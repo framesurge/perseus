@@ -1,0 +1,50 @@
+use actix_web::{web, App, HttpRequest, HttpServer, Result as ActixResult, error};
+use actix_files::{NamedFile};
+use perseus_showcase_app::serve::{get_render_cfg, get_page};
+use perseus_showcase_app::render_cfg::RenderCfg;
+use perseus_showcase_app::config_manager::FsConfigManager;
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .data(
+                get_render_cfg().expect("Couldn't get render configuration!")
+            )
+            .data(
+                FsConfigManager::new()
+            )
+            // TODO chunk JS and WASM bundles
+            // These allow getting the basic app code (not including the static data)
+            // This contains everything in the spirit of a pseudo-SPA
+            .route("/.perseus/bundle.js", web::get().to(js_bundle))
+            .route("/.perseus/bundle.wasm", web::get().to(wasm_bundle))
+            // This allows getting the static HTML/JSON of a page
+            // We stream both together in a single JSON object so SSR works (otherwise we'd have request IDs and weird caching...)
+            .route("/.perseus/page/{filename:.*}", web::get().to(page_data))
+            // For everything else, we'll serve the app shell directly
+            .default_service(web::route().to(initial))
+    })
+    .bind(("localhost", 8080))?
+    .run()
+    .await
+}
+
+async fn initial() -> std::io::Result<NamedFile> {
+    NamedFile::open("../app/index.html")
+}
+async fn js_bundle() -> std::io::Result<NamedFile> {
+    NamedFile::open("../app/pkg/bundle.js")
+}
+async fn wasm_bundle() -> std::io::Result<NamedFile> {
+    NamedFile::open("../app/pkg/perseus_showcase_app_bg.wasm")
+}
+async fn page_data(req: HttpRequest, render_cfg: web::Data<RenderCfg>, config_manager: web::Data<FsConfigManager>) -> ActixResult<String> {
+    let path = req.match_info().query("filename");
+    // TODO match different types of errors here
+    let page_data = get_page(path, &render_cfg, config_manager.get_ref()).map_err(error::ErrorNotFound)?;
+
+    Ok(
+        serde_json::to_string(&page_data).unwrap()
+    )
+}

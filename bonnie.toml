@@ -1,0 +1,4 @@
+version="0.3.1"
+
+[scripts]
+start = "echo \"No start script yet!\""
