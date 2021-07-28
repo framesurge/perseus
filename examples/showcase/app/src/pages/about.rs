@@ -1,5 +1,5 @@
 use sycamore::prelude::*;
-use crate::page::Page;
+use perseus::page::Page;
 
 #[component(AboutPage<G>)]
 pub fn about_page() -> Template<G> {
@@ -8,7 +8,7 @@ pub fn about_page() -> Template<G> {
 	}
 }
 
-pub fn get_page() -> Page<()> {
+pub fn get_page<G: GenericNode>() -> Page<(), G> {
     Page::new("about")
         .template(Box::new(|_| template! {
                 AboutPage()

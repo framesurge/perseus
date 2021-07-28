@@ -1,8 +1,11 @@
 use actix_web::{web, App, HttpRequest, HttpServer, Result as ActixResult, error};
 use actix_files::{NamedFile};
-use perseus_showcase_app::serve::{get_render_cfg, get_page};
-use perseus_showcase_app::render_cfg::RenderCfg;
-use perseus_showcase_app::config_manager::FsConfigManager;
+
+use perseus::{
+    serve::{get_render_cfg, get_page},
+    render_cfg::RenderCfg,
+    config_manager::FsConfigManager
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

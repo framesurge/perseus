@@ -8,9 +8,10 @@ use crate::{
 };
 use crate::errors::*;
 use std::any::Any;
+use sycamore::prelude::SsrNode;
 
 /// Builds a page, writing static data as appropriate. This should be used as part of a larger build process.
-pub fn build_page<Props: Serialize + DeserializeOwned + Any>(page: Page<Props>, config_manager: &impl ConfigManager) -> Result<Vec<RenderOpt>> {
+pub fn build_page<Props: Serialize + DeserializeOwned + Any>(page: Page<Props, SsrNode>, config_manager: &impl ConfigManager) -> Result<Vec<RenderOpt>> {
     let mut render_opts: Vec<RenderOpt> = Vec::new();
     let page_path = page.get_path();
 

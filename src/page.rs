@@ -2,19 +2,19 @@
 
 use crate::errors::*;
 use serde::{Serialize, de::DeserializeOwned};
+use sycamore::prelude::{Template, GenericNode};
 
 // A series of closure types that should not be typed out more than once
-// TODO maybe make these public?
-type TemplateFnReturn = sycamore::prelude::Template<sycamore::prelude::SsrNode>;
-type TemplateFn<Props> = Box<dyn Fn(Option<Props>) -> TemplateFnReturn>;
-type GetBuildPathsFn = Box<dyn Fn() -> Vec<String>>;
-type GetBuildStateFn<Props> = Box<dyn Fn(String) -> Props>;
-type GetRequestStateFn<Props> = Box<dyn Fn(String) -> Props>;
-type ShouldRevalidateFn = Box<dyn Fn() -> bool>;
+pub type TemplateFn<Props, G> = Box<dyn Fn(Option<Props>) -> Template<G>>;
+pub type GetBuildPathsFn = Box<dyn Fn() -> Vec<String>>;
+pub type GetBuildStateFn<Props> = Box<dyn Fn(String) -> Props>;
+pub type GetRequestStateFn<Props> = Box<dyn Fn(String) -> Props>;
+pub type ShouldRevalidateFn = Box<dyn Fn() -> bool>;
 
 /// This allows the specification of all the page templates in an app and how to render them. If no rendering logic is provided at all,
 /// the page will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
-pub struct Page<Props: Serialize + DeserializeOwned>
+// #[derive(Clone)]
+pub struct Page<Props: Serialize + DeserializeOwned, G: GenericNode>
 {
     /// The path to the root of the template. Any build paths will be inserted under this.
     path: String,
@@ -22,7 +22,7 @@ pub struct Page<Props: Serialize + DeserializeOwned>
     /// to be prerendered in some way. This should be very similar to the function that hydrates your page on the client side.
     /// This will be executed inside `sycamore::render_to_string`, and should return a `Template<SsrNode>`. This takes an `Option<Props>`
     /// because otherwise efficient typing is almost impossible for pages without any properties (solutions welcome in PRs!).
-    template: TemplateFn<Props>,
+    template: TemplateFn<Props, G>,
     /// A function that gets the paths to render for at built-time. This is equivalent to `get_static_paths` in NextJS. If
     /// `incremental_path_rendering` is `true`, more paths can be rendered at request time on top of these.
     get_build_paths: Option<GetBuildPathsFn>,
@@ -44,7 +44,7 @@ pub struct Page<Props: Serialize + DeserializeOwned>
     /// A length of time after which to prerender the page again. This is equivalent to ISR in NextJS.
     revalidate_after: Option<String>,
 }
-impl<Props: Serialize + DeserializeOwned> Page<Props> {
+impl<Props: Serialize + DeserializeOwned, G: GenericNode> Page<Props, G> {
     /// Creates a new page definition.
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
@@ -62,7 +62,7 @@ impl<Props: Serialize + DeserializeOwned> Page<Props> {
 
     // Render executors
     /// Executes the user-given function that renders the page on the server-side (build or request time).
-    pub fn render_for_template(&self, props: Option<Props>) -> TemplateFnReturn {
+    pub fn render_for_template(&self, props: Option<Props>) -> Template<G> {
         (self.template)(props)
     }
     /// Gets the list of pages that should be prerendered for at build-time.
@@ -122,31 +122,31 @@ impl<Props: Serialize + DeserializeOwned> Page<Props> {
     }
 
     // Builder setters
-    pub fn template(mut self, val: TemplateFn<Props>) -> Page<Props> {
+    pub fn template(mut self, val: TemplateFn<Props, G>) -> Page<Props, G> {
         self.template = val;
         self
     }
-    pub fn build_paths_fn(mut self, val: GetBuildPathsFn) -> Page<Props> {
+    pub fn build_paths_fn(mut self, val: GetBuildPathsFn) -> Page<Props, G> {
         self.get_build_paths = Some(val);
         self
     }
-    pub fn incremental_path_rendering(mut self, val: bool) -> Page<Props> {
+    pub fn incremental_path_rendering(mut self, val: bool) -> Page<Props, G> {
         self.incremental_path_rendering = val;
         self
     }
-    pub fn build_state_fn(mut self, val: GetBuildStateFn<Props>) -> Page<Props> {
+    pub fn build_state_fn(mut self, val: GetBuildStateFn<Props>) -> Page<Props, G> {
         self.get_build_state = Some(val);
         self
     }
-    pub fn request_state_fn(mut self, val: GetRequestStateFn<Props>) -> Page<Props> {
+    pub fn request_state_fn(mut self, val: GetRequestStateFn<Props>) -> Page<Props, G> {
         self.get_request_state = Some(val);
         self
     }
-    pub fn should_revalidate(mut self, val: ShouldRevalidateFn) -> Page<Props> {
+    pub fn should_revalidate(mut self, val: ShouldRevalidateFn) -> Page<Props, G> {
         self.should_revalidate = Some(val);
         self
     }
-    pub fn revalidate_after(mut self, val: String) -> Page<Props> {
+    pub fn revalidate_after(mut self, val: String) -> Page<Props, G> {
         self.revalidate_after = Some(val);
         self
     }

@@ -1,15 +1,9 @@
-pub mod errors;
 pub mod pages;
-mod shell;
-pub mod serve;
-pub mod render_cfg;
-pub mod config_manager;
-pub mod page;
-pub mod build;
 
 use sycamore::prelude::*;
 use sycamore_router::{Route, BrowserRouter};
 use wasm_bindgen::prelude::*;
+use perseus::shell::app_shell;
 
 // Define our routes
 #[derive(Route)]
@@ -44,26 +38,24 @@ pub fn run() -> Result<(), JsValue> {
             template! {
                 BrowserRouter(|route: AppRoute| {
                     match route {
-                        AppRoute::Index => app_shell!({
-                            name => "index",
-                            props => pages::index::IndexPageProps,
-                            template => |props: Option<pages::index::IndexPageProps>| template! {
+                        AppRoute::Index => app_shell(
+                            "index".to_string(),
+                            Box::new(|props: Option<pages::index::IndexPageProps>| template! {
                                 pages::index::IndexPage(props.unwrap())
-                            },
-                        }),
-                        AppRoute::About => app_shell!({
-                            name => "about",
-                            template => |_: Option<()>| template! {
+                            })
+                        ),
+                        AppRoute::About => app_shell(
+                            "about".to_string(),
+                            Box::new(|_: Option<()>| template! {
                                 pages::about::AboutPage()
-                            },
-                        }),
-                        AppRoute::Post { slug } => app_shell!({
-                            name => &format!("post/{}", slug),
-                            props => pages::post::PostPageProps,
-                            template => |props: Option<pages::post::PostPageProps>| template! {
+                            })
+                        ),
+                        AppRoute::Post { slug } => app_shell(
+                            format!("post/{}", slug),
+                            Box::new(|props: Option<pages::post::PostPageProps>| template! {
                                 pages::post::PostPage(props.unwrap())
-                            },
-                        }),
+                            })
+                        ),
                         AppRoute::NotFound => template! {
                             p {"Not Found."}
                         }

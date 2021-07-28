@@ -1,7 +1,7 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub mod errors;
+pub mod shell;
+pub mod serve;
+pub mod render_cfg;
+pub mod config_manager;
+pub mod page;
+pub mod build;

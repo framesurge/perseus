@@ -1,6 +1,6 @@
 use sycamore::prelude::*;
 use serde::{Serialize, Deserialize};
-use crate::page::Page;
+use perseus::page::Page;
 
 #[derive(Serialize, Deserialize)]
 pub struct PostPageProps {
@@ -22,7 +22,7 @@ pub fn post_page(props: PostPageProps) -> Template<G> {
 	}
 }
 
-pub fn get_page() -> Page<PostPageProps> {
+pub fn get_page<G: GenericNode>() -> Page<PostPageProps, G> {
     Page::new("post")
         .build_paths_fn(Box::new(get_static_paths))
         .build_state_fn(Box::new(get_static_props))
