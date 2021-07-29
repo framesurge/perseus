@@ -26,9 +26,10 @@ pub struct Template<Props: Serialize + DeserializeOwned, G: GenericNode>
     /// A function that gets the paths to render for at built-time. This is equivalent to `get_static_paths` in NextJS. If
     /// `incremental_path_rendering` is `true`, more paths can be rendered at request time on top of these.
     get_build_paths: Option<GetBuildPathsFn>,
-    /// Defiens whether or not any new paths that match this template will be prerendered and cached in production. This allows you to
+    /// Defines whether or not any new paths that match this template will be prerendered and cached in production. This allows you to
     /// have potentially billions of templates and retain a super-fast build process. The first user will have an ever-so-slightly slower
-    /// experience, and everyone else gets the beneftis afterwards.
+    /// experience, and everyone else gets the beneftis afterwards. This requires `get_build_paths`. Note that the template root will NOT
+    /// be rendered on demand, and must be explicitly defined if it's wanted. It can uuse a different template.
     incremental_path_rendering: bool,
     /// A function that gets the initial state to use to prerender the template at build time. This will be passed the path of the template, and
     /// will be run for any sub-paths. This is equivalent to `get_static_props` in NextJS.
@@ -86,7 +87,8 @@ impl<Props: Serialize + DeserializeOwned, G: GenericNode> Template<Props, G> {
     }
 
     // Value getters
-    /// Gets the path of the template.
+    /// Gets the path of the template. This is the root path under which any generated pages will be served. In the simplest case, there will
+    /// only be one page rendered, and it will occupy that root position.
     pub fn get_path(&self) -> String {
         self.path.clone()
     }

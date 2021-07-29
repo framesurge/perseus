@@ -19,4 +19,20 @@ pub enum RenderOpt {
     Server,
 }
 
-pub type RenderCfg = HashMap<String, Vec<RenderOpt>>;
+pub type TemplatesCfg = HashMap<String, Vec<RenderOpt>>;
+pub type PagesCfg = HashMap<String, String>;
+
+/// The configuration that details how to render each page. Every known page path has an entry here except for those with ISR.
+/// Any page that uses ISR (by defining the `TODO` property on its `Page` definition) has an entry for the template followed by `/*` to
+/// avoid storing potentially billions of pages in this file. Any explicitly defined page though will be present in here for maximum speed.
+/// Note that ISR is not compatible with defining other pages specifically under the root of the ISR template with different templates (e.g.
+/// defining `/posts/*` and then defining a new template `/posts/index`, you'd have to use the same template there if you use ISR).
+#[derive(Serialize, Deserialize)]
+pub struct RenderCfg {
+    /// All the registered templates. Each of these corresponds to a `Page` definition. They all have a series of render options that are
+    /// automatically generated with `build_page` (invoked by `build_pages!`).
+    pub templates: TemplatesCfg,
+    /// The actual pages themselves, each mapping to the name of their template that defines their render options. Again, ISR rendered pages
+    /// are stored with a wildcard here.
+    pub pages: PagesCfg,
+}

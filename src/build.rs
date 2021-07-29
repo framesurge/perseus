@@ -10,9 +10,22 @@ use crate::errors::*;
 use std::any::Any;
 use sycamore::prelude::SsrNode;
 
-/// Builds a template, writing static data as appropriate. This should be used as part of a larger build process.
-pub fn build_template<Props: Serialize + DeserializeOwned + Any>(template: Template<Props, SsrNode>, config_manager: &impl ConfigManager) -> Result<Vec<RenderOpt>> {
+/// Builds a template, writing static data as appropriate. This should be used as part of a larger build process. This returns both a list
+/// of the extracted render options for this template (needed at request time), a list of pages that it explicitly generated, and a boolean
+/// as to whether or not it only generated a single page to occupy the template's root path (`true` unless using using build-time path
+/// generation).
+pub fn build_template<Props: Serialize + DeserializeOwned + Any>(
+    template: Template<Props, SsrNode>,
+    config_manager: &impl ConfigManager
+) -> Result<
+    (
+        Vec<RenderOpt>,
+        Vec<String>,
+        bool
+    )
+> {
     let mut render_opts: Vec<RenderOpt> = Vec::new();
+    let mut single_page = false;
     let template_path = template.get_path();
 
     // Handle the boolean properties
@@ -30,8 +43,18 @@ pub fn build_template<Props: Serialize + DeserializeOwned + Any>(template: Templ
             render_opts.push(RenderOpt::StaticPaths);
             template.get_build_paths()?
         },
-        false => vec![template_path.clone()]
+        false => {
+            single_page = true;
+            vec![String::new()]
+        }
     };
+    // Add the rest of the render options before we loop over defined pages
+    if template.uses_build_state() {
+        render_opts.push(RenderOpt::StaticProps);
+    }
+    if template.uses_request_state() {
+        render_opts.push(RenderOpt::Server);
+    }
 
     // Iterate through the paths to generate initial states if needed
     for path in paths.iter() {
@@ -45,8 +68,7 @@ pub fn build_template<Props: Serialize + DeserializeOwned + Any>(template: Templ
 
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated
-        if template.uses_build_state() {
-            render_opts.push(RenderOpt::StaticProps);
+        if render_opts.contains(&RenderOpt::StaticProps) {
             // We pass in the latter part of the path, without the base specifier (because that would be the same for everything in the template)
             let initial_state = template.get_build_state(path.to_string())?;
             let initial_state_str = serde_json::to_string(&initial_state).unwrap();
@@ -65,14 +87,11 @@ pub fn build_template<Props: Serialize + DeserializeOwned + Any>(template: Templ
                 .unwrap();
         }
 
-        // Handle server-side rendering
-        // By definition, everything here is done at request-time, so there's not really much to do
-        // Note also that if a template only uses SSR, it won't get prerendered at build time whatsoever
-        if template.uses_request_state() {
-            render_opts.push(RenderOpt::Server);
-        }
+        // Note that SSR has already been handled by checking for `.uses_request_state()` above, we don't need to do any rendering here
+        // If a template only uses SSR, it won't get prerendered at build time whatsoever
 
         // If the template is very basic, prerender without any state
+        // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
         if template.is_basic() {
             render_opts.push(RenderOpt::StaticProps);
             let prerendered = sycamore::render_to_string(
@@ -86,26 +105,58 @@ pub fn build_template<Props: Serialize + DeserializeOwned + Any>(template: Templ
         }
     }
 
-    Ok(render_opts)
+    Ok((render_opts, paths, single_page))
 }
 
 /// Runs the build process of building many different templates. This is done with a macro because typing for a function means we have to do
 /// things on the heap.
 /// (Any better solutions are welcome in PRs!)
+// TODO set up error handling here
 #[macro_export]
 macro_rules! build_templates {
     (
         [$($template:expr),+],
         $config_manager:expr
     ) => {
-        let mut render_conf: $crate::render_cfg::RenderCfg = ::std::collections::HashMap::new();
+        let mut templates_conf: $crate::render_cfg::TemplatesCfg = ::std::collections::HashMap::new();
+        let mut pages_conf: $crate::render_cfg::PagesCfg = ::std::collections::HashMap::new();
+        // Create each of the templates
         $(
-            render_conf.insert(
-                $template.get_path(),
-                $crate::build::build_template($template, $config_manager)
-                    .unwrap()
+            let (render_opts, pages, single_page) = $crate::build::build_template($template, $config_manager)
+                .unwrap();
+            let template_root_path = $template.get_path();
+            templates_conf.insert(
+                template_root_path.clone(),
+                render_opts
             );
+            if single_page {
+                pages_conf.insert(
+                    template_root_path.clone(),
+                    template_root_path.clone()
+                );
+            } else {
+                // Add each page that the template explicitly generated (ignoring ISR for now)
+                for page in pages {
+                    pages_conf.insert(
+                        format!("{}/{}", &template_root_path, &page),
+                        template_root_path.clone()
+                    );
+                }
+                // Now if the page uses ISR, add an explicit `/*` in there after the template root path
+                // Incremental rendering requires build-time path generation
+                if $template.uses_incremental() {
+                    pages_conf.insert(
+                        format!("{}/*", &template_root_path),
+                        template_root_path.clone()
+                    );
+                }
+            }
         )+
+
+        let render_conf = $crate::render_cfg::RenderCfg {
+            templates: templates_conf,
+            pages: pages_conf
+        };
         $config_manager
             .write("./dist/render_conf.json", &serde_json::to_string(&render_conf).unwrap())
             .unwrap();
