@@ -1,6 +1,6 @@
-use sycamore::prelude::*;
 use serde::{Serialize, Deserialize};
-use perseus::page::Page;
+use sycamore::prelude::{template, component, GenericNode, Template as SycamoreTemplate};
+use perseus::template::Template;
 
 #[derive(Serialize, Deserialize)]
 pub struct PostPageProps {
@@ -9,7 +9,7 @@ pub struct PostPageProps {
 }
 
 #[component(PostPage<G>)]
-pub fn post_page(props: PostPageProps) -> Template<G> {
+pub fn post_page(props: PostPageProps) -> SycamoreTemplate<G> {
     let title = props.title;
     let content = props.content;
 	template! {
@@ -22,8 +22,8 @@ pub fn post_page(props: PostPageProps) -> Template<G> {
 	}
 }
 
-pub fn get_page<G: GenericNode>() -> Page<PostPageProps, G> {
-    Page::new("post")
+pub fn get_page<G: GenericNode>() -> Template<PostPageProps, G> {
+    Template::new("post")
         .build_paths_fn(Box::new(get_static_paths))
         .build_state_fn(Box::new(get_static_props))
         .incremental_path_rendering(true)

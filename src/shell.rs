@@ -6,7 +6,7 @@ use sycamore::prelude::*;
 use serde::{Serialize, de::DeserializeOwned};
 use crate::errors::*;
 use crate::serve::PageData;
-use crate::page::TemplateFn;
+use crate::template::TemplateFn;
 
 pub async fn fetch(url: String) -> Result<Option<String>> {
     let js_err_handler = |err: JsValue| ErrorKind::JsErr(format!("{:?}", err));

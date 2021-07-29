@@ -28,6 +28,7 @@ pub fn get_render_cfg() -> Result<RenderCfg> {
 pub fn get_page(raw_path: &str, render_cfg: &RenderCfg, config_manager: &impl ConfigManager) -> Result<PageData> {
     // Remove `/` from the path by encoding it as a URL (that's what we store)
     let path = urlencoding::encode(raw_path).to_string();
+    // TODO Match the path to one of the templates
     // TODO support SSR
 
     // Get the static HTML

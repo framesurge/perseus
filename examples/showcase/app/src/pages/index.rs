@@ -1,6 +1,6 @@
-use sycamore::prelude::*;
 use serde::{Serialize, Deserialize};
-use perseus::page::Page;
+use sycamore::prelude::{template, component, GenericNode, Template as SycamoreTemplate};
+use perseus::template::Template;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndexPageProps {
@@ -8,15 +8,15 @@ pub struct IndexPageProps {
 }
 
 #[component(IndexPage<G>)]
-pub fn index_page(props: IndexPageProps) -> Template<G> {
+pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
 	template! {
 		p {(props.greeting)}
         a(href = "/about") { "About!" }
 	}
 }
 
-pub fn get_page<G: GenericNode>() -> Page<IndexPageProps, G> {
-    Page::new("index")
+pub fn get_page<G: GenericNode>() -> Template<IndexPageProps, G> {
+    Template::new("index")
         .build_state_fn(Box::new(get_static_props))
         .template(Box::new(|props: Option<IndexPageProps>| template! {
             IndexPage(props.unwrap())

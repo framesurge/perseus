@@ -13,9 +13,9 @@ error_chain! {
             display("the following error occurred while interfacing with javascript: {:?}", err)
         }
 
-        PageFeatureNotEnabled(name: String, feature: String) {
-            description("a page feature required by a function called was not present")
-            display("the page '{}' is missing the feature '{}'", name, feature)
+        TemplateFeatureNotEnabled(name: String, feature: String) {
+            description("a template feature required by a function called was not present")
+            display("the template '{}' is missing the feature '{}'", name, feature)
         }
     }
     links {
