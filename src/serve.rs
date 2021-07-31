@@ -3,10 +3,10 @@
 use std::fs;
 use serde::{Serialize, Deserialize};
 use crate::errors::*;
-use crate::render_cfg::{RenderCfg, RenderOpt};
 use crate::config_manager::ConfigManager;
 use crate::template::TemplateMap;
 use sycamore::prelude::SsrNode;
+use std::collections::HashMap;
 
 /// Represents the data necessary to render a page.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -19,9 +19,9 @@ pub struct PageData {
 }
 
 /// Gets the configuration of how to render each page.
-pub fn get_render_cfg() -> Result<RenderCfg> {
+pub fn get_render_cfg() -> Result<HashMap<String, String>> {
     let content = fs::read_to_string("../app/dist/render_conf.json")?;
-    let cfg = serde_json::from_str::<RenderCfg>(&content)?;
+    let cfg = serde_json::from_str::<HashMap<String, String>>(&content)?;
 
     Ok(cfg)
 }
@@ -30,7 +30,7 @@ pub fn get_render_cfg() -> Result<RenderCfg> {
 // TODO let this function take a request struct of some form
 pub fn get_page(
     path: &str,
-    render_cfg: &RenderCfg,
+    render_cfg: &HashMap<String, String>,
     templates: &TemplateMap<SsrNode>,
     config_manager: &impl ConfigManager
 ) -> Result<PageData> {
@@ -40,7 +40,7 @@ pub fn get_page(
     // Match the path to one of the templates
     let mut template_name = String::new();
     // We'll try a direct match first
-    if let Some(template_root_path) = render_cfg.pages.get(path) {
+    if let Some(template_root_path) = render_cfg.get(path) {
         template_name = template_root_path.to_string();
     }
     // Next, an ISR match (more complex)
@@ -56,7 +56,7 @@ pub fn get_page(
         } + "/*";
 
         // If we find something, keep going until we don't (maximise specificity)
-        if let Some(template_root_path) = render_cfg.pages.get(&path_to_try) {
+        if let Some(template_root_path) = render_cfg.get(&path_to_try) {
             template_name = template_root_path.to_string();
         } else {
             break;
@@ -66,19 +66,18 @@ pub fn get_page(
         bail!(ErrorKind::PageNotFound(path.to_string()))
     }
 
-    // Get the render options of the template
-    let render_opts = render_cfg.templates.get(&template_name);
-    let render_opts = match render_opts {
-        Some(render_opts) => render_opts,
+    // Get the template to use
+    let template = templates.get(&template_name);
+    let template = match template {
+        Some(template) => template,
         None => bail!(ErrorKind::PageNotFound(path.to_string()))
     };
 
     let html: String;
     let state: Option<String>;
 
-    // TODO remove render options system altogether now that we're passing pages around
     // Handle each different type of rendering (static paths have already been done though, so we don't need to deal with them)
-    if render_opts.contains(&RenderOpt::StaticProps) {
+    if template.uses_build_state() || template.is_basic() {
         // Get the static HTML
         html = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded))?;
         // Get the static JSON
@@ -86,13 +85,7 @@ pub fn get_page(
             Ok(state) => Some(state),
             Err(_) => None
         };
-    } else if render_opts.contains(&RenderOpt::Server) {
-        // Get the template itself (we need it for generation)
-        let template = templates.get(&template_name);
-        let template = match template {
-            Some(template) => template,
-            None => bail!(ErrorKind::PageNotFound(path.to_string()))
-        };
+    } else if template.uses_request_state() {
         // Generate the initial state (this may generate an error, but there's no file that can't exist)
         state = Some(template.get_request_state(path.to_string())?);
         // Use that to render the static HTML

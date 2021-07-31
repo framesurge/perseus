@@ -1,10 +1,10 @@
 use actix_web::{web, App, HttpRequest, HttpServer, Result as ActixResult, error};
 use actix_files::{NamedFile};
 use sycamore::prelude::SsrNode;
+use std::collections::HashMap;
 
 use perseus::{
     serve::{get_render_cfg, get_page},
-    render_cfg::RenderCfg,
     config_manager::FsConfigManager,
     template::TemplateMap
 };
@@ -48,7 +48,12 @@ async fn js_bundle() -> std::io::Result<NamedFile> {
 async fn wasm_bundle() -> std::io::Result<NamedFile> {
     NamedFile::open("../app/pkg/perseus_showcase_app_bg.wasm")
 }
-async fn page_data(req: HttpRequest, templates: web::Data<TemplateMap<SsrNode>>, render_cfg: web::Data<RenderCfg>, config_manager: web::Data<FsConfigManager>) -> ActixResult<String> {
+async fn page_data(
+    req: HttpRequest,
+    templates: web::Data<TemplateMap<SsrNode>>,
+    render_cfg: web::Data<HashMap<String, String>>,
+    config_manager: web::Data<FsConfigManager>
+) -> ActixResult<String> {
     let path = req.match_info().query("filename");
     // TODO match different types of errors here
     let page_data = get_page(path, &render_cfg, &templates, config_manager.get_ref()).map_err(error::ErrorNotFound)?;
