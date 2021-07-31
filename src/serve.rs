@@ -76,6 +76,7 @@ pub fn get_page(
     let html: String;
     let state: Option<String>;
 
+    // TODO remove render options system altogether now that we're passing pages around
     // Handle each different type of rendering (static paths have already been done though, so we don't need to deal with them)
     if render_opts.contains(&RenderOpt::StaticProps) {
         // Get the static HTML
@@ -85,10 +86,24 @@ pub fn get_page(
             Ok(state) => Some(state),
             Err(_) => None
         };
-    }  else {
+    } else if render_opts.contains(&RenderOpt::Server) {
+        // Get the template itself (we need it for generation)
+        let template = templates.get(&template_name);
+        let template = match template {
+            Some(template) => template,
+            None => bail!(ErrorKind::PageNotFound(path.to_string()))
+        };
+        // Generate the initial state (this may generate an error, but there's no file that can't exist)
+        state = Some(template.get_request_state(path.to_string())?);
+        // Use that to render the static HTML
+        html = sycamore::render_to_string(
+            ||
+                template.render_for_template(state.clone())
+        );
+    } else {
         bail!(ErrorKind::NoRenderOpts(template_name));
     }
-    // TODO support SSR, revalidation, and ISR
+    // TODO support revalidation and ISR
 
     // Combine everything into one JSON object
     let res = PageData {

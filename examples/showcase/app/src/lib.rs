@@ -16,6 +16,8 @@ enum AppRoute {
     Post {
         slug: String
     },
+    #[to("/ip")]
+    Ip,
     #[not_found]
     NotFound
 }
@@ -49,6 +51,10 @@ pub fn run() -> Result<(), JsValue> {
                         AppRoute::Post { slug } => app_shell(
                             format!("post/{}", slug),
                             pages::post::template_fn()
+                        ),
+                        AppRoute::Ip => app_shell(
+                            "ip".to_string(),
+                            pages::ip::template_fn()
                         ),
                         AppRoute::NotFound => template! {
                             p {"Not Found."}

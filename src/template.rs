@@ -85,6 +85,16 @@ impl<G: GenericNode> Template<G> {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "build_state".to_string()))
         }
     }
+    /// Gets the request-time state for a template. This is equivalent to SSR, and will not be performed at build-time. Unlike
+    /// `.get_build_paths()` though, this will be passed information about the request that triggered the render.
+    pub fn get_request_state(&self, path: String) -> Result<String> {
+        if let Some(get_request_state) = &self.get_request_state {
+            // TODO support error handling for render functions
+            Ok(get_request_state(path))
+        } else {
+            bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "request_state".to_string()))
+        }
+    }
 
     // Value getters
     /// Gets the path of the template. This is the root path under which any generated pages will be served. In the simplest case, there will

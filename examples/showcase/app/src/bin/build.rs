@@ -11,7 +11,8 @@ fn main() {
     build_templates(vec![
         pages::index::get_page::<SsrNode>(),
         pages::about::get_page::<SsrNode>(),
-        pages::post::get_page::<SsrNode>()
+        pages::post::get_page::<SsrNode>(),
+        pages::ip::get_page::<SsrNode>()
     ], &config_manager).expect("Static generation failed!");
 
     println!("Static generation successfully completed!");
