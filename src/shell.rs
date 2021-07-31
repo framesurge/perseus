@@ -3,7 +3,6 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::{JsFuture};
 use web_sys::{Request, RequestInit, RequestMode, Response};
 use sycamore::prelude::*;
-use serde::{Serialize, de::DeserializeOwned};
 use crate::errors::*;
 use crate::serve::PageData;
 use crate::template::TemplateFn;
@@ -37,9 +36,8 @@ pub async fn fetch(url: String) -> Result<Option<String>> {
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
 /// broader template).
-// TODO fix static lifetime here
 // TODO set up errors here
-pub fn app_shell<Props: Serialize + DeserializeOwned + 'static>(path: String, template_fn: TemplateFn<Props, DomNode>) -> Template<DomNode> {
+pub fn app_shell(path: String, template_fn: TemplateFn<DomNode>) -> Template<DomNode> {
     // Get the container as a DOM element
     let container = NodeRef::new();
     // Spawn a Rust futures thread in the background to fetch the static HTML/JSON
@@ -64,21 +62,10 @@ pub fn app_shell<Props: Serialize + DeserializeOwned + 'static>(path: String, te
         let container_elem = container.get::<DomNode>().unchecked_into::<web_sys::Element>();
         container_elem.set_inner_html(&page_data.content);
 
-        let state = match page_data.state {
-            Some(state_str) => {
-                let state_res = serde_json::from_str::<Props>(&state_str);
-                match state_res {
-                    Ok(state) => Some(state),
-                    Err(err) => todo!("serialization error unimplemented")
-                }
-            },
-            None => None
-        };
-
         // Hydrate that static code using the acquired state
         // BUG (Sycamore): this will double-render if the component is just text (no nodes)
         sycamore::hydrate_to(
-            || template_fn(state),
+            || template_fn(page_data.state),
             &container.get::<DomNode>().inner_element()
         );
     }));

@@ -8,10 +8,14 @@ pub fn about_page() -> SycamoreTemplate<G> {
 	}
 }
 
-pub fn get_page<G: GenericNode>() -> Template<(), G> {
+pub fn get_page<G: GenericNode>() -> Template<G> {
     Template::new("about")
-        .template(Box::new(|_| template! {
-                AboutPage()
-            }
-        ))
+        .template(template_fn())
+}
+
+pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
+    Box::new(|_| template! {
+            AboutPage()
+        }
+    )
 }

@@ -10,5 +10,5 @@ build.cmd = [
 build.subcommands.--watch = "find ../../ -not -path \"../../target/*\" -not -path \"../../.git/*\" | entr -s \"bonnie build\""
 serve = [
 	"cd server",
-	"cargo watch -w ../ -x \"run\""
+	"cargo watch -w ../../../ -x \"run\""
 ]

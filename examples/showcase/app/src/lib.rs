@@ -40,21 +40,15 @@ pub fn run() -> Result<(), JsValue> {
                     match route {
                         AppRoute::Index => app_shell(
                             "index".to_string(),
-                            Box::new(|props: Option<pages::index::IndexPageProps>| template! {
-                                pages::index::IndexPage(props.unwrap())
-                            })
+                            pages::index::template_fn()
                         ),
                         AppRoute::About => app_shell(
                             "about".to_string(),
-                            Box::new(|_: Option<()>| template! {
-                                pages::about::AboutPage()
-                            })
+                            pages::about::template_fn()
                         ),
                         AppRoute::Post { slug } => app_shell(
                             format!("post/{}", slug),
-                            Box::new(|props: Option<pages::post::PostPageProps>| template! {
-                                pages::post::PostPage(props.unwrap())
-                            })
+                            pages::post::template_fn()
                         ),
                         AppRoute::NotFound => template! {
                             p {"Not Found."}

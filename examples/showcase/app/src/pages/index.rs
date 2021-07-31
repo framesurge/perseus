@@ -15,16 +15,24 @@ pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
 	}
 }
 
-pub fn get_page<G: GenericNode>() -> Template<IndexPageProps, G> {
+pub fn get_page<G: GenericNode>() -> Template<G> {
     Template::new("index")
         .build_state_fn(Box::new(get_static_props))
-        .template(Box::new(|props: Option<IndexPageProps>| template! {
-            IndexPage(props.unwrap())
-        }))
+        .template(template_fn())
 }
 
-pub fn get_static_props(_path: String) -> IndexPageProps {
-    IndexPageProps {
-        greeting: "Hello World!".to_string()
-    }
+pub fn get_static_props(_path: String) -> String {
+    serde_json::to_string(
+        &IndexPageProps {
+            greeting: "Hello World!".to_string()
+        }
+    ).unwrap()
+}
+
+pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
+    Box::new(|props: Option<String>| template! {
+        IndexPage(
+            serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
+        )
+    })
 }
