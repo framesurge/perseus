@@ -43,25 +43,25 @@ pub fn get_page(
     if let Some(template_root_path) = render_cfg.get(path) {
         template_name = template_root_path.to_string();
     }
-    // Next, an ISR match (more complex)
-    // We progressively look for more and more specificity of the path, adding each segment
-    // That way, we're searching forwards rather than backwards, which is more efficient
-    let path_segments: Vec<&str> = path.split('/').collect();
-    for (idx, _) in path_segments.iter().enumerate() {
-        // Make a path out of this and all the previous segments
-        // For some reason, [0..0] gives nothing, so we need to `match` here
-        let path_to_try = match idx {
-            0 => path_segments[0].to_string(),
-            _ => path_segments[0..idx].join("/")
-        } + "/*";
+    // Next, an ISR match (more complex), which we only want to run if we didn't get an exact match above
+    if template_name.is_empty() {
+        // We progressively look for more and more specificity of the path, adding each segment
+        // That way, we're searching forwards rather than backwards, which is more efficient
+        let path_segments: Vec<&str> = path.split('/').collect();
+        for (idx, _) in path_segments.iter().enumerate() {
+            // Make a path out of this and all the previous segments
+            let path_to_try = path_segments[0..(idx + 1)].join("/") + "/*";
 
-        // If we find something, keep going until we don't (maximise specificity)
-        if let Some(template_root_path) = render_cfg.get(&path_to_try) {
-            template_name = template_root_path.to_string();
-        } else {
-            break;
+            // If we find something, keep going until we don't (maximise specificity)
+            if let Some(template_root_path) = render_cfg.get(&path_to_try) {
+                template_name = template_root_path.to_string();
+            } else {
+                break;
+            }
         }
     }
+    
+    // if we still have nothing, then the page doesn't exist
     if template_name.is_empty() {
         bail!(ErrorKind::PageNotFound(path.to_string()))
     }
@@ -77,7 +77,37 @@ pub fn get_page(
     let state: Option<String>;
 
     // Handle each different type of rendering (static paths have already been done though, so we don't need to deal with them)
-    if template.uses_build_state() || template.is_basic() {
+    // TODO make this system completely modular with state amalgamation
+    if template.uses_incremental() {
+        // The template uses ISR, check if it's already been rendered before and cached
+        let html_res = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded));
+        if matches!(html_res, Ok(_)) && !cfg!(debug_assertions) {
+            html = html_res.unwrap();
+            // Get the static JSON (if it exists, but it should)
+            state = match config_manager.read(&format!("../app/dist/static/{}.json", path_encoded)) {
+                Ok(state) => Some(state),
+                Err(_) => None
+            };
+        } else {
+            // Note that we assume ISR is used with SSG (otherwise it would be completely pointless...)
+            // We need to generate and cache this page for future usage
+            state = Some(
+                template.get_build_state(
+                    format!("{}/{}", template.get_path(), path)
+                )?
+            );
+            html = sycamore::render_to_string(
+                ||
+                    template.render_for_template(state.clone())
+            );
+            // Cache all that
+            config_manager
+                .write(&format!("../app/dist/static/{}.json", path_encoded), &state.clone().unwrap())?;
+            // Write that prerendered HTML to a static file
+            config_manager
+                .write(&format!("../app/dist/static/{}.html", path_encoded), &html)?;
+        }
+    } else if template.uses_build_state() || template.is_basic() {
         // Get the static HTML
         html = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded))?;
         // Get the static JSON

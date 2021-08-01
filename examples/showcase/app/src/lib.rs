@@ -12,6 +12,8 @@ enum AppRoute {
     Index,
     #[to("/about")]
     About,
+    #[to("/post/new")]
+    NewPost,
     #[to("/post/<slug>")]
     Post {
         slug: String
@@ -51,6 +53,10 @@ pub fn run() -> Result<(), JsValue> {
                         AppRoute::Post { slug } => app_shell(
                             format!("post/{}", slug),
                             pages::post::template_fn()
+                        ),
+                        AppRoute::NewPost => app_shell(
+                            "post/new".to_string(),
+                            pages::new_post::template_fn()
                         ),
                         AppRoute::Ip => app_shell(
                             "ip".to_string(),

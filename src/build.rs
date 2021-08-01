@@ -41,7 +41,7 @@ pub fn build_template(
         let full_path = match template.uses_build_paths() {
             true => urlencoding::encode(&format!("{}/{}", &template_path, path)).to_string(),
             // We don't want to concatenate the name twice if we don't have to
-            false => template_path.clone()
+            false => urlencoding::encode(&template_path).to_string()
         };
 
         // Handle static initial state generation

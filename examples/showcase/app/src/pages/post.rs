@@ -32,7 +32,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
 
 pub fn get_static_props(path: String) -> String {
     let path_vec: Vec<&str> = path.split('/').collect();
-    let title_slug = path_vec[0];
+    let title_slug = path_vec[path_vec.len() - 1];
     // This is just an example
     let title = urlencoding::decode(title_slug).unwrap();
     let content = format!("This is a post entitled '{}'. Its original slug was '{}'.", title, title_slug);

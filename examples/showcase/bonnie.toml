@@ -7,7 +7,7 @@ build.cmd = [
 	"wasm-pack build --target web",
 	"rollup ./main.js --format iife --file ./pkg/bundle.js"
 ]
-build.subcommands.--watch = "find ../../ -not -path \"../../target/*\" -not -path \"../../.git/*\" | entr -s \"bonnie build\""
+build.subcommands.--watch = "find ../../ -not -path \"../../target/*\" -not -path \"../../.git/*\" -not -path \"../../examples/showcase/app/dist/*\" | entr -s \"bonnie build\""
 serve = [
 	"cd server",
 	"cargo watch -w ../../../ -x \"run\""

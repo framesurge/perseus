@@ -46,6 +46,7 @@ pub struct Template<G: GenericNode>
     /// A length of time after which to prerender the template again. This is equivalent to ISR in NextJS.
     revalidate_after: Option<String>,
 }
+// TODO mandate usage conditions (e.g. ISR needs SSG)
 impl<G: GenericNode> Template<G> {
     /// Creates a new template definition.
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
