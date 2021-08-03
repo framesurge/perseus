@@ -31,7 +31,7 @@ error_chain! {
 pub trait ConfigManager {
     /// Reads data from the named asset.
     fn read(&self, name: &str) -> Result<String>;
-    /// Writes data to the named asset. This will create a new asset if on edoesn't exist already.
+    /// Writes data to the named asset. This will create a new asset if one doesn't exist already.
     fn write(&self, name: &str, content: &str) -> Result<()>;
 }
 

@@ -3,6 +3,8 @@ pub mod about;
 pub mod post;
 pub mod ip;
 pub mod new_post;
+pub mod time;
+pub mod time_root;
 
 use perseus::{get_templates_map, template::Template};
 use sycamore::prelude::GenericNode;
@@ -15,6 +17,8 @@ pub fn get_templates_map<G: GenericNode>() -> HashMap<String, Template<G>> {
         about::get_page::<G>(),
         post::get_page::<G>(),
         new_post::get_page::<G>(),
-        ip::get_page::<G>()
+        ip::get_page::<G>(),
+        time::get_page::<G>(),
+        time_root::get_page::<G>()
     ]
 }

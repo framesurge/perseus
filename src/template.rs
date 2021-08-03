@@ -1,8 +1,43 @@
 // This file contains logic to define how templates are rendered
+// TODO make all user functions able to return errors
+// TODO make all user functions asynchronous
 
 use crate::errors::*;
 use sycamore::prelude::{Template as SycamoreTemplate, GenericNode};
 use std::collections::HashMap;
+
+/// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
+/// of what did what (rather than blindly working on a vector).
+// TODO update this to reflect reality
+#[derive(Default)]
+pub struct States {
+    pub build_state: Option<String>,
+    pub request_state: Option<String>,
+}
+impl States {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    /// Checks if both request state and build state are defined.
+    pub fn both_defined(&self) -> bool {
+        self.build_state.is_some() && self.request_state.is_some()
+    }
+    /// Gets the only defined state if only one is defined. If no states are defined, this will just return `None`. If both are defined,
+    /// this will return an error.
+    pub fn get_defined(&self) -> Result<Option<String>> {
+        if self.both_defined() {
+            bail!(ErrorKind::BothStatesDefined)
+        }
+
+        if self.build_state.is_some() {
+            Ok(self.build_state.clone())
+        } else if self.request_state.is_some() {
+            Ok(self.request_state.clone())
+        } else {
+            Ok(None)
+        }
+    }
+}
 
 // A series of closure types that should not be typed out more than once
 pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
@@ -10,6 +45,7 @@ pub type GetBuildPathsFn = Box<dyn Fn() -> Vec<String>>;
 pub type GetBuildStateFn = Box<dyn Fn(String) -> String>;
 pub type GetRequestStateFn = Box<dyn Fn(String) -> String>;
 pub type ShouldRevalidateFn = Box<dyn Fn() -> bool>;
+pub type AmalgamateStatesFn = Box<dyn Fn(States) -> Option<String>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
@@ -40,11 +76,18 @@ pub struct Template<G: GenericNode>
     // TODO add request data to be passed in here
     get_request_state: Option<GetRequestStateFn>,
     /// A function to be run on every request to check if a template prerendered at build-time should be prerendered again. This is equivalent
-    /// to incremental static rendering (ISR) in NextJS. If used with `revalidate_after`, this function will only be run after that time
-    /// period. This function will not be parsed anything specific to the request that invoked it.
+    /// to revalidation after a time in NextJS, with the improvement of custom logic. If used with `revalidate_after`, this function will
+    /// only be run after that time period. This function will not be parsed anything specific to the request that invoked it.
     should_revalidate: Option<ShouldRevalidateFn>,
-    /// A length of time after which to prerender the template again. This is equivalent to ISR in NextJS.
+    /// A length of time after which to prerender the template again. This is equivalent to revalidating in NextJS. This should specify a
+    /// string interval to revalidate after. That will be converted into a datetime to wait for, which will be updated after every revalidation.
+    /// Note that, if this is used with incremental generation, the counter will only start after the first render (meaning if you expect
+    /// a weekly re-rendering cycle for all pages, they'd likely all be out of sync, you'd need to manually implement that with
+    /// `should_revalidate`).
     revalidate_after: Option<String>,
+    /// Custom logic to amalgamate potentially different states generated at build and request time. This is only necessary if your template
+    /// uses both `build_state` and `request_state`. If not specified and both are generated, request state will be prioritized.
+    amalgamate_states: Option<AmalgamateStatesFn>
 }
 // TODO mandate usage conditions (e.g. ISR needs SSG)
 impl<G: GenericNode> Template<G> {
@@ -59,6 +102,7 @@ impl<G: GenericNode> Template<G> {
             get_request_state: None,
             should_revalidate: None,
             revalidate_after: None,
+            amalgamate_states: None,
         }
     }
 
@@ -96,6 +140,25 @@ impl<G: GenericNode> Template<G> {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "request_state".to_string()))
         }
     }
+    /// Amalagmates given request and build states.
+    pub fn amalgamate_states(&self, states: States) -> Result<Option<String>> {
+        if let Some(amalgamate_states) = &self.amalgamate_states {
+            // TODO support error handling for render functions
+            Ok(amalgamate_states(states))
+        } else {
+            bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "request_state".to_string()))
+        }
+    }
+    /// Checks, by the user's custom logic, if this template should revalidate. This function isn't presently parsed anything, but has
+    /// network access etc., and can really do whatever it likes.
+    pub fn should_revalidate(&self) -> Result<bool> {
+        if let Some(should_revalidate) = &self.should_revalidate {
+            // TODO support error handling for render functions
+            Ok(should_revalidate())
+        } else {
+            bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "should_revalidate".to_string()))
+        }
+    }
 
     // Value getters
     /// Gets the path of the template. This is the root path under which any generated pages will be served. In the simplest case, there will
@@ -103,11 +166,22 @@ impl<G: GenericNode> Template<G> {
     pub fn get_path(&self) -> String {
         self.path.clone()
     }
+    pub fn get_revalidate_interval(&self) -> Option<String> {
+        self.revalidate_after.clone()
+    }
 
     // Render characteristic checkers
     /// Checks if this template can revalidate existing prerendered templates.
     pub fn revalidates(&self) -> bool {
         self.should_revalidate.is_some() || self.revalidate_after.is_some()
+    }
+    /// Checks if this template can revalidate existing prerendered templates after a given time.
+    pub fn revalidates_with_time(&self) -> bool {
+        self.revalidate_after.is_some()
+    }
+    /// Checks if this template can revalidate existing prerendered templates based on some given logic.
+    pub fn revalidates_with_logic(&self) -> bool {
+        self.should_revalidate.is_some()
     }
     /// Checks if this template can render more templates beyond those paths it explicitly defines.
     pub fn uses_incremental(&self) -> bool {
@@ -124,6 +198,10 @@ impl<G: GenericNode> Template<G> {
     /// Checks if this template needs to do anything at build time.
     pub fn uses_build_state(&self) -> bool {
         self.get_build_state.is_some()
+    }
+    /// Checks if this template has custom logic to amalgamate build and reqquest states if both are generated.
+    pub fn can_amalgamate_states(&self) -> bool {
+        self.amalgamate_states.is_some()
     }
     /// Checks if this template defines no rendering logic whatsoever. Such templates will be rendered using SSG.
     pub fn is_basic(&self) -> bool {
@@ -155,7 +233,7 @@ impl<G: GenericNode> Template<G> {
         self.get_request_state = Some(val);
         self
     }
-    pub fn should_revalidate(mut self, val: ShouldRevalidateFn) -> Template<G> {
+    pub fn should_revalidate_fn(mut self, val: ShouldRevalidateFn) -> Template<G> {
         self.should_revalidate = Some(val);
         self
     }

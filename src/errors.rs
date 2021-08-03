@@ -25,6 +25,14 @@ error_chain! {
             description("a template had no rendering options for use at request-time")
             display("the template '{}' had no rendering options for use at request-time", template_path)
         }
+        InvalidDatetimeIntervalIndicator(indicator: String) {
+            description("invalid indicator in timestring")
+            display("invalid indicator '{}' in timestring, must be one of: s, m, h, d, w, M, y", indicator)
+        }
+        BothStatesDefined {
+            description("both build and request states were defined for a template when only one or fewer were expected")
+            display("both build and request states were defined for a template when only one or fewer were expected")
+        }
     }
     links {
         ConfigManager(crate::config_manager::Error, crate::config_manager::ErrorKind);
@@ -33,5 +41,6 @@ error_chain! {
     foreign_links {
         Io(::std::io::Error);
         Json(::serde_json::Error);
+        ChronoParse(::chrono::ParseError);
     }
 }

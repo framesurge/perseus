@@ -20,6 +20,12 @@ enum AppRoute {
     },
     #[to("/ip")]
     Ip,
+    #[to("/time")]
+    TimeRoot,
+    #[to("/timeisr/<slug>")]
+    Time {
+        slug: String
+    },
     #[not_found]
     NotFound
 }
@@ -61,6 +67,14 @@ pub fn run() -> Result<(), JsValue> {
                         AppRoute::Ip => app_shell(
                             "ip".to_string(),
                             pages::ip::template_fn()
+                        ),
+                        AppRoute::Time { slug } => app_shell(
+                            format!("timeisr/{}", slug),
+                            pages::time::template_fn()
+                        ),
+                        AppRoute::TimeRoot => app_shell(
+                            "time".to_string(),
+                            pages::time_root::template_fn()
                         ),
                         AppRoute::NotFound => template! {
                             p {"Not Found."}

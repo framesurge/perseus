@@ -4,9 +4,11 @@ use std::fs;
 use serde::{Serialize, Deserialize};
 use crate::errors::*;
 use crate::config_manager::ConfigManager;
-use crate::template::TemplateMap;
+use crate::template::{TemplateMap, Template, States};
+use crate::decode_time_str::decode_time_str;
 use sycamore::prelude::SsrNode;
 use std::collections::HashMap;
+use chrono::{DateTime, Utc};
 
 /// Represents the data necessary to render a page.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -26,7 +28,100 @@ pub fn get_render_cfg() -> Result<HashMap<String, String>> {
     Ok(cfg)
 }
 
-/// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page.
+/// Renders a template that uses state generated at build-time.
+fn render_build_state(path_encoded: &str, config_manager: &impl ConfigManager) -> Result<(String, Option<String>)> {
+    // Get the static HTML
+    let html = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded))?;
+    // Get the static JSON
+    let state = match config_manager.read(&format!("../app/dist/static/{}.json", path_encoded)) {
+        Ok(state) => Some(state),
+        Err(_) => None
+    };
+
+    Ok((html, state))
+}
+/// Renders a template that generated its state at request-time. Note that revalidation and ISR have no impact on SSR-rendered pages.
+fn render_request_state(template: &Template<SsrNode>, path: &str) -> Result<(String, Option<String>)> {
+    // Generate the initial state (this may generate an error, but there's no file that can't exist)
+    let state = Some(template.get_request_state(path.to_string())?);
+    // Use that to render the static HTML
+    let html = sycamore::render_to_string(
+        ||
+            template.render_for_template(state.clone())
+    );
+
+    Ok((html, state))
+}
+/// Checks if a template that uses ISR has already been cached.
+fn get_incremental_cached(path_encoded: &str, config_manager: &impl ConfigManager) -> Option<String> {
+    let html_res = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded));
+
+    // We should only treat it as cached if it can be accessed and if we aren't in development (when everything should constantly reload)
+    match html_res {
+        Ok(html) if !cfg!(debug_assertions)  => Some(html),
+        Ok(_) | Err(_) => None
+    }
+}
+/// Checks if a template should revalidate by time.
+fn should_revalidate(template: &Template<SsrNode>, path_encoded: &str, config_manager: &impl ConfigManager) -> Result<bool> {
+    let mut should_revalidate = false;
+    // If it revalidates after a certain period of time, we needd to check that BEFORE the custom logic
+    if template.revalidates_with_time() {
+        // Get the time when it should revalidate (RFC 3339)
+        let datetime_to_revalidate_str = config_manager
+            .read(&format!("../app/dist/static/{}.revld.txt", path_encoded))?;
+        let datetime_to_revalidate = DateTime::parse_from_rfc3339(&datetime_to_revalidate_str)?;
+        // Get the current time (UTC)
+        let now = Utc::now();
+
+        // If the datetime to revalidate is still in the future, end with `false`
+        if datetime_to_revalidate > now {
+            return Ok(false);
+        }
+        should_revalidate = true;
+    }
+
+    // Now run the user's custom revalidation logic
+    if template.revalidates_with_logic() {
+        should_revalidate = template.should_revalidate()?;
+    }
+    Ok(should_revalidate)
+}
+/// Revalidates a template
+fn revalidate(
+    template: &Template<SsrNode>,
+    path: &str, path_encoded: &str,
+    config_manager: &impl ConfigManager
+) -> Result<(String, Option<String>)> {
+    // We need to regenerate and cache this page for future usage (until the next revalidation)
+    let state = Some(
+        template.get_build_state(
+            format!("{}/{}", template.get_path(), path)
+        )?
+    );
+    let html = sycamore::render_to_string(
+        ||
+            template.render_for_template(state.clone())
+    );
+    // Handle revalidation, we need to parse any given time strings into datetimes
+    // We don't need to worry about revalidation that operates by logic, that's request-time only
+    if template.revalidates_with_time() {
+        // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not from the previous one
+        // So if you're revalidating many pages weekly, they will NOT revalidate simultaneously, even if they're all queried thus
+        let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
+        config_manager
+            .write(&format!("../app/dist/static/{}.revld.txt", path_encoded), &datetime_to_revalidate.to_string())?;
+    }
+    config_manager
+        .write(&format!("../app/dist/static/{}.json", path_encoded), &state.clone().unwrap())?;
+    config_manager
+        .write(&format!("../app/dist/static/{}.html", path_encoded), &html)?;
+
+    Ok((html, state))
+}
+
+/// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML generated
+/// at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
 // TODO let this function take a request struct of some form
 pub fn get_page(
     path: &str,
@@ -61,7 +156,7 @@ pub fn get_page(
         }
     }
     
-    // if we still have nothing, then the page doesn't exist
+    // If we still have nothing, then the page doesn't exist
     if template_name.is_empty() {
         bail!(ErrorKind::PageNotFound(path.to_string()))
     }
@@ -73,60 +168,117 @@ pub fn get_page(
         None => bail!(ErrorKind::PageNotFound(path.to_string()))
     };
 
-    let html: String;
-    let state: Option<String>;
+    // Only a single string of HTML is needed, and it will be overridden if necessary (priorities system) 
+    let mut html: String = String::new();
+    // Multiple rendering strategies may need to amalgamate different states
+    let mut states: States = States::new();
 
-    // Handle each different type of rendering (static paths have already been done though, so we don't need to deal with them)
-    // TODO make this system completely modular with state amalgamation
-    if template.uses_incremental() {
-        // The template uses ISR, check if it's already been rendered before and cached
-        let html_res = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded));
-        if matches!(html_res, Ok(_)) && !cfg!(debug_assertions) {
-            html = html_res.unwrap();
-            // Get the static JSON (if it exists, but it should)
-            state = match config_manager.read(&format!("../app/dist/static/{}.json", path_encoded)) {
-                Ok(state) => Some(state),
-                Err(_) => None
-            };
+    // Handle build state (which might use revalidation or incremental)
+    if template.uses_build_state() || template.is_basic() {
+        // If the template uses incremental generation, that is its own contained process
+        if template.uses_incremental() {
+            // Get the cached content if it exists (otherwise `None`)
+            let html_opt = get_incremental_cached(&path_encoded, config_manager);
+            match html_opt {
+                // It's cached
+                Some(html_val) => {
+                    // Check if we need to revalidate
+                    if should_revalidate(template, &path_encoded, config_manager)? {
+                        let (html_val, state) = revalidate(template, path, &path_encoded, config_manager)?;
+                        // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                        if html.is_empty() {
+                            html = html_val
+                        }
+                        states.build_state = state;
+                    } else {
+                        // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                        if html.is_empty() {
+                            html = html_val
+                        }
+                        // Get the static JSON (if it exists, but it should)
+                        states.build_state = match config_manager.read(&format!("../app/dist/static/{}.json", path_encoded)) {
+                            Ok(state) => Some(state),
+                            Err(_) => None
+                        };
+                    }
+                    
+                },
+                // It's not cached
+                None => {
+                    // We need to generate and cache this page for future usage
+                    let state = Some(
+                        template.get_build_state(
+                            format!("{}/{}", template.get_path(), path)
+                        )?
+                    );
+                    let html_val = sycamore::render_to_string(
+                        ||
+                            template.render_for_template(state.clone())
+                    );
+                    // Handle revalidation, we need to parse any given time strings into datetimes
+                    // We don't need to worry about revalidation that operates by logic, that's request-time only
+                    // Obviously we don't need to revalidate now, we just created it
+                    if template.revalidates_with_time() {
+                        let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
+                        // Write that to a static file, we'll update it every time we revalidate
+                        // Note that this runs for every path generated, so it's fully usable with ISR
+                        config_manager
+                            .write(&format!("../app/dist/static/{}.revld.txt", path_encoded), &datetime_to_revalidate.to_string())?;
+                    }
+                    // Cache all that
+                    config_manager
+                        .write(&format!("../app/dist/static/{}.json", path_encoded), &state.clone().unwrap())?;
+                    // Write that prerendered HTML to a static file
+                    config_manager
+                        .write(&format!("../app/dist/static/{}.html", path_encoded), &html_val)?;
+
+                    states.build_state = state;
+                    // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                    if html.is_empty() {
+                        html = html_val
+                    }
+                }
+            }
         } else {
-            // Note that we assume ISR is used with SSG (otherwise it would be completely pointless...)
-            // We need to generate and cache this page for future usage
-            state = Some(
-                template.get_build_state(
-                    format!("{}/{}", template.get_path(), path)
-                )?
-            );
-            html = sycamore::render_to_string(
-                ||
-                    template.render_for_template(state.clone())
-            );
-            // Cache all that
-            config_manager
-                .write(&format!("../app/dist/static/{}.json", path_encoded), &state.clone().unwrap())?;
-            // Write that prerendered HTML to a static file
-            config_manager
-                .write(&format!("../app/dist/static/{}.html", path_encoded), &html)?;
+            // Handle if we need to revalidate
+            if should_revalidate(template, &path_encoded, config_manager)? {
+                let (html_val, state) = revalidate(template, path, &path_encoded, config_manager)?;
+                // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                if html.is_empty() {
+                    html = html_val
+                }
+                states.build_state = state;
+            } else {
+                let (html_val, state) = render_build_state(&path_encoded, config_manager)?;
+                // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                if html.is_empty() {
+                    html = html_val
+                }
+                states.build_state = state;
+            }
         }
-    } else if template.uses_build_state() || template.is_basic() {
-        // Get the static HTML
-        html = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded))?;
-        // Get the static JSON
-        state = match config_manager.read(&format!("../app/dist/static/{}.json", path_encoded)) {
-            Ok(state) => Some(state),
-            Err(_) => None
-        };
-    } else if template.uses_request_state() {
-        // Generate the initial state (this may generate an error, but there's no file that can't exist)
-        state = Some(template.get_request_state(path.to_string())?);
-        // Use that to render the static HTML
-        html = sycamore::render_to_string(
-            ||
-                template.render_for_template(state.clone())
-        );
-    } else {
-        bail!(ErrorKind::NoRenderOpts(template_name));
     }
-    // TODO support revalidation and ISR
+    // Handle request state
+    if template.uses_request_state() {
+        let (html_val, state) = render_request_state(template, path)?;
+        // Request-time HTML always overrides anything generated at build-time or incrementally (this has more information)
+        html = html_val;
+        states.request_state = state;
+    }
+    // TODO support revalidation
+
+    // Amalgamate the states
+    // If the user has defined custom logic for this, we'll defer to that
+    // Otherwise we go as with HTML, request trumps build
+    // Of course, if only one state was defined, we'll just use that regardless (so `None` prioritization is impossible)
+    let state: Option<String>;
+    if !states.both_defined() {
+        state = states.get_defined()?;
+    } else if template.can_amalgamate_states() {
+        state = template.amalgamate_states(states)?;
+    } else {
+        state = states.request_state;
+    }
 
     // Combine everything into one JSON object
     let res = PageData {

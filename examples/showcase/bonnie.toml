@@ -1,13 +1,17 @@
 version="0.3.1"
 
 [scripts]
+clean = "rm -f ./app/dist/static/*"
 build.cmd = [
 	"cd app",
     "cargo run --bin ssg",
 	"wasm-pack build --target web",
 	"rollup ./main.js --format iife --file ./pkg/bundle.js"
 ]
-build.subcommands.--watch = "find ../../ -not -path \"../../target/*\" -not -path \"../../.git/*\" -not -path \"../../examples/showcase/app/dist/*\" | entr -s \"bonnie build\""
+build.subcommands.--watch = [
+	"bonnie clean",
+	"find ../../ -not -path \"../../target/*\" -not -path \"../../.git/*\" -not -path \"../../examples/showcase/app/dist/*\" | entr -s \"bonnie build\""
+]
 serve = [
 	"cd server",
 	"cargo watch -w ../../../ -x \"run\""

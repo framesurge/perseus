@@ -3,6 +3,7 @@
 use crate::{
     template::Template,
     config_manager::ConfigManager,
+    decode_time_str::decode_time_str
 };
 use crate::errors::*;
 use std::collections::HashMap;
@@ -60,6 +61,16 @@ pub fn build_template(
             // Write that prerendered HTML to a static file
             config_manager
                 .write(&format!("./dist/static/{}.html", full_path), &prerendered)?;
+        }
+
+        // Handle revalidation, we need to parse any given time strings into datetimes
+        // We don't need to worry about revalidation that operates by logic, that's request-time only
+        if template.revalidates_with_time() {
+            let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
+            // Write that to a static file, we'll update it every time we revalidate
+            // Note that this runs for every path generated, so it's fully usable with ISR
+            config_manager
+                .write(&format!("./dist/static/{}.revld.txt", full_path), &datetime_to_revalidate.to_string())?;
         }
 
         // Note that SSR has already been handled by checking for `.uses_request_state()` above, we don't need to do any rendering here
