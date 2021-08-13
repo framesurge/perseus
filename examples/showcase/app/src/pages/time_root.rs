@@ -21,17 +21,17 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
 		.revalidate_after("5s".to_string())
         .should_revalidate_fn(Box::new(|| {
-            true
+            Ok(true)
         }))
         .build_state_fn(Box::new(get_build_state))
 }
 
-pub fn get_build_state(_path: String) -> String {
-    serde_json::to_string(
+pub fn get_build_state(_path: String) -> Result<String, String> {
+    Ok(serde_json::to_string(
         &TimePageProps {
             time: format!("{:?}", std::time::SystemTime::now())
         }
-    ).unwrap()
+    ).unwrap())
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {

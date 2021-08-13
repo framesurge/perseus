@@ -39,13 +39,16 @@ impl States {
     }
 }
 
+/// A generic error type that mandates a string error. This sidesteps horrible generics while maintaining DX.
+pub type StringResult<T> = std::result::Result<T, String>;
+
 // A series of closure types that should not be typed out more than once
 pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
-pub type GetBuildPathsFn = Box<dyn Fn() -> Vec<String>>;
-pub type GetBuildStateFn = Box<dyn Fn(String) -> String>;
-pub type GetRequestStateFn = Box<dyn Fn(String) -> String>;
-pub type ShouldRevalidateFn = Box<dyn Fn() -> bool>;
-pub type AmalgamateStatesFn = Box<dyn Fn(States) -> Option<String>>;
+pub type GetBuildPathsFn = Box<dyn Fn() -> StringResult<Vec<String>>>;
+pub type GetBuildStateFn = Box<dyn Fn(String) -> StringResult<String>>;
+pub type GetRequestStateFn = Box<dyn Fn(String) -> StringResult<String>>;
+pub type ShouldRevalidateFn = Box<dyn Fn() -> StringResult<bool>>;
+pub type AmalgamateStatesFn = Box<dyn Fn(States) -> StringResult<Option<String>>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
@@ -114,8 +117,11 @@ impl<G: GenericNode> Template<G> {
     /// Gets the list of templates that should be prerendered for at build-time.
     pub fn get_build_paths(&self) -> Result<Vec<String>> {
         if let Some(get_build_paths) = &self.get_build_paths {
-            // TODO support error handling for render functions
-            Ok(get_build_paths())
+            let res = get_build_paths();
+            match res {
+                Ok(res) => Ok(res),
+                Err(err) => bail!(ErrorKind::RenderFnFailed("get_build_paths".to_string(), self.get_path(), err.to_string()))
+            }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "build_paths".to_string()))
         }
@@ -124,8 +130,11 @@ impl<G: GenericNode> Template<G> {
     /// `.get_build_paths()`.
     pub fn get_build_state(&self, path: String) -> Result<String> {
         if let Some(get_build_state) = &self.get_build_state {
-            // TODO support error handling for render functions
-            Ok(get_build_state(path))
+            let res = get_build_state(path);
+            match res {
+                Ok(res) => Ok(res),
+                Err(err) => bail!(ErrorKind::RenderFnFailed("get_build_state".to_string(), self.get_path(), err.to_string()))
+            }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "build_state".to_string()))
         }
@@ -134,8 +143,11 @@ impl<G: GenericNode> Template<G> {
     /// `.get_build_paths()` though, this will be passed information about the request that triggered the render.
     pub fn get_request_state(&self, path: String) -> Result<String> {
         if let Some(get_request_state) = &self.get_request_state {
-            // TODO support error handling for render functions
-            Ok(get_request_state(path))
+            let res = get_request_state(path);
+            match res {
+                Ok(res) => Ok(res),
+                Err(err) => bail!(ErrorKind::RenderFnFailed("get_request_state".to_string(), self.get_path(), err.to_string()))
+            }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "request_state".to_string()))
         }
@@ -143,8 +155,11 @@ impl<G: GenericNode> Template<G> {
     /// Amalagmates given request and build states.
     pub fn amalgamate_states(&self, states: States) -> Result<Option<String>> {
         if let Some(amalgamate_states) = &self.amalgamate_states {
-            // TODO support error handling for render functions
-            Ok(amalgamate_states(states))
+            let res = amalgamate_states(states);
+            match res {
+                Ok(res) => Ok(res),
+                Err(err) => bail!(ErrorKind::RenderFnFailed("amalgamate_states".to_string(), self.get_path(), err.to_string()))
+            }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "request_state".to_string()))
         }
@@ -153,8 +168,11 @@ impl<G: GenericNode> Template<G> {
     /// network access etc., and can really do whatever it likes.
     pub fn should_revalidate(&self) -> Result<bool> {
         if let Some(should_revalidate) = &self.should_revalidate {
-            // TODO support error handling for render functions
-            Ok(should_revalidate())
+            let res = should_revalidate();
+            match res {
+                Ok(res) => Ok(res),
+                Err(err) => bail!(ErrorKind::RenderFnFailed("should_revalidate".to_string(), self.get_path(), err.to_string()))
+            }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "should_revalidate".to_string()))
         }

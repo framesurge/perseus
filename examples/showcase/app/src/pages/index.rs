@@ -21,12 +21,12 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub fn get_static_props(_path: String) -> String {
-    serde_json::to_string(
+pub fn get_static_props(_path: String) -> Result<String, String> {
+    Ok(serde_json::to_string(
         &IndexPageProps {
             greeting: "Hello World!".to_string()
         }
-    ).unwrap()
+    ).unwrap())
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {

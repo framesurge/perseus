@@ -33,6 +33,10 @@ error_chain! {
             description("both build and request states were defined for a template when only one or fewer were expected")
             display("both build and request states were defined for a template when only one or fewer were expected")
         }
+        RenderFnFailed(fn_name: String, template: String, err_str: String) {
+            description("error while calling render function")
+            display("an error occurred while calling render function '{}' on template '{}': '{}'", fn_name, template, err_str)
+        }
     }
     links {
         ConfigManager(crate::config_manager::Error, crate::config_manager::ErrorKind);

@@ -30,25 +30,25 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub fn get_static_props(path: String) -> String {
+pub fn get_static_props(path: String) -> Result<String, String> {
     let path_vec: Vec<&str> = path.split('/').collect();
     let title_slug = path_vec[path_vec.len() - 1];
     // This is just an example
     let title = urlencoding::decode(title_slug).unwrap();
     let content = format!("This is a post entitled '{}'. Its original slug was '{}'.", title, title_slug);
 
-    serde_json::to_string(
+    Ok(serde_json::to_string(
         &PostPageProps {
             title: title.to_string(),
             content
         }
-    ).unwrap()
+    ).unwrap())
 }
 // TODO
-pub fn get_static_paths() -> Vec<String> {
-    vec![
+pub fn get_static_paths() -> Result<Vec<String>, String> {
+    Ok(vec![
         "test".to_string()
-    ]
+    ])
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
