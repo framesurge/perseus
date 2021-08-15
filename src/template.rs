@@ -5,10 +5,11 @@
 use crate::errors::*;
 use sycamore::prelude::{Template as SycamoreTemplate, GenericNode};
 use std::collections::HashMap;
+use futures::Future;
+use std::pin::Pin;
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
-// TODO update this to reflect reality
 #[derive(Default)]
 pub struct States {
     pub build_state: Option<String>,
@@ -42,12 +43,60 @@ impl States {
 /// A generic error type that mandates a string error. This sidesteps horrible generics while maintaining DX.
 pub type StringResult<T> = std::result::Result<T, String>;
 
+/// A generic return type for asynchronous functions that we need to store in a struct.
+type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T>>>;
+
+/// Creates traits that prevent users from having to pin their functions' return types. We can't make a generic one until desugared function
+/// types are stabilized (https://github.com/rust-lang/rust/issues/29625https://github.com/rust-lang/rust/issues/29625).
+macro_rules! make_async_trait {
+    ($name:ident, $return_ty:ty$(, $arg_name:ident: $arg:ty)*) => {
+        pub trait $name{
+            fn call(
+                &self,
+                // Each given argument is repeated
+                $(
+                    $arg_name: $arg,
+                )*
+            ) -> AsyncFnReturn<$return_ty>;
+        }
+        impl<T, F> $name for T
+        where
+            T: Fn(
+                $(
+                    $arg,
+                )*
+            ) -> F,
+            F: Future<Output = $return_ty> + 'static,
+        {
+            fn call(
+                &self,
+                $(
+                    $arg_name: $arg,
+                )*
+            ) -> AsyncFnReturn<$return_ty> {
+                Box::pin(self(
+                    $(
+                        $arg_name,
+                    )*
+                ))
+            }
+        }
+    };
+}
+
+// A series of asynchronous closure traits that prevent the user from having to pin their functions
+make_async_trait!(GetBuildPathsFnType, StringResult<Vec<String>>);
+make_async_trait!(GetBuildStateFnType, StringResult<String>, path: String);
+// TODO add request data to be passed in here
+make_async_trait!(GetRequestStateFnType, StringResult<String>, path: String);
+make_async_trait!(ShouldRevalidateFnType, StringResult<bool>);
+
 // A series of closure types that should not be typed out more than once
 pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
-pub type GetBuildPathsFn = Box<dyn Fn() -> StringResult<Vec<String>>>;
-pub type GetBuildStateFn = Box<dyn Fn(String) -> StringResult<String>>;
-pub type GetRequestStateFn = Box<dyn Fn(String) -> StringResult<String>>;
-pub type ShouldRevalidateFn = Box<dyn Fn() -> StringResult<bool>>;
+pub type GetBuildPathsFn = Box<dyn GetBuildPathsFnType>;
+pub type GetBuildStateFn = Box<dyn GetBuildStateFnType>;
+pub type GetRequestStateFn = Box<dyn GetRequestStateFnType>;
+pub type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType>;
 pub type AmalgamateStatesFn = Box<dyn Fn(States) -> StringResult<Option<String>>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
@@ -76,7 +125,6 @@ pub struct Template<G: GenericNode>
     get_build_state: Option<GetBuildStateFn>,
     /// A function that will run on every request to generate a state for that request. This allows server-side-rendering. This is equivalent
     /// to `get_server_side_props` in NextJS. This can be used with `get_build_state`, though custom amalgamation logic must be provided.
-    // TODO add request data to be passed in here
     get_request_state: Option<GetRequestStateFn>,
     /// A function to be run on every request to check if a template prerendered at build-time should be prerendered again. This is equivalent
     /// to revalidation after a time in NextJS, with the improvement of custom logic. If used with `revalidate_after`, this function will
@@ -115,9 +163,9 @@ impl<G: GenericNode> Template<G> {
         (self.template)(props)
     }
     /// Gets the list of templates that should be prerendered for at build-time.
-    pub fn get_build_paths(&self) -> Result<Vec<String>> {
+    pub async fn get_build_paths(&self) -> Result<Vec<String>> {
         if let Some(get_build_paths) = &self.get_build_paths {
-            let res = get_build_paths();
+            let res = get_build_paths.call().await;
             match res {
                 Ok(res) => Ok(res),
                 Err(err) => bail!(ErrorKind::RenderFnFailed("get_build_paths".to_string(), self.get_path(), err.to_string()))
@@ -128,9 +176,9 @@ impl<G: GenericNode> Template<G> {
     }
     /// Gets the initial state for a template. This needs to be passed the full path of the template, which may be one of those generated by
     /// `.get_build_paths()`.
-    pub fn get_build_state(&self, path: String) -> Result<String> {
+    pub async fn get_build_state(&self, path: String) -> Result<String> {
         if let Some(get_build_state) = &self.get_build_state {
-            let res = get_build_state(path);
+            let res = get_build_state.call(path).await;
             match res {
                 Ok(res) => Ok(res),
                 Err(err) => bail!(ErrorKind::RenderFnFailed("get_build_state".to_string(), self.get_path(), err.to_string()))
@@ -141,9 +189,9 @@ impl<G: GenericNode> Template<G> {
     }
     /// Gets the request-time state for a template. This is equivalent to SSR, and will not be performed at build-time. Unlike
     /// `.get_build_paths()` though, this will be passed information about the request that triggered the render.
-    pub fn get_request_state(&self, path: String) -> Result<String> {
+    pub async fn get_request_state(&self, path: String) -> Result<String> {
         if let Some(get_request_state) = &self.get_request_state {
-            let res = get_request_state(path);
+            let res = get_request_state.call(path).await;
             match res {
                 Ok(res) => Ok(res),
                 Err(err) => bail!(ErrorKind::RenderFnFailed("get_request_state".to_string(), self.get_path(), err.to_string()))
@@ -166,9 +214,9 @@ impl<G: GenericNode> Template<G> {
     }
     /// Checks, by the user's custom logic, if this template should revalidate. This function isn't presently parsed anything, but has
     /// network access etc., and can really do whatever it likes.
-    pub fn should_revalidate(&self) -> Result<bool> {
+    pub async fn should_revalidate(&self) -> Result<bool> {
         if let Some(should_revalidate) = &self.should_revalidate {
-            let res = should_revalidate();
+            let res = should_revalidate.call().await;
             match res {
                 Ok(res) => Ok(res),
                 Err(err) => bail!(ErrorKind::RenderFnFailed("should_revalidate".to_string(), self.get_path(), err.to_string()))

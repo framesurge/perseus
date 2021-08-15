@@ -30,7 +30,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub fn get_static_props(path: String) -> Result<String, String> {
+pub async fn get_static_props(path: String) -> Result<String, String> {
     let path_vec: Vec<&str> = path.split('/').collect();
     let title_slug = path_vec[path_vec.len() - 1];
     // This is just an example
@@ -45,7 +45,7 @@ pub fn get_static_props(path: String) -> Result<String, String> {
     ).unwrap())
 }
 // TODO
-pub fn get_static_paths() -> Result<Vec<String>, String> {
+pub async fn get_static_paths() -> Result<Vec<String>, String> {
     Ok(vec![
         "test".to_string()
     ])

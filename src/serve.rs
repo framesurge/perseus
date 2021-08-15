@@ -41,9 +41,9 @@ fn render_build_state(path_encoded: &str, config_manager: &impl ConfigManager) -
     Ok((html, state))
 }
 /// Renders a template that generated its state at request-time. Note that revalidation and ISR have no impact on SSR-rendered pages.
-fn render_request_state(template: &Template<SsrNode>, path: &str) -> Result<(String, Option<String>)> {
+async fn render_request_state(template: &Template<SsrNode>, path: &str) -> Result<(String, Option<String>)> {
     // Generate the initial state (this may generate an error, but there's no file that can't exist)
-    let state = Some(template.get_request_state(path.to_string())?);
+    let state = Some(template.get_request_state(path.to_string()).await?);
     // Use that to render the static HTML
     let html = sycamore::render_to_string(
         ||
@@ -63,7 +63,7 @@ fn get_incremental_cached(path_encoded: &str, config_manager: &impl ConfigManage
     }
 }
 /// Checks if a template should revalidate by time.
-fn should_revalidate(template: &Template<SsrNode>, path_encoded: &str, config_manager: &impl ConfigManager) -> Result<bool> {
+async fn should_revalidate(template: &Template<SsrNode>, path_encoded: &str, config_manager: &impl ConfigManager) -> Result<bool> {
     let mut should_revalidate = false;
     // If it revalidates after a certain period of time, we needd to check that BEFORE the custom logic
     if template.revalidates_with_time() {
@@ -83,12 +83,12 @@ fn should_revalidate(template: &Template<SsrNode>, path_encoded: &str, config_ma
 
     // Now run the user's custom revalidation logic
     if template.revalidates_with_logic() {
-        should_revalidate = template.should_revalidate()?;
+        should_revalidate = template.should_revalidate().await?;
     }
     Ok(should_revalidate)
 }
 /// Revalidates a template
-fn revalidate(
+async fn revalidate(
     template: &Template<SsrNode>,
     path: &str, path_encoded: &str,
     config_manager: &impl ConfigManager
@@ -97,7 +97,7 @@ fn revalidate(
     let state = Some(
         template.get_build_state(
             format!("{}/{}", template.get_path(), path)
-        )?
+        ).await?
     );
     let html = sycamore::render_to_string(
         ||
@@ -123,7 +123,8 @@ fn revalidate(
 /// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML generated
 /// at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
 // TODO let this function take a request struct of some form
-pub fn get_page(
+// TODO possible further optimizations on this for futures?
+pub async fn get_page(
     path: &str,
     render_cfg: &HashMap<String, String>,
     templates: &TemplateMap<SsrNode>,
@@ -183,8 +184,8 @@ pub fn get_page(
                 // It's cached
                 Some(html_val) => {
                     // Check if we need to revalidate
-                    if should_revalidate(template, &path_encoded, config_manager)? {
-                        let (html_val, state) = revalidate(template, path, &path_encoded, config_manager)?;
+                    if should_revalidate(template, &path_encoded, config_manager).await? {
+                        let (html_val, state) = revalidate(template, path, &path_encoded, config_manager).await?;
                         // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                         if html.is_empty() {
                             html = html_val
@@ -209,7 +210,7 @@ pub fn get_page(
                     let state = Some(
                         template.get_build_state(
                             format!("{}/{}", template.get_path(), path)
-                        )?
+                        ).await?
                     );
                     let html_val = sycamore::render_to_string(
                         ||
@@ -241,8 +242,8 @@ pub fn get_page(
             }
         } else {
             // Handle if we need to revalidate
-            if should_revalidate(template, &path_encoded, config_manager)? {
-                let (html_val, state) = revalidate(template, path, &path_encoded, config_manager)?;
+            if should_revalidate(template, &path_encoded, config_manager).await? {
+                let (html_val, state) = revalidate(template, path, &path_encoded, config_manager).await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                 if html.is_empty() {
                     html = html_val
@@ -260,12 +261,11 @@ pub fn get_page(
     }
     // Handle request state
     if template.uses_request_state() {
-        let (html_val, state) = render_request_state(template, path)?;
+        let (html_val, state) = render_request_state(template, path).await?;
         // Request-time HTML always overrides anything generated at build-time or incrementally (this has more information)
         html = html_val;
         states.request_state = state;
     }
-    // TODO support revalidation
 
     // Amalgamate the states
     // If the user has defined custom logic for this, we'll defer to that

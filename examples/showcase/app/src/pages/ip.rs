@@ -26,7 +26,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub fn get_request_state(_path: String) -> Result<String, String> {
+pub async fn get_request_state(_path: String) -> Result<String, String> {
     Ok(serde_json::to_string(
         &IpPageProps {
             ip: "x.x.x.x".to_string()

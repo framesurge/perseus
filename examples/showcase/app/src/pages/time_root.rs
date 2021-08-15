@@ -20,13 +20,13 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         // This page will revalidate every five seconds (to illustrate revalidation)
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
 		.revalidate_after("5s".to_string())
-        .should_revalidate_fn(Box::new(|| {
+        .should_revalidate_fn(Box::new(|| async {
             Ok(true)
         }))
         .build_state_fn(Box::new(get_build_state))
 }
 
-pub fn get_build_state(_path: String) -> Result<String, String> {
+pub async fn get_build_state(_path: String) -> Result<String, String> {
     Ok(serde_json::to_string(
         &TimePageProps {
             time: format!("{:?}", std::time::SystemTime::now())

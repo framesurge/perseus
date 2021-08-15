@@ -56,7 +56,7 @@ async fn page_data(
 ) -> ActixResult<String> {
     let path = req.match_info().query("filename");
     // TODO match different types of errors here
-    let page_data = get_page(path, &render_cfg, &templates, config_manager.get_ref()).map_err(error::ErrorNotFound)?;
+    let page_data = get_page(path, &render_cfg, &templates, config_manager.get_ref()).await.map_err(error::ErrorNotFound)?;
 
     Ok(
         serde_json::to_string(&page_data).unwrap()

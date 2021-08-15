@@ -24,7 +24,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .build_paths_fn(Box::new(get_build_paths))
 }
 
-pub fn get_build_state(_path: String) -> Result<String, String> {
+pub async fn get_build_state(_path: String) -> Result<String, String> {
     Ok(serde_json::to_string(
         &TimePageProps {
             time: format!("{:?}", std::time::SystemTime::now())
@@ -32,7 +32,7 @@ pub fn get_build_state(_path: String) -> Result<String, String> {
     ).unwrap())
 }
 
-pub fn get_build_paths() -> Result<Vec<String>, String> {
+pub async fn get_build_paths() -> Result<Vec<String>, String> {
     Ok(vec![
         "test".to_string()
     ])
