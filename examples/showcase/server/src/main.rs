@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpRequest, HttpServer, Result as ActixResult, error};
+use actix_web::{web, App, HttpRequest, HttpServer, HttpResponse, http::StatusCode};
 use actix_files::{NamedFile};
 use sycamore::prelude::SsrNode;
 use std::collections::HashMap;
@@ -6,7 +6,9 @@ use std::collections::HashMap;
 use perseus::{
     serve::{get_render_cfg, get_page},
     config_manager::FsConfigManager,
-    template::TemplateMap
+    template::TemplateMap,
+    errors::ErrorKind as PerseusErr,
+    errors::err_to_status_code
 };
 use perseus_showcase_app::pages;
 
@@ -53,12 +55,15 @@ async fn page_data(
     templates: web::Data<TemplateMap<SsrNode>>,
     render_cfg: web::Data<HashMap<String, String>>,
     config_manager: web::Data<FsConfigManager>
-) -> ActixResult<String> {
+) -> HttpResponse {
     let path = req.match_info().query("filename");
-    // TODO match different types of errors here
-    let page_data = get_page(path, &render_cfg, &templates, config_manager.get_ref()).await.map_err(error::ErrorNotFound)?;
+    let page_data = get_page(path, &render_cfg, &templates, config_manager.get_ref()).await;
+    let http_res = match page_data {
+        Ok(page_data) => HttpResponse::Ok().body(
+            serde_json::to_string(&page_data).unwrap()
+        ),
+        Err(err) => HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap()).body(err.to_string()),
+    };
 
-    Ok(
-        serde_json::to_string(&page_data).unwrap()
-    )
+    http_res
 }

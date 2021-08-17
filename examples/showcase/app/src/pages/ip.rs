@@ -3,6 +3,7 @@
 use serde::{Serialize, Deserialize};
 use sycamore::prelude::{template, component, GenericNode, Template as SycamoreTemplate};
 use perseus::template::Template;
+use perseus::errors::ErrorCause;
 
 #[derive(Serialize, Deserialize)]
 pub struct IpPageProps {
@@ -26,7 +27,8 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub async fn get_request_state(_path: String) -> Result<String, String> {
+pub async fn get_request_state(_path: String) -> Result<String, (String, ErrorCause)> {
+    // Err(("this is a test error!".to_string(), ErrorCause::Client(None)))
     Ok(serde_json::to_string(
         &IpPageProps {
             ip: "x.x.x.x".to_string()

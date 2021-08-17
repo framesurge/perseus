@@ -44,7 +44,7 @@ pub async fn get_static_props(path: String) -> Result<String, String> {
         }
     ).unwrap())
 }
-// TODO
+
 pub async fn get_static_paths() -> Result<Vec<String>, String> {
     Ok(vec![
         "test".to_string()

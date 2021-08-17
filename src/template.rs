@@ -1,6 +1,4 @@
 // This file contains logic to define how templates are rendered
-// TODO make all user functions able to return errors
-// TODO make all user functions asynchronous
 
 use crate::errors::*;
 use sycamore::prelude::{Template as SycamoreTemplate, GenericNode};
@@ -42,6 +40,8 @@ impl States {
 
 /// A generic error type that mandates a string error. This sidesteps horrible generics while maintaining DX.
 pub type StringResult<T> = std::result::Result<T, String>;
+/// A generic error type that mandates a string errorr and a statement of causation (client or server) for status code generation.
+pub type StringResultWithCause<T> = std::result::Result<T, (String, ErrorCause)>;
 
 /// A generic return type for asynchronous functions that we need to store in a struct.
 type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T>>>;
@@ -87,9 +87,8 @@ macro_rules! make_async_trait {
 // A series of asynchronous closure traits that prevent the user from having to pin their functions
 make_async_trait!(GetBuildPathsFnType, StringResult<Vec<String>>);
 make_async_trait!(GetBuildStateFnType, StringResult<String>, path: String);
-// TODO add request data to be passed in here
-make_async_trait!(GetRequestStateFnType, StringResult<String>, path: String);
-make_async_trait!(ShouldRevalidateFnType, StringResult<bool>);
+make_async_trait!(GetRequestStateFnType, StringResultWithCause<String>, path: String);
+make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
 
 // A series of closure types that should not be typed out more than once
 pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
@@ -97,7 +96,7 @@ pub type GetBuildPathsFn = Box<dyn GetBuildPathsFnType>;
 pub type GetBuildStateFn = Box<dyn GetBuildStateFnType>;
 pub type GetRequestStateFn = Box<dyn GetRequestStateFnType>;
 pub type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType>;
-pub type AmalgamateStatesFn = Box<dyn Fn(States) -> StringResult<Option<String>>>;
+pub type AmalgamateStatesFn = Box<dyn Fn(States) -> StringResultWithCause<Option<String>>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
@@ -140,7 +139,6 @@ pub struct Template<G: GenericNode>
     /// uses both `build_state` and `request_state`. If not specified and both are generated, request state will be prioritized.
     amalgamate_states: Option<AmalgamateStatesFn>
 }
-// TODO mandate usage conditions (e.g. ISR needs SSG)
 impl<G: GenericNode> Template<G> {
     /// Creates a new template definition.
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
@@ -168,7 +166,12 @@ impl<G: GenericNode> Template<G> {
             let res = get_build_paths.call().await;
             match res {
                 Ok(res) => Ok(res),
-                Err(err) => bail!(ErrorKind::RenderFnFailed("get_build_paths".to_string(), self.get_path(), err.to_string()))
+                Err(err) => bail!(ErrorKind::RenderFnFailed(
+                    "get_build_paths".to_string(),
+                    self.get_path(),
+                    ErrorCause::Server(None),
+                    err.to_string()
+                ))
             }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "build_paths".to_string()))
@@ -181,45 +184,68 @@ impl<G: GenericNode> Template<G> {
             let res = get_build_state.call(path).await;
             match res {
                 Ok(res) => Ok(res),
-                Err(err) => bail!(ErrorKind::RenderFnFailed("get_build_state".to_string(), self.get_path(), err.to_string()))
+                Err(err) => bail!(ErrorKind::RenderFnFailed(
+                    "get_build_state".to_string(),
+                    self.get_path(),
+                    ErrorCause::Server(None),
+                    err.to_string()
+                ))
             }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "build_state".to_string()))
         }
     }
     /// Gets the request-time state for a template. This is equivalent to SSR, and will not be performed at build-time. Unlike
-    /// `.get_build_paths()` though, this will be passed information about the request that triggered the render.
+    /// `.get_build_paths()` though, this will be passed information about the request that triggered the render. Errors here can be caused
+    /// by either the server or the client, so the user must specify an [`ErrorCause`].
     pub async fn get_request_state(&self, path: String) -> Result<String> {
         if let Some(get_request_state) = &self.get_request_state {
             let res = get_request_state.call(path).await;
             match res {
                 Ok(res) => Ok(res),
-                Err(err) => bail!(ErrorKind::RenderFnFailed("get_request_state".to_string(), self.get_path(), err.to_string()))
+                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
+                    "get_request_state".to_string(),
+                    self.get_path(),
+                    cause,
+                    err.to_string()
+                ))
             }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "request_state".to_string()))
         }
     }
-    /// Amalagmates given request and build states.
+    /// Amalagmates given request and build states. Errors here can be caused by either the server or the client, so the user must specify
+    /// an [`ErrorCause`].
     pub fn amalgamate_states(&self, states: States) -> Result<Option<String>> {
         if let Some(amalgamate_states) = &self.amalgamate_states {
             let res = amalgamate_states(states);
             match res {
                 Ok(res) => Ok(res),
-                Err(err) => bail!(ErrorKind::RenderFnFailed("amalgamate_states".to_string(), self.get_path(), err.to_string()))
+                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
+                    "amalgamate_states".to_string(),
+                    self.get_path(),
+                    cause,
+                    err.to_string()
+                ))
             }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "request_state".to_string()))
         }
     }
     /// Checks, by the user's custom logic, if this template should revalidate. This function isn't presently parsed anything, but has
-    /// network access etc., and can really do whatever it likes.
+    /// network access etc., and can really do whatever it likes. Errors here can be caused by either the server or the client, so the
+    /// user must specify an [`ErrorCause`].
     pub async fn should_revalidate(&self) -> Result<bool> {
         if let Some(should_revalidate) = &self.should_revalidate {
             let res = should_revalidate.call().await;
             match res {
                 Ok(res) => Ok(res),
-                Err(err) => bail!(ErrorKind::RenderFnFailed("should_revalidate".to_string(), self.get_path(), err.to_string()))
+                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
+                    "should_revalidate".to_string(),
+                    self.get_path(),
+                    cause,
+                    err.to_string()
+                ))
             }
         } else {
             bail!(ErrorKind::TemplateFeatureNotEnabled(self.path.clone(), "should_revalidate".to_string()))
