@@ -1,4 +1,10 @@
 version="0.3.1"
 
 [scripts]
-start = "echo \"No start script yet!\""
+build = "cargo build"
+test = "cargo watch -x \"test\""
+check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
+
+# Releases the project (maintainers only)
+# We commit all staged files so we can manually bump the Cargo version
+release = "standard-version --sign --commit-all && git push --follow-tags origin main"
