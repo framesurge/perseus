@@ -1,9 +1,9 @@
 pub mod pages;
 
-use sycamore::prelude::*;
-use sycamore_router::{Route, BrowserRouter};
-use wasm_bindgen::prelude::*;
 use perseus::shell::{app_shell, ErrorPages};
+use sycamore::prelude::*;
+use sycamore_router::{BrowserRouter, Route};
+use wasm_bindgen::prelude::*;
 
 // Define our routes
 #[derive(Route)]
@@ -15,31 +15,39 @@ enum AppRoute {
     #[to("/post/new")]
     NewPost,
     #[to("/post/<slug>")]
-    Post {
-        slug: String
-    },
+    Post { slug: String },
     #[to("/ip")]
     Ip,
     #[to("/time")]
     TimeRoot,
     #[to("/timeisr/<slug>")]
-    Time {
-        slug: String
-    },
+    Time { slug: String },
     #[not_found]
-    NotFound
+    NotFound,
 }
 
 fn get_error_pages() -> ErrorPages {
-    let mut error_pages = ErrorPages::new(Box::new(|_, _, _| template! {
-        p { "Another error occurred." }
+    let mut error_pages = ErrorPages::new(Box::new(|_, _, _| {
+        template! {
+            p { "Another error occurred." }
+        }
     }));
-    error_pages.add_page(404, Box::new(|_, _, _| template! {
-        p { "Page not found." }
-    }));
-    error_pages.add_page(400, Box::new(|_, _, _| template! {
-        p { "Client error occurred..." }
-    }));
+    error_pages.add_page(
+        404,
+        Box::new(|_, _, _| {
+            template! {
+                p { "Page not found." }
+            }
+        }),
+    );
+    error_pages.add_page(
+        400,
+        Box::new(|_, _, _| {
+            template! {
+                p { "Client error occurred..." }
+            }
+        }),
+    );
 
     error_pages
 }
@@ -49,7 +57,7 @@ fn get_error_pages() -> ErrorPages {
 pub fn run() -> Result<(), JsValue> {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     // Get the root (for the router) we'll be injecting page content into
-	let root = web_sys::window()
+    let root = web_sys::window()
         .unwrap()
         .document()
         .unwrap()
@@ -57,8 +65,8 @@ pub fn run() -> Result<(), JsValue> {
         .unwrap()
         .unwrap();
 
-	sycamore::render_to(
-        ||
+    sycamore::render_to(
+        || {
             template! {
                 BrowserRouter(|route: AppRoute| {
                     // TODO improve performance rather than naively copying error pages for every template
@@ -103,9 +111,10 @@ pub fn run() -> Result<(), JsValue> {
                         }
                     }
                 })
-            },
-        &root
+            }
+        },
+        &root,
     );
 
-	Ok(())
+    Ok(())
 }

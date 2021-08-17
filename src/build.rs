@@ -1,14 +1,10 @@
 // This binary builds all the templates with SSG
 
-use crate::{
-    template::Template,
-    config_manager::ConfigManager,
-    decode_time_str::decode_time_str
-};
 use crate::errors::*;
+use crate::{config_manager::ConfigManager, decode_time_str::decode_time_str, template::Template};
+use futures::future::try_join_all;
 use std::collections::HashMap;
 use sycamore::prelude::SsrNode;
-use futures::future::try_join_all;
 
 /// Builds a template, writing static data as appropriate. This should be used as part of a larger build process. This returns both a list
 /// of the extracted render options for this template (needed at request time), a list of pages that it explicitly generated, and a boolean
@@ -16,13 +12,8 @@ use futures::future::try_join_all;
 /// generation).
 pub async fn build_template(
     template: Template<SsrNode>,
-    config_manager: &impl ConfigManager
-) -> Result<
-    (
-        Vec<String>,
-        bool
-    )
-> {
+    config_manager: &impl ConfigManager,
+) -> Result<(Vec<String>, bool)> {
     let mut single_page = false;
     let template_path = template.get_path();
 
@@ -43,7 +34,7 @@ pub async fn build_template(
         let full_path = match template.uses_build_paths() {
             true => urlencoding::encode(&format!("{}/{}", &template_path, path)).to_string(),
             // We don't want to concatenate the name twice if we don't have to
-            false => urlencoding::encode(&template_path).to_string()
+            false => urlencoding::encode(&template_path).to_string(),
         };
 
         // Handle static initial state generation
@@ -52,26 +43,25 @@ pub async fn build_template(
             // We pass in the latter part of the path, without the base specifier (because that would be the same for everything in the template)
             let initial_state = template.get_build_state(path.to_string()).await?;
             // Write that intial state to a static JSON file
-            config_manager
-                .write(&format!("./dist/static/{}.json", full_path), &initial_state)?;
+            config_manager.write(&format!("./dist/static/{}.json", full_path), &initial_state)?;
             // Prerender the template using that state
-            let prerendered = sycamore::render_to_string(
-                ||
-                    template.render_for_template(Some(initial_state))
-            );
+            let prerendered =
+                sycamore::render_to_string(|| template.render_for_template(Some(initial_state)));
             // Write that prerendered HTML to a static file
-            config_manager
-                .write(&format!("./dist/static/{}.html", full_path), &prerendered)?;
+            config_manager.write(&format!("./dist/static/{}.html", full_path), &prerendered)?;
         }
 
         // Handle revalidation, we need to parse any given time strings into datetimes
         // We don't need to worry about revalidation that operates by logic, that's request-time only
         if template.revalidates_with_time() {
-            let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
+            let datetime_to_revalidate =
+                decode_time_str(&template.get_revalidate_interval().unwrap())?;
             // Write that to a static file, we'll update it every time we revalidate
             // Note that this runs for every path generated, so it's fully usable with ISR
-            config_manager
-                .write(&format!("./dist/static/{}.revld.txt", full_path), &datetime_to_revalidate.to_string())?;
+            config_manager.write(
+                &format!("./dist/static/{}.revld.txt", full_path),
+                &datetime_to_revalidate.to_string(),
+            )?;
         }
 
         // Note that SSR has already been handled by checking for `.uses_request_state()` above, we don't need to do any rendering here
@@ -80,20 +70,19 @@ pub async fn build_template(
         // If the template is very basic, prerender without any state
         // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
         if template.is_basic() {
-            let prerendered = sycamore::render_to_string(
-                ||
-                    template.render_for_template(None)
-            );
+            let prerendered = sycamore::render_to_string(|| template.render_for_template(None));
             // Write that prerendered HTML to a static file
-            config_manager
-                .write(&format!("./dist/static/{}.html", full_path), &prerendered)?;
+            config_manager.write(&format!("./dist/static/{}.html", full_path), &prerendered)?;
         }
     }
 
     Ok((paths, single_page))
 }
 
-async fn build_template_and_get_cfg(template: Template<SsrNode>, config_manager: &impl ConfigManager) -> Result<HashMap<String, String>> {
+async fn build_template_and_get_cfg(
+    template: Template<SsrNode>,
+    config_manager: &impl ConfigManager,
+) -> Result<HashMap<String, String>> {
     let mut render_cfg = HashMap::new();
     let template_root_path = template.get_path();
     let is_incremental = template.uses_incremental();
@@ -101,16 +90,13 @@ async fn build_template_and_get_cfg(template: Template<SsrNode>, config_manager:
     let (pages, single_page) = build_template(template, config_manager).await?;
     // If the template represents a single page itself, we don't need any concatenation
     if single_page {
-        render_cfg.insert(
-            template_root_path.clone(),
-            template_root_path.clone()
-        );
+        render_cfg.insert(template_root_path.clone(), template_root_path.clone());
     } else {
         // Add each page that the template explicitly generated (ignoring ISR for now)
         for page in pages {
             render_cfg.insert(
                 format!("{}/{}", &template_root_path, &page),
-                template_root_path.clone()
+                template_root_path.clone(),
             );
         }
         // Now if the page uses ISR, add an explicit `/*` in there after the template root path
@@ -118,7 +104,7 @@ async fn build_template_and_get_cfg(template: Template<SsrNode>, config_manager:
         if is_incremental {
             render_cfg.insert(
                 format!("{}/*", &template_root_path),
-                template_root_path.clone()
+                template_root_path.clone(),
             );
         }
     }
@@ -127,7 +113,10 @@ async fn build_template_and_get_cfg(template: Template<SsrNode>, config_manager:
 }
 
 /// Runs the build process of building many different templates.
-pub async fn build_templates(templates: Vec<Template<SsrNode>>, config_manager: &impl ConfigManager) -> Result<()> {
+pub async fn build_templates(
+    templates: Vec<Template<SsrNode>>,
+    config_manager: &impl ConfigManager,
+) -> Result<()> {
     // The render configuration stores a list of pages to the root paths of their templates
     let mut render_cfg: HashMap<String, String> = HashMap::new();
     // Create each of the templates
@@ -140,8 +129,10 @@ pub async fn build_templates(templates: Vec<Template<SsrNode>>, config_manager: 
         render_cfg.extend(template_cfg.into_iter())
     }
 
-    config_manager
-        .write("./dist/render_conf.json", &serde_json::to_string(&render_cfg)?)?;
+    config_manager.write(
+        "./dist/render_conf.json",
+        &serde_json::to_string(&render_cfg)?,
+    )?;
 
     Ok(())
 }

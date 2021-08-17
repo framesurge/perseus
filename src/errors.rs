@@ -8,7 +8,7 @@ use error_chain::error_chain;
 #[derive(Debug)]
 pub enum ErrorCause {
     Client(Option<u16>),
-    Server(Option<u16>)
+    Server(Option<u16>),
 }
 
 // TODO disclose what information may be revealed over the network through these errors in docs
@@ -90,7 +90,9 @@ pub fn err_to_status_code(err: &Error) -> u16 {
             ErrorCause::Server(code) => code.unwrap_or(500),
         },
         // We shouldn't be generating JS errors on the server...
-        ErrorKind::JsErr(_) => panic!("function 'err_to_status_code' is only intended for server-side usage"),
+        ErrorKind::JsErr(_) => {
+            panic!("function 'err_to_status_code' is only intended for server-side usage")
+        }
         // These are nearly always server-induced
         ErrorKind::ConfigManager(_) => 500,
         ErrorKind::Io(_) => 500,
@@ -98,6 +100,6 @@ pub fn err_to_status_code(err: &Error) -> u16 {
         // JSON errors can be caused by the client, but we don't have enough information
         ErrorKind::Json(_) => 500,
         // Any other errors go to a 500
-        _ => 500
+        _ => 500,
     }
 }

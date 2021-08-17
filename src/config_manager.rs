@@ -2,8 +2,8 @@
 // At simplest, this is just a filesystem interface, but it's more likely to be a CMS in production
 // This has its own error management logic because the user may implement it separately
 
+use error_chain::{bail, error_chain};
 use std::fs;
-use error_chain::{error_chain, bail};
 
 // This has no foreign links because everything to do with config management should be isolated and generic
 error_chain! {
@@ -46,18 +46,16 @@ impl FsConfigManager {
 impl ConfigManager for FsConfigManager {
     fn read(&self, name: &str) -> Result<String> {
         match fs::metadata(name) {
-            Ok(_) => fs::read_to_string(name).map_err(
-                |err|
-                    ErrorKind::ReadFailed(name.to_string(), err.to_string()).into()
-            ),
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => bail!(ErrorKind::NotFound(name.to_string())),
-            Err(err) => bail!(ErrorKind::ReadFailed(name.to_string(), err.to_string()))
+            Ok(_) => fs::read_to_string(name)
+                .map_err(|err| ErrorKind::ReadFailed(name.to_string(), err.to_string()).into()),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                bail!(ErrorKind::NotFound(name.to_string()))
+            }
+            Err(err) => bail!(ErrorKind::ReadFailed(name.to_string(), err.to_string())),
         }
     }
     fn write(&self, name: &str, content: &str) -> Result<()> {
-        fs::write(name, content).map_err(
-            |err|
-                ErrorKind::WriteFailed(name.to_string(), err.to_string()).into()
-        )
+        fs::write(name, content)
+            .map_err(|err| ErrorKind::WriteFailed(name.to_string(), err.to_string()).into())
     }
 }

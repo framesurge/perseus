@@ -1,14 +1,14 @@
-use actix_web::{web, App, HttpRequest, HttpServer, HttpResponse, http::StatusCode};
-use actix_files::{NamedFile};
-use sycamore::prelude::SsrNode;
+use actix_files::NamedFile;
+use actix_web::{http::StatusCode, web, App, HttpRequest, HttpResponse, HttpServer};
 use std::collections::HashMap;
+use sycamore::prelude::SsrNode;
 
 use perseus::{
-    serve::{get_render_cfg, get_page},
     config_manager::FsConfigManager,
-    template::TemplateMap,
+    errors::err_to_status_code,
     errors::ErrorKind as PerseusErr,
-    errors::err_to_status_code
+    serve::{get_page, get_render_cfg},
+    template::TemplateMap,
 };
 use perseus_showcase_app::pages;
 
@@ -16,15 +16,9 @@ use perseus_showcase_app::pages;
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .data(
-                get_render_cfg().expect("Couldn't get render configuration!")
-            )
-            .data(
-                FsConfigManager::new()
-            )
-            .data(
-                pages::get_templates_map::<SsrNode>()
-            )
+            .data(get_render_cfg().expect("Couldn't get render configuration!"))
+            .data(FsConfigManager::new())
+            .data(pages::get_templates_map::<SsrNode>())
             // TODO chunk JS and WASM bundles
             // These allow getting the basic app code (not including the static data)
             // This contains everything in the spirit of a pseudo-SPA
@@ -54,15 +48,14 @@ async fn page_data(
     req: HttpRequest,
     templates: web::Data<TemplateMap<SsrNode>>,
     render_cfg: web::Data<HashMap<String, String>>,
-    config_manager: web::Data<FsConfigManager>
+    config_manager: web::Data<FsConfigManager>,
 ) -> HttpResponse {
     let path = req.match_info().query("filename");
     let page_data = get_page(path, &render_cfg, &templates, config_manager.get_ref()).await;
     let http_res = match page_data {
-        Ok(page_data) => HttpResponse::Ok().body(
-            serde_json::to_string(&page_data).unwrap()
-        ),
-        Err(err) => HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap()).body(err.to_string()),
+        Ok(page_data) => HttpResponse::Ok().body(serde_json::to_string(&page_data).unwrap()),
+        Err(err) => HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
+            .body(err.to_string()),
     };
 
     http_res

@@ -1,26 +1,26 @@
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::{JsFuture};
-use web_sys::{Request, RequestInit, RequestMode, Response};
-use sycamore::prelude::*;
-use sycamore::prelude::{Template as SycamoreTemplate};
-use std::collections::HashMap;
 use crate::errors::*;
 use crate::serve::PageData;
 use crate::template::TemplateFn;
+use std::collections::HashMap;
+use sycamore::prelude::Template as SycamoreTemplate;
+use sycamore::prelude::*;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{Request, RequestInit, RequestMode, Response};
 
 pub async fn fetch(url: &str) -> Result<Option<String>> {
     let js_err_handler = |err: JsValue| ErrorKind::JsErr(format!("{:?}", err));
     let mut opts = RequestInit::new();
-    opts
-        .method("GET")
-        .mode(RequestMode::Cors);
+    opts.method("GET").mode(RequestMode::Cors);
 
     let request = Request::new_with_str_and_init(url, &opts).map_err(js_err_handler)?;
 
     let window = web_sys::window().unwrap();
     // Get the response as a future and await it
-    let res_value = JsFuture::from(window.fetch_with_request(&request)).await.map_err(js_err_handler)?;
+    let res_value = JsFuture::from(window.fetch_with_request(&request))
+        .await
+        .map_err(js_err_handler)?;
     // Turn that into a proper response object
     let res: Response = res_value.dyn_into().unwrap();
     // If the status is 404, we should return that the request worked but no file existed
@@ -36,13 +36,17 @@ pub async fn fetch(url: &str) -> Result<Option<String>> {
     let body_str = body.as_string();
     let body_str = match body_str {
         Some(body_str) => body_str,
-        None => bail!(ErrorKind::AssetNotString(url.to_string()))
+        None => bail!(ErrorKind::AssetNotString(url.to_string())),
     };
     // Handle non-200 error codes
     if res.status() == 200 {
         Ok(Some(body_str))
     } else {
-        bail!(ErrorKind::AssetNotOk(url.to_string(), res.status(), body_str))
+        bail!(ErrorKind::AssetNotOk(
+            url.to_string(),
+            res.status(),
+            body_str
+        ))
     }
 }
 
@@ -53,14 +57,14 @@ pub type ErrorPageTemplate<G> = Box<dyn Fn(&str, &u16, &str) -> SycamoreTemplate
 /// A type alias for the `HashMap` the user should provide for error pages.
 pub struct ErrorPages {
     status_pages: HashMap<u16, ErrorPageTemplate<DomNode>>,
-    fallback: ErrorPageTemplate<DomNode>
+    fallback: ErrorPageTemplate<DomNode>,
 }
 impl ErrorPages {
     /// Creates a new definition of error pages with just a fallback.
     pub fn new(fallback: ErrorPageTemplate<DomNode>) -> Self {
         Self {
             status_pages: HashMap::default(),
-            fallback
+            fallback,
         }
     }
     pub fn add_page(&mut self, status: u16, page: ErrorPageTemplate<DomNode>) {
@@ -76,7 +80,7 @@ impl ErrorPages {
         // Render that to the given container
         sycamore::render_to(
             || template_fn(url, status, err),
-            &container.get::<DomNode>().inner_element()
+            &container.get::<DomNode>().inner_element(),
         );
     }
 }
@@ -87,7 +91,7 @@ impl ErrorPages {
 pub fn app_shell(
     path: String,
     template_fn: TemplateFn<DomNode>,
-    error_pages: ErrorPages
+    error_pages: ErrorPages,
 ) -> Template<DomNode> {
     // Get the container as a DOM element
     let container = NodeRef::new();
