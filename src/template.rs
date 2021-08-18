@@ -1,6 +1,7 @@
 // This file contains logic to define how templates are rendered
 
 use crate::errors::*;
+use crate::Request;
 use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
@@ -90,7 +91,8 @@ make_async_trait!(GetBuildStateFnType, StringResult<String>, path: String);
 make_async_trait!(
     GetRequestStateFnType,
     StringResultWithCause<String>,
-    path: String
+    path: String,
+    req: Request
 );
 make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
 
@@ -207,9 +209,9 @@ impl<G: GenericNode> Template<G> {
     /// Gets the request-time state for a template. This is equivalent to SSR, and will not be performed at build-time. Unlike
     /// `.get_build_paths()` though, this will be passed information about the request that triggered the render. Errors here can be caused
     /// by either the server or the client, so the user must specify an [`ErrorCause`].
-    pub async fn get_request_state(&self, path: String) -> Result<String> {
+    pub async fn get_request_state(&self, path: String, req: Request) -> Result<String> {
         if let Some(get_request_state) = &self.get_request_state {
-            let res = get_request_state.call(path).await;
+            let res = get_request_state.call(path, req).await;
             match res {
                 Ok(res) => Ok(res),
                 Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(

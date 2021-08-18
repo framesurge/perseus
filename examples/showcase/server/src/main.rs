@@ -6,11 +6,13 @@ use sycamore::prelude::SsrNode;
 use perseus::{
     config_manager::FsConfigManager,
     errors::err_to_status_code,
-    errors::ErrorKind as PerseusErr,
     serve::{get_page, get_render_cfg},
     template::TemplateMap,
 };
 use perseus_showcase_app::pages;
+
+mod conv_req;
+use conv_req::convert_req;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -51,12 +53,15 @@ async fn page_data(
     config_manager: web::Data<FsConfigManager>,
 ) -> HttpResponse {
     let path = req.match_info().query("filename");
-    let page_data = get_page(path, &render_cfg, &templates, config_manager.get_ref()).await;
-    let http_res = match page_data {
+    // We need to turn the Actix Web request into one acceptable for Perseus (uses `http` internally)
+    // TODO proper error handling here
+    let http_req = convert_req(&req).unwrap();
+    let page_data = get_page(path, http_req, &render_cfg, &templates, config_manager.get_ref()).await;
+
+    match page_data {
         Ok(page_data) => HttpResponse::Ok().body(serde_json::to_string(&page_data).unwrap()),
+        // We parse the error to return an appropriate status code
         Err(err) => HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
             .body(err.to_string()),
-    };
-
-    http_res
+    }
 }

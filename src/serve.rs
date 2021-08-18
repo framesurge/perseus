@@ -4,6 +4,7 @@ use crate::config_manager::ConfigManager;
 use crate::decode_time_str::decode_time_str;
 use crate::errors::*;
 use crate::template::{States, Template, TemplateMap};
+use crate::Request;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -47,9 +48,10 @@ fn render_build_state(
 async fn render_request_state(
     template: &Template<SsrNode>,
     path: &str,
+    req: Request
 ) -> Result<(String, Option<String>)> {
     // Generate the initial state (this may generate an error, but there's no file that can't exist)
-    let state = Some(template.get_request_state(path.to_string()).await?);
+    let state = Some(template.get_request_state(path.to_string(), req).await?);
     // Use that to render the static HTML
     let html = sycamore::render_to_string(|| template.render_for_template(state.clone()));
 
@@ -137,6 +139,7 @@ async fn revalidate(
 // TODO possible further optimizations on this for futures?
 pub async fn get_page(
     path: &str,
+    req: Request,
     render_cfg: &HashMap<String, String>,
     templates: &TemplateMap<SsrNode>,
     config_manager: &impl ConfigManager,
@@ -280,7 +283,7 @@ pub async fn get_page(
     }
     // Handle request state
     if template.uses_request_state() {
-        let (html_val, state) = render_request_state(template, path).await?;
+        let (html_val, state) = render_request_state(template, path, req).await?;
         // Request-time HTML always overrides anything generated at build-time or incrementally (this has more information)
         html = html_val;
         states.request_state = state;
