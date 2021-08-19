@@ -14,8 +14,8 @@ enum AppRoute {
     About,
     #[to("/post/new")]
     NewPost,
-    #[to("/post/<slug>")]
-    Post { slug: String },
+    #[to("/post/<slug..>")]
+    Post { slug: Vec<String> },
     #[to("/ip")]
     Ip,
     #[to("/time")]
@@ -82,7 +82,7 @@ pub fn run() -> Result<(), JsValue> {
                             get_error_pages()
                         ),
                         AppRoute::Post { slug } => app_shell(
-                            format!("post/{}", slug),
+                            format!("post/{}", slug.join("/")),
                             pages::post::template_fn(),
                             get_error_pages()
                         ),

@@ -40,8 +40,8 @@ pub async fn build_template(
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated
         if template.uses_build_state() {
-            // We pass in the latter part of the path, without the base specifier (because that would be the same for everything in the template)
-            let initial_state = template.get_build_state(path.to_string()).await?;
+            // We pass in the path to get a state (including the template path for consistency with the incremental logic)
+            let initial_state = template.get_build_state(full_path.clone()).await?;
             // Write that intial state to a static JSON file
             config_manager.write(&format!("./dist/static/{}.json", full_path), &initial_state)?;
             // Prerender the template using that state

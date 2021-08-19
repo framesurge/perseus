@@ -135,7 +135,6 @@ async fn revalidate(
 
 /// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML generated
 /// at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
-// TODO let this function take a request struct of some form
 // TODO possible further optimizations on this for futures?
 pub async fn get_page(
     path: &str,
@@ -225,7 +224,7 @@ pub async fn get_page(
                     // We need to generate and cache this page for future usage
                     let state = Some(
                         template
-                            .get_build_state(format!("{}/{}", template.get_path(), path))
+                            .get_build_state(path.to_string())
                             .await?,
                     );
                     let html_val =
