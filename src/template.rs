@@ -87,7 +87,8 @@ macro_rules! make_async_trait {
 
 // A series of asynchronous closure traits that prevent the user from having to pin their functions
 make_async_trait!(GetBuildPathsFnType, StringResult<Vec<String>>);
-make_async_trait!(GetBuildStateFnType, StringResult<String>, path: String);
+// The build state strategy needs an error cause if it's invoked from incremental
+make_async_trait!(GetBuildStateFnType, StringResultWithCause<String>, path: String);
 make_async_trait!(
     GetRequestStateFnType,
     StringResultWithCause<String>,
@@ -192,10 +193,10 @@ impl<G: GenericNode> Template<G> {
             let res = get_build_state.call(path).await;
             match res {
                 Ok(res) => Ok(res),
-                Err(err) => bail!(ErrorKind::RenderFnFailed(
+                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
                     "get_build_state".to_string(),
                     self.get_path(),
-                    ErrorCause::Server(None),
+                    cause,
                     err
                 )),
             }

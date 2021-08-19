@@ -1,4 +1,5 @@
 use perseus::template::Template;
+use perseus::errors::ErrorCause;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
@@ -30,7 +31,11 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -> Result<String, String> {
+pub async fn get_static_props(path: String) -> Result<String, (String, ErrorCause)> {
+    // This path is illegal, and can't be rendered
+    if path == "post/tests" {
+        return Err(("illegal page".to_string(), ErrorCause::Client(Some(404))))
+    }
     // This is just an example
     let title = urlencoding::decode(&path).unwrap();
     let content = format!(

@@ -1,4 +1,5 @@
 use perseus::template::Template;
+use perseus::errors::ErrorCause;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
@@ -24,7 +25,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .build_paths_fn(Box::new(get_build_paths))
 }
 
-pub async fn get_build_state(_path: String) -> Result<String, String> {
+pub async fn get_build_state(_path: String) -> Result<String, (String, ErrorCause)> {
     Ok(serde_json::to_string(&TimePageProps {
         time: format!("{:?}", std::time::SystemTime::now()),
     })
