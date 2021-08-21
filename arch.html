@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Introduction - Perseus Book</title>
+        <title>Architecture - Perseus Book</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">4.</strong> Building Your First App</div></li><li class="chapter-item expanded "><a href="templates.html"><strong aria-hidden="true">5.</strong> Templates</a></li><li class="chapter-item expanded "><a href="routing.html"><strong aria-hidden="true">6.</strong> Routing</a></li><li class="chapter-item expanded "><a href="error_pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">8.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build_paths.html"><strong aria-hidden="true">8.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/build_state.html"><strong aria-hidden="true">8.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/request_state.html"><strong aria-hidden="true">8.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">8.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">8.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="building.html"><strong aria-hidden="true">9.</strong> Building</a></li><li class="chapter-item expanded "><a href="serving.html"><strong aria-hidden="true">10.</strong> Serving</a></li><li class="chapter-item expanded "><a href="config_managers.html"><strong aria-hidden="true">11.</strong> Config Managers</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="arch.html" class="active"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">4.</strong> Building Your First App</div></li><li class="chapter-item expanded "><a href="templates.html"><strong aria-hidden="true">5.</strong> Templates</a></li><li class="chapter-item expanded "><a href="routing.html"><strong aria-hidden="true">6.</strong> Routing</a></li><li class="chapter-item expanded "><a href="error_pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">8.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build_paths.html"><strong aria-hidden="true">8.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/build_state.html"><strong aria-hidden="true">8.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/request_state.html"><strong aria-hidden="true">8.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">8.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">8.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="building.html"><strong aria-hidden="true">9.</strong> Building</a></li><li class="chapter-item expanded "><a href="serving.html"><strong aria-hidden="true">10.</strong> Serving</a></li><li class="chapter-item expanded "><a href="config_managers.html"><strong aria-hidden="true">11.</strong> Config Managers</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,19 +143,39 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="welcome-to-perseus"><a class="header" href="#welcome-to-perseus">Welcome to Perseus!</a></h1>
-<p><a href="https://github.com/arctic-hen7/perseus">Home</a> • <a href="https://crates.io/crates/perseus">Crate Page</a> • <a href="https://docs.rs/perseus">API Documentation</a> • <a href="./CONTRIBUTING.html">Contributing</a></p>
-<blockquote>
-<p>🚧 This book is nearly complete, but Perseus is not yet in beta yet, so you can't install it as a library or use it yet! We're working on it, and it'll be ready very soon, we promise! 🚧</p>
-</blockquote>
-<p>Welcome to the Perseus documentation! Here, you'll find guides on how to use Perseus, as well as documentation for specific features and plenty of examples!</p>
+                        <h1 id="architecture"><a class="header" href="#architecture">Architecture</a></h1>
+<p>Perseus is a complex system, and this page will aim to explain the basics in a beginner-friendly way. If you've already used similar frameworks from the JS world like NextJS, then some of this may be familiar to you. If you're having trouble following along, please <a href="https://github.com/arctic-hen7/perseus/issues/new/choose">open an issue</a> and ask us to clarify some sections, because this page in particular should be accessible to everyone. If you'd like more specific help, <a href="TODO">ask on Gitter</a>!</p>
+<h2 id="templates-and-pages"><a class="header" href="#templates-and-pages">Templates and Pages</a></h2>
+<p>The core of Perseus is the idea of templates. When you create a Perseus app, what you're basically doing is telling Perseus how to compile your code into a series of <em>pages</em>. <strong>Each page has a unique URL on your final website.</strong> If you have a blog, and every post is stored as something like <code>post/title</code>, then each post would be a unique page.</p>
+<p>But this doesn't mean you have to write the code for every page individually! Perseus does this for you, and only asks you to write <em>templates</em>. A template can generate one page or many, and a great example of one would be a <code>post</code> template. Each template has a <em>root path</em>, which is essentially like the space on your website that that template controls. For example, a post template might control <code>/post</code>, meaning it can render pages at <code>/post</code>, <code>/post/test</code>, <code>/post/longer/path</code>, etc. In theory, a template could render pages outside its domain, but this would be a bad idea for structure, and makes your code difficult to understand.</p>
+<h3 id="state"><a class="header" href="#state">State</a></h3>
+<p>What differentiates pages from templates is <em>state</em>, which tells a page how to fill out its template to give unique content. For example, our post template would probably have a <code>content</code> field in its state, and its pages would use that to render their unique content!</p>
+<p>In terms of writing code, a page's state is just a <code>struct</code> that can be serialized and deserialized with <a href="https://serde.rs">Serde</a>.</p>
+<h2 id="rendering-strategies"><a class="header" href="#rendering-strategies">Rendering Strategies</a></h2>
+<p>Each template has a rendering strategy, which it uses to create its pages. There are a number of rendering strategies in Perseus, each of which is documented in detail in its own section. What's important to understand for now is that there are two main ways a template can render pages, at <em>build time</em>, or at <em>request time</em>. If a template renders at build time, it generates the code for your pages when you build your app, which means you end up serving static pages. This is <em>really fast</em>. However, sometimes you need information specific to each request to render a page (e.g. an authentication token), and you can't render at build. Instead, you'd render at request time, which gives you access to information about the HTTP request a user sent for your page.</p>
+<p>Here's a list of Perseus' currently supported rendering strategies. These can all be combined, but some combinations make more sense than others.</p>
+<table><thead><tr><th>Strategy</th><th>Description</th><th>Type</th></tr></thead><tbody>
+<tr><td>Build paths</td><td>Generates a series of pages for a template</td><td>Build</td></tr>
+<tr><td>Build state</td><td>Generates page state</td><td>Build</td></tr>
+<tr><td>Request state</td><td>Generates page state</td><td>Request</td></tr>
+<tr><td>Revalidation</td><td>Rebuilds pages conditionally</td><td>Hybrid</td></tr>
+<tr><td>Incremental generation</td><td>Builds pages on-demand</td><td>Hybrid</td></tr>
+</tbody></table>
+<p>There are two <em>hybrid</em> strategies listed above. They're a little more complicated, and out of the scope of this page, but they operate at both build <em>and</em> request-time, allowing you to reap the benefits of both worlds!</p>
+<h2 id="routing"><a class="header" href="#routing">Routing</a></h2>
+<p><em>This section describes how Perseus works under the hood. Skip it if you want.</em></p>
+<p>Perseus doesn't just host your pages at their URLs though. In fact, Perseus has a generic handler for <em>any URL</em>, which returns what we call the <em>app shell</em>. That's a concept from the single-page app (e.g. ReactJS), where your app always has a constant shell around it, and each page is loaded into that shell, making page transitions more seamless. Perseus adopts this as well, but with the added benefits of super-fast static rendering strategies and a more lightweight shell.</p>
+<p>The shell includes a router (courtesy of <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a>), which determines what page the user wants, and then sends a request to a special endpoint behind <code>/.perseus</code>. That then renders the page and returns some static HTML and the page's state.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                                                    <a rel="prev" href="setup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
                         
-                                                    <a rel="next" href="setup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                                    <a rel="next" href="templates.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -165,8 +185,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                                    <a rel="prev" href="setup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
                 
-                                    <a rel="next" href="setup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <a rel="next" href="templates.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                             </nav>

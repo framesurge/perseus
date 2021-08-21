@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Introduction - Perseus Book</title>
+        <title>Routing - Perseus Book</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">4.</strong> Building Your First App</div></li><li class="chapter-item expanded "><a href="templates.html"><strong aria-hidden="true">5.</strong> Templates</a></li><li class="chapter-item expanded "><a href="routing.html"><strong aria-hidden="true">6.</strong> Routing</a></li><li class="chapter-item expanded "><a href="error_pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">8.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build_paths.html"><strong aria-hidden="true">8.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/build_state.html"><strong aria-hidden="true">8.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/request_state.html"><strong aria-hidden="true">8.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">8.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">8.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="building.html"><strong aria-hidden="true">9.</strong> Building</a></li><li class="chapter-item expanded "><a href="serving.html"><strong aria-hidden="true">10.</strong> Serving</a></li><li class="chapter-item expanded "><a href="config_managers.html"><strong aria-hidden="true">11.</strong> Config Managers</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">4.</strong> Building Your First App</div></li><li class="chapter-item expanded "><a href="templates.html"><strong aria-hidden="true">5.</strong> Templates</a></li><li class="chapter-item expanded "><a href="routing.html" class="active"><strong aria-hidden="true">6.</strong> Routing</a></li><li class="chapter-item expanded "><a href="error_pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">8.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build_paths.html"><strong aria-hidden="true">8.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/build_state.html"><strong aria-hidden="true">8.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/request_state.html"><strong aria-hidden="true">8.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">8.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">8.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="building.html"><strong aria-hidden="true">9.</strong> Building</a></li><li class="chapter-item expanded "><a href="serving.html"><strong aria-hidden="true">10.</strong> Serving</a></li><li class="chapter-item expanded "><a href="config_managers.html"><strong aria-hidden="true">11.</strong> Config Managers</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,19 +143,92 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="welcome-to-perseus"><a class="header" href="#welcome-to-perseus">Welcome to Perseus!</a></h1>
-<p><a href="https://github.com/arctic-hen7/perseus">Home</a> • <a href="https://crates.io/crates/perseus">Crate Page</a> • <a href="https://docs.rs/perseus">API Documentation</a> • <a href="./CONTRIBUTING.html">Contributing</a></p>
-<blockquote>
-<p>🚧 This book is nearly complete, but Perseus is not yet in beta yet, so you can't install it as a library or use it yet! We're working on it, and it'll be ready very soon, we promise! 🚧</p>
-</blockquote>
-<p>Welcome to the Perseus documentation! Here, you'll find guides on how to use Perseus, as well as documentation for specific features and plenty of examples!</p>
+                        <h1 id="routing"><a class="header" href="#routing">Routing</a></h1>
+<p>Perseus will serve your pages on the backend, rendered however you like, but it depends on <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> for front-end rendering and routing, so you'll need to provide a router for your pages. You can see more information about Sycamore routing in their official documentation <a href="https://sycamore-rs.netlify.app/docs/advanced/routing">here</a>.</p>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<p>You'll need to define a rout <code>enum</code> at the root of your app like so to define your app's routes:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use sycamore::prelude::*;
+
+#[derive(Route)]
+enum AppRoute {
+    #[to(&quot;/&quot;)]
+    Index,
+    #[to(&quot;/about&quot;)]
+    About,
+    #[to(&quot;/post/new&quot;)]
+    NewPost,
+    #[to(&quot;/post/&lt;slug..&gt;&quot;)]
+    Post { slug: Vec&lt;String&gt; },
+    #[to(&quot;/ip&quot;)]
+    Ip,
+    #[to(&quot;/time&quot;)]
+    TimeRoot,
+    #[to(&quot;/timeisr/&lt;slug&gt;&quot;)]
+    Time { slug: String },
+    #[not_found]
+    NotFound,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note in the above example the usage of the <code>NewPost</code> template to override a section of the domain of the <code>Post</code> template, specifically the <code>/post/new</code> path, where a post writing page is hosted. Notably, such intrusive routes must be placed before. In general, <strong>order your routes by specificity</strong>. If you're not having troubles though, put them in any order you like (but <code>NotFound</code> must come last).</p>
+<p>You can then match each of your routes and render it like so (subset of the previous example):</p>
+<pre><pre class="playground"><code class="language-rust no_run no_plyaground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let root = web_sys::window()
+        .unwrap()
+        .document()
+        .unwrap()
+        .query_selector(&quot;#_perseus_root&quot;)
+        .unwrap()
+        .unwrap();
+
+sycamore::render_to(
+        || {
+            template! {
+                BrowserRouter(|route: AppRoute| {
+                    match route {
+                        AppRoute::Index =&gt; app_shell(
+                            &quot;index&quot;.to_string(),
+                            pages::index::template_fn(),
+                            get_error_pages()
+                        ),
+                        AppRoute::About =&gt; app_shell(
+                            &quot;about&quot;.to_string(),
+                            pages::about::template_fn(),
+                            get_error_pages()
+                        ),
+                        AppRoute::Post { slug } =&gt; app_shell(
+                            format!(&quot;post/{}&quot;, slug.join(&quot;/&quot;)),
+                            pages::post::template_fn(),
+                            get_error_pages()
+                        ),
+                        AppRoute::NotFound =&gt; template! {
+                            p {&quot;Not Found.&quot;}
+                        }
+                    }
+                })
+            }
+        },
+        &amp;root,
+    );
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note that you pass your error pages to the app shell, allowing it to conditionally render them if need be. Also note the template function being reused for the router as well as in the template itself.</p>
+<p>The router is the core of your app, and should be rendered to a location from which you'll use Perseus. Perseus is a full framework for rendering, so if you want incremental adoption of reactivity, you should check out the underlying <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> library.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                                                    <a rel="prev" href="templates.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
                         
-                                                    <a rel="next" href="setup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                                    <a rel="next" href="error_pages.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -165,8 +238,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                                    <a rel="prev" href="templates.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
                 
-                                    <a rel="next" href="setup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <a rel="next" href="error_pages.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                             </nav>
