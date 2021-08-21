@@ -4,6 +4,11 @@ version="0.3.1"
 build = "cargo build"
 test = "cargo watch -x \"test\""
 check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
+# Hosts the book locally
+doc = [
+	"cd docs",
+	"mdbook serve"
+]
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version

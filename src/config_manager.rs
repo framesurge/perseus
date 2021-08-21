@@ -26,6 +26,7 @@ error_chain! {
     }
 }
 
+// TODO make config managers asynchronous
 /// A trait for systems that manage where to put configuration files. At simplest, we'll just write them to static files, but they're
 /// more likely to be stored on a CMS.
 pub trait ConfigManager {
