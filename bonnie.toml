@@ -1,6 +1,14 @@
 version="0.3.1"
 
 [scripts]
+dev.subcommands.build = [
+	"cd examples/showcase",
+	"bonnie build --watch"
+]
+dev.subcommands.serve = [
+	"cd examples/showcase",
+	"bonnie serve"
+]
 build = "cargo build"
 test = "cargo watch -x \"test\""
 check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
