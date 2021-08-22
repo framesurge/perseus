@@ -10,6 +10,11 @@ dev.subcommands.serve.cmd = [
 	"bonnie serve %server"
 ]
 dev.subcommands.serve.args = [ "server" ]
+# TODO fix this with an example
+dev.subcommands.cli = [
+	"cd packages/perseus-cli",
+	"cargo watch -x \"run --bin cli\""
+]
 build = "cargo build"
 test = "cargo watch -x \"test\""
 check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
