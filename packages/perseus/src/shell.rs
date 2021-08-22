@@ -9,7 +9,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 
-pub async fn fetch(url: &str) -> Result<Option<String>> {
+pub(crate) async fn fetch(url: &str) -> Result<Option<String>> {
     let js_err_handler = |err: JsValue| ErrorKind::JsErr(format!("{:?}", err));
     let mut opts = RequestInit::new();
     opts.method("GET").mode(RequestMode::Cors);

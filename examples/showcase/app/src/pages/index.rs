@@ -1,5 +1,4 @@
-use perseus::template::Template;
-use perseus::errors::ErrorCause;
+use perseus::{Template, StringResultWithCause};
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
@@ -23,7 +22,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub async fn get_static_props(_path: String) -> Result<String, (String, ErrorCause)> {
+pub async fn get_static_props(_path: String) -> StringResultWithCause<String> {
     Ok(serde_json::to_string(&IndexPageProps {
         greeting: "Hello World!".to_string(),
     })

@@ -1,4 +1,4 @@
-use perseus::template::Template;
+use perseus::Template;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
 

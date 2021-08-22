@@ -1,8 +1,4 @@
-use perseus::{
-	config_manager::ConfigManager,
-    errors::err_to_status_code,
-    serve::get_page,
-};
+use perseus::{ConfigManager, err_to_status_code, get_page};
 use actix_web::{web, HttpRequest, HttpResponse, http::StatusCode};
 use std::collections::HashMap;
 use crate::conv_req::convert_req;

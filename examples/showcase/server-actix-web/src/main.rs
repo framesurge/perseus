@@ -1,7 +1,6 @@
-use perseus::config_manager::FsConfigManager;
+use perseus::{FsConfigManager, SsrNode};
 use perseus_actix_web::{configurer, Options};
 use perseus_showcase_app::pages;
-use sycamore::SsrNode;
 use actix_web::{HttpServer, App};
 
 #[actix_web::main]

@@ -1,6 +1,6 @@
 pub mod pages;
 
-use perseus::shell::{app_shell, ErrorPages};
+use perseus::{app_shell, ErrorPages};
 use sycamore::prelude::*;
 use sycamore_router::{BrowserRouter, Route};
 use wasm_bindgen::prelude::*;

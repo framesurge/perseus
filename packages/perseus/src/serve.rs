@@ -22,6 +22,7 @@ pub struct PageData {
 }
 
 /// Gets the configuration of how to render each page.
+// TODO use a config manager here
 pub fn get_render_cfg() -> Result<HashMap<String, String>> {
     let content = fs::read_to_string("../app/dist/render_conf.json")?;
     let cfg = serde_json::from_str::<HashMap<String, String>>(&content)?;

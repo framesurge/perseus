@@ -1,13 +1,6 @@
 use actix_files::NamedFile;
 use actix_web::web;
-use sycamore::prelude::SsrNode;
-
-use perseus::{
-    config_manager::ConfigManager,
-    serve::get_render_cfg,
-    template::TemplateMap,
-};
-
+use perseus::{ConfigManager, get_render_cfg, TemplateMap, SsrNode};
 use crate::page_data::page_data;
 
 /// The options for setting up the Actix Web integration. This should be literally constructed, as nothing is optional.

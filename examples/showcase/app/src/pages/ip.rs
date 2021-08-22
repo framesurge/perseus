@@ -1,8 +1,6 @@
 // This page illustrates SSR
 
-use perseus::errors::ErrorCause;
-use perseus::template::{Template};
-use perseus::Request;
+use perseus::{Template, Request, StringResultWithCause};
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
@@ -29,8 +27,8 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub async fn get_request_state(_path: String, req: Request) -> Result<String, (String, ErrorCause)> {
-    // Err(("this is a test error!".to_string(), ErrorCause::Client(None)))
+pub async fn get_request_state(_path: String, req: Request) -> StringResultWithCause<String> {
+    // Err(("this is a test error!".to_string(), perseus::ErrorCause::Client(None)))
     Ok(serde_json::to_string(&IpPageProps {
         // Gets the client's IP address
         ip: format!(

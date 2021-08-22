@@ -1,7 +1,6 @@
 use futures::executor::block_on;
-use perseus::{build::build_templates, config_manager::FsConfigManager};
+use perseus::{build_templates, FsConfigManager, SsrNode};
 use perseus_showcase_app::pages;
-use sycamore::prelude::SsrNode;
 
 fn main() {
     let config_manager = FsConfigManager::new();

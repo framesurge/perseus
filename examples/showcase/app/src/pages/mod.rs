@@ -6,7 +6,7 @@ pub mod post;
 pub mod time;
 pub mod time_root;
 
-use perseus::{get_templates_map, template::Template};
+use perseus::{get_templates_map, Template};
 use std::collections::HashMap;
 use sycamore::prelude::GenericNode;
 
