@@ -26,14 +26,14 @@ error_chain! {
     }
 }
 
-// TODO make config managers asynchronous
 /// A trait for systems that manage where to put configuration files. At simplest, we'll just write them to static files, but they're
 /// more likely to be stored on a CMS.
+#[async_trait::async_trait]
 pub trait ConfigManager: Clone {
     /// Reads data from the named asset.
-    fn read(&self, name: &str) -> Result<String>;
+    async fn read(&self, name: &str) -> Result<String>;
     /// Writes data to the named asset. This will create a new asset if one doesn't exist already.
-    fn write(&self, name: &str, content: &str) -> Result<()>;
+    async fn write(&self, name: &str, content: &str) -> Result<()>;
 }
 
 #[derive(Default, Clone)]
@@ -44,8 +44,9 @@ impl FsConfigManager {
         Self::default()
     }
 }
+#[async_trait::async_trait]
 impl ConfigManager for FsConfigManager {
-    fn read(&self, name: &str) -> Result<String> {
+    async fn read(&self, name: &str) -> Result<String> {
         match fs::metadata(name) {
             Ok(_) => fs::read_to_string(name)
                 .map_err(|err| ErrorKind::ReadFailed(name.to_string(), err.to_string()).into()),
@@ -55,7 +56,7 @@ impl ConfigManager for FsConfigManager {
             Err(err) => bail!(ErrorKind::ReadFailed(name.to_string(), err.to_string())),
         }
     }
-    fn write(&self, name: &str, content: &str) -> Result<()> {
+    async fn write(&self, name: &str, content: &str) -> Result<()> {
         fs::write(name, content)
             .map_err(|err| ErrorKind::WriteFailed(name.to_string(), err.to_string()).into())
     }

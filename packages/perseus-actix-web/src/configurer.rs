@@ -27,10 +27,12 @@ async fn index(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
 }
 
 /// Configures an existing Actix Web app for Perseus. This returns a function that does the configuring so it can take arguments.
-pub fn configurer<C: ConfigManager + 'static>(opts: Options, config_manager: C) -> impl Fn(&mut web::ServiceConfig) {
+pub async fn configurer<C: ConfigManager + 'static>(opts: Options, config_manager: C) -> impl Fn(&mut web::ServiceConfig) {
+	let render_cfg = get_render_cfg(&config_manager).await.expect("Couldn't get render configuration!");
 	move |cfg: &mut web::ServiceConfig| {
 		cfg
-			.data(get_render_cfg(&config_manager).expect("Couldn't get render configuration!"))
+			// We implant the render config in the app data for bertter performance, it's needed on every request
+			.data(render_cfg.clone())
     	    .data(config_manager.clone())
     	    .data(opts.clone())
     	    // TODO chunk JS and WASM bundles

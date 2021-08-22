@@ -2,13 +2,14 @@ use perseus::{FsConfigManager, SsrNode};
 use perseus_actix_web::{configurer, Options};
 use perseus_showcase_app::pages;
 use actix_web::{HttpServer, App};
+use futures::executor::block_on;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 	HttpServer::new(|| {
         App::new()
         	.configure(
-				configurer(
+				block_on(configurer(
 					Options {
 						index: "../app/index.html".to_string(),
 						js_bundle: "../app/pkg/bundle.js".to_string(),
@@ -16,7 +17,7 @@ async fn main() -> std::io::Result<()> {
 						templates_map: pages::get_templates_map::<SsrNode>()
 					},
 					FsConfigManager::new()
-				)
+				))
 			)
     })
     	.bind(("localhost", 8080))?

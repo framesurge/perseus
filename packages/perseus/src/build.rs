@@ -43,12 +43,12 @@ pub async fn build_template(
             // We pass in the path to get a state (including the template path for consistency with the incremental logic)
             let initial_state = template.get_build_state(full_path.clone()).await?;
             // Write that intial state to a static JSON file
-            config_manager.write(&format!("./dist/static/{}.json", full_path), &initial_state)?;
+            config_manager.write(&format!("./dist/static/{}.json", full_path), &initial_state).await?;
             // Prerender the template using that state
             let prerendered =
                 sycamore::render_to_string(|| template.render_for_template(Some(initial_state)));
             // Write that prerendered HTML to a static file
-            config_manager.write(&format!("./dist/static/{}.html", full_path), &prerendered)?;
+            config_manager.write(&format!("./dist/static/{}.html", full_path), &prerendered).await?;
         }
 
         // Handle revalidation, we need to parse any given time strings into datetimes
@@ -61,7 +61,7 @@ pub async fn build_template(
             config_manager.write(
                 &format!("./dist/static/{}.revld.txt", full_path),
                 &datetime_to_revalidate.to_string(),
-            )?;
+            ).await?;
         }
 
         // Note that SSR has already been handled by checking for `.uses_request_state()` above, we don't need to do any rendering here
@@ -72,7 +72,7 @@ pub async fn build_template(
         if template.is_basic() {
             let prerendered = sycamore::render_to_string(|| template.render_for_template(None));
             // Write that prerendered HTML to a static file
-            config_manager.write(&format!("./dist/static/{}.html", full_path), &prerendered)?;
+            config_manager.write(&format!("./dist/static/{}.html", full_path), &prerendered).await?;
         }
     }
 
@@ -132,7 +132,7 @@ pub async fn build_templates(
     config_manager.write(
         "./dist/render_conf.json",
         &serde_json::to_string(&render_cfg)?,
-    )?;
+    ).await?;
 
     Ok(())
 }
