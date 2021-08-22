@@ -5,10 +5,11 @@ dev.subcommands.build = [
 	"cd examples/showcase",
 	"bonnie build --watch"
 ]
-dev.subcommands.serve = [
+dev.subcommands.serve.cmd = [
 	"cd examples/showcase",
-	"bonnie serve"
+	"bonnie serve %server"
 ]
+dev.subcommands.serve.args = [ "server" ]
 build = "cargo build"
 test = "cargo watch -x \"test\""
 check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well

@@ -6,6 +6,7 @@ use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
 use sycamore::prelude::{GenericNode, Template as SycamoreTemplate};
+use std::sync::Arc;
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
@@ -98,17 +99,18 @@ make_async_trait!(
 make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
 
 // A series of closure types that should not be typed out more than once
-pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
-pub type GetBuildPathsFn = Box<dyn GetBuildPathsFnType>;
-pub type GetBuildStateFn = Box<dyn GetBuildStateFnType>;
-pub type GetRequestStateFn = Box<dyn GetRequestStateFnType>;
-pub type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType>;
-pub type AmalgamateStatesFn = Box<dyn Fn(States) -> StringResultWithCause<Option<String>>>;
+pub type TemplateFn<G> = Arc<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
+pub type GetBuildPathsFn = Arc<dyn GetBuildPathsFnType>;
+pub type GetBuildStateFn = Arc<dyn GetBuildStateFnType>;
+pub type GetRequestStateFn = Arc<dyn GetRequestStateFnType>;
+pub type ShouldRevalidateFn = Arc<dyn ShouldRevalidateFnType>;
+pub type AmalgamateStatesFn = Arc<dyn Fn(States) -> StringResultWithCause<Option<String>>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
 /// All properties for templates are passed around as strings to avoid type maps and other horrible things, this only adds one extra
 /// deserialization call at build time.
+#[derive(Clone)]
 pub struct Template<G: GenericNode> {
     /// The path to the root of the template. Any build paths will be inserted under this.
     path: String,
@@ -150,7 +152,7 @@ impl<G: GenericNode> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_: Option<String>| sycamore::template! {}),
+            template: Arc::new(|_: Option<String>| sycamore::template! {}),
             get_build_paths: None,
             incremental_path_rendering: false,
             get_build_state: None,

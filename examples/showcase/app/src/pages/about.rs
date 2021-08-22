@@ -1,5 +1,6 @@
 use perseus::template::Template;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+use std::sync::Arc;
 
 #[component(AboutPage<G>)]
 pub fn about_page() -> SycamoreTemplate<G> {
@@ -13,7 +14,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Box::new(|_| {
+    Arc::new(|_| {
         template! {
             AboutPage()
         }

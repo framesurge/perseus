@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"packages/perseus",
+	"packages/perseus-actix-web",
 	"examples/showcase/app",
-	"examples/showcase/server"
+	"examples/showcase/server-actix-web"
 ]

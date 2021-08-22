@@ -2,6 +2,7 @@ use perseus::template::Template;
 use perseus::errors::ErrorCause;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TimePageProps {
@@ -21,8 +22,8 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
         // This page will revalidate every five seconds (to illustrate revalidation)
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
         .revalidate_after("5s".to_string())
-        .should_revalidate_fn(Box::new(|| async { Ok(true) }))
-        .build_state_fn(Box::new(get_build_state))
+        .should_revalidate_fn(Arc::new(|| async { Ok(true) }))
+        .build_state_fn(Arc::new(get_build_state))
 }
 
 pub async fn get_build_state(_path: String) -> Result<String, (String, ErrorCause)> {
@@ -33,7 +34,7 @@ pub async fn get_build_state(_path: String) -> Result<String, (String, ErrorCaus
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Box::new(|props: Option<String>| {
+    Arc::new(|props: Option<String>| {
         template! {
             TimePage(
                 serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()

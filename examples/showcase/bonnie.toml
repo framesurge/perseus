@@ -12,7 +12,8 @@ build.subcommands.--watch = [
 	"bonnie clean",
 	"find ../../ -not -path \"../../target/*\" -not -path \"../../.git/*\" -not -path \"../../examples/showcase/app/dist/*\" | entr -s \"bonnie build\""
 ]
-serve = [
-	"cd server",
+serve.cmd = [
+	"cd server-%server",
 	"cargo watch -w ../../../ -x \"run\""
 ]
+serve.args = [ "server" ]
