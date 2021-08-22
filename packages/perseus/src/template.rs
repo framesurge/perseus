@@ -356,6 +356,10 @@ impl<G: GenericNode> Template<G> {
         self.revalidate_after = Some(val);
         self
     }
+    pub fn amalgamate_states_fn(mut self, val: AmalgamateStatesFn) -> Template<G> {
+        self.amalgamate_states = Some(val);
+        self
+    }
 }
 
 /// Gets a `HashMap` of the given templates by their paths for serving. This should be manually wrapped for the pages your app provides
