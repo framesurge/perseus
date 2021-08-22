@@ -124,11 +124,9 @@ pub fn app_shell(
                         Err(err) => panic!("page data couldn't be serialized: '{}'", err)
                     };
                 },
-                // TODO NotFound
                 None => error_pages.render_page(&asset_url, &404, "page not found", &container),
             },
             Err(err) => match err.kind() {
-                // TODO NotOk
                 ErrorKind::AssetNotOk(url, status, err) => error_pages.render_page(url, status, err, &container),
                 // No other errors should be returned
                 _ => panic!("expected 'AssetNotOk' error, found other unacceptable error")

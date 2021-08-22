@@ -11,7 +11,6 @@ pub enum ErrorCause {
     Server(Option<u16>),
 }
 
-// TODO disclose what information may be revealed over the network through these errors in docs
 // The `error_chain` setup for the whole crate
 error_chain! {
     // The custom errors for this crate (very broad)
