@@ -14,6 +14,7 @@ fn main() {
             pages::ip::get_page::<SsrNode>(),
             pages::time::get_page::<SsrNode>(),
             pages::time_root::get_page::<SsrNode>(),
+            pages::amalgamation::get_page::<SsrNode>(),
         ],
         &config_manager,
     );

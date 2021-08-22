@@ -22,6 +22,8 @@ enum AppRoute {
     TimeRoot,
     #[to("/timeisr/<slug>")]
     Time { slug: String },
+    #[to("/amalgamation")]
+    Amalgamation,
     #[not_found]
     NotFound,
 }
@@ -104,6 +106,11 @@ pub fn run() -> Result<(), JsValue> {
                         AppRoute::TimeRoot => app_shell(
                             "time".to_string(),
                             pages::time_root::template_fn(),
+                            get_error_pages()
+                        ),
+                        AppRoute::Amalgamation => app_shell(
+                            "amalgamation".to_string(),
+                            pages::amalgamation::template_fn(),
                             get_error_pages()
                         ),
                         AppRoute::NotFound => template! {

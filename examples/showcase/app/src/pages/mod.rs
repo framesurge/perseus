@@ -5,6 +5,7 @@ pub mod new_post;
 pub mod post;
 pub mod time;
 pub mod time_root;
+pub mod amalgamation;
 
 use perseus::{get_templates_map, Template};
 use std::collections::HashMap;
@@ -19,6 +20,7 @@ pub fn get_templates_map<G: GenericNode>() -> HashMap<String, Template<G>> {
         new_post::get_page::<G>(),
         ip::get_page::<G>(),
         time::get_page::<G>(),
-        time_root::get_page::<G>()
+        time_root::get_page::<G>(),
+        amalgamation::get_page::<G>()
     ]
 }
