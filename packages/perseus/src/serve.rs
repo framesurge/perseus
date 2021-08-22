@@ -8,7 +8,6 @@ use crate::Request;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
 use sycamore::prelude::SsrNode;
 
 /// Represents the data necessary to render a page.
@@ -22,9 +21,8 @@ pub struct PageData {
 }
 
 /// Gets the configuration of how to render each page.
-// TODO use a config manager here
-pub fn get_render_cfg() -> Result<HashMap<String, String>> {
-    let content = fs::read_to_string("../app/dist/render_conf.json")?;
+pub fn get_render_cfg(config_manager: &impl ConfigManager) -> Result<HashMap<String, String>> {
+    let content = config_manager.read("../app/dist/render_conf.json")?;
     let cfg = serde_json::from_str::<HashMap<String, String>>(&content)?;
 
     Ok(cfg)

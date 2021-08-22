@@ -30,7 +30,7 @@ async fn index(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
 pub fn configurer<C: ConfigManager + 'static>(opts: Options, config_manager: C) -> impl Fn(&mut web::ServiceConfig) {
 	move |cfg: &mut web::ServiceConfig| {
 		cfg
-			.data(get_render_cfg().expect("Couldn't get render configuration!"))
+			.data(get_render_cfg(&config_manager).expect("Couldn't get render configuration!"))
     	    .data(config_manager.clone())
     	    .data(opts.clone())
     	    // TODO chunk JS and WASM bundles
