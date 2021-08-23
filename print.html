@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">4.</strong> Building Your First App</div></li><li class="chapter-item expanded "><a href="templates.html"><strong aria-hidden="true">5.</strong> Templates</a></li><li class="chapter-item expanded "><a href="routing.html"><strong aria-hidden="true">6.</strong> Routing</a></li><li class="chapter-item expanded "><a href="error_pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">8.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build_paths.html"><strong aria-hidden="true">8.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/build_state.html"><strong aria-hidden="true">8.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/request_state.html"><strong aria-hidden="true">8.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">8.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">8.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="building.html"><strong aria-hidden="true">9.</strong> Building</a></li><li class="chapter-item expanded "><a href="serving.html"><strong aria-hidden="true">10.</strong> Serving</a></li><li class="chapter-item expanded "><a href="config_managers.html"><strong aria-hidden="true">11.</strong> Config Managers</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">4.</strong> Building Your First App</div></li><li class="chapter-item expanded "><a href="templates.html"><strong aria-hidden="true">5.</strong> Templates</a></li><li class="chapter-item expanded "><a href="routing.html"><strong aria-hidden="true">6.</strong> Routing</a></li><li class="chapter-item expanded "><a href="error_pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">8.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build_paths.html"><strong aria-hidden="true">8.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/build_state.html"><strong aria-hidden="true">8.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/request_state.html"><strong aria-hidden="true">8.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">8.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">8.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="building.html"><strong aria-hidden="true">9.</strong> Building</a></li><li class="chapter-item expanded "><a href="serving.html"><strong aria-hidden="true">10.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations/actix-web.html"><strong aria-hidden="true">10.1.</strong> Actix Web Integration</a></li></ol></li><li class="chapter-item expanded "><a href="config_managers.html"><strong aria-hidden="true">11.</strong> Config Managers</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -552,7 +552,11 @@ fn main() {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="serving"><a class="header" href="#serving">Serving</a></h1>
 <p>Having generated a large number of static files, you'll need a system to host your files for you! Due to the dynamic nature of some rendering strategies, Perseus needs to be involved in this process (for executing request-time logic), and so it provides a simple API interface for serving pages.</p>
 <p>Perseus aims to be agnostic as to what framework you use to host your files, and any framework that gives you access to request headers and wildcard paths should work (in other words, any framework worth its salt).</p>
-<p>In future, Perseus will provide separate integration libraries for common frameworks that manage this side of things for you!</p>
+<p>If you're using one of our supported integrations, you don't have to bother with this page, nearly all of it can be done for you!</p>
+<ul>
+<li><a href="./integrations/actix-web.html">Actix Web</a></li>
+<li><em>More coming soon...</em></li>
+</ul>
 <h2 id="endpoints"><a class="header" href="#endpoints">Endpoints</a></h2>
 <p>Here are the endpoints that a server for Perseus must serve:</p>
 <ul>
@@ -639,6 +643,49 @@ HttpRequest::new(());
 </span></code></pre></pre>
 <h2 id="file-storage-1"><a class="header" href="#file-storage-1">File Storage</a></h2>
 <p>Perseus' systems of storing files in production are documented in-depth <a href="./config_managers.html">here</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="actix-web-integration"><a class="header" href="#actix-web-integration">Actix Web Integration</a></h1>
+<p>If you're using <a href="https://actix.rs">Actix Web</a>, then Perseus can automate nearly all the boilerplate of serving your app for you!</p>
+<p>This integration provides a configuration function, which you can use to configure an existing web server to support Perseus, so you could even run something like <a href="https://github.com/arctic-hen7/diana">Diana</a> on the same server!</p>
+<p>This integration should support almost every use case of Perseus, but there may be some extremely advanced things that you'll need to go back to basics for. If that's the case, please let us know by <a href="integrations/">opening an issue</a> (we want these integrations to be as powerful as possible), and in the meantime you can use the guide <a href="integrations/./serving.html">here</a> to see how to set up a server without using the integrations. If you need implementation details, check out the actual source code for the integration in the <a href="https://github.com/arctic-hen7/perseus">repository</a>.</p>
+<h2 id="installation-1"><a class="header" href="#installation-1">Installation</a></h2>
+<p>You can install the Actix Web integration by adding the following to your <code>Cargo.toml</code> under the <code>dependencies</code> section:</p>
+<pre><code class="language-toml">perseus-actix-web = &quot;0.1&quot;
+</code></pre>
+<p>Note that you will still need <code>actix-web</code>, <code>futures</code>, and <code>perseus</code> itself, even in a server repository.</p>
+<p>All Perseus integrations follow the same version format as the core library, meaning they're all updated simultaneously. This makes version management much easier, and it means that you can just install the same version of every Perseus package and not have to worry about compatibility issues.</p>
+<h2 id="usage-9"><a class="header" href="#usage-9">Usage</a></h2>
+<p>This is an example of a web server that only uses Perseus, but you can call <code>.configure()</code> on any existing web server. Note though that <strong>Perseus must be configured after all other logic</strong>, because it adds a generic handler for all remaining pages, which will break other more specific logic that comes after it.</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2018">use perseus::{FsConfigManager, SsrNode};
+use perseus_actix_web::{configurer, Options};
+use perseus_showcase_app::pages;
+use actix_web::{HttpServer, App};
+use futures::executor::block_on;
+
+#[actix_web::main]
+async fn main() -&gt; std::io::Result&lt;()&gt; {
+	HttpServer::new(|| {
+        App::new()
+			// Other server logic here
+        	.configure(
+				block_on(configurer(
+					Options {
+						index: &quot;../app/index.html&quot;.to_string(),
+						js_bundle: &quot;../app/pkg/bundle.js&quot;.to_string(),
+						wasm_bundle: &quot;../app/pkg/perseus_showcase_app_bg.wasm&quot;.to_string(),
+						templates_map: pages::get_templates_map::&lt;SsrNode&gt;()
+					},
+					FsConfigManager::new()
+				))
+			)
+    })
+    	.bind((&quot;localhost&quot;, 8080))?
+    	.run()
+    	.await
+}
+</code></pre></pre>
+<p>When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your <code>index.html</code> file, your JS bundle, and your WASM bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).</p>
+<p>Also, because this plugs into an existing server, you have full control over hosting options, like the port to be used!</p>
+<p>It's worth mentioning the blocking component of this design. The function that returns the closure that actually configures your server for Perseus is asynchronous because it needs to get your render configuration and add it as data to the server (this improves performance by reducing reads), which unfortunately is an asynchronous operation. We also can't <code>.await</code> that without causing ownership errors due to Actix Web's closure structure, which means the best solution for now is to <code>block_on</code> that configuration (which won't impact performance other than in your startup times, and all that's happening is a read from a file). If you have a better solution, <a href="https://github.com/arctic-hen7/pulls">PRs are welcome</a>!</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="config-managers"><a class="header" href="#config-managers">Config Managers</a></h1>
 <p>As you may have noticed, Perseus generates a considerable volume of static files to speed up serving your app and to cache various data. Storing these is trivial in development, they can just be put in a <code>dist</code> folder or the like. However, when in production, we don't always have access to such luxuries as a stateful filesystem, and we may need to access files from elsewhere, like a database or a CDN.</p>
 <h2 id="default"><a class="header" href="#default">Default</a></h2>
