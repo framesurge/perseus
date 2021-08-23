@@ -1,0 +1,12 @@
+# This ensures your code style preferences are enforced no matter what editor you and your contributors use!
+# They'll need to install the Editorconfig extension in their editr of choice first though.
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+end_of_line = lf
