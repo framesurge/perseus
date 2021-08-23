@@ -4,7 +4,10 @@ Having generated a large number of static files, you'll need a system to host yo
 
 Perseus aims to be agnostic as to what framework you use to host your files, and any framework that gives you access to request headers and wildcard paths should work (in other words, any framework worth its salt).
 
-In future, Perseus will provide separate integration libraries for common frameworks that manage this side of things for you!
+If you're using one of our supported integrations, you don't have to bother with this page, nearly all of it can be done for you!
+
+- [Actix Web](./integrations/actix-web.md)
+- *More coming soon...*
 
 ## Endpoints
 

@@ -15,4 +15,5 @@
 	- [Incremental generation](./strategies/incremental.md)
 - [Building](./building.md)
 - [Serving](./serving.md)
+	- [Actix Web Integration](./integrations/actix-web.md)
 - [Config Managers](./config_managers.md)
