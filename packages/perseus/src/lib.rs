@@ -10,7 +10,7 @@ pub use http;
 pub use http::Request as HttpRequest;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
-pub use sycamore::{DomNode, SsrNode};
+pub use sycamore::{DomNode, SsrNode, generic_node::GenericNode};
 
 pub use crate::build::{build_template, build_templates};
 pub use crate::config_manager::{ConfigManager, FsConfigManager};
