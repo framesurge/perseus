@@ -36,28 +36,34 @@ pub trait ConfigManager: Clone {
     async fn write(&self, name: &str, content: &str) -> Result<()>;
 }
 
-#[derive(Default, Clone)]
-pub struct FsConfigManager {}
+#[derive(Clone)]
+pub struct FsConfigManager {
+    root_path: String
+}
 impl FsConfigManager {
     /// Creates a new filesystem configuration manager. This function only exists to preserve the API surface of the trait.
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(root_path: String) -> Self {
+        Self {
+            root_path
+        }
     }
 }
 #[async_trait::async_trait]
 impl ConfigManager for FsConfigManager {
     async fn read(&self, name: &str) -> Result<String> {
-        match fs::metadata(name) {
-            Ok(_) => fs::read_to_string(name)
-                .map_err(|err| ErrorKind::ReadFailed(name.to_string(), err.to_string()).into()),
+        let asset_path = format!("{}/{}", self.root_path, name);
+        match fs::metadata(&asset_path) {
+            Ok(_) => fs::read_to_string(&asset_path)
+                .map_err(|err| ErrorKind::ReadFailed(asset_path, err.to_string()).into()),
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                bail!(ErrorKind::NotFound(name.to_string()))
+                bail!(ErrorKind::NotFound(asset_path))
             }
             Err(err) => bail!(ErrorKind::ReadFailed(name.to_string(), err.to_string())),
         }
     }
     async fn write(&self, name: &str, content: &str) -> Result<()> {
-        fs::write(name, content)
-            .map_err(|err| ErrorKind::WriteFailed(name.to_string(), err.to_string()).into())
+        let asset_path = format!("{}/{}", self.root_path, name);
+        fs::write(&asset_path, content)
+            .map_err(|err| ErrorKind::WriteFailed(asset_path, err.to_string()).into())
     }
 }

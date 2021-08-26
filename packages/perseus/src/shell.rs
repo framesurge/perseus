@@ -83,6 +83,17 @@ impl ErrorPages {
             &container.get::<DomNode>().inner_element(),
         );
     }
+    /// Gets the template for a page without rendering it into a container.
+    pub fn get_template_for_page(&self, url: &str, status: &u16, err: &str) -> SycamoreTemplate<DomNode> {
+        // Check if we have an explicitly defined page for this status code
+        // If not, we'll render the fallback page
+        let template_fn = match self.status_pages.contains_key(status) {
+            true => self.status_pages.get(status).unwrap(),
+            false => &self.fallback,
+        };
+
+        template_fn(url, status, err)
+    }
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the

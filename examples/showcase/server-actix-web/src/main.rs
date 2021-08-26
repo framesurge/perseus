@@ -16,7 +16,7 @@ async fn main() -> std::io::Result<()> {
 						wasm_bundle: "../app/pkg/perseus_showcase_app_bg.wasm".to_string(),
 						templates_map: pages::get_templates_map::<SsrNode>()
 					},
-					FsConfigManager::new()
+					FsConfigManager::new("../app/dist".to_string())
 				))
 			)
     })

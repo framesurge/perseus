@@ -1,0 +1,16 @@
+# This crate defines the user's app in terms that WASM can understand, making development significantly simpler.
+
+[package]
+name = "perseus-cli-server"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# We alias here because the package name will change based on whatever's in the user's manifest
+app = { package = "perseus-basic", path = "../../" }
+
+perseus-actix-web = { path = "../../../../packages/perseus-actix-web" }
+actix-web = "3.3"
+futures = "0.3"

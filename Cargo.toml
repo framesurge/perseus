@@ -4,5 +4,9 @@ members = [
 	"packages/perseus-actix-web",
 	"packages/perseus-cli",
 	"examples/showcase/app",
-	"examples/showcase/server-actix-web"
+	"examples/showcase/server-actix-web",
+    "examples/basic",
+    # FIXME
+    "examples/basic/.perseus",
+    "examples/basic/.perseus/server"
 ]

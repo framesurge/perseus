@@ -22,7 +22,7 @@ pub struct PageData {
 
 /// Gets the configuration of how to render each page.
 pub async fn get_render_cfg(config_manager: &impl ConfigManager) -> Result<HashMap<String, String>> {
-    let content = config_manager.read("../app/dist/render_conf.json").await?;
+    let content = config_manager.read("render_conf.json").await?;
     let cfg = serde_json::from_str::<HashMap<String, String>>(&content)?;
 
     Ok(cfg)
@@ -34,9 +34,9 @@ async fn render_build_state(
     config_manager: &impl ConfigManager,
 ) -> Result<(String, Option<String>)> {
     // Get the static HTML
-    let html = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded)).await?;
+    let html = config_manager.read(&format!("static/{}.html", path_encoded)).await?;
     // Get the static JSON
-    let state = match config_manager.read(&format!("../app/dist/static/{}.json", path_encoded)).await {
+    let state = match config_manager.read(&format!("static/{}.json", path_encoded)).await {
         Ok(state) => Some(state),
         Err(_) => None,
     };
@@ -61,7 +61,7 @@ async fn get_incremental_cached(
     path_encoded: &str,
     config_manager: &impl ConfigManager,
 ) -> Option<String> {
-    let html_res = config_manager.read(&format!("../app/dist/static/{}.html", path_encoded)).await;
+    let html_res = config_manager.read(&format!("static/{}.html", path_encoded)).await;
 
     // We should only treat it as cached if it can be accessed and if we aren't in development (when everything should constantly reload)
     match html_res {
@@ -80,7 +80,7 @@ async fn should_revalidate(
     if template.revalidates_with_time() {
         // Get the time when it should revalidate (RFC 3339)
         let datetime_to_revalidate_str =
-            config_manager.read(&format!("../app/dist/static/{}.revld.txt", path_encoded)).await?;
+            config_manager.read(&format!("static/{}.revld.txt", path_encoded)).await?;
         let datetime_to_revalidate = DateTime::parse_from_rfc3339(&datetime_to_revalidate_str)?;
         // Get the current time (UTC)
         let now = Utc::now();
@@ -119,15 +119,15 @@ async fn revalidate(
         // So if you're revalidating many pages weekly, they will NOT revalidate simultaneously, even if they're all queried thus
         let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
         config_manager.write(
-            &format!("../app/dist/static/{}.revld.txt", path_encoded),
+            &format!("static/{}.revld.txt", path_encoded),
             &datetime_to_revalidate,
         ).await?;
     }
     config_manager.write(
-        &format!("../app/dist/static/{}.json", path_encoded),
+        &format!("static/{}.json", path_encoded),
         &state.clone().unwrap(),
     ).await?;
-    config_manager.write(&format!("../app/dist/static/{}.html", path_encoded), &html).await?;
+    config_manager.write(&format!("static/{}.html", path_encoded), &html).await?;
 
     Ok((html, state))
 }
@@ -211,7 +211,7 @@ pub async fn get_page(
                         }
                         // Get the static JSON (if it exists, but it should)
                         states.build_state = match config_manager
-                            .read(&format!("../app/dist/static/{}.json", path_encoded)).await
+                            .read(&format!("static/{}.json", path_encoded)).await
                         {
                             Ok(state) => Some(state),
                             Err(_) => None,
@@ -237,18 +237,18 @@ pub async fn get_page(
                         // Write that to a static file, we'll update it every time we revalidate
                         // Note that this runs for every path generated, so it's fully usable with ISR
                         config_manager.write(
-                            &format!("../app/dist/static/{}.revld.txt", path_encoded),
+                            &format!("static/{}.revld.txt", path_encoded),
                             &datetime_to_revalidate,
                         ).await?;
                     }
                     // Cache all that
                     config_manager.write(
-                        &format!("../app/dist/static/{}.json", path_encoded),
+                        &format!("static/{}.json", path_encoded),
                         &state.clone().unwrap(),
                     ).await?;
                     // Write that prerendered HTML to a static file
                     config_manager.write(
-                        &format!("../app/dist/static/{}.html", path_encoded),
+                        &format!("static/{}.html", path_encoded),
                         &html_val,
                     ).await?;
 

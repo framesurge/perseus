@@ -3,7 +3,7 @@ use perseus::{build_templates, FsConfigManager, SsrNode};
 use perseus_showcase_app::pages;
 
 fn main() {
-    let config_manager = FsConfigManager::new();
+    let config_manager = FsConfigManager::new("./dist".to_string());
 
     let fut = build_templates(
         vec![

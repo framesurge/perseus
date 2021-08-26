@@ -1,9 +1,13 @@
 use std::env;
 use std::io::Write;
-use lib::{PERSEUS_VERSION, help};
+use lib::{PERSEUS_VERSION, help, build};
 
 // All this does is run the program and terminate with the acquired exit code
 fn main() {
+    // In development, we'll test in the basic example
+    if cfg!(debug_assertions) {
+        env::set_current_dir("../../examples/basic").unwrap();
+    }
     let exit_code = real_main();
     std::process::exit(exit_code)
 }
@@ -33,28 +37,34 @@ fn core() -> Result<i32, String> {
     let mut prog_args: Vec<String> = env::args().collect();
     // This will panic if the first argument is not found (which is probably someone trying to fuzz us)
     let _executable_name = prog_args.remove(0);
+    // Get the working directory
+    // FIXME
+    let dir = env::current_dir()
+        .map_err(|err| format!("Couldn't get your current working directory: '{}'.", err))?;
+    let dir = match dir.to_str() {
+        Some(dir) => dir,
+        None => return Err(String::from("Couldn't get your current working directory (not vallid Unicode)."))
+    };
     // Check for special arguments
     if matches!(prog_args.get(0), Some(_)) {
         if prog_args[0] == "-v" || prog_args[0] == "--version" {
             writeln!(stdout, "You are currently running the Perseus CLI v{}! You can see the latest release at https://github.com/arctic-hen7/perseus/releases.", PERSEUS_VERSION).expect("Failed to write version.");
-            return Ok(0);
+            Ok(0)
         } else if prog_args[0] == "-h" || prog_args[0] == "--help" {
             help(stdout);
-            return Ok(0);
+            Ok(0)
         }
 		// Now we're checking commands
 		else if prog_args[0] == "build" {
-			todo!("build command")
+			build(&prog_args, dir)
 		} else if prog_args[0] == "serve" {
 			todo!("serve command")
 		} else {
 			writeln!(stdout, "Unknown command '{}'. You can see the help page with -h/--help.", prog_args[0]);
-			return Ok(1);
+			Ok(1)
 		}
     } else {
 		writeln!(stdout, "Please provide a command to run, or use -h/--help to see the help page.");
-		return Ok(1);
+		Ok(1)
 	}
-
-    Ok(0)
 }

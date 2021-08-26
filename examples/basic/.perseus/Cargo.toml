@@ -1,0 +1,32 @@
+# This crate defines the user's app in terms that WASM can understand, making development significantly simpler.
+
+[package]
+name = "perseus-cli-builder"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# We alias here because the package name will change based on whatever's in the user's manifest
+app = { package = "perseus-basic", path = "../" }
+
+perseus = { path = "../../../packages/perseus" }
+sycamore = { version = "0.5.1", features = ["ssr"] }
+sycamore-router = "0.5.1"
+web-sys = { version = "0.3", features = ["Headers", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1" # Possibly don't need?
+console_error_panic_hook = "0.1.6"
+urlencoding = "2.1"
+futures = "0.3"
+
+# This section is needed for WASM Pack (which we use instead of Trunk for flexibility)
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# We define a binary for building, serving, and doing both
+[[bin]]
+name = "perseus-internal"
+path = "src/bin/build.rs"
