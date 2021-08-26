@@ -30,7 +30,6 @@ pub(crate) async fn fetch(url: &str) -> Result<Option<String>> {
     // Get the body thereof
     let body_promise = res.text().map_err(js_err_handler)?;
     let body = JsFuture::from(body_promise).await.map_err(js_err_handler)?;
-    web_sys::console::log_1(&JsValue::from(&body));
 
     // Convert that into a string (this will be `None` if it wasn't a string in the JS)
     let body_str = body.as_string();
