@@ -5,8 +5,10 @@ members = [
 	"packages/perseus-cli",
 	"examples/showcase/app",
 	"examples/showcase/server-actix-web",
-    "examples/basic",
-    # FIXME
-    "examples/basic/.perseus",
-    "examples/basic/.perseus/server"
+    "examples/cli",
+    # We have the CLI subcrates as workspace members so we can actively develop on them
+    # They also can't be a workspace until nested workspaces are supported
+    "examples/cli/.perseus",
+    "examples/cli/.perseus/server",
+    "examples/basic"
 ]

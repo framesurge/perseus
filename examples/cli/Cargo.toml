@@ -1,5 +1,8 @@
+# This package is a testing playground for the CLI subcrates, which are stored here under `.perseus/`.
+# Use the `basic` example for learning
+
 [package]
-name = "perseus-basic"
+name = "perseus-example-cli"
 version = "0.1.0"
 edition = "2018"
 

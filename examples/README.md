@@ -18,4 +18,6 @@ members = [
 
 All examples should have both an `app` and a `server` directory.
 
-- Showcase -- an app that demonstrates all the different features of Perseus, including SSR, SSG, and ISR (this example is actively used for testing)
+-   Showcase -- an app that demonstrates all the different features of Perseus, including SSR, SSG, and ISR (this example is actively used for testing)
+-   Basic -- a simple app that uses the Perseus CLI (symlinks to CLI example)
+-   CLI -- same as basic, but includes the CLI subcrates (actively used for testing/development)
