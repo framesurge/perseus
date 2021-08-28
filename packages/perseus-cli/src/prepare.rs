@@ -5,7 +5,9 @@ use std::fs;
 use std::io::Write;
 use std::fs::OpenOptions;
 use std::process::Command;
+use cargo_toml::Manifest;
 use crate::errors::*;
+use crate::PERSEUS_VERSION;
 
 /// This literally includes the entire subcrate in the program, allowing more efficient development.
 const SUBCRATES: Dir = include_dir!("../../examples/cli/.perseus");
@@ -33,6 +35,41 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
         if let Err(err) = SUBCRATES.extract(&target) {
             bail!(ErrorKind::ExtractionFailed(target.to_str().map(|s| s.to_string()), err.to_string()))
         }
+        // Use the current version of this crate (and thus all Perseus crates) to replace the relative imports
+        // That way everything works in dev and in prod on another system!
+        let mut root_manifest = target.clone();
+        root_manifest.extend(["Cargo.toml"]);
+        let mut server_manifest = target.clone();
+        server_manifest.extend(["server", "Cargo.toml"]);
+        let root_manifest_contents = fs::read_to_string(&root_manifest)
+            .map_err(|err| ErrorKind::ManifestUpdateFailed(root_manifest.to_str().map(|s| s.to_string()), err.to_string()))?;
+        let server_manifest_contents = fs::read_to_string(&server_manifest)
+            .map_err(|err| ErrorKind::ManifestUpdateFailed(server_manifest.to_str().map(|s| s.to_string()), err.to_string()))?;
+        // Get the name of the user's crate (which the subcrates depend on)
+        // We assume they're running this in a folder with a Cargo.toml...
+        let user_manifest = Manifest::from_path("./Cargo.toml")
+            .map_err(|err| ErrorKind::GetUserManifestFailed(err.to_string()))?;
+        let user_crate_name = user_manifest.package;
+        let user_crate_name = match user_crate_name {
+            Some(package) => package.name,
+            None => bail!(ErrorKind::GetUserManifestFailed("no '[package]' section in manifest".to_string()))
+        };
+        // Replace the relative path references to Perseus packages
+        // Also update the name of the user's crate (Cargo needs more than just a path and an alias)
+        let updated_root_manifest = root_manifest_contents
+            .replace("{ path = \"../../../packages/perseus\" }", &format!("\"{}\"", PERSEUS_VERSION))
+            .replace("perseus-example-cli", &user_crate_name);
+        let updated_server_manifest = server_manifest_contents
+            .replace("{ path = \"../../../../packages/perseus-actix-web\" }", &format!("\"{}\"", PERSEUS_VERSION))
+            .replace("perseus-example-cli", &user_crate_name);
+        // Write the updated manifests back
+        if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {
+            bail!(ErrorKind::ManifestUpdateFailed(root_manifest.to_str().map(|s| s.to_string()), err.to_string()))
+        }
+        if let Err(err) = fs::write(&server_manifest, updated_server_manifest) {
+            bail!(ErrorKind::ManifestUpdateFailed(server_manifest.to_str().map(|s| s.to_string()), err.to_string()))
+        }
+
         // If we aren't already gitignoring the subcrates, update .gitignore to do so
         if let Ok(contents) = fs::read_to_string(".gitignore") {
             if contents.contains(".perseus/") {

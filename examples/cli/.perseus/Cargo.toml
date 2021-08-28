@@ -1,4 +1,5 @@
 # This crate defines the user's app in terms that WASM can understand, making development significantly simpler.
+# IMPORTANT: spacing matters in this file for runtime replacements, do NOT change it!
 
 [package]
 name = "perseus-cli-builder"
