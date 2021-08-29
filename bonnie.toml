@@ -13,7 +13,7 @@ dev.subcommands.serve.args = [ "server" ]
 # TODO fix this with an example
 dev.subcommands.cli = [
 	"cd packages/perseus-cli",
-	"cargo watch -x \"run --bin cli\""
+	"cargo run -- %%"
 ]
 build = "cargo build"
 test = "cargo watch -x \"test\""
