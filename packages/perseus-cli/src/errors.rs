@@ -44,6 +44,16 @@ error_chain! {
             display("Couldn't remove '.perseus/' directory at '{:?}'. Please remove the '.perseus/' directory manually (particularly if you didn't intentionally run the 'clean' command, that means the directory has been corrupted). Error was: '{}'.", target, err)
 
         }
+        /// For when executing a system command after preparation failed. This shouldn't cause a directory deletion.
+        CmdExecFailed(cmd: String, err: String) {
+            description("command exeuction failed")
+            display("Couldn't execute command '{}'. Error was: '{}'.", cmd, err)
+        }
+        /// For when watching failes for changes failed.
+        WatcherFailed(path: String, err: String) {
+            description("watching files failed")
+            display("Couldn't watch '{}' for changes. Error was: '{}'.", path, err)
+        }
     }
 }
 

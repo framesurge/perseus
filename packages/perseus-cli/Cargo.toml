@@ -9,6 +9,9 @@ edition = "2018"
 include_dir = "0.6"
 error-chain = "0.12"
 cargo_toml = "0.9"
+indicatif = "0.16"
+console = "0.14"
+notify = "4.0"
 
 [lib]
 name = "lib"

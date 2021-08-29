@@ -6,9 +6,9 @@ use lib::errors::*;
 
 // All this does is run the program and terminate with the acquired exit code
 fn main() {
-    // In development, we'll test in the basic example
+    // In development, we'll test in the `basic` example
     if cfg!(debug_assertions) {
-        env::set_current_dir("../../examples/basic").unwrap();
+        env::set_current_dir("../../examples/cli").unwrap();
     }
     let exit_code = real_main();
     std::process::exit(exit_code)
@@ -60,7 +60,7 @@ fn core(dir: PathBuf) -> Result<i32> {
     // Check for special arguments
     if matches!(prog_args.get(0), Some(_)) {
         if prog_args[0] == "-v" || prog_args[0] == "--version" {
-            writeln!(stdout, "You are currently running the Perseus CLI v{}! You can see the latest release at https://github.com/arctic-hen7/perseus/releases.", PERSEUS_VERSION).expect("Failed to write version.");
+            writeln!(stdout, "You are currently running the Perseus CLI v{}! You can see the latest release at https://github.com/arctic-hen7/perseus/releases.", PERSEUS_VERSION).expect("Failed to write to stdout.");
             Ok(0)
         } else if prog_args[0] == "-h" || prog_args[0] == "--help" {
             help(stdout);
@@ -70,24 +70,24 @@ fn core(dir: PathBuf) -> Result<i32> {
 		    if prog_args[0] == "build" {
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
-		    	build(dir, &prog_args)?;
-                Ok(0)
+		    	let exit_code = build(dir, &prog_args)?;
+                Ok(exit_code)
 		    } else if prog_args[0] == "serve" {
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
-		    	serve(dir, &prog_args)?;
-                Ok(0)
+		    	let exit_code = serve(dir, &prog_args)?;
+                Ok(exit_code)
             } else if prog_args[0] == "clean" {
 		    	// Just delete the '.perseus/' directory directly, as we'd do in a corruption
                 delete_bad_dir(dir)?;
                 Ok(0)
             } else {
-                writeln!(stdout, "Unknown command '{}'. You can see the help page with -h/--help.", prog_args[0]);
+                writeln!(stdout, "Unknown command '{}'. You can see the help page with -h/--help.", prog_args[0]).expect("Failed to write to stdout.");
 			    Ok(1)
             }
 		}
     } else {
-		writeln!(stdout, "Please provide a command to run, or use -h/--help to see the help page.");
+		writeln!(stdout, "Please provide a command to run, or use -h/--help to see the help page.").expect("Failed to write to stdout.");
 		Ok(1)
 	}
 }

@@ -3,6 +3,7 @@ mod prepare;
 pub mod errors;
 mod build;
 mod serve;
+mod cmd;
 
 use errors::*;
 use std::fs;

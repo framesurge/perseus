@@ -11,9 +11,10 @@ This is the CLI for Perseus, a super-fast WebAssembly frontend development frame
 -h, --help			prints this help page
 -v, --version			prints the current version of the CLI
 
-build				builds your app (-p/--prod for production, -w/--watch to watch files)
-serve				serves your app (accepts $PORT and $HOST env vars)
+build				builds your app
+serve				serves your app (accepts $PORT and $HOST env vars, --no-build to serve pre-built files)
 
+Please note that watching for file changes is not yet inbuilt, but can be achieved with a tool like 'entr' in the meantime.
 Further information can be found at https://arctic-hen7.github.io/perseus.
         ",
         version = PERSEUS_VERSION
