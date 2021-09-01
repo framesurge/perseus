@@ -54,6 +54,21 @@ error_chain! {
             description("watching files failed")
             display("Couldn't watch '{}' for changes. Error was: '{}'.", path, err)
         }
+        /// For when the next line of the stdout of a command is `None` when it shouldn't have been.
+        NextStdoutLineNone {
+            description("next stdout line was None, expected Some(_)")
+            display("Executing a command failed because it seemed to stop reporting prmeaturely. If this error persists, you should file a bug report (particularly if you've just upgraded Rust).")
+        }
+        /// For when getting the path to the built executable for the server from the JSON build output failed.
+        GetServerExecutableFailed(err: String) {
+            description("getting server executable path failed")
+            display("Couldn't get the path to the server executable from `cargo build`. If this problem persists, please report it as a bug (especially if you just updated cargo). Error was: '{}'.", err)
+        }
+        /// For when getting the path to the built executable for the server from the JSON build output failed.
+        PortNotNumber(err: String) {
+            description("port in PORT environment variable couldn't be parsed as number")
+            display("Couldn't parse 'PORT' environment variable as a number, please check that you've provided the correct value. Error was: '{}'.", err)
+        }
     }
 }
 

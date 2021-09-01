@@ -11,7 +11,8 @@ error-chain = "0.12"
 cargo_toml = "0.9"
 indicatif = "0.16"
 console = "0.14"
-notify = "4.0"
+serde = "1"
+serde_json = "1"
 
 [lib]
 name = "lib"

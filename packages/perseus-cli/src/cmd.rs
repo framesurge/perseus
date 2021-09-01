@@ -6,11 +6,12 @@ use console::Emoji;
 use crate::errors::*;
 
 // Some useful emojis
-static SUCCESS: Emoji<'_, '_> = Emoji("✅", "success!");
-static FAILURE: Emoji<'_, '_> = Emoji("❌", "failed!");
+pub static SUCCESS: Emoji<'_, '_> = Emoji("✅", "success!");
+pub static FAILURE: Emoji<'_, '_> = Emoji("❌", "failed!");
 
 /// Runs the given command conveniently, returning the exit code. Notably, this parses the given command by separating it on spaces.
-pub fn run_cmd(raw_cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<i32> {
+/// Returns the command's output and the exit code.
+pub fn run_cmd(raw_cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(String, String, i32)> {
     let mut cmd_args: Vec<&str> = raw_cmd.split(' ').collect();
     let cmd = cmd_args.remove(0);
 
@@ -33,10 +34,16 @@ pub fn run_cmd(raw_cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<i32> 
         std::io::stderr().write_all(&output.stderr).unwrap();
     }
 
-    Ok(exit_code)
+    Ok((
+        String::from_utf8_lossy(&output.stdout).to_string(),
+        String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code
+    ))
 }
 
-pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<i32> {
+/// Runs a series of commands and provides a nice spinner with a custom message. Returns the last command's output and an appropriate exit
+/// code (0 if everything worked, otherwise the exit code of the one that failed).
+pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<(String, String, i32)> {
     // Tell the user about the stage with a nice progress bar
     let spinner = ProgressBar::new_spinner();
     spinner.set_style(
@@ -47,10 +54,11 @@ pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<i32>
     // Tick the spinner every 50 milliseconds
     spinner.enable_steady_tick(50);
 
+    let mut last_output = (String::new(), String::new());
     // Run the commands
     for cmd in cmds {
         // We make sure all commands run in the target directory ('.perseus/' itself)
-        let exit_code = run_cmd(cmd.to_string(), target, || {
+        let (stdout, stderr, exit_code) = run_cmd(cmd.to_string(), target, || {
             // We're done, we'll write a more permanent version of the message
             spinner.finish_with_message(format!(
                 "{}...{}",
@@ -58,9 +66,10 @@ pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<i32>
                 FAILURE
             ))
         })?;
+        last_output = (stdout, stderr);
         // If we have a non-zero exit code, we should NOT continue (stderr has been written to the console already)
         if exit_code != 0 {
-            return Ok(1);
+            return Ok((last_output.0, last_output.1, 1));
         }
     }
 
@@ -71,5 +80,5 @@ pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<i32>
         SUCCESS
     ));
 
-    Ok(0)
+    Ok((last_output.0, last_output.1, 0))
 }

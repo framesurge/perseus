@@ -11,15 +11,16 @@ static FINALIZING: Emoji<'_, '_> = Emoji("📦", "");
 /// Returns the exit code if it's non-zero.
 macro_rules! handle_exit_code {
     ($code:expr) => {
-        let code = $code;
+        let (_, _, code) = $code;
         if code != 0 {
             return Ok(code);
         }
     };
 }
 
-/// Actually builds the user's code, program arguments having been interpreted.
-fn build_internal(dir: PathBuf) -> Result<i32> {
+/// Actually builds the user's code, program arguments having been interpreted. This needs to know how many steps there are in total
+/// because the serving logic also uses it.
+pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
     let mut target = dir;
     target.extend([".perseus"]);
 
@@ -31,7 +32,7 @@ fn build_internal(dir: PathBuf) -> Result<i32> {
         &target,
         format!(
             "{} {} Generating your app",
-            style("[1/3]").bold().dim(),
+            style(format!("[1/{}]", num_steps)).bold().dim(),
             GENERATING
         )
     )?);
@@ -46,7 +47,7 @@ fn build_internal(dir: PathBuf) -> Result<i32> {
         &target,
         format!(
             "{} {} Building your app to WASM",
-            style("[2/3]").bold().dim(),
+            style(format!("[2/{}]", num_steps)).bold().dim(),
             BUILDING
         )
     )?);
@@ -58,7 +59,7 @@ fn build_internal(dir: PathBuf) -> Result<i32> {
         &target,
         format!(
             "{} {} Finalizing bundle",
-            style("[3/3]").bold().dim(),
+            style(format!("[3/{}]", num_steps)).bold().dim(),
             FINALIZING
         )
     )?);
@@ -76,7 +77,7 @@ pub fn build(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
     if should_watch == Some(&"-w".to_string()) || should_watch == Some(&"--watch".to_string()) {
         todo!("watching not yet supported, try a tool like 'entr'");
     }
-    let exit_code = build_internal(dir.clone())?;
+    let exit_code = build_internal(dir.clone(), 3)?;
 
     Ok(exit_code)
 }
