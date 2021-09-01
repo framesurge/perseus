@@ -5,6 +5,8 @@ mod build;
 mod serve;
 mod cmd;
 
+mod extraction;
+
 use errors::*;
 use std::fs;
 use std::path::PathBuf;

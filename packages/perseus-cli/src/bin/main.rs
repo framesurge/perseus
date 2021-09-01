@@ -8,7 +8,7 @@ use lib::errors::*;
 fn main() {
     // In development, we'll test in the `basic` example
     if cfg!(debug_assertions) {
-        env::set_current_dir("../../examples/cli").unwrap();
+        env::set_current_dir("../../examples/basic").unwrap();
     }
     let exit_code = real_main();
     std::process::exit(exit_code)
@@ -77,6 +77,10 @@ fn core(dir: PathBuf) -> Result<i32> {
                 prepare(dir.clone())?;
 		    	let exit_code = serve(dir, &prog_args)?;
                 Ok(exit_code)
+            } else if prog_args[0] == "prep" {
+                // Set up the '.perseus/' directory if needed
+                prepare(dir.clone())?;
+                Ok(0)
             } else if prog_args[0] == "clean" {
 		    	// Just delete the '.perseus/' directory directly, as we'd do in a corruption
                 delete_bad_dir(dir)?;

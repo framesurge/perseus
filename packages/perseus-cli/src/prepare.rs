@@ -8,12 +8,11 @@ use std::process::Command;
 use cargo_toml::Manifest;
 use crate::errors::*;
 use crate::PERSEUS_VERSION;
+use crate::extraction::extract_dir;
 
 /// This literally includes the entire subcrate in the program, allowing more efficient development.
 const SUBCRATES: Dir = include_dir!("../../examples/cli/.perseus");
-// const SUBCRATES: Dir = include_dir!("./test");
 
-// BUG: `include_dir` currently doesn't support recursive extraction, tracking issue is https://github.com/Michael-F-Bryan/include_dir/issues/59
 /// Prepares the user's project by copying in the `.perseus/` subcrates. We use these subcrates to do all the building/serving, we just
 /// have to execute the right commands in the CLI. We can essentially treat the subcrates themselves as a blackbox of just a folder.
 pub fn prepare(dir: PathBuf) -> Result<()> {
@@ -32,7 +31,7 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
             bail!(ErrorKind::ExtractionFailed(target.to_str().map(|s| s.to_string()), err.to_string()))
         }
         // Notably, this function will not do anything or tell us if the directory already exists...
-        if let Err(err) = SUBCRATES.extract(&target) {
+        if let Err(err) =  extract_dir(SUBCRATES, &target) {
             bail!(ErrorKind::ExtractionFailed(target.to_str().map(|s| s.to_string()), err.to_string()))
         }
         // Use the current version of this crate (and thus all Perseus crates) to replace the relative imports
@@ -56,12 +55,15 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
         };
         // Replace the relative path references to Perseus packages
         // Also update the name of the user's crate (Cargo needs more than just a path and an alias)
+        // Also add an empty `[workspace]` key so we exclude from any of the user's workspace settings
         let updated_root_manifest = root_manifest_contents
             .replace("{ path = \"../../../packages/perseus\" }", &format!("\"{}\"", PERSEUS_VERSION))
-            .replace("perseus-example-cli", &user_crate_name);
+            .replace("perseus-example-cli", &user_crate_name)
+            + "\n[workspace]";
         let updated_server_manifest = server_manifest_contents
             .replace("{ path = \"../../../../packages/perseus-actix-web\" }", &format!("\"{}\"", PERSEUS_VERSION))
-            .replace("perseus-example-cli", &user_crate_name);
+            .replace("perseus-example-cli", &user_crate_name)
+            + "\n[workspace]";
         // Write the updated manifests back
         if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {
             bail!(ErrorKind::ManifestUpdateFailed(root_manifest.to_str().map(|s| s.to_string()), err.to_string()))

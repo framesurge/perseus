@@ -10,7 +10,6 @@ dev.subcommands.serve.cmd = [
 	"bonnie serve %server"
 ]
 dev.subcommands.serve.args = [ "server" ]
-# TODO fix this with an example
 dev.subcommands.cli = [
 	"cd packages/perseus-cli",
 	"cargo run -- %%"
