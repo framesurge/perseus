@@ -25,7 +25,7 @@ pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
     })
 }
 
-pub fn get_page<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("about").template(template_fn())
 }
 ```

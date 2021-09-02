@@ -2,8 +2,6 @@
 
 [Book][book] • [Crate Page][crate] • [API Documentation][docs] • [Contributing][contrib]
 
-> 🚧 Perseus is **nearly** ready for v0.1.0, but is still under construction! 🚧
-
 Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore) and provides a NextJS-like API!
 
 - ✨ Supports static generation (serving only static resources)
@@ -14,7 +12,7 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 
 ## How to use
 
-Check out the docs [here](https://arctic-hen7.github.io/perseus) (WORK IN PROGRESS!) for how to use Perseus.
+Check out the docs [here](https://arctic-hen7.github.io/perseus) for how to use Perseus.
 
 ## Aim
 
@@ -26,21 +24,15 @@ There is a sore lack of Rust frameworks for frontend development that support mo
 
 ## Roadmap
 
-### Pre-beta
-
-These tasks still need to be done before Perseus can be pushed to v0.1.0.
-
-- [ ] Support providing request data to SSR renderers
-
 ### Pre-stable
 
 These tasks still need to be done before Perseus can be pushed to v1.0.0.
 
+* [x] Create a custom CLI as a harness for apps without riediculous amounts of configuration needed
 - [ ] Support custom template hierarchies
-- [ ] Create a custom CLI as a harness for apps without riediculous amounts of configuration needed
 - [ ] Support i18n out of the box
 - [ ] (Maybe) Implement custom router
-- [ ] Pre-built integrations for Actix Web and AWS Lambda
+- [ ] Pre-built integrations for Actix Web (done) and AWS Lambda (todo)
 
 ### Beyond
 
