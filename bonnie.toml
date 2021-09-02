@@ -28,7 +28,7 @@ doc = [
 release = "standard-version --sign --commit-all && git push --follow-tags origin main"
 
 # Publishes each package
-publish-core = [
+publish = [
     "cd packages/perseus",
     "cargo publish",
     "cd ../perseus-actix-web",
