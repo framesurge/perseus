@@ -1,0 +1,54 @@
+{
+    "types": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "docs", "section": "Documentation Changes" },
+        { "type": "perf", "section": "Performance Improvements" },
+        { "type": "refactor", "section": "Code Refactorings" },
+        { "type": "test", "section": "Tests", "hidden": true },
+        { "type": "build", "section": "Build System", "hidden": true },
+        { "type": "ci", "hidden": true },
+
+        {
+            "type": "feat",
+            "section": "Features",
+            "hidden": false
+        },
+        {
+            "type": "fix",
+            "section": "Bug Fixes",
+            "hidden": false
+        },
+        {
+            "type": "chore",
+            "section": "Chores",
+            "hidden": true
+        },
+        {
+            "type": "docs",
+            "section": "Documentation Changes",
+            "hidden": false
+        },
+        {
+            "type": "style",
+            "section": "Code Style Changes",
+            "hidden": true
+        },
+        {
+            "type": "refactor",
+            "section": "Code Refactorings",
+            "hidden": true
+        },
+        {
+            "type": "perf",
+            "section": "Performance Improvements",
+            "hidden": false
+        },
+        {
+            "type": "test",
+            "section": "Code Testing Changes",
+            "hidden": true
+        }
+    ],
+    "releaseCommitMessageFormat": "chore(release): 🔖 {{currentTag}}"
+}
