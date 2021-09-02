@@ -1,6 +1,6 @@
 use perseus::Template;
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[component(NewPostPage<G>)]
 pub fn new_post_page() -> SycamoreTemplate<G> {

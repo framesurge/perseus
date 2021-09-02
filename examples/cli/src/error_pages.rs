@@ -1,4 +1,4 @@
-use perseus::{ErrorPages};
+use perseus::ErrorPages;
 use sycamore::template;
 
 pub fn get_error_pages() -> ErrorPages {

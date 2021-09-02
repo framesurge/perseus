@@ -1,7 +1,7 @@
-use std::path::PathBuf;
-use console::{style, Emoji};
 use crate::cmd::run_stage;
 use crate::errors::*;
+use console::{style, Emoji};
+use std::path::PathBuf;
 
 // Emojis for stages
 static GENERATING: Emoji<'_, '_> = Emoji("🔨", "");
@@ -26,9 +26,7 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
 
     // Static generation
     handle_exit_code!(run_stage(
-        vec![
-            "cargo run"
-        ],
+        vec!["cargo run"],
         &target,
         format!(
             "{} {} Generating your app",
@@ -53,9 +51,7 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
     )?);
     // JS bundle generation
     handle_exit_code!(run_stage(
-        vec![
-            "rollup main.js --format iife --file dist/pkg/bundle.js"
-        ],
+        vec!["rollup main.js --format iife --file dist/pkg/bundle.js"],
         &target,
         format!(
             "{} {} Finalizing bundle",

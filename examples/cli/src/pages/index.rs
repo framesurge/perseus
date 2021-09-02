@@ -1,7 +1,7 @@
-use perseus::{Template, StringResultWithCause};
+use perseus::{StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IndexPageProps {

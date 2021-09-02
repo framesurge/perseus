@@ -77,8 +77,8 @@ error_chain! {
 pub fn err_should_cause_deletion(err: &Error) -> bool {
     matches!(
         err.kind(),
-        ErrorKind::ExtractionFailed(_, _) |
-        ErrorKind::GitignoreUpdateFailed(_) |
-        ErrorKind::ManifestUpdateFailed(_, _)
+        ErrorKind::ExtractionFailed(_, _)
+            | ErrorKind::GitignoreUpdateFailed(_)
+            | ErrorKind::ManifestUpdateFailed(_, _)
     )
 }

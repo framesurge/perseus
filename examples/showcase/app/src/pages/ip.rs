@@ -1,9 +1,9 @@
 // This page illustrates SSR
 
-use perseus::{Template, Request, StringResultWithCause};
+use perseus::{Request, StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize)]
 pub struct IpPageProps {
@@ -33,8 +33,7 @@ pub async fn get_request_state(_path: String, req: Request) -> StringResultWithC
         // Gets the client's IP address
         ip: format!(
             "{:?}",
-            req
-                .headers()
+            req.headers()
                 .get("X-Forwarded-For")
                 .unwrap_or(&perseus::http::HeaderValue::from_str("hidden from view!").unwrap())
         ),

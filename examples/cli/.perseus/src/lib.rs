@@ -1,15 +1,8 @@
-use app::{
-    AppRoute,
-    APP_ROUTE,
-    get_error_pages,
-    match_route
-};
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use app::{get_error_pages, match_route, AppRoute, APP_ROUTE};
+use perseus::app_shell;
 use sycamore::prelude::template;
 use sycamore_router::BrowserRouter;
-use perseus::{
-    app_shell
-};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 /// The entrypoint into the app itself. This will be compiled to WASM and actually executed, rendering the rest of the app.
 #[wasm_bindgen]

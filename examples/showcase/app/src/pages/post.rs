@@ -1,7 +1,7 @@
-use perseus::{Template, StringResultWithCause, ErrorCause};
+use perseus::{ErrorCause, StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize)]
 pub struct PostPageProps {
@@ -34,7 +34,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
 pub async fn get_static_props(path: String) -> StringResultWithCause<String> {
     // This path is illegal, and can't be rendered
     if path == "post/tests" {
-        return Err(("illegal page".to_string(), ErrorCause::Client(Some(404))))
+        return Err(("illegal page".to_string(), ErrorCause::Client(Some(404))));
     }
     // This is just an example
     let title = urlencoding::decode(&path).unwrap();
@@ -51,10 +51,7 @@ pub async fn get_static_props(path: String) -> StringResultWithCause<String> {
 }
 
 pub async fn get_static_paths() -> Result<Vec<String>, String> {
-    Ok(vec![
-        "test".to_string(),
-        "blah/test/blah".to_string()
-    ])
+    Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {

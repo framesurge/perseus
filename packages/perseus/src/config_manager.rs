@@ -38,14 +38,12 @@ pub trait ConfigManager: Clone {
 
 #[derive(Clone)]
 pub struct FsConfigManager {
-    root_path: String
+    root_path: String,
 }
 impl FsConfigManager {
     /// Creates a new filesystem configuration manager. This function only exists to preserve the API surface of the trait.
     pub fn new(root_path: String) -> Self {
-        Self {
-            root_path
-        }
+        Self { root_path }
     }
 }
 #[async_trait::async_trait]

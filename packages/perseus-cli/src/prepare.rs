@@ -1,14 +1,14 @@
-use std::path::PathBuf;
-use include_dir::{Dir, include_dir};
+use crate::errors::*;
+use crate::extraction::extract_dir;
+use crate::PERSEUS_VERSION;
+use cargo_toml::Manifest;
+use include_dir::{include_dir, Dir};
 use std::env;
 use std::fs;
-use std::io::Write;
 use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::PathBuf;
 use std::process::Command;
-use cargo_toml::Manifest;
-use crate::errors::*;
-use crate::PERSEUS_VERSION;
-use crate::extraction::extract_dir;
 
 /// This literally includes the entire subcrate in the program, allowing more efficient development.
 const SUBCRATES: Dir = include_dir!("../../examples/cli/.perseus");
@@ -28,11 +28,17 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
     } else {
         // Write the stored directory to that location, creating the directory first
         if let Err(err) = fs::create_dir(&target) {
-            bail!(ErrorKind::ExtractionFailed(target.to_str().map(|s| s.to_string()), err.to_string()))
+            bail!(ErrorKind::ExtractionFailed(
+                target.to_str().map(|s| s.to_string()),
+                err.to_string()
+            ))
         }
         // Notably, this function will not do anything or tell us if the directory already exists...
-        if let Err(err) =  extract_dir(SUBCRATES, &target) {
-            bail!(ErrorKind::ExtractionFailed(target.to_str().map(|s| s.to_string()), err.to_string()))
+        if let Err(err) = extract_dir(SUBCRATES, &target) {
+            bail!(ErrorKind::ExtractionFailed(
+                target.to_str().map(|s| s.to_string()),
+                err.to_string()
+            ))
         }
         // Use the current version of this crate (and thus all Perseus crates) to replace the relative imports
         // That way everything works in dev and in prod on another system!
@@ -40,10 +46,18 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
         root_manifest.extend(["Cargo.toml"]);
         let mut server_manifest = target.clone();
         server_manifest.extend(["server", "Cargo.toml"]);
-        let root_manifest_contents = fs::read_to_string(&root_manifest)
-            .map_err(|err| ErrorKind::ManifestUpdateFailed(root_manifest.to_str().map(|s| s.to_string()), err.to_string()))?;
-        let server_manifest_contents = fs::read_to_string(&server_manifest)
-            .map_err(|err| ErrorKind::ManifestUpdateFailed(server_manifest.to_str().map(|s| s.to_string()), err.to_string()))?;
+        let root_manifest_contents = fs::read_to_string(&root_manifest).map_err(|err| {
+            ErrorKind::ManifestUpdateFailed(
+                root_manifest.to_str().map(|s| s.to_string()),
+                err.to_string(),
+            )
+        })?;
+        let server_manifest_contents = fs::read_to_string(&server_manifest).map_err(|err| {
+            ErrorKind::ManifestUpdateFailed(
+                server_manifest.to_str().map(|s| s.to_string()),
+                err.to_string(),
+            )
+        })?;
         // Get the name of the user's crate (which the subcrates depend on)
         // We assume they're running this in a folder with a Cargo.toml...
         let user_manifest = Manifest::from_path("./Cargo.toml")
@@ -51,25 +65,39 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
         let user_crate_name = user_manifest.package;
         let user_crate_name = match user_crate_name {
             Some(package) => package.name,
-            None => bail!(ErrorKind::GetUserManifestFailed("no '[package]' section in manifest".to_string()))
+            None => bail!(ErrorKind::GetUserManifestFailed(
+                "no '[package]' section in manifest".to_string()
+            )),
         };
         // Replace the relative path references to Perseus packages
         // Also update the name of the user's crate (Cargo needs more than just a path and an alias)
         // Also add an empty `[workspace]` key so we exclude from any of the user's workspace settings
         let updated_root_manifest = root_manifest_contents
-            .replace("{ path = \"../../../packages/perseus\" }", &format!("\"{}\"", PERSEUS_VERSION))
+            .replace(
+                "{ path = \"../../../packages/perseus\" }",
+                &format!("\"{}\"", PERSEUS_VERSION),
+            )
             .replace("perseus-example-cli", &user_crate_name)
             + "\n[workspace]";
         let updated_server_manifest = server_manifest_contents
-            .replace("{ path = \"../../../../packages/perseus-actix-web\" }", &format!("\"{}\"", PERSEUS_VERSION))
+            .replace(
+                "{ path = \"../../../../packages/perseus-actix-web\" }",
+                &format!("\"{}\"", PERSEUS_VERSION),
+            )
             .replace("perseus-example-cli", &user_crate_name)
             + "\n[workspace]";
         // Write the updated manifests back
         if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {
-            bail!(ErrorKind::ManifestUpdateFailed(root_manifest.to_str().map(|s| s.to_string()), err.to_string()))
+            bail!(ErrorKind::ManifestUpdateFailed(
+                root_manifest.to_str().map(|s| s.to_string()),
+                err.to_string()
+            ))
         }
         if let Err(err) = fs::write(&server_manifest, updated_server_manifest) {
-            bail!(ErrorKind::ManifestUpdateFailed(server_manifest.to_str().map(|s| s.to_string()), err.to_string()))
+            bail!(ErrorKind::ManifestUpdateFailed(
+                server_manifest.to_str().map(|s| s.to_string()),
+                err.to_string()
+            ))
         }
 
         // If we aren't already gitignoring the subcrates, update .gitignore to do so
@@ -84,7 +112,7 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
             .open(".gitignore");
         let mut file = match file {
             Ok(file) => file,
-            Err(err) => bail!(ErrorKind::GitignoreUpdateFailed(err.to_string()))
+            Err(err) => bail!(ErrorKind::GitignoreUpdateFailed(err.to_string())),
         };
         // Check for errors with appending to the file
         if let Err(err) = file.write_all(b"\n.perseus/") {
@@ -101,18 +129,30 @@ pub fn check_env() -> Result<()> {
     // We'll loop through each prerequisite executable to check their existence
     // If the spawn returns an error, it's considered not present, success means presence
     let prereq_execs = vec![
-        (env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()), "PERSEUS_CARGO_PATH"),
-        (env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()), "PERSEUS_WASM_PACK_PATH"),
+        (
+            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+            "PERSEUS_CARGO_PATH",
+        ),
+        (
+            env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
+            "PERSEUS_WASM_PACK_PATH",
+        ),
         // We dangerously assume that the user isn't using `npx`...
-        (env::var("PERSEUS_ROLLUP_PATH").unwrap_or_else(|_| "rollup".to_string()), "PERSEUS_ROLLUP_PATH")
+        (
+            env::var("PERSEUS_ROLLUP_PATH").unwrap_or_else(|_| "rollup".to_string()),
+            "PERSEUS_ROLLUP_PATH",
+        ),
     ];
 
     for exec in prereq_execs {
-        let res = Command::new(&exec.0)
-            .output();
+        let res = Command::new(&exec.0).output();
         // Any errors are interpreted as meaning that the user doesn't have the prerequisite installed properly.
         if let Err(err) = res {
-            bail!(ErrorKind::PrereqFailed(exec.0, exec.1.to_string(), err.to_string()))
+            bail!(ErrorKind::PrereqFailed(
+                exec.0,
+                exec.1.to_string(),
+                err.to_string()
+            ))
         }
     }
 

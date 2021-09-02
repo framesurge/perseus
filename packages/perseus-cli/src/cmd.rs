@@ -1,9 +1,9 @@
-use std::process::Command;
-use std::path::Path;
-use std::io::Write;
-use indicatif::{ProgressBar, ProgressStyle};
-use console::Emoji;
 use crate::errors::*;
+use console::Emoji;
+use indicatif::{ProgressBar, ProgressStyle};
+use std::io::Write;
+use std::path::Path;
+use std::process::Command;
 
 // Some useful emojis
 pub static SUCCESS: Emoji<'_, '_> = Emoji("✅", "success!");
@@ -23,7 +23,7 @@ pub fn run_cmd(raw_cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(Stri
         .map_err(|err| ErrorKind::CmdExecFailed(raw_cmd.clone(), err.to_string()))?;
 
     let exit_code = match output.status.code() {
-        Some(exit_code) => exit_code,       // If we have an exit code, use it
+        Some(exit_code) => exit_code,         // If we have an exit code, use it
         None if output.status.success() => 0, // If we don't, but we know the command succeeded, return 0 (success code)
         None => 1, // If we don't know an exit code but we know that the command failed, return 1 (general error code)
     };
@@ -37,7 +37,7 @@ pub fn run_cmd(raw_cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(Stri
     Ok((
         String::from_utf8_lossy(&output.stdout).to_string(),
         String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code
+        exit_code,
     ))
 }
 
@@ -46,10 +46,7 @@ pub fn run_cmd(raw_cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(Stri
 pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<(String, String, i32)> {
     // Tell the user about the stage with a nice progress bar
     let spinner = ProgressBar::new_spinner();
-    spinner.set_style(
-        ProgressStyle::default_spinner()
-            .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ")
-    );
+    spinner.set_style(ProgressStyle::default_spinner().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ "));
     spinner.set_message(format!("{}...", message));
     // Tick the spinner every 50 milliseconds
     spinner.enable_steady_tick(50);
@@ -60,11 +57,7 @@ pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<(Str
         // We make sure all commands run in the target directory ('.perseus/' itself)
         let (stdout, stderr, exit_code) = run_cmd(cmd.to_string(), target, || {
             // We're done, we'll write a more permanent version of the message
-            spinner.finish_with_message(format!(
-                "{}...{}",
-                message,
-                FAILURE
-            ))
+            spinner.finish_with_message(format!("{}...{}", message, FAILURE))
         })?;
         last_output = (stdout, stderr);
         // If we have a non-zero exit code, we should NOT continue (stderr has been written to the console already)
@@ -74,11 +67,7 @@ pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<(Str
     }
 
     // We're done, we'll write a more permanent version of the message
-    spinner.finish_with_message(format!(
-        "{}...{}",
-        message,
-        SUCCESS
-    ));
+    spinner.finish_with_message(format!("{}...{}", message, SUCCESS));
 
     Ok((last_output.0, last_output.1, 0))
 }

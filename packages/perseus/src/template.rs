@@ -5,8 +5,8 @@ use crate::Request;
 use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
-use sycamore::prelude::{GenericNode, Template as SycamoreTemplate};
 use std::sync::Arc;
+use sycamore::prelude::{GenericNode, Template as SycamoreTemplate};
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
@@ -89,7 +89,11 @@ macro_rules! make_async_trait {
 // A series of asynchronous closure traits that prevent the user from having to pin their functions
 make_async_trait!(GetBuildPathsFnType, StringResult<Vec<String>>);
 // The build state strategy needs an error cause if it's invoked from incremental
-make_async_trait!(GetBuildStateFnType, StringResultWithCause<String>, path: String);
+make_async_trait!(
+    GetBuildStateFnType,
+    StringResultWithCause<String>,
+    path: String
+);
 make_async_trait!(
     GetRequestStateFnType,
     StringResultWithCause<String>,

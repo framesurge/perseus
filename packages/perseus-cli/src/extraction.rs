@@ -1,9 +1,9 @@
 // This file contains a temporary fix for the issues with recursive extraction in `include_dir`
 // Tracking issue is https://github.com/Michael-F-Bryan/include_dir/issues/59
 
-use std::path::Path;
 use include_dir::Dir;
 use std::io::Write;
+use std::path::Path;
 
 /// Extracts a directory included with `include_dir!` until issue #59 is fixed on that module (recursive extraction support).
 pub fn extract_dir<S: AsRef<Path>>(dir: Dir, path: S) -> std::io::Result<()> {

@@ -1,11 +1,11 @@
-use std::path::PathBuf;
-use console::{style, Emoji};
-use std::env;
-use std::io::Write;
-use std::process::{Command, Stdio};
 use crate::build::build_internal;
 use crate::cmd::run_stage;
 use crate::errors::*;
+use console::{style, Emoji};
+use std::env;
+use std::io::Write;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
 // Emojis for stages
 static BUILDING_SERVER: Emoji<'_, '_> = Emoji("📡", "");
@@ -13,15 +13,13 @@ static SERVING: Emoji<'_, '_> = Emoji("🛰️ ", "");
 
 /// Returns the exit code if it's non-zero.
 macro_rules! handle_exit_code {
-    ($code:expr) => {
-        {
-            let (stdout, stderr, code) = $code;
-            if code != 0 {
-                return Ok(code);
-            }
-            (stdout, stderr)
+    ($code:expr) => {{
+        let (stdout, stderr, code) = $code;
+        if code != 0 {
+            return Ok(code);
         }
-    };
+        (stdout, stderr)
+    }};
 }
 
 /// Actually serves the user's app, program arguments having been interpreted. This needs to know if we've built as part of this process
@@ -29,7 +27,7 @@ macro_rules! handle_exit_code {
 fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
     let num_steps = match did_build {
         true => 5,
-        false => 2
+        false => 2,
     };
     let mut target = dir;
     // All the serving work can be done in the `server` subcrate after building is finished
@@ -38,13 +36,13 @@ fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
     // Build the server runner
     // We use the JSON message format so we can get extra info about the generated executable
     let (stdout, _stderr) = handle_exit_code!(run_stage(
-        vec![
-            "cargo build --message-format json"
-        ],
+        vec!["cargo build --message-format json"],
         &target,
         format!(
             "{} {} Building server",
-            style(format!("[{}/{}]", num_steps - 1, num_steps)).bold().dim(),
+            style(format!("[{}/{}]", num_steps - 1, num_steps))
+                .bold()
+                .dim(),
             BUILDING_SERVER
         )
     )?);
@@ -54,19 +52,25 @@ fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
     let msg = msgs.get(msgs.len() - 2);
     let msg = match msg {
         // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
-        Some(msg) => serde_json::from_str::<serde_json::Value>(msg).map_err(|err| ErrorKind::GetServerExecutableFailed(err.to_string()))?,
-        None => bail!(ErrorKind::GetServerExecutableFailed("expected second-last message, none existed (too few messages)".to_string()))
+        Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
+            .map_err(|err| ErrorKind::GetServerExecutableFailed(err.to_string()))?,
+        None => bail!(ErrorKind::GetServerExecutableFailed(
+            "expected second-last message, none existed (too few messages)".to_string()
+        )),
     };
     let server_exec_path = msg.get("executable");
     let server_exec_path = match server_exec_path {
         // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
-        Some(server_exec_path) => {
-            match server_exec_path.as_str() {
-                Some(server_exec_path) => server_exec_path,
-                None => bail!(ErrorKind::GetServerExecutableFailed("expected 'executable' field to be string".to_string()))
-            }
+        Some(server_exec_path) => match server_exec_path.as_str() {
+            Some(server_exec_path) => server_exec_path,
+            None => bail!(ErrorKind::GetServerExecutableFailed(
+                "expected 'executable' field to be string".to_string()
+            )),
         },
-        None => bail!(ErrorKind::GetServerExecutableFailed("expected 'executable' field in JSON map in second-last message, not present".to_string()))
+        None => bail!(ErrorKind::GetServerExecutableFailed(
+            "expected 'executable' field in JSON map in second-last message, not present"
+                .to_string()
+        )),
     };
 
     // Manually run the generated binary (invoking in the right directory context for good measure if it ever needs it in future)
@@ -79,7 +83,10 @@ fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
         .map_err(|err| ErrorKind::CmdExecFailed(server_exec_path.to_string(), err.to_string()))?;
     // Figure out what host/port the app will be live on
     let host = env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string()).parse::<u16>().map_err(|err| ErrorKind::PortNotNumber(err.to_string()))?;
+    let port = env::var("PORT")
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse::<u16>()
+        .map_err(|err| ErrorKind::PortNotNumber(err.to_string()))?;
     // Give the user a nice informational message
     println!(
         "  {} {} Your app is now live on http://{host}:{port}! To change this, re-run this command with different settings of the HOST/PORT environment variables.",
@@ -92,7 +99,7 @@ fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
     // Wait on the child process to finish (which it shouldn't unless there's an error), then perform error handling
     let output = child.wait_with_output().unwrap();
     let exit_code = match output.status.code() {
-        Some(exit_code) => exit_code,       // If we have an exit code, use it
+        Some(exit_code) => exit_code,         // If we have an exit code, use it
         None if output.status.success() => 0, // If we don't, but we know the command succeeded, return 0 (success code)
         None => 1, // If we don't know an exit code but we know that the command failed, return 1 (general error code)
     };

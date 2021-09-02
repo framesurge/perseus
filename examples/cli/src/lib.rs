@@ -1,5 +1,5 @@
-mod pages;
 mod error_pages;
+mod pages;
 
 use perseus::define_app;
 
@@ -12,7 +12,7 @@ pub enum Route {
     #[not_found]
     NotFound,
 }
-define_app!{
+define_app! {
     root: "#root",
     route: Route,
     router: {
