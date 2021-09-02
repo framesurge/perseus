@@ -23,7 +23,7 @@ serde_json = "1"
 
 Then, add a `lib.rs` file to your project under `src/` that contains the following:
 
-```toml
+```rust
 mod pages;
 mod error_pages;
 
