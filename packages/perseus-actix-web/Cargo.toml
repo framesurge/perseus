@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus" }
+perseus = { path = "../perseus", version = "0.1.0" }
 actix-web = "3.3"
 actix-files = "0.5"
 urlencoding = "2.1"
