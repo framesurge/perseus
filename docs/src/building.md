@@ -1,5 +1,7 @@
 # Building
 
+*You only need this page if you're not using the Perseus CLI, which performs this process for you!*
+
 After you've defined all your templates and the like, you'll of course need to build them into pages! Perseus tries to make this process as simple as possible.
 
 ## Usage

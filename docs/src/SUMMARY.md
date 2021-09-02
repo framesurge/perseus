@@ -4,6 +4,7 @@
 - [Setup](./setup.md)
 - [Architecture](./arch.md)
 - [Building Your First App]()
+- [CLI](./cli.md)
 - [Templates](./templates.md)
 - [Routing](./routing.md)
 - [Error Pages](./error_pages.md)

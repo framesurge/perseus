@@ -1,5 +1,7 @@
 # Serving
 
+*You only need this page if you're not using the Perseus CLI, which performs this process for you!*
+
 Having generated a large number of static files, you'll need a system to host your files for you! Due to the dynamic nature of some rendering strategies, Perseus needs to be involved in this process (for executing request-time logic), and so it provides a simple API interface for serving pages.
 
 Perseus aims to be agnostic as to what framework you use to host your files, and any framework that gives you access to request headers and wildcard paths should work (in other words, any framework worth its salt).

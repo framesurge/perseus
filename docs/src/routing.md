@@ -1,5 +1,7 @@
 # Routing
 
+*You only need this page if you're not using the Perseus CLI, which performs this process for you! It does provide some useful background even so though.*
+
 Perseus will serve your pages on the backend, rendered however you like, but it depends on [Sycamore](https://github.com/sycamore-rs/sycamore) for front-end rendering and routing, so you'll need to provide a router for your pages. You can see more information about Sycamore routing in their official documentation [here](https://sycamore-rs.netlify.app/docs/advanced/routing).
 
 ## Usage
