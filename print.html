@@ -198,7 +198,10 @@ serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
 serde_json = &quot;1&quot;
 </code></pre>
 <p>Then, add a <code>lib.rs</code> file to your project under <code>src/</code> that contains the following:</p>
-<pre><code class="language-toml">mod pages;
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>mod pages;
 mod error_pages;
 
 use perseus::define_app;
@@ -232,7 +235,8 @@ define_app!{
     ]
     // config_manager: perseus::FsConfigManager::new()
 }
-</code></pre>
+<span class="boring">}
+</span></code></pre></pre>
 <p>This assumes you've defined a function to get your error pages elsewhere (you can read more about that <a href="error_pages.html">here</a>), and that it's in a module called <code>error_pages</code>, you can customize that as needed.</p>
 <p>The way the rest of this works is pretty simple. First off, you define a router with <a href="https://sycamore-rs.netlify.app/docs/advanced/routing">Sycamore</a>, which defines each of your templates and the paths on your site that it will accept. This <strong>must</strong> have a variant explicitly named <code>NotFound</code>, that's handled for you. Then, you define your app itself, which takes the following properties (which need to be in order right now!):</p>
 <ul>
