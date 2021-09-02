@@ -2,6 +2,14 @@
 name = "perseus-cli"
 version = "0.1.0"
 edition = "2018"
+description = "The CLI for the Perseus frontend framework."
+authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
+license = "MIT"
+repository = "https://github.com/arctic-hen7/perseus"
+homepage = "https://arctic-hen7.github.io/perseus"
+readme = "../../README.md"
+keywords = ["wasm", "cli", "webdev", "ssg", "ssr"]
+categories = ["wasm", "development-tools", "asynchronous", "gui", "command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -2,6 +2,14 @@
 name = "perseus-actix-web"
 version = "0.1.0"
 edition = "2018"
+description = "An integration that makes the Perseus frontend framework easy to use with Actix Web."
+authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
+license = "MIT"
+repository = "https://github.com/arctic-hen7/perseus"
+homepage = "https://arctic-hen7.github.io/perseus"
+readme = "../../README.md"
+keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
+categories = ["wasm", "web-programming::http-server", "development-tools", "asynchronous", "gui"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

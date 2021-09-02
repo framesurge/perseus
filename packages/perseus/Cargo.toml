@@ -2,6 +2,14 @@
 name = "perseus"
 version = "0.1.0"
 edition = "2018"
+description = "A lightning-fast frontend web dev platform with full support for SSR and SSG."
+authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
+license = "MIT"
+repository = "https://github.com/arctic-hen7/perseus"
+homepage = "https://arctic-hen7.github.io/perseus"
+readme = "../../README.md"
+keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
+categories = ["wasm", "web-programming", "development-tools", "asynchronous", "gui"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
