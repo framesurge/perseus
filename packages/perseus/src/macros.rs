@@ -24,14 +24,14 @@ macro_rules! define_app {
         route: $route:ty,
         // The user will define something very similar to a macro pattern, which will return the template's name and its render function
         // We don't use a match statement because we abstract `NotFound` matching
-        router: [
+        router: {
             $(
                 $pat:pat => [
                     $name:expr,
                     $fn:expr
                 ]
             ),+
-        ],
+        },
         error_pages: $error_pages:expr,
         templates: [
             $($template:expr),+

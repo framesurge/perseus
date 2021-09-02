@@ -15,7 +15,7 @@ pub enum Route {
 define_app!{
     root: "#root",
     route: Route,
-    router: [
+    router: {
         Route::Index => [
             "index".to_string(),
             pages::index::template_fn()
@@ -24,7 +24,7 @@ define_app!{
             "about".to_string(),
             pages::about::template_fn()
         ]
-    ],
+    },
     error_pages: crate::error_pages::get_error_pages(),
     templates: [
         crate::pages::index::get_page::<G>(),
