@@ -26,3 +26,13 @@ doc = [
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
 release = "standard-version --sign --commit-all && git push --follow-tags origin main"
+
+# Publishes each package
+publish-core = [
+    "cd packages/perseus",
+    "cargo publish",
+    "cd ../perseus-actix-web",
+    "cargo publish",
+    "cd ../perseus-cli",
+    "cargo publish"
+]
