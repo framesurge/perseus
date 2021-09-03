@@ -8,4 +8,5 @@ jobs:
         steps:
             - uses: actions/checkout@v2
             - name: Test Library
-              run: cargo check --all && cargo fmt --all -- --check && cargo clippy --all && cargo test --all
+              # We need to have a `.perseus/` directory for the CLI to compile, but it doesn't need to have anything in it
+              run: mkdir packages/perseus-cli/.perseus && cargo check --all && cargo fmt --all -- --check && cargo clippy --all && cargo test --all
