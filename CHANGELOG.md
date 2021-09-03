@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/arctic-hen7/perseus/compare/v0.1.0...v0.1.1) (2021-09-03)
+
+
+### Bug Fixes
+
+* 🐛 added version numbers for local package imports ([b700cf7](https://github.com/arctic-hen7/perseus/commit/b700cf72325b54a987c87415de3f119273690650))
+* 🐛 fixed cli packaging issues ([dd43e81](https://github.com/arctic-hen7/perseus/commit/dd43e8132d9b6cde82874883291c79e6d1ba6676))
+
 ## 0.1.0 (2021-09-02)
 
 
