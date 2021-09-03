@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.2](https://github.com/arctic-hen7/perseus/compare/v0.1.1...v0.1.2) (2021-09-03)
+
+
+### Bug Fixes
+
+* 🐛 fixed cli executable name ([573fc2f](https://github.com/arctic-hen7/perseus/commit/573fc2f962039d91fb08e49a162d4972a7a935df))
+
+
+### Documentation Changes
+
+* 📝 added crate docs for `perseus-actix-web` ([f5036e7](https://github.com/arctic-hen7/perseus/commit/f5036e756ce789812e08752b1e7e31b0c70d4c1c))
+* 📝 added crate docs for `perseus` package ([61ca6c0](https://github.com/arctic-hen7/perseus/commit/61ca6c080931b5a67e82403e0c32de5934e8781d))
+* 📝 added crate documentation for `perseus-cli` and fixed doc typos ([b3ec9ac](https://github.com/arctic-hen7/perseus/commit/b3ec9aca0a5f08fb91d411f54964e4a02ffa2066))
+* 📝 updated readme with contact links ([a2bc5f2](https://github.com/arctic-hen7/perseus/commit/a2bc5f271263d5ed85618b818d5e27d1d2dde191))
+
 ### [0.1.1](https://github.com/arctic-hen7/perseus/compare/v0.1.0...v0.1.1) (2021-09-03)
 
 
