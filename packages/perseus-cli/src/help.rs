@@ -1,5 +1,6 @@
 use crate::PERSEUS_VERSION;
 
+/// Prints the help page.
 pub fn help(output: &mut impl std::io::Write) {
     writeln!(
         output,

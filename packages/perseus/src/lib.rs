@@ -1,6 +1,6 @@
 /*!
  * Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies,
- * reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of[Sycamore](https://github.com/sycamore-rs/sycamore)
+ * reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)
  * and provides a NextJS-like API!
  *
  * - ✨ Supports static generation (serving only static resources)

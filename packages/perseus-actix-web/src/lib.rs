@@ -1,6 +1,6 @@
 /*!
  * Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies,
- * reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of[Sycamore](https://github.com/sycamore-rs/sycamore)
+ * reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)
  * and provides a NextJS-like API!
  *
  * - ✨ Supports static generation (serving only static resources)
@@ -11,7 +11,7 @@
  * - ✨ CLI harness that lets you build apps with ease and confidence
  *
  * This is the documentation for the Perseus Actix Web integration, but there's also [a CLI](https://arctic-hen7.github.io/perseus/cli.html),
- * [the core package](https://crates.io/crates/perseus), and other integrations [integrations](https://arctic-hen7.github.io/perseus/serving.html)
+ * [the core package](https://crates.io/crates/perseus), and other [integrations](https://arctic-hen7.github.io/perseus/serving.html)
  * to make serving apps on other platforms easier!
  *
  * # Resources

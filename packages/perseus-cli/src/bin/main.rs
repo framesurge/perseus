@@ -1,5 +1,5 @@
-use lib::errors::*;
-use lib::{build, check_env, delete_bad_dir, help, prepare, serve, PERSEUS_VERSION};
+use perseus_cli::errors::*;
+use perseus_cli::{build, check_env, delete_bad_dir, help, prepare, serve, PERSEUS_VERSION};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;

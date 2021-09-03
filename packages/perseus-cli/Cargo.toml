@@ -7,7 +7,7 @@ authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
 license = "MIT"
 repository = "https://github.com/arctic-hen7/perseus"
 homepage = "https://arctic-hen7.github.io/perseus"
-readme = "../../README.md"
+readme = "./README.md"
 keywords = ["wasm", "cli", "webdev", "ssg", "ssr"]
 categories = ["wasm", "development-tools", "asynchronous", "gui", "command-line-utilities"]
 include = [
@@ -28,7 +28,7 @@ serde = "1"
 serde_json = "1"
 
 [lib]
-name = "lib"
+name = "perseus_cli"
 
 [[bin]]
 name = "perseus"
