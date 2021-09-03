@@ -7,7 +7,7 @@ authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
 license = "MIT"
 repository = "https://github.com/arctic-hen7/perseus"
 homepage = "https://arctic-hen7.github.io/perseus"
-readme = "../../README.md"
+readme = "./README.md"
 keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
 categories = ["wasm", "web-programming::http-server", "development-tools", "asynchronous", "gui"]
 
