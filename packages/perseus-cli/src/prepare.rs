@@ -10,8 +10,9 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 
-/// This literally includes the entire subcrate in the program, allowing more efficient development.
-const SUBCRATES: Dir = include_dir!("../../examples/cli/.perseus");
+// This literally includes the entire subcrate in the program, allowing more efficient development.
+// This MUST be copied in from `../../examples/cli/.perseus/` every time the CLI is tested (use the Bonnie script).
+const SUBCRATES: Dir = include_dir!("./.perseus");
 
 /// Prepares the user's project by copying in the `.perseus/` subcrates. We use these subcrates to do all the building/serving, we just
 /// have to execute the right commands in the CLI. We can essentially treat the subcrates themselves as a blackbox of just a folder.
@@ -42,19 +43,24 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
         }
         // Use the current version of this crate (and thus all Perseus crates) to replace the relative imports
         // That way everything works in dev and in prod on another system!
+        // We have to store `Cargo.toml` as `Cargo.toml.old` for packaging
+        let mut root_manifest_pkg = target.clone();
+        root_manifest_pkg.extend(["Cargo.toml.old"]);
         let mut root_manifest = target.clone();
         root_manifest.extend(["Cargo.toml"]);
+        let mut server_manifest_pkg = target.clone();
+        server_manifest_pkg.extend(["server", "Cargo.toml.old"]);
         let mut server_manifest = target.clone();
         server_manifest.extend(["server", "Cargo.toml"]);
-        let root_manifest_contents = fs::read_to_string(&root_manifest).map_err(|err| {
+        let root_manifest_contents = fs::read_to_string(&root_manifest_pkg).map_err(|err| {
             ErrorKind::ManifestUpdateFailed(
-                root_manifest.to_str().map(|s| s.to_string()),
+                root_manifest_pkg.to_str().map(|s| s.to_string()),
                 err.to_string(),
             )
         })?;
-        let server_manifest_contents = fs::read_to_string(&server_manifest).map_err(|err| {
+        let server_manifest_contents = fs::read_to_string(&server_manifest_pkg).map_err(|err| {
             ErrorKind::ManifestUpdateFailed(
-                server_manifest.to_str().map(|s| s.to_string()),
+                server_manifest_pkg.to_str().map(|s| s.to_string()),
                 err.to_string(),
             )
         })?;

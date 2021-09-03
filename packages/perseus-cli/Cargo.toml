@@ -10,6 +10,11 @@ homepage = "https://arctic-hen7.github.io/perseus"
 readme = "../../README.md"
 keywords = ["wasm", "cli", "webdev", "ssg", "ssr"]
 categories = ["wasm", "development-tools", "asynchronous", "gui", "command-line-utilities"]
+include = [
+    "src/",
+    "Cargo.toml",
+    ".perseus/"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

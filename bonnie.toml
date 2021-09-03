@@ -12,6 +12,12 @@ dev.subcommands.serve.cmd = [
 dev.subcommands.serve.args = [ "server" ]
 dev.subcommands.cli = [
 	"cd packages/perseus-cli",
+    # We need to copy in the directory where we actually work on the subcrate
+    "cd ../perseus-cli",
+    "rm -rf ./.perseus",
+    "cp -r ../../examples/cli/.perseus/ .perseus/",
+    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
+    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
 	"cargo run -- %%"
 ]
 build = "cargo build"
@@ -33,6 +39,11 @@ publish = [
     "cargo publish",
     "cd ../perseus-actix-web",
     "cargo publish",
+    # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
     "cd ../perseus-cli",
+    "rm -rf ./.perseus",
+    "cp -r ../../examples/cli/.perseus/ .perseus/",
+    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
+    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
     "cargo publish"
 ]

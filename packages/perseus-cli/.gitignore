@@ -1,0 +1,2 @@
+# We copy in the subcrate under development in the `cli` example for packaging only
+.perseus/
