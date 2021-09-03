@@ -36,12 +36,14 @@ pub trait ConfigManager: Clone {
     async fn write(&self, name: &str, content: &str) -> Result<()>;
 }
 
+/// The default config manager. This will store static files in the specified location on disk. This should be suitable for nearly all
+/// development and serverful use-cases. Serverless is another matter though (more development needs to be done).
 #[derive(Clone)]
 pub struct FsConfigManager {
     root_path: String,
 }
 impl FsConfigManager {
-    /// Creates a new filesystem configuration manager. This function only exists to preserve the API surface of the trait.
+    /// Creates a new filesystem configuration manager. You should provide a path like `/dist` here.
     pub fn new(root_path: String) -> Self {
         Self { root_path }
     }

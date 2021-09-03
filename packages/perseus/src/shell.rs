@@ -66,9 +66,12 @@ impl ErrorPages {
             fallback,
         }
     }
+    /// Adds a new page for the given status code. If a page was already defined for the given code, it will be updated by the mechanics of
+    /// the internal `HashMap`.
     pub fn add_page(&mut self, status: u16, page: ErrorPageTemplate<DomNode>) {
         self.status_pages.insert(status, page);
     }
+    /// Renders the appropriate error page to the given DOM container.
     pub fn render_page(&self, url: &str, status: &u16, err: &str, container: &NodeRef<DomNode>) {
         // Check if we have an explicitly defined page for this status code
         // If not, we'll render the fallback page
