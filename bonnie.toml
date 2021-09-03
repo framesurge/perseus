@@ -37,13 +37,14 @@ release = "standard-version --sign --commit-all && git push --follow-tags origin
 publish = [
     "cd packages/perseus",
     "cargo publish",
-    "cd ../perseus-actix-web",
-    "cargo publish",
     # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
     "cd ../perseus-cli",
     "rm -rf ./.perseus",
     "cp -r ../../examples/cli/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
+    "cargo publish --allow-dirty", # Without this flag, `.perseus` will be a problem because it's not in Git
+    # We delay this so that `crates.io` can have time to host the core
+    "cd ../perseus-actix-web",
     "cargo publish"
 ]
