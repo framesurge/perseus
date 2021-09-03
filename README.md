@@ -9,6 +9,7 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 - ✨ Supports revalidation after time and/or with custom logic (updating rendered pages)
 - ✨ Supports incremental regeneration (build on demand)
 - ✨ Open build matrix (use any rendering strategy with anything else, mostly)
+- ✨ CLI harness that lets you build apps with ease and confidence
 
 ## How to use
 
@@ -43,6 +44,8 @@ These tasks will be done after Perseus is stable.
 ## Contributing
 
 We appreciate all kinds of contributions, check out our [contributing guidelines](./CONTRIBUTING.md) for more information! Also, please be sure to follow our [code of conduct](./CODE_OF_CONDUCT.md).
+
+You can also chat about Perseus at our [Gitter link](https://gitter.im/perseus-framework/community), or (for Sycamore-related stuff) on [our channel on Sycamore's Discord server](https://discord.com/channels/820400041332179004/883168134331256892).
 
 ## License
 
