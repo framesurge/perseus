@@ -31,7 +31,7 @@ doc = [
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
-release = "standard-version --sign --commit-all && git push --follow-tags origin main"
+release = "standard-version --sign --commit-all && git push --follow-tags %% origin main"
 
 # Publishes each package
 publish = [
