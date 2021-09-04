@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Installation and Setup - Perseus Book</title>
+        <title>Writing Your First Template - Perseus Book</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="../../arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><a href="../../tutorials/first_app/intro.html"><strong aria-hidden="true">4.</strong> Building Your First App</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../tutorials/first_app/setup.html" class="active"><strong aria-hidden="true">4.1.</strong> Installation and Setup</a></li><li class="chapter-item expanded "><a href="../../tutorials/first_app/template.html"><strong aria-hidden="true">4.2.</strong> Writing Your First Template</a></li><li class="chapter-item expanded "><a href="../../tutorials/first_app/app.html"><strong aria-hidden="true">4.3.</strong> Setting up the App Itself</a></li></ol></li><li class="chapter-item expanded "><a href="../../cli.html"><strong aria-hidden="true">5.</strong> CLI</a></li><li class="chapter-item expanded "><a href="../../templates.html"><strong aria-hidden="true">6.</strong> Templates</a></li><li class="chapter-item expanded "><a href="../../routing.html"><strong aria-hidden="true">7.</strong> Routing</a></li><li class="chapter-item expanded "><a href="../../error_pages.html"><strong aria-hidden="true">8.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="../../strategies/intro.html"><strong aria-hidden="true">9.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../strategies/build_paths.html"><strong aria-hidden="true">9.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="../../strategies/build_state.html"><strong aria-hidden="true">9.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="../../strategies/request_state.html"><strong aria-hidden="true">9.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="../../strategies/revalidation.html"><strong aria-hidden="true">9.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="../../strategies/incremental.html"><strong aria-hidden="true">9.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="../../building.html"><strong aria-hidden="true">10.</strong> Building</a></li><li class="chapter-item expanded "><a href="../../serving.html"><strong aria-hidden="true">11.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../integrations/actix-web.html"><strong aria-hidden="true">11.1.</strong> Actix Web Integration</a></li></ol></li><li class="chapter-item expanded "><a href="../../config_managers.html"><strong aria-hidden="true">12.</strong> Config Managers</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="../../arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><a href="../../tutorials/first_app/intro.html"><strong aria-hidden="true">4.</strong> Building Your First App</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../tutorials/first_app/setup.html"><strong aria-hidden="true">4.1.</strong> Installation and Setup</a></li><li class="chapter-item expanded "><a href="../../tutorials/first_app/template.html" class="active"><strong aria-hidden="true">4.2.</strong> Writing Your First Template</a></li><li class="chapter-item expanded "><a href="../../tutorials/first_app/app.html"><strong aria-hidden="true">4.3.</strong> Setting up the App Itself</a></li></ol></li><li class="chapter-item expanded "><a href="../../cli.html"><strong aria-hidden="true">5.</strong> CLI</a></li><li class="chapter-item expanded "><a href="../../templates.html"><strong aria-hidden="true">6.</strong> Templates</a></li><li class="chapter-item expanded "><a href="../../routing.html"><strong aria-hidden="true">7.</strong> Routing</a></li><li class="chapter-item expanded "><a href="../../error_pages.html"><strong aria-hidden="true">8.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="../../strategies/intro.html"><strong aria-hidden="true">9.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../strategies/build_paths.html"><strong aria-hidden="true">9.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="../../strategies/build_state.html"><strong aria-hidden="true">9.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="../../strategies/request_state.html"><strong aria-hidden="true">9.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="../../strategies/revalidation.html"><strong aria-hidden="true">9.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="../../strategies/incremental.html"><strong aria-hidden="true">9.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="../../building.html"><strong aria-hidden="true">10.</strong> Building</a></li><li class="chapter-item expanded "><a href="../../serving.html"><strong aria-hidden="true">11.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../integrations/actix-web.html"><strong aria-hidden="true">11.1.</strong> Actix Web Integration</a></li></ol></li><li class="chapter-item expanded "><a href="../../config_managers.html"><strong aria-hidden="true">12.</strong> Config Managers</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,59 +143,63 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="installation-and-setup"><a class="header" href="#installation-and-setup">Installation and Setup</a></h1>
-<p>Perseus aims to be as easy to use as possible with the default settings, but you will need to install a few things first.</p>
-<h2 id="rust-and-cargo"><a class="header" href="#rust-and-cargo">Rust and Cargo</a></h2>
-<p>Make sure you've got Rust and Cargo. If you haven't yet, install them from <a href="https://doc.rust-lang.org/stable/book/ch01-01-installation.html">here</a>, and you might want to check out the <a href="https://doc.rust-lang.org/book">Rust book</a> if you're unfamiliar with the language.</p>
-<p>After you've done this, make sure everything works by running <code>cargo</code> in a terminal. You should get a help page!</p>
-<h2 id="build-tools"><a class="header" href="#build-tools">Build Tools</a></h2>
-<p>Perseus is built on top of WASM (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is <em>really</em> complicated, and you'll need two particular build tools to make your code work.</p>
-<p>The first one is <a href=""><code>wasm-pack</code></a>, which helps to compile your Rust code to WebAssembly (sort of like how you'd compile code normally, but specially for the browser). You can install it with this command:</p>
-<pre><code>cargo install wasm-pack
-</code></pre>
-<p>Now, you should be able to type <code>wasm-pack</code> in your terminal to get another help page!</p>
-<p>The next tool is one you might be familiar with if you're coming from the JavaScript world: <a href="https://rollupjs.org">Rollup</a>. Rollup is a bundling tool for JavaScript, and it works really nicely with WASM. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:</p>
-<pre><code>npm i -g rollup
-</code></pre>
-<p>or</p>
-<pre><code>yarn global add rollup
-</code></pre>
-<p>Both of those assume you have either <code>npm</code> or <code>yarn</code> installed. If not, you can check out other installation options <a href="https://rollupjs.org/guide/en/#installation">here</a>.</p>
-<h2 id="perseus-cli"><a class="header" href="#perseus-cli">Perseus CLI</a></h2>
-<p>Perseus is easiest to use with the official CLI, which will let you effortlessly develop apps and serve them locally. It's not quite designed for production serving yet, but development on that is actively underway!</p>
-<p>You can install the CLI with the following command:</p>
-<pre><code>cargo install perseus-cli
-</code></pre>
-<p>And it should be available as <code>perseus</code> in your terminal! Type <code>perseus -v</code> to check that everything works (you should see a version number).</p>
-<p>Note that the Perseus CLI will not work unless you've installed Cargo, <code>wasm-pack</code> and Rollup. If you've installed them at different paths, you can set the <code>PERSEUS_CARGO_PATH</code>/<code>PERSEUS_WASM_PACK_PATH</code>/<code>PERSEUS_ROLLUP_PATH</code> environment variables to define those. The default paths are <code>cargo</code>, <code>wasm-pack</code>, and <code>rollup</code> respectively.</p>
-<h2 id="setting-up-a-new-project"><a class="header" href="#setting-up-a-new-project">Setting Up a New Project</a></h2>
-<p>Okay! Now that you've got all the build tools and the CLI set up, you can create a new project with this command in the directory where you want your app:</p>
-<pre><code>cargo init --lib
-</code></pre>
-<p>You should now have an <code>src/</code> directory and a <code>Cargo.toml</code> file, which is what we'll edit first. You need quite a few dependencies for Perseus to work, which you can set up by adding the following to your <code>Cargo.toml</code> under the <code>[dependencies]</code> line:</p>
-<pre><code class="language-toml"># Perseus itself, which we (amazingly) need for a Perseus app
-perseus = &quot;0.1&quot;
-# Sycamore, the library Perseus depends on for lower-leve reactivity primitivity
-sycamore = { version = &quot;0.5.1&quot;, features = [&quot;ssr&quot;] }
-sycamore-router = &quot;0.5.1&quot;
-# Serde, which lets you work with representations of data, like JSON
-serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
-serde_json = &quot;1&quot;
-</code></pre>
-<p>Now run the following command to install and build everything for the first time (this will take a little while):</p>
-<pre><code>cargo build
-</code></pre>
-<p>If that all works, then congratulations, you've just created the scaffold of a Perseus app! It's time to make your app do something now!</p>
+                        <h1 id="writing-your-first-template"><a class="header" href="#writing-your-first-template">Writing Your First Template</a></h1>
+<p>Now it's time to write your first template! Templates in Perseus are the things that create pages (e.g. you might have an about page template and a blog post template). You can read more about them <a href="https://arctic-hen7.github.io/perseus/arch.html#templates-and-pages">here</a>.</p>
+<p><em>Note: templates used to be called pages in Perseus, so some of the older examples may still use that term. Don't worry about it, just be aware of the inconsistency! We're cleaning it up gradually!</em></p>
+<h2 id="setting-up-templates"><a class="header" href="#setting-up-templates">Setting up Templates</a></h2>
+<ol>
+<li>Create a new folder under <code>src/</code> called <code>templates</code>. This is where all your templates will be housed.</li>
+<li>Add a file that declares that as a module (that's how Cargo handles subfolders) called <code>mod.rs</code> under <code>src/templates/</code>.</li>
+<li>Declare the module by adding <code>mod templates;</code> to the top of <code>src/lib.rs</code> (which Cargo should've created for you).</li>
+</ol>
+<h2 id="writing-an-index-page"><a class="header" href="#writing-an-index-page">Writing an Index Page</a></h2>
+<p>Let's write the landing page of your app! Create a new file under <code>src/templates/</code> called <code>index.rs</code>, and then declare it by adding <code>pub mod index;</code> to the top of <code>src/templates/mod.rs</code> (<code>pub</code> because it should be publicly accessible by <code>lib.rs</code>).</p>
+<p>Now add the following to that file:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::Template;
+use std::sync::Arc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+
+#[component(IndexPage&lt;G&gt;)]
+pub fn index_page() -&gt; SycamoreTemplate&lt;G&gt; {
+    template! {
+        p { &quot;Welcome to the app!&quot; }
+    }
+}
+
+pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
+    Arc::new(|_| {
+        template! {
+            IndexPage()
+        }
+    })
+}
+
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;index&quot;).template(template_fn())
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This code needs a lot of explaining, so here goes!</p>
+<ol>
+<li>Import everything we need. That's the type for a Perseus template, an <a href="https://doc.rust-lang.org/std/sync/struct.Arc.html"><code>Arc</code></a> (magical Rust type wizardry if you're a beginner!), and some stuff from <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> that lets us make an interface.</li>
+<li>Define the component that will render your final page with the <code>index_page</code> function (annotated so that it becomes <code>IndexPage</code> with Sycamore's internal magic). Notice that this outputs a <code>SycamoreTemplate</code>, which is basically a Rust way of writing HTML. The syntax is a little weird, but you'll get used to it pretty quickly (and there's <a href="https://github.com/sycamore-rs/sycamore/issues/23">some work</a> happening to possibly make it more HTML-like in future). All this little <code>template!</code> does is render a <code>p</code> HTML element (paragraph) and will it with the text <code>Welcome to the app!</code>.</li>
+<li>Define the template function in <code>template_fn</code>. This is probably the weirdest part of Perseus, but it'll make more sense with more complex pages. Basically, the template function will be given any props your template takes (this template doesn't take any though, hence the <code>_</code>), and then it lets you render your template with them. <strong>Props are what turn a generic template into a unique page.</strong></li>
+<li>Finally define a utility function for using this called <code>get_template</code>. This actually defines the Perseus template, providing the root path at which it will be rendered as a page (<code>/index</code>, without the leading forward slash written). That needs to know about the template function, which we provide with <code>.template()</code>. Later, this is where you get to add cool rendering strategies like <a href="https://arctic-hen7.github.io/perseus/strategies/revalidation.html">revalidation</a>, <a href="https://arctic-hen7.github.io/perseus/strategies/request_state.html">SSR</a>, and <a href="https://arctic-hen7.github.io/perseus/strategies/incremental.html">incremental generation</a>!</li>
+</ol>
+<p>If you understand all that, then you understand how to write a basic template in Perseus! Well done! If not, don't worry, but you might want to go over the above explanation a few times until you're understanding the basics. If you're feeling clueless, reach out on the <a href="https://gitter.im/perseus-framework/support">Gitter support channel</a> for help!</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="../../tutorials/first_app/intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="../../tutorials/first_app/setup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
-                                                    <a rel="next" href="../../tutorials/first_app/template.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                                    <a rel="next" href="../../tutorials/first_app/app.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -205,11 +209,11 @@ serde_json = &quot;1&quot;
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="../../tutorials/first_app/intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="../../tutorials/first_app/setup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
-                                    <a rel="next" href="../../tutorials/first_app/template.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                    <a rel="next" href="../../tutorials/first_app/app.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                             </nav>
