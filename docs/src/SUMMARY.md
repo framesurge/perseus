@@ -5,6 +5,8 @@
 - [Architecture](./arch.md)
 - [Building Your First App](./tutorials/first_app/intro.md)
 	- [Installation and Setup](./tutorials/first_app/setup.md)
+	- [Writing Your First Template](./tutorials/first_app/template.md)
+	- [Setting up the App Itself](./tutorials/first_app/app.md)
 - [CLI](./cli.md)
 - [Templates](./templates.md)
 - [Routing](./routing.md)
