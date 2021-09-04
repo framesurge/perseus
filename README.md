@@ -4,12 +4,12 @@
 
 Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore) and provides a NextJS-like API!
 
-- ✨ Supports static generation (serving only static resources)
-- ✨ Supports server-side rendering (serving dynamic resources)
-- ✨ Supports revalidation after time and/or with custom logic (updating rendered pages)
-- ✨ Supports incremental regeneration (build on demand)
-- ✨ Open build matrix (use any rendering strategy with anything else, mostly)
-- ✨ CLI harness that lets you build apps with ease and confidence
+-   ✨ Supports static generation (serving only static resources)
+-   ✨ Supports server-side rendering (serving dynamic resources)
+-   ✨ Supports revalidation after time and/or with custom logic (updating rendered pages)
+-   ✨ Supports incremental regeneration (build on demand)
+-   ✨ Open build matrix (use any rendering strategy with anything else, mostly)
+-   ✨ CLI harness that lets you build apps with ease and confidence
 
 ## How to use
 
@@ -29,17 +29,18 @@ There is a sore lack of Rust frameworks for frontend development that support mo
 
 These tasks still need to be done before Perseus can be pushed to v1.0.0.
 
-* [x] Create a custom CLI as a harness for apps without riediculous amounts of configuration needed
-- [ ] Support custom template hierarchies
-- [ ] Support i18n out of the box
-- [ ] (Maybe) Implement custom router
-- [ ] Pre-built integrations for Actix Web (done) and AWS Lambda (todo)
+-   [x] Create a custom CLI as a harness for apps without ridiculous amounts of configuration needed
+
+*   [ ] Support custom template hierarchies
+*   [ ] Support i18n out of the box
+*   [ ] (Maybe) Implement custom router
+*   [ ] Pre-built integrations for Actix Web (done) and AWS Lambda (todo)
 
 ### Beyond
 
 These tasks will be done after Perseus is stable.
 
-- [ ] Integrations for other platforms
+-   [ ] Integrations for other platforms
 
 ## Contributing
 
