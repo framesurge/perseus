@@ -1,16 +1,7 @@
-version="0.3.1"
+version="0.3.2"
 
 [scripts]
-dev.subcommands.build = [
-	"cd examples/showcase",
-	"bonnie build --watch"
-]
-dev.subcommands.serve.cmd = [
-	"cd examples/showcase",
-	"bonnie serve %server"
-]
-dev.subcommands.serve.args = [ "server" ]
-dev.subcommands.cli = [
+dev.subcommands.cli.cmd = [
 	"cd packages/perseus-cli",
     # We need to copy in the directory where we actually work on the subcrate
     "cd ../perseus-cli",
@@ -20,21 +11,31 @@ dev.subcommands.cli = [
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
 	"cargo run -- %%"
 ]
+dev.subcommands.cli.desc = "runs the cli in its own directory (which should test `examples/basic`)"
+dev.subcommands.example.cmd = [
+    "cd examples/%example",
+    "find . -not -path \"./.perseus/*\" -not -path \"./target/*\" | entr -s \"perseus serve\""
+]
+dev.subcommands.example.args = [ "example" ]
+dev.subcommands.example.desc = "serves the given example, watching for file changes (uses cli)"
+
 build = "cargo build"
 test = "cargo watch -x \"test\""
 check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
 # Hosts the book locally
-doc = [
+doc.cmd = [
 	"cd docs",
 	"mdbook serve"
 ]
+doc.desc = "hosts the book locally at http://localhost:3000"
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
-release = "standard-version --sign --commit-all && git push --follow-tags %% origin main"
+release.cmd = "standard-version --sign --commit-all && git push --follow-tags %% origin main"
+release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped)"
 
 # Publishes each package
-publish = [
+publish.cmd = [
     "cd packages/perseus",
     "cargo publish %%",
     # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
@@ -48,3 +49,4 @@ publish = [
     "cd ../perseus-actix-web",
     "cargo publish %%"
 ]
+publish.desc = "publishes all packages to crates.io"
