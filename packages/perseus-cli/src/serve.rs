@@ -120,7 +120,7 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if !prog_args.contains(&"--no-build".to_string()) {
         did_build = true;
-        let build_exit_code = build_internal(dir.clone(), 4)?;
+        let build_exit_code = build_internal(dir.clone(), 5)?;
         if build_exit_code != 0 {
             return Ok(build_exit_code);
         }
