@@ -42,7 +42,6 @@ error_chain! {
         RemoveBadDirFailed(target: Option<String>, err: String) {
             description("removing corrupted '.perseus/' directory failed")
             display("Couldn't remove '.perseus/' directory at '{:?}'. Please remove the '.perseus/' directory manually (particularly if you didn't intentionally run the 'clean' command, that means the directory has been corrupted). Error was: '{}'.", target, err)
-
         }
         /// For when executing a system command after preparation failed. This shouldn't cause a directory deletion.
         CmdExecFailed(cmd: String, err: String) {
@@ -68,6 +67,11 @@ error_chain! {
         PortNotNumber(err: String) {
             description("port in PORT environment variable couldn't be parsed as number")
             display("Couldn't parse 'PORT' environment variable as a number, please check that you've provided the correct value. Error was: '{}'.", err)
+        }
+        /// For when build artifacts either couldn't be removed or the directory couldn't be recreated.
+        RemoveArtifactsFailed(target: Option<String>, err: String) {
+            description("reconstituting build artifacts failed")
+            display("Couldn't remove and replace '.perseus/dist/static/' directory at '{:?}'. Please try again or run 'perseus clean' if the error persists. Error was: '{}'.", target, err)
         }
     }
 }

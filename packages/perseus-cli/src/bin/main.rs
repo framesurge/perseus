@@ -1,5 +1,5 @@
 use perseus_cli::errors::*;
-use perseus_cli::{build, check_env, delete_bad_dir, help, prepare, serve, PERSEUS_VERSION};
+use perseus_cli::{build, check_env, delete_artifacts, delete_bad_dir, help, prepare, serve, PERSEUS_VERSION};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -71,11 +71,15 @@ fn core(dir: PathBuf) -> Result<i32> {
             if prog_args[0] == "build" {
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
+                // Delete old build artifacts
+                delete_artifacts(dir.clone())?;
                 let exit_code = build(dir, &prog_args)?;
                 Ok(exit_code)
             } else if prog_args[0] == "serve" {
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
+                // Delete old build artifacts
+                delete_artifacts(dir.clone())?;
                 let exit_code = serve(dir, &prog_args)?;
                 Ok(exit_code)
             } else if prog_args[0] == "prep" {

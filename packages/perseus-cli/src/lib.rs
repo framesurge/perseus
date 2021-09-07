@@ -47,7 +47,7 @@ pub use help::help;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
 
-/// Deletes a corrupted '.perseus/' directory. This qwill be called on certain error types that would leave the user with a half-finished
+/// Deletes a corrupted '.perseus/' directory. This will be called on certain error types that would leave the user with a half-finished
 /// product, which is better to delete for safety and sanity.
 pub fn delete_bad_dir(dir: PathBuf) -> Result<()> {
     let mut target = dir;
@@ -61,5 +61,29 @@ pub fn delete_bad_dir(dir: PathBuf) -> Result<()> {
             ))
         }
     }
+    Ok(())
+}
+
+/// Deletes build artifacts in `.perseus/dist/static` and replaces the directory.
+pub fn delete_artifacts(dir: PathBuf) -> Result<()> {
+    let mut target = dir;
+    target.extend([".perseus", "dist", "static"]);
+    // We'll only delete the directory if it exists, otherwise we're fine
+    if target.exists() {
+        if let Err(err) = fs::remove_dir_all(&target) {
+            bail!(ErrorKind::RemoveArtifactsFailed(
+                target.to_str().map(|s| s.to_string()),
+                err.to_string()
+            ))
+        }
+    }
+    // No matter what, it's gone now, so recreate it
+    if let Err(err) = fs::create_dir(&target) {
+        bail!(ErrorKind::RemoveArtifactsFailed(
+            target.to_str().map(|s| s.to_string()),
+            err.to_string()
+        ))
+    }
+
     Ok(())
 }
