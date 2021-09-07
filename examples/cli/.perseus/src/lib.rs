@@ -1,5 +1,7 @@
-use app::{get_error_pages, match_route, AppRoute, APP_ROUTE};
-use perseus::app_shell;
+use app::{get_error_pages, get_locales, match_route, AppRoute, APP_ROUTE};
+use perseus::{app_shell, ClientTranslationsManager};
+use std::cell::RefCell;
+use std::rc::Rc;
 use sycamore::prelude::template;
 use sycamore_router::BrowserRouter;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -20,20 +22,28 @@ pub fn run() -> Result<(), JsValue> {
         .unwrap()
         .unwrap();
 
+    // Create a mutable translations manager to control caching
+    let translations_manager =
+        Rc::new(RefCell::new(ClientTranslationsManager::new(&get_locales())));
+
     sycamore::render_to(
         || {
             template! {
-                BrowserRouter(|route: AppRoute| {
-                    // TODO improve performance rather than naively copying error pages for every template
+                BrowserRouter(move |route: AppRoute| {
+                    // TODO improve performance rather than naively copying error pages for every template (use `Rc<ErrorPages>`)
                     match route {
                         // We handle the 404 for the user for convenience
                         AppRoute::NotFound => get_error_pages().get_template_for_page("", &404, "not found"),
                         // All other routes are based on the user's given statements
                         _ => {
-                            let (name, render_fn) = match_route(route);
+                            let (name, render_fn, locale) = match_route(route);
+
                             app_shell(
                                 name,
                                 render_fn,
+                                locale,
+                                // We give the app shell a translations manager and let it get the `Rc<Translator>` (because it can do async safely)
+                                Rc::clone(&translations_manager),
                                 get_error_pages()
                             )
                         }

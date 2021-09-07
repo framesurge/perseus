@@ -30,6 +30,17 @@ error_chain! {
             description("the asset couldn't be fecthed with a 200 OK")
             display("the asset at '{}' returned status code '{}' with payload '{}'", url, status, err)
         }
+        /// For when the server returned an asset that was 200 but couldn't be serialized properly. This is the server's fault, and
+        /// should generate a 500 status code at presentation.
+        AssetSerFailed(url: String, err: String) {
+            description("the asset couldn't be properly serialized")
+            display("the asset at '{}' was successfully fetched, but couldn't be serialized with error '{}'", url, err)
+        }
+        /// For when the user requested an unsupported locale. This should generate a 404 at presentation.
+        LocaleNotSupported(locale: String) {
+            description("the given locale is not supported")
+            display("the locale '{}' is not supported", locale)
+        }
 
         /// For when a necessary template feautre was expected but not present. This just pertains to rendering strategies, and shouldn't
         /// ever be sensitive.
@@ -61,9 +72,16 @@ error_chain! {
             description("error while calling render function")
             display("an error caused by '{:?}' occurred while calling render function '{}' on template '{}': '{}'", cause, fn_name, template, err_str)
         }
+        /// For when a translation ID doesn't exist. This indicates that `translate_checked()` was deliberately used, because `translate()`
+        /// will panic in this scenario.
+        TranslationIdNotFound(id: String, locale: String) {
+            description("translation id not found for current locale")
+            display("translation id '{}' not found for locale '{}'", id, locale)
+        }
     }
     links {
         ConfigManager(crate::config_manager::Error, crate::config_manager::ErrorKind);
+        TranslationsManager(crate::translations_manager::Error, crate::translations_manager::ErrorKind);
     }
     // We work with many external libraries, all of which have their own errors
     foreign_links {

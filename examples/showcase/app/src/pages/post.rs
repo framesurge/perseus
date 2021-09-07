@@ -55,7 +55,7 @@ pub async fn get_static_paths() -> Result<Vec<String>, String> {
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Arc::new(|props: Option<String>| {
+    Arc::new(|props, _| {
         template! {
             PostPage(
                 serde_json::from_str::<PostPageProps>(&props.unwrap()).unwrap()

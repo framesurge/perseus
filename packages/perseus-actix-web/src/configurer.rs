@@ -1,7 +1,8 @@
 use crate::page_data::page_data;
+use crate::translations::translations;
 use actix_files::NamedFile;
 use actix_web::web;
-use perseus::{get_render_cfg, ConfigManager, SsrNode, TemplateMap};
+use perseus::{get_render_cfg, ConfigManager, Locales, SsrNode, TemplateMap, TranslationsManager};
 
 /// The options for setting up the Actix Web integration. This should be literally constructed, as nothing is optional.
 #[derive(Clone)]
@@ -14,6 +15,8 @@ pub struct Options {
     pub index: String,
     /// A `HashMap` of your app's templates by their paths.
     pub templates_map: TemplateMap<SsrNode>,
+    /// The locales information for the app.
+    pub locales: Locales,
 }
 
 async fn js_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
@@ -27,18 +30,20 @@ async fn index(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
 }
 
 /// Configures an existing Actix Web app for Perseus. This returns a function that does the configuring so it can take arguments.
-pub async fn configurer<C: ConfigManager + 'static>(
+pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'static>(
     opts: Options,
     config_manager: C,
+    translations_manager: T,
 ) -> impl Fn(&mut web::ServiceConfig) {
     let render_cfg = get_render_cfg(&config_manager)
         .await
         .expect("Couldn't get render configuration!");
     move |cfg: &mut web::ServiceConfig| {
         cfg
-            // We implant the render config in the app data for bertter performance, it's needed on every request
+            // We implant the render config in the app data for better performance, it's needed on every request
             .data(render_cfg.clone())
             .data(config_manager.clone())
+            .data(translations_manager.clone())
             .data(opts.clone())
             // TODO chunk JS and WASM bundles
             // These allow getting the basic app code (not including the static data)
@@ -48,11 +53,15 @@ pub async fn configurer<C: ConfigManager + 'static>(
             // This allows getting the static HTML/JSON of a page
             // We stream both together in a single JSON object so SSR works (otherwise we'd have request IDs and weird caching...)
             .route(
-                "/.perseus/page/{filename:.*}",
-                web::get().to(page_data::<C>),
+                "/.perseus/page/{locale}/{filename:.*}",
+                web::get().to(page_data::<C, T>),
+            )
+            // This allows the app shell to fetch translations for a given page
+            .route(
+                "/.perseus/translations/{locale}",
+                web::get().to(translations::<T>),
             )
             // For everything else, we'll serve the app shell directly
-            // FIXME
             .route("*", web::get().to(index));
     }
 }

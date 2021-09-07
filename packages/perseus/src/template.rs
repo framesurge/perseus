@@ -2,9 +2,11 @@
 
 use crate::errors::*;
 use crate::Request;
+use crate::Translator;
 use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
+use std::rc::Rc;
 use std::sync::Arc;
 use sycamore::prelude::{GenericNode, Template as SycamoreTemplate};
 
@@ -109,8 +111,8 @@ make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
 
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
-/// given `Option`.
-pub type TemplateFn<G> = Arc<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
+/// given `Option`. If you're using i18n, this will also be given an `Rc<Translator>` (all templates share ownership of the translations).
+pub type TemplateFn<G> = Arc<dyn Fn(Option<String>, Rc<Translator>) -> SycamoreTemplate<G>>;
 /// The type of functions that get build paths.
 pub type GetBuildPathsFn = Arc<dyn GetBuildPathsFnType>;
 /// The type of functions that get build state.
@@ -168,7 +170,7 @@ impl<G: GenericNode> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Arc::new(|_: Option<String>| sycamore::template! {}),
+            template: Arc::new(|_: Option<String>, _: Rc<Translator>| sycamore::template! {}),
             get_build_paths: None,
             incremental_path_rendering: false,
             get_build_state: None,
@@ -181,8 +183,12 @@ impl<G: GenericNode> Template<G> {
 
     // Render executors
     /// Executes the user-given function that renders the template on the server-side (build or request time).
-    pub fn render_for_template(&self, props: Option<String>) -> SycamoreTemplate<G> {
-        (self.template)(props)
+    pub fn render_for_template(
+        &self,
+        props: Option<String>,
+        translator: Rc<Translator>,
+    ) -> SycamoreTemplate<G> {
+        (self.template)(props, translator)
     }
     /// Gets the list of templates that should be prerendered for at build-time.
     pub async fn get_build_paths(&self) -> Result<Vec<String>> {

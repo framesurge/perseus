@@ -1,9 +1,13 @@
 // This binary builds all the templates with SSG
 
 use crate::errors::*;
+use crate::Locales;
+use crate::TranslationsManager;
+use crate::Translator;
 use crate::{config_manager::ConfigManager, decode_time_str::decode_time_str, template::Template};
 use futures::future::try_join_all;
 use std::collections::HashMap;
+use std::rc::Rc;
 use sycamore::prelude::SsrNode;
 
 /// Builds a template, writing static data as appropriate. This should be used as part of a larger build process. This returns both a list
@@ -11,7 +15,8 @@ use sycamore::prelude::SsrNode;
 /// as to whether or not it only generated a single page to occupy the template's root path (`true` unless using using build-time path
 /// generation).
 pub async fn build_template(
-    template: Template<SsrNode>,
+    template: &Template<SsrNode>,
+    translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
 ) -> Result<(Vec<String>, bool)> {
     let mut single_page = false;
@@ -36,6 +41,8 @@ pub async fn build_template(
             // We don't want to concatenate the name twice if we don't have to
             false => urlencoding::encode(&template_path).to_string(),
         };
+        // Add the current locale to the front of that
+        let full_path = format!("{}-{}", translator.locale, full_path);
 
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated
@@ -47,8 +54,9 @@ pub async fn build_template(
                 .write(&format!("static/{}.json", full_path), &initial_state)
                 .await?;
             // Prerender the template using that state
-            let prerendered =
-                sycamore::render_to_string(|| template.render_for_template(Some(initial_state)));
+            let prerendered = sycamore::render_to_string(|| {
+                template.render_for_template(Some(initial_state), Rc::clone(&translator))
+            });
             // Write that prerendered HTML to a static file
             config_manager
                 .write(&format!("static/{}.html", full_path), &prerendered)
@@ -62,6 +70,7 @@ pub async fn build_template(
                 decode_time_str(&template.get_revalidate_interval().unwrap())?;
             // Write that to a static file, we'll update it every time we revalidate
             // Note that this runs for every path generated, so it's fully usable with ISR
+            // Yes, there's a different revalidation schedule for each locale, but that means we don't have to rebuild every locale simultaneously
             config_manager
                 .write(
                     &format!("static/{}.revld.txt", full_path),
@@ -76,7 +85,9 @@ pub async fn build_template(
         // If the template is very basic, prerender without any state
         // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
         if template.is_basic() {
-            let prerendered = sycamore::render_to_string(|| template.render_for_template(None));
+            let prerendered = sycamore::render_to_string(|| {
+                template.render_for_template(None, Rc::clone(&translator))
+            });
             // Write that prerendered HTML to a static file
             config_manager
                 .write(&format!("static/{}.html", full_path), &prerendered)
@@ -88,14 +99,15 @@ pub async fn build_template(
 }
 
 async fn build_template_and_get_cfg(
-    template: Template<SsrNode>,
+    template: &Template<SsrNode>,
+    translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
 ) -> Result<HashMap<String, String>> {
     let mut render_cfg = HashMap::new();
     let template_root_path = template.get_path();
     let is_incremental = template.uses_incremental();
 
-    let (pages, single_page) = build_template(template, config_manager).await?;
+    let (pages, single_page) = build_template(template, translator, config_manager).await?;
     // If the template represents a single page itself, we don't need any concatenation
     if single_page {
         render_cfg.insert(template_root_path.clone(), template_root_path.clone());
@@ -120,17 +132,24 @@ async fn build_template_and_get_cfg(
     Ok(render_cfg)
 }
 
-/// Runs the build process of building many different templates.
-pub async fn build_templates(
-    templates: Vec<Template<SsrNode>>,
+/// Runs the build process of building many different templates for a single locale. If you're not using i18n, provide a `Translator::empty()`
+/// for this. You should only build the most commonly used locales here (the rest should be built on demand).
+pub async fn build_templates_for_locale(
+    templates: &[Template<SsrNode>],
+    translator_raw: Translator,
     config_manager: &impl ConfigManager,
 ) -> Result<()> {
+    let translator = Rc::new(translator_raw);
     // The render configuration stores a list of pages to the root paths of their templates
     let mut render_cfg: HashMap<String, String> = HashMap::new();
     // Create each of the templates
     let mut futs = Vec::new();
     for template in templates {
-        futs.push(build_template_and_get_cfg(template, config_manager));
+        futs.push(build_template_and_get_cfg(
+            template,
+            Rc::clone(&translator),
+            config_manager,
+        ));
     }
     let template_cfgs = try_join_all(futs).await?;
     for template_cfg in template_cfgs {
@@ -140,6 +159,46 @@ pub async fn build_templates(
     config_manager
         .write("render_conf.json", &serde_json::to_string(&render_cfg)?)
         .await?;
+
+    Ok(())
+}
+
+/// Gets a translator and builds templates for a single locale.
+async fn build_templates_and_translator_for_locale(
+    templates: &[Template<SsrNode>],
+    locale: String,
+    config_manager: &impl ConfigManager,
+    translations_manager: &impl TranslationsManager,
+) -> Result<()> {
+    let translator = translations_manager
+        .get_translator_for_locale(locale)
+        .await?;
+    build_templates_for_locale(templates, translator, config_manager).await?;
+
+    Ok(())
+}
+
+/// Runs the build process of building many templates for the given locales data, building directly for the default and common locales.
+/// Any other locales should be built on demand.
+pub async fn build_app(
+    templates: Vec<Template<SsrNode>>,
+    locales: &Locales,
+    config_manager: &impl ConfigManager,
+    translations_manager: &impl TranslationsManager,
+) -> Result<()> {
+    let locales_to_build = locales.get_default_and_common();
+    let mut futs = Vec::new();
+
+    for locale in locales_to_build {
+        futs.push(build_templates_and_translator_for_locale(
+            &templates,
+            locale.to_string(),
+            config_manager,
+            translations_manager,
+        ));
+    }
+    // Build all locales in parallel
+    try_join_all(futs).await?;
 
     Ok(())
 }

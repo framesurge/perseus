@@ -14,7 +14,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Arc::new(|_| {
+    Arc::new(|_, _| {
         template! {
             NewPostPage()
         }

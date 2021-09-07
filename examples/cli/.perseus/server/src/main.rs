@@ -1,5 +1,5 @@
 use actix_web::{App, HttpServer};
-use app::{get_config_manager, get_templates_map};
+use app::{get_config_manager, get_locales, get_templates_map, get_translations_manager};
 use futures::executor::block_on;
 use perseus_actix_web::{configurer, Options};
 use std::env;
@@ -23,8 +23,10 @@ async fn main() -> std::io::Result<()> {
                     // Our crate has the same name, so this will be predictable
                     wasm_bundle: "dist/pkg/perseus_cli_builder_bg.wasm".to_string(),
                     templates_map: get_templates_map(),
+                    locales: get_locales(),
                 },
                 get_config_manager(),
+                get_translations_manager(),
             )))
         })
         .bind((host, port))?

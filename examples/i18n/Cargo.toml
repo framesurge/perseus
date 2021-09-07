@@ -1,0 +1,16 @@
+[package]
+name = "perseus-example-i18n"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Perseus itself, which we (amazingly) need for a Perseus app
+perseus = { path = "../../packages/perseus" }
+# Sycamore, the library Perseus depends on for lower-leve reactivity primitivity
+sycamore = { version = "0.5.1", features = ["ssr"] }
+sycamore-router = "0.5.1"
+# Serde, which lets you work with representations of data, like JSON
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

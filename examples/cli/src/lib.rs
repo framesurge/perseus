@@ -18,17 +18,24 @@ define_app! {
     router: {
         Route::Index => [
             "index".to_string(),
-            pages::index::template_fn()
+            pages::index::template_fn(),
+            "en-US".to_string()
         ],
         Route::About => [
             "about".to_string(),
-            pages::about::template_fn()
+            pages::about::template_fn(),
+            "en-US".to_string()
         ]
     },
     error_pages: crate::error_pages::get_error_pages(),
     templates: [
         crate::pages::index::get_page::<G>(),
         crate::pages::about::get_page::<G>()
-    ]
+    ],
+    locales: {
+        default: "en-US",
+        common: [],
+        other: []
+    }
     // config_manager: perseus::FsConfigManager::new()
 }

@@ -1,5 +1,7 @@
 use perseus_cli::errors::*;
-use perseus_cli::{build, check_env, delete_artifacts, delete_bad_dir, help, prepare, serve, PERSEUS_VERSION};
+use perseus_cli::{
+    build, check_env, delete_artifacts, delete_bad_dir, help, prepare, serve, PERSEUS_VERSION,
+};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -8,7 +10,8 @@ use std::path::PathBuf;
 fn main() {
     // In development, we'll test in the `basic` example
     if cfg!(debug_assertions) {
-        let example_to_test = env::var("TEST_EXAMPLE").unwrap_or_else(|_| "../../examples/basic".to_string());
+        let example_to_test =
+            env::var("TEST_EXAMPLE").unwrap_or_else(|_| "../../examples/basic".to_string());
         env::set_current_dir(example_to_test).unwrap();
     }
     let exit_code = real_main();

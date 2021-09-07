@@ -1,7 +1,10 @@
 use crate::errors::*;
 use crate::serve::PageData;
 use crate::template::TemplateFn;
+use crate::ClientTranslationsManager;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use wasm_bindgen::prelude::*;
@@ -109,6 +112,9 @@ impl ErrorPages {
 pub fn app_shell(
     path: String,
     template_fn: TemplateFn<DomNode>,
+    // translator: Rc<Translator>,
+    locale: String,
+    translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: ErrorPages,
 ) -> Template<DomNode> {
     // Get the container as a DOM element
@@ -116,7 +122,7 @@ pub fn app_shell(
     // Spawn a Rust futures thread in the background to fetch the static HTML/JSON
     wasm_bindgen_futures::spawn_local(cloned!((container) => async move {
         // Get the static page data
-        let asset_url = format!("/.perseus/page/{}", path.to_string());
+        let asset_url = format!("/.perseus/page/{}/{}", locale, path.to_string());
         // If this doesn't exist, then it's a 404 (we went here by explicit navigation, but it may be an unservable ISR page or the like)
         let page_data_str = fetch(&asset_url).await;
         match page_data_str {
@@ -131,10 +137,26 @@ pub fn app_shell(
                             let container_elem = container.get::<DomNode>().unchecked_into::<web_sys::Element>();
                             container_elem.set_inner_html(&page_data.content);
 
+                            // Now that the user can see something, we can get the translator
+                            let mut translations_manager_mut = translations_manager.borrow_mut();
+                            // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
+                            let translator = translations_manager_mut.get_translator_for_locale(&locale).await;
+                            let translator = match translator {
+                                Ok(translator) => translator,
+                                Err(err) => match err.kind() {
+                                    // TODO assign status codes to client-side errors and do all this automatically
+                                    ErrorKind::AssetNotOk(url, status, err) => return error_pages.render_page(url, status, err, &container),
+                                    ErrorKind::AssetSerFailed(url, err) => return error_pages.render_page(url, &500, err, &container),
+                                    ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &format!("locale '{}' not supported", locale), &container),
+                                    // No other errors should be returned
+                                    _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                                }
+                            };
+
                             // Hydrate that static code using the acquired state
                             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                             sycamore::hydrate_to(
-                                || template_fn(page_data.state),
+                                || template_fn(page_data.state, Rc::clone(&translator)),
                                 &container.get::<DomNode>().inner_element()
                             );
                         },
@@ -154,11 +176,6 @@ pub fn app_shell(
 
     // This is where the static content will be rendered
     // BUG: white flash of death until Sycamore can suspend the router until the static content is ready
-    // PageToRender::Success(
-    //     template! {
-    //         div(ref = container)
-    //     }
-    // )
     template! {
         div(ref = container)
     }
