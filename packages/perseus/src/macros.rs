@@ -56,8 +56,7 @@ macro_rules! define_app {
         // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
         locales: {
             default: $default_locale:literal,
-            // The user doesn't have to define any common/other locales
-            common: [$($common_locale:literal),*],
+            // The user doesn't have to define any other locales
             other: [$($other_locale:literal),*]
         }
         $(,config_manager: $config_manager:expr)?
@@ -82,9 +81,6 @@ macro_rules! define_app {
         pub fn get_locales() -> $crate::Locales {
             $crate::Locales {
                 default: $default_locale.to_string(),
-                common: vec![
-                    $($common_locale.to_string()),*
-                ],
                 other: vec![
                     $($other_locale.to_string()),*
                 ]

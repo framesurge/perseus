@@ -159,6 +159,7 @@ async fn revalidate(
 /// at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
 // TODO possible further optimizations on this for futures?
 pub async fn get_page(
+    // This must not contain the locale
     path: &str,
     locale: &str,
     req: Request,

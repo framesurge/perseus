@@ -34,7 +34,6 @@ define_app! {
     ],
     locales: {
         default: "en-US",
-        common: [],
         other: []
     }
     // config_manager: perseus::FsConfigManager::new()

@@ -178,18 +178,18 @@ async fn build_templates_and_translator_for_locale(
     Ok(())
 }
 
-/// Runs the build process of building many templates for the given locales data, building directly for the default and common locales.
-/// Any other locales should be built on demand.
+/// Runs the build process of building many templates for the given locales data, building directly for all supported locales. This is
+/// fine because of how ridiculously fast builds are.
 pub async fn build_app(
     templates: Vec<Template<SsrNode>>,
     locales: &Locales,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
 ) -> Result<()> {
-    let locales_to_build = locales.get_default_and_common();
+    let locales = locales.get_all();
     let mut futs = Vec::new();
 
-    for locale in locales_to_build {
+    for locale in locales {
         futs.push(build_templates_and_translator_for_locale(
             &templates,
             locale.to_string(),

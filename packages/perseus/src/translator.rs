@@ -7,24 +7,14 @@ use std::collections::HashMap;
 pub struct Locales {
     /// The default locale, which will be used as a fallback if the user's locale can't be extracted. This will be built for at build-time.
     pub default: String,
-    /// Common locales that should be built for at build-time.
-    pub common: Vec<String>,
-    /// All other supported locales, which won't be built unless requested at request-time.
+    /// All other supported locales, which will all be built at build time.
     pub other: Vec<String>,
 }
 impl Locales {
-    /// Gets all the supported locales by combining the default, common, and other.
+    /// Gets all the supported locales by combining the default, and other.
     pub fn get_all(&self) -> Vec<&String> {
         let mut vec: Vec<&String> = vec![&self.default];
-        vec.extend(&self.common);
         vec.extend(&self.other);
-
-        vec
-    }
-    /// Gets the locales that should be built at build time, the default and common.
-    pub fn get_default_and_common(&self) -> Vec<&String> {
-        let mut vec: Vec<&String> = vec![&self.default];
-        vec.extend(&self.common);
 
         vec
     }

@@ -35,7 +35,6 @@ define_app! {
     ],
     locales: {
         default: "en-US",
-        common: ["en-US", "fr-FR"],
-        other: ["es-ES"]
+        other: ["fr-FR", "es-ES"]
     }
 }
