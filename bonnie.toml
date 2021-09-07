@@ -4,7 +4,6 @@ version="0.3.2"
 dev.subcommands.cli.cmd = [
 	"cd packages/perseus-cli",
     # We need to copy in the directory where we actually work on the subcrate
-    "cd ../perseus-cli",
     "rm -rf ./.perseus",
     "cp -r ../../examples/cli/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
@@ -13,11 +12,17 @@ dev.subcommands.cli.cmd = [
 ]
 dev.subcommands.cli.desc = "runs the cli in its own directory (which should test `examples/basic`)"
 dev.subcommands.example.cmd = [
-    "cd examples/%example",
-    "find . -not -path \"./.perseus/*\" -not -path \"./target/*\" | entr -s \"perseus serve\""
+    "cd packages/perseus-cli",
+    # We need to copy in the directory where we actually work on the subcrate
+    "rm -rf ./.perseus",
+    "cp -r ../../examples/cli/.perseus/ .perseus/",
+    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
+    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
+    # Now point this live version of the CLI at the given example
+    "TEST_EXAMPLE=../../examples/%example cargo run -- %%"
 ]
 dev.subcommands.example.args = [ "example" ]
-dev.subcommands.example.desc = "serves the given example, watching for file changes (uses cli)"
+dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
 build = "cargo build"
 test = "cargo watch -x \"test\""

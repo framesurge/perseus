@@ -75,23 +75,27 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
                 "no '[package]' section in manifest".to_string()
             )),
         };
-        // Replace the relative path references to Perseus packages
-        // Also update the name of the user's crate (Cargo needs more than just a path and an alias)
+        // Update the name of the user's crate (Cargo needs more than just a path and an alias)
         // Also add an empty `[workspace]` key so we exclude from any of the user's workspace settings
         let updated_root_manifest = root_manifest_contents
-            .replace(
-                "{ path = \"../../../packages/perseus\" }",
-                &format!("\"{}\"", PERSEUS_VERSION),
-            )
             .replace("perseus-example-cli", &user_crate_name)
             + "\n[workspace]";
         let updated_server_manifest = server_manifest_contents
-            .replace(
-                "{ path = \"../../../../packages/perseus-actix-web\" }",
-                &format!("\"{}\"", PERSEUS_VERSION),
-            )
             .replace("perseus-example-cli", &user_crate_name)
             + "\n[workspace]";
+
+        // If we're not in development, also update relative path references
+        #[cfg(not(debug_assertions))]
+        let updated_root_manifest = updated_root_manifest.replace(
+            "{ path = \"../../../packages/perseus\" }",
+            &format!("\"{}\"", PERSEUS_VERSION),
+        );
+        #[cfg(not(debug_assertions))]
+        let updated_server_manifest = updated_server_manifest.replace(
+            "{ path = \"../../../../packages/perseus-actix-web\" }",
+            &format!("\"{}\"", PERSEUS_VERSION),
+        );
+
         // Write the updated manifests back
         if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {
             bail!(ErrorKind::ManifestUpdateFailed(

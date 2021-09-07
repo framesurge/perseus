@@ -8,7 +8,8 @@ use std::path::PathBuf;
 fn main() {
     // In development, we'll test in the `basic` example
     if cfg!(debug_assertions) {
-        env::set_current_dir("../../examples/basic").unwrap();
+        let example_to_test = env::var("TEST_EXAMPLE").unwrap_or_else(|_| "../../examples/basic".to_string());
+        env::set_current_dir(example_to_test).unwrap();
     }
     let exit_code = real_main();
     std::process::exit(exit_code)
