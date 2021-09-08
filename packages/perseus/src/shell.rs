@@ -115,7 +115,7 @@ pub fn app_shell(
     // translator: Rc<Translator>,
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
-    error_pages: ErrorPages,
+    error_pages: Rc<ErrorPages>,
 ) -> Template<DomNode> {
     // Get the container as a DOM element
     let container = NodeRef::new();
