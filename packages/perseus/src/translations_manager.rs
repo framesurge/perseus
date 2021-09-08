@@ -6,7 +6,7 @@ use crate::Translator;
 use error_chain::{bail, error_chain};
 use std::collections::HashMap;
 use std::fs;
-use std::sync::Arc;
+use futures::future::join_all;
 
 // This has no foreign links because everything to do with config management should be isolated and generic
 error_chain! {
@@ -31,7 +31,7 @@ error_chain! {
 }
 
 /// A trait for systems that manage where to put translations. At simplest, we'll just write them to static files, but they might also
-/// be stored in a CMS.
+/// be stored in a CMS. It is **strongly** advised that any implementations use some form of caching, guided by `FsTranslationsManager`.
 #[async_trait::async_trait]
 pub trait TranslationsManager: Clone {
     /// Gets a translator for the given locale.
@@ -41,47 +41,88 @@ pub trait TranslationsManager: Clone {
     async fn get_translations_str_for_locale(&self, locale: String) -> Result<String>;
 }
 
+// TODO make this return a tuple including the locale so we can join the futures
+/// A utility function for allowing parallel futures execution. This returns a tuple of the locale and the translations as a JSON string.
+async fn get_translations_str_and_cache(locale: String, manager: &FsTranslationsManager) -> (String, String) {
+    let translations_str = manager
+        .get_translations_str_for_locale(locale.to_string())
+        .await
+        .unwrap_or_else(|_| panic!("translations for locale to be cached '{}' couldn't be loaded", locale));
+
+    (locale, translations_str)
+}
+
 /// The default translations manager. This will store static files in the specified location on disk. This should be suitable for
 /// nearly all development and serverful use-cases. Serverless is another matter though (more development needs to be done). This
 /// mandates that translations be stored as JSON files named as the locale they describe (e.g. 'en-US.json').
 #[derive(Clone)]
 pub struct FsTranslationsManager {
     root_path: String,
-    /// A map of locales to cached translators. This decreases the number of file reads significantly for the locales specified. This
-    /// does NOT cache dynamically, and will only cache the requested locales.
-    cached_translators: HashMap<String, Arc<Translator>>,
+    /// A map of locales to cached translations. This decreases the number of file reads significantly for the locales specified. This
+    /// does NOT cache dynamically, and will only cache the requested locales. Translators can be created when necessary from these.
+    cached_translations: HashMap<String, String>,
     /// The locales being cached for easier access.
     cached_locales: Vec<String>
 }
 // TODO implement caching
 impl FsTranslationsManager {
-    /// Creates a new filesystem translations manager. You should provide a path like `/translations` here.
-    pub fn new(root_path: String) -> Self {
-        Self {
+    /// Creates a new filesystem translations manager. You should provide a path like `/translations` here. You should also provide
+    /// the locales you want to cache, which will have their translations stored in memory. Any supported locales not specified here
+    /// will not be cached, and must have their translations read from disk on every request. If fetching translations for any of the
+    /// given locales fails, this will panic (locales to be cached should always be hardcoded).
+    // TODO performance analysis of manual caching strategy
+    pub async fn new(root_path: String, locales_to_cache: Vec<String>) -> Self {
+        // Initialize a new instance without any caching first
+        let mut manager = Self {
             root_path,
-            cached_translators: HashMap::new(),
+            cached_translations: HashMap::new(),
             cached_locales: Vec::new()
+        };
+        // Now use that to get the translations for the locales we want to cache (all done in parallel)
+        let mut futs = Vec::new();
+        for locale in &locales_to_cache {
+            futs.push(
+                get_translations_str_and_cache(locale.to_string(), &manager)
+            );
         }
+        let cached_translations_kv_vec = join_all(futs).await;
+        manager.cached_translations = cached_translations_kv_vec.iter().cloned().collect();
+        // We only declare the locales that are being cached after getting translations becuase otherwise those getters would be using undefined caches
+        manager.cached_locales = locales_to_cache;
+
+        manager
     }
 }
 #[async_trait::async_trait]
 impl TranslationsManager for FsTranslationsManager {
     async fn get_translations_str_for_locale(&self, locale: String) -> Result<String> {
-        // The file must be named as the locale it describes
-        let asset_path = format!("{}/{}.json", self.root_path, locale);
-        let translations_str = match fs::metadata(&asset_path) {
-            Ok(_) => fs::read_to_string(&asset_path)
-                .map_err(|err| ErrorKind::ReadFailed(asset_path, err.to_string()))?,
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                bail!(ErrorKind::NotFound(asset_path))
-            }
-            Err(err) => bail!(ErrorKind::ReadFailed(locale.to_string(), err.to_string())),
-        };
-
-        Ok(translations_str)
+        // Check if the locale is cached for
+        // No dynamic caching, so if it isn't cached it stays that way
+        if self.cached_locales.contains(&locale) {
+            Ok(self.cached_translations.get(&locale).unwrap().to_string())
+        } else {
+            // The file must be named as the locale it describes
+            let asset_path = format!("{}/{}.json", self.root_path, locale);
+            let translations_str = match fs::metadata(&asset_path) {
+                Ok(_) => fs::read_to_string(&asset_path)
+                    .map_err(|err| ErrorKind::ReadFailed(asset_path, err.to_string()))?,
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                    bail!(ErrorKind::NotFound(asset_path))
+                }
+                Err(err) => bail!(ErrorKind::ReadFailed(locale.to_string(), err.to_string())),
+            };
+            Ok(translations_str)
+        }
     }
     async fn get_translator_for_locale(&self, locale: String) -> Result<Translator> {
-        let translations_str = self.get_translations_str_for_locale(locale.clone()).await?;
+        // Check if the locale is cached for
+        // No dynamic caching, so if it isn't cached it stays that way
+        let translations_str;
+        if self.cached_locales.contains(&locale) {
+            translations_str = self.cached_translations.get(&locale).unwrap().to_string();
+        } else {
+            translations_str = self.get_translations_str_for_locale(locale.clone()).await?;
+        }
         // We expect the translations defined there, but not the locale itself
         let translations = serde_json::from_str::<HashMap<String, String>>(&translations_str)
             .map_err(|err| ErrorKind::SerializationFailed(locale.clone(), err.to_string()))?;

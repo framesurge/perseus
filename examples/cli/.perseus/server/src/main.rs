@@ -26,7 +26,7 @@ async fn main() -> std::io::Result<()> {
                     locales: get_locales(),
                 },
                 get_config_manager(),
-                get_translations_manager(),
+                block_on(get_translations_manager()),
             )))
         })
         .bind((host, port))?

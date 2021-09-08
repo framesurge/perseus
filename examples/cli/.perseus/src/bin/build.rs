@@ -9,7 +9,7 @@ fn main() {
 
 fn real_main() -> i32 {
     let config_manager = get_config_manager();
-    let translations_manager = get_translations_manager();
+    let translations_manager = block_on(get_translations_manager());
     let locales = get_locales();
 
     // Build the site for all the common locales (done in parallel)

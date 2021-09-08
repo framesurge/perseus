@@ -16,14 +16,22 @@ macro_rules! define_get_config_manager {
 /// An internal macro used for defining a function to get the user's preferred translations manager (which requires multiple branches).
 #[macro_export]
 macro_rules! define_get_translations_manager {
-    () => {
-        pub fn get_translations_manager() -> impl $crate::TranslationsManager {
+    ($locales:expr) => {
+        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
             // This will be executed in the context of the user's directory, but moved into `.perseus`
             // Note that `translations/` must be next to `src/`, not within it
-            $crate::FsTranslationsManager::new("../translations".to_string())
+            // By default, all translations are cached
+            let all_locales: Vec<String> = $locales
+                .get_all()
+                .iter()
+                // We have a `&&String` at this point, hence the double clone
+                .cloned()
+                .cloned()
+                .collect();
+            $crate::FsTranslationsManager::new("../translations".to_string(), all_locales).await
         }
     };
-    ($translations_manager:expr) => {
+    ($locales:expr, $translations_manager:expr) => {
         pub fn get_translations_manager() -> impl $crate::TranslationsManager {
             $translations_manager
         }
@@ -74,7 +82,7 @@ macro_rules! define_app {
 
         /// Gets the translations manager to use. This allows the user to conveniently test production managers in development. If
         /// nothing is given, the filesystem will be used.
-        $crate::define_get_translations_manager!($($translations_manager)?);
+        $crate::define_get_translations_manager!(get_locales() $(, $translations_manager)?);
 
         /// Defines the locales the app should build for, specifying defaults and common locales (which will be built at build-time
         /// rather than on-demand).
