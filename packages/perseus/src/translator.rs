@@ -75,6 +75,11 @@ impl Translator {
             )),
         }
     }
+    /// Gets the given URL in the current locale. This allows easier navigation within the same locale, but it's just sugar. The given
+    /// locale should have a leading forward slash (to maintain the appearance of routing).
+    pub fn url<S: Into<String> + std::fmt::Display>(&self, url: S) -> String {
+        format!("/{}{}", self.locale, url)
+    }
 }
 
 /// A super-shortcut for translating stuff. Your translator must be named `translator` for this to work.

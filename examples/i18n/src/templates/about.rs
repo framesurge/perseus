@@ -1,4 +1,4 @@
-use perseus::{t, Template, Translator};
+use perseus::{Template, Translator};
 use std::rc::Rc;
 use std::sync::Arc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};

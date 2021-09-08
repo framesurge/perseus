@@ -1,14 +1,17 @@
-use perseus::{t, Template, Translator};
+use perseus::{Template, Translator};
 use std::rc::Rc;
 use std::sync::Arc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[component(IndexPage<G>)]
 pub fn index_page(translator: Rc<Translator>) -> SycamoreTemplate<G> {
+    // TODO fix multiple translators with some kind of macro
+    let translator_1 = Rc::clone(&translator);
+    let translator_2 = Rc::clone(&translator);
     template! {
         // TODO switch to `t!` macro
-        p { (translator.translate("hello")) }
-        a(href = "/en-US/about") { "About" }
+        p { (translator_1.translate("hello")) }
+        a(href = translator_2.url("/about")) { "About" }
     }
 }
 
