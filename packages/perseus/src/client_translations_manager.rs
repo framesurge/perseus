@@ -3,6 +3,7 @@ use crate::shell::fetch;
 use crate::Locales;
 use crate::Translator;
 use std::rc::Rc;
+use std::collections::HashMap;
 
 /// Manages translations in the app shell. This handles fetching translations from the server as well as caching for performance.
 /// This is distinct from `TranslationsManager` in that it operates on the client-side rather than on the server. This optimizes for
@@ -39,10 +40,11 @@ impl ClientTranslationsManager {
                 let translator = match translator_str {
                     Ok(translator_str) => match translator_str {
                         Some(translator_str) => {
-                            // All good, deserialize the translator
-                            let translator = serde_json::from_str::<Translator>(&translator_str);
-                            match translator {
-                                Ok(translator) => translator,
+                            // All good, deserialize the translations
+                            let translations = serde_json::from_str::<HashMap<String, String>>(&translator_str);
+                            match translations {
+                                // And then turn them into a translator
+                                Ok(translations) => Translator::new(locale.to_string(), translations),
                                 Err(err) => {
                                     bail!(ErrorKind::AssetSerFailed(asset_url, err.to_string()))
                                 }
