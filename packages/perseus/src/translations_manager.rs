@@ -60,7 +60,7 @@ async fn get_translations_str_and_cache(
 
 /// The default translations manager. This will store static files in the specified location on disk. This should be suitable for
 /// nearly all development and serverful use-cases. Serverless is another matter though (more development needs to be done). This
-/// mandates that translations be stored as files named as the locale they describe (e.g. 'en-US.ftl').
+/// mandates that translations be stored as files named as the locale they describe (e.g. 'en-US.ftl', 'en-US.json', etc.).
 #[derive(Clone)]
 pub struct FsTranslationsManager {
     root_path: String,

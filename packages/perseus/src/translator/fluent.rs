@@ -1,62 +1,10 @@
-use error_chain::{bail, error_chain};
+use crate::translator::errors::*;
 use fluent_bundle::{FluentArgs, FluentBundle, FluentResource};
 use std::rc::Rc;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
-/// Defines app information about i18n, specifically about which locales are supported.
-#[derive(Clone)]
-pub struct Locales {
-    /// The default locale, which will be used as a fallback if the user's locale can't be extracted. This will be built for at build-time.
-    pub default: String,
-    /// All other supported locales, which will all be built at build time.
-    pub other: Vec<String>,
-}
-impl Locales {
-    /// Gets all the supported locales by combining the default, and other.
-    pub fn get_all(&self) -> Vec<&String> {
-        let mut vec: Vec<&String> = vec![&self.default];
-        vec.extend(&self.other);
-
-        vec
-    }
-    /// Checks if the given locale is supported.
-    pub fn is_supported(&self, locale: &str) -> bool {
-        let locales = self.get_all();
-        locales.iter().any(|l| *l == locale)
-    }
-}
-
-// This has its own error management because the user might be implementing translators themselves
-error_chain! {
-    errors {
-        /// For when a translation ID doesn't exist.
-        TranslationIdNotFound(id: String, locale: String) {
-            description("translation id not found for current locale")
-            display("translation id '{}' not found for locale '{}'", id, locale)
-        }
-        /// For when the given string of translations couldn't be correctly parsed
-        TranslationsStrSerFailed(locale: String, err: String) {
-            description("given translations string couldn't be parsed")
-            display("given translations string for locale '{}' couldn't be parsed: '{}'", locale, err)
-        }
-        /// For when the given locale was invalid. This takes an error because different i18n systems may have different requirements.
-        InvalidLocale(locale: String, err: String) {
-            description("given locale was invalid")
-            display("given locale '{}' was invalid: '{}'", locale, err)
-        }
-        /// For when the translation of a message failed for some reason generally.
-        TranslationFailed(id: String, locale: String, err: String) {
-            description("message translation failed")
-            display("translation of message with id '{}' into locale '{}' failed: '{}'", id, locale, err)
-        }
-        /// For when the we couldn't arrive at a translation for some reason. This might be caused by an invalid variant for a compound
-        /// message.
-        NoTranslationDerived(id: String, locale: String) {
-            description("no translation derived for message")
-            display("no translation could be derived for message with id '{}' in locale '{}'", id, locale)
-        }
-    }
-}
+/// The file extension used by the Fluent translator, which expects FTL files.
+pub const FLUENT_TRANSLATOR_FILE_EXT: &str = "ftl";
 
 /// Manages translations on the client-side for a single locale using Mozilla's [Fluent](https://projectfluent.org/) syntax. This
 /// should generally be placed into an `Rc<T>` and referred to by every template in an app. You do NOT want to be cloning potentially
@@ -64,13 +12,13 @@ error_chain! {
 ///
 /// Fluent supports compound messages, with many variants, which can specified here using the form `[id].[variant]` in a translation ID,
 /// as a `.` is not valid in an ID anyway, and so can be used as a delimiter. More than one dot will result in an error.
-pub struct Translator {
+pub struct FluentTranslator {
     /// Stores the internal Fluent data for translating. This bundle directly owns its attached resources (translations).
     bundle: Rc<FluentBundle<FluentResource>>,
     /// The locale for which translations are being managed by this instance.
     locale: String,
 }
-impl Translator {
+impl FluentTranslator {
     /// Creates a new translator for a given locale, passing in translations in FTL syntax form.
     pub fn new(locale: String, ftl_string: String) -> Result<Self> {
         let resource = FluentResource::try_new(ftl_string)
@@ -196,13 +144,4 @@ impl Translator {
     pub fn get_bundle(&self) -> Rc<FluentBundle<FluentResource>> {
         Rc::clone(&self.bundle)
     }
-}
-
-/// A super-shortcut for translating stuff. Your translator must be named `translator` for this to work.
-// FIXME
-#[macro_export]
-macro_rules! t {
-    ($id:literal, $translator:expr) => {
-        $translator.translate($id)
-    };
 }

@@ -35,6 +35,7 @@ mod client_translations_manager;
 pub mod config_manager;
 mod decode_time_str;
 pub mod errors;
+mod locales;
 mod macros;
 /// Utilities for serving your app. These are platform-agnostic, and you probably want an integration like [perseus-actix-web](https://crates.io/crates/perseus-actix-web).
 pub mod serve;
@@ -58,8 +59,9 @@ pub use crate::build::{build_app, build_template, build_templates_for_locale};
 pub use crate::client_translations_manager::ClientTranslationsManager;
 pub use crate::config_manager::{ConfigManager, FsConfigManager};
 pub use crate::errors::{err_to_status_code, ErrorCause};
+pub use crate::locales::Locales;
 pub use crate::serve::{get_page, get_render_cfg};
 pub use crate::shell::{app_shell, ErrorPages};
 pub use crate::template::{States, StringResult, StringResultWithCause, Template, TemplateMap};
 pub use crate::translations_manager::{FsTranslationsManager, TranslationsManager};
-pub use crate::translator::{Locales, Translator};
+pub use crate::translator::{Translator, TRANSLATOR_FILE_EXT};

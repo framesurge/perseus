@@ -31,7 +31,7 @@ macro_rules! define_get_translations_manager {
             $crate::FsTranslationsManager::new(
                 "../translations".to_string(),
                 all_locales,
-                "ftl".to_string(),
+                $crate::TRANSLATOR_FILE_EXT.to_string(),
             )
             .await
         }

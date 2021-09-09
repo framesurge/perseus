@@ -76,7 +76,7 @@ error_chain! {
     links {
         ConfigManager(crate::config_manager::Error, crate::config_manager::ErrorKind);
         TranslationsManager(crate::translations_manager::Error, crate::translations_manager::ErrorKind);
-        Translator(crate::translator::Error, crate::translator::ErrorKind);
+        Translator(crate::translator::errors::Error, crate::translator::errors::ErrorKind);
     }
     // We work with many external libraries, all of which have their own errors
     foreign_links {
