@@ -13,7 +13,9 @@ pub async fn translations<T: TranslationsManager>(
     // Check if the locale is supported
     if opts.locales.is_supported(locale) {
         // We know that the locale is supported, so any failure to get translations is a 500
-        let translations = translations_manager.get_translations_str_for_locale(locale.to_string()).await;
+        let translations = translations_manager
+            .get_translations_str_for_locale(locale.to_string())
+            .await;
         let translations = match translations {
             Ok(translations) => translations,
             Err(err) => return HttpResponse::InternalServerError().body(err.to_string()),

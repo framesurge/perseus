@@ -10,7 +10,11 @@ pub fn index_page(translator: Rc<Translator>) -> SycamoreTemplate<G> {
     let translator_2 = Rc::clone(&translator);
     template! {
         // TODO switch to `t!` macro
-        p { (translator_1.translate("hello")) }
+        p { (translator_1.translate("hello", {
+            let mut args = fluent_bundle::FluentArgs::new();
+            args.set("user", "User");
+            Some(args)
+        })) }
         a(href = translator_2.url("/about")) { "About" }
     }
 }

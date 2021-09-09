@@ -3,7 +3,6 @@ use crate::shell::fetch;
 use crate::Locales;
 use crate::Translator;
 use std::rc::Rc;
-use std::collections::HashMap;
 
 /// Manages translations in the app shell. This handles fetching translations from the server as well as caching for performance.
 /// This is distinct from `TranslationsManager` in that it operates on the client-side rather than on the server. This optimizes for
@@ -27,7 +26,7 @@ impl ClientTranslationsManager {
     pub async fn get_translator_for_locale(&mut self, locale: &str) -> Result<Rc<Translator>> {
         // Check if we've already cached
         if self.cached_translator.is_some()
-            && self.cached_translator.as_ref().unwrap().locale == locale
+            && self.cached_translator.as_ref().unwrap().get_locale() == locale
         {
             Ok(Rc::clone(self.cached_translator.as_ref().unwrap()))
         } else {
@@ -36,15 +35,14 @@ impl ClientTranslationsManager {
                 // Get the translations data
                 let asset_url = format!("/.perseus/translations/{}", locale);
                 // If this doesn't exist, then it's a 404 (we went here by explicit navigation after checking the locale, so that's a bug)
-                let translator_str = fetch(&asset_url).await;
-                let translator = match translator_str {
-                    Ok(translator_str) => match translator_str {
-                        Some(translator_str) => {
-                            // All good, deserialize the translations
-                            let translations = serde_json::from_str::<HashMap<String, String>>(&translator_str);
-                            match translations {
-                                // And then turn them into a translator
-                                Ok(translations) => Translator::new(locale.to_string(), translations),
+                let translations_str = fetch(&asset_url).await;
+                let translator = match translations_str {
+                    Ok(translations_str) => match translations_str {
+                        Some(translations_str) => {
+                            // All good, turn the translations into a translator
+                            let translator = Translator::new(locale.to_string(), translations_str);
+                            match translator {
+                                Ok(translator) => translator,
                                 Err(err) => {
                                     bail!(ErrorKind::AssetSerFailed(asset_url, err.to_string()))
                                 }

@@ -42,7 +42,7 @@ pub async fn build_template(
             false => urlencoding::encode(&template_path).to_string(),
         };
         // Add the current locale to the front of that
-        let full_path = format!("{}-{}", translator.locale, full_path);
+        let full_path = format!("{}-{}", translator.get_locale(), full_path);
 
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated

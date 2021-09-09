@@ -2,6 +2,7 @@ use crate::errors::*;
 use crate::serve::PageData;
 use crate::template::TemplateFn;
 use crate::ClientTranslationsManager;
+use crate::Translator;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -52,9 +53,11 @@ pub(crate) async fn fetch(url: &str) -> Result<Option<String>> {
     }
 }
 
-/// The callback to a template the user must provide for error pages. This is passed the status code, the error message, and the URL of
-/// the problematic asset.
-pub type ErrorPageTemplate<G> = Box<dyn Fn(&str, &u16, &str) -> SycamoreTemplate<G>>;
+/// The callback to a template the user must provide for error pages. This is passed the status code, the error message, the URL of the
+/// problematic asset, and a translator if one is available . Many error pages are generated when a translator is not available or
+/// couldn't be instantiated, so you'll need to rely on symbols or the like in these cases.
+pub type ErrorPageTemplate<G> =
+    Box<dyn Fn(&str, &u16, &str, Option<Rc<Translator>>) -> SycamoreTemplate<G>>;
 
 /// A type alias for the `HashMap` the user should provide for error pages.
 pub struct ErrorPages {
@@ -75,7 +78,14 @@ impl ErrorPages {
         self.status_pages.insert(status, page);
     }
     /// Renders the appropriate error page to the given DOM container.
-    pub fn render_page(&self, url: &str, status: &u16, err: &str, container: &NodeRef<DomNode>) {
+    pub fn render_page(
+        &self,
+        url: &str,
+        status: &u16,
+        err: &str,
+        translator: Option<Rc<Translator>>,
+        container: &NodeRef<DomNode>,
+    ) {
         // Check if we have an explicitly defined page for this status code
         // If not, we'll render the fallback page
         let template_fn = match self.status_pages.contains_key(status) {
@@ -84,7 +94,7 @@ impl ErrorPages {
         };
         // Render that to the given container
         sycamore::render_to(
-            || template_fn(url, status, err),
+            || template_fn(url, status, err, translator),
             &container.get::<DomNode>().inner_element(),
         );
     }
@@ -94,6 +104,7 @@ impl ErrorPages {
         url: &str,
         status: &u16,
         err: &str,
+        translator: Option<Rc<Translator>>,
     ) -> SycamoreTemplate<DomNode> {
         // Check if we have an explicitly defined page for this status code
         // If not, we'll render the fallback page
@@ -102,7 +113,7 @@ impl ErrorPages {
             false => &self.fallback,
         };
 
-        template_fn(url, status, err)
+        template_fn(url, status, err, translator)
     }
 }
 
@@ -144,10 +155,11 @@ pub fn app_shell(
                             let translator = match translator {
                                 Ok(translator) => translator,
                                 Err(err) => match err.kind() {
+                                    // These errors happen because we couldn't get a translator, so they certainly don't get one
                                     // TODO assign status codes to client-side errors and do all this automatically
-                                    ErrorKind::AssetNotOk(url, status, err) => return error_pages.render_page(url, status, err, &container),
-                                    ErrorKind::AssetSerFailed(url, err) => return error_pages.render_page(url, &500, err, &container),
-                                    ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &format!("locale '{}' not supported", locale), &container),
+                                    ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container),
+                                    ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container),
+                                    ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container),
                                     // No other errors should be returned
                                     _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                                 }
@@ -164,10 +176,12 @@ pub fn app_shell(
                         Err(err) => panic!("page data couldn't be serialized: '{}'", err)
                     };
                 },
-                None => error_pages.render_page(&asset_url, &404, "page not found", &container),
+                // No translators ready yet
+                None => error_pages.render_page(&asset_url, &404, "page not found", None, &container),
             },
             Err(err) => match err.kind() {
-                ErrorKind::AssetNotOk(url, status, err) => error_pages.render_page(url, status, err, &container),
+                // No translators ready yet
+                ErrorKind::AssetNotOk(url, status, _) => error_pages.render_page(url, status, &err.to_string(), None, &container),
                 // No other errors should be returned
                 _ => panic!("expected 'AssetNotOk' error, found other unacceptable error")
             }

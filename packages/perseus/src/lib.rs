@@ -26,6 +26,7 @@
  */
 
 #![deny(missing_docs)]
+#![recursion_limit = "256"]
 
 /// Utilities for building your app.
 pub mod build;
@@ -43,7 +44,8 @@ pub mod shell;
 pub mod template;
 /// Utilities for creating custom translations managers, as well as the default `FsTranslationsManager`.
 pub mod translations_manager;
-mod translator;
+/// Utilities regarding translators, including the default `FluentTranslator`.
+pub mod translator;
 
 pub use http;
 pub use http::Request as HttpRequest;

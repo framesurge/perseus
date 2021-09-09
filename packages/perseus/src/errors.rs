@@ -72,16 +72,11 @@ error_chain! {
             description("error while calling render function")
             display("an error caused by '{:?}' occurred while calling render function '{}' on template '{}': '{}'", cause, fn_name, template, err_str)
         }
-        /// For when a translation ID doesn't exist. This indicates that `translate_checked()` was deliberately used, because `translate()`
-        /// will panic in this scenario.
-        TranslationIdNotFound(id: String, locale: String) {
-            description("translation id not found for current locale")
-            display("translation id '{}' not found for locale '{}'", id, locale)
-        }
     }
     links {
         ConfigManager(crate::config_manager::Error, crate::config_manager::ErrorKind);
         TranslationsManager(crate::translations_manager::Error, crate::translations_manager::ErrorKind);
+        Translator(crate::translator::Error, crate::translator::ErrorKind);
     }
     // We work with many external libraries, all of which have their own errors
     foreign_links {

@@ -34,7 +34,8 @@ pub fn run() -> Result<(), JsValue> {
                 BrowserRouter(move |route: AppRoute| {
                     match route {
                         // We handle the 404 for the user for convenience
-                        AppRoute::NotFound => get_error_pages().get_template_for_page("", &404, "not found"),
+                        // To get a translator here, we'd have to go async and dangerously check the URL
+                        AppRoute::NotFound => get_error_pages().get_template_for_page("", &404, "not found", None),
                         // All other routes are based on the user's given statements
                         _ => {
                             let (name, render_fn, locale) = match_route(route);

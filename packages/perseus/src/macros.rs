@@ -28,7 +28,12 @@ macro_rules! define_get_translations_manager {
                 .cloned()
                 .cloned()
                 .collect();
-            $crate::FsTranslationsManager::new("../translations".to_string(), all_locales).await
+            $crate::FsTranslationsManager::new(
+                "../translations".to_string(),
+                all_locales,
+                "ftl".to_string(),
+            )
+            .await
         }
     };
     ($locales:expr, $translations_manager:expr) => {

@@ -7,7 +7,7 @@ use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTe
 pub fn about_page(translator: Rc<Translator>) -> SycamoreTemplate<G> {
     template! {
         // TODO switch to `t!` macro
-        p { (translator.translate("about")) }
+        p { (translator.translate("about", None)) }
     }
 }
 

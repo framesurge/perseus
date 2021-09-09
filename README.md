@@ -10,6 +10,7 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 -   ✨ Supports incremental regeneration (build on demand)
 -   ✨ Open build matrix (use any rendering strategy with anything else, mostly)
 -   ✨ CLI harness that lets you build apps with ease and confidence
+-   ✨ Full i18n support out-of-the-box with [Fluent](https://projectfluent.org)
 
 ## How to use
 
