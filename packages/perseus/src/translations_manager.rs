@@ -3,7 +3,8 @@
 // This has its own error management logic because the user may implement it separately
 
 use crate::Translator;
-use error_chain::{bail, error_chain};
+pub use error_chain::bail;
+use error_chain::error_chain;
 use futures::future::join_all;
 use std::collections::HashMap;
 use std::fs;
@@ -131,6 +132,29 @@ impl TranslationsManager for FsTranslationsManager {
         }
         // We expect the translations defined there, but not the locale itself
         let translator = Translator::new(locale.clone(), translations_str)
+            .map_err(|err| ErrorKind::SerializationFailed(locale.clone(), err.to_string()))?;
+
+        Ok(translator)
+    }
+}
+
+/// A dummy translations manager for use if you don't want i18n. This avoids errors of not being able to find translations. If you set
+/// `no_i18n: true` in the `locales` section of `define_app!`, this will be used by default. If you intend to use i18n, do not use this!
+#[derive(Clone, Default)]
+pub struct DummyTranslationsManager;
+impl DummyTranslationsManager {
+    /// Creates a new dummy translations manager.
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[async_trait::async_trait]
+impl TranslationsManager for DummyTranslationsManager {
+    async fn get_translations_str_for_locale(&self, _locale: String) -> Result<String> {
+        Ok(String::new())
+    }
+    async fn get_translator_for_locale(&self, locale: String) -> Result<Translator> {
+        let translator = Translator::new(locale.clone(), String::new())
             .map_err(|err| ErrorKind::SerializationFailed(locale.clone(), err.to_string()))?;
 
         Ok(translator)

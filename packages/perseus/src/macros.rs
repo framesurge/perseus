@@ -36,8 +36,19 @@ macro_rules! define_get_translations_manager {
             .await
         }
     };
+    ($locales:expr, $no_i18n:literal) => {
+        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
+            $crate::translations_manager::DummyTranslationsManager::new()
+        }
+    };
     ($locales:expr, $translations_manager:expr) => {
-        pub fn get_translations_manager() -> impl $crate::TranslationsManager {
+        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
+            $translations_manager
+        }
+    };
+    // If the user doesn't want i18n but also sets their own transations manager, the latter takes priority
+    ($locales:expr, $no_i18n:literal, $translations_manager:expr) => {
+        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
             $translations_manager
         }
     };
@@ -45,7 +56,9 @@ macro_rules! define_get_translations_manager {
 
 /// Defines the components to create an entrypoint for the app. The actual entrypoint is created in the `.perseus/` crate (where we can
 /// get all the dependencies without driving the user's `Cargo.toml` nuts). This also defines the template map. This is intended to make
-/// compatibility with the Perseus CLI significantly easier.
+/// compatibility with the Perseus CLI significantly easier. Perseus makes i18n opt-out, so if you don't intend to use it, set `no_i18n`
+/// to `true` in `locales`. Note that you must still specify a default locale for verbosity and correctness. If you specify `no_i18n` and
+/// a custom translations manager, the latter will override.
 #[macro_export]
 macro_rules! define_app {
     {
@@ -71,6 +84,7 @@ macro_rules! define_app {
             default: $default_locale:literal,
             // The user doesn't have to define any other locales
             other: [$($other_locale:literal),*]
+            $(,no_i18n: $no_i18n:literal)?
         }
         $(,config_manager: $config_manager:expr)?
         $(,translations_manager: $translations_manager:expr)?
@@ -87,7 +101,7 @@ macro_rules! define_app {
 
         /// Gets the translations manager to use. This allows the user to conveniently test production managers in development. If
         /// nothing is given, the filesystem will be used.
-        $crate::define_get_translations_manager!(get_locales() $(, $translations_manager)?);
+        $crate::define_get_translations_manager!(get_locales() $(, $no_i18n)? $(, $translations_manager)?);
 
         /// Defines the locales the app should build for, specifying defaults and common locales (which will be built at build-time
         /// rather than on-demand).
