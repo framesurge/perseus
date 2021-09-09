@@ -23,6 +23,13 @@
  * - [Crate page](https://crates.io/crates/perseus)
  * - [Gitter chat](https://gitter.im/perseus-framework/community)
  * - [Discord server channel](https://discord.com/channels/820400041332179004/883168134331256892) (for Sycamore-related stuff)
+ *
+ * # Features
+ *
+ * Perseus performs internationalization using translators, each of which utilizes some translation engine, like [Fluent](https://projectfluent.org).
+ * Each of the available translations are feature-gated, and can be enabled with the `translator-[engine-name]` feature. You can set
+ * the default translator by setting the `translator-dflt-[engine-name]` (you of course can't have more than one default translator).
+ * You can read more about this system [here](https://arctic-hen7.github.io/perseus/i18n.html).
  */
 
 #![deny(missing_docs)]
