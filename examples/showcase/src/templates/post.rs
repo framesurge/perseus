@@ -1,6 +1,6 @@
 use perseus::{ErrorCause, StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize)]
@@ -23,10 +23,10 @@ pub fn post_page(props: PostPageProps) -> SycamoreTemplate<G> {
     }
 }
 
-pub fn get_page<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("post")
-        .build_paths_fn(Arc::new(get_static_paths))
-        .build_state_fn(Arc::new(get_static_props))
+        .build_paths_fn(Rc::new(get_static_paths))
+        .build_state_fn(Rc::new(get_static_props))
         .incremental_path_rendering(true)
         .template(template_fn())
 }
@@ -55,7 +55,7 @@ pub async fn get_static_paths() -> Result<Vec<String>, String> {
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Arc::new(|props, _| {
+    Rc::new(|props, _| {
         template! {
             PostPage(
                 serde_json::from_str::<PostPageProps>(&props.unwrap()).unwrap()

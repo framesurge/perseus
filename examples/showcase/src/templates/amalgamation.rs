@@ -1,6 +1,6 @@
 use perseus::{Request, States, StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -15,11 +15,11 @@ pub fn about_page(props: AmalagamationPageProps) -> SycamoreTemplate<G> {
     }
 }
 
-pub fn get_page<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("amalgamation")
-        .build_state_fn(Arc::new(get_build_state))
-        .request_state_fn(Arc::new(get_request_state))
-        .amalgamate_states_fn(Arc::new(amalgamate_states))
+        .build_state_fn(Rc::new(get_build_state))
+        .request_state_fn(Rc::new(get_request_state))
+        .amalgamate_states_fn(Rc::new(amalgamate_states))
         .template(template_fn())
 }
 
@@ -57,7 +57,7 @@ pub async fn get_request_state(_path: String, _req: Request) -> StringResultWith
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Arc::new(|props, _| {
+    Rc::new(|props, _| {
         template! {
             AboutPage(
                 serde_json::from_str::<AmalagamationPageProps>(&props.unwrap()).unwrap()

@@ -1,6 +1,6 @@
 use perseus::{StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -15,14 +15,14 @@ pub fn time_page(props: TimePageProps) -> SycamoreTemplate<G> {
     }
 }
 
-pub fn get_page<G: GenericNode>() -> Template<G> {
-    Template::new("timeisr")
+pub fn get_template<G: GenericNode>() -> Template<G> {
+    Template::new("time")
         .template(template_fn())
         // This page will revalidate every five seconds (to illustrate revalidation)
+        // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
         .revalidate_after("5s".to_string())
-        .incremental_path_rendering(true)
-        .build_state_fn(Arc::new(get_build_state))
-        .build_paths_fn(Arc::new(get_build_paths))
+        .should_revalidate_fn(Rc::new(|| async { Ok(true) }))
+        .build_state_fn(Rc::new(get_build_state))
 }
 
 pub async fn get_build_state(_path: String) -> StringResultWithCause<String> {
@@ -32,12 +32,8 @@ pub async fn get_build_state(_path: String) -> StringResultWithCause<String> {
     .unwrap())
 }
 
-pub async fn get_build_paths() -> Result<Vec<String>, String> {
-    Ok(vec!["test".to_string()])
-}
-
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Arc::new(|props, _| {
+    Rc::new(|props, _| {
         template! {
             TimePage(
                 serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()

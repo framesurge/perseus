@@ -4,6 +4,7 @@ members = [
 	"packages/perseus-actix-web",
 	"packages/perseus-cli",
     # TODO remake showcase app for CLI
+    "examples/showcase",
 	# "examples/showcase/app",
 	# "examples/showcase/server-actix-web",
     "examples/cli",

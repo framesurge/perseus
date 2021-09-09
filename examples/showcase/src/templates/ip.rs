@@ -2,7 +2,7 @@
 
 use perseus::{Request, StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize)]
@@ -21,9 +21,9 @@ pub fn dashboard_page(props: IpPageProps) -> SycamoreTemplate<G> {
     }
 }
 
-pub fn get_page<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("ip")
-        .request_state_fn(Arc::new(get_request_state))
+        .request_state_fn(Rc::new(get_request_state))
         .template(template_fn())
 }
 
@@ -42,7 +42,7 @@ pub async fn get_request_state(_path: String, req: Request) -> StringResultWithC
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Arc::new(|props, _| {
+    Rc::new(|props, _| {
         template! {
             IpPage(
                 serde_json::from_str::<IpPageProps>(&props.unwrap()).unwrap()

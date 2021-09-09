@@ -14,8 +14,8 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sycamore = { version = "0.5.1", features = ["ssr"] }
-sycamore-router = "0.5.1"
+sycamore = { version = "0.5", features = ["ssr"] }
+sycamore-router = "0.5"
 web-sys = { version = "0.3", features = ["Headers", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"

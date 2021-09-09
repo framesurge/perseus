@@ -1,5 +1,5 @@
 [package]
-name = "perseus-example-i18n"
+name = "perseus-example-showcase"
 version = "0.1.0"
 edition = "2018"
 
@@ -14,4 +14,5 @@ sycamore-router = "0.5"
 # Serde, which lets you work with representations of data, like JSON
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-fluent-bundle = "0.15"
+
+urlencoding = "2.1"
