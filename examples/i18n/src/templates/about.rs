@@ -1,6 +1,5 @@
 use perseus::{Template, Translator};
 use std::rc::Rc;
-use std::sync::Arc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[component(AboutPage<G>)]
@@ -12,7 +11,7 @@ pub fn about_page(translator: Rc<Translator>) -> SycamoreTemplate<G> {
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Arc::new(|_, translator: Rc<Translator>| {
+    Rc::new(|_, translator: Rc<Translator>| {
         template! {
             AboutPage(translator)
         }

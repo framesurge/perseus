@@ -7,7 +7,6 @@ use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
-use std::sync::Arc;
 use sycamore::prelude::{GenericNode, Template as SycamoreTemplate};
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -112,17 +111,17 @@ make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
 /// given `Option`. If you're using i18n, this will also be given an `Rc<Translator>` (all templates share ownership of the translations).
-pub type TemplateFn<G> = Arc<dyn Fn(Option<String>, Rc<Translator>) -> SycamoreTemplate<G>>;
+pub type TemplateFn<G> = Rc<dyn Fn(Option<String>, Rc<Translator>) -> SycamoreTemplate<G>>;
 /// The type of functions that get build paths.
-pub type GetBuildPathsFn = Arc<dyn GetBuildPathsFnType>;
+pub type GetBuildPathsFn = Rc<dyn GetBuildPathsFnType>;
 /// The type of functions that get build state.
-pub type GetBuildStateFn = Arc<dyn GetBuildStateFnType>;
+pub type GetBuildStateFn = Rc<dyn GetBuildStateFnType>;
 /// The type of functions that get request state.
-pub type GetRequestStateFn = Arc<dyn GetRequestStateFnType>;
+pub type GetRequestStateFn = Rc<dyn GetRequestStateFnType>;
 /// The type of functions that check if a template sghould revalidate.
-pub type ShouldRevalidateFn = Arc<dyn ShouldRevalidateFnType>;
+pub type ShouldRevalidateFn = Rc<dyn ShouldRevalidateFnType>;
 /// The type of functions that amalgamate build and request states.
-pub type AmalgamateStatesFn = Arc<dyn Fn(States) -> StringResultWithCause<Option<String>>>;
+pub type AmalgamateStatesFn = Rc<dyn Fn(States) -> StringResultWithCause<Option<String>>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
@@ -170,7 +169,7 @@ impl<G: GenericNode> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Arc::new(|_: Option<String>, _: Rc<Translator>| sycamore::template! {}),
+            template: Rc::new(|_: Option<String>, _: Rc<Translator>| sycamore::template! {}),
             get_build_paths: None,
             incremental_path_rendering: false,
             get_build_state: None,
