@@ -126,7 +126,7 @@ pub type AmalgamateStatesFn = Rc<dyn Fn(States) -> StringResultWithCause<Option<
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
 /// All properties for templates are passed around as strings to avoid type maps and other horrible things, this only adds one extra
-/// deserialization call at build time.
+/// deserialization call at build time. This only actually owns a two `String`s and a `bool`.
 #[derive(Clone)]
 pub struct Template<G: GenericNode> {
     /// The path to the root of the template. Any build paths will be inserted under this.
@@ -182,6 +182,7 @@ impl<G: GenericNode> Template<G> {
 
     // Render executors
     /// Executes the user-given function that renders the template on the server-side (build or request time).
+    // TODO set up translator context here
     pub fn render_for_template(
         &self,
         props: Option<String>,

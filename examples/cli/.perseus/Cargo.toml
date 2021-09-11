@@ -31,3 +31,8 @@ crate-type = ["cdylib", "rlib"]
 [[bin]]
 name = "perseus-internal"
 path = "src/bin/build.rs"
+
+# Needed until Sycamore #230 is released (becomes relevant when excluded from user's workspaces)
+[patch.crates-io]
+sycamore = { git = "https://github.com/arctic-hen7/sycamore", branch = "router-clone-stable" }
+sycamore-router = { git = "https://github.com/arctic-hen7/sycamore", branch = "router-clone-stable" }

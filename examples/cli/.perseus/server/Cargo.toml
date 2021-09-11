@@ -15,3 +15,8 @@ app = { package = "perseus-example-cli", path = "../../" }
 perseus-actix-web = { path = "../../../../packages/perseus-actix-web" }
 actix-web = "3.3"
 futures = "0.3"
+
+# Needed until Sycamore #230 is released (becomes relevant when excluded from user's workspaces)
+[patch.crates-io]
+sycamore = { git = "https://github.com/arctic-hen7/sycamore", branch = "router-clone-stable" }
+sycamore-router = { git = "https://github.com/arctic-hen7/sycamore", branch = "router-clone-stable" }

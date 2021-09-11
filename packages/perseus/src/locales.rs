@@ -5,6 +5,8 @@ pub struct Locales {
     pub default: String,
     /// All other supported locales, which will all be built at build time.
     pub other: Vec<String>,
+    /// Whether or not the user is actually using i18n. This is set here because most things that need locale data also need it.
+    pub using_i18n: bool,
 }
 impl Locales {
     /// Gets all the supported locales by combining the default, and other.

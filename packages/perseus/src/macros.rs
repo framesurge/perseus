@@ -1,3 +1,5 @@
+// TODO parse `no_i18n` properly so the user can specify `false`
+
 /// An internal macro used for defining a function to get the user's preferred config manager (which requires multiple branches).
 #[macro_export]
 macro_rules! define_get_config_manager {
@@ -53,31 +55,56 @@ macro_rules! define_get_translations_manager {
         }
     };
 }
+/// An internal macro used for defining locales data. This is abstracted because it needs multiple branches.
+#[macro_export]
+macro_rules! define_get_locales {
+    {
+        default: $default_locale:literal,
+        other: [$($other_locale:literal),*]
+    } => {
+        pub fn get_locales() -> $crate::Locales {
+            $crate::Locales {
+                default: $default_locale.to_string(),
+                other: vec![
+                    $($other_locale.to_string()),*
+                ],
+                using_i18n: true
+            }
+        }
+    };
+    {
+        default: $default_locale:literal,
+        other: [$($other_locale:literal),*],
+        no_i18n: $no_i18n:literal
+    } => {
+        pub fn get_locales() -> $crate::Locales {
+            $crate::Locales {
+                default: $default_locale.to_string(),
+                other: vec![
+                    $($other_locale.to_string()),*
+                ],
+                using_i18n: !$no_i18n
+            }
+        }
+    };
+}
 
 /// Defines the components to create an entrypoint for the app. The actual entrypoint is created in the `.perseus/` crate (where we can
 /// get all the dependencies without driving the user's `Cargo.toml` nuts). This also defines the template map. This is intended to make
 /// compatibility with the Perseus CLI significantly easier. Perseus makes i18n opt-out, so if you don't intend to use it, set `no_i18n`
 /// to `true` in `locales`. Note that you must still specify a default locale for verbosity and correctness. If you specify `no_i18n` and
 /// a custom translations manager, the latter will override.
+///
+/// Warning: all properties must currently be in the correct order (`root`, `error_pages`, `templates`, `locales`, `config_manager`,
+/// `translations_manager`).
+// TODO make this syntax even more compact and beautiful? (error pages inside templates?)
 #[macro_export]
 macro_rules! define_app {
     {
         root: $root_selector:literal,
-        route: $route:ty,
-        // The user will define something very similar to a macro pattern, which will return the template's name and its render function
-        // We don't use a match statement because we abstract `NotFound` matching
-        router: {
-            $(
-                $pat:pat => [
-                    $name:expr,
-                    $fn:expr,
-                    $locale:expr
-                ]
-            ),+
-        },
         error_pages: $error_pages:expr,
         templates: [
-            $($template:expr),+
+            $($router_path:literal => $template:expr),+
         ],
         // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
         locales: {
@@ -92,8 +119,18 @@ macro_rules! define_app {
         /// The CSS selector that will find the app root to render Perseus in.
         pub const APP_ROUTE: &str = $root_selector;
 
-        // We alias the user's route enum so that don't have to worry about naming
-        pub type AppRoute = $route;
+        /// Gets the routes for the app in Perseus' custom abstraction over Sycamore's routing logic. This enables tight coupling of
+        /// the templates and the routing system. This can be used on the client or server side.
+        pub fn get_routes<G: $crate::GenericNode>() -> $crate::router::Routes<G> {
+            $crate::router::Routes::new(
+                vec![
+                    $(
+                        ($router_path.to_string(), $template)
+                    ),+
+                ],
+                get_locales()
+            )
+        }
 
         /// Gets the config manager to use. This allows the user to conveniently test production managers in development. If nothing is
         /// given, the filesystem will be used.
@@ -105,13 +142,12 @@ macro_rules! define_app {
 
         /// Defines the locales the app should build for, specifying defaults and common locales (which will be built at build-time
         /// rather than on-demand).
-        pub fn get_locales() -> $crate::Locales {
-            $crate::Locales {
-                default: $default_locale.to_string(),
-                other: vec![
-                    $($other_locale.to_string()),*
-                ]
-            }
+        $crate::define_get_locales! {
+            default: $default_locale,
+            other: [
+                $($other_locale),*
+            ]
+            $(, no_i18n: $no_i18n)?
         }
 
         /// Gets a map of all the templates in the app by their root paths.
@@ -121,7 +157,7 @@ macro_rules! define_app {
             ]
         }
 
-        /// Gets a list of all the templates in the app.
+        /// Gets a list of all the templates in the app in the order the user provided them.
         pub fn get_templates_vec<G: $crate::GenericNode>() -> Vec<$crate::Template<G>> {
             vec![
                 $($template),+
@@ -131,22 +167,6 @@ macro_rules! define_app {
         /// Gets the error pages (done here so the user doesn't have to worry about naming).
         pub fn get_error_pages() -> $crate::ErrorPages {
             $error_pages
-        }
-
-        /// Matches the given route to a template name, render function, and locale.
-        pub fn match_route(route: $route) -> (String, $crate::template::TemplateFn<$crate::DomNode>, String) {
-            match route {
-                // We regurgitate all the user's custom matches
-                $(
-                    $pat => (
-                        $name,
-                        $fn,
-                        $locale
-                    ),
-                )+
-                // We MUST handle the NotFound route before this function
-                <$route>::NotFound => panic!("not found route should've been handled before reaching `match_route` (this is a bug, please report it!)")
-            }
         }
     };
 }

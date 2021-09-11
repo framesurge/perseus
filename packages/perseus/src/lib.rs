@@ -43,7 +43,10 @@ pub mod config_manager;
 mod decode_time_str;
 pub mod errors;
 mod locales;
+mod log;
 mod macros;
+/// Utilities regarding routing.
+pub mod router;
 /// Utilities for serving your app. These are platform-agnostic, and you probably want an integration like [perseus-actix-web](https://crates.io/crates/perseus-actix-web).
 pub mod serve;
 /// Utilities to do with the app shell. You probably don't want to delve into here.

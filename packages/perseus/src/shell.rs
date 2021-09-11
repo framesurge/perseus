@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::serve::PageData;
-use crate::template::TemplateFn;
+use crate::template::Template;
 use crate::ClientTranslationsManager;
 use crate::Translator;
 use std::cell::RefCell;
@@ -122,12 +122,11 @@ impl ErrorPages {
 // TODO handle exceptions higher up
 pub fn app_shell(
     path: String,
-    template_fn: TemplateFn<DomNode>,
-    // translator: Rc<Translator>,
+    template: Template<DomNode>,
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages>,
-) -> Template<DomNode> {
+) -> SycamoreTemplate<DomNode> {
     // Get the container as a DOM element
     let container = NodeRef::new();
     // Spawn a Rust futures thread in the background to fetch the static HTML/JSON
@@ -168,7 +167,8 @@ pub fn app_shell(
                             // Hydrate that static code using the acquired state
                             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                             sycamore::hydrate_to(
-                                || template_fn(page_data.state, Rc::clone(&translator)),
+                                // This function provides translator context as needed
+                                || template.render_for_template(page_data.state, Rc::clone(&translator)),
                                 &container.get::<DomNode>().inner_element()
                             );
                         },

@@ -3,10 +3,7 @@ members = [
 	"packages/perseus",
 	"packages/perseus-actix-web",
 	"packages/perseus-cli",
-    # TODO remake showcase app for CLI
     "examples/showcase",
-	# "examples/showcase/app",
-	# "examples/showcase/server-actix-web",
     "examples/cli",
     # We have the CLI subcrates as workspace members so we can actively develop on them
     # They also can't be a workspace until nested workspaces are supported
@@ -15,3 +12,8 @@ members = [
     "examples/basic",
     "examples/i18n"
 ]
+
+# Needed until Sycamore #230 is released
+[patch.crates-io]
+sycamore = { git = "https://github.com/arctic-hen7/sycamore", branch = "router-clone-stable" }
+sycamore-router = { git = "https://github.com/arctic-hen7/sycamore", branch = "router-clone-stable" }

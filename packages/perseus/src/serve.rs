@@ -160,7 +160,7 @@ async fn revalidate(
 // TODO possible further optimizations on this for futures?
 pub async fn get_page(
     // This must not contain the locale
-    path: &str,
+    raw_path: &str,
     locale: &str,
     req: Request,
     render_cfg: &HashMap<String, String>,
@@ -168,6 +168,11 @@ pub async fn get_page(
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
 ) -> Result<PageData> {
+    let mut path = raw_path;
+    // If the path is empty, we're looking for the special `index` page
+    if path.is_empty() {
+        path = "index";
+    }
     // Get a translator for this locale (for sanity we hope the manager is caching)
     let translator = Rc::new(
         translations_manager
