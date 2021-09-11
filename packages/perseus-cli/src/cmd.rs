@@ -11,16 +11,26 @@ pub static FAILURE: Emoji<'_, '_> = Emoji("❌", "failed!");
 
 /// Runs the given command conveniently, returning the exit code. Notably, this parses the given command by separating it on spaces.
 /// Returns the command's output and the exit code.
-pub fn run_cmd(raw_cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(String, String, i32)> {
-    let mut cmd_args: Vec<&str> = raw_cmd.split(' ').collect();
-    let cmd = cmd_args.remove(0);
+pub fn run_cmd(cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(String, String, i32)> {
+    // let mut cmd_args: Vec<&str> = raw_cmd.split(' ').collect();
+    // let cmd = cmd_args.remove(0);
+
+    // We run the command in a shell so that NPM/Yarn binaries can be recognized (see #5)
+    #[cfg(unix)]
+    let shell_exec = "sh";
+    #[cfg(windows)]
+    let shell_exec = "powershell";
+    #[cfg(unix)]
+    let shell_param = "-c";
+    #[cfg(windows)]
+    let shell_param = "-command";
 
     // This will NOT pipe output/errors to the console
-    let output = Command::new(&cmd)
-        .args(cmd_args)
+    let output = Command::new(shell_exec)
+        .args([shell_param, &cmd])
         .current_dir(dir)
         .output()
-        .map_err(|err| ErrorKind::CmdExecFailed(raw_cmd.clone(), err.to_string()))?;
+        .map_err(|err| ErrorKind::CmdExecFailed(cmd.clone(), err.to_string()))?;
 
     let exit_code = match output.status.code() {
         Some(exit_code) => exit_code,         // If we have an exit code, use it
