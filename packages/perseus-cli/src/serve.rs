@@ -36,7 +36,9 @@ fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
     // Build the server runner
     // We use the JSON message format so we can get extra info about the generated executable
     let (stdout, _stderr) = handle_exit_code!(run_stage(
-        vec!["cargo build --message-format json"],
+        vec![
+            &format!("{} build --message-format json", env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()))
+        ],
         &target,
         format!(
             "{} {} Building server",

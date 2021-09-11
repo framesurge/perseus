@@ -3,6 +3,7 @@ use crate::errors::*;
 use console::{style, Emoji};
 use std::fs;
 use std::path::PathBuf;
+use std::env;
 
 // Emojis for stages
 static GENERATING: Emoji<'_, '_> = Emoji("🔨", "");
@@ -27,7 +28,9 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
 
     // Static generation
     handle_exit_code!(run_stage(
-        vec!["cargo run"],
+        vec![
+            &format!("{} run", env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()))
+        ],
         &target,
         format!(
             "{} {} Generating your app",
@@ -37,7 +40,9 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
     )?);
     // WASM building
     handle_exit_code!(run_stage(
-        vec!["wasm-pack build --target web"],
+        vec![
+            &format!("{} build --target web", env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()))
+        ],
         &target,
         format!(
             "{} {} Building your app to WASM",
@@ -58,7 +63,9 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
     }
     // JS bundle generation
     handle_exit_code!(run_stage(
-        vec!["rollup main.js --format iife --file dist/pkg/bundle.js"],
+        vec![
+            &format!("{} main.js --format iife --file dist/pkg/bundle.js", env::var("PERSEUS_ROLLUP_PATH").unwrap_or_else(|_| "rollup".to_string()))
+        ],
         &target,
         format!(
             "{} {} Finalizing bundle",
