@@ -73,6 +73,11 @@ error_chain! {
             description("reconstituting build artifacts failed")
             display("Couldn't remove and replace '.perseus/dist/static/' directory at '{:?}'. Please try again or run 'perseus clean' if the error persists. Error was: '{}'.", target, err)
         }
+        /// For when moving the `pkg/` directory to `dist/pkg/` fails.
+        MovePkgDirFailed(err: String) {
+            description("couldn't move `pkg/` to `dist/pkg/`")
+            display("Couldn't move `.perseus/pkg/` to `.perseus/dist/pkg`. Error was: '{}'.", err)
+        }
     }
 }
 

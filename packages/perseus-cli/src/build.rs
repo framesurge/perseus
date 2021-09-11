@@ -1,6 +1,8 @@
 use crate::cmd::run_stage;
 use crate::errors::*;
 use console::{style, Emoji};
+use std::env;
+use std::fs;
 use std::path::PathBuf;
 
 // Emojis for stages
@@ -26,7 +28,10 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
 
     // Static generation
     handle_exit_code!(run_stage(
-        vec!["cargo run"],
+        vec![&format!(
+            "{} run",
+            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+        )],
         &target,
         format!(
             "{} {} Generating your app",
@@ -36,12 +41,10 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
     )?);
     // WASM building
     handle_exit_code!(run_stage(
-        vec![
-            "wasm-pack build --target web",
-            // Move the `pkg/` directory into `dist/pkg/`
-            "rm -rf dist/pkg",
-            "mv pkg/ dist/",
-        ],
+        vec![&format!(
+            "{} build --target web",
+            env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string())
+        )],
         &target,
         format!(
             "{} {} Building your app to WASM",
@@ -49,9 +52,23 @@ pub fn build_internal(dir: PathBuf, num_steps: u8) -> Result<i32> {
             BUILDING
         )
     )?);
+    // Move the `pkg/` directory into `dist/pkg/`
+    let pkg_dir = target.join("dist/pkg");
+    if pkg_dir.exists() {
+        if let Err(err) = fs::remove_dir_all(&pkg_dir) {
+            bail!(ErrorKind::MovePkgDirFailed(err.to_string()));
+        }
+    }
+    // The `fs::rename()` function will fail on Windows if the destination already exists, so this should work (we've just deleted it as per https://github.com/rust-lang/rust/issues/31301#issuecomment-177117325)
+    if let Err(err) = fs::rename(target.join("pkg"), target.join("dist/pkg")) {
+        bail!(ErrorKind::MovePkgDirFailed(err.to_string()));
+    }
     // JS bundle generation
     handle_exit_code!(run_stage(
-        vec!["rollup main.js --format iife --file dist/pkg/bundle.js"],
+        vec![&format!(
+            "{} main.js --format iife --file dist/pkg/bundle.js",
+            env::var("PERSEUS_ROLLUP_PATH").unwrap_or_else(|_| "rollup".to_string())
+        )],
         &target,
         format!(
             "{} {} Finalizing bundle",
