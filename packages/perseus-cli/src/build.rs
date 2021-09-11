@@ -1,8 +1,8 @@
 use crate::cmd::run_stage;
 use crate::errors::*;
 use console::{style, Emoji};
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 // Emojis for stages
 static GENERATING: Emoji<'_, '_> = Emoji("🔨", "");
