@@ -69,6 +69,11 @@ error_chain! {
             description("port in PORT environment variable couldn't be parsed as number")
             display("Couldn't parse 'PORT' environment variable as a number, please check that you've provided the correct value. Error was: '{}'.", err)
         }
+        /// For when moving the `pkg/` directory to `dist/pkg/` fails.
+        MovePkgDirFailed(err: String) {
+            description("couldn't move `pkg/` to `dist/pkg/`")
+            display("Couldn't move `.perseus/pkg/` to `.perseus/dist/pkg`. Error was: '{}'.", err)
+        }
     }
 }
 
