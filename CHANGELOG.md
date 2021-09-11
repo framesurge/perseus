@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.4](https://github.com/arctic-hen7/perseus/compare/v0.1.3...v0.1.4) (2021-09-11)
+
+
+### Bug Fixes
+
+* 🐛 updated `basic` example perseus version ([1d8d895](https://github.com/arctic-hen7/perseus/commit/1d8d895a0c6ed5d9cb96a14d06c702917c3837c1))
+* 🚑 allowed env var specification of command paths in building/serving ([5a2e494](https://github.com/arctic-hen7/perseus/commit/5a2e49475a9e6ef1e1d25491530f8be9b22f74f5))
+
 ### [0.1.3](https://github.com/arctic-hen7/perseus/compare/v0.1.2...v0.1.3) (2021-09-11)
 
 
