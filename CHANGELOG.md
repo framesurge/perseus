@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.3](https://github.com/arctic-hen7/perseus/compare/v0.1.2...v0.1.3) (2021-09-11)
+
+
+### Bug Fixes
+
+* 🚑 commands now executed in shells ([80604a4](https://github.com/arctic-hen7/perseus/commit/80604a4b1323ec322e875bb6bdc7e05b4768b1a6))
+* 🚑 fixed windows cli bug ([1b6ef16](https://github.com/arctic-hen7/perseus/commit/1b6ef164ebf6a8c9f3c2f9c27488d181b0760b36))
+
 ### [0.1.2](https://github.com/arctic-hen7/perseus/compare/v0.1.1...v0.1.2) (2021-09-03)
 
 
