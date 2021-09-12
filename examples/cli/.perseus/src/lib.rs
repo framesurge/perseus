@@ -4,7 +4,7 @@ use perseus::{app_shell, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
-use sycamore::prelude::{StateHandle, template};
+use sycamore::prelude::{template, StateHandle};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
