@@ -1,6 +1,6 @@
 use app::{get_error_pages, get_locales, get_routes, APP_ROUTE};
 use perseus::router::{RouteInfo, RouteVerdict};
-use perseus::{app_shell, ClientTranslationsManager, DomNode};
+use perseus::{app_shell, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::template;
@@ -49,14 +49,13 @@ pub fn run() -> Result<(), JsValue> {
                                     path,
                                     template_fn,
                                     locale,
-                                    // We give the app shell a translations manager and let it get the `Rc<Translator>` (because it can do async safely)
+                                    // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
                                     Rc::clone(&translations_manager),
                                     Rc::clone(&error_pages)
                                 ),
                                 // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
                                 // Those all go to the same system that redirects to the appropriate locale
-                                // TODO locale detection
-                                RouteVerdict::LocaleDetection(_) => get_error_pages().get_template_for_page("", &400, "locale detection not yet supported", None),
+                                RouteVerdict::LocaleDetection(path) => detect_locale(path, get_locales()),
                                 // We handle the 404 for the user for convenience
                                 // To get a translator here, we'd have to go async and dangerously check the URL
                                 RouteVerdict::NotFound => get_error_pages().get_template_for_page("", &404, "not found", None),

@@ -42,10 +42,8 @@ macro_rules! t {
 /// Gets the link to the given resource in internationalized form conveniently.
 #[macro_export]
 macro_rules! link {
-    ($url:expr) => {
-        {
-            let translator = ::sycamore::rx::use_context::<Rc<Translator>>();
-            translator.url($url)
-        }
-    };
+    ($url:expr) => {{
+        let translator = ::sycamore::rx::use_context::<Rc<Translator>>();
+        translator.url($url)
+    }};
 }

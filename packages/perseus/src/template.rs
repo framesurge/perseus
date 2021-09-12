@@ -7,7 +7,7 @@ use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
-use sycamore::prelude::{GenericNode, Template as SycamoreTemplate, template};
+use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
 use sycamore::rx::{ContextProvider, ContextProviderProps};
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
