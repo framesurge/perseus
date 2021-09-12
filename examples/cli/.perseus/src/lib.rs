@@ -3,9 +3,9 @@ use perseus::router::{RouteInfo, RouteVerdict};
 use perseus::{app_shell, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::prelude::template;
-use sycamore::rx::{ContextProvider, ContextProviderProps};
-use sycamore_router::BrowserRouter;
+use sycamore::context::{ContextProvider, ContextProviderProps};
+use sycamore::prelude::{StateHandle, template};
+use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 /// The entrypoint into the app itself. This will be compiled to WASM and actually executed, rendering the rest of the app.
@@ -38,29 +38,29 @@ pub fn run() -> Result<(), JsValue> {
                 ContextProvider(ContextProviderProps {
                     value: Rc::clone(&routes),
                     children: || template! {
-                        BrowserRouter(move |route: RouteVerdict<DomNode>| {
-                            match route {
+                        Router(RouterProps::new(HistoryIntegration::new(), move |route: StateHandle<RouteVerdict<DomNode>>| {
+                            match route.get().as_ref() {
                                 // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
                                 RouteVerdict::Found(RouteInfo {
                                     path,
                                     template_fn,
                                     locale
                                 }) => app_shell(
-                                    path,
-                                    template_fn,
-                                    locale,
+                                    path.clone(),
+                                    template_fn.clone(),
+                                    locale.clone(),
                                     // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
                                     Rc::clone(&translations_manager),
                                     Rc::clone(&error_pages)
                                 ),
                                 // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
                                 // Those all go to the same system that redirects to the appropriate locale
-                                RouteVerdict::LocaleDetection(path) => detect_locale(path, get_locales()),
+                                RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
                                 // We handle the 404 for the user for convenience
                                 // To get a translator here, we'd have to go async and dangerously check the URL
                                 RouteVerdict::NotFound => get_error_pages().get_template_for_page("", &404, "not found", None),
                             }
-                        })
+                        }))
                     }
                 })
             }
