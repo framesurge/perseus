@@ -19,7 +19,7 @@ macro_rules! t {
     // When there are no arguments to interpolate
     ($id:expr) => {
         {
-            let translator = ::sycamore::rx::use_context::<Rc<Translator>>();
+            let translator = ::sycamore::context::use_context::<Rc<Translator>>();
             translator.translate($id, None)
         }
     };
@@ -28,7 +28,7 @@ macro_rules! t {
         $($key:literal: $value:expr),+
     }) => {
         {
-            let translator = ::sycamore::rx::use_context::<Rc<Translator>>();
+            let translator = ::sycamore::context::use_context::<Rc<Translator>>();
             let mut args = fluent_bundle::FluentArgs::new();
             $(
                 args.set($key, $value);
@@ -43,7 +43,7 @@ macro_rules! t {
 #[macro_export]
 macro_rules! link {
     ($url:expr) => {{
-        let translator = ::sycamore::rx::use_context::<Rc<Translator>>();
+        let translator = ::sycamore::context::use_context::<Rc<Translator>>();
         translator.url($url)
     }};
 }
