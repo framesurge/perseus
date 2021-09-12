@@ -1,5 +1,6 @@
 use crate::errors::*;
 use crate::extraction::extract_dir;
+#[allow(unused_imports)]
 use crate::PERSEUS_VERSION;
 use cargo_toml::Manifest;
 use include_dir::{include_dir, Dir};
@@ -76,13 +77,12 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
             )),
         };
         // Update the name of the user's crate (Cargo needs more than just a path and an alias)
-        // Also add an empty `[workspace]` key so we exclude from any of the user's workspace settings
+        // Also create a workspace so the subcrates share a `target/` directory (speeds up builds)
         let updated_root_manifest = root_manifest_contents
             .replace("perseus-example-cli", &user_crate_name)
-            + "\n[workspace]";
-        let updated_server_manifest = server_manifest_contents
-            .replace("perseus-example-cli", &user_crate_name)
-            + "\n[workspace]";
+            + "\n[workspace]\nmembers = [ \"server\" ]";
+        let updated_server_manifest =
+            server_manifest_contents.replace("perseus-example-cli", &user_crate_name);
 
         // If we're not in development, also update relative path references
         #[cfg(not(debug_assertions))]
