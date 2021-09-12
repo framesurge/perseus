@@ -1,19 +1,18 @@
-use perseus::{Template, Translator};
+use perseus::{Template, Translator, t};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[component(AboutPage<G>)]
-pub fn about_page(translator: Rc<Translator>) -> SycamoreTemplate<G> {
+pub fn about_page() -> SycamoreTemplate<G> {
     template! {
-        // TODO switch to `t!` macro
-        p { (translator.translate("about", None)) }
+        p { (t!("about")) }
     }
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|_, translator: Rc<Translator>| {
+    Rc::new(|_| {
         template! {
-            AboutPage(translator)
+            AboutPage()
         }
     })
 }

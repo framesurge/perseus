@@ -42,7 +42,7 @@ pub async fn get_request_state(_path: String, req: Request) -> StringResultWithC
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props, _| {
+    Rc::new(|props| {
         template! {
             IpPage(
                 serde_json::from_str::<IpPageProps>(&props.unwrap()).unwrap()

@@ -33,7 +33,7 @@ pub async fn get_build_state(_path: String) -> StringResultWithCause<String> {
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props, _| {
+    Rc::new(|props| {
         template! {
             TimePage(
                 serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()

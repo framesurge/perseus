@@ -155,7 +155,6 @@ pub fn app_shell(
                                 Ok(translator) => translator,
                                 Err(err) => match err.kind() {
                                     // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                    // TODO assign status codes to client-side errors and do all this automatically
                                     ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container),
                                     ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container),
                                     ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container),

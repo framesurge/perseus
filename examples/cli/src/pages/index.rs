@@ -30,7 +30,7 @@ pub async fn get_static_props(_path: String) -> StringResultWithCause<String> {
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props: Option<String>, _| {
+    Rc::new(|props: Option<String>| {
         template! {
             IndexPage(
                 serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()

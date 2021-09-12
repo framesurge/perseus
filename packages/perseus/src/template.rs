@@ -7,7 +7,8 @@ use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
-use sycamore::prelude::{GenericNode, Template as SycamoreTemplate};
+use sycamore::prelude::{GenericNode, Template as SycamoreTemplate, template};
+use sycamore::rx::{ContextProvider, ContextProviderProps};
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
@@ -110,8 +111,8 @@ make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
 
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
-/// given `Option`. If you're using i18n, this will also be given an `Rc<Translator>` (all templates share ownership of the translations).
-pub type TemplateFn<G> = Rc<dyn Fn(Option<String>, Rc<Translator>) -> SycamoreTemplate<G>>;
+/// given `Option`. If you're using i18n, an `Rc<Translator>` will also be made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
+pub type TemplateFn<G> = Rc<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
 /// The type of functions that get build paths.
 pub type GetBuildPathsFn = Rc<dyn GetBuildPathsFnType>;
 /// The type of functions that get build state.
@@ -169,7 +170,7 @@ impl<G: GenericNode> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Rc::new(|_: Option<String>, _: Rc<Translator>| sycamore::template! {}),
+            template: Rc::new(|_: Option<String>| sycamore::template! {}),
             get_build_paths: None,
             incremental_path_rendering: false,
             get_build_state: None,
@@ -182,13 +183,19 @@ impl<G: GenericNode> Template<G> {
 
     // Render executors
     /// Executes the user-given function that renders the template on the server-side (build or request time).
-    // TODO set up translator context here
+    // TODO possibly duplicate routes context here to avoid disappearance issues?
     pub fn render_for_template(
         &self,
         props: Option<String>,
         translator: Rc<Translator>,
     ) -> SycamoreTemplate<G> {
-        (self.template)(props, translator)
+        template! {
+            // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
+            ContextProvider(ContextProviderProps {
+                value: Rc::clone(&translator),
+                children: || (self.template)(props)
+            })
+        }
     }
     /// Gets the list of templates that should be prerendered for at build-time.
     pub async fn get_build_paths(&self) -> Result<Vec<String>> {

@@ -57,7 +57,7 @@ pub async fn get_request_state(_path: String, _req: Request) -> StringResultWith
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props, _| {
+    Rc::new(|props| {
         template! {
             AboutPage(
                 serde_json::from_str::<AmalagamationPageProps>(&props.unwrap()).unwrap()
