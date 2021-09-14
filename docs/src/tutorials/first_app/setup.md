@@ -60,8 +60,8 @@ You should now have an `src/` directory and a `Cargo.toml` file, which is what w
 # Perseus itself, which we (amazingly) need for a Perseus app
 perseus = "0.1"
 # Sycamore, the library Perseus depends on for lower-leve reactivity primitivity
-sycamore = { version = "0.5.1", features = ["ssr"] }
-sycamore-router = "0.5.1"
+sycamore = { version = "0.6.0", features = ["ssr"] }
+sycamore-router = "0.6.0"
 # Serde, which lets you work with representations of data, like JSON
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

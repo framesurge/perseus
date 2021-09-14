@@ -1,6 +1,6 @@
 # This file is temporary until the CLI is ready!
 
-version="0.3.1"
+version="0.3.2"
 
 [scripts]
 build = [

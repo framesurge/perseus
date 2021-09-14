@@ -1,8 +1,8 @@
 use crate::Locales;
 use crate::Template;
 use std::rc::Rc;
+use sycamore::context::use_context;
 use sycamore::prelude::GenericNode;
-use sycamore::rx::use_context;
 use sycamore_router::{Route, RoutePath, Segment};
 
 /// A representation of routes in a Perseus app. This is used internally to match routes. Because this can't be passed directly to

@@ -10,8 +10,8 @@ edition = "2018"
 
 [dependencies]
 perseus = { path = "../../packages/perseus" }
-sycamore = { version = "0.5", features = ["ssr"] }
-sycamore-router = "0.5"
+sycamore = { version = "0.6", features = ["ssr"] }
+sycamore-router = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1" # Possibly don't need?
 

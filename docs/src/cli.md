@@ -14,8 +14,8 @@ Set up a library project with `cargo`, and add the following to the `[dependenci
 
 ```toml
 perseus = { path = "../../packages/perseus" }
-sycamore = { version = "0.5.1", features = ["ssr"] }
-sycamore-router = "0.5.1"
+sycamore = { version = "0.6.0", features = ["ssr"] }
+sycamore-router = "0.6.0"
 # You only need these for pages that take properties
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
