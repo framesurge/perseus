@@ -275,8 +275,8 @@ template! {
 <pre><code class="language-toml"># Perseus itself, which we (amazingly) need for a Perseus app
 perseus = &quot;0.1&quot;
 # Sycamore, the library Perseus depends on for lower-leve reactivity primitivity
-sycamore = { version = &quot;0.5.1&quot;, features = [&quot;ssr&quot;] }
-sycamore-router = &quot;0.5.1&quot;
+sycamore = { version = &quot;0.6.0&quot;, features = [&quot;ssr&quot;] }
+sycamore-router = &quot;0.6.0&quot;
 # Serde, which lets you work with representations of data, like JSON
 serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
 serde_json = &quot;1&quot;
@@ -464,8 +464,8 @@ pub fn get_error_pages() -&gt; ErrorPages {
 <h2 id="setup-1"><a class="header" href="#setup-1">Setup</a></h2>
 <p>Set up a library project with <code>cargo</code>, and add the following to the <code>[dependencies]</code> section in your <code>Cargo.toml</code>:</p>
 <pre><code class="language-toml">perseus = { path = &quot;../../packages/perseus&quot; }
-sycamore = { version = &quot;0.5.1&quot;, features = [&quot;ssr&quot;] }
-sycamore-router = &quot;0.5.1&quot;
+sycamore = { version = &quot;0.6.0&quot;, features = [&quot;ssr&quot;] }
+sycamore-router = &quot;0.6.0&quot;
 # You only need these for pages that take properties
 serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
 serde_json = &quot;1&quot;
