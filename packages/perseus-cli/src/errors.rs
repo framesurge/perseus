@@ -78,6 +78,11 @@ error_chain! {
             description("couldn't move `pkg/` to `dist/pkg/`")
             display("Couldn't move `.perseus/pkg/` to `.perseus/dist/pkg`. Error was: '{}'.", err)
         }
+        /// For when an error occurs while trying to wait for a thread.
+        ThreadWaitFailed {
+            description("error occurred while trying to wait for thread")
+            display("Waiting on thread failed.")
+        }
     }
 }
 

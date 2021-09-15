@@ -12,9 +12,6 @@ pub static FAILURE: Emoji<'_, '_> = Emoji("❌", "failed!");
 /// Runs the given command conveniently, returning the exit code. Notably, this parses the given command by separating it on spaces.
 /// Returns the command's output and the exit code.
 pub fn run_cmd(cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(String, String, i32)> {
-    // let mut cmd_args: Vec<&str> = raw_cmd.split(' ').collect();
-    // let cmd = cmd_args.remove(0);
-
     // We run the command in a shell so that NPM/Yarn binaries can be recognized (see #5)
     #[cfg(unix)]
     let shell_exec = "sh";
@@ -51,23 +48,39 @@ pub fn run_cmd(cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(String, 
     ))
 }
 
-/// Runs a series of commands and provides a nice spinner with a custom message. Returns the last command's output and an appropriate exit
-/// code (0 if everything worked, otherwise the exit code of the one that failed).
-pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<(String, String, i32)> {
-    // Tell the user about the stage with a nice progress bar
-    let spinner = ProgressBar::new_spinner();
+/// Creates a new spinner.
+pub fn cfg_spinner(spinner: ProgressBar, message: &str) -> ProgressBar {
     spinner.set_style(ProgressStyle::default_spinner().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ "));
-    spinner.set_message(format!("{}...", message));
+    spinner.set_message(format!("{}...", &message));
     // Tick the spinner every 50 milliseconds
     spinner.enable_steady_tick(50);
 
+    spinner
+}
+/// Instructs the given spinner to show success.
+pub fn succeed_spinner(spinner: &ProgressBar, message: &str) {
+    spinner.finish_with_message(format!("{}...{}", message, SUCCESS));
+}
+/// Instructs the given spinner to show failure.
+pub fn fail_spinner(spinner: &ProgressBar, message: &str) {
+    spinner.finish_with_message(format!("{}...{}", message, FAILURE));
+}
+
+/// Runs a series of commands. Returns the last command's output and an appropriate exit code (0 if everything worked, otherwise th
+/// exit code of the first one that failed). This also takes a `Spinner` to use and control.
+pub fn run_stage(
+    cmds: Vec<&str>,
+    target: &Path,
+    spinner: &ProgressBar,
+    message: &str,
+) -> Result<(String, String, i32)> {
     let mut last_output = (String::new(), String::new());
     // Run the commands
     for cmd in cmds {
         // We make sure all commands run in the target directory ('.perseus/' itself)
         let (stdout, stderr, exit_code) = run_cmd(cmd.to_string(), target, || {
-            // We're done, we'll write a more permanent version of the message
-            spinner.finish_with_message(format!("{}...{}", message, FAILURE))
+            // This stage has failed
+            fail_spinner(spinner, message);
         })?;
         last_output = (stdout, stderr);
         // If we have a non-zero exit code, we should NOT continue (stderr has been written to the console already)
@@ -76,8 +89,8 @@ pub fn run_stage(cmds: Vec<&str>, target: &Path, message: String) -> Result<(Str
         }
     }
 
-    // We're done, we'll write a more permanent version of the message
-    spinner.finish_with_message(format!("{}...{}", message, SUCCESS));
+    // Everything has worked for this stage
+    succeed_spinner(spinner, message);
 
     Ok((last_output.0, last_output.1, 0))
 }

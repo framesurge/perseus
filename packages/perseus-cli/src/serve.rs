@@ -1,11 +1,14 @@
-use crate::build::build_internal;
-use crate::cmd::run_stage;
+use crate::build::{build_internal, finalize};
+use crate::cmd::{cfg_spinner, run_stage};
 use crate::errors::*;
 use console::{style, Emoji};
+use indicatif::{MultiProgress, ProgressBar};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
 
 // Emojis for stages
 static BUILDING_SERVER: Emoji<'_, '_> = Emoji("📡", "");
@@ -16,74 +19,118 @@ macro_rules! handle_exit_code {
     ($code:expr) => {{
         let (stdout, stderr, code) = $code;
         if code != 0 {
-            return Ok(code);
+            return $crate::errors::Result::Ok(code);
         }
         (stdout, stderr)
     }};
 }
 
-/// Actually serves the user's app, program arguments having been interpreted. This needs to know if we've built as part of this process
-/// so it can show an accurate progress count.
-fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
+/// Builds the server for the app, program arguments having been interpreted. This needs to know if we've built as part of this process
+/// so it can show an accurate progress count. This also takes a `MultiProgress` so it can be used truly atomically (which will have
+/// build spinners already on it if necessary). This also takes a `Mutex<String>` to inform the caller of the path of the server
+/// executable.
+fn build_server(
+    dir: PathBuf,
+    spinners: &MultiProgress,
+    did_build: bool,
+    exec: Arc<Mutex<String>>,
+) -> Result<JoinHandle<Result<i32>>> {
     let num_steps = match did_build {
-        true => 5,
+        true => 4,
         false => 2,
     };
-    let mut target = dir;
-    // All the serving work can be done in the `server` subcrate after building is finished
-    target.extend([".perseus", "server"]);
+    let target = dir.join(".perseus/server");
 
-    // Build the server runner
-    // We use the JSON message format so we can get extra info about the generated executable
-    let (stdout, _stderr) = handle_exit_code!(run_stage(
-        vec![&format!(
-            "{} build --message-format json",
-            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
-        )],
-        &target,
-        format!(
-            "{} {} Building server",
-            style(format!("[{}/{}]", num_steps - 1, num_steps))
-                .bold()
-                .dim(),
-            BUILDING_SERVER
-        )
-    )?);
-    let msgs: Vec<&str> = stdout.trim().split('\n').collect();
-    // If we got to here, the exit code was 0 and everything should've worked
-    // The last message will just tell us that the build finished, the second-last one will tell us the executable path
-    let msg = msgs.get(msgs.len() - 2);
-    let msg = match msg {
-        // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
-        Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
-            .map_err(|err| ErrorKind::GetServerExecutableFailed(err.to_string()))?,
-        None => bail!(ErrorKind::GetServerExecutableFailed(
-            "expected second-last message, none existed (too few messages)".to_string()
-        )),
-    };
-    let server_exec_path = msg.get("executable");
-    let server_exec_path = match server_exec_path {
-        // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
-        Some(server_exec_path) => match server_exec_path.as_str() {
-            Some(server_exec_path) => server_exec_path,
+    // Server building message
+    let sb_msg = format!(
+        "{} {} Building server",
+        style(format!("[{}/{}]", num_steps - 1, num_steps))
+            .bold()
+            .dim(),
+        BUILDING_SERVER
+    );
+
+    // We'll parallelize the building of the server with any build commands that are currently running
+    // We deliberately insert the spinner at the end of the list
+    let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
+    let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
+    let sb_target = target.clone();
+    let sb_thread = thread::spawn(move || {
+        let (stdout, _stderr) = handle_exit_code!(run_stage(
+            vec![&format!(
+                // This sets Cargo to tell us everything, including the executable path to the server
+                "{} build --message-format json",
+                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+            )],
+            &sb_target,
+            &sb_spinner,
+            &sb_msg
+        )?);
+
+        let msgs: Vec<&str> = stdout.trim().split('\n').collect();
+        // If we got to here, the exit code was 0 and everything should've worked
+        // The last message will just tell us that the build finished, the second-last one will tell us the executable path
+        let msg = msgs.get(msgs.len() - 2);
+        let msg = match msg {
+            // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
+            Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
+                .map_err(|err| ErrorKind::GetServerExecutableFailed(err.to_string()))?,
             None => bail!(ErrorKind::GetServerExecutableFailed(
-                "expected 'executable' field to be string".to_string()
+                "expected second-last message, none existed (too few messages)".to_string()
             )),
-        },
-        None => bail!(ErrorKind::GetServerExecutableFailed(
-            "expected 'executable' field in JSON map in second-last message, not present"
-                .to_string()
-        )),
+        };
+        let server_exec_path = msg.get("executable");
+        let server_exec_path = match server_exec_path {
+            // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
+            Some(server_exec_path) => match server_exec_path.as_str() {
+                Some(server_exec_path) => server_exec_path,
+                None => bail!(ErrorKind::GetServerExecutableFailed(
+                    "expected 'executable' field to be string".to_string()
+                )),
+            },
+            None => bail!(ErrorKind::GetServerExecutableFailed(
+                "expected 'executable' field in JSON map in second-last message, not present"
+                    .to_string()
+            )),
+        };
+
+        // And now the main thread needs to know about this
+        let mut exec_val = exec.lock().unwrap();
+        *exec_val = server_exec_path.to_string();
+
+        Ok(0)
+    });
+
+    Ok(sb_thread)
+}
+
+/// Runs the server at the given path, handling any errors therewith. This will likely be a black hole until the user manually terminates
+/// the process.
+fn run_server(exec: Arc<Mutex<String>>, dir: PathBuf, did_build: bool) -> Result<i32> {
+    let target = dir.join(".perseus/server");
+    let num_steps = match did_build {
+        true => 4,
+        false => 2,
     };
+
+    // First off, handle any issues with the executable path
+    let exec_val = exec.lock().unwrap();
+    if exec_val.is_empty() {
+        bail!(ErrorKind::GetServerExecutableFailed(
+            "mutex value empty, implies uncaught thread termination (please report this as a bug)"
+                .to_string()
+        ))
+    }
+    let server_exec_path = (*exec_val).to_string();
 
     // Manually run the generated binary (invoking in the right directory context for good measure if it ever needs it in future)
-    let child = Command::new(server_exec_path)
+    let child = Command::new(&server_exec_path)
         .current_dir(target)
         // We should be able to access outputs in case there's an error
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|err| ErrorKind::CmdExecFailed(server_exec_path.to_string(), err.to_string()))?;
+        .map_err(|err| ErrorKind::CmdExecFailed(server_exec_path, err.to_string()))?;
     // Figure out what host/port the app will be live on
     let host = env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("PORT")
@@ -116,20 +163,45 @@ fn serve_internal(dir: PathBuf, did_build: bool) -> Result<i32> {
     Ok(0)
 }
 
-/// Builds the subcrates to get a directory that we can serve. Returns an exit code.
+/// Builds the subcrates to get a directory that we can serve and then serves it.
 pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
+    let spinners = MultiProgress::new();
     // TODO support watching files
-    let mut did_build = false;
+    let did_build = !prog_args.contains(&"--no-build".to_string());
+    // We need to have a way of knowing what the executable path to the server is
+    let exec = Arc::new(Mutex::new(String::new()));
+    // We can begin building the server in a thread without having to deal with the rest of the build stage yet
+    let sb_thread = build_server(dir.clone(), &spinners, did_build, Arc::clone(&exec))?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if !prog_args.contains(&"--no-build".to_string()) {
-        did_build = true;
-        let build_exit_code = build_internal(dir.clone(), 5)?;
-        if build_exit_code != 0 {
-            return Ok(build_exit_code);
+        let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 4)?;
+        let sg_res = sg_thread
+            .join()
+            .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+        let wb_res = wb_thread
+            .join()
+            .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+        if sg_res != 0 {
+            return Ok(sg_res);
+        } else if wb_res != 0 {
+            return Ok(wb_res);
         }
     }
-    // Now actually serve the user's data
-    let exit_code = serve_internal(dir.clone(), did_build)?;
+    // Handle errors from the server building
+    let sb_res = sb_thread
+        .join()
+        .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+    if sb_res != 0 {
+        return Ok(sb_res);
+    }
+
+    // This waits for all the threads and lets the spinners draw to the terminal
+    // spinners.join().map_err(|_| ErrorKind::ThreadWaitFailed)?;
+    // And now we can run the finalization stage
+    finalize(&dir.join(".perseus"))?;
+
+    // Now actually run that executable path
+    let exit_code = run_server(Arc::clone(&exec), dir.clone(), did_build)?;
 
     Ok(exit_code)
 }

@@ -1,4 +1,4 @@
-import init, { run } from "./dist/pkg/perseus_cli_builder.js";
+import init, { run } from "/.perseus/bundle.js";
 async function main() {
     await init("/.perseus/bundle.wasm");
     run();
