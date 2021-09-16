@@ -7,7 +7,7 @@ use std::env;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // So we don't have to define a different `FsConfigManager` just for the server, we shift the execution context to the same level as everything else
-    // The server has to be a separate crate because otherwise the dependencies don't work with WASM bundling
+    // The server has to be a separate crate because otherwise the dependencies don't work with Wasm bundling
     env::set_current_dir("../").unwrap();
 
     let host = env::var("HOST").unwrap_or_else(|_| "localhost".to_string());

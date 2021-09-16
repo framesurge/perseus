@@ -12,7 +12,7 @@ pub struct Options {
     /// The locales on the filesystem of the file that will invoke your JavaScript bundle. This should have something like `init()` in
     /// it.
     pub js_init: String,
-    /// The location on the filesystem of your WASM bundle.
+    /// The location on the filesystem of your Wasm bundle.
     pub wasm_bundle: String,
     /// The location on the filesystem of your `index.html` file that includes the JS bundle.
     pub index: String,
@@ -51,7 +51,7 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             .data(config_manager.clone())
             .data(translations_manager.clone())
             .data(opts.clone())
-            // TODO chunk JS and WASM bundles
+            // TODO chunk JS and Wasm bundles
             // These allow getting the basic app code (not including the static data)
             // This contains everything in the spirit of a pseudo-SPA
             .route("/.perseus/main.js", web::get().to(js_init))

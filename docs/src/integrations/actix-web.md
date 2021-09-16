@@ -52,7 +52,7 @@ async fn main() -> std::io::Result<()> {
 }
 ```
 
-When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your `index.html` file, your JS bundle, and your WASM bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).
+When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your `index.html` file, your JS bundle, and your Wasm bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).
 
 Also, because this plugs into an existing server, you have full control over hosting options, like the port to be used!
 

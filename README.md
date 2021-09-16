@@ -22,7 +22,7 @@ Support every major rendering strategy and provide developers the ability to eff
 
 ## Motivation
 
-There is a sore lack of Rust frameworks for frontend development that support more than just SPAs and client-side rendering, and so Perseus was born. We need something like NextJS for WASM.
+There is a sore lack of Rust frameworks for frontend development that support more than just SPAs and client-side rendering, and so Perseus was born. We need something like NextJS for Wasm.
 
 ## Roadmap
 

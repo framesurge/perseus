@@ -8,7 +8,7 @@ use sycamore::prelude::{template, StateHandle};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
-/// The entrypoint into the app itself. This will be compiled to WASM and actually executed, rendering the rest of the app.
+/// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
     // Panics should always go to the console

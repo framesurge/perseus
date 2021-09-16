@@ -1,6 +1,6 @@
 # Serving
 
-*You only need this page if you're not using the Perseus CLI, which performs this process for you!*
+_You only need this page if you're not using the Perseus CLI, which performs this process for you!_
 
 Having generated a large number of static files, you'll need a system to host your files for you! Due to the dynamic nature of some rendering strategies, Perseus needs to be involved in this process (for executing request-time logic), and so it provides a simple API interface for serving pages.
 
@@ -8,26 +8,26 @@ Perseus aims to be agnostic as to what framework you use to host your files, and
 
 If you're using one of our supported integrations, you don't have to bother with this page, nearly all of it can be done for you!
 
-- [Actix Web](./integrations/actix-web.md)
-- *More coming soon...*
+-   [Actix Web](./integrations/actix-web.md)
+-   _More coming soon..._
 
 ## Endpoints
 
 Here are the endpoints that a server for Perseus must serve:
 
-- `/.perseus/page/*` – used to serve the JSON data that the app shell needs to render a page (`*` should be extractable as a filename, e.g. `{filename:.*}` in Actix Web)
-- `/.perseus/bundle.js` – the JavaScript bundle file that calls your WASM code (see [tutorial on building your first app](./tutorials/first_app/intro.md))
-- `/.perseus/bundle.wasm` – the WASM bundle file that contains your code (see [tutorial on building your first app](./tutorials/first_app/intro.md))
-- `*` (anything else) – any page that the user actually requests, which will return the app shell to do the heavy lifting (or more accurately an HTML file that includes the bundle)
+-   `/.perseus/page/*` – used to serve the JSON data that the app shell needs to render a page (`*` should be extractable as a filename, e.g. `{filename:.*}` in Actix Web)
+-   `/.perseus/bundle.js` – the JavaScript bundle file that calls your Wasm code (see [tutorial on building your first app](./tutorials/first_app/intro.md))
+-   `/.perseus/bundle.wasm` – the Wasm bundle file that contains your code (see [tutorial on building your first app](./tutorials/first_app/intro.md))
+-   `*` (anything else) – any page that the user actually requests, which will return the app shell to do the heavy lifting (or more accurately an HTML file that includes the bundle)
 
 ## Usage
 
 This example shows what would be done to acquire a page for any framework. You'll need to have access to these data to get a page:
 
-- The page path the user requested, e.g. `/post/test` for a request to `/.perseus/page/post/test`
-- Data about the HTTP request the user sent (see below)
-- A map of templates produced with [`get_templates_map!`]() (API docs WIP)
-- A [config manager](./config_managers.md)
+-   The page path the user requested, e.g. `/post/test` for a request to `/.perseus/page/post/test`
+-   Data about the HTTP request the user sent (see below)
+-   A map of templates produced with [`get_templates_map!`]() (API docs WIP)
+-   A [config manager](./config_managers.md)
 
 ```rust,no_run,no_playground
 use perseus::{get_page};
@@ -46,7 +46,7 @@ match page_data {
 
 ## Request Data
 
-Perseus needs access to information about HTTP requests so it can perform tasks related to the *request state* strategy, which provides access to headers and the like. Internally, Perseus uses [`http::Request`](https://docs.rs/http/0.2.4/http/request/struct.Request.html) for this, with the body type `()` (payloads are irrelevant in requests that ask for a page at a URL).
+Perseus needs access to information about HTTP requests so it can perform tasks related to the _request state_ strategy, which provides access to headers and the like. Internally, Perseus uses [`http::Request`](https://docs.rs/http/0.2.4/http/request/struct.Request.html) for this, with the body type `()` (payloads are irrelevant in requests that ask for a page at a URL).
 
 Unfortunately, different web server frameworks represent request data differently, and so you'll need to convert from your framework's system to `http`'s. When integrations are ready, this will be done for you!
 
@@ -77,19 +77,19 @@ pub fn convert_req(raw: &actix_web::HttpRequest) -> Result<Request, String> {
 		// Any custom data should therefore be sent in headers (if you're doing that, consider a dedicated API)
 		.body(())
 		.map_err(|err| format!("converting actix web request to perseus-compliant request failed: '{}'", err))?;
-	
+
 	Ok(req)
 }
 ```
 
 Notably, the data that need to be converted are:
 
-- Headers
-- URI to which the request was sent
-- HTTP method (subject to change in future Perseus versions, currently `GET`)
-- HTTP version used
+-   Headers
+-   URI to which the request was sent
+-   HTTP method (subject to change in future Perseus versions, currently `GET`)
+-   HTTP version used
 
-Note that mis-converting any of these data will not affect Perseus (which doesn't require any of them to function), only your own code. So if you have no intention of using the *request state* strategy in your app, you could theoretically just parse an empty request to Perseus like so:
+Note that mis-converting any of these data will not affect Perseus (which doesn't require any of them to function), only your own code. So if you have no intention of using the _request state_ strategy in your app, you could theoretically just parse an empty request to Perseus like so:
 
 ```rust
 use perseus::HttpRequest

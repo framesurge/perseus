@@ -10,7 +10,7 @@ After you've done this, make sure everything works by running `cargo` in a termi
 
 ## Build Tools
 
-Perseus is built on top of WASM (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is *really* complicated, and you'll need two particular build tools to make your code work.
+Perseus is built on top of Wasm (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is _really_ complicated, and you'll need two particular build tools to make your code work.
 
 The first one is [`wasm-pack`](), which helps to compile your Rust code to WebAssembly (sort of like how you'd compile code normally, but specially for the browser). You can install it with this command:
 
@@ -20,12 +20,14 @@ cargo install wasm-pack
 
 Now, you should be able to type `wasm-pack` in your terminal to get another help page!
 
-The next tool is one you might be familiar with if you're coming from the JavaScript world: [Rollup](https://rollupjs.org). Rollup is a bundling tool for JavaScript, and it works really nicely with WASM. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:
+The next tool is one you might be familiar with if you're coming from the JavaScript world: [Rollup](https://rollupjs.org). Rollup is a bundling tool for JavaScript, and it works really nicely with Wasm. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:
 
 ```
 npm i -g rollup
 ```
+
 or
+
 ```
 yarn global add rollup
 ```

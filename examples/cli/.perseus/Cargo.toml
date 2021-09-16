@@ -1,4 +1,4 @@
-# This crate defines the user's app in terms that WASM can understand, making development significantly simpler.
+# This crate defines the user's app in terms that Wasm can understand, making development significantly simpler.
 # IMPORTANT: spacing matters in this file for runtime replacements, do NOT change it!
 
 [package]
@@ -23,7 +23,7 @@ console_error_panic_hook = "0.1.6"
 urlencoding = "2.1"
 futures = "0.3"
 
-# This section is needed for WASM Pack (which we use instead of Trunk for flexibility)
+# This section is needed for Wasm Pack (which we use instead of Trunk for flexibility)
 [lib]
 crate-type = ["cdylib", "rlib"]
 
