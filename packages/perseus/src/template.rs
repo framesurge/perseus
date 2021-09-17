@@ -55,7 +55,7 @@ pub type StringResultWithCause<T> = std::result::Result<T, (String, ErrorCause)>
 type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T>>>;
 
 /// Creates traits that prevent users from having to pin their functions' return types. We can't make a generic one until desugared function
-/// types are stabilized (https://github.com/rust-lang/rust/issues/29625https://github.com/rust-lang/rust/issues/29625).
+/// types are stabilized (https://github.com/rust-lang/rust/issues/29625).
 macro_rules! make_async_trait {
     ($name:ident, $return_ty:ty$(, $arg_name:ident: $arg:ty)*) => {
         // These traits should be purely internal, the user is likely to shoot themselves in the foot
