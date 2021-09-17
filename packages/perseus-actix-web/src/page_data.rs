@@ -2,18 +2,25 @@ use crate::conv_req::convert_req;
 use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::{err_to_status_code, get_page, ConfigManager, TranslationsManager};
-use std::collections::HashMap;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct PageDataReq {
+    pub template_name: String,
+}
 
 /// The handler for calls to `.perseus/page/*`. This will manage returning errors and the like.
 pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Options>,
-    render_cfg: web::Data<HashMap<String, String>>,
     config_manager: web::Data<C>,
     translations_manager: web::Data<T>,
+    web::Query(query_params): web::Query<PageDataReq>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
     let locale = req.match_info().query("locale");
+    // TODO get the template name from the query
+    let template_name = query_params.template_name;
     // Check if the locale is supported
     if opts.locales.is_supported(locale) {
         let path = req.match_info().query("filename");
@@ -30,8 +37,8 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
         let page_data = get_page(
             path,
             locale,
+            &template_name,
             http_req,
-            &render_cfg,
             templates,
             config_manager.get_ref(),
             translations_manager.get_ref(),

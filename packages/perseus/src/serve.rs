@@ -162,8 +162,8 @@ pub async fn get_page(
     // This must not contain the locale
     raw_path: &str,
     locale: &str,
+    template_name: &str,
     req: Request,
-    render_cfg: &HashMap<String, String>,
     templates: &TemplateMap<SsrNode>,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
@@ -182,39 +182,11 @@ pub async fn get_page(
     // Remove `/` from the path by encoding it as a URL (that's what we store) and add the locale
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path).to_string());
 
-    // Match the path to one of the templates
-    let mut template_name = String::new();
-    // We'll try a direct match first
-    if let Some(template_root_path) = render_cfg.get(path) {
-        template_name = template_root_path.to_string();
-    }
-    // Next, an ISR match (more complex), which we only want to run if we didn't get an exact match above
-    if template_name.is_empty() {
-        // We progressively look for more and more specificity of the path, adding each segment
-        // That way, we're searching forwards rather than backwards, which is more efficient
-        let path_segments: Vec<&str> = path.split('/').collect();
-        for (idx, _) in path_segments.iter().enumerate() {
-            // Make a path out of this and all the previous segments
-            let path_to_try = path_segments[0..(idx + 1)].join("/") + "/*";
-
-            // If we find something, keep going until we don't (maximise specificity)
-            if let Some(template_root_path) = render_cfg.get(&path_to_try) {
-                template_name = template_root_path.to_string();
-            } else {
-                break;
-            }
-        }
-    }
-
-    // If we still have nothing, then the page doesn't exist
-    if template_name.is_empty() {
-        bail!(ErrorKind::PageNotFound(path.to_string()))
-    }
-
     // Get the template to use
-    let template = templates.get(&template_name);
+    let template = templates.get(template_name);
     let template = match template {
         Some(template) => template,
+        // This shouldn't happen because the client should already have performed checks against the render config, but it's handled anyway
         None => bail!(ErrorKind::PageNotFound(path.to_string())),
     };
 

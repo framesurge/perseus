@@ -13,7 +13,9 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 
-pub(crate) async fn fetch(url: &str) -> Result<Option<String>> {
+/// Fetches the given resource. This should NOT be used by end users, but it's required by the CLI.
+#[doc(hidden)]
+pub async fn fetch(url: &str) -> Result<Option<String>> {
     let js_err_handler = |err: JsValue| ErrorKind::JsErr(format!("{:?}", err));
     let mut opts = RequestInit::new();
     opts.method("GET").mode(RequestMode::Cors);
@@ -51,6 +53,27 @@ pub(crate) async fn fetch(url: &str) -> Result<Option<String>> {
             body_str
         ))
     }
+}
+
+/// Gets the render configuration from the JS global variable `__PERSEUS_RENDER_CFG`, which should be inlined by the server. This will
+/// return `None` on any error (not found, serialization failed, etc.), which should reasonably lead to a `panic!` in the caller.
+pub fn get_render_cfg() -> Option<HashMap<String, String>> {
+    let val_opt = web_sys::window().unwrap().get("__PERSEUS_RENDER_CFG");
+    let js_obj = match val_opt {
+        Some(js_obj) => js_obj,
+        None => return None,
+    };
+    // The object should only actually contain the string value that was injected
+    let cfg_str = match js_obj.as_string() {
+        Some(cfg_str) => cfg_str,
+        None => return None,
+    };
+    let render_cfg = match serde_json::from_str::<HashMap<String, String>>(&cfg_str) {
+        Ok(render_cfg) => render_cfg,
+        Err(_) => return None,
+    };
+
+    Some(render_cfg)
 }
 
 /// The callback to a template the user must provide for error pages. This is passed the status code, the error message, the URL of the
@@ -132,7 +155,7 @@ pub fn app_shell(
     // Spawn a Rust futures thread in the background to fetch the static HTML/JSON
     wasm_bindgen_futures::spawn_local(cloned!((container) => async move {
         // Get the static page data
-        let asset_url = format!("/.perseus/page/{}/{}", locale, path.to_string());
+        let asset_url = format!("/.perseus/page/{}/{}?template_name={}", locale, path.to_string(), template.get_path());
         // If this doesn't exist, then it's a 404 (we went here by explicit navigation, but it may be an unservable ISR page or the like)
         let page_data_str = fetch(&asset_url).await;
         match page_data_str {

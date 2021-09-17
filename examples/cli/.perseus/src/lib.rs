@@ -1,9 +1,9 @@
-use app::{get_error_pages, get_locales, get_routes, APP_ROUTE};
+use app::{get_error_pages, get_locales, get_templates_map, APP_ROOT};
 use perseus::router::{RouteInfo, RouteVerdict};
-use perseus::{app_shell, detect_locale, ClientTranslationsManager, DomNode};
+use perseus::shell::get_render_cfg;
+use perseus::{app_shell, create_app_route, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{template, StateHandle};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -18,7 +18,7 @@ pub fn run() -> Result<(), JsValue> {
         .unwrap()
         .document()
         .unwrap()
-        .query_selector(APP_ROUTE)
+        .query_selector(APP_ROOT)
         .unwrap()
         .unwrap();
 
@@ -27,42 +27,42 @@ pub fn run() -> Result<(), JsValue> {
         Rc::new(RefCell::new(ClientTranslationsManager::new(&get_locales())));
     // Get the error pages in an `Rc` so we aren't creating hundreds of them
     let error_pages = Rc::new(get_error_pages());
-    // Get the routes in an `Rc` as well
-    let routes = Rc::new(get_routes::<DomNode>());
+
+    // Create the router we'll use for this app, based on the user's app definition
+    create_app_route! {
+        name => AppRoute,
+        // The render configuration is injected verbatim into the HTML shell, so it certainly should be present
+        render_cfg => get_render_cfg().expect("render configuration invalid or not injected"),
+        templates => get_templates_map(),
+        locales => get_locales()
+    }
 
     sycamore::render_to(
         || {
             template! {
-                // We provide the routes in context (can't provide them directly because of Sycamore trait constraints)
-                // BUG: context doesn't exist when link clicked first time, works second time...
-                ContextProvider(ContextProviderProps {
-                    value: Rc::clone(&routes),
-                    children: || template! {
-                        Router(RouterProps::new(HistoryIntegration::new(), move |route: StateHandle<RouteVerdict<DomNode>>| {
-                            match route.get().as_ref() {
-                                // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
-                                RouteVerdict::Found(RouteInfo {
-                                    path,
-                                    template_fn,
-                                    locale
-                                }) => app_shell(
-                                    path.clone(),
-                                    template_fn.clone(),
-                                    locale.clone(),
-                                    // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
-                                    Rc::clone(&translations_manager),
-                                    Rc::clone(&error_pages)
-                                ),
-                                // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
-                                // Those all go to the same system that redirects to the appropriate locale
-                                RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
-                                // We handle the 404 for the user for convenience
-                                // To get a translator here, we'd have to go async and dangerously check the URL
-                                RouteVerdict::NotFound => get_error_pages().get_template_for_page("", &404, "not found", None),
-                            }
-                        }))
+                Router(RouterProps::new(HistoryIntegration::new(), move |route: StateHandle<AppRoute<DomNode>>| {
+                    match &route.get().as_ref().0 {
+                        // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
+                        RouteVerdict::Found(RouteInfo {
+                            path,
+                            template,
+                            locale
+                        }) => app_shell(
+                            path.clone(),
+                            template.clone(),
+                            locale.clone(),
+                            // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
+                            Rc::clone(&translations_manager),
+                            Rc::clone(&error_pages)
+                        ),
+                        // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
+                        // Those all go to the same system that redirects to the appropriate locale
+                        RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
+                        // We handle the 404 for the user for convenience
+                        // To get a translator here, we'd have to go async and dangerously check the URL
+                        RouteVerdict::NotFound => get_error_pages().get_template_for_page("", &404, "not found", None),
                     }
-                })
+                }))
             }
         },
         &root,

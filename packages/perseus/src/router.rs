@@ -1,120 +1,111 @@
 use crate::Locales;
 use crate::Template;
-use std::rc::Rc;
-use sycamore::context::use_context;
+use crate::TemplateMap;
+use std::collections::HashMap;
 use sycamore::prelude::GenericNode;
-use sycamore_router::{Route, RoutePath, Segment};
 
-/// A representation of routes in a Perseus app. This is used internally to match routes. Because this can't be passed directly to
-/// the `RouteVerdict`'s `match_route` function, it should be provided in context instead (through an `Rc<T>`).
-pub struct Routes<G: GenericNode> {
-    /// The routes in the app, stored as an *ordered* list of key-value pairs, mapping routing path (e.g. `/post/<slug..>`) to template.
-    /// These will be matched by a loop, so more specific routes should go first in the vector. Even if we're using i18n, this still
-    /// stores a routing path without the locale, which is added in during parsing as necessary.
-    routes: Vec<(Vec<Segment>, Template<G>)>,
-    /// Whether or not the user is using i18n, which significantly impacts how we match routes (will there be a locale in front of
-    /// everything).
-    locales: Locales,
-}
-impl<G: GenericNode> Routes<G> {
-    /// Creates a new instance of the routes. This takes a vector of key-value pairs of routing path to template functions.
-    pub fn new(raw_routes: Vec<(String, Template<G>)>, locales: Locales) -> Self {
-        let routes: Vec<(Vec<Segment>, Template<G>)> = raw_routes
-            .iter()
-            .map(|(router_path_str_raw, template_fn)| {
-                // Handle the landing page (because match systems don't tolerate empty strings well)
-                if router_path_str_raw == "/" {
-                    return (Vec::new(), template_fn.clone());
-                }
-
-                // Remove leading/trailing `/`s to avoid empty elements (which stuff up path matching)
-                let mut router_path_str = router_path_str_raw.clone();
-                if router_path_str.starts_with('/') {
-                    router_path_str.remove(0);
-                }
-                if router_path_str.ends_with('/') {
-                    router_path_str.remove(router_path_str.len() - 1);
-                }
-
-                let router_path_parts = router_path_str.split('/');
-                let router_path: Vec<Segment> = router_path_parts
-                    .map(|part| {
-                        // TODO possibly use Actix Web like syntax here instead and propose to @lukechu10?
-                        // We need to create a segment out of this part, we'll parse Sycamore's syntax
-                        // We don't actually need Regex here, so we don't bloat with it
-                        // If you're familiar with Sycamore's routing system, we don't need to worry about capturing these segments in Perseus because we just return the actual path directly
-                        /* Variants (in tested order):
-                            - <stuff..>     segment that captures many parameters
-                            - <stuff>       parameter that captures a single element
-                            - stuff         verbatim stuff
-                        */
-                        if part.starts_with('<') && part.ends_with("..>") {
-                            Segment::DynSegments
-                        } else if part.starts_with('<') && part.ends_with('>') {
-                            Segment::DynParam
-                        } else {
-                            Segment::Param(part.to_string())
-                        }
-                    })
-                    .collect();
-                // Turn the router path into a vector of `Segment`s
-                (router_path, template_fn.clone())
-            })
-            .collect();
-
-        Self { routes, locales }
+/// Determines the template to use for the given path by checking against the render configuration. This houses the central routing
+/// algorithm of Perseus, which is based fully on the fact that we know about every single page except those rendered with ISR, and we
+/// can infer about them based on template root path domains. If that domain system is violated, this routing algorithm will not
+/// behave as expected whatsoever (as far as routing goes, it's undefined behaviour)!
+pub fn get_template_for_path<'a, G: GenericNode>(
+    raw_path: &str,
+    render_cfg: &HashMap<String, String>,
+    templates: &'a TemplateMap<G>,
+) -> Option<&'a Template<G>> {
+    let mut path = raw_path;
+    // If the path is empty, we're looking for the special `index` page
+    if path.is_empty() {
+        path = "index";
     }
-    /// Matches the given route to an instance of `RouteVerdict`.
-    pub fn match_route(&self, raw_path: &[&str]) -> RouteVerdict<G> {
-        let path: Vec<&str> = raw_path.to_vec();
-        let path_joined = path.join("/"); // This should not have a leading forward slash, it's used for asset fetching by the app shell
 
-        let mut verdict = RouteVerdict::NotFound;
-        // There are different logic chains if we're using i18n, so we fork out early
-        if self.locales.using_i18n {
-            for (segments, template_fn) in &self.routes {
-                let route_path_without_locale = RoutePath::new(segments.to_vec());
-                let route_path_with_locale = RoutePath::new({
-                    let mut vec = vec![Segment::DynParam];
-                    vec.extend(segments.to_vec());
-                    vec
-                });
+    // Match the path to one of the templates
+    let mut template_name = String::new();
+    // We'll try a direct match first
+    if let Some(template_root_path) = render_cfg.get(path) {
+        template_name = template_root_path.to_string();
+    }
+    // Next, an ISR match (more complex), which we only want to run if we didn't get an exact match above
+    if template_name.is_empty() {
+        // We progressively look for more and more specificity of the path, adding each segment
+        // That way, we're searching forwards rather than backwards, which is more efficient
+        let path_segments: Vec<&str> = path.split('/').collect();
+        for (idx, _) in path_segments.iter().enumerate() {
+            // Make a path out of this and all the previous segments
+            let path_to_try = path_segments[0..(idx + 1)].join("/") + "/*";
 
-                // First, we'll see if the path matches a translated route
-                // If that fails, we'll see if it matches an untranslated route, which becomes a locale detector
-                if route_path_with_locale.match_path(&path).is_some() {
-                    verdict = RouteVerdict::Found(RouteInfo {
-                        // The asset fetching process deals with the locale separately, and doesn't need a leading `/`
-                        path: path[1..].to_vec().join("/"),
-                        template_fn: template_fn.clone(),
-                        locale: path[0].to_string(),
-                    });
-                    break;
-                } else if route_path_without_locale.match_path(&path).is_some() {
-                    // We've now matched that it fits without the locale, which means the user is trying to
-                    verdict = RouteVerdict::LocaleDetection(path_joined);
-                    break;
-                }
-            }
-        } else {
-            for (segments, template_fn) in &self.routes {
-                let route_path = RoutePath::new(segments.to_vec());
-
-                // We're not using i18n, so we can just match the path directly
-                if route_path.match_path(&path).is_some() {
-                    verdict = RouteVerdict::Found(RouteInfo {
-                        path: path_joined,
-                        template_fn: template_fn.clone(),
-                        // Every page uses the default locale if we aren't using i18n (translators won't be used anyway)
-                        locale: self.locales.default.to_string(),
-                    });
-                    break;
-                }
+            // If we find something, keep going until we don't (maximise specificity)
+            if let Some(template_root_path) = render_cfg.get(&path_to_try) {
+                template_name = template_root_path.to_string();
+            } else {
+                break;
             }
         }
-
-        verdict
     }
+    // If we still have nothing, then the page doesn't exist
+    if template_name.is_empty() {
+        return None;
+    }
+
+    // Get the template to use (the `Option<T>` this returns is perfect) if it exists
+    templates.get(&template_name)
+}
+
+/// Matches the given path to a `RouteVerdict`. This takes a `TemplateMap` to match against, the render configuration to index, and it
+/// needs to know if i18n is being used. The path this takes should be raw, it may or may not have a locale, but should be split into
+/// segments by `/`, with empty ones having been removed.
+pub fn match_route<G: GenericNode>(
+    path_slice: &[&str],
+    render_cfg: HashMap<String, String>,
+    templates: TemplateMap<G>,
+    locales: Locales,
+) -> RouteVerdict<G> {
+    let path_vec: Vec<&str> = path_slice.to_vec();
+    let path_joined = path_vec.join("/"); // This should not have a leading forward slash, it's used for asset fetching by the app shell
+
+    let verdict;
+    // There are different logic chains if we're using i18n, so we fork out early
+    if locales.using_i18n && !path_slice.is_empty() {
+        let locale = path_slice[0];
+        // Check if the 'locale' is supported (otherwise it may be the first section of an uni18ned route)
+        if locales.is_supported(locale) {
+            // We'll assume this has already been i18ned (if one of your routes has the same name as a supported locale, ffs)
+            let path_without_locale = path_slice[1..].to_vec().join("/");
+            // Get the template to use
+            let template = get_template_for_path(&path_without_locale, &render_cfg, &templates);
+            verdict = match template {
+                Some(template) => RouteVerdict::Found(RouteInfo {
+                    locale: locale.to_string(),
+                    // This will be used in asset fetching from the server
+                    path: path_without_locale,
+                    template: template.clone(),
+                }),
+                None => RouteVerdict::NotFound,
+            };
+        } else {
+            // If the locale isn't supported, we assume that it's part of a route that still needs a locale (we'll detect the user's preferred)
+            // This will result in a redirect, and the actual template to use will be determined after that
+            // We'll just pass through the path to be redirected to (after it's had a locale placed in front)
+            verdict = RouteVerdict::LocaleDetection(path_joined)
+        }
+    } else if locales.using_i18n {
+        // If we're here, then we're using i18n, but we're at the root path, which is a locale detection point
+        verdict = RouteVerdict::LocaleDetection(path_joined);
+    } else {
+        // Get the template to use
+        let template = get_template_for_path(&path_joined, &render_cfg, &templates);
+        verdict = match template {
+            Some(template) => RouteVerdict::Found(RouteInfo {
+                locale: locales.default.to_string(),
+                // This will be used in asset fetching from the server
+                path: path_joined,
+                template: template.clone(),
+            }),
+            None => RouteVerdict::NotFound,
+        };
+    }
+
+    verdict
 }
 
 /// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
@@ -122,8 +113,8 @@ impl<G: GenericNode> Routes<G> {
 pub struct RouteInfo<G: GenericNode> {
     /// The actual path of the route.
     pub path: String,
-    /// The template that will render the template. The app shell will derive pros and a translator to pass to the template function.
-    pub template_fn: Template<G>,
+    /// The template that will be used. The app shell will derive pros and a translator to pass to the template function.
+    pub template: Template<G>,
     /// The locale for the template to be rendered in.
     pub locale: String,
 }
@@ -139,11 +130,26 @@ pub enum RouteVerdict<G: GenericNode> {
     /// The given route maps to the locale detector, which will redirect the user to the attached path (in the appropriate locale).
     LocaleDetection(String),
 }
-impl<G: GenericNode> Route for RouteVerdict<G> {
-    fn match_route(path: &[&str]) -> Self {
-        // Get an instance of `Routes` by context
-        let routes = use_context::<Rc<Routes<G>>>();
-        // Match the path using that
-        routes.match_route(path)
-    }
+
+/// Creates an app-specific routing `struct`. Sycamore expects an `enum` to do this, so we create a `struct` that behaves similarly. If
+/// we don't do this, we can't get the information necessary for routing into the `enum` at all (context and global variables don't suit
+/// this particular case).
+#[macro_export]
+macro_rules! create_app_route {
+    {
+        name => $name:ident,
+        render_cfg => $render_cfg:expr,
+        templates => $templates:expr,
+        locales => $locales:expr
+    } => {
+        /// The route type for the app, with all routing logic inbuilt through the generation macro.
+        struct $name<G: $crate::GenericNode>($crate::router::RouteVerdict<G>);
+        impl<G: $crate::GenericNode> ::sycamore_router::Route for $name<G> {
+            fn match_route(path: &[&str]) -> Self {
+                let verdict = $crate::router::match_route(path, $render_cfg, $templates, $locales);
+                // BUG Sycamore doesn't call the route verdict matching logic for some reason, but we get to this point
+                Self(verdict)
+            }
+        }
+    };
 }

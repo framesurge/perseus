@@ -104,7 +104,7 @@ macro_rules! define_app {
         root: $root_selector:literal,
         error_pages: $error_pages:expr,
         templates: [
-            $($router_path:literal => $template:expr),+
+            $($template:expr),+
         ],
         // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
         locales: {
@@ -117,20 +117,7 @@ macro_rules! define_app {
         $(,translations_manager: $translations_manager:expr)?
     } => {
         /// The CSS selector that will find the app root to render Perseus in.
-        pub const APP_ROUTE: &str = $root_selector;
-
-        /// Gets the routes for the app in Perseus' custom abstraction over Sycamore's routing logic. This enables tight coupling of
-        /// the templates and the routing system. This can be used on the client or server side.
-        pub fn get_routes<G: $crate::GenericNode>() -> $crate::router::Routes<G> {
-            $crate::router::Routes::new(
-                vec![
-                    $(
-                        ($router_path.to_string(), $template)
-                    ),+
-                ],
-                get_locales()
-            )
-        }
+        pub const APP_ROOT: &str = $root_selector;
 
         /// Gets the config manager to use. This allows the user to conveniently test production managers in development. If nothing is
         /// given, the filesystem will be used.
