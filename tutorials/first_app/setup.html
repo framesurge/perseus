@@ -149,12 +149,12 @@
 <p>Make sure you've got Rust and Cargo. If you haven't yet, install them from <a href="https://doc.rust-lang.org/stable/book/ch01-01-installation.html">here</a>, and you might want to check out the <a href="https://doc.rust-lang.org/book">Rust book</a> if you're unfamiliar with the language.</p>
 <p>After you've done this, make sure everything works by running <code>cargo</code> in a terminal. You should get a help page!</p>
 <h2 id="build-tools"><a class="header" href="#build-tools">Build Tools</a></h2>
-<p>Perseus is built on top of WASM (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is <em>really</em> complicated, and you'll need two particular build tools to make your code work.</p>
+<p>Perseus is built on top of Wasm (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is <em>really</em> complicated, and you'll need two particular build tools to make your code work.</p>
 <p>The first one is <a href=""><code>wasm-pack</code></a>, which helps to compile your Rust code to WebAssembly (sort of like how you'd compile code normally, but specially for the browser). You can install it with this command:</p>
 <pre><code>cargo install wasm-pack
 </code></pre>
 <p>Now, you should be able to type <code>wasm-pack</code> in your terminal to get another help page!</p>
-<p>The next tool is one you might be familiar with if you're coming from the JavaScript world: <a href="https://rollupjs.org">Rollup</a>. Rollup is a bundling tool for JavaScript, and it works really nicely with WASM. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:</p>
+<p>The next tool is one you might be familiar with if you're coming from the JavaScript world: <a href="https://rollupjs.org">Rollup</a>. Rollup is a bundling tool for JavaScript, and it works really nicely with Wasm. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:</p>
 <pre><code>npm i -g rollup
 </code></pre>
 <p>or</p>

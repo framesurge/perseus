@@ -156,8 +156,8 @@
 <p>Here are the endpoints that a server for Perseus must serve:</p>
 <ul>
 <li><code>/.perseus/page/*</code> – used to serve the JSON data that the app shell needs to render a page (<code>*</code> should be extractable as a filename, e.g. <code>{filename:.*}</code> in Actix Web)</li>
-<li><code>/.perseus/bundle.js</code> – the JavaScript bundle file that calls your WASM code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
-<li><code>/.perseus/bundle.wasm</code> – the WASM bundle file that contains your code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
+<li><code>/.perseus/bundle.js</code> – the JavaScript bundle file that calls your Wasm code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
+<li><code>/.perseus/bundle.wasm</code> – the Wasm bundle file that contains your code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
 <li><code>*</code> (anything else) – any page that the user actually requests, which will return the app shell to do the heavy lifting (or more accurately an HTML file that includes the bundle)</li>
 </ul>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
@@ -215,7 +215,7 @@ pub fn convert_req(raw: &amp;actix_web::HttpRequest) -&gt; Result&lt;Request, St
 		// Any custom data should therefore be sent in headers (if you're doing that, consider a dedicated API)
 		.body(())
 		.map_err(|err| format!(&quot;converting actix web request to perseus-compliant request failed: '{}'&quot;, err))?;
-	
+
 	Ok(req)
 }
 <span class="boring">}

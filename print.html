@@ -248,12 +248,12 @@ template! {
 <p>Make sure you've got Rust and Cargo. If you haven't yet, install them from <a href="https://doc.rust-lang.org/stable/book/ch01-01-installation.html">here</a>, and you might want to check out the <a href="https://doc.rust-lang.org/book">Rust book</a> if you're unfamiliar with the language.</p>
 <p>After you've done this, make sure everything works by running <code>cargo</code> in a terminal. You should get a help page!</p>
 <h2 id="build-tools"><a class="header" href="#build-tools">Build Tools</a></h2>
-<p>Perseus is built on top of WASM (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is <em>really</em> complicated, and you'll need two particular build tools to make your code work.</p>
+<p>Perseus is built on top of Wasm (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is <em>really</em> complicated, and you'll need two particular build tools to make your code work.</p>
 <p>The first one is <a href="tutorials/first_app/"><code>wasm-pack</code></a>, which helps to compile your Rust code to WebAssembly (sort of like how you'd compile code normally, but specially for the browser). You can install it with this command:</p>
 <pre><code>cargo install wasm-pack
 </code></pre>
 <p>Now, you should be able to type <code>wasm-pack</code> in your terminal to get another help page!</p>
-<p>The next tool is one you might be familiar with if you're coming from the JavaScript world: <a href="https://rollupjs.org">Rollup</a>. Rollup is a bundling tool for JavaScript, and it works really nicely with WASM. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:</p>
+<p>The next tool is one you might be familiar with if you're coming from the JavaScript world: <a href="https://rollupjs.org">Rollup</a>. Rollup is a bundling tool for JavaScript, and it works really nicely with Wasm. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:</p>
 <pre><code>npm i -g rollup
 </code></pre>
 <p>or</p>
@@ -917,8 +917,8 @@ fn main() {
 <p>Here are the endpoints that a server for Perseus must serve:</p>
 <ul>
 <li><code>/.perseus/page/*</code> – used to serve the JSON data that the app shell needs to render a page (<code>*</code> should be extractable as a filename, e.g. <code>{filename:.*}</code> in Actix Web)</li>
-<li><code>/.perseus/bundle.js</code> – the JavaScript bundle file that calls your WASM code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
-<li><code>/.perseus/bundle.wasm</code> – the WASM bundle file that contains your code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
+<li><code>/.perseus/bundle.js</code> – the JavaScript bundle file that calls your Wasm code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
+<li><code>/.perseus/bundle.wasm</code> – the Wasm bundle file that contains your code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
 <li><code>*</code> (anything else) – any page that the user actually requests, which will return the app shell to do the heavy lifting (or more accurately an HTML file that includes the bundle)</li>
 </ul>
 <h2 id="usage-9"><a class="header" href="#usage-9">Usage</a></h2>
@@ -976,7 +976,7 @@ pub fn convert_req(raw: &amp;actix_web::HttpRequest) -&gt; Result&lt;Request, St
 		// Any custom data should therefore be sent in headers (if you're doing that, consider a dedicated API)
 		.body(())
 		.map_err(|err| format!(&quot;converting actix web request to perseus-compliant request failed: '{}'&quot;, err))?;
-	
+
 	Ok(req)
 }
 <span class="boring">}
@@ -1039,7 +1039,7 @@ async fn main() -&gt; std::io::Result&lt;()&gt; {
     	.await
 }
 </code></pre></pre>
-<p>When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your <code>index.html</code> file, your JS bundle, and your WASM bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).</p>
+<p>When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your <code>index.html</code> file, your JS bundle, and your Wasm bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).</p>
 <p>Also, because this plugs into an existing server, you have full control over hosting options, like the port to be used!</p>
 <p>It's worth mentioning the blocking component of this design. The function that returns the closure that actually configures your server for Perseus is asynchronous because it needs to get your render configuration and add it as data to the server (this improves performance by reducing reads), which unfortunately is an asynchronous operation. We also can't <code>.await</code> that without causing ownership errors due to Actix Web's closure structure, which means the best solution for now is to <code>block_on</code> that configuration (which won't impact performance other than in your startup times, and all that's happening is a read from a file). If you have a better solution, <a href="https://github.com/arctic-hen7/pulls">PRs are welcome</a>!</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="config-managers"><a class="header" href="#config-managers">Config Managers</a></h1>

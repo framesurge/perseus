@@ -183,7 +183,7 @@ async fn main() -&gt; std::io::Result&lt;()&gt; {
     	.await
 }
 </code></pre></pre>
-<p>When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your <code>index.html</code> file, your JS bundle, and your WASM bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).</p>
+<p>When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your <code>index.html</code> file, your JS bundle, and your Wasm bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).</p>
 <p>Also, because this plugs into an existing server, you have full control over hosting options, like the port to be used!</p>
 <p>It's worth mentioning the blocking component of this design. The function that returns the closure that actually configures your server for Perseus is asynchronous because it needs to get your render configuration and add it as data to the server (this improves performance by reducing reads), which unfortunately is an asynchronous operation. We also can't <code>.await</code> that without causing ownership errors due to Actix Web's closure structure, which means the best solution for now is to <code>block_on</code> that configuration (which won't impact performance other than in your startup times, and all that's happening is a read from a file). If you have a better solution, <a href="https://github.com/arctic-hen7/pulls">PRs are welcome</a>!</p>
 
