@@ -20,6 +20,7 @@ pub fn get_page<G: GenericNode>() -> Template<G> {
     Template::new("index")
         .build_state_fn(Rc::new(get_static_props))
         .template(template_fn())
+        .head(head_fn())
 }
 
 pub async fn get_static_props(_path: String) -> StringResultWithCause<String> {
@@ -35,6 +36,14 @@ pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
             IndexPage(
                 serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
             )
+        }
+    })
+}
+
+pub fn head_fn() -> perseus::template::HeadFn {
+    Rc::new(|_| {
+        template! {
+            title { "Index Page | Perseus Example – Basic" }
         }
     })
 }

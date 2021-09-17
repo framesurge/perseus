@@ -2,6 +2,7 @@
 
 use crate::errors::*;
 use crate::Request;
+use crate::SsrNode;
 use crate::Translator;
 use futures::Future;
 use std::collections::HashMap;
@@ -113,6 +114,10 @@ make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
 /// given `Option`. If you're using i18n, an `Rc<Translator>` will also be made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
 pub type TemplateFn<G> = Rc<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
+/// A type alias for the function that modifies the document head. This is just a template function that will always be server-side
+/// rendered in function (it may be rendered on the client, but it will always be used to create an HTML string, rather than a reactive
+/// template).
+pub type HeadFn = TemplateFn<SsrNode>;
 /// The type of functions that get build paths.
 pub type GetBuildPathsFn = Rc<dyn GetBuildPathsFnType>;
 /// The type of functions that get build state.
@@ -137,6 +142,10 @@ pub struct Template<G: GenericNode> {
     /// This will be executed inside `sycamore::render_to_string`, and should return a `Template<SsrNode>`. This takes an `Option<Props>`
     /// because otherwise efficient typing is almost impossible for templates without any properties (solutions welcome in PRs!).
     template: TemplateFn<G>,
+    /// A function that will be used to populate the document's `<head>` with metadata such as the title. This will be passed state in
+    /// the same way as `template`, but will always be rendered to a string, whcih will then be interpolated directly into the `<head>`,
+    /// so reactivity here will not work!
+    head: TemplateFn<SsrNode>,
     /// A function that gets the paths to render for at built-time. This is equivalent to `get_static_paths` in NextJS. If
     /// `incremental_path_rendering` is `true`, more paths can be rendered at request time on top of these.
     get_build_paths: Option<GetBuildPathsFn>,
@@ -171,6 +180,8 @@ impl<G: GenericNode> Template<G> {
         Self {
             path: path.to_string(),
             template: Rc::new(|_: Option<String>| sycamore::template! {}),
+            // Unlike `template`, this may not be set at all (especially in very simple apps)
+            head: Rc::new(|_: Option<String>| sycamore::template! {}),
             get_build_paths: None,
             incremental_path_rendering: false,
             get_build_state: None,
@@ -183,7 +194,6 @@ impl<G: GenericNode> Template<G> {
 
     // Render executors
     /// Executes the user-given function that renders the template on the server-side (build or request time).
-    // TODO possibly duplicate routes context here to avoid disappearance issues?
     pub fn render_for_template(
         &self,
         props: Option<String>,
@@ -196,6 +206,19 @@ impl<G: GenericNode> Template<G> {
                 children: || (self.template)(props)
             })
         }
+    }
+    /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually. Reactivity
+    /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
+    pub fn render_head_str(&self, props: Option<String>, translator: Rc<Translator>) -> String {
+        sycamore::render_to_string(|| {
+            template! {
+                // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
+                ContextProvider(ContextProviderProps {
+                    value: Rc::clone(&translator),
+                    children: || (self.head)(props)
+                })
+            }
+        })
     }
     /// Gets the list of templates that should be prerendered for at build-time.
     pub async fn get_build_paths(&self) -> Result<Vec<String>> {
@@ -361,6 +384,11 @@ impl<G: GenericNode> Template<G> {
     /// Sets the template rendering function to use.
     pub fn template(mut self, val: TemplateFn<G>) -> Template<G> {
         self.template = val;
+        self
+    }
+    /// Sets the document head rendering function to use.
+    pub fn head(mut self, val: TemplateFn<SsrNode>) -> Template<G> {
+        self.head = val;
         self
     }
     /// Enables the *build paths* strategy with the given function.

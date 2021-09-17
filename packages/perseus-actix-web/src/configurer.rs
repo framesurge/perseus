@@ -56,12 +56,13 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
         .expect("Couldn't get render configuration!");
     // Get the index file and inject the render configuration into ahead of time
     // We do this by injecting a script that defines the render config as a global variable, which we put just before the close of the head
+    // We also inject a delimiter comment that will be used to wall off the constant document head from the interpolated document head
     let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
     let index_with_render_cfg = index_file.replace(
         "</head>",
         // It's safe to assume that something we just deserialized will serialize again in this case
         &format!(
-            "<script>window.__PERSEUS_RENDER_CFG = '{}';</script>\n</head>",
+            "<script>window.__PERSEUS_RENDER_CFG = '{}';</script>\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n</head>",
             serde_json::to_string(&render_cfg).unwrap()
         ),
     );

@@ -186,6 +186,23 @@ pub fn app_shell(
                                 }
                             };
 
+                            // Render the document head
+                            let head_str = template.render_head_str(page_data.state.clone(), Rc::clone(&translator));
+                            // Get the current head
+                            let head_elem = web_sys::window()
+                                .unwrap()
+                                .document()
+                                .unwrap()
+                                .query_selector("head")
+                                .unwrap()
+                                .unwrap();
+                            let head_html = head_elem.inner_html();
+                            // We'll assume that there's already previously interpolated head in addition to the hardcoded stuff, but it will be separated by the server-injected delimiter comment
+                            // Thus, we replace the stuff after that delimiter comment with the new head
+                            let head_parts: Vec<&str> = head_html.split("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->").collect();
+                            let new_head = format!("{}\n{}", head_parts[0], head_str);
+                            head_elem.set_inner_html(&new_head);
+
                             // Hydrate that static code using the acquired state
                             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                             sycamore::hydrate_to(
