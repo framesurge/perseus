@@ -173,7 +173,7 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
     // We can begin building the server in a thread without having to deal with the rest of the build stage yet
     let sb_thread = build_server(dir.clone(), &spinners, did_build, Arc::clone(&exec))?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
-    if !prog_args.contains(&"--no-build".to_string()) {
+    if did_build {
         let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 4)?;
         let sg_res = sg_thread
             .join()
@@ -195,10 +195,10 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
         return Ok(sb_res);
     }
 
-    // This waits for all the threads and lets the spinners draw to the terminal
-    // spinners.join().map_err(|_| ErrorKind::ThreadWaitFailed)?;
-    // And now we can run the finalization stage
-    finalize(&dir.join(".perseus"))?;
+    // And now we can run the finalization stage (only if `--no-build` wasn't specified)
+    if did_build {
+        finalize(&dir.join(".perseus"))?;
+    }
 
     // Now actually run that executable path
     let exit_code = run_server(Arc::clone(&exec), dir.clone(), did_build)?;

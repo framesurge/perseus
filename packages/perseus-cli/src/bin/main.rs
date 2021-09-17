@@ -81,8 +81,10 @@ fn core(dir: PathBuf) -> Result<i32> {
             } else if prog_args[0] == "serve" {
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
-                // Delete old build artifacts
-                delete_artifacts(dir.clone())?;
+                // Delete old build artifacts if `--no-build` wasn't specified
+                if !prog_args.contains(&"--no-build".to_string()) {
+                    delete_artifacts(dir.clone())?;
+                }
                 let exit_code = serve(dir, &prog_args)?;
                 Ok(exit_code)
             } else if prog_args[0] == "prep" {
