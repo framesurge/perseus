@@ -1,6 +1,7 @@
 use crate::build::{build_internal, finalize};
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::errors::*;
+use crate::thread::{spawn_thread, ThreadHandle};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
 use std::env;
@@ -8,7 +9,6 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
-use std::thread::{self, JoinHandle};
 
 // Emojis for stages
 static BUILDING_SERVER: Emoji<'_, '_> = Emoji("📡", "");
@@ -34,7 +34,7 @@ fn build_server(
     spinners: &MultiProgress,
     did_build: bool,
     exec: Arc<Mutex<String>>,
-) -> Result<JoinHandle<Result<i32>>> {
+) -> Result<ThreadHandle<impl FnOnce() -> Result<i32>, Result<i32>>> {
     let num_steps = match did_build {
         true => 4,
         false => 2,
@@ -55,7 +55,7 @@ fn build_server(
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = target.clone();
-    let sb_thread = thread::spawn(move || {
+    let sb_thread = spawn_thread(move || {
         let (stdout, _stderr) = handle_exit_code!(run_stage(
             vec![&format!(
                 // This sets Cargo to tell us everything, including the executable path to the server

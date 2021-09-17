@@ -33,6 +33,7 @@ pub mod errors;
 mod help;
 mod prepare;
 mod serve;
+mod thread;
 
 mod extraction;
 

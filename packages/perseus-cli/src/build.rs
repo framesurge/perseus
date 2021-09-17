@@ -1,11 +1,11 @@
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::errors::*;
+use crate::thread::{spawn_thread, ThreadHandle};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::thread::{self, JoinHandle};
 
 // Emojis for stages
 static GENERATING: Emoji<'_, '_> = Emoji("🔨", "");
@@ -38,17 +38,18 @@ pub fn finalize(target: &Path) -> Result<()> {
     Ok(())
 }
 
-// This literally only exists to avoid type complexity warnings in the `build_internal`'s return type
-type ThreadHandle = JoinHandle<Result<i32>>;
-
 /// Actually builds the user's code, program arguments having been interpreted. This needs to know how many steps there are in total
 /// because the serving logic also uses it. This also takes a `MultiProgress` to interact with so it can be used truly atomically.
 /// This returns handles for waiting on the component threads so we can use it composably.
+#[allow(clippy::type_complexity)]
 pub fn build_internal(
     dir: PathBuf,
     spinners: &MultiProgress,
     num_steps: u8,
-) -> Result<(ThreadHandle, ThreadHandle)> {
+) -> Result<(
+    ThreadHandle<impl FnOnce() -> Result<i32>, Result<i32>>,
+    ThreadHandle<impl FnOnce() -> Result<i32>, Result<i32>>,
+)> {
     let target = dir.join(".perseus");
 
     // Static generation message
@@ -72,7 +73,7 @@ pub fn build_internal(
     let wb_spinner = spinners.insert(1, ProgressBar::new_spinner());
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
     let wb_target = target.clone();
-    let sg_thread = thread::spawn(move || {
+    let sg_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
                 "{} run",
@@ -85,7 +86,7 @@ pub fn build_internal(
 
         Ok(0)
     });
-    let wb_thread = thread::spawn(move || {
+    let wb_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
                 "{} build --target web",

@@ -61,6 +61,10 @@ fn core(dir: PathBuf) -> Result<i32> {
     let _executable_name = prog_args.remove(0);
     // Check the user's environment to make sure they have prerequisites
     check_env()?;
+    // Warn the user if they're using the CLI single-threaded mode
+    if env::var("PERSEUS_CLI_SEQUENTIAL").is_ok() {
+        writeln!(stdout, "Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.\n").expect("Failed to write to stdout.");
+    }
     // Check for special arguments
     if matches!(prog_args.get(0), Some(_)) {
         if prog_args[0] == "-v" || prog_args[0] == "--version" {
