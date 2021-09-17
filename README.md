@@ -33,8 +33,8 @@ These tasks still need to be done before Perseus can be pushed to v1.0.0.
 -   [x] Create a custom CLI as a harness for apps without ridiculous amounts of configuration needed
 
 *   [ ] Support custom template hierarchies
-*   [ ] Support i18n out of the box
-*   [ ] (Maybe) Implement custom router
+*   [x] Support i18n out of the box
+*   [x] (Maybe) Implement custom router
 *   [ ] Pre-built integrations for Actix Web (done) and AWS Lambda (todo)
 
 ### Beyond
