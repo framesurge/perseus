@@ -30,8 +30,8 @@ impl ClientTranslationsManager {
         {
             Ok(Rc::clone(self.cached_translator.as_ref().unwrap()))
         } else {
-            // Check if the locale is supported
-            if self.locales.is_supported(locale) {
+            // Check if the locale is supported and we're actually using i18n
+            if self.locales.is_supported(locale) && self.locales.using_i18n {
                 // Get the translations data
                 let asset_url = format!("/.perseus/translations/{}", locale);
                 // If this doesn't exist, then it's a 404 (we went here by explicit navigation after checking the locale, so that's a bug)
@@ -64,6 +64,13 @@ impl ClientTranslationsManager {
                         _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
                     },
                 };
+                // Cache that translator
+                self.cached_translator = Some(Rc::new(translator));
+                // Now return that
+                Ok(Rc::clone(self.cached_translator.as_ref().unwrap()))
+            } else if !self.locales.using_i18n {
+                // If we aren't even using i18n, then it would be pointless to fetch translations
+                let translator = Translator::new("xx-XX".to_string(), "".to_string()).unwrap();
                 // Cache that translator
                 self.cached_translator = Some(Rc::new(translator));
                 // Now return that
