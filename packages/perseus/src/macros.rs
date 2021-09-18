@@ -15,6 +15,17 @@ macro_rules! define_get_config_manager {
         }
     };
 }
+/// An internal macro used for defining the HTML `id` at which to render the Perseus app (which requires multiple branches). The default
+/// is `root`.
+#[macro_export]
+macro_rules! define_app_root {
+    () => {
+        pub static APP_ROOT: &str = "root";
+    };
+    ($root_id:literal) => {
+        pub static APP_ROOT: &str = $root_id;
+    };
+}
 /// An internal macro used for defining a function to get the user's preferred translations manager (which requires multiple branches).
 #[macro_export]
 macro_rules! define_get_translations_manager {
@@ -72,6 +83,7 @@ macro_rules! define_get_locales {
             }
         }
     };
+    // With i18n disabled, the default locale will be `xx-XX`
     {
         default: $default_locale:literal,
         other: [$($other_locale:literal),*],
@@ -79,11 +91,9 @@ macro_rules! define_get_locales {
     } => {
         pub fn get_locales() -> $crate::Locales {
             $crate::Locales {
-                default: $default_locale.to_string(),
-                other: vec![
-                    $($other_locale.to_string()),*
-                ],
-                using_i18n: !$no_i18n
+                default: "xx-XX".to_string(),
+                other: Vec::new(),
+                using_i18n: false
             }
         }
     };
@@ -95,17 +105,18 @@ macro_rules! define_get_locales {
 /// to `true` in `locales`. Note that you must still specify a default locale for verbosity and correctness. If you specify `no_i18n` and
 /// a custom translations manager, the latter will override.
 ///
-/// Warning: all properties must currently be in the correct order (`root`, `error_pages`, `templates`, `locales`, `config_manager`,
+/// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `locales`, `config_manager`,
 /// `translations_manager`).
 // TODO make this syntax even more compact and beautiful? (error pages inside templates?)
 #[macro_export]
 macro_rules! define_app {
+    // With locales
     {
-        root: $root_selector:literal,
-        error_pages: $error_pages:expr,
+        $(root: $root_selector:literal,)?
         templates: [
             $($template:expr),+
         ],
+        error_pages: $error_pages:expr,
         // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
         locales: {
             default: $default_locale:literal,
@@ -116,9 +127,77 @@ macro_rules! define_app {
         $(,config_manager: $config_manager:expr)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
+        define_app!(
+            @define_app,
+            {
+                $(root: $root_selector,)?
+                templates: [
+                    $($template),+
+                ],
+                error_pages: $error_pages,
+                locales: {
+                    default: $default_locale,
+                    // The user doesn't have to define any other locales (but they'll still get locale detection and the like)
+                    other: [$($other_locale),*]
+                }
+                $(,config_manager: $config_manager)?
+                $(,translations_manager: $translations_manager)?
+            }
+        );
+    };
+    // Without locales (default locale is set to xx-XX)
+    {
+        $(root: $root_selector:literal,)?
+        templates: [
+            $($template:expr),+
+        ],
+        error_pages: $error_pages:expr
+        $(,config_manager: $config_manager:expr)?
+        $(,translations_manager: $translations_manager:expr)?
+    } => {
+        define_app!(
+            @define_app,
+            {
+                $(root: $root_selector,)?
+                templates: [
+                    $($template),+
+                ],
+                error_pages: $error_pages,
+                // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
+                locales: {
+                    default: "xx-XX",
+                    other: [],
+                    no_i18n: true
+                }
+                $(,config_manager: $config_manager)?
+                $(,translations_manager: $translations_manager)?
+            }
+        );
+    };
+    // This is internal, and allows syntax abstractions and defaults
+    (
+        @define_app,
+        {
+            $(root: $root_selector:literal,)?
+            templates: [
+                $($template:expr),+
+            ],
+            error_pages: $error_pages:expr,
+            // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
+            locales: {
+                default: $default_locale:literal,
+                // The user doesn't have to define any other locales
+                other: [$($other_locale:literal),*]
+                // If this is defined at all, i18n will be disabled and the default locale will be set to `xx-XX`
+                $(,no_i18n: $no_i18n:literal)?
+            }
+            $(,config_manager: $config_manager:expr)?
+            $(,translations_manager: $translations_manager:expr)?
+        }
+    ) => {
         /// The html `id` that will find the app root to render Perseus in. For server-side interpolation, this MUST be an element of
         /// the form <div id="root_id">` in your markup (double or single quotes, `root_id` replaced by what this property is set to).
-        pub const APP_ROOT: &str = $root_selector;
+        $crate::define_app_root!($($root_selector)?);
 
         /// Gets the config manager to use. This allows the user to conveniently test production managers in development. If nothing is
         /// given, the filesystem will be used.
