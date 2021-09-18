@@ -56,9 +56,9 @@ pub fn get_template_for_path<'a, G: GenericNode>(
 /// segments by `/`, with empty ones having been removed.
 pub fn match_route<G: GenericNode>(
     path_slice: &[&str],
-    render_cfg: HashMap<String, String>,
-    templates: TemplateMap<G>,
-    locales: Locales,
+    render_cfg: &HashMap<String, String>,
+    templates: &TemplateMap<G>,
+    locales: &Locales,
 ) -> RouteVerdict<G> {
     let path_vec: Vec<&str> = path_slice.to_vec();
     let path_joined = path_vec.join("/"); // This should not have a leading forward slash, it's used for asset fetching by the app shell
@@ -72,7 +72,7 @@ pub fn match_route<G: GenericNode>(
             // We'll assume this has already been i18ned (if one of your routes has the same name as a supported locale, ffs)
             let path_without_locale = path_slice[1..].to_vec().join("/");
             // Get the template to use
-            let template = get_template_for_path(&path_without_locale, &render_cfg, &templates);
+            let template = get_template_for_path(&path_without_locale, render_cfg, templates);
             verdict = match template {
                 Some(template) => RouteVerdict::Found(RouteInfo {
                     locale: locale.to_string(),
@@ -93,7 +93,7 @@ pub fn match_route<G: GenericNode>(
         verdict = RouteVerdict::LocaleDetection(path_joined);
     } else {
         // Get the template to use
-        let template = get_template_for_path(&path_joined, &render_cfg, &templates);
+        let template = get_template_for_path(&path_joined, render_cfg, templates);
         verdict = match template {
             Some(template) => RouteVerdict::Found(RouteInfo {
                 locale: locales.default.to_string(),

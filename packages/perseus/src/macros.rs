@@ -116,7 +116,8 @@ macro_rules! define_app {
         $(,config_manager: $config_manager:expr)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
-        /// The CSS selector that will find the app root to render Perseus in.
+        /// The html `id` that will find the app root to render Perseus in. For server-side interpolation, this MUST be an element of
+        /// the form <div id="root_id">` in your markup (double or single quotes, `root_id` replaced by what this property is set to).
         pub const APP_ROOT: &str = $root_selector;
 
         /// Gets the config manager to use. This allows the user to conveniently test production managers in development. If nothing is
@@ -152,7 +153,7 @@ macro_rules! define_app {
         }
 
         /// Gets the error pages (done here so the user doesn't have to worry about naming).
-        pub fn get_error_pages() -> $crate::ErrorPages {
+        pub fn get_error_pages<G: $crate::GenericNode>() -> $crate::ErrorPages<G> {
             $error_pages
         }
     };

@@ -1,13 +1,11 @@
-use crate::DomNode;
 use crate::Locales;
-use sycamore::prelude::{template, Template as SycamoreTemplate};
 use sycamore_router::navigate;
 
 /// Detects which locale the user should be served and redirects appropriately. This should only be used when the user navigates to a
 /// page like `/about`, without a locale. This will only work on the client-side (needs access to browser i18n settings). Any pages
 /// that direct to this should be explicitly excluded from search engines (they don't show anything until redirected). This is guided
 /// by [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt), but is not yet fully compliant (only supports `xx-XX` form locales).
-pub fn detect_locale(url: String, locales: Locales) -> SycamoreTemplate<DomNode> {
+pub fn detect_locale(url: String, locales: Locales) {
     // If nothing matches, we'll use the default locale
     let mut locale = locales.default.clone();
 
@@ -40,8 +38,6 @@ pub fn detect_locale(url: String, locales: Locales) -> SycamoreTemplate<DomNode>
 
     // Imperatively navigate to the localized route
     navigate(&format!("/{}/{}", locale, url));
-    // We'll never actually get here, but we need a sensible return type
-    template! {}
 }
 
 /// The possible outcomes of trying to match a locale.

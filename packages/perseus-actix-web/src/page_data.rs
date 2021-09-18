@@ -19,7 +19,6 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
 ) -> HttpResponse {
     let templates = &opts.templates_map;
     let locale = req.match_info().query("locale");
-    // TODO get the template name from the query
     let template_name = query_params.template_name;
     // Check if the locale is supported
     if opts.locales.is_supported(locale) {

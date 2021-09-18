@@ -155,40 +155,26 @@ async fn revalidate(
     Ok((html, state))
 }
 
-/// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML generated
-/// at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
+/// Internal logic behind `get_page`. The only differences are that this takes a full template rather than just a template name, which
+/// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing), and that it takes
+/// a pre-formed translator for similar reasons.
 // TODO possible further optimizations on this for futures?
-pub async fn get_page(
+pub async fn get_page_for_template_and_translator(
     // This must not contain the locale
     raw_path: &str,
     locale: &str,
-    template_name: &str,
+    template: &Template<SsrNode>,
     req: Request,
-    templates: &TemplateMap<SsrNode>,
+    translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
-    translations_manager: &impl TranslationsManager,
 ) -> Result<PageData> {
     let mut path = raw_path;
     // If the path is empty, we're looking for the special `index` page
     if path.is_empty() {
         path = "index";
     }
-    // Get a translator for this locale (for sanity we hope the manager is caching)
-    let translator = Rc::new(
-        translations_manager
-            .get_translator_for_locale(locale.to_string())
-            .await?,
-    );
     // Remove `/` from the path by encoding it as a URL (that's what we store) and add the locale
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path).to_string());
-
-    // Get the template to use
-    let template = templates.get(template_name);
-    let template = match template {
-        Some(template) => template,
-        // This shouldn't happen because the client should already have performed checks against the render config, but it's handled anyway
-        None => bail!(ErrorKind::PageNotFound(path.to_string())),
-    };
 
     // Only a single string of HTML is needed, and it will be overridden if necessary (priorities system)
     let mut html: String = String::new();
@@ -329,5 +315,48 @@ pub async fn get_page(
         state,
     };
 
+    Ok(res)
+}
+
+/// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML generated
+/// at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
+pub async fn get_page(
+    // This must not contain the locale
+    raw_path: &str,
+    locale: &str,
+    template_name: &str,
+    req: Request,
+    templates: &TemplateMap<SsrNode>,
+    config_manager: &impl ConfigManager,
+    translations_manager: &impl TranslationsManager,
+) -> Result<PageData> {
+    let mut path = raw_path;
+    // If the path is empty, we're looking for the special `index` page
+    if path.is_empty() {
+        path = "index";
+    }
+    // Get the template to use
+    let template = templates.get(template_name);
+    let template = match template {
+        Some(template) => template,
+        // This shouldn't happen because the client should already have performed checks against the render config, but it's handled anyway
+        None => bail!(ErrorKind::PageNotFound(path.to_string())),
+    };
+    // Get a translator for this locale (for sanity we hope the manager is caching)
+    let translator = Rc::new(
+        translations_manager
+            .get_translator_for_locale(locale.to_string())
+            .await?,
+    );
+
+    let res = get_page_for_template_and_translator(
+        raw_path,
+        locale,
+        template,
+        req,
+        translator,
+        config_manager,
+    )
+    .await?;
     Ok(res)
 }

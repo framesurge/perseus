@@ -31,6 +31,7 @@
 mod configurer;
 mod conv_req;
 pub mod errors;
+mod initial_load;
 mod page_data;
 mod translations;
 

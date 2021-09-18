@@ -41,6 +41,8 @@ mod client_translations_manager;
 /// Utilities for creating custom config managers, as well as the default `FsConfigManager`.
 pub mod config_manager;
 mod decode_time_str;
+/// Utilities regarding the formation of error pages for HTTP status codes, like a `404 Not Found` page.
+pub mod error_pages;
 pub mod errors;
 mod locale_detector;
 mod locales;
@@ -69,11 +71,12 @@ pub use sycamore_router::Route;
 pub use crate::build::{build_app, build_template, build_templates_for_locale};
 pub use crate::client_translations_manager::ClientTranslationsManager;
 pub use crate::config_manager::{ConfigManager, FsConfigManager};
+pub use crate::error_pages::ErrorPages;
 pub use crate::errors::{err_to_status_code, ErrorCause};
 pub use crate::locale_detector::detect_locale;
 pub use crate::locales::Locales;
 pub use crate::serve::{get_page, get_render_cfg};
-pub use crate::shell::{app_shell, ErrorPages};
+pub use crate::shell::app_shell;
 pub use crate::template::{States, StringResult, StringResultWithCause, Template, TemplateMap};
 pub use crate::translations_manager::{FsTranslationsManager, TranslationsManager};
 pub use crate::translator::{Translator, TRANSLATOR_FILE_EXT};

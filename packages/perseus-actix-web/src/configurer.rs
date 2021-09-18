@@ -1,8 +1,11 @@
+use crate::initial_load::initial_load;
 use crate::page_data::page_data;
 use crate::translations::translations;
-use actix_files::NamedFile;
-use actix_web::{web, HttpResponse};
-use perseus::{get_render_cfg, ConfigManager, Locales, SsrNode, TemplateMap, TranslationsManager};
+use actix_files::{Files, NamedFile};
+use actix_web::web;
+use perseus::{
+    get_render_cfg, ConfigManager, ErrorPages, Locales, SsrNode, TemplateMap, TranslationsManager,
+};
 use std::collections::HashMap;
 use std::fs;
 
@@ -22,18 +25,20 @@ pub struct Options {
     pub templates_map: TemplateMap<SsrNode>,
     /// The locales information for the app.
     pub locales: Locales,
+    /// The HTML `id` of the element at which to render Perseus. On the server-side, interpolation will be done here in a highly
+    /// efficient manner by not parsing the HTML, so this MUST be of the form `<div id="root_id">` in your markup (double or single
+    /// quotes, `root_id` replaced by what this property is set to).
+    pub root_id: String,
+    /// The location of the JS interop snippets to be served as static files.
+    pub snippets: String,
+    /// The error pages for the app. These will be server-rendered if an initial load fails.
+    pub error_pages: ErrorPages<SsrNode>,
 }
 
 async fn render_conf(
     render_conf: web::Data<HashMap<String, String>>,
 ) -> web::Json<HashMap<String, String>> {
     web::Json(render_conf.get_ref().clone())
-}
-/// This returns the HTML index file with the render configuration injected as a JS global variable.
-async fn index(index_with_render_cfg: web::Data<String>) -> HttpResponse {
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(index_with_render_cfg.get_ref())
 }
 async fn js_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.js_bundle)
@@ -94,7 +99,10 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
                 "/.perseus/translations/{locale}",
                 web::get().to(translations::<T>),
             )
+            // This allows gettting JS interop snippets (including ones that are supposedly 'inlined')
+            // These won't change, so they can be set as a filesystem dependency safely
+            .service(Files::new("/.perseus/snippets", &opts.snippets))
             // For everything else, we'll serve the app shell directly
-            .route("*", web::get().to(index));
+            .route("*", web::get().to(initial_load::<C, T>));
     }
 }

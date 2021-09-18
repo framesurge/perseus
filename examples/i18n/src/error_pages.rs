@@ -1,15 +1,16 @@
-use perseus::ErrorPages;
+use perseus::{ErrorPages, GenericNode};
+use std::rc::Rc;
 use sycamore::template;
 
-pub fn get_error_pages() -> ErrorPages {
-    let mut error_pages = ErrorPages::new(Box::new(|_, _, _, _| {
+pub fn get_error_pages<G: GenericNode>() -> ErrorPages<G> {
+    let mut error_pages = ErrorPages::new(Rc::new(|_, _, err, _| {
         template! {
-            p { "Another error occurred." }
+            p { (format!("Another error occurred: '{}'.", err)) }
         }
     }));
     error_pages.add_page(
         404,
-        Box::new(|_, _, _, _| {
+        Rc::new(|_, _, _, _| {
             template! {
                 p { "Page not found." }
             }
@@ -17,7 +18,7 @@ pub fn get_error_pages() -> ErrorPages {
     );
     error_pages.add_page(
         400,
-        Box::new(|_, _, _, _| {
+        Rc::new(|_, _, _, _| {
             template! {
                 p { "Client error occurred..." }
             }
