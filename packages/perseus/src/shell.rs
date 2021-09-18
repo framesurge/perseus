@@ -7,7 +7,6 @@ use crate::ErrorPages;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

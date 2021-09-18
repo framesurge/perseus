@@ -46,8 +46,6 @@ pub fn run() -> Result<(), JsValue> {
         templates => &get_templates_map(),
         locales => &get_locales()
     }
-    // TODO integrate templates fully
-    // BUG router sees empty template and moves on, fixed by above
 
     sycamore::render_to(
         || {
@@ -72,7 +70,6 @@ pub fn run() -> Result<(), JsValue> {
                         // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
                         // Those all go to the same system that redirects to the appropriate locale
                         // Note that `container` doesn't exist for this scenario
-                        // TODO redirect doesn't work until reload
                         RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
                         // We handle the 404 for the user for convenience
                         // To get a translator here, we'd have to go async and dangerously check the URL
