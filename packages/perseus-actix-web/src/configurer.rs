@@ -14,9 +14,6 @@ use std::fs;
 pub struct Options {
     /// The location on the filesystem of your JavaScript bundle.
     pub js_bundle: String,
-    /// The locales on the filesystem of the file that will invoke your JavaScript bundle. This should have something like `init()` in
-    /// it.
-    pub js_init: String,
     /// The location on the filesystem of your Wasm bundle.
     pub wasm_bundle: String,
     /// The location on the filesystem of your `index.html` file that includes the JS bundle.
@@ -43,9 +40,6 @@ async fn render_conf(
 async fn js_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.js_bundle)
 }
-async fn js_init(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
-    NamedFile::open(&opts.js_init)
-}
 async fn wasm_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.wasm_bundle)
 }
@@ -62,13 +56,23 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
     // Get the index file and inject the render configuration into ahead of time
     // We do this by injecting a script that defines the render config as a global variable, which we put just before the close of the head
     // We also inject a delimiter comment that will be used to wall off the constant document head from the interpolated document head
+    // We also inject a script to load the Wasm bundle (avoids extra trips)
     let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
+    let load_script = r#"<script type="module">
+    import init, { run } from "/.perseus/bundle.js";
+    async function main() {
+        await init("/.perseus/bundle.wasm");
+        run();
+    }
+    main();
+</script>"#;
     let index_with_render_cfg = index_file.replace(
         "</head>",
         // It's safe to assume that something we just deserialized will serialize again in this case
         &format!(
-            "<script>window.__PERSEUS_RENDER_CFG = '{}';</script>\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n</head>",
-            serde_json::to_string(&render_cfg).unwrap()
+            "<script>window.__PERSEUS_RENDER_CFG = '{}';</script>\n{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n</head>",
+            serde_json::to_string(&render_cfg).unwrap(),
+            load_script
         ),
     );
 
@@ -83,7 +87,6 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             // TODO chunk JS and Wasm bundles
             // These allow getting the basic app code (not including the static data)
             // This contains everything in the spirit of a pseudo-SPA
-            .route("/.perseus/main.js", web::get().to(js_init))
             .route("/.perseus/bundle.js", web::get().to(js_bundle))
             .route("/.perseus/bundle.wasm", web::get().to(wasm_bundle))
             .route("/.perseus/render_conf.json", web::get().to(render_conf))

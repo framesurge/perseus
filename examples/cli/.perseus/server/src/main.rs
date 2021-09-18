@@ -23,7 +23,6 @@ async fn main() -> std::io::Result<()> {
                 Options {
                     index: "../index.html".to_string(), // The user must define their own `index.html` file
                     js_bundle: "dist/pkg/perseus_cli_builder.js".to_string(),
-                    js_init: "main.js".to_string(),
                     // Our crate has the same name, so this will be predictable
                     wasm_bundle: "dist/pkg/perseus_cli_builder_bg.wasm".to_string(),
                     templates_map: get_templates_map(),
