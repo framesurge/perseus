@@ -83,6 +83,22 @@ error_chain! {
             description("error occurred while trying to wait for thread")
             display("Waiting on thread failed.")
         }
+        /// For when updating the user's gitignore for ejection fails.
+        GitignoreEjectUpdateFailed(err: String) {
+            description("couldn't remove perseus subcrates from gitignore for ejection")
+            display("Couldn't remove `.perseus/` (Perseus subcrates) from your `.gitignore`. Please remove them manually, then ejection is complete (that's all this command does). Error was: '{}'.", err)
+        }
+        /// For when writing the file that signals that we've ejected fails.
+        EjectionWriteFailed(err: String) {
+            description("couldn't write ejection declaration file")
+            display("Couldn't create `.perseus/.ejected` file to signal that you've ejected. Please make sure you have permission to write to the `.perseus/` directory, and then try again. Error was: '{}'.", err)
+        }
+        /// For when the user tries to run `clean` after they've ejected. That command deletes the subcrates, which shouldn't happen
+        /// after an ejection (they'll likely have customized things).
+        CleanAfterEjection {
+            description("can't clean after ejection unless `--force` is provided")
+            display("The `clean` command removes the entire `.perseus/` directory, and you've already ejected, meaning that you can make modifications to that directory. If you proceed with this command, any modifications you've made to `.perseus/` will be PERMANENTLY lost! If you're sure you want to proceed, run `perseus clean --force`.")
+        }
     }
 }
 

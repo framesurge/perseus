@@ -1,6 +1,7 @@
 use perseus_cli::errors::*;
 use perseus_cli::{
-    build, check_env, delete_artifacts, delete_bad_dir, help, prepare, serve, PERSEUS_VERSION,
+    build, check_env, delete_artifacts, delete_bad_dir, eject, has_ejected, help, prepare, serve,
+    PERSEUS_VERSION,
 };
 use std::env;
 use std::io::Write;
@@ -79,7 +80,7 @@ fn core(dir: PathBuf) -> Result<i32> {
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
                 // Delete old build artifacts
-                delete_artifacts(dir.clone())?;
+                delete_artifacts(dir.clone(), "static")?;
                 let exit_code = build(dir, &prog_args)?;
                 Ok(exit_code)
             } else if prog_args[0] == "serve" {
@@ -87,17 +88,35 @@ fn core(dir: PathBuf) -> Result<i32> {
                 prepare(dir.clone())?;
                 // Delete old build artifacts if `--no-build` wasn't specified
                 if !prog_args.contains(&"--no-build".to_string()) {
-                    delete_artifacts(dir.clone())?;
+                    delete_artifacts(dir.clone(), "static")?;
                 }
                 let exit_code = serve(dir, &prog_args)?;
                 Ok(exit_code)
             } else if prog_args[0] == "prep" {
+                // This command is deliberately undocumented, it's only used for testing
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
                 Ok(0)
+            } else if prog_args[0] == "eject" {
+                // Set up the '.perseus/' directory if needed
+                prepare(dir.clone())?;
+                eject(dir)?;
+                Ok(0)
             } else if prog_args[0] == "clean" {
-                // Just delete the '.perseus/' directory directly, as we'd do in a corruption
-                delete_bad_dir(dir)?;
+                if prog_args[1] == "--dist" {
+                    // The user only wants to remove distribution artifacts
+                    // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
+                    delete_artifacts(dir.clone(), "static")?;
+                    delete_artifacts(dir.clone(), "pkg")?;
+                } else {
+                    // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
+                    if has_ejected(dir.clone()) && prog_args[1] != "--force" {
+                        bail!(ErrorKind::CleanAfterEjection)
+                    }
+                    // Just delete the '.perseus/' directory directly, as we'd do in a corruption
+                    delete_bad_dir(dir)?;
+                }
+
                 Ok(0)
             } else {
                 writeln!(

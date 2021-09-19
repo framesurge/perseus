@@ -29,6 +29,7 @@
 
 mod build;
 mod cmd;
+mod eject;
 pub mod errors;
 mod help;
 mod prepare;
@@ -44,6 +45,7 @@ use std::path::PathBuf;
 /// The current version of the CLI, extracted from the crate version.
 pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use build::build;
+pub use eject::{eject, has_ejected};
 pub use help::help;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
@@ -65,10 +67,10 @@ pub fn delete_bad_dir(dir: PathBuf) -> Result<()> {
     Ok(())
 }
 
-/// Deletes build artifacts in `.perseus/dist/static` and replaces the directory.
-pub fn delete_artifacts(dir: PathBuf) -> Result<()> {
+/// Deletes build artifacts in `.perseus/dist/static` or `.perseus/dist/pkg` and replaces the directory.
+pub fn delete_artifacts(dir: PathBuf, dir_to_remove: &str) -> Result<()> {
     let mut target = dir;
-    target.extend([".perseus", "dist", "static"]);
+    target.extend([".perseus", "dist", dir_to_remove]);
     // We'll only delete the directory if it exists, otherwise we're fine
     if target.exists() {
         if let Err(err) = fs::remove_dir_all(&target) {

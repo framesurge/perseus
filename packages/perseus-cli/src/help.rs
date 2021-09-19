@@ -14,6 +14,8 @@ This is the CLI for Perseus, a super-fast WebAssembly frontend development frame
 
 build				builds your app
 serve				serves your app (accepts $PORT and $HOST env vars, --no-build to serve pre-built files)
+clean               removes `.perseus/` entirely (use `--dist` to only remove build artifacts)
+eject               ejects your app from the CLI harness, see documentation at https://arctic-hen7.github.io/perseus/cli/ejection.html
 
 Please note that watching for file changes is not yet inbuilt, but can be achieved with a tool like 'entr' in the meantime.
 Further information can be found at https://arctic-hen7.github.io/perseus.
