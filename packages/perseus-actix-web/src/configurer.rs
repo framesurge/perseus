@@ -2,7 +2,7 @@ use crate::initial_load::initial_load;
 use crate::page_data::page_data;
 use crate::translations::translations;
 use actix_files::{Files, NamedFile};
-use actix_web::web;
+use actix_web::{web, HttpRequest};
 use perseus::{
     get_render_cfg, ConfigManager, ErrorPages, Locales, SsrNode, TemplateMap, TranslationsManager,
 };
@@ -30,6 +30,13 @@ pub struct Options {
     pub snippets: String,
     /// The error pages for the app. These will be server-rendered if an initial load fails.
     pub error_pages: ErrorPages<SsrNode>,
+    /// Directories to serve static content from, mapping URL to folder path. Note that the URL provided will be gated behind
+    /// `.perseus/static/`, and must have a leading `/`. If you're using a CMS instead, you should set these up outside the Perseus
+    /// server (but they might still be on the same machine, you can still add more routes after Perseus is configured).
+    pub static_dirs: HashMap<String, String>,
+    /// A map of URLs to act as aliases for certain static resources. These are particularly designed for things like a site manifest or
+    /// favicons, which should be stored in a static directory, but need to be aliased at a path like `/favicon.ico`.
+    pub static_aliases: HashMap<String, String>,
 }
 
 async fn render_conf(
@@ -43,8 +50,18 @@ async fn js_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
 async fn wasm_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.wasm_bundle)
 }
+async fn static_alias(opts: web::Data<Options>, req: HttpRequest) -> std::io::Result<NamedFile> {
+    let filename = opts.static_aliases.get(req.path());
+    let filename = match filename {
+        Some(filename) => filename,
+        // If the path doesn't exist, then the alias is not found
+        None => return Err(std::io::Error::from(std::io::ErrorKind::NotFound)),
+    };
+    NamedFile::open(filename)
+}
 
-/// Configures an existing Actix Web app for Perseus. This returns a function that does the configuring so it can take arguments.
+/// Configures an existing Actix Web app for Perseus. This returns a function that does the configuring so it can take arguments. This
+/// includes a complete wildcard handler (`*`), and so it should be configured after any other routes on your server.
 pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'static>(
     opts: Options,
     config_manager: C,
@@ -104,8 +121,18 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             )
             // This allows gettting JS interop snippets (including ones that are supposedly 'inlined')
             // These won't change, so they can be set as a filesystem dependency safely
-            .service(Files::new("/.perseus/snippets", &opts.snippets))
-            // For everything else, we'll serve the app shell directly
-            .route("*", web::get().to(initial_load::<C, T>));
+            .service(Files::new("/.perseus/snippets", &opts.snippets));
+        // Now we add support for any static content the user wants to provide
+        for (url, static_dir) in opts.static_dirs.iter() {
+            cfg.service(Files::new(&format!("/.perseus/static{}", url), static_dir));
+        }
+        // And finally add in aliases for static content as necessary
+        for (url, _static_path) in opts.static_aliases.iter() {
+            // This handler indexes the path of the request in `opts.static_aliases` to figure out what to serve
+            cfg.route(url, web::get().to(static_alias));
+        }
+        // For everything else, we'll serve the app shell directly
+        // This has to be done AFTER everything else, because it will match anything that's left
+        cfg.route("*", web::get().to(initial_load::<C, T>));
     }
 }

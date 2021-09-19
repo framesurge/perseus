@@ -1,5 +1,3 @@
-// TODO parse `no_i18n` properly so the user can specify `false`
-
 /// An internal macro used for defining a function to get the user's preferred config manager (which requires multiple branches).
 #[macro_export]
 macro_rules! define_get_config_manager {
@@ -99,15 +97,49 @@ macro_rules! define_get_locales {
     };
 }
 
+/// An internal macro for defining a function that gets the user's static content aliases (abstracted because it needs multiple
+/// branches).
+#[macro_export]
+macro_rules! define_get_static_aliases {
+    (
+        static_aliases: {
+            $($url:literal => $resource:literal)*
+        }
+    ) => {
+        pub fn get_static_aliases() -> ::std::collections::HashMap<String, String> {
+            let mut static_aliases = ::std::collections::HashMap::new();
+            $(
+                let resource = $resource.to_string();
+                // We need to move this from being scoped to the app to being scoped for `.perseus/`
+                // TODO make sure this works properly on Windows
+                let resource = if resource.starts_with("/") {
+                    // Absolute paths should be left as is
+                    resource
+                } else if resource.starts_with("./") {
+                    // `./` -> `../`
+                    format!(".{}", resource)
+                } else {
+                    // Anything else (including `../`) gets a `../` prepended
+                    format!("../{}", resource)
+                };
+                static_aliases.insert($url.to_string(), resource);
+            )*
+            static_aliases
+        }
+    };
+    () => {
+        pub fn get_static_aliases() -> ::std::collections::HashMap<String, String> {
+            ::std::collections::HashMap::new()
+        }
+    };
+}
+
 /// Defines the components to create an entrypoint for the app. The actual entrypoint is created in the `.perseus/` crate (where we can
 /// get all the dependencies without driving the user's `Cargo.toml` nuts). This also defines the template map. This is intended to make
-/// compatibility with the Perseus CLI significantly easier. Perseus makes i18n opt-out, so if you don't intend to use it, set `no_i18n`
-/// to `true` in `locales`. Note that you must still specify a default locale for verbosity and correctness. If you specify `no_i18n` and
-/// a custom translations manager, the latter will override.
+/// compatibility with the Perseus CLI significantly easier.
 ///
-/// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `locales`, `config_manager`,
-/// `translations_manager`).
-// TODO make this syntax even more compact and beautiful? (error pages inside templates?)
+/// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `locales`, `static_aliases`,
+/// `config_manager`, `translations_manager`).
 #[macro_export]
 macro_rules! define_app {
     // With locales
@@ -124,6 +156,9 @@ macro_rules! define_app {
             other: [$($other_locale:literal),*]
             $(,no_i18n: $no_i18n:literal)?
         }
+        $(,static_aliases: {
+            $($url:literal => $resource:literal)*
+        })?
         $(,config_manager: $config_manager:expr)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
@@ -140,6 +175,9 @@ macro_rules! define_app {
                     // The user doesn't have to define any other locales (but they'll still get locale detection and the like)
                     other: [$($other_locale),*]
                 }
+                $(,static_aliases: {
+                    $($url => $resource)*
+                })?
                 $(,config_manager: $config_manager)?
                 $(,translations_manager: $translations_manager)?
             }
@@ -152,6 +190,9 @@ macro_rules! define_app {
             $($template:expr),+
         ],
         error_pages: $error_pages:expr
+        $(,static_aliases: {
+            $($url:literal => $resource:literal)*
+        })?
         $(,config_manager: $config_manager:expr)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
@@ -169,6 +210,9 @@ macro_rules! define_app {
                     other: [],
                     no_i18n: true
                 }
+                $(,static_aliases: {
+                    $($url => $resource)*
+                })?
                 $(,config_manager: $config_manager)?
                 $(,translations_manager: $translations_manager)?
             }
@@ -191,6 +235,9 @@ macro_rules! define_app {
                 // If this is defined at all, i18n will be disabled and the default locale will be set to `xx-XX`
                 $(,no_i18n: $no_i18n:literal)?
             }
+            $(,static_aliases: {
+                $($url:literal => $resource:literal)*
+            })?
             $(,config_manager: $config_manager:expr)?
             $(,translations_manager: $translations_manager:expr)?
         }
@@ -235,5 +282,12 @@ macro_rules! define_app {
         pub fn get_error_pages<G: $crate::GenericNode>() -> $crate::ErrorPages<G> {
             $error_pages
         }
+
+        /// Gets any static content aliases provided by the user.
+        $crate::define_get_static_aliases!(
+            $(static_aliases: {
+                $($url => $resource)*
+            })?
+        );
     };
 }

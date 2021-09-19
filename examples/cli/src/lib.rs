@@ -8,5 +8,8 @@ define_app! {
         crate::pages::index::get_page::<G>(),
         crate::pages::about::get_page::<G>()
     ],
-    error_pages: crate::error_pages::get_error_pages()
+    error_pages: crate::error_pages::get_error_pages(),
+    static_aliases: {
+        "/test.txt" => "static/test.txt"
+    }
 }
