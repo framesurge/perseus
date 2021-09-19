@@ -19,5 +19,5 @@ for d in */ ; do
     fi
 done
 
-# Copy in the redirection for the latets stable version
+# Copy in the redirection for the latest stable version
 cp stable.html dist/stable.html
