@@ -134,13 +134,14 @@ extern "C" {
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
 /// broader template). Asynchronous Wasm is handled here, because only a few cases need it.
 // TODO handle exceptions higher up
-pub fn app_shell(
+pub async fn app_shell(
     path: String,
     template: Template<DomNode>,
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
-    container: Element,
+    initial_container: Element, // The container that the server put initial load content into
+    container_rx_elem: Element, // The container that we'll actually use (reactive)
 ) {
     // Check if this was an initial load and we already have the state
     let initial_state = get_initial_state();
@@ -150,117 +151,151 @@ pub fn app_shell(
         InitialState::Present(state) => {
             // Unset the initial state variable so we perform subsequent renders correctly
             unset_initial_state();
-            wasm_bindgen_futures::spawn_local(cloned!((container) => async move {
-                // Now that the user can see something, we can get the translator
-                let mut translations_manager_mut = translations_manager.borrow_mut();
-                // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
-                let translator = translations_manager_mut.get_translator_for_locale(&locale).await;
-                let translator = match translator {
-                    Ok(translator) => translator,
-                    Err(err) => {
-                        // Directly eliminate the HTMl sent in from the server before we render an error page
-                        container.set_inner_html("");
-                        match err.kind() {
-                            // These errors happen because we couldn't get a translator, so they certainly don't get one
-                            ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container),
-                            ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container),
-                            ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container),
-                            // No other errors should be returned
-                            _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
-                        }
+            // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
+            let initial_html = initial_container.inner_html();
+            container_rx_elem.set_inner_html(&initial_html);
+            initial_container.set_inner_html("");
+            // Now that the user can see something, we can get the translator
+            let mut translations_manager_mut = translations_manager.borrow_mut();
+            // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
+            let translator = translations_manager_mut
+                .get_translator_for_locale(&locale)
+                .await;
+            let translator = match translator {
+                Ok(translator) => translator,
+                Err(err) => {
+                    // Directly eliminate the HTMl sent in from the server before we render an error page
+                    container_rx_elem.set_inner_html("");
+                    match err.kind() {
+                        // These errors happen because we couldn't get a translator, so they certainly don't get one
+                        ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container_rx_elem),
+                        ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container_rx_elem),
+                        ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container_rx_elem),
+                        // No other errors should be returned
+                        _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                     }
-                };
+                }
+            };
 
-                // Hydrate that static code using the acquired state
-                // BUG (Sycamore): this will double-render if the component is just text (no nodes)
-                sycamore::hydrate_to(
-                    // This function provides translator context as needed
-                    || template.render_for_template(state, Rc::clone(&translator)),
-                    &container
-                );
-            }));
+            // Hydrate that static code using the acquired state
+            // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+            sycamore::hydrate_to(
+                // This function provides translator context as needed
+                || template.render_for_template(state, Rc::clone(&translator)),
+                &container_rx_elem,
+            );
         }
         // If we have no initial state, we should proceed as usual, fetching the content and state from the server
         InitialState::NotPresent => {
-            // Spawn a Rust futures thread in the background to fetch the static HTML/JSON
-            wasm_bindgen_futures::spawn_local(cloned!((container) => async move {
-                // Get the static page data
-                let asset_url = format!("/.perseus/page/{}/{}?template_name={}", locale, path.to_string(), template.get_path());
-                // If this doesn't exist, then it's a 404 (we went here by explicit navigation, but it may be an unservable ISR page or the like)
-                let page_data_str = fetch(&asset_url).await;
-                match page_data_str {
-                    Ok(page_data_str) => match page_data_str {
-                        Some(page_data_str) => {
-                            // All good, deserialize the page data
-                            let page_data = serde_json::from_str::<PageData>(&page_data_str);
-                            match page_data {
-                                Ok(page_data) => {
-                                    // We have the page data ready, render everything
-                                    // Interpolate the HTML directly into the document (we'll hydrate it later)
-                                    container.set_inner_html(&page_data.content);
+            // Get the static page data
+            let asset_url = format!(
+                "/.perseus/page/{}/{}?template_name={}",
+                locale,
+                path.to_string(),
+                template.get_path()
+            );
+            // If this doesn't exist, then it's a 404 (we went here by explicit navigation, but it may be an unservable ISR page or the like)
+            let page_data_str = fetch(&asset_url).await;
+            match page_data_str {
+                Ok(page_data_str) => match page_data_str {
+                    Some(page_data_str) => {
+                        // All good, deserialize the page data
+                        let page_data = serde_json::from_str::<PageData>(&page_data_str);
+                        match page_data {
+                            Ok(page_data) => {
+                                // We have the page data ready, render everything
+                                // Interpolate the HTML directly into the document (we'll hydrate it later)
+                                container_rx_elem.set_inner_html(&page_data.content);
 
-                                    // Now that the user can see something, we can get the translator
-                                    let mut translations_manager_mut = translations_manager.borrow_mut();
-                                    // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
-                                    let translator = translations_manager_mut.get_translator_for_locale(&locale).await;
-                                    let translator = match translator {
-                                        Ok(translator) => translator,
-                                        Err(err) => match err.kind() {
-                                            // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                            ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container),
-                                            ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container),
-                                            ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container),
-                                            // No other errors should be returned
-                                            _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
-                                        }
-                                    };
+                                // Now that the user can see something, we can get the translator
+                                let mut translations_manager_mut =
+                                    translations_manager.borrow_mut();
+                                // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
+                                let translator = translations_manager_mut
+                                    .get_translator_for_locale(&locale)
+                                    .await;
+                                let translator = match translator {
+                                    Ok(translator) => translator,
+                                    Err(err) => match err.kind() {
+                                        // These errors happen because we couldn't get a translator, so they certainly don't get one
+                                        ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container_rx_elem),
+                                        ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container_rx_elem),
+                                        ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container_rx_elem),
+                                        // No other errors should be returned
+                                        _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                                    }
+                                };
 
-                                    // Render the document head
-                                    let head_str = template.render_head_str(page_data.state.clone(), Rc::clone(&translator));
-                                    // Get the current head
-                                    let head_elem = web_sys::window()
-                                        .unwrap()
-                                        .document()
-                                        .unwrap()
-                                        .query_selector("head")
-                                        .unwrap()
-                                        .unwrap();
-                                    let head_html = head_elem.inner_html();
-                                    // We'll assume that there's already previously interpolated head in addition to the hardcoded stuff, but it will be separated by the server-injected delimiter comment
-                                    // Thus, we replace the stuff after that delimiter comment with the new head
-                                    let head_parts: Vec<&str> = head_html.split("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->").collect();
-                                    let new_head = format!("{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n{}", head_parts[0], head_str);
-                                    head_elem.set_inner_html(&new_head);
+                                // Render the document head
+                                let head_str = template.render_head_str(
+                                    page_data.state.clone(),
+                                    Rc::clone(&translator),
+                                );
+                                // Get the current head
+                                let head_elem = web_sys::window()
+                                    .unwrap()
+                                    .document()
+                                    .unwrap()
+                                    .query_selector("head")
+                                    .unwrap()
+                                    .unwrap();
+                                let head_html = head_elem.inner_html();
+                                // We'll assume that there's already previously interpolated head in addition to the hardcoded stuff, but it will be separated by the server-injected delimiter comment
+                                // Thus, we replace the stuff after that delimiter comment with the new head
+                                let head_parts: Vec<&str> = head_html
+                                    .split("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->")
+                                    .collect();
+                                let new_head = format!(
+                                    "{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n{}",
+                                    head_parts[0], head_str
+                                );
+                                head_elem.set_inner_html(&new_head);
 
-                                    // Hydrate that static code using the acquired state
-                                    // BUG (Sycamore): this will double-render if the component is just text (no nodes)
-                                    sycamore::hydrate_to(
-                                        // This function provides translator context as needed
-                                        || template.render_for_template(page_data.state, Rc::clone(&translator)),
-                                        &container
-                                    );
-                                },
-                                // If the page failed to serialize, an exception has occurred
-                                Err(err) => panic!("page data couldn't be serialized: '{}'", err)
-                            };
-                        },
-                        // No translators ready yet
-                        None => error_pages.render_page(&asset_url, &404, "page not found", None, &container),
-                    },
-                    Err(err) => match err.kind() {
-                        // No translators ready yet
-                        ErrorKind::AssetNotOk(url, status, _) => error_pages.render_page(url, status, &err.to_string(), None, &container),
-                        // No other errors should be returned
-                        _ => panic!("expected 'AssetNotOk' error, found other unacceptable error")
+                                // Hydrate that static code using the acquired state
+                                // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+                                sycamore::hydrate_to(
+                                    // This function provides translator context as needed
+                                    || {
+                                        template.render_for_template(
+                                            page_data.state,
+                                            Rc::clone(&translator),
+                                        )
+                                    },
+                                    &container_rx_elem,
+                                );
+                            }
+                            // If the page failed to serialize, an exception has occurred
+                            Err(err) => panic!("page data couldn't be serialized: '{}'", err),
+                        };
                     }
-                };
-            }));
+                    // No translators ready yet
+                    None => error_pages.render_page(
+                        &asset_url,
+                        &404,
+                        "page not found",
+                        None,
+                        &container_rx_elem,
+                    ),
+                },
+                Err(err) => match err.kind() {
+                    // No translators ready yet
+                    ErrorKind::AssetNotOk(url, status, _) => error_pages.render_page(
+                        url,
+                        status,
+                        &err.to_string(),
+                        None,
+                        &container_rx_elem,
+                    ),
+                    // No other errors should be returned
+                    _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
+                },
+            };
         }
         // Nothing should be done if an error was sent down
         InitialState::Error(ErrorPageData { url, status, err }) => {
             // Hydrate the currently static error page
             // Right now, we don't provide translators to any error pages that have come from the server
-            error_pages.hydrate_page(&url, &status, &err, None, &container);
+            error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
         }
     };
 }

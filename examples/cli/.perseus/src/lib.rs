@@ -5,7 +5,7 @@ use perseus::shell::{get_initial_state, get_render_cfg, InitialState};
 use perseus::{app_shell, create_app_route, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::prelude::{template, StateHandle};
+use sycamore::prelude::{cloned, template, NodeRef, StateHandle};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -23,14 +23,17 @@ pub fn run() -> Result<(), JsValue> {
         .unwrap()
         .unwrap();
 
-    // Get the root we'll be injecting actual content into (created by the server)
+    // Get the root that the server will have injected initial load content into
+    // This will be moved into a reactive `<div>` by the app shell
     // This is an `Option<Element>` until we know we aren't doing loclae detection (in which case it wouldn't exist)
-    let container = web_sys::window()
+    let initial_container = web_sys::window()
         .unwrap()
         .document()
         .unwrap()
         .query_selector("#__perseus_content")
         .unwrap();
+    // And create a node reference that we can use as a handle to the reactive verison
+    let container_rx = NodeRef::new();
 
     // Create a mutable translations manager to control caching
     let translations_manager =
@@ -51,41 +54,49 @@ pub fn run() -> Result<(), JsValue> {
         || {
             template! {
                 Router(RouterProps::new(HistoryIntegration::new(), move |route: StateHandle<AppRoute<DomNode>>| {
-                    match &route.get().as_ref().0 {
-                        // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
-                        // If a non-404 error occurred, it will be handled in the app shell
-                        RouteVerdict::Found(RouteInfo {
-                            path,
-                            template,
-                            locale
-                        }) => app_shell(
-                            path.clone(),
-                            template.clone(),
-                            locale.clone(),
-                            // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
-                            Rc::clone(&translations_manager),
-                            Rc::clone(&error_pages),
-                            container.unwrap().clone()
-                        ),
-                        // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
-                        // Those all go to the same system that redirects to the appropriate locale
-                        // Note that `container` doesn't exist for this scenario
-                        RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
-                        // We handle the 404 for the user for convenience
-                        // To get a translator here, we'd have to go async and dangerously check the URL
-                        // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
-                        RouteVerdict::NotFound => {
-                            if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
-                                // Hydrate the error pages
-                                // Right now, we don't provide translators to any error pages that have come from the server
-                                error_pages.hydrate_page(&url, &status, &err, None, &container.unwrap());
-                            } else {
-                                get_error_pages::<DomNode>().get_template_for_page("", &404, "not found", None);
-                            }
-                        },
-                    };
-                    // Everything is based on hydration, and so we always return an empty template
-                    sycamore::template::Template::empty()
+                    wasm_bindgen_futures::spawn_local(cloned!((container_rx) => async move {
+                        let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
+                        match &route.get().as_ref().0 {
+                            // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
+                            // If a non-404 error occurred, it will be handled in the app shell
+                            RouteVerdict::Found(RouteInfo {
+                                path,
+                                template,
+                                locale
+                            }) => app_shell(
+                                path.clone(),
+                                template.clone(),
+                                locale.clone(),
+                                // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
+                                Rc::clone(&translations_manager),
+                                Rc::clone(&error_pages),
+                                initial_container.unwrap().clone(),
+                                container_rx_elem.clone()
+                            ).await,
+                            // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
+                            // Those all go to the same system that redirects to the appropriate locale
+                            // Note that `container` doesn't exist for this scenario
+                            RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
+                            // We handle the 404 for the user for convenience
+                            // To get a translator here, we'd have to go async and dangerously check the URL
+                            // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
+                            RouteVerdict::NotFound => {
+                                if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
+                                    // Hydrate the error pages
+                                    // Right now, we don't provide translators to any error pages that have come from the server
+                                    error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
+                                } else {
+                                    get_error_pages::<DomNode>().get_template_for_page("", &404, "not found", None);
+                                }
+                            },
+                        };
+                    }));
+                    // This template is reactive, and will be updated as necessary
+                    // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
+                    // The main reason for this is that the router only intercepts click events from its children
+                    template! {
+                        div(class="__perseus_content_rx", ref=container_rx) {}
+                    }
                 }))
             }
         },
