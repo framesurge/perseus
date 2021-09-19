@@ -162,7 +162,7 @@ macro_rules! define_app {
         $(,config_manager: $config_manager:expr)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
-        define_app!(
+        $crate::define_app!(
             @define_app,
             {
                 $(root: $root_selector,)?
@@ -196,7 +196,7 @@ macro_rules! define_app {
         $(,config_manager: $config_manager:expr)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
-        define_app!(
+        $crate::define_app!(
             @define_app,
             {
                 $(root: $root_selector,)?
