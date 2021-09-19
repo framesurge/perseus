@@ -106,7 +106,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
             };
             // Create a translator here, we'll use it twice
             let translator_raw = translations_manager
-                .get_translator_for_locale("locale".to_string())
+                .get_translator_for_locale(locale.to_string())
                 .await;
             let translator_raw = match translator_raw {
                 Ok(translator_raw) => translator_raw,
