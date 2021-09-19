@@ -293,6 +293,10 @@ pub async fn app_shell(
         }
         // Nothing should be done if an error was sent down
         InitialState::Error(ErrorPageData { url, status, err }) => {
+            // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
+            let initial_html = initial_container.inner_html();
+            container_rx_elem.set_inner_html(&initial_html);
+            initial_container.set_inner_html("");
             // Hydrate the currently static error page
             // Right now, we don't provide translators to any error pages that have come from the server
             error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);

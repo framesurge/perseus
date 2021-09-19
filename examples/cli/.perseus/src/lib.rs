@@ -77,11 +77,15 @@ pub fn run() -> Result<(), JsValue> {
                             // Those all go to the same system that redirects to the appropriate locale
                             // Note that `container` doesn't exist for this scenario
                             RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
-                            // We handle the 404 for the user for convenience
                             // To get a translator here, we'd have to go async and dangerously check the URL
                             // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
                             RouteVerdict::NotFound => {
                                 if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
+                                    let initial_container = initial_container.unwrap();
+                                    // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
+                                    let initial_html = initial_container.inner_html();
+                                    container_rx_elem.set_inner_html(&initial_html);
+                                    initial_container.set_inner_html("");
                                     // Hydrate the error pages
                                     // Right now, we don't provide translators to any error pages that have come from the server
                                     error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
