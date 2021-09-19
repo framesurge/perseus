@@ -5,7 +5,7 @@ use perseus::shell::{get_initial_state, get_render_cfg, InitialState};
 use perseus::{app_shell, create_app_route, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::prelude::{cloned, template, NodeRef, StateHandle};
+use sycamore::prelude::{cloned, create_effect, template, NodeRef, StateHandle};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -54,46 +54,51 @@ pub fn run() -> Result<(), JsValue> {
         || {
             template! {
                 Router(RouterProps::new(HistoryIntegration::new(), move |route: StateHandle<AppRoute<DomNode>>| {
-                    wasm_bindgen_futures::spawn_local(cloned!((container_rx) => async move {
-                        let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
-                        match &route.get().as_ref().0 {
-                            // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
-                            // If a non-404 error occurred, it will be handled in the app shell
-                            RouteVerdict::Found(RouteInfo {
-                                path,
-                                template,
-                                locale
-                            }) => app_shell(
-                                path.clone(),
-                                template.clone(),
-                                locale.clone(),
-                                // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
-                                Rc::clone(&translations_manager),
-                                Rc::clone(&error_pages),
-                                initial_container.unwrap().clone(),
-                                container_rx_elem.clone()
-                            ).await,
-                            // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
-                            // Those all go to the same system that redirects to the appropriate locale
-                            // Note that `container` doesn't exist for this scenario
-                            RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
-                            // To get a translator here, we'd have to go async and dangerously check the URL
-                            // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
-                            RouteVerdict::NotFound => {
-                                if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
-                                    let initial_container = initial_container.unwrap();
-                                    // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
-                                    let initial_html = initial_container.inner_html();
-                                    container_rx_elem.set_inner_html(&initial_html);
-                                    initial_container.set_inner_html("");
-                                    // Hydrate the error pages
-                                    // Right now, we don't provide translators to any error pages that have come from the server
-                                    error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
-                                } else {
-                                    get_error_pages::<DomNode>().get_template_for_page("", &404, "not found", None);
-                                }
-                            },
-                        };
+                    create_effect(cloned!((container_rx) => move || {
+                        // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
+                        // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
+                        let _ = route.get();
+                        wasm_bindgen_futures::spawn_local(cloned!((route, container_rx, translations_manager, error_pages, initial_container) => async move {
+                            let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
+                            match &route.get().as_ref().0 {
+                                // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
+                                // If a non-404 error occurred, it will be handled in the app shell
+                                RouteVerdict::Found(RouteInfo {
+                                    path,
+                                    template,
+                                    locale
+                                }) => app_shell(
+                                    path.clone(),
+                                    template.clone(),
+                                    locale.clone(),
+                                    // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
+                                    Rc::clone(&translations_manager),
+                                    Rc::clone(&error_pages),
+                                    initial_container.unwrap().clone(),
+                                    container_rx_elem.clone()
+                                ).await,
+                                // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
+                                // Those all go to the same system that redirects to the appropriate locale
+                                // Note that `container` doesn't exist for this scenario
+                                RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
+                                // To get a translator here, we'd have to go async and dangerously check the URL
+                                // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
+                                RouteVerdict::NotFound => {
+                                    if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
+                                        let initial_container = initial_container.unwrap();
+                                        // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
+                                        let initial_html = initial_container.inner_html();
+                                        container_rx_elem.set_inner_html(&initial_html);
+                                        initial_container.set_inner_html("");
+                                        // Hydrate the error pages
+                                        // Right now, we don't provide translators to any error pages that have come from the server
+                                        error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
+                                    } else {
+                                        get_error_pages::<DomNode>().get_template_for_page("", &404, "not found", None);
+                                    }
+                                },
+                            };
+                        }));
                     }));
                     // This template is reactive, and will be updated as necessary
                     // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
