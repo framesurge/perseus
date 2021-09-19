@@ -16,11 +16,11 @@ jobs:
               with:
                   mdbook-version: "latest"
             - name: Build book
-              run: mdbook build
+              run: bash build.sh
               working-directory: docs
             - name: Deploy book to GitHub Pages
               uses: peaceiris/actions-gh-pages@v3
               if: github.ref == 'refs/heads/main'
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
-                  publish_dir: docs/book
+                  publish_dir: docs/dist

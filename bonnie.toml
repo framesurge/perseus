@@ -57,6 +57,11 @@ docs.subcommands.create.cmd = [
 ]
 docs.subcommands.create.args = [ "version" ]
 docs.subcommands.create.desc = "creates documentation for a new version from `next` and marks it as stable (doesn't deprecate old versions though)"
+docs.subcommands.build.cmd = [
+    "cd docs",
+    "bash ./build.sh"
+]
+docs.subcommands.build.desc = "builds the book for deployment to GitHub pages or the like"
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
