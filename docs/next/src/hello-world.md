@@ -7,7 +7,7 @@ Let's get started with Perseus!
 To begin, create a new folder for your project, let's call it `my-perseus-app`. Now, create a `Cargo.toml` file in that folder. This tells Rust which packages you want to use in your project and some other metadata. Put the following inside:
 
 ```toml
-{{#include ../../../examples/tiny/Cargo.toml}}
+{{#include ../../../examples/tiny/Cargo.toml.example}}
 ```
 
 <details>

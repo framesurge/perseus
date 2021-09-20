@@ -9,7 +9,7 @@ If learning by reading isn't really your thing, or you'd like a reference, you c
 Much like the *Hello World!* app, we'll start off by creating a new directory for the project, maybe `my-second-perseus-app` (or you could exercise imagination...). Then, we'll create a new `Cargo.toml` file and fill it with the following:
 
 ```toml
-{{#include ../../../examples/basic/Cargo.toml}}
+{{#include ../../../examples/basic/Cargo.toml.example}}
 ```
 
 The only difference between this and the last `Cargo.toml` we created is two new dependencies:
@@ -115,6 +115,8 @@ Perseus' templating system is extremely versatile, and here we're using it to de
 ### `get_build_props()`
 
 This function is part of Perseus' secret sauce (actually *open* sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is `async`. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!
+
+Note that this function returns a `StringResultWithCause<String>`, which means that it returns a normal Rust `Result<String, E>`, where `E` is a tuple of a `String` error message and a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book.
 
 ### `template_fn()`
 
