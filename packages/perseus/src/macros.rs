@@ -117,13 +117,16 @@ macro_rules! define_get_static_aliases {
                 // We need to move this from being scoped to the app to being scoped for `.perseus/`
                 // TODO make sure this works properly on Windows
                 let resource = if resource.starts_with("/") {
-                    // Absolute paths should be left as is
-                    resource
+                    // Absolute paths are a security risk and are disallowed
+                    panic!("it's a security risk to include absolute paths in `static_aliases`");
+                }  else if resource.starts_with("../") {
+                    // Anything outside this directory is a security risk as well
+                    panic!("it's a security risk to include paths outside the current directory in `static_aliases`");
                 } else if resource.starts_with("./") {
-                    // `./` -> `../`
+                    // `./` -> `../` (moving to execution from `.perseus/`)
                     format!(".{}", resource)
                 } else {
-                    // Anything else (including `../`) gets a `../` prepended
+                    // Anything else gets a `../` prepended
                     format!("../{}", resource)
                 };
                 static_aliases.insert($url.to_string(), resource);
