@@ -46,6 +46,10 @@ Support every major rendering strategy and provide developers the ability to eff
 
 There is a sore lack of Rust frameworks for frontend development that support more than just SPAs and client-side rendering, and so Perseus was born. We need something like NextJS for Wasm.
 
+## Why is this 0.1% JavaScript?
+
+[This](https://github.com/arctic-hen7/perseus/tree/main/packages/perseus/src/unset_initial_state.js) is the only JavaScript file in the entirety of Perseus, all it does is unset a global variable, and it's only needed until [this issue](https://github.com/rustwasm/wasm-bindgen/issues/2685) is fixed on [`web-sys`](https://docs.rs/web-sys). After that's fixed, Perseus will be completely free of JavaScript!
+
 ## Roadmap
 
 ### Pre-stable
