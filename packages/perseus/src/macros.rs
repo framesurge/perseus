@@ -1,4 +1,5 @@
 /// An internal macro used for defining a function to get the user's preferred config manager (which requires multiple branches).
+#[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_config_manager {
     () => {
@@ -15,6 +16,7 @@ macro_rules! define_get_config_manager {
 }
 /// An internal macro used for defining the HTML `id` at which to render the Perseus app (which requires multiple branches). The default
 /// is `root`.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! define_app_root {
     () => {
@@ -25,6 +27,7 @@ macro_rules! define_app_root {
     };
 }
 /// An internal macro used for defining a function to get the user's preferred translations manager (which requires multiple branches).
+#[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_translations_manager {
     ($locales:expr) => {
@@ -65,6 +68,7 @@ macro_rules! define_get_translations_manager {
     };
 }
 /// An internal macro used for defining locales data. This is abstracted because it needs multiple branches.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_locales {
     {
@@ -96,9 +100,9 @@ macro_rules! define_get_locales {
         }
     };
 }
-
 /// An internal macro for defining a function that gets the user's static content aliases (abstracted because it needs multiple
 /// branches).
+#[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_static_aliases {
     (
@@ -154,7 +158,6 @@ macro_rules! define_app {
             default: $default_locale:literal,
             // The user doesn't have to define any other locales
             other: [$($other_locale:literal),*]
-            $(,no_i18n: $no_i18n:literal)?
         }
         $(,static_aliases: {
             $($url:literal => $resource:literal)*
@@ -194,7 +197,6 @@ macro_rules! define_app {
             $($url:literal => $resource:literal)*
         })?
         $(,config_manager: $config_manager:expr)?
-        $(,translations_manager: $translations_manager:expr)?
     } => {
         $crate::define_app!(
             @define_app,
@@ -214,7 +216,6 @@ macro_rules! define_app {
                     $($url => $resource)*
                 })?
                 $(,config_manager: $config_manager)?
-                $(,translations_manager: $translations_manager)?
             }
         );
     };
