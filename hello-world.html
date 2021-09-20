@@ -198,14 +198,14 @@
 <p><em>To follow along here, you'll want to be familiar with Rust, which you can learn more about <a href="https://rust-lang.org">here</a>. You should also have it and <code>cargo</code> installed.</em></p>
 <p>To begin, create a new folder for your project, let's call it <code>my-perseus-app</code>. Now, create a <code>Cargo.toml</code> file in that folder. This tells Rust which packages you want to use in your project and some other metadata. Put the following inside:</p>
 <pre><code class="language-toml">[package]
-name = &quot;perseus-example-tiny&quot;
-version = &quot;0.1.4&quot;
+name = &quot;my-perseus-app&quot;
+version = &quot;0.1.0&quot;
 edition = &quot;2018&quot;
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = &quot;../../packages/perseus&quot; }
+perseus = &quot;0.2&quot;
 sycamore = &quot;0.6&quot;
 </code></pre>
 <details>

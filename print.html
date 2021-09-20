@@ -264,14 +264,14 @@ template! {
 <p><em>To follow along here, you'll want to be familiar with Rust, which you can learn more about <a href="https://rust-lang.org">here</a>. You should also have it and <code>cargo</code> installed.</em></p>
 <p>To begin, create a new folder for your project, let's call it <code>my-perseus-app</code>. Now, create a <code>Cargo.toml</code> file in that folder. This tells Rust which packages you want to use in your project and some other metadata. Put the following inside:</p>
 <pre><code class="language-toml">[package]
-name = &quot;perseus-example-tiny&quot;
-version = &quot;0.1.4&quot;
+name = &quot;my-perseus-app&quot;
+version = &quot;0.1.0&quot;
 edition = &quot;2018&quot;
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = &quot;../../packages/perseus&quot; }
+perseus = &quot;0.2&quot;
 sycamore = &quot;0.6&quot;
 </code></pre>
 <details>
@@ -372,14 +372,14 @@ define_app! {
 <h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
 <p>Much like the <em>Hello World!</em> app, we'll start off by creating a new directory for the project, maybe <code>my-second-perseus-app</code> (or you could exercise imagination...). Then, we'll create a new <code>Cargo.toml</code> file and fill it with the following:</p>
 <pre><code class="language-toml">[package]
-name = &quot;perseus-example-cli&quot;
-version = &quot;0.1.4&quot;
+name = &quot;my-second-perseus-app&quot;
+version = &quot;0.1.0&quot;
 edition = &quot;2018&quot;
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = &quot;../../packages/perseus&quot; }
+perseus = &quot;0.2&quot;
 sycamore = &quot;0.6&quot;
 serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
 serde_json = &quot;1&quot;
@@ -564,6 +564,7 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 <p>Perseus' templating system is extremely versatile, and here we're using it to define our page itself through <code>.template()</code>, and to define a function that will modify the document <code>&lt;head&gt;</code> (which allows us to add a title) with <code>.head()</code>. Notably, we also use the <em>build state</em> rendering strategy, which tells Perseus to call the <code>get_build_props()</code> function when your app builds to get some state. More on that now.</p>
 <h3 id="get_build_props"><a class="header" href="#get_build_props"><code>get_build_props()</code></a></h3>
 <p>This function is part of Perseus' secret sauce (actually <em>open</em> sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is <code>async</code>. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!</p>
+<p>Note that this function returns a <code>StringResultWithCause&lt;String&gt;</code>, which means that it returns a normal Rust <code>Result&lt;String, E&gt;</code>, where <code>E</code> is a tuple of a <code>String</code> error message and a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book.</p>
 <h3 id="template_fn"><a class="header" href="#template_fn"><code>template_fn()</code></a></h3>
 <p>The result of this function is what Perseus will call when it wants to render your template (which it does more than you might think), and it passes it the props that your template takes as an <code>Option&lt;String&gt;</code>. This might seem a bit weird, but there are reasons under the hood. All you need to know here is that if your template takes any properties, they <strong>will</strong> be here, and it's safe to <code>.unwrap()</code> them for deserialization.</p>
 <h3 id="head_fn"><a class="header" href="#head_fn"><code>head_fn()</code></a></h3>
