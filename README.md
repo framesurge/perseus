@@ -12,9 +12,31 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 -   ✨ CLI harness that lets you build apps with ease and confidence
 -   ✨ Full i18n support out-of-the-box with [Fluent](https://projectfluent.org)
 
-## How to use
+## Usage
 
-Check out the docs [here](https://arctic-hen7.github.io/perseus) for how to use Perseus.
+Here's a taste of Perseus (see [the *tiny* example](https://github.com/arctic-hen7/perseus/tree/main/examples/tiny) for more):
+
+```rust
+use perseus::{define_app, ErrorPages, Template};
+use std::rc::Rc;
+use sycamore::template;
+define_app! {
+    templates: [
+        Template::<G>::new("index").template(Rc::new(|_| {
+            template! {
+                p { "Hello World!" }
+            }
+        }))
+    ],
+    error_pages: ErrorPages::new(Rc::new(|url, status, err, _| {
+        template! {
+            p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
+        }
+    }))
+}
+```
+
+Check out [the book](https://arctic-hen7.github.io/perseus) to learn how to turn that into your next app!
 
 ## Aim
 
@@ -35,7 +57,7 @@ These tasks still need to be done before Perseus can be pushed to v1.0.0.
 *   [x] Support i18n out of the box
 *   [x] Implement custom router
 *   [x] Allow direct modification of the document head
-*   [ ] Improve SEO and initial load performance
+* [x] Improve SEO and initial load performance
 *   [ ] Support custom template hierarchies
 *   [ ] Pre-built integrations
     -   [x] Actix Web
