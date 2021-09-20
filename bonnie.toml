@@ -5,7 +5,7 @@ dev.subcommands.cli.cmd = [
 	"cd packages/perseus-cli",
     # We need to copy in the directory where we actually work on the subcrate
     "rm -rf ./.perseus",
-    "cp -r ../../examples/cli/.perseus/ .perseus/",
+    "cp -r ../../examples/basic/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
 	"cargo run -- %%"
@@ -15,7 +15,7 @@ dev.subcommands.example.cmd = [
     "cd packages/perseus-cli",
     # We need to copy in the directory where we actually work on the subcrate
     "rm -rf ./.perseus",
-    "cp -r ../../examples/cli/.perseus/ .perseus/",
+    "cp -r ../../examples/basic/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
     # Now point this live version of the CLI at the given example
@@ -75,7 +75,7 @@ publish.cmd = [
     # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
     "cd ../perseus-cli",
     "rm -rf ./.perseus",
-    "cp -r ../../examples/cli/.perseus/ .perseus/",
+    "cp -r ../../examples/basic/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
     "cargo publish --allow-dirty %%", # Without this flag, `.perseus` will be a problem because it's not in Git

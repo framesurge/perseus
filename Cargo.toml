@@ -4,6 +4,6 @@ members = [
     "examples/*",
     # We have the CLI subcrates as workspace members so we can actively develop on them
     # They also can't be a workspace until nested workspaces are supported
-    "examples/cli/.perseus",
-    "examples/cli/.perseus/server"
+    "examples/basic/.perseus",
+    "examples/basic/.perseus/server"
 ]

@@ -9,7 +9,7 @@ pub fn about_page() -> SycamoreTemplate<G> {
     }
 }
 
-pub fn get_page<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("about")
         .template(template_fn())
         .head(head_fn())
