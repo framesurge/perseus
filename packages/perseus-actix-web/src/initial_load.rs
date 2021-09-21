@@ -4,9 +4,8 @@ use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::error_pages::ErrorPageData;
 use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::{
-    err_to_status_code,
-    serve::get_page_for_template_and_translator, ConfigManager, ErrorPages, SsrNode,
-    TranslationsManager, Translator,
+    err_to_status_code, serve::get_page_for_template_and_translator, ConfigManager, ErrorPages,
+    SsrNode, TranslationsManager, Translator,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -130,10 +129,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 Ok(page_data) => page_data,
                 // We parse the error to return an appropriate status code
                 Err(err) => {
-                    return html_err(
-                        err_to_status_code(&err),
-                        &err.to_string()
-                    );
+                    return html_err(err_to_status_code(&err), &err.to_string());
                 }
             };
 
