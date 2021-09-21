@@ -31,6 +31,7 @@
 - [Config Managers](./config-managers.md)
 - [Testing](./testing.md)
 - [Styling](./styling.md)
+- [Migrating from v0.1.x](./updating.md)
 ***
 # Advanced
 
