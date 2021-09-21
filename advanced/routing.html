@@ -194,6 +194,38 @@
             <div id="content" class="content">
                 <main>
                     <h1 id="routing"><a class="header" href="#routing">Routing</a></h1>
+<p>Perseus' routing system is quite unique in that it's almost entirely <em>inferred</em>, meaning that you don't ever have to define a router or explain to the system which paths go where. Instead, they're inferred from templates in a system that's explained in detail in the <a href="../templates/intro.html">templates section</a>.</p>
+<h2 id="template-selection-algorithm"><a class="header" href="#template-selection-algorithm">Template Selection Algorithm</a></h2>
+<p>Perseus has a very specific algorithm that it uses to determine which template to use for a given route, which is greatly dependent on <code>.perseus/dist/render_conf.json</code>. This is executed on the client-side for <em>subsequent loads</em> and on the server-side for <em>initial loads</em>.</p>
+<p>Here's an example render configuration (for the <a href="https://github.com/arctic-hen7/perseus/blob/main/examples/showcase">showcase example</a>), which maps path to template root path.</p>
+<pre><code class="language-json">{
+    &quot;about&quot;: &quot;about&quot;,
+    &quot;index&quot;: &quot;index&quot;,
+    &quot;post/new&quot;: &quot;post/new&quot;,
+    &quot;ip&quot;: &quot;ip&quot;,
+    &quot;post/*&quot;: &quot;post&quot;,
+    &quot;timeisr/test&quot;: &quot;timeisr&quot;,
+    &quot;timeisr/*&quot;: &quot;timeisr&quot;,
+    &quot;time&quot;: &quot;time&quot;,
+    &quot;amalgamation&quot;: &quot;amalgamation&quot;,
+    &quot;post/blah/test/blah&quot;: &quot;post&quot;,
+    &quot;post/test&quot;: &quot;post&quot;
+}
+</code></pre>
+<p>Here are the algorithm's steps (see <a href="https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/router.rs"><code>router.rs</code></a>):</p>
+<ol>
+<li>If the path is empty, set it to <code>index</code> (which is used for the landing page).</li>
+<li>Try to directly get the template name by trying the path as a key. This would work for anything not using incremental generation (in the above example, anything other than <code>post/*</code>).</li>
+<li>Split the path into sections by <code>/</code> and iterate through them, performing the following on each section (iterating forwards from the beginning of the path, becoming more and more specific):
+<ol>
+<li>Make a path out of all segments up to the current point, adding <code>/*</code> at the end (indicative of incremental generation in the render configuration).</li>
+<li>Try that as a key, return if it works.</li>
+<li>Even if we have something, continue iterating until we have nothing. This way, we get the most specific path possible (and we can have incremental generation in incremental generation).</li>
+</ol>
+</li>
+</ol>
+<h2 id="relationship-with-sycamores-router"><a class="header" href="#relationship-with-sycamores-router">Relationship with Sycamore's Router</a></h2>
+<p>Sycamore has its own <a href="https://sycamore-rs.netlify.app/docs/v0.6/advanced/routing">routing system</a>, which Perseus depends on extensively under the hood. This is evident in <code>.perseus/src/lib.rs</code>, which invokes the router. However, rather than using the traditional Sycamore approach of having an <code>enum</code> with variants for each possible route (which was the approach in Perseus v0.1.x), Perseus provides the router with a <code>struct</code> that performs routing logic and returns either <code>RouteVerdict::Found</code>, <code>RouteVerdict::LocaleDetection</code>, or <code>RouteVerdict::NotFound</code>. The render configuration is accessed through a global variable implanted in the user's HTML shell when the server initializes.</p>
 
                 </main>
 
