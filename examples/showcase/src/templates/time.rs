@@ -20,7 +20,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .template(template_fn())
         // This page will revalidate every five seconds (to illustrate revalidation)
         .revalidate_after("5s".to_string())
-        .incremental_path_rendering(true)
+        .incremental_generation()
         .build_state_fn(Rc::new(get_build_state))
         .build_paths_fn(Rc::new(get_build_paths))
 }

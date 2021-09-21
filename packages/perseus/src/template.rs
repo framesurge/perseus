@@ -147,13 +147,13 @@ pub struct Template<G: GenericNode> {
     /// so reactivity here will not work!
     head: TemplateFn<SsrNode>,
     /// A function that gets the paths to render for at built-time. This is equivalent to `get_static_paths` in NextJS. If
-    /// `incremental_path_rendering` is `true`, more paths can be rendered at request time on top of these.
+    /// `incremental_generation` is `true`, more paths can be rendered at request time on top of these.
     get_build_paths: Option<GetBuildPathsFn>,
     /// Defines whether or not any new paths that match this template will be prerendered and cached in production. This allows you to
     /// have potentially billions of templates and retain a super-fast build process. The first user will have an ever-so-slightly slower
     /// experience, and everyone else gets the beneftis afterwards. This requires `get_build_paths`. Note that the template root will NOT
     /// be rendered on demand, and must be explicitly defined if it's wanted. It can uuse a different template.
-    incremental_path_rendering: bool,
+    incremental_generation: bool,
     /// A function that gets the initial state to use to prerender the template at build time. This will be passed the path of the template, and
     /// will be run for any sub-paths. This is equivalent to `get_static_props` in NextJS.
     get_build_state: Option<GetBuildStateFn>,
@@ -183,7 +183,7 @@ impl<G: GenericNode> Template<G> {
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             head: Rc::new(|_: Option<String>| sycamore::template! {}),
             get_build_paths: None,
-            incremental_path_rendering: false,
+            incremental_generation: false,
             get_build_state: None,
             get_request_state: None,
             should_revalidate: None,
@@ -353,7 +353,7 @@ impl<G: GenericNode> Template<G> {
     }
     /// Checks if this template can render more templates beyond those paths it explicitly defines.
     pub fn uses_incremental(&self) -> bool {
-        self.incremental_path_rendering
+        self.incremental_generation
     }
     /// Checks if this template is a template to generate paths beneath it.
     pub fn uses_build_paths(&self) -> bool {
@@ -396,9 +396,9 @@ impl<G: GenericNode> Template<G> {
         self.get_build_paths = Some(val);
         self
     }
-    /// Enables the *incremental generation* strategy with the given function.
-    pub fn incremental_path_rendering(mut self, val: bool) -> Template<G> {
-        self.incremental_path_rendering = val;
+    /// Enables the *incremental generation* strategy.
+    pub fn incremental_generation(mut self) -> Template<G> {
+        self.incremental_generation = true;
         self
     }
     /// Enables the *build state* strategy with the given function.

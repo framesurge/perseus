@@ -27,7 +27,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("post")
         .build_paths_fn(Rc::new(get_static_paths))
         .build_state_fn(Rc::new(get_static_props))
-        .incremental_path_rendering(true)
+        .incremental_generation()
         .template(template_fn())
 }
 
