@@ -1,0 +1,462 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Your Second App - Perseus Book</title>
+                
+
+        <!-- Custom HTML head -->
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+                <link rel="icon" href="favicon.svg">
+                        <link rel="shortcut icon" href="favicon.png">
+                <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+                <link rel="stylesheet" href="css/print.css" media="print">
+        
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+                <link rel="stylesheet" href="fonts/fonts.css">
+        
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+            </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="what-is-perseus.html"><strong aria-hidden="true">1.1.</strong> What is Perseus?</a></li><li class="chapter-item expanded "><a href="hello-world.html"><strong aria-hidden="true">1.2.</strong> Hello World!</a></li></ol></li><li class="chapter-item expanded "><a href="second-app.html" class="active"><strong aria-hidden="true">2.</strong> Your Second App</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Reference</li><li class="chapter-item expanded "><a href="define-app.html"><strong aria-hidden="true">3.</strong> define_app!</a></li><li class="chapter-item expanded "><a href="views.html"><strong aria-hidden="true">4.</strong> Writing Views</a></li><li class="chapter-item expanded "><a href="debugging.html"><strong aria-hidden="true">5.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="templates/intro.html"><strong aria-hidden="true">6.</strong> Templates and Routing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/metadata-modification.html"><strong aria-hidden="true">6.1.</strong> Modifying the &lt;head&gt;</a></li></ol></li><li class="chapter-item expanded "><a href="error-pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="static-content.html"><strong aria-hidden="true">8.</strong> Static Content</a></li><li class="chapter-item expanded "><a href="i18n/intro.html"><strong aria-hidden="true">9.</strong> Internationalization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="i18n/defining.html"><strong aria-hidden="true">9.1.</strong> Defining Translations</a></li><li class="chapter-item expanded "><a href="i18n/using.html"><strong aria-hidden="true">9.2.</strong> Using Translations</a></li><li class="chapter-item expanded "><a href="i18n/translations-managers.html"><strong aria-hidden="true">9.3.</strong> Translations Managers</a></li><li class="chapter-item expanded "><a href="i18n/other-engines.html"><strong aria-hidden="true">9.4.</strong> Other Translation Engines</a></li></ol></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">10.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build-state.html"><strong aria-hidden="true">10.1.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/build-paths.html"><strong aria-hidden="true">10.2.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/request-state.html"><strong aria-hidden="true">10.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">10.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">10.5.</strong> Incremental Generation</a></li><li class="chapter-item expanded "><a href="strategies/amlagamation.html"><strong aria-hidden="true">10.6.</strong> State Amalgamation</a></li></ol></li><li class="chapter-item expanded "><a href="cli.html"><strong aria-hidden="true">11.</strong> CLI</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ejecting.html"><strong aria-hidden="true">11.1.</strong> Ejecting</a></li></ol></li><li class="chapter-item expanded "><a href="config-managers.html"><strong aria-hidden="true">12.</strong> Config Managers</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">13.</strong> Testing</a></li><li class="chapter-item expanded "><a href="styling.html"><strong aria-hidden="true">14.</strong> Styling</a></li><li class="chapter-item expanded "><a href="updating.html"><strong aria-hidden="true">15.</strong> Migrating from v0.1.x</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Advanced</li><li class="chapter-item expanded "><a href="advanced/intro.html"><strong aria-hidden="true">16.</strong> Under the Hood</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="advanced/arch.html"><strong aria-hidden="true">16.1.</strong> Architecture</a></li><li class="chapter-item expanded "><a href="advanced/initial-loads.html"><strong aria-hidden="true">16.2.</strong> Initial Loads</a></li><li class="chapter-item expanded "><a href="advanced/subsequent-loads.html"><strong aria-hidden="true">16.3.</strong> Subsequent Loads</a></li><li class="chapter-item expanded "><a href="advanced/routing.html"><strong aria-hidden="true">16.4.</strong> Routing</a></li></ol></li></ol>            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                                                <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                                            </div>
+
+                    <h1 class="menu-title">Perseus Book</h1>
+
+                    <div class="right-buttons">
+                                                <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                                                                        
+                    </div>
+                </div>
+
+                                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="your-second-app"><a class="header" href="#your-second-app">Your Second App</a></h1>
+<p>This section will cover building a more realistic app than the <em>Hello World!</em> section, with proper structuring and multiple templates.</p>
+<p>If learning by reading isn't really your thing, or you'd like a reference, you can see all the code in <a href="https://github.com/arctic-hen7/perseus/tree/main/examples/basic">this repository</a>!</p>
+<h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
+<p>Much like the <em>Hello World!</em> app, we'll start off by creating a new directory for the project, maybe <code>my-second-perseus-app</code> (or you could exercise imagination...). Then, we'll create a new <code>Cargo.toml</code> file and fill it with the following:</p>
+<pre><code class="language-toml">[package]
+name = &quot;my-second-perseus-app&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2018&quot;
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+perseus = &quot;0.2&quot;
+sycamore = &quot;0.6&quot;
+serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
+serde_json = &quot;1&quot;
+</code></pre>
+<p>The only difference between this and the last <code>Cargo.toml</code> we created is two new dependencies:</p>
+<ul>
+<li><a href="https://serde.rs"><code>serde</code></a> -- a really useful Rust library for serializing/deserializing data</li>
+<li><a href="https://github.com/serde-rs/json"><code>serde_json</code></a> -- Serde's integration for JSON, which lets us pass around properties for more advanced pages in Perseus</li>
+</ul>
+<p>The next thing to do is to create <code>index.html</code>, which is pretty much the same as last time:</p>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+    &lt;head&gt;
+        &lt;meta charset=&quot;UTF-8&quot; /&gt;
+        &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot; /&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>The only notable difference here is the absence of a <code>&lt;title&gt;</code>, which is because we'll be creating it inside Perseus! Any Perseus template can modify the <code>&lt;head&gt;</code> of the document, but anything you put into <code>index.html</code> will persist across all pages. We don't want to have conflicting titles, so we leave that property out of <code>index.html</code>.</p>
+<h2 id="librs"><a class="header" href="#librs"><code>lib.rs</code></a></h2>
+<p>As in every Perseus app, <code>lib.rs</code> is how we communicate with the CLI and tell it how our app works. Put the following content in <code>src/lib.rs</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_playground no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>mod error_pages;
+mod templates;
+
+use perseus::define_app;
+
+define_app! {
+    templates: [
+        crate::templates::index::get_template::&lt;G&gt;(),
+        crate::templates::about::get_template::&lt;G&gt;()
+    ],
+    error_pages: crate::error_pages::get_error_pages(),
+    static_aliases: {
+        &quot;/test.txt&quot; =&gt; &quot;static/test.txt&quot;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This code is quite different from your first app, so let's go through how it works.</p>
+<p>First, we define two other modules in our code: <code>error_pages</code> (at <code>src/error_pages.rs</code>) and <code>templates</code> (at <code>src/templates</code>). Don't worry, we'll create those in a moment. The rest of the code creates a new app with two templates, which are expected to be in the <code>src/templates</code> directory. Note the use of <code>&lt;G&gt;</code> here, which is a Rust <em>type parameter</em> (the <code>get_template</code> function can work for the browser or the server, so Rust needs to know which one it is). This parameter is <em>ambient</em> to the <code>templates</code> key, which means you can use it without declaring it as long as you're inside <code>templates: {...}</code>. This will be set to <code>DomNode</code> for the browser and <code>SsrNode</code> for the server, but that all happens behind the scenes.</p>
+<p>Also note that we're pulling in our error pages from another file as well (in a larger app you may even want to have a different file for each error page).</p>
+<p>The last thing we do is new, we define <code>static_aliases</code> to map the URL <code>/test.txt</code> in our app to the file <code>static/test.txt</code>. This feature is detailed in more depth later, but it can be extremely useful, for example for defining your site's logo (or favicon), which browsers expect to be available at <code>/favicon.ico</code>. Create the <code>static/test.txt</code> file now (<code>static/</code> should NOT be inside <code>src/</code>!) and fill it with whatever you want.</p>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h2>
+<p>Before we get to the cool part of building the actual pages of the app, we should set up error pages again, which we'll do in <code>src/error_pages.rs</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::{ErrorPages, GenericNode};
+use std::rc::Rc;
+use sycamore::template;
+
+pub fn get_error_pages&lt;G: GenericNode&gt;() -&gt; ErrorPages&lt;G&gt; {
+    let mut error_pages = ErrorPages::new(Rc::new(|url, status, err, _| {
+        template! {
+            p { (format!(&quot;An error with HTTP code {} occurred at '{}': '{}'.&quot;, status, url, err)) }
+        }
+    }));
+    error_pages.add_page(
+        404,
+        Rc::new(|_, _, _, _| {
+            template! {
+                p { &quot;Page not found.&quot; }
+            }
+        }),
+    );
+
+    error_pages
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This is a little more advanced than the last time we did this, and there are a few things we should note.</p>
+<p>The first is the import of <code>GenericNode</code>, which we define as a type parameter on the <code>get_error_pages</code> function. As we said before, this means your error pages will work on the client or the server, and they're needed in both environments. If you're interested, this separation of browser and server elements is done by Sycamore, and you can learn more about it <a href="https://docs.rs/sycamore/0.6/sycamore/generic_node/trait.GenericNode.html">here</a>.</p>
+<p>In this function, we also define a different error page for a 404 error, which will occur when a user tries to go to a page that doesn't exist. The fallback page (which we initialize <code>ErrorPages</code> with) is the same as last time, and will be called for any errors other than a <em>404 Not Found</em>.</p>
+<h2 id="indexrs"><a class="header" href="#indexrs"><code>index.rs</code></a></h2>
+<p>It's time to create the first page for this app! But first, we need to make sure that import in <code>src/lib.rs</code> of <code>mod templates;</code> works, which requires us to create a new file <code>src/templates/mod.rs</code>, which declares <code>src/templates</code> as a module with its own code. Add the following to that file:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub mod about;
+pub mod index;
+<span class="boring">}
+</span></code></pre></pre>
+<p>It's common practice to have a file for each <em>template</em>, which is slightly different to a page (explained in more detail later), and this app has two pages: a landing page (index) and an about page.</p>
+<p>Let's begin with the landing page. Create a new file <code>src/templates/index.rs</code> and put the following inside:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::{GenericNode, StringResultWithCause, Template};
+use serde::{Deserialize, Serialize};
+use std::rc::Rc;
+use sycamore::prelude::{component, template, Template as SycamoreTemplate};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IndexPageProps {
+    pub greeting: String,
+}
+
+#[component(IndexPage&lt;G&gt;)]
+pub fn index_page(props: IndexPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
+    template! {
+        p {(props.greeting)}
+        a(href = &quot;/about&quot;) { &quot;About!&quot; }
+    }
+}
+
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;index&quot;)
+        .build_state_fn(Rc::new(get_build_props))
+        .template(template_fn())
+        .head(head_fn())
+}
+
+pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+    Ok(serde_json::to_string(&amp;IndexPageProps {
+        greeting: &quot;Hello World!&quot;.to_string(),
+    })
+    .unwrap())
+}
+
+pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
+    Rc::new(|props: Option&lt;String&gt;| {
+        template! {
+            IndexPage(
+                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
+            )
+        }
+    })
+}
+
+pub fn head_fn() -&gt; perseus::template::HeadFn {
+    Rc::new(|_| {
+        template! {
+            title { &quot;Index Page | Perseus Example – Basic&quot; }
+        }
+    })
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This code is <em>much</em> more complex than the <em>Hello World!</em> example, so let's go through it carefully.</p>
+<p>First, we import a whole ton of stuff:</p>
+<ul>
+<li><code>perseus</code>
+<ul>
+<li><code>StringResultWithCause</code> -- see below for an explanation of this</li>
+<li><code>Template</code> -- as before</li>
+<li><code>GenericNode</code> -- as before</li>
+</ul>
+</li>
+<li><code>serde</code>
+<ul>
+<li><code>Serialize</code> -- a trait for <code>struct</code>s that can be turned into a string (like JSON)</li>
+<li><code>Deserialize</code> -- a trait for <code>struct</code>s that can be <em>de</em>serialized from a string (like JSON)</li>
+</ul>
+</li>
+<li><code>std::rc::Rc</code> -- same as before, you can read more about <code>Rc</code>s <a href="https://doc.rust-lang.org/std/rc/struct.Rc.html">here</a></li>
+<li><code>sycamore</code>
+<ul>
+<li><code>component</code> -- a macro that turns a function into a Sycamore component</li>
+<li><code>template</code> -- the <code>template!</code> macro, same as before</li>
+<li><code>Template as SycamoreTemplate</code> -- the output of the <code>template!</code> macro, aliased as <code>SycamoreTemplate</code> so it doesn't conflict with <code>perseus::Template</code>, which is very different</li>
+</ul>
+</li>
+</ul>
+<p>Then we define a number of different functions and a <code>struct</code>, each of which gets a section now.</p>
+<h3 id="indexpageprops"><a class="header" href="#indexpageprops"><code>IndexPageProps</code></a></h3>
+<p>This <code>struct</code> represents the properties that the index page will take. In this case, we're building an index page that will display a greeting defined in this, specifically in the <code>greeting</code> property.</p>
+<p>Any template can take arguments in Perseus, which should always be given inside a <code>struct</code>. For simplicity and performance, Perseus only ever passes your properties around as a <code>String</code>, so you'll need to serialize/deserialize them yourself (as in the functions below).</p>
+<h3 id="index_page"><a class="header" href="#index_page"><code>index_page()</code></a></h3>
+<p>This is the actual component that your page is. Technically, you could just put this under <code>template_fn()</code>, but it's conventional to break it out independently. By annotating it with <code>#[component(IndexPage&lt;G&gt;)]</code>, we tell Sycamore to turn it into a complex <code>struct</code> that can be called inside <code>template!</code> (which we do in <code>template_fn()</code>).</p>
+<p>Note that this takes <code>IndexPageProps</code> as an argument, which it can then access in the <code>template!</code>. This is Sycamore's interpolation system, which you can read about <a href="https://sycamore-rs.netlify.app/docs/basics/template">here</a>, but all you need to know is that it's basically seamless and works exactly as you'd expect.</p>
+<p>The only other thing we do here is define an <code>&lt;a&gt;</code> (an HTML link) to <code>/about</code>. This link, and any others you define, will automatically be detected by Sycamore's systems, which will pass them to Perseus' routing logic, which means your users <strong>never leave the page</strong>. In this way, Perseus only pulls in the content that needs to change, and gives your users the feeling of a lightning-fast and weightless app.</p>
+<p><em>Note: external links will automatically be excluded from this, and you can exclude manually by adding <code>rel=&quot;external&quot;</code> if you need.</em></p>
+<h3 id="get_template"><a class="header" href="#get_template"><code>get_template()</code></a></h3>
+<p>This function is what we call in <code>lib.rs</code>, and it combines everything else in this file to produce an actual Perseus <code>Template</code> to be used. Note the name of the template as <code>index</code>, which Perseus interprets as special, which causes this template to be rendered at <code>/</code> (the landing page).</p>
+<p>Perseus' templating system is extremely versatile, and here we're using it to define our page itself through <code>.template()</code>, and to define a function that will modify the document <code>&lt;head&gt;</code> (which allows us to add a title) with <code>.head()</code>. Notably, we also use the <em>build state</em> rendering strategy, which tells Perseus to call the <code>get_build_props()</code> function when your app builds to get some state. More on that now.</p>
+<h3 id="get_build_props"><a class="header" href="#get_build_props"><code>get_build_props()</code></a></h3>
+<p>This function is part of Perseus' secret sauce (actually <em>open</em> sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is <code>async</code>. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!</p>
+<p>Note that this function returns a <code>StringResultWithCause&lt;String&gt;</code>, which means that it returns a normal Rust <code>Result&lt;String, E&gt;</code>, where <code>E</code> is a tuple of a <code>String</code> error message and a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book.</p>
+<h3 id="template_fn"><a class="header" href="#template_fn"><code>template_fn()</code></a></h3>
+<p>The result of this function is what Perseus will call when it wants to render your template (which it does more than you might think), and it passes it the props that your template takes as an <code>Option&lt;String&gt;</code>. This might seem a bit weird, but there are reasons under the hood. All you need to know here is that if your template takes any properties, they <strong>will</strong> be here, and it's safe to <code>.unwrap()</code> them for deserialization.</p>
+<h3 id="head_fn"><a class="header" href="#head_fn"><code>head_fn()</code></a></h3>
+<p>This is very similar to <code>template_fn</code>, except it can't be reactive. In other words, anything you put in here is like a picture, it can't move (so no buttons, counters, etc.). This is because this modifies the document <code>&lt;head&gt;</code>, so you should put metadata, titles, etc. in here. Note that the function we return from here does take an argument (ignored with <code>_</code>), that's a string of the properties to your app, but we don't need it in this example. If this page was a generic template for blog posts, you might use this capability to render a different title for each blog post.</p>
+<p>All this does though is set the <code>&lt;title&gt;</code>. If you inspect the source code of the HTML in your browser, you'll find a big comment in the <code>&lt;head&gt;</code> that says <code>&lt;!--PERSEUS_INTERPOLATED_HEAD_BEGINS--&gt;</code>, that separates the stuff that should remain the same on every page from the stuff that should update for each page.</p>
+<h2 id="aboutrs"><a class="header" href="#aboutrs"><code>about.rs</code></a></h2>
+<p>Okay! We're past the hump, and now it's time to define the (much simpler) <code>/about</code> page. Create <code>src/templates/about.rs</code> and put the following inside:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::Template;
+use std::rc::Rc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+
+#[component(AboutPage&lt;G&gt;)]
+pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
+    template! {
+        p { &quot;About.&quot; }
+    }
+}
+
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;about&quot;)
+        .template(template_fn())
+        .head(head_fn())
+}
+
+pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
+    Rc::new(|_| {
+        template! {
+            AboutPage()
+        }
+    })
+}
+
+pub fn head_fn() -&gt; perseus::template::HeadFn {
+    Rc::new(|_| {
+        template! {
+            title { &quot;About Page | Perseus Example – Basic&quot; }
+        }
+    })
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This is basically exactly the same as <code>index.rs</code>, except we don't have any properties to deal with, and we don't need to generate anything special at build time (but Perseus will still render this page to static HTML, ready to be served to your users).</p>
+<h2 id="running-it"><a class="header" href="#running-it">Running It</a></h2>
+<p><code>perseus serve</code></p>
+<p>That's all. Every time you build a Perseus app, that's all you need to do.</p>
+<p>Once this is finished, your app will be live at <a href="http://localhost:8080">http://localhost:8080</a>! Note that if you don't like that, you can change the host/port with the <code>HOST</code>/<code>PORT</code> environment variables (e.g. you'd want to set the host to <code>0.0.0.0</code> if you want other people on your network to be able to access your site).</p>
+<p>Hop over to <a href="http://localhost:8080">http://localhost:8080</a> in any modern browser and you should see your greeting <code>Hello World!</code> above a link to the about page! if you click that link, you'll be taken to a page that just says <code>About.</code>, but notice how your browser seemingly never navigates to a new page (the tab doesn't show a loading icon)? That's Perseus' <em>app shell</em> in action, which intercepts navigation to other pages and makes it occur seamlessly, only fetching the bare minimum to make the new page load. The same behavior will occur if you use your browser's forward/backward buttons.</p>
+<details>
+<summary>Why a 'modern browser'?</summary>
+<h3 id="browser-compatibility"><a class="header" href="#browser-compatibility">Browser Compatibility</a></h3>
+<p>Perseus is compatible with any browser that supports Wasm, which is most modern browsers like Firefox and Chrome. However, legacy browsers like Internet Explorer will not work with any Perseus app, unless you <em>polyfill</em> support for WebAssembly.</p>
+</details>
+<p>By the way, remember this little bit of code in <code>src/lib.rs</code>?</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    static_aliases: {
+        &quot;/test.txt&quot; =&gt; &quot;static/test.txt&quot;
+    }
+<span class="boring">}
+</span></code></pre></pre>
+<p>If you navigate to <a href="http://localhost:8080/test.txt">http://localhost:8080/test.txt</a>, you should see the contents on <code>static/test.txt</code>! You can also access them at <a href="http://localhost:8080/.perseus/static/test.txt">http://localhost:8080/.perseus/static/test.txt</a></p>
+<h2 id="moving-forward"><a class="header" href="#moving-forward">Moving Forward</a></h2>
+<p>Congratulations! You're now well on your way to building highly performant web apps in Rust! The remaining sections of this book are more reference-style, and won't guide you through building an app, but they'll focus instead on specific features of Perseus that can be used to make extremely powerful systems.</p>
+<p>So go forth, and build!</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                                                    <a rel="prev" href="hello-world.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+                                                    <a rel="next" href="define-app.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                                    <a rel="prev" href="hello-world.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+                                    <a rel="next" href="define-app.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                            </nav>
+
+        </div>
+
+        
+        
+        
+                <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        
+        
+                <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+        
+    </body>
+</html>
