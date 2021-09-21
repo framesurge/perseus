@@ -1,5 +1,3 @@
-// This page illustrates SSR
-
 use perseus::{Request, StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
