@@ -32,9 +32,6 @@ let counter = Signal::new(0);
 let increment = cloned!((counter) => move |_| counter.set(*counter.get() + 1));
 
 template! {
-    p {(props.greeting)}
-    a(href = "/about") { "About!" }
-
     p { (counter.get()) }
     button(on:click = increment) { "Increment" }
 }

@@ -26,14 +26,14 @@
 	- [Incremental Generation]()
 - [CLI](./cli.md)
 	- [Ejecting](./ejecting.md)
-- [Config Managers]()
-- [Testing]()
-- [Styling]()
+- [Config Managers](./config-managers.md)
+- [Testing](./testing.md)
+- [Styling](./styling.md)
 ***
 # Advanced
 
-- [Under the Hood]()
-	- [Architecture]()
-	- [Initial Loads]()
-	- [Subsequent Loads]()
-	- [Routing]()
+- [Under the Hood](./advanced/intro.md)
+	- [Architecture](./advanced/arch.md)
+	- [Initial Loads](./advanced/initial-loads.md)
+	- [Subsequent Loads](./advanced/subsequent-loads.md)
+	- [Routing](./advanced/routing.md)
