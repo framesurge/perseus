@@ -2,19 +2,19 @@
 
 [Book][book] • [Crate Page][crate] • [API Documentation][docs] • [Contributing][contrib]
 
-Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore) and provides a NextJS-like API!
+Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)!
 
--   ✨ Supports static generation (serving only static resources)
--   ✨ Supports server-side rendering (serving dynamic resources)
--   ✨ Supports revalidation after time and/or with custom logic (updating rendered pages)
--   ✨ Supports incremental regeneration (build on demand)
--   ✨ Open build matrix (use any rendering strategy with anything else, mostly)
--   ✨ CLI harness that lets you build apps with ease and confidence
--   ✨ Full i18n support out-of-the-box with [Fluent](https://projectfluent.org)
+-   📕 Supports static generation (serving only static resources)
+-   🗼 Supports server-side rendering (serving dynamic resources)
+-   🔧 Supports revalidation after time and/or with custom logic (updating rendered pages)
+-   🛠️ Supports incremental regeneration (build on demand)
+-   🏭 Open build matrix (use any rendering strategy with anything else)
+-   🖥️ CLI harness that lets you build apps with ease and confidence
+-   🌐 Full i18n support out-of-the-box with [Fluent](https://projectfluent.org)
 
 ## Usage
 
-Here's a taste of Perseus (see [the *tiny* example](https://github.com/arctic-hen7/perseus/tree/main/examples/tiny) for more):
+Here's a taste of Perseus (see [the _tiny_ example](https://github.com/arctic-hen7/perseus/tree/main/examples/tiny) for more):
 
 ```rust
 use perseus::{define_app, ErrorPages, Template};
@@ -61,7 +61,7 @@ These tasks still need to be done before Perseus can be pushed to v1.0.0.
 *   [x] Support i18n out of the box
 *   [x] Implement custom router
 *   [x] Allow direct modification of the document head
-* [x] Improve SEO and initial load performance
+*   [x] Improve SEO and initial load performance
 *   [ ] Support custom template hierarchies
 *   [ ] Pre-built integrations
     -   [x] Actix Web

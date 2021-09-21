@@ -66,7 +66,7 @@ Perseus aims to be more convenient than any other Rust web framework by taking a
 Basically, here's your workflow:
 
 1. Create a new project.
-2. Define your app in under 30 lines of code (coming down to 15 with v0.2.0!)
+2. Define your app in around 12 lines of code and some listing.
 3. Code your amazing app.
 4. Run `perseus serve`.
 
