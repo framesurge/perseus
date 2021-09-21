@@ -1,6 +1,6 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
-use crate::serve::PageData;
+use crate::serve::PageDataWithHead;
 use crate::template::Template;
 use crate::ClientTranslationsManager;
 use crate::ErrorPages;
@@ -200,12 +200,32 @@ pub async fn app_shell(
                 Ok(page_data_str) => match page_data_str {
                     Some(page_data_str) => {
                         // All good, deserialize the page data
-                        let page_data = serde_json::from_str::<PageData>(&page_data_str);
+                        let page_data = serde_json::from_str::<PageDataWithHead>(&page_data_str);
                         match page_data {
                             Ok(page_data) => {
                                 // We have the page data ready, render everything
                                 // Interpolate the HTML directly into the document (we'll hydrate it later)
                                 container_rx_elem.set_inner_html(&page_data.content);
+                                // Interpolate the metadata directly into the document's `<head>`
+                                // Get the current head
+                                let head_elem = web_sys::window()
+                                    .unwrap()
+                                    .document()
+                                    .unwrap()
+                                    .query_selector("head")
+                                    .unwrap()
+                                    .unwrap();
+                                let head_html = head_elem.inner_html();
+                                // We'll assume that there's already previously interpolated head in addition to the hardcoded stuff, but it will be separated by the server-injected delimiter comment
+                                // Thus, we replace the stuff after that delimiter comment with the new head
+                                let head_parts: Vec<&str> = head_html
+                                    .split("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->")
+                                    .collect();
+                                let new_head = format!(
+                                    "{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n{}",
+                                    head_parts[0], &page_data.head
+                                );
+                                head_elem.set_inner_html(&new_head);
 
                                 // Now that the user can see something, we can get the translator
                                 let mut translations_manager_mut =
@@ -225,31 +245,6 @@ pub async fn app_shell(
                                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                                     }
                                 };
-
-                                // Render the document head
-                                let head_str = template.render_head_str(
-                                    page_data.state.clone(),
-                                    Rc::clone(&translator),
-                                );
-                                // Get the current head
-                                let head_elem = web_sys::window()
-                                    .unwrap()
-                                    .document()
-                                    .unwrap()
-                                    .query_selector("head")
-                                    .unwrap()
-                                    .unwrap();
-                                let head_html = head_elem.inner_html();
-                                // We'll assume that there's already previously interpolated head in addition to the hardcoded stuff, but it will be separated by the server-injected delimiter comment
-                                // Thus, we replace the stuff after that delimiter comment with the new head
-                                let head_parts: Vec<&str> = head_html
-                                    .split("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->")
-                                    .collect();
-                                let new_head = format!(
-                                    "{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n{}",
-                                    head_parts[0], head_str
-                                );
-                                head_elem.set_inner_html(&new_head);
 
                                 // Hydrate that static code using the acquired state
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
