@@ -4,6 +4,7 @@ use crate::serve::PageDataWithHead;
 use crate::template::Template;
 use crate::ClientTranslationsManager;
 use crate::ErrorPages;
+use js_sys::Reflect;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -125,12 +126,6 @@ pub enum InitialState {
     NotPresent,
 }
 
-// We have to rely on JS to set a global variable unfortunately (should file an error on `web_sys` about this)
-#[wasm_bindgen(module = "/src/unset_initial_state.js")]
-extern "C" {
-    fn unset_initial_state();
-}
-
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
 /// broader template). Asynchronous Wasm is handled here, because only a few cases need it.
 // TODO handle exceptions higher up
@@ -150,7 +145,13 @@ pub async fn app_shell(
         // The state is here, and the HTML has already been injected for us (including head metadata)
         InitialState::Present(state) => {
             // Unset the initial state variable so we perform subsequent renders correctly
-            unset_initial_state();
+            // This monstrosity is needed until `web-sys` adds a `.set()` method on `Window`
+            Reflect::set(
+                &JsValue::from(web_sys::window().unwrap()),
+                &JsValue::from("__PERSEUS_INITIAL_STATE"),
+                &JsValue::undefined(),
+            )
+            .unwrap();
             // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);
