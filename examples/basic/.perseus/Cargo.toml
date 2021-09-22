@@ -10,7 +10,7 @@ edition = "2018"
 
 [dependencies]
 # We alias here because the package name will change based on whatever's in the user's manifest
-app = { package = "perseus-example-cli", path = "../" }
+app = { package = "perseus-example-basic", path = "../" }
 
 perseus = { path = "../../../packages/perseus" }
 sycamore = { version = "0.6", features = ["ssr"] }

@@ -1,5 +1,5 @@
 [package]
-name = "perseus-example-cli"
+name = "perseus-example-basic"
 version = "0.2.0"
 edition = "2018"
 
