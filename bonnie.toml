@@ -25,7 +25,7 @@ dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
 build = "cargo build"
-check.cmd = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
+check.cmd = "cargo check && cargo fmt -- --check && cargo clippy && bonnie test" # This will be run on CI as well
 check.desc = "checks code formatting, runs tests, etc. (also run on CI)"
 
 test.cmd = [
