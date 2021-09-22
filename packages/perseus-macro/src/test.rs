@@ -136,13 +136,16 @@ pub fn test_impl(input: TestFn, args: TestArgs) -> TokenStream {
             async fn fn_internal#generics(#arg) -> #return_type {
                 #block
             }
-            let mut client = ::fantoccini::ClientBuilder::native().connect(&#webdriver_url).await.expect("failed to connect to WebDriver");
-            let output = fn_internal(&mut client).await;
-            // Close the client no matter what
-            client.close().await.expect("failed to close Fantoccini client");
-            // Panic if the test failed
-            if let Err(err) = output {
-                panic!("test failed: '{}'", err.to_string())
+            // Only run the test if the environment variable is specified (avoids having to do exclusions for workspace `cargo test`)
+            if ::std::env::var("PERSEUS_RUN_WASM_TESTS").is_ok() {
+                let mut client = ::fantoccini::ClientBuilder::native().connect(&#webdriver_url).await.expect("failed to connect to WebDriver");
+                let output = fn_internal(&mut client).await;
+                // Close the client no matter what
+                client.close().await.expect("failed to close Fantoccini client");
+                // Panic if the test failed
+                if let Err(err) = output {
+                    panic!("test failed: '{}'", err.to_string())
+                }
             }
         }
     };
