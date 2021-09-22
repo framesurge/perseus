@@ -168,6 +168,7 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
     let spinners = MultiProgress::new();
     // TODO support watching files
     let did_build = !prog_args.contains(&"--no-build".to_string());
+    let should_run = !prog_args.contains(&"--no-run".to_string());
     // We need to have a way of knowing what the executable path to the server is
     let exec = Arc::new(Mutex::new(String::new()));
     // We can begin building the server in a thread without having to deal with the rest of the build stage yet
@@ -200,8 +201,14 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
         finalize(&dir.join(".perseus"))?;
     }
 
-    // Now actually run that executable path
-    let exit_code = run_server(Arc::clone(&exec), dir.clone(), did_build)?;
-
-    Ok(exit_code)
+    // Now actually run that executable path if we should
+    if should_run {
+        let exit_code = run_server(Arc::clone(&exec), dir.clone(), did_build)?;
+        Ok(exit_code)
+    } else {
+        // The user doesn't want to run the server, so we'll give them the executable path instead
+        let exec_str: String = (*exec.lock().unwrap()).to_string();
+        println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable in `.perseus/server/`.\n{}", exec_str);
+        Ok(0)
+    }
 }
