@@ -8,7 +8,7 @@ jobs:
         steps:
             - uses: actions/checkout@v2
             - run: cargo install bonnie
-            - run: apt install firefox gecko-driver
+            - run: sudo apt install firefox gecko-driver
             - name: Run Firefox WebDriver
               run: geckodriver &
             - name: Test Library
