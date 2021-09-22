@@ -60,6 +60,7 @@ pub mod template;
 pub mod translations_manager;
 /// Utilities regarding translators, including the default `FluentTranslator`.
 pub mod translator;
+mod test;
 
 pub use http;
 pub use http::Request as HttpRequest;
