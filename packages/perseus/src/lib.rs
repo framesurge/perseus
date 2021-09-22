@@ -80,3 +80,5 @@ pub use crate::shell::app_shell;
 pub use crate::template::{States, StringResult, StringResultWithCause, Template, TemplateMap};
 pub use crate::translations_manager::{FsTranslationsManager, TranslationsManager};
 pub use crate::translator::{Translator, TRANSLATOR_FILE_EXT};
+
+pub use perseus_macro::test;
