@@ -138,7 +138,25 @@ pub fn test_impl(input: TestFn, args: TestArgs) -> TokenStream {
             }
             // Only run the test if the environment variable is specified (avoids having to do exclusions for workspace `cargo test`)
             if ::std::env::var("PERSEUS_RUN_WASM_TESTS").is_ok() {
-                let mut client = ::fantoccini::ClientBuilder::native().connect(&#webdriver_url).await.expect("failed to connect to WebDriver");
+                let headless = ::std::env::var("PERSEUS_RUN_WASM_TESTS_HEADLESS").is_ok();
+                // Set the capabilities of the client
+                // If the user wants different capabilities, they should break out of this macro and use Fantoccini directly
+                let mut capabilities = ::serde_json::Map::new();
+                let firefox_opts;
+                let chrome_opts;
+                if headless {
+                    firefox_opts = ::serde_json::json!({ "args": ["--headless"] });
+                    chrome_opts = ::serde_json::json!({ "args": ["--headless"] });
+                } else {
+                    firefox_opts = ::serde_json::json!({ "args": [] });
+                    chrome_opts = ::serde_json::json!({ "args": [] });
+                }
+                capabilities.insert("moz:firefoxOptions".to_string(), firefox_opts);
+                capabilities.insert("goog:chromeOptions".to_string(), chrome_opts);
+
+                let mut client = ::fantoccini::ClientBuilder::native()
+                    .capabilities(capabilities)
+                    .connect(&#webdriver_url).await.expect("failed to connect to WebDriver");
                 let output = fn_internal(&mut client).await;
                 // Close the client no matter what
                 client.close().await.expect("failed to close Fantoccini client");

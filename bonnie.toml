@@ -25,19 +25,20 @@ dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
 build = "cargo build"
-check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
+check.cmd = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
+check.desc = "checks code formatting, runs tests, etc. (also run on CI)"
 
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
-    "bonnie test example basic"
+    "bonnie test example basic --headless"
 ]
-test.desc = "runs all tests (assumes geckodriver running in background)"
+test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
 test.subcommands.core.desc = "runs cargo tests only"
-test.subcommands.example.cmd = "bash ./test.sh %example" # A script can do backgrounding properly
+test.subcommands.example.cmd = "bash ./test.sh %example %%" # A script can do backgrounding properly
 test.subcommands.example.args = [ "example" ]
-test.subcommands.example.desc = "tests a single example (assumes geckodriver running in background)"
+test.subcommands.example.desc = "tests a single example (assumes geckodriver running in background), use `--headless` to run headlessly"
 
 # Hosts the book locally
 docs.cmd = [
