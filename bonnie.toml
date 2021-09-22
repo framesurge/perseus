@@ -25,8 +25,20 @@ dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
 build = "cargo build"
-test = "cargo watch -x \"test\""
 check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
+
+test.cmd = [
+    "cargo test", # This will ignore Wasm tests
+    # Run tests for each example
+    "bonnie test example basic"
+]
+test.desc = "runs all tests (assumes geckodriver running in background)"
+test.subcommands.core.cmd = "cargo test"
+test.subcommands.core.desc = "runs cargo tests only"
+test.subcommands.example.cmd = "bash ./test.sh %example" # A script can do backgrounding properly
+test.subcommands.example.args = [ "example" ]
+test.subcommands.example.desc = "tests a single example (assumes geckodriver running in background)"
+
 # Hosts the book locally
 docs.cmd = [
 	"cd docs/next",
@@ -65,11 +77,15 @@ docs.subcommands.build.desc = "builds the book for deployment to GitHub pages or
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
-release.cmd = "standard-version --sign --commit-all && git push --follow-tags %% origin main"
-release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped)"
+release.cmd = [
+    "bonnie check-branch stable",
+    "standard-version --sign --commit-all && git push --follow-tags %% origin main"
+]
+release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped, needs branch 'stable')"
 
 # Publishes each package
 publish.cmd = [
+    "bonnie check-branch stable",
     "cd packages/perseus",
     "cargo publish %%",
     # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
@@ -83,4 +99,9 @@ publish.cmd = [
     "cd ../perseus-actix-web",
     "cargo publish %%"
 ]
-publish.desc = "publishes all packages to crates.io"
+publish.desc = "publishes all packages to crates.io (needs branch 'stable')"
+
+check-branch.cmd.exec = "[[ $(git rev-parse --abbrev-ref HEAD) == \"%branch\" ]] && exit 0 || echo \"You need to be on Git branch '%branch' to run this command.\"; exit 1"
+check-branch.cmd.shell = ["bash", "-c", "{COMMAND}"]
+check-branch.args = [ "branch" ]
+check-branch.desc = "checks if the current git branch is the given argument, signals with exit codes (and warns), this will prevent following commands from running if it fails"
