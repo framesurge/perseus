@@ -8,6 +8,7 @@ jobs:
         steps:
             - uses: actions/checkout@v2
             - run: cargo install bonnie
+            - run: cargo install wasm-pack
             - run: sudo apt install firefox firefox-geckodriver
             - name: Run Firefox WebDriver
               run: geckodriver &
