@@ -12,7 +12,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 /// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
-    checkpoint("shell_entry");
+    checkpoint("begin");
     // Panics should always go to the console
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     // Get the root we'll be injecting the router into
