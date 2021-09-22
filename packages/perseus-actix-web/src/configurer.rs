@@ -7,8 +7,8 @@ use perseus::{
     get_render_cfg, ConfigManager, ErrorPages, Locales, SsrNode, TemplateMap, TranslationsManager,
 };
 use std::collections::HashMap;
-use std::fs;
 use std::env;
+use std::fs;
 
 /// The options for setting up the Actix Web integration. This should be literally constructed, as nothing is optional.
 #[derive(Clone)]

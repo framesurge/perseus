@@ -144,7 +144,7 @@ pub fn checkpoint(name: &str) {
         None => return,
     };
     if !is_testing {
-        return
+        return;
     }
 
     // If we're here, we're testing
@@ -152,13 +152,8 @@ pub fn checkpoint(name: &str) {
     crate::web_log!("Perseus is in testing mode. If you're an end-user and seeing this message, please report this as a bug to the website owners!");
     // Create a custom element that can be waited for by the WebDriver
     // This will be removed by the next checkpoint
-    let document = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap();
-    let container_opt = document
-        .query_selector("#__perseus_checkpoints")
-        .unwrap();
+    let document = web_sys::window().unwrap().document().unwrap();
+    let container_opt = document.query_selector("#__perseus_checkpoints").unwrap();
     let container: Element;
     if let Some(container_i) = container_opt {
         container = container_i;
@@ -166,7 +161,12 @@ pub fn checkpoint(name: &str) {
         // If the container doesn't exist yet, create it
         container = document.create_element("div").unwrap();
         container.set_id("__perseus_checkpoints");
-        document.query_selector("body").unwrap().unwrap().append_with_node_1(&container).unwrap();
+        document
+            .query_selector("body")
+            .unwrap()
+            .unwrap()
+            .append_with_node_1(&container)
+            .unwrap();
     }
 
     // Get the number of checkpoints that already exist with the same ID
@@ -177,7 +177,10 @@ pub fn checkpoint(name: &str) {
         .length();
     // Append the new checkpoint
     let checkpoint = document.create_element("div").unwrap();
-    checkpoint.set_id(&format!("__perseus_checkpoint-{}-{}", name, num_checkpoints));
+    checkpoint.set_id(&format!(
+        "__perseus_checkpoint-{}-{}",
+        name, num_checkpoints
+    ));
     container.append_with_node_1(&checkpoint).unwrap();
 }
 

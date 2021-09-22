@@ -1,7 +1,7 @@
 use app::{get_error_pages, get_locales, get_templates_map, APP_ROOT};
 use perseus::error_pages::ErrorPageData;
 use perseus::router::{RouteInfo, RouteVerdict};
-use perseus::shell::{get_initial_state, get_render_cfg, InitialState, checkpoint};
+use perseus::shell::{checkpoint, get_initial_state, get_render_cfg, InitialState};
 use perseus::{app_shell, create_app_route, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;

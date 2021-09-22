@@ -1,8 +1,10 @@
+use darling::FromMeta;
 use proc_macro2::TokenStream;
-use syn::{ItemFn, Block, Type, FnArg, Generics, Visibility, Ident, Attribute, Item, Result, ReturnType};
-use syn::parse::{Parse, ParseStream};
 use quote::{quote, ToTokens};
-use darling::{FromMeta};
+use syn::parse::{Parse, ParseStream};
+use syn::{
+    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
+};
 
 /// The arguments that the test annotation macro takes.
 #[derive(Debug, FromMeta)]
@@ -125,7 +127,9 @@ pub fn test_impl(input: TestFn, args: TestArgs) -> TokenStream {
     } = input;
 
     // Get the WebDriver URL to use from the macro arguments, or use a sensible default
-    let webdriver_url = args.webdriver_url.unwrap_or_else(|| "http://localhost:4444".to_string());
+    let webdriver_url = args
+        .webdriver_url
+        .unwrap_or_else(|| "http://localhost:4444".to_string());
 
     // We create a wrapper function that handles errors and the Fantoccini client
     let output = quote! {
