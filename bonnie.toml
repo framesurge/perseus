@@ -12,21 +12,34 @@ dev.subcommands.cli.cmd = [
 ]
 dev.subcommands.cli.desc = "runs the cli in its own directory (which should test `examples/basic`)"
 dev.subcommands.example.cmd = [
+    "bonnie copy-subcrates",
     "cd packages/perseus-cli",
-    # We need to copy in the directory where we actually work on the subcrate
-    "rm -rf ./.perseus",
-    "cp -r ../../examples/basic/.perseus/ .perseus/",
-    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
-    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
-    # Now point this live version of the CLI at the given example
+    # Point this live version of the CLI at the given example
     "TEST_EXAMPLE=../../examples/%example cargo run -- %%"
 ]
 dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
 build = "cargo build"
-check.cmd = "cargo check && cargo fmt -- --check && cargo clippy && bonnie test" # This will be run on CI as well
-check.desc = "checks code formatting, runs tests, etc. (also run on CI)"
+
+copy-subcrates.cmd = [
+    # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
+    "cd packages/perseus-cli",
+    "rm -rf ./.perseus",
+    "cp -r ../../examples/basic/.perseus/ .perseus/",
+    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
+    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
+]
+copy-subcrates.desc = "copies `.perseus/` into the CLi directory for packaging/usage"
+
+ci.cmd = [
+    "bonnie copy-subcrates",
+    "cargo check --all",
+    "cargo fmt --all -- --check",
+    "cargo clippy --all",
+    "bonnie test"
+]
+ci.desc = "the checks that are run on CI"
 
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
@@ -86,15 +99,13 @@ release.desc = "creates a new project release and pushes it to github (cargo ver
 
 # Publishes each package
 publish.cmd = [
+    "bonnie copy-subcrates",
     "bonnie check-branch stable",
-    "cd packages/perseus",
+    "cd packages/perseus-macro",
     "cargo publish %%",
-    # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
+    "cd ../perseus",
+    "cargo publish %%",
     "cd ../perseus-cli",
-    "rm -rf ./.perseus",
-    "cp -r ../../examples/basic/.perseus/ .perseus/",
-    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
-    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
     "cargo publish --allow-dirty %%", # Without this flag, `.perseus` will be a problem because it's not in Git
     # We delay this so that `crates.io` can have time to host the core
     "cd ../perseus-actix-web",

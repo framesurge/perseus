@@ -7,6 +7,6 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
+            - run: cargo install bonnie
             - name: Test Library
-              # We need to have a `.perseus/` directory for the CLI to compile, but it doesn't need to have anything in it
-              run: mkdir packages/perseus-cli/.perseus && cargo check --all && cargo fmt --all -- --check && cargo clippy --all && cargo test --all
+              run: bonnie ci
