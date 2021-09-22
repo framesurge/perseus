@@ -1,3 +1,10 @@
 {
-    "conventionalCommits.scopes": ["i18n", "routing", "cli", "book", "examples"]
+    "conventionalCommits.scopes": [
+        "i18n",
+        "routing",
+        "cli",
+        "book",
+        "examples",
+        "testing"
+    ]
 }
