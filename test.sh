@@ -18,6 +18,9 @@ if [[ $headless == "--headless" ]]; then
 else
     PERSEUS_RUN_WASM_TESTS=true cargo test
 fi
+code=$?
 
 # Now that we're done, halt the server
 kill %1
+
+exit $code
