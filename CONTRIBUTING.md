@@ -18,22 +18,32 @@ Make sure your code doesn't break anything existing, that all tests pass, and, i
 
 After you've submitted a pull request, a maintainer will review your changes. Unfortunately, not every pull request will be merged, but we'll try to request changes so that your pull request can best be integrated into the project.
 
-## Building and Testing
+## Building
 
-Perseus uses [Bonnie](https://github.com/arctic-hen7/bonnie) for command aliasing, and most of the project work is done on the `showcase` example, which is used for live development testing.
+Perseus uses [Bonnie](https://github.com/arctic-hen7/bonnie) for command aliasing (you can install it with `cargo install bonnie`), and most of the project testing is done in the `examples` directory. You can run `bonnie help` to see all available commands, but this is the one you'll use the most:
 
-- Terminal 1
-	- `cd examples/showcase`
-	- `bonnie build --watch`
-- Terminal 2
-	- `cd examples/showcase`
-	- `bonnie serve`
+-   `bonnie dev example showcase serve` -- serves the `showcase` example to <http://localhost:8080>
 
-Now you can make changes to the core library and enjoy! Nearly all project commands are managed with Bonnie, and you can see what everything does by checking out the various `bonnie.toml` files throughout the project!
+## Testing
+
+Nearly all Perseus' tests are end-to-end, and run using the Perseus test macro for each example (under `examples`). You can run all tests with `bonnie test`, provided that you're running a WebDriver instance at <http://localhost:4444>.
+
+If you're new to WebDriver, install `geckodriver` and Firefox, and then run `geckodriver` in another terminal. Then all Perseus tests will run fine.
+
+You can also run a full check on all your code with `bonnie check`, which is the same as what's performed on CI.
 
 ## Documentation
 
 If the code you write needs to be documented in, the README, the book, or elsewhere, please do so! Also, **please ensure your code is commented**, it makes everything so much easier.
+
+## Branches
+
+Perseus uses a relatively intuitive branching system:
+
+-   `main` -- the rolling-release version of the project, which should not be committed to directly
+-   `stable` -- the stable version of the project, which should reflect released features (should be in line with latest tag)
+
+A separate branch is created for new features/fixes, which are then merged into `main` with pull requests. Note that new releases can only be authored from the `stable` branch (checked by Bonnie).
 
 ## Committing
 
