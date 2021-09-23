@@ -29,7 +29,10 @@
 - [CLI](./cli.md)
 	- [Ejecting](./ejecting.md)
 - [Config Managers](./config-managers.md)
-- [Testing](./testing.md)
+- [Testing](./testing/intro.md)
+	- [Checkpoints](./testing/checkpoints.md)
+	- [Fantoccini Basics](./testing/fantoccini-basics.md)
+	- [Manual Testing](./testing/manual.md)
 - [Styling](./styling.md)
 - [Migrating from v0.1.x](./updating.md)
 ***
