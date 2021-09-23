@@ -1,4 +1,4 @@
-use perseus::{StringResultWithCause, Template};
+use perseus::{ErrorCause, StringResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -25,7 +25,11 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .build_paths_fn(Rc::new(get_build_paths))
 }
 
-pub async fn get_build_state(_path: String) -> StringResultWithCause<String> {
+pub async fn get_build_state(path: String) -> StringResultWithCause<String> {
+    // This path is illegal, and can't be rendered
+    if path == "timeisr/tests" {
+        return Err(("illegal page".to_string(), ErrorCause::Client(Some(404))));
+    }
     Ok(serde_json::to_string(&TimePageProps {
         time: format!("{:?}", std::time::SystemTime::now()),
     })

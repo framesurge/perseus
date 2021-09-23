@@ -114,6 +114,76 @@ pub fn get_initial_state() -> InitialState {
     }
 }
 
+/// Marks a checkpoint in the code and alerts any tests that it's been reached by creating an element that represents it. The preferred
+/// solution would be emitting a DOM event, but the WebDriver specification currently doesn't support waiting on those (go figure). This
+/// will only create a custom element if the `__PERSEUS_TESTING` JS global variable is set to `true`.
+///
+/// This adds a `<div id="__perseus_checkpoint-<event-name>" />` to the `<div id="__perseus_checkpoints"></div>` element, creating the
+/// latter if it doesn't exist. Each checkpoint must have a unique name, and if the same checkpoint is executed twice, it'll be added
+/// with a `-<number>` after it, starting from `0`. In this way, we have a functional checkpoints queue for signalling to test code!
+/// Note that the checkpoint queue is NOT cleared on subsequent loads.
+///
+/// Note: this is not just for internal usage, it's highly recommended that you use this for your own checkpoints as well! Just make
+/// sure your tests don't conflict with any internal Perseus checkpoint names (preferably prefix yours with `custom-` or the like, as
+/// Perseus' checkpoints may change at any time, but won't ever use that namespace).
+///
+/// WARNING: your checkpoint names must not include hyphens! This will result in a `panic!`.
+pub fn checkpoint(name: &str) {
+    if name.contains('-') {
+        panic!("checkpoint must not contain hyphens, use underscores instead (hyphens are used as an internal delimiter)");
+    }
+
+    let val_opt = web_sys::window().unwrap().get("__PERSEUS_TESTING");
+    let js_obj = match val_opt {
+        Some(js_obj) => js_obj,
+        None => return,
+    };
+    // The object should only actually contain the string value that was injected
+    let is_testing = match js_obj.as_bool() {
+        Some(cfg_str) => cfg_str,
+        None => return,
+    };
+    if !is_testing {
+        return;
+    }
+
+    // If we're here, we're testing
+    // We dispatch a console warning to reduce the likelihood of literal 'testing in prod'
+    crate::web_log!("Perseus is in testing mode. If you're an end-user and seeing this message, please report this as a bug to the website owners!");
+    // Create a custom element that can be waited for by the WebDriver
+    // This will be removed by the next checkpoint
+    let document = web_sys::window().unwrap().document().unwrap();
+    let container_opt = document.query_selector("#__perseus_checkpoints").unwrap();
+    let container: Element;
+    if let Some(container_i) = container_opt {
+        container = container_i;
+    } else {
+        // If the container doesn't exist yet, create it
+        container = document.create_element("div").unwrap();
+        container.set_id("__perseus_checkpoints");
+        document
+            .query_selector("body")
+            .unwrap()
+            .unwrap()
+            .append_with_node_1(&container)
+            .unwrap();
+    }
+
+    // Get the number of checkpoints that already exist with the same ID
+    // We prevent having to worry about checkpoints whose names are subsets of others by using the hyphen as a delimiter
+    let num_checkpoints = document
+        .query_selector_all(&format!("[id^=__perseus_checkpoint-{}-]", name))
+        .unwrap()
+        .length();
+    // Append the new checkpoint
+    let checkpoint = document.create_element("div").unwrap();
+    checkpoint.set_id(&format!(
+        "__perseus_checkpoint-{}-{}",
+        name, num_checkpoints
+    ));
+    container.append_with_node_1(&checkpoint).unwrap();
+}
+
 /// A representation of whether or not the initial state was present. If it was, it could be `None` (some templates take no state), and
 /// if not, then this isn't an initial load, and we need to request the page from the server. It could also be an error that the server
 /// has rendered.
@@ -138,12 +208,14 @@ pub async fn app_shell(
     initial_container: Element, // The container that the server put initial load content into
     container_rx_elem: Element, // The container that we'll actually use (reactive)
 ) {
+    checkpoint("app_shell_entry");
     // Check if this was an initial load and we already have the state
     let initial_state = get_initial_state();
     match initial_state {
         // If we do have an initial state, then we have everything we need for immediate hydration (no double trips)
         // The state is here, and the HTML has already been injected for us (including head metadata)
         InitialState::Present(state) => {
+            checkpoint("initial_state_present");
             // Unset the initial state variable so we perform subsequent renders correctly
             // This monstrosity is needed until `web-sys` adds a `.set()` method on `Window`
             Reflect::set(
@@ -156,6 +228,7 @@ pub async fn app_shell(
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);
             initial_container.set_inner_html("");
+            checkpoint("page_visible");
             // Now that the user can see something, we can get the translator
             let mut translations_manager_mut = translations_manager.borrow_mut();
             // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
@@ -185,9 +258,11 @@ pub async fn app_shell(
                 || template.render_for_template(state, Rc::clone(&translator)),
                 &container_rx_elem,
             );
+            checkpoint("page_interactive");
         }
         // If we have no initial state, we should proceed as usual, fetching the content and state from the server
         InitialState::NotPresent => {
+            checkpoint("initial_state_not_present");
             // Get the static page data
             let asset_url = format!(
                 "/.perseus/page/{}/{}?template_name={}",
@@ -227,6 +302,7 @@ pub async fn app_shell(
                                     head_parts[0], &page_data.head
                                 );
                                 head_elem.set_inner_html(&new_head);
+                                checkpoint("page_visible");
 
                                 // Now that the user can see something, we can get the translator
                                 let mut translations_manager_mut =
@@ -259,6 +335,7 @@ pub async fn app_shell(
                                     },
                                     &container_rx_elem,
                                 );
+                                checkpoint("page_interactive");
                             }
                             // If the page failed to serialize, an exception has occurred
                             Err(err) => panic!("page data couldn't be serialized: '{}'", err),
@@ -289,6 +366,7 @@ pub async fn app_shell(
         }
         // Nothing should be done if an error was sent down
         InitialState::Error(ErrorPageData { url, status, err }) => {
+            checkpoint("initial_state_error");
             // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);

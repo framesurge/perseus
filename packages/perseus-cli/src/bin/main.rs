@@ -92,6 +92,18 @@ fn core(dir: PathBuf) -> Result<i32> {
                 }
                 let exit_code = serve(dir, &prog_args)?;
                 Ok(exit_code)
+            } else if prog_args[0] == "test" {
+                // The `test` command serves in the exact same way, but it also sets `PERSEUS_TESTING`
+                // This will be used by the subcrates
+                env::set_var("PERSEUS_TESTING", "true");
+                // Set up the '.perseus/' directory if needed
+                prepare(dir.clone())?;
+                // Delete old build artifacts if `--no-build` wasn't specified
+                if !prog_args.contains(&"--no-build".to_string()) {
+                    delete_artifacts(dir.clone(), "static")?;
+                }
+                let exit_code = serve(dir, &prog_args)?;
+                Ok(exit_code)
             } else if prog_args[0] == "prep" {
                 // This command is deliberately undocumented, it's only used for testing
                 // Set up the '.perseus/' directory if needed

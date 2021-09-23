@@ -79,10 +79,10 @@ pub fn prepare(dir: PathBuf) -> Result<()> {
         // Update the name of the user's crate (Cargo needs more than just a path and an alias)
         // Also create a workspace so the subcrates share a `target/` directory (speeds up builds)
         let updated_root_manifest = root_manifest_contents
-            .replace("perseus-example-cli", &user_crate_name)
+            .replace("perseus-example-basic", &user_crate_name)
             + "\n[workspace]\nmembers = [ \"server\" ]";
         let updated_server_manifest =
-            server_manifest_contents.replace("perseus-example-cli", &user_crate_name);
+            server_manifest_contents.replace("perseus-example-basic", &user_crate_name);
 
         // If we're not in development, also update relative path references
         #[cfg(not(debug_assertions))]

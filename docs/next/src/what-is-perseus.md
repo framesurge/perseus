@@ -8,9 +8,9 @@ If none of that makes any sense, this is the section for you! If you're not in t
 
 [Rust](https://www.rust-lang.org/) is an extremely powerful programming language, but I'll leave the introduction of it [to its developers](https://www.rust-lang.org/).
 
-[WebAssembly](https://webassembly.org) (abbreviated Wasm) is like a low-level programming language for your browser. This is revolutionary, because it allows websites and web apps to built in programming languages other than JavaScript. Also, it's [really fast](https://medium.com/@torch2424/webassembly-is-fast-a-real-world-benchmark-of-webassembly-vs-es6-d85a23f8e193) (usually >30% faster than JS).
+[WebAssembly](https://webassembly.org) (abbreviated Wasm) is like a low-level programming language for your browser. This is revolutionary, because it allows websites and web apps to be built in programming languages other than JavaScript. Also, it's [really fast](https://medium.com/@torch2424/webassembly-is-fast-a-real-world-benchmark-of-webassembly-vs-es6-d85a23f8e193) (usually >30% faster than JS).
 
-But developing directly for the web with Rust using something like [`web-sys`](https://docs.rs/web-sys) isn't a great experience, it's generally agreed in the web development community that developer experience and productivity is vastly improved by having a *reactive* framework. Let's approach this from a traditional JavaScript and HTML perspective first.
+But developing directly for the web with Rust using something like [`web-sys`](https://docs.rs/web-sys) isn't a great experience, it's generally agreed in the web development community that developer experience and productivity are vastly improved by having a *reactive* framework. Let's approach this from a traditional JavaScript and HTML perspective first.
 
 Imagine you want to create a simple counter. Here's how you might do it in a non-reactive framework (again, JS and HTML here, no Rust yet):
 

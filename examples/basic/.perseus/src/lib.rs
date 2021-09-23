@@ -1,7 +1,7 @@
 use app::{get_error_pages, get_locales, get_templates_map, APP_ROOT};
 use perseus::error_pages::ErrorPageData;
 use perseus::router::{RouteInfo, RouteVerdict};
-use perseus::shell::{get_initial_state, get_render_cfg, InitialState};
+use perseus::shell::{checkpoint, get_initial_state, get_render_cfg, InitialState};
 use perseus::{app_shell, create_app_route, detect_locale, ClientTranslationsManager, DomNode};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -12,6 +12,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 /// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
+    checkpoint("begin");
     // Panics should always go to the console
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     // Get the root we'll be injecting the router into
@@ -60,6 +61,7 @@ pub fn run() -> Result<(), JsValue> {
                         let _ = route.get();
                         wasm_bindgen_futures::spawn_local(cloned!((route, container_rx, translations_manager, error_pages, initial_container) => async move {
                             let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
+                            checkpoint("router_entry");
                             match &route.get().as_ref().0 {
                                 // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
                                 // If a non-404 error occurred, it will be handled in the app shell
@@ -84,6 +86,7 @@ pub fn run() -> Result<(), JsValue> {
                                 // To get a translator here, we'd have to go async and dangerously check the URL
                                 // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
                                 RouteVerdict::NotFound => {
+                                    checkpoint("not_found");
                                     if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
                                         let initial_container = initial_container.unwrap();
                                         // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)

@@ -56,6 +56,7 @@ pub mod serve;
 pub mod shell;
 /// Utilities to do with templating. This is where the bulk of designing apps lies.
 pub mod template;
+mod test;
 /// Utilities for creating custom translations managers, as well as the default `FsTranslationsManager`.
 pub mod translations_manager;
 /// Utilities regarding translators, including the default `FluentTranslator`.
@@ -80,3 +81,5 @@ pub use crate::shell::app_shell;
 pub use crate::template::{States, StringResult, StringResultWithCause, Template, TemplateMap};
 pub use crate::translations_manager::{FsTranslationsManager, TranslationsManager};
 pub use crate::translator::{Translator, TRANSLATOR_FILE_EXT};
+
+pub use perseus_macro::test;

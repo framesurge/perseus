@@ -12,21 +12,52 @@ dev.subcommands.cli.cmd = [
 ]
 dev.subcommands.cli.desc = "runs the cli in its own directory (which should test `examples/basic`)"
 dev.subcommands.example.cmd = [
+    "bonnie copy-subcrates",
     "cd packages/perseus-cli",
-    # We need to copy in the directory where we actually work on the subcrate
-    "rm -rf ./.perseus",
-    "cp -r ../../examples/basic/.perseus/ .perseus/",
-    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
-    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
-    # Now point this live version of the CLI at the given example
+    # Point this live version of the CLI at the given example
     "TEST_EXAMPLE=../../examples/%example cargo run -- %%"
 ]
 dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
 build = "cargo build"
-test = "cargo watch -x \"test\""
-check = "cargo check && cargo fmt -- --check && cargo clippy && cargo test" # This will be run on CI as well
+
+copy-subcrates.cmd = [
+    # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
+    "cd packages/perseus-cli",
+    "rm -rf ./.perseus",
+    "cp -r ../../examples/basic/.perseus/ .perseus/",
+    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
+    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
+]
+copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/usage"
+
+ci.cmd = [
+    "bonnie copy-subcrates",
+    # Create directories we need to preserve the file structure of
+    "mkdir -p examples/basic/.perseus/dist",
+    "mkdir -p examples/basic/.perseus/dist/static",
+    "cargo check --all",
+    "cargo fmt --all -- --check",
+    "cargo clippy --all",
+    "bonnie test"
+]
+ci.desc = "the checks that are run on CI"
+
+test.cmd = [
+    "cargo test", # This will ignore Wasm tests
+    # Run tests for each example
+    "bonnie test example basic --headless",
+    "bonnie test example i18n --headless",
+    "bonnie test example showcase --headless"
+]
+test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
+test.subcommands.core.cmd = "cargo test"
+test.subcommands.core.desc = "runs cargo tests only"
+test.subcommands.example.cmd = "bash ./test.sh %example %%" # A script can do backgrounding properly
+test.subcommands.example.args = [ "example" ]
+test.subcommands.example.desc = "tests a single example (assumes geckodriver running in background), use `--headless` to run headlessly"
+
 # Hosts the book locally
 docs.cmd = [
 	"cd docs/next",
@@ -65,22 +96,29 @@ docs.subcommands.build.desc = "builds the book for deployment to GitHub pages or
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
-release.cmd = "standard-version --sign --commit-all && git push --follow-tags %% origin main"
-release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped)"
+release.cmd = [
+    "bonnie check-branch stable",
+    "standard-version --sign --commit-all && git push --follow-tags %% origin main"
+]
+release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped, needs branch 'stable')"
 
 # Publishes each package
 publish.cmd = [
-    "cd packages/perseus",
+    "bonnie copy-subcrates",
+    "bonnie check-branch stable",
+    "cd packages/perseus-macro",
     "cargo publish %%",
-    # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
+    "cd ../perseus",
+    "cargo publish %%",
     "cd ../perseus-cli",
-    "rm -rf ./.perseus",
-    "cp -r ../../examples/basic/.perseus/ .perseus/",
-    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
-    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
     "cargo publish --allow-dirty %%", # Without this flag, `.perseus` will be a problem because it's not in Git
     # We delay this so that `crates.io` can have time to host the core
     "cd ../perseus-actix-web",
     "cargo publish %%"
 ]
-publish.desc = "publishes all packages to crates.io"
+publish.desc = "publishes all packages to crates.io (needs branch 'stable')"
+
+check-branch.cmd.exec = "[[ $(git rev-parse --abbrev-ref HEAD) == \"%branch\" ]] && exit 0 || echo \"You need to be on Git branch '%branch' to run this command.\"; exit 1"
+check-branch.cmd.shell = ["bash", "-c", "{COMMAND}"]
+check-branch.args = [ "branch" ]
+check-branch.desc = "checks if the current git branch is the given argument, signals with exit codes (and warns), this will prevent following commands from running if it fails"

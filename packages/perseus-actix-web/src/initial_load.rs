@@ -146,7 +146,10 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
             // Error pages (above) will set this to `error`
             let state_var = format!("<script>window.__PERSEUS_INITIAL_STATE = '{}';</script>", {
                 if let Some(state) = &page_data.state {
-                    state.replace(r#"'"#, r#"\'"#) // If we don't escape single quotes, we get runtime syntax errors
+                    state
+                        // If we don't escape quotes, we get runtime syntax errors
+                        .replace(r#"'"#, r#"\'"#)
+                        .replace(r#"""#, r#"\""#)
                 } else {
                     "None".to_string()
                 }

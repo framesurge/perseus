@@ -5,6 +5,8 @@ on:
         paths:
             - "docs/**"
             - ".github/workflows/book.yml" # If we change this build script, it should rerun
+        branches:
+            - main
 
 jobs:
     deploy:
@@ -15,9 +17,9 @@ jobs:
               uses: peaceiris/actions-mdbook@v1
               with:
                   mdbook-version: "latest"
+            - run: cargo install bonnie
             - name: Build book
-              run: bash build.sh
-              working-directory: docs
+              run: bonnie docs build
             - name: Deploy book to GitHub Pages
               uses: peaceiris/actions-gh-pages@v3
               if: github.ref == 'refs/heads/main'
