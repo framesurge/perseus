@@ -20,6 +20,24 @@ All notable changes to this project will be documented in this file. See [standa
 * 📝 updated readme to reflect js elimination ([4d5cf2a](https://github.com/arctic-hen7/perseus/commit/4d5cf2add178277446b67b46e599c8a144dd8e8e))
 * **book:** ✏️ fixed typos in the book ([f84cfb0](https://github.com/arctic-hen7/perseus/commit/f84cfb097129f97509ced5c0d9da1a881eb4b53a))
 
+### [0.2.1](https://github.com/arctic-hen7/perseus/compare/v0.2.0...v0.2.1) (2021-09-23)
+
+
+### Features
+
+* **testing:** ✨ added testing harness and tests for examples ([#21](https://github.com/arctic-hen7/perseus/issues/21)) ([4cca6f7](https://github.com/arctic-hen7/perseus/commit/4cca6f7403e6c566592468a2d5d0a836c8ec06fa))
+
+
+### Code Refactorings
+
+* **routing:** ♻️ refactored to eliminate only remaining js ([dc21490](https://github.com/arctic-hen7/perseus/commit/dc21490d462654ef6fad3abc3cd3e322e0b2bb1f))
+
+
+### Documentation Changes
+
+* 📝 updated readme to reflect js elimination ([4d5cf2a](https://github.com/arctic-hen7/perseus/commit/4d5cf2add178277446b67b46e599c8a144dd8e8e))
+* **book:** ✏️ fixed typos in the book ([f84cfb0](https://github.com/arctic-hen7/perseus/commit/f84cfb097129f97509ced5c0d9da1a881eb4b53a))
+
 ## [0.2.0](https://github.com/arctic-hen7/perseus/compare/v0.1.4...v0.2.0) (2021-09-21)
 
 
