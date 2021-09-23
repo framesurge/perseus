@@ -38,6 +38,8 @@ pub trait ConfigManager: Clone {
 
 /// The default config manager. This will store static files in the specified location on disk. This should be suitable for nearly all
 /// development and serverful use-cases. Serverless is another matter though (more development needs to be done).
+///
+/// Note: the `.write()` methods on this implementation will create any missing parent directories automatically.
 #[derive(Clone)]
 pub struct FsConfigManager {
     root_path: String,
@@ -61,8 +63,14 @@ impl ConfigManager for FsConfigManager {
             Err(err) => bail!(ErrorKind::ReadFailed(name.to_string(), err.to_string())),
         }
     }
+    // This creates a directory structure as necessary
     async fn write(&self, name: &str, content: &str) -> Result<()> {
         let asset_path = format!("{}/{}", self.root_path, name);
+        let mut dir_tree: Vec<&str> = asset_path.split('/').collect();
+        dir_tree.pop();
+
+        fs::create_dir_all(dir_tree.join("/"))
+            .map_err(|err| ErrorKind::WriteFailed(asset_path.clone(), err.to_string()))?;
         fs::write(&asset_path, content)
             .map_err(|err| ErrorKind::WriteFailed(asset_path, err.to_string()).into())
     }
