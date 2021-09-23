@@ -1,1 +1,3 @@
-dist/
+dist/render_conf.json
+dist/pkg
+dist/static/*
