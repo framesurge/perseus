@@ -17,7 +17,9 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // This tests i18n linking (locale should be auto-detected)
     let url = c.current_url().await?;
     wait_for_checkpoint!("initial_state_not_present", 0, c);
-    assert!(url.as_ref().starts_with("http://localhost:8080/en-US/about"));
+    assert!(url
+        .as_ref()
+        .starts_with("http://localhost:8080/en-US/about"));
 
     Ok(())
 }

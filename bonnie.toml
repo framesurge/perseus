@@ -30,7 +30,7 @@ copy-subcrates.cmd = [
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
 ]
-copy-subcrates.desc = "copies `.perseus/` into the CLi directory for packaging/usage"
+copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/usage"
 
 ci.cmd = [
     "bonnie copy-subcrates",

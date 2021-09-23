@@ -25,7 +25,9 @@ async fn new_post(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     wait_for_checkpoint!("router_entry", 0, c);
     let url = c.current_url().await?;
     // We only test for one locale here because changing the browser's preferred languages is very hard, we do unit testing on the locale detection system instead
-    assert!(url.as_ref().starts_with("http://localhost:8080/en-US/post/new"));
+    assert!(url
+        .as_ref()
+        .starts_with("http://localhost:8080/en-US/post/new"));
     wait_for_checkpoint!("initial_state_present", 0, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(text, "New post creator.");
@@ -37,10 +39,13 @@ async fn new_post(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
 #[perseus::test]
 async fn post(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     async fn test_post_page(page: &str, c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
-        c.goto(&format!("http://localhost:8080/post{}", page)).await?;
+        c.goto(&format!("http://localhost:8080/post{}", page))
+            .await?;
         wait_for_checkpoint!("router_entry", 0, c);
         let url = c.current_url().await?;
-        assert!(url.as_ref().starts_with(&format!("http://localhost:8080/en-US/post{}", page)));
+        assert!(url
+            .as_ref()
+            .starts_with(&format!("http://localhost:8080/en-US/post{}", page)));
         wait_for_checkpoint!("initial_state_present", 0, c);
         // There should be a heading with the slug
         let text = c.find(Locator::Css("h1")).await?.text().await?;
@@ -58,7 +63,9 @@ async fn post(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080/post/tests").await?;
     wait_for_checkpoint!("router_entry", 0, c);
     let url = c.current_url().await?;
-    assert!(url.as_ref().starts_with("http://localhost:8080/en-US/post/tests"));
+    assert!(url
+        .as_ref()
+        .starts_with("http://localhost:8080/en-US/post/tests"));
     wait_for_checkpoint!("initial_state_error", 0, c);
     // There should be an error page
     let text = c.find(Locator::Css("p")).await?.text().await?;
@@ -73,7 +80,9 @@ async fn amalgamation(c: &mut Client) -> Result<(), fantoccini::error::CmdError>
     c.goto("http://localhost:8080/amalgamation").await?;
     wait_for_checkpoint!("router_entry", 0, c);
     let url = c.current_url().await?;
-    assert!(url.as_ref().starts_with("http://localhost:8080/en-US/amalgamation"));
+    assert!(url
+        .as_ref()
+        .starts_with("http://localhost:8080/en-US/amalgamation"));
     wait_for_checkpoint!("initial_state_present", 0, c);
     // This page naively combines build and request states into a single message
     let text = c.find(Locator::Css("p")).await?.text().await?;
@@ -120,10 +129,13 @@ async fn time_root(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
 #[perseus::test]
 async fn time(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     async fn test_time_page(page: &str, c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
-        c.goto(&format!("http://localhost:8080/timeisr{}", page)).await?;
+        c.goto(&format!("http://localhost:8080/timeisr{}", page))
+            .await?;
         wait_for_checkpoint!("router_entry", 0, c);
         let url = c.current_url().await?;
-        assert!(url.as_ref().starts_with(&format!("http://localhost:8080/en-US/timeisr{}", page)));
+        assert!(url
+            .as_ref()
+            .starts_with(&format!("http://localhost:8080/en-US/timeisr{}", page)));
         wait_for_checkpoint!("initial_state_present", 0, c);
         let text = c.find(Locator::Css("p")).await?.text().await?;
         // We'll wait for five seconds, then reload the page and expect the content to be different
@@ -144,7 +156,9 @@ async fn time(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080/timeisr/tests").await?;
     wait_for_checkpoint!("router_entry", 0, c);
     let url = c.current_url().await?;
-    assert!(url.as_ref().starts_with("http://localhost:8080/en-US/timeisr/tests"));
+    assert!(url
+        .as_ref()
+        .starts_with("http://localhost:8080/en-US/timeisr/tests"));
     wait_for_checkpoint!("initial_state_error", 0, c);
     // There should be an error page
     let text = c.find(Locator::Css("p")).await?.text().await?;

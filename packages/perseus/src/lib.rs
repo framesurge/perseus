@@ -56,11 +56,11 @@ pub mod serve;
 pub mod shell;
 /// Utilities to do with templating. This is where the bulk of designing apps lies.
 pub mod template;
+mod test;
 /// Utilities for creating custom translations managers, as well as the default `FsTranslationsManager`.
 pub mod translations_manager;
 /// Utilities regarding translators, including the default `FluentTranslator`.
 pub mod translator;
-mod test;
 
 pub use http;
 pub use http::Request as HttpRequest;
