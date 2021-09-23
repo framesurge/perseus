@@ -228,6 +228,7 @@ pub async fn app_shell(
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);
             initial_container.set_inner_html("");
+            checkpoint("page_visible");
             // Now that the user can see something, we can get the translator
             let mut translations_manager_mut = translations_manager.borrow_mut();
             // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
@@ -257,7 +258,7 @@ pub async fn app_shell(
                 || template.render_for_template(state, Rc::clone(&translator)),
                 &container_rx_elem,
             );
-            checkpoint("page_hydrated");
+            checkpoint("page_interactive");
         }
         // If we have no initial state, we should proceed as usual, fetching the content and state from the server
         InitialState::NotPresent => {
@@ -301,6 +302,7 @@ pub async fn app_shell(
                                     head_parts[0], &page_data.head
                                 );
                                 head_elem.set_inner_html(&new_head);
+                                checkpoint("page_visible");
 
                                 // Now that the user can see something, we can get the translator
                                 let mut translations_manager_mut =
@@ -333,7 +335,7 @@ pub async fn app_shell(
                                     },
                                     &container_rx_elem,
                                 );
-                                checkpoint("page_hydrated");
+                                checkpoint("page_interactive");
                             }
                             // If the page failed to serialize, an exception has occurred
                             Err(err) => panic!("page data couldn't be serialized: '{}'", err),
