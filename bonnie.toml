@@ -35,8 +35,8 @@ copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/u
 ci.cmd = [
     "bonnie copy-subcrates",
     # Create directories we need to preserve the file structure of
-    "mkdir -p examples/basic/dist",
-    "mkdir -p examples/basic/dist/static",
+    "mkdir -p examples/basic/.perseus/dist",
+    "mkdir -p examples/basic/.perseus/dist/static",
     "cargo check --all",
     "cargo fmt --all -- --check",
     "cargo clippy --all",
