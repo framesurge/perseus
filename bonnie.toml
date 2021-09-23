@@ -47,7 +47,9 @@ ci.desc = "the checks that are run on CI"
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
-    "bonnie test example basic --headless"
+    "bonnie test example basic --headless",
+    "bonnie test example i18n --headless",
+    "bonnie test example showcase --headless"
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
