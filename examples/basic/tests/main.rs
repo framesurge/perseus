@@ -6,7 +6,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080").await?;
     wait_for_checkpoint!("begin", 0, c);
     let url = c.current_url().await?;
-    assert_eq!(url.as_ref(), "http://localhost:8080/");
+    assert!(url.as_ref().starts_with("http://localhost:8080"));
 
     // The greeting was passed through using build state
     wait_for_checkpoint!("initial_state_present", 0, c);
@@ -20,7 +20,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // Go to `/about`
     c.find(Locator::Id("about-link")).await?.click().await?;
     let url = c.current_url().await?;
-    assert_eq!(url.as_ref(), "http://localhost:8080/about");
+    assert!(url.as_ref().starts_with("http://localhost:8080/about"));
     wait_for_checkpoint!("initial_state_not_present", 0, c);
     wait_for_checkpoint!("page_visible", 1, c);
     // Make sure the hardcoded text there exists
