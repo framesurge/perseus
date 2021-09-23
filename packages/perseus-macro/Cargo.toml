@@ -3,6 +3,14 @@ name = "perseus-macro"
 version = "0.2.1"
 edition = "2018"
 autotests = false
+description = "The Perseus macros."
+authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
+license = "MIT"
+repository = "https://github.com/arctic-hen7/perseus"
+homepage = "https://arctic-hen7.github.io/perseus"
+readme = "../../README.md"
+keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
+categories = ["wasm", "web-programming", "development-tools", "asynchronous", "gui"]
 
 [lib]
 proc-macro = true
