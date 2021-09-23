@@ -16,7 +16,7 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 [dependencies]
 sycamore = { version = "0.6", features = ["ssr"] }
 sycamore-router = "0.6"
-perseus-macro = { path = "../perseus-macro" }
+perseus-macro = { path = "../perseus-macro", version = "0.2.1" }
 web-sys = { version = "0.3", features = ["Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
