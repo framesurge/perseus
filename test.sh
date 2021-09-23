@@ -13,10 +13,12 @@ PERSEUS_TESTING=true $exec &
 
 # Now execute tests against that
 cd ../../ # Now we're in the example's directory
+# With `geckodriver`, we can only run one test at a time
+# TODO use chromedriver instead
 if [[ $headless == "--headless" ]]; then
-    PERSEUS_RUN_WASM_TESTS=true PERSEUS_RUN_WASM_TESTS_HEADLESS=true cargo test
+    PERSEUS_RUN_WASM_TESTS=true PERSEUS_RUN_WASM_TESTS_HEADLESS=true cargo test -- --test-threads 1
 else
-    PERSEUS_RUN_WASM_TESTS=true cargo test
+    PERSEUS_RUN_WASM_TESTS=true cargo test -- --test-threads 1
 fi
 code=$?
 
