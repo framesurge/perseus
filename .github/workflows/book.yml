@@ -5,6 +5,8 @@ on:
         paths:
             - "docs/**"
             - ".github/workflows/book.yml" # If we change this build script, it should rerun
+        branches:
+            - main
 
 jobs:
     deploy:
