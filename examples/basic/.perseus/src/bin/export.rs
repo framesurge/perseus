@@ -4,6 +4,8 @@ use app::{
 };
 use futures::executor::block_on;
 use perseus::{build_app, export_app, SsrNode};
+use fs_extra::dir::{CopyOptions, copy as copy_dir};
+use std::path::PathBuf;
 
 fn main() {
     let exit_code = real_main();
@@ -39,9 +41,19 @@ fn real_main() -> i32 {
     );
     if let Err(err) = block_on(export_fut) {
         eprintln!("Static exporting failed: '{}'.", err);
-        1
-    } else {
-        println!("Static exporting successfully completed!");
-        0
+        return 1;
     }
+
+    // Copy the `static` directory into the export package if it exists
+    // We don't use a config manager here because static files are always handled on-disk in Perseus (for now)
+    let static_dir = PathBuf::from("../static");
+    if static_dir.exists() {
+        if let Err(err) = copy_dir(&static_dir, "dist/exported/.perseus/", &CopyOptions::new()) {
+            eprintln!("Static exporting failed: 'couldn't copy static directory: '{}''", err.to_string());
+            return 1;
+        }
+    }
+
+    println!("Static exporting successfully completed!");
+    0
 }
