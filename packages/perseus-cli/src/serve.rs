@@ -139,7 +139,7 @@ fn run_server(exec: Arc<Mutex<String>>, dir: PathBuf, did_build: bool) -> Result
         .map_err(|err| ErrorKind::PortNotNumber(err.to_string()))?;
     // Give the user a nice informational message
     println!(
-        "  {} {} Your app is now live on http://{host}:{port}! To change this, re-run this command with different settings of the HOST/PORT environment variables.",
+        "  {} {} Your app is now live on <http://{host}:{port}>! To change this, re-run this command with different settings of the HOST/PORT environment variables.",
         style(format!("[{}/{}]", num_steps, num_steps)).bold().dim(),
         SERVING,
         host=host,
