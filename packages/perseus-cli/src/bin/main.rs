@@ -115,7 +115,7 @@ fn core(dir: PathBuf) -> Result<i32> {
             } else if prog_args[0] == "prep" {
                 // This command is deliberately undocumented, it's only used for testing
                 // Set up the '.perseus/' directory if needed
-                prepare(dir.clone())?;
+                prepare(dir)?;
                 Ok(0)
             } else if prog_args[0] == "eject" {
                 // Set up the '.perseus/' directory if needed
@@ -127,7 +127,7 @@ fn core(dir: PathBuf) -> Result<i32> {
                     // The user only wants to remove distribution artifacts
                     // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
                     delete_artifacts(dir.clone(), "static")?;
-                    delete_artifacts(dir.clone(), "pkg")?;
+                    delete_artifacts(dir, "pkg")?;
                 } else {
                     // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
                     if has_ejected(dir.clone()) && prog_args[1] != "--force" {
