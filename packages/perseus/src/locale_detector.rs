@@ -16,7 +16,7 @@ pub fn detect_locale(url: String, locales: Locales) {
         // We'll fall back to `language`, which only gives us one locale to compare with
         // If that isn't supported, we'll automatically fall back to the default locale
         if let Some(lang) = navigator.language() {
-            locale = match compare_locale(&lang, locales.get_all()) {
+            locale = match compare_locale(&lang, &locales.get_all()) {
                 LocaleMatch::Exact(matched) | LocaleMatch::Language(matched) => matched,
                 LocaleMatch::None => locales.default,
             }
@@ -28,7 +28,7 @@ pub fn detect_locale(url: String, locales: Locales) {
             let cmp_str = cmp.as_string().unwrap();
             // As per RFC 4647, the first match (exact or language-only) is the one we'll use
             if let LocaleMatch::Exact(matched) | LocaleMatch::Language(matched) =
-                compare_locale(&cmp_str, locales.get_all())
+                compare_locale(&cmp_str, &locales.get_all())
             {
                 locale = matched;
                 break;
@@ -46,6 +46,7 @@ pub fn detect_locale(url: String, locales: Locales) {
 }
 
 /// The possible outcomes of trying to match a locale.
+#[derive(Debug, PartialEq, Eq)]
 enum LocaleMatch {
     /// The language and region match to a supported locale.
     Exact(String),
@@ -64,12 +65,13 @@ enum LocaleMatch {
 ///
 /// This does NOT comply fully with [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt) yet, as only `xx-XX` form locales are
 /// currently supported. This functionality will eventually be broken out into a separate module for ease of use.
-fn compare_locale(cmp: &str, locales: Vec<&String>) -> LocaleMatch {
+fn compare_locale<S: Into<String> + std::fmt::Display>(cmp: &str, locales: &[S]) -> LocaleMatch {
     let mut outcome = LocaleMatch::None;
     // Split into language and region (e.g. `en-US`) if possible
     let cmp_parts: Vec<&str> = cmp.split('-').collect();
 
     for locale in locales {
+        let locale = locale.to_string();
         // Split into language and region (e.g. `en-US`) if possible
         let parts: Vec<&str> = locale.split('-').collect();
         if locale == cmp {
@@ -87,4 +89,29 @@ fn compare_locale(cmp: &str, locales: Vec<&String>) -> LocaleMatch {
     }
 
     outcome
+}
+
+mod tests {
+    #[allow(unused_imports)] // For some reason this throws a warning otherwise...
+    use super::*;
+    #[test]
+    fn matches_exact() {
+        let verdict = compare_locale("en-US", &["en-US"]);
+        assert_eq!(verdict, LocaleMatch::Exact("en-US".to_string()))
+    }
+    #[test]
+    fn matches_lang() {
+        let verdict = compare_locale("en-US", &["en-GB"]);
+        assert_eq!(verdict, LocaleMatch::Language("en-GB".to_string()))
+    }
+    #[test]
+    fn fails_on_no_match() {
+        let verdict = compare_locale("en-US", &["zh-CN"]);
+        assert_eq!(verdict, LocaleMatch::None)
+    }
+    #[test]
+    fn uses_later_exact_match() {
+        let verdict = compare_locale("en-US", &["en-GB", "en-US"]);
+        assert_eq!(verdict, LocaleMatch::Exact("en-US".to_string()))
+    }
 }
