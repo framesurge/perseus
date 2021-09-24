@@ -40,11 +40,6 @@ pub struct Options {
     pub static_aliases: HashMap<String, String>,
 }
 
-async fn render_conf(
-    render_conf: web::Data<HashMap<String, String>>,
-) -> web::Json<HashMap<String, String>> {
-    web::Json(render_conf.get_ref().clone())
-}
 async fn js_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.js_bundle)
 }
@@ -89,8 +84,6 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             // This contains everything in the spirit of a pseudo-SPA
             .route("/.perseus/bundle.js", web::get().to(js_bundle))
             .route("/.perseus/bundle.wasm", web::get().to(wasm_bundle))
-            // TODO I don't think we need this anymore...
-            .route("/.perseus/render_conf.json", web::get().to(render_conf))
             // This allows getting the static HTML/JSON of a page
             // We stream both together in a single JSON object so SSR works (otherwise we'd have request IDs and weird caching...)
             // A request to this should also provide the template name (routing should only be done once on the client) as a query parameter
