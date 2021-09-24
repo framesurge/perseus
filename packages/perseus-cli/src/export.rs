@@ -8,7 +8,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 // Emojis for stages
-static GENERATING: Emoji<'_, '_> = Emoji("🔨", "");
+static EXPORTING: Emoji<'_, '_> = Emoji("📦", "");
 static BUILDING: Emoji<'_, '_> = Emoji("🏗️ ", ""); // Yes, there's a space here, for some reason it's needed...
 
 /// Returns the exit code if it's non-zero.
@@ -118,7 +118,7 @@ pub fn export_internal(
     let ep_msg = format!(
         "{} {} Exporting your app's pages",
         style(format!("[1/{}]", num_steps)).bold().dim(),
-        GENERATING
+        EXPORTING
     );
     // Wasm building message
     let wb_msg = format!(
