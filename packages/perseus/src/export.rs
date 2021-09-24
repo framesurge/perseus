@@ -128,6 +128,7 @@ pub async fn export_app(
                 .await?;
         }
     }
+    // Copying in bundles from the filesystem is left to the CLI command for exporting, so we're done!
 
     Ok(())
 }

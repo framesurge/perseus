@@ -1,6 +1,6 @@
 use perseus_cli::errors::*;
 use perseus_cli::{
-    build, check_env, delete_artifacts, delete_bad_dir, eject, has_ejected, help, prepare, serve,
+    build, check_env, delete_artifacts, delete_bad_dir, eject, has_ejected, help, prepare, serve, export,
     PERSEUS_VERSION,
 };
 use std::env;
@@ -82,6 +82,14 @@ fn core(dir: PathBuf) -> Result<i32> {
                 // Delete old build artifacts
                 delete_artifacts(dir.clone(), "static")?;
                 let exit_code = build(dir, &prog_args)?;
+                Ok(exit_code)
+            } else if prog_args[0] == "export" {
+                // Set up the '.perseus/' directory if needed
+                prepare(dir.clone())?;
+                // Delete old build/exportation artifacts
+                delete_artifacts(dir.clone(), "static")?;
+                delete_artifacts(dir.clone(), "exported")?;
+                let exit_code = export(dir, &prog_args)?;
                 Ok(exit_code)
             } else if prog_args[0] == "serve" {
                 // Set up the '.perseus/' directory if needed

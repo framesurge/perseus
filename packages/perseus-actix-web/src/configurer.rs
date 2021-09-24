@@ -89,6 +89,7 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             // This contains everything in the spirit of a pseudo-SPA
             .route("/.perseus/bundle.js", web::get().to(js_bundle))
             .route("/.perseus/bundle.wasm", web::get().to(wasm_bundle))
+            // TODO I don't think we need this anymore...
             .route("/.perseus/render_conf.json", web::get().to(render_conf))
             // This allows getting the static HTML/JSON of a page
             // We stream both together in a single JSON object so SSR works (otherwise we'd have request IDs and weird caching...)

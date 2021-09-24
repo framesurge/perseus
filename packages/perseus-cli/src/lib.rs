@@ -35,6 +35,7 @@ mod help;
 mod prepare;
 mod serve;
 mod thread;
+mod export;
 
 mod extraction;
 
@@ -49,6 +50,7 @@ pub use eject::{eject, has_ejected};
 pub use help::help;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
+pub use export::export;
 
 /// Deletes a corrupted '.perseus/' directory. This will be called on certain error types that would leave the user with a half-finished
 /// product, which is better to delete for safety and sanity.
