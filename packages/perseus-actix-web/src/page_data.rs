@@ -3,11 +3,10 @@ use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::{
     err_to_status_code,
-    serve::{get_page_for_template_and_translator, PageDataWithHead},
+    serve::get_page_for_template,
     ConfigManager, TranslationsManager,
 };
 use serde::Deserialize;
-use std::rc::Rc;
 
 #[derive(Deserialize)]
 pub struct PageDataReq {
@@ -38,18 +37,6 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
                     .body(err.to_string())
             }
         };
-        // Create a translator here, we'll use it twice
-        let translator_raw = translations_manager
-            .get_translator_for_locale(locale.to_string())
-            .await;
-        let translator_raw = match translator_raw {
-            Ok(translator_raw) => translator_raw,
-            Err(err) => {
-                // We know the locale is valid, so any failure here is a 500
-                return HttpResponse::InternalServerError().body(err.to_string());
-            }
-        };
-        let translator = Rc::new(translator_raw);
         // Get the template to use
         let template = templates.get(&template_name);
         let template = match template {
@@ -59,31 +46,21 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
                 return HttpResponse::InternalServerError().body("template not found".to_string());
             }
         };
-        let page_data = get_page_for_template_and_translator(
+        let page_data = get_page_for_template(
             path,
             locale,
             template,
             http_req,
-            Rc::clone(&translator),
             config_manager.get_ref(),
+            translations_manager.get_ref()
         )
         .await;
-        let page_data = match page_data {
-            Ok(page_data) => page_data,
+        match page_data {
+            Ok(page_data) => HttpResponse::Ok().body(serde_json::to_string(&page_data).unwrap()),
             // We parse the error to return an appropriate status code
-            Err(err) => {
-                return HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
-                    .body(err.to_string())
-            }
-        };
-        let head_str = template.render_head_str(page_data.state.clone(), Rc::clone(&translator));
-        let page_data_with_head = PageDataWithHead {
-            content: page_data.content,
-            state: page_data.state,
-            head: head_str,
-        };
-
-        HttpResponse::Ok().body(serde_json::to_string(&page_data_with_head).unwrap())
+            Err(err) => HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
+                .body(err.to_string())
+        }
     } else {
         HttpResponse::NotFound().body("locale not supported".to_string())
     }

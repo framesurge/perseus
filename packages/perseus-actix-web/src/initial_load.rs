@@ -4,7 +4,7 @@ use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::error_pages::ErrorPageData;
 use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::{
-    err_to_status_code, serve::get_page_for_template_and_translator, ConfigManager, ErrorPages,
+    err_to_status_code, serve::get_page_for_template, ConfigManager, ErrorPages,
     SsrNode, TranslationsManager, Translator,
 };
 use std::collections::HashMap;
@@ -104,25 +104,14 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                     return html_err(400, &err.to_string());
                 }
             };
-            // Create a translator here, we'll use it twice
-            let translator_raw = translations_manager
-                .get_translator_for_locale(locale.to_string())
-                .await;
-            let translator_raw = match translator_raw {
-                Ok(translator_raw) => translator_raw,
-                Err(err) => {
-                    return html_err(500, &err.to_string());
-                }
-            };
-            let translator = Rc::new(translator_raw);
             // Actually render the page as we would if this weren't an initial load
-            let page_data = get_page_for_template_and_translator(
+            let page_data = get_page_for_template(
                 &path,
                 &locale,
                 &template,
                 http_req,
-                Rc::clone(&translator),
                 config_manager.get_ref(),
+                translations_manager.get_ref()
             )
             .await;
             let page_data = match page_data {
@@ -133,12 +122,10 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 }
             };
 
-            // Render the HTML head and interpolate it
-            let head_str =
-                template.render_head_str(page_data.state.clone(), Rc::clone(&translator));
+            // Interpolate the document `<head>`
             let html_with_head = html_shell.replace(
                 "<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->",
-                &format!("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->{}", head_str),
+                &format!("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->{}", &page_data.head),
             );
 
             // Interpolate a global variable of the state so the app shell doesn't have to make any more trips

@@ -61,6 +61,10 @@ mod test;
 pub mod translations_manager;
 /// Utilities regarding translators, including the default `FluentTranslator`.
 pub mod translator;
+/// Utilities to do with exporting your app to purely static files.
+pub mod export;
+/// Utilities for manipulating the HTML shell. These are primarily used in exporting and serving.
+pub mod html_shell;
 
 pub use http;
 pub use http::Request as HttpRequest;
@@ -81,5 +85,6 @@ pub use crate::shell::app_shell;
 pub use crate::template::{States, StringResult, StringResultWithCause, Template, TemplateMap};
 pub use crate::translations_manager::{FsTranslationsManager, TranslationsManager};
 pub use crate::translator::{Translator, TRANSLATOR_FILE_EXT};
+pub use crate::export::export_app;
 
 pub use perseus_macro::test;

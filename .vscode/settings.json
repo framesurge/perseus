@@ -5,6 +5,7 @@
         "cli",
         "book",
         "examples",
-        "testing"
+        "testing",
+        "templates"
     ]
 }

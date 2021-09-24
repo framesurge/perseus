@@ -5,6 +5,7 @@
 name = "perseus-cli-builder"
 version = "0.2.1"
 edition = "2018"
+default-run = "perseus-builder"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -30,5 +31,9 @@ crate-type = ["cdylib", "rlib"]
 
 # We define a binary for building, serving, and doing both
 [[bin]]
-name = "perseus-internal"
+name = "perseus-builder"
 path = "src/bin/build.rs"
+
+[[bin]]
+name = "perseus-exporter"
+path = "src/bin/export.rs"

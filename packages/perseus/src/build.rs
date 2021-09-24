@@ -18,9 +18,21 @@ pub async fn build_template(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
+    exporting: bool
 ) -> Result<(Vec<String>, bool)> {
     let mut single_page = false;
     let template_path = template.get_path();
+
+    // If we're exporting, ensure that all the template's strategies are export-safe (not requiring a server)
+    if exporting && (
+        template.revalidates() ||
+        template.uses_incremental() ||
+        template.uses_request_state() ||
+        // We check amalgamation as well because it involves request state, even if that wasn't provided
+        template.can_amalgamate_states()
+    ) {
+        bail!(ErrorKind::TemplateNotExportable(template_path.clone()))
+    }
 
     // Handle static path generation
     // Because we iterate over the paths, we need a base path if we're not generating custom ones (that'll be overriden if needed)
@@ -55,11 +67,17 @@ pub async fn build_template(
                 .await?;
             // Prerender the template using that state
             let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(Some(initial_state), Rc::clone(&translator))
+                template.render_for_template(Some(initial_state.clone()), Rc::clone(&translator))
             });
             // Write that prerendered HTML to a static file
             config_manager
                 .write(&format!("static/{}.html", full_path), &prerendered)
+                .await?;
+            // Prerender the document `<head>` with that state
+            // If the page also uses request state, amalgamation will be applied as for the normal content
+            let head_str = template.render_head_str(Some(initial_state), Rc::clone(&translator));
+            config_manager
+                .write(&format!("static/{}.head.html", full_path), &head_str)
                 .await?;
         }
 
@@ -88,9 +106,13 @@ pub async fn build_template(
             let prerendered = sycamore::render_to_string(|| {
                 template.render_for_template(None, Rc::clone(&translator))
             });
+            let head_str = template.render_head_str(None, Rc::clone(&translator));
             // Write that prerendered HTML to a static file
             config_manager
                 .write(&format!("static/{}.html", full_path), &prerendered)
+                .await?;
+            config_manager
+                .write(&format!("static/{}.head.html", full_path), &head_str)
                 .await?;
         }
     }
@@ -102,12 +124,13 @@ async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
+    exporting: bool
 ) -> Result<HashMap<String, String>> {
     let mut render_cfg = HashMap::new();
     let template_root_path = template.get_path();
     let is_incremental = template.uses_incremental();
 
-    let (pages, single_page) = build_template(template, translator, config_manager).await?;
+    let (pages, single_page) = build_template(template, translator, config_manager, exporting).await?;
     // If the template represents a single page itself, we don't need any concatenation
     if single_page {
         render_cfg.insert(template_root_path.clone(), template_root_path.clone());
@@ -138,6 +161,7 @@ pub async fn build_templates_for_locale(
     templates: &[Template<SsrNode>],
     translator_raw: Translator,
     config_manager: &impl ConfigManager,
+    exporting: bool
 ) -> Result<()> {
     let translator = Rc::new(translator_raw);
     // The render configuration stores a list of pages to the root paths of their templates
@@ -149,6 +173,7 @@ pub async fn build_templates_for_locale(
             template,
             Rc::clone(&translator),
             config_manager,
+            exporting
         ));
     }
     let template_cfgs = try_join_all(futs).await?;
@@ -169,11 +194,12 @@ async fn build_templates_and_translator_for_locale(
     locale: String,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
+    exporting: bool
 ) -> Result<()> {
     let translator = translations_manager
         .get_translator_for_locale(locale)
         .await?;
-    build_templates_for_locale(templates, translator, config_manager).await?;
+    build_templates_for_locale(templates, translator, config_manager, exporting).await?;
 
     Ok(())
 }
@@ -185,6 +211,7 @@ pub async fn build_app(
     locales: &Locales,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
+    exporting: bool
 ) -> Result<()> {
     let locales = locales.get_all();
     let mut futs = Vec::new();
@@ -195,6 +222,7 @@ pub async fn build_app(
             locale.to_string(),
             config_manager,
             translations_manager,
+            exporting
         ));
     }
     // Build all locales in parallel

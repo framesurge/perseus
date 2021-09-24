@@ -13,19 +13,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::SsrNode;
 
-/// Represents the data necessary to render a page.
+/// Represents the data necessary to render a page, including document metadata.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PageData {
-    /// Prerendered HTML content.
-    pub content: String,
-    /// The state for hydration. This is kept as a string for ease of typing. Some pages may not need state or generate it in another way,
-    /// so this might be `None`.
-    pub state: Option<String>,
-}
-
-/// Represents the data necessary to render a page with its metadata.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PageDataWithHead {
     /// Prerendered HTML content.
     pub content: String,
     /// The state for hydration. This is kept as a string for ease of typing. Some pages may not need state or generate it in another way,
@@ -49,10 +39,13 @@ pub async fn get_render_cfg(
 async fn render_build_state(
     path_encoded: &str,
     config_manager: &impl ConfigManager,
-) -> Result<(String, Option<String>)> {
+) -> Result<(String, String, Option<String>)> {
     // Get the static HTML
     let html = config_manager
         .read(&format!("static/{}.html", path_encoded))
+        .await?;
+    let head = config_manager
+        .read(&format!("static/{}.head.html", path_encoded))
         .await?;
     // Get the static JSON
     let state = match config_manager
@@ -63,7 +56,7 @@ async fn render_build_state(
         Err(_) => None,
     };
 
-    Ok((html, state))
+    Ok((html, head, state))
 }
 /// Renders a template that generated its state at request-time. Note that revalidation and ISR have no impact on SSR-rendered pages.
 async fn render_request_state(
@@ -71,27 +64,35 @@ async fn render_request_state(
     translator: Rc<Translator>,
     path: &str,
     req: Request,
-) -> Result<(String, Option<String>)> {
+) -> Result<(String, String, Option<String>)> {
     // Generate the initial state (this may generate an error, but there's no file that can't exist)
     let state = Some(template.get_request_state(path.to_string(), req).await?);
     // Use that to render the static HTML
     let html =
-        sycamore::render_to_string(|| template.render_for_template(state.clone(), translator));
+        sycamore::render_to_string(|| template.render_for_template(state.clone(), Rc::clone(&translator)));
+    let head = template.render_head_str(state.clone(), Rc::clone(&translator));
 
-    Ok((html, state))
+    Ok((html, head, state))
 }
 /// Checks if a template that uses ISR has already been cached.
 async fn get_incremental_cached(
     path_encoded: &str,
     config_manager: &impl ConfigManager,
-) -> Option<String> {
+) -> Option<(String, String)> {
     let html_res = config_manager
         .read(&format!("static/{}.html", path_encoded))
         .await;
 
     // We should only treat it as cached if it can be accessed and if we aren't in development (when everything should constantly reload)
     match html_res {
-        Ok(html) if !cfg!(debug_assertions) => Some(html),
+        Ok(html) if !cfg!(debug_assertions) => {
+            // If the HTML exists, the head must as well
+            let head = config_manager
+                .read(&format!("static/{}.html", path_encoded))
+                .await
+                .unwrap();
+            Some((html, head))
+        },
         Ok(_) | Err(_) => None,
     }
 }
@@ -132,7 +133,7 @@ async fn revalidate(
     path: &str,
     path_encoded: &str,
     config_manager: &impl ConfigManager,
-) -> Result<(String, Option<String>)> {
+) -> Result<(String, String, Option<String>)> {
     // We need to regenerate and cache this page for future usage (until the next revalidation)
     let state = Some(
         template
@@ -140,7 +141,8 @@ async fn revalidate(
             .await?,
     );
     let html =
-        sycamore::render_to_string(|| template.render_for_template(state.clone(), translator));
+        sycamore::render_to_string(|| template.render_for_template(state.clone(), Rc::clone(&translator)));
+    let head = template.render_head_str(state.clone(), Rc::clone(&translator));
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's request-time only
     if template.revalidates_with_time() {
@@ -163,23 +165,32 @@ async fn revalidate(
     config_manager
         .write(&format!("static/{}.html", path_encoded), &html)
         .await?;
+    config_manager
+        .write(&format!("static/{}.head.html", path_encoded), &head)
+        .await?;
 
-    Ok((html, state))
+    Ok((html, head, state))
 }
 
 /// Internal logic behind `get_page`. The only differences are that this takes a full template rather than just a template name, which
-/// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing), and that it takes
-/// a pre-formed translator for similar reasons.
+/// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing).
 // TODO possible further optimizations on this for futures?
-pub async fn get_page_for_template_and_translator(
+pub async fn get_page_for_template(
     // This must not contain the locale
     raw_path: &str,
     locale: &str,
     template: &Template<SsrNode>,
     req: Request,
-    translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
+    translations_manager: &impl TranslationsManager
 ) -> Result<PageData> {
+    // Get a translator for this locale (for sanity we hope the manager is caching)
+    let translator = Rc::new(
+        translations_manager
+            .get_translator_for_locale(locale.to_string())
+            .await?,
+    );
+
     let mut path = raw_path;
     // If the path is empty, we're looking for the special `index` page
     if path.is_empty() {
@@ -189,7 +200,9 @@ pub async fn get_page_for_template_and_translator(
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path).to_string());
 
     // Only a single string of HTML is needed, and it will be overridden if necessary (priorities system)
-    let mut html: String = String::new();
+    let mut html = String::new();
+    // The same applies for the document metadata
+    let mut head = String::new();
     // Multiple rendering strategies may need to amalgamate different states
     let mut states: States = States::new();
 
@@ -198,13 +211,13 @@ pub async fn get_page_for_template_and_translator(
         // If the template uses incremental generation, that is its own contained process
         if template.uses_incremental() {
             // Get the cached content if it exists (otherwise `None`)
-            let html_opt = get_incremental_cached(&path_encoded, config_manager).await;
-            match html_opt {
+            let html_and_head_opt = get_incremental_cached(&path_encoded, config_manager).await;
+            match html_and_head_opt {
                 // It's cached
-                Some(html_val) => {
+                Some((html_val, head_val)) => {
                     // Check if we need to revalidate
                     if should_revalidate(template, &path_encoded, config_manager).await? {
-                        let (html_val, state) = revalidate(
+                        let (html_val, head_val, state) = revalidate(
                             template,
                             Rc::clone(&translator),
                             path,
@@ -214,13 +227,15 @@ pub async fn get_page_for_template_and_translator(
                         .await?;
                         // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                         if html.is_empty() {
-                            html = html_val
+                            html = html_val;
+                            head = head_val;
                         }
                         states.build_state = state;
                     } else {
                         // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                         if html.is_empty() {
-                            html = html_val
+                            html = html_val;
+                            head = head_val;
                         }
                         // Get the static JSON (if it exists, but it should)
                         states.build_state = match config_manager
@@ -239,6 +254,7 @@ pub async fn get_page_for_template_and_translator(
                     let html_val = sycamore::render_to_string(|| {
                         template.render_for_template(state.clone(), Rc::clone(&translator))
                     });
+                    let head_val = template.render_head_str(state.clone(), Rc::clone(&translator));
                     // Handle revalidation, we need to parse any given time strings into datetimes
                     // We don't need to worry about revalidation that operates by logic, that's request-time only
                     // Obviously we don't need to revalidate now, we just created it
@@ -265,18 +281,22 @@ pub async fn get_page_for_template_and_translator(
                     config_manager
                         .write(&format!("static/{}.html", path_encoded), &html_val)
                         .await?;
+                    config_manager
+                        .write(&format!("static/{}.head.html", path_encoded), &head_val)
+                        .await?;
 
                     states.build_state = state;
                     // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                     if html.is_empty() {
-                        html = html_val
+                        html = html_val;
+                        head = head_val;
                     }
                 }
             }
         } else {
             // Handle if we need to revalidate
             if should_revalidate(template, &path_encoded, config_manager).await? {
-                let (html_val, state) = revalidate(
+                let (html_val, head_val, state) = revalidate(
                     template,
                     Rc::clone(&translator),
                     path,
@@ -286,14 +306,16 @@ pub async fn get_page_for_template_and_translator(
                 .await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                 if html.is_empty() {
-                    html = html_val
+                    html = html_val;
+                    head = head_val;
                 }
                 states.build_state = state;
             } else {
-                let (html_val, state) = render_build_state(&path_encoded, config_manager).await?;
+                let (html_val, head_val, state) = render_build_state(&path_encoded, config_manager).await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                 if html.is_empty() {
-                    html = html_val
+                    html = html_val;
+                    head = head_val;
                 }
                 states.build_state = state;
             }
@@ -301,10 +323,11 @@ pub async fn get_page_for_template_and_translator(
     }
     // Handle request state
     if template.uses_request_state() {
-        let (html_val, state) =
+        let (html_val, head_val, state) =
             render_request_state(template, Rc::clone(&translator), path, req).await?;
         // Request-time HTML always overrides anything generated at build-time or incrementally (this has more information)
         html = html_val;
+        head = head_val;
         states.request_state = state;
     }
 
@@ -312,6 +335,7 @@ pub async fn get_page_for_template_and_translator(
     // If the user has defined custom logic for this, we'll defer to that
     // Otherwise we go as with HTML, request trumps build
     // Of course, if only one state was defined, we'll just use that regardless (so `None` prioritization is impossible)
+    // If this is the case, the build content will still be served, and then it's up to the client to hydrate it with the new amalgamated state
     let state: Option<String>;
     if !states.both_defined() {
         state = states.get_defined()?;
@@ -325,6 +349,7 @@ pub async fn get_page_for_template_and_translator(
     let res = PageData {
         content: html,
         state,
+        head
     };
 
     Ok(res)
@@ -354,20 +379,14 @@ pub async fn get_page(
         // This shouldn't happen because the client should already have performed checks against the render config, but it's handled anyway
         None => bail!(ErrorKind::PageNotFound(path.to_string())),
     };
-    // Get a translator for this locale (for sanity we hope the manager is caching)
-    let translator = Rc::new(
-        translations_manager
-            .get_translator_for_locale(locale.to_string())
-            .await?,
-    );
 
-    let res = get_page_for_template_and_translator(
+    let res = get_page_for_template(
         raw_path,
         locale,
         template,
         req,
-        translator,
         config_manager,
+        translations_manager
     )
     .await?;
     Ok(res)

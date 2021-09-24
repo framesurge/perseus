@@ -1,6 +1,6 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
-use crate::serve::PageDataWithHead;
+use crate::serve::PageData;
 use crate::template::Template;
 use crate::ClientTranslationsManager;
 use crate::ErrorPages;
@@ -276,7 +276,7 @@ pub async fn app_shell(
                 Ok(page_data_str) => match page_data_str {
                     Some(page_data_str) => {
                         // All good, deserialize the page data
-                        let page_data = serde_json::from_str::<PageDataWithHead>(&page_data_str);
+                        let page_data = serde_json::from_str::<PageData>(&page_data_str);
                         match page_data {
                             Ok(page_data) => {
                                 // We have the page data ready, render everything

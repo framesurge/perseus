@@ -18,10 +18,12 @@ fn real_main() -> i32 {
         &locales,
         &config_manager,
         &translations_manager,
+        // We use another binary to handle exporting
+        false
     );
     let res = block_on(fut);
     if let Err(err) = res {
-        eprintln!("Static generation failed: '{}'", err);
+        eprintln!("Static generation failed: '{}'.", err);
         1
     } else {
         println!("Static generation successfully completed!");
