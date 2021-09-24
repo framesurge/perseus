@@ -1,6 +1,12 @@
-<h1 style="text-align: center;">Perseus</h1>
+<h1 align="center">Perseus</h1>
 
 [Book][book] • [Crate Page][crate] • [API Documentation][docs] • [Contributing][contrib]
+
+[![Book](https://img.shields.io/badge/Book-arctic--hen7.github.io-informational?style=for-the-badge)](https://arctic-hen7.github.io/perseus)
+[![API Docs](https://img.shields.io/docsrs/perseus?label=API%20Docs&style=for-the-badge)](https://docs.rs/perseus)
+[![Crate Page](https://img.shields.io/crates/v/perseus?style=for-the-badge)](https://crates.io/crates/perseus)
+[![Top Language](https://img.shields.io/github/languages/top/arctic-hen7/perseus?style=for-the-badge)]()
+[![Discord Chat](https://img.shields.io/discord/820400041332179004?label=Discord&style=for-the-badge)](https://discord.gg/PgwPn7dKEk)
 
 Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)!
 
