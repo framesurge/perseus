@@ -1,4 +1,7 @@
-use app::{APP_ROOT, get_config_manager, get_locales, get_templates_vec, get_templates_map, get_translations_manager};
+use app::{
+    get_config_manager, get_locales, get_templates_map, get_templates_vec,
+    get_translations_manager, APP_ROOT,
+};
 use futures::executor::block_on;
 use perseus::{build_app, export_app, SsrNode};
 
@@ -19,11 +22,11 @@ fn real_main() -> i32 {
         &config_manager,
         &translations_manager,
         // We use another binary to handle normal building
-        true
+        true,
     );
     if let Err(err) = block_on(build_fut) {
         eprintln!("Static exporting failed: '{}'.", err);
-        return 1
+        return 1;
     }
     // Turn the build artifacts into self-contained static files
     let export_fut = export_app(
@@ -31,7 +34,7 @@ fn real_main() -> i32 {
         "../index.html",
         &locales,
         APP_ROOT,
-        &config_manager
+        &config_manager,
     );
     if let Err(err) = block_on(export_fut) {
         eprintln!("Static exporting failed: '{}'.", err);

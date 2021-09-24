@@ -2,9 +2,7 @@ use crate::conv_req::convert_req;
 use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::{
-    err_to_status_code,
-    serve::get_page_for_template,
-    ConfigManager, TranslationsManager,
+    err_to_status_code, serve::get_page_for_template, ConfigManager, TranslationsManager,
 };
 use serde::Deserialize;
 
@@ -52,14 +50,16 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
             template,
             http_req,
             config_manager.get_ref(),
-            translations_manager.get_ref()
+            translations_manager.get_ref(),
         )
         .await;
         match page_data {
             Ok(page_data) => HttpResponse::Ok().body(serde_json::to_string(&page_data).unwrap()),
             // We parse the error to return an appropriate status code
-            Err(err) => HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
-                .body(err.to_string())
+            Err(err) => {
+                HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
+                    .body(err.to_string())
+            }
         }
     } else {
         HttpResponse::NotFound().body("locale not supported".to_string())

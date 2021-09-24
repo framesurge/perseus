@@ -4,8 +4,8 @@ use crate::translations::translations;
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest};
 use perseus::{
-    get_render_cfg, ConfigManager, ErrorPages, Locales, SsrNode, TemplateMap, TranslationsManager,
-    html_shell::prep_html_shell
+    get_render_cfg, html_shell::prep_html_shell, ConfigManager, ErrorPages, Locales, SsrNode,
+    TemplateMap, TranslationsManager,
 };
 use std::collections::HashMap;
 use std::fs;

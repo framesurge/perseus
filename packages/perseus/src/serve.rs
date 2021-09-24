@@ -68,8 +68,9 @@ async fn render_request_state(
     // Generate the initial state (this may generate an error, but there's no file that can't exist)
     let state = Some(template.get_request_state(path.to_string(), req).await?);
     // Use that to render the static HTML
-    let html =
-        sycamore::render_to_string(|| template.render_for_template(state.clone(), Rc::clone(&translator)));
+    let html = sycamore::render_to_string(|| {
+        template.render_for_template(state.clone(), Rc::clone(&translator))
+    });
     let head = template.render_head_str(state.clone(), Rc::clone(&translator));
 
     Ok((html, head, state))
@@ -92,7 +93,7 @@ async fn get_incremental_cached(
                 .await
                 .unwrap();
             Some((html, head))
-        },
+        }
         Ok(_) | Err(_) => None,
     }
 }
@@ -140,8 +141,9 @@ async fn revalidate(
             .get_build_state(format!("{}/{}", template.get_path(), path))
             .await?,
     );
-    let html =
-        sycamore::render_to_string(|| template.render_for_template(state.clone(), Rc::clone(&translator)));
+    let html = sycamore::render_to_string(|| {
+        template.render_for_template(state.clone(), Rc::clone(&translator))
+    });
     let head = template.render_head_str(state.clone(), Rc::clone(&translator));
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's request-time only
@@ -182,7 +184,7 @@ pub async fn get_page_for_template(
     template: &Template<SsrNode>,
     req: Request,
     config_manager: &impl ConfigManager,
-    translations_manager: &impl TranslationsManager
+    translations_manager: &impl TranslationsManager,
 ) -> Result<PageData> {
     // Get a translator for this locale (for sanity we hope the manager is caching)
     let translator = Rc::new(
@@ -311,7 +313,8 @@ pub async fn get_page_for_template(
                 }
                 states.build_state = state;
             } else {
-                let (html_val, head_val, state) = render_build_state(&path_encoded, config_manager).await?;
+                let (html_val, head_val, state) =
+                    render_build_state(&path_encoded, config_manager).await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                 if html.is_empty() {
                     html = html_val;
@@ -349,7 +352,7 @@ pub async fn get_page_for_template(
     let res = PageData {
         content: html,
         state,
-        head
+        head,
     };
 
     Ok(res)
@@ -386,7 +389,7 @@ pub async fn get_page(
         template,
         req,
         config_manager,
-        translations_manager
+        translations_manager,
     )
     .await?;
     Ok(res)

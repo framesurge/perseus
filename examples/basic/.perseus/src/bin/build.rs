@@ -19,7 +19,7 @@ fn real_main() -> i32 {
         &config_manager,
         &translations_manager,
         // We use another binary to handle exporting
-        false
+        false,
     );
     let res = block_on(fut);
     if let Err(err) = res {

@@ -18,19 +18,19 @@ pub async fn build_template(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
-    exporting: bool
+    exporting: bool,
 ) -> Result<(Vec<String>, bool)> {
     let mut single_page = false;
     let template_path = template.get_path();
 
     // If we're exporting, ensure that all the template's strategies are export-safe (not requiring a server)
-    if exporting && (
-        template.revalidates() ||
+    if exporting
+        && (template.revalidates() ||
         template.uses_incremental() ||
         template.uses_request_state() ||
         // We check amalgamation as well because it involves request state, even if that wasn't provided
-        template.can_amalgamate_states()
-    ) {
+        template.can_amalgamate_states())
+    {
         bail!(ErrorKind::TemplateNotExportable(template_path.clone()))
     }
 
@@ -124,13 +124,14 @@ async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
-    exporting: bool
+    exporting: bool,
 ) -> Result<HashMap<String, String>> {
     let mut render_cfg = HashMap::new();
     let template_root_path = template.get_path();
     let is_incremental = template.uses_incremental();
 
-    let (pages, single_page) = build_template(template, translator, config_manager, exporting).await?;
+    let (pages, single_page) =
+        build_template(template, translator, config_manager, exporting).await?;
     // If the template represents a single page itself, we don't need any concatenation
     if single_page {
         render_cfg.insert(template_root_path.clone(), template_root_path.clone());
@@ -161,7 +162,7 @@ pub async fn build_templates_for_locale(
     templates: &[Template<SsrNode>],
     translator_raw: Translator,
     config_manager: &impl ConfigManager,
-    exporting: bool
+    exporting: bool,
 ) -> Result<()> {
     let translator = Rc::new(translator_raw);
     // The render configuration stores a list of pages to the root paths of their templates
@@ -173,7 +174,7 @@ pub async fn build_templates_for_locale(
             template,
             Rc::clone(&translator),
             config_manager,
-            exporting
+            exporting,
         ));
     }
     let template_cfgs = try_join_all(futs).await?;
@@ -194,7 +195,7 @@ async fn build_templates_and_translator_for_locale(
     locale: String,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
-    exporting: bool
+    exporting: bool,
 ) -> Result<()> {
     let translator = translations_manager
         .get_translator_for_locale(locale)
@@ -211,7 +212,7 @@ pub async fn build_app(
     locales: &Locales,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
-    exporting: bool
+    exporting: bool,
 ) -> Result<()> {
     let locales = locales.get_all();
     let mut futs = Vec::new();
@@ -222,7 +223,7 @@ pub async fn build_app(
             locale.to_string(),
             config_manager,
             translations_manager,
-            exporting
+            exporting,
         ));
     }
     // Build all locales in parallel

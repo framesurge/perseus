@@ -2,11 +2,11 @@ use crate::conv_req::convert_req;
 use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::error_pages::ErrorPageData;
-use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::html_shell::interpolate_page_data;
+use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::{
-    err_to_status_code, serve::get_page_for_template, ConfigManager, ErrorPages,
-    SsrNode, TranslationsManager, Translator,
+    err_to_status_code, serve::get_page_for_template, ConfigManager, ErrorPages, SsrNode,
+    TranslationsManager, Translator,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -112,7 +112,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 &template,
                 http_req,
                 config_manager.get_ref(),
-                translations_manager.get_ref()
+                translations_manager.get_ref(),
             )
             .await;
             let page_data = match page_data {

@@ -38,11 +38,7 @@ pub fn prep_html_shell(html_shell: String, render_cfg: &HashMap<String, String>)
 /// Interpolates content, metadata, and state into the HTML shell, ready to be sent to the user for initial loads. This should be passed
 /// an HTMl shell prepared with `prep_html_shell`. This also takes the HTML `id` of the element in the shell to interpolate content
 /// into.
-pub fn interpolate_page_data(
-    html_shell: &str,
-    page_data: &PageData,
-    root_id: &str
-) -> String {
+pub fn interpolate_page_data(html_shell: &str, page_data: &PageData, root_id: &str) -> String {
     // Interpolate the document `<head>`
     let html_with_head = html_shell.replace(
         "<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->",
@@ -63,8 +59,7 @@ pub fn interpolate_page_data(
         }
     });
     // We put this at the very end of the head (after the delimiter comment) because it doesn't matter if it's expunged on subsequent loads
-    let html_with_state =
-        html_with_head.replace("</head>", &format!("{}\n</head>", state_var));
+    let html_with_state = html_with_head.replace("</head>", &format!("{}\n</head>", state_var));
 
     // Figure out exactly what we're interpolating in terms of content
     // The user MUST place have a `<div>` of this exact form (documented explicitly)

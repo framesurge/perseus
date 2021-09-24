@@ -44,6 +44,10 @@ mod decode_time_str;
 /// Utilities regarding the formation of error pages for HTTP status codes, like a `404 Not Found` page.
 pub mod error_pages;
 pub mod errors;
+/// Utilities to do with exporting your app to purely static files.
+pub mod export;
+/// Utilities for manipulating the HTML shell. These are primarily used in exporting and serving.
+pub mod html_shell;
 mod locale_detector;
 mod locales;
 mod log;
@@ -61,10 +65,6 @@ mod test;
 pub mod translations_manager;
 /// Utilities regarding translators, including the default `FluentTranslator`.
 pub mod translator;
-/// Utilities to do with exporting your app to purely static files.
-pub mod export;
-/// Utilities for manipulating the HTML shell. These are primarily used in exporting and serving.
-pub mod html_shell;
 
 pub use http;
 pub use http::Request as HttpRequest;
@@ -78,6 +78,7 @@ pub use crate::client_translations_manager::ClientTranslationsManager;
 pub use crate::config_manager::{ConfigManager, FsConfigManager};
 pub use crate::error_pages::ErrorPages;
 pub use crate::errors::{err_to_status_code, ErrorCause};
+pub use crate::export::export_app;
 pub use crate::locale_detector::detect_locale;
 pub use crate::locales::Locales;
 pub use crate::serve::{get_page, get_render_cfg};
@@ -85,6 +86,5 @@ pub use crate::shell::app_shell;
 pub use crate::template::{States, StringResult, StringResultWithCause, Template, TemplateMap};
 pub use crate::translations_manager::{FsTranslationsManager, TranslationsManager};
 pub use crate::translator::{Translator, TRANSLATOR_FILE_EXT};
-pub use crate::export::export_app;
 
 pub use perseus_macro::test;
