@@ -1,7 +1,5 @@
 <h1 align="center">Perseus</h1>
 
-[Book][book] • [Crate Page][crate] • [API Documentation][docs] • [Contributing][contrib]
-
 [![Book](https://img.shields.io/badge/Book-arctic--hen7.github.io-informational?style=for-the-badge)](https://arctic-hen7.github.io/perseus)
 [![API Docs](https://img.shields.io/docsrs/perseus?label=API%20Docs&style=for-the-badge)](https://docs.rs/perseus)
 [![Crate Page](https://img.shields.io/crates/v/perseus?style=for-the-badge)](https://crates.io/crates/perseus)
