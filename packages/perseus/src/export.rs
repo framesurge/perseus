@@ -3,6 +3,7 @@ use crate::get_render_cfg;
 use crate::html_shell::{interpolate_page_data, prep_html_shell};
 use crate::serve::PageData;
 use crate::ConfigManager;
+use crate::TranslationsManager;
 use crate::Locales;
 use crate::SsrNode;
 use crate::TemplateMap;
@@ -46,6 +47,7 @@ pub async fn export_app(
     locales: &Locales,
     root_id: &str,
     config_manager: &impl ConfigManager,
+    translations_manager: &impl TranslationsManager
 ) -> Result<()> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(config_manager).await?;
@@ -69,7 +71,7 @@ pub async fn export_app(
         // These just send the app shell, which will perform a redirect as necessary
         if locales.using_i18n {
             config_manager
-                .write(&format!("exported/{}", path), &html_shell)
+                .write(&format!("exported/{}.html", path), &html_shell)
                 .await?;
         }
         // Check if that template uses build state (in which case it should have a JSON file)
@@ -88,7 +90,7 @@ pub async fn export_app(
                 let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
                 // We don't add an extension because this will be queried directly
                 config_manager
-                    .write(&format!("exported/{}/{}", locale, &path), &full_html)
+                    .write(&format!("exported/{}/{}.html", locale, &path), &full_html)
                     .await?;
 
                 // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
@@ -112,7 +114,7 @@ pub async fn export_app(
             let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
             // We don't add an extension because this will be queried directly by the browser
             config_manager
-                .write(&format!("exported/{}", &path), &full_html)
+                .write(&format!("exported/{}.html", &path), &full_html)
                 .await?;
 
             // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
@@ -126,6 +128,22 @@ pub async fn export_app(
                     &partial,
                 )
                 .await?;
+        }
+    }
+    // If we're using i18n, loop through the locales
+    if locales.using_i18n {
+        for locale in locales.get_all() {
+            // Get the translations string for that
+            let translations_str = translations_manager.get_translations_str_for_locale(locale.to_string()).await?;
+            // Write it to an asset so that it can be served directly
+            config_manager
+                .write(
+                    &format!(
+                        "exported/.perseus/translations/{}",
+                        locale
+                    ),
+                    &translations_str
+                ).await?;
         }
     }
     // Copying in bundles from the filesystem is left to the CLI command for exporting, so we're done!

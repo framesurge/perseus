@@ -35,6 +35,7 @@ fn real_main() -> i32 {
         &locales,
         APP_ROOT,
         &config_manager,
+        &translations_manager
     );
     if let Err(err) = block_on(export_fut) {
         eprintln!("Static exporting failed: '{}'.", err);
