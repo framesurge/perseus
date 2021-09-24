@@ -31,11 +31,11 @@ mod build;
 mod cmd;
 mod eject;
 pub mod errors;
+mod export;
 mod help;
 mod prepare;
 mod serve;
 mod thread;
-mod export;
 
 mod extraction;
 
@@ -47,10 +47,10 @@ use std::path::PathBuf;
 pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use build::build;
 pub use eject::{eject, has_ejected};
+pub use export::export;
 pub use help::help;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
-pub use export::export;
 
 /// Deletes a corrupted '.perseus/' directory. This will be called on certain error types that would leave the user with a half-finished
 /// product, which is better to delete for safety and sanity.

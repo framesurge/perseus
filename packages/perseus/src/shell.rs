@@ -267,7 +267,7 @@ pub async fn app_shell(
             // This can be handled by the Perseus server (and is), but not by static exporting
             let path = match path.is_empty() {
                 true => "index".to_string(),
-                false => path
+                false => path,
             };
             // Get the static page data
             let asset_url = format!(

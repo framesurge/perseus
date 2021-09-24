@@ -26,7 +26,11 @@ macro_rules! handle_exit_code {
 macro_rules! copy_file {
     ($from:expr, $to:expr, $target:expr) => {
         if let Err(err) = fs::copy($target.join($from), $target.join($to)) {
-            bail!(ErrorKind::MoveExportAssetFailed($from.to_string(), $to.to_string(), err.to_string()));
+            bail!(ErrorKind::MoveExportAssetFailed(
+                $from.to_string(),
+                $to.to_string(),
+                err.to_string()
+            ));
         }
     };
 }
@@ -46,8 +50,16 @@ pub fn finalize_export(target: &Path) -> Result<()> {
     }
 
     // Copy files over (the directory structure should already exist from exporting the pages)
-    copy_file!("dist/pkg/perseus_cli_builder.js", "dist/exported/.perseus/bundle.js", target);
-    copy_file!("dist/pkg/perseus_cli_builder_bg.wasm", "dist/exported/.perseus/bundle.wasm", target);
+    copy_file!(
+        "dist/pkg/perseus_cli_builder.js",
+        "dist/exported/.perseus/bundle.js",
+        target
+    );
+    copy_file!(
+        "dist/pkg/perseus_cli_builder_bg.wasm",
+        "dist/exported/.perseus/bundle.wasm",
+        target
+    );
     // Copy any JS snippets over (if the directory doesn't exist though, don't do anything)
     // This takes a target of the `dist/` directory, and then extends on that
     fn copy_snippets(ext: &str, parent: &Path) -> Result<()> {
@@ -56,18 +68,18 @@ pub fn finalize_export(target: &Path) -> Result<()> {
             for file in snippets {
                 let path = match file {
                     Ok(file) => file.path(),
-                    Err(err) => bail!(ErrorKind::MoveExportAssetFailed("js snippet".to_string(), "exportable js snippet".to_string(), err.to_string()))
+                    Err(err) => bail!(ErrorKind::MoveExportAssetFailed(
+                        "js snippet".to_string(),
+                        "exportable js snippet".to_string(),
+                        err.to_string()
+                    )),
                 };
                 // Recurse on any directories and copy any files
                 if path.is_dir() {
                     // We continue to pass on the parent, but we add the filename of this directory to the extension
                     copy_snippets(
-                        &format!(
-                            "{}/{}",
-                            ext,
-                            path.file_name().unwrap().to_str().unwrap()
-                        ),
-                        parent
+                        &format!("{}/{}", ext, path.file_name().unwrap().to_str().unwrap()),
+                        parent,
                     )?;
                 } else {
                     // `ext` holds the folder structure of this file, which we'll preserve
@@ -82,13 +94,21 @@ pub fn finalize_export(target: &Path) -> Result<()> {
                         format!("/{}", dir_tree)
                     };
                     let filename = path.file_name().unwrap().to_str().unwrap();
-                    let final_dir_tree = parent.join(format!("dist/exported/.perseus/snippets{}", dir_tree));
-                    let path_to_copy_to = parent.join(&format!("dist/exported/.perseus/snippets{}/{}", dir_tree, filename));
+                    let final_dir_tree =
+                        parent.join(format!("dist/exported/.perseus/snippets{}", dir_tree));
+                    let path_to_copy_to = parent.join(&format!(
+                        "dist/exported/.perseus/snippets{}/{}",
+                        dir_tree, filename
+                    ));
                     // Create the directory structure needed for this
                     if fs::create_dir_all(&final_dir_tree).is_err() {
                         bail!(ErrorKind::ExportDirStructureFailed);
                     }
-                    copy_file!(path.to_str().unwrap(), path_to_copy_to.to_str().unwrap(), parent);
+                    copy_file!(
+                        path.to_str().unwrap(),
+                        path_to_copy_to.to_str().unwrap(),
+                        parent
+                    );
                 }
             }
         }

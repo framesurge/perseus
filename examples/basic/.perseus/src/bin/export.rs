@@ -1,13 +1,12 @@
 use app::{
-    get_config_manager, get_locales, get_templates_map, get_templates_vec,
+    get_config_manager, get_locales, get_static_aliases, get_templates_map, get_templates_vec,
     get_translations_manager, APP_ROOT,
-    get_static_aliases
 };
+use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::executor::block_on;
 use perseus::{build_app, export_app, SsrNode};
-use fs_extra::dir::{CopyOptions, copy as copy_dir};
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 fn main() {
     let exit_code = real_main();
@@ -39,7 +38,7 @@ fn real_main() -> i32 {
         &locales,
         APP_ROOT,
         &config_manager,
-        &translations_manager
+        &translations_manager,
     );
     if let Err(err) = block_on(export_fut) {
         eprintln!("Static exporting failed: '{}'.", err);
@@ -51,7 +50,10 @@ fn real_main() -> i32 {
     let static_dir = PathBuf::from("../static");
     if static_dir.exists() {
         if let Err(err) = copy_dir(&static_dir, "dist/exported/.perseus/", &CopyOptions::new()) {
-            eprintln!("Static exporting failed: 'couldn't copy static directory: '{}''", err.to_string());
+            eprintln!(
+                "Static exporting failed: 'couldn't copy static directory: '{}''",
+                err.to_string()
+            );
             return 1;
         }
     }
@@ -65,11 +67,17 @@ fn real_main() -> i32 {
 
         if from.is_dir() {
             if let Err(err) = copy_dir(&from, &to, &CopyOptions::new()) {
-                eprintln!("Static exporting failed: 'couldn't copy static alias directory: '{}''", err.to_string());
+                eprintln!(
+                    "Static exporting failed: 'couldn't copy static alias directory: '{}''",
+                    err.to_string()
+                );
                 return 1;
             }
         } else if let Err(err) = fs::copy(&from, &to) {
-            eprintln!("Static exporting failed: 'couldn't copy static alias file: '{}''", err.to_string());
+            eprintln!(
+                "Static exporting failed: 'couldn't copy static alias file: '{}''",
+                err.to_string()
+            );
             return 1;
         }
     }

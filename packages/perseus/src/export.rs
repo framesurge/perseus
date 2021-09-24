@@ -3,10 +3,10 @@ use crate::get_render_cfg;
 use crate::html_shell::{interpolate_page_data, prep_html_shell};
 use crate::serve::PageData;
 use crate::ConfigManager;
-use crate::TranslationsManager;
 use crate::Locales;
 use crate::SsrNode;
 use crate::TemplateMap;
+use crate::TranslationsManager;
 use std::fs;
 
 /// Gets the static page data.
@@ -47,7 +47,7 @@ pub async fn export_app(
     locales: &Locales,
     root_id: &str,
     config_manager: &impl ConfigManager,
-    translations_manager: &impl TranslationsManager
+    translations_manager: &impl TranslationsManager,
 ) -> Result<()> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(config_manager).await?;
@@ -134,16 +134,16 @@ pub async fn export_app(
     if locales.using_i18n {
         for locale in locales.get_all() {
             // Get the translations string for that
-            let translations_str = translations_manager.get_translations_str_for_locale(locale.to_string()).await?;
+            let translations_str = translations_manager
+                .get_translations_str_for_locale(locale.to_string())
+                .await?;
             // Write it to an asset so that it can be served directly
             config_manager
                 .write(
-                    &format!(
-                        "exported/.perseus/translations/{}",
-                        locale
-                    ),
-                    &translations_str
-                ).await?;
+                    &format!("exported/.perseus/translations/{}", locale),
+                    &translations_str,
+                )
+                .await?;
         }
     }
     // Copying in bundles from the filesystem is left to the CLI command for exporting, so we're done!

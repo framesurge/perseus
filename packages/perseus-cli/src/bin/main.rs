@@ -1,7 +1,7 @@
 use perseus_cli::errors::*;
 use perseus_cli::{
-    build, check_env, delete_artifacts, delete_bad_dir, eject, has_ejected, help, prepare, serve, export,
-    PERSEUS_VERSION,
+    build, check_env, delete_artifacts, delete_bad_dir, eject, export, has_ejected, help, prepare,
+    serve, PERSEUS_VERSION,
 };
 use std::env;
 use std::io::Write;
