@@ -6,6 +6,7 @@
         "book",
         "examples",
         "testing",
-        "templates"
+        "templates",
+        "exporting"
     ]
 }

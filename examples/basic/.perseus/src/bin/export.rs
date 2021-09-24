@@ -1,4 +1,4 @@
-use app::{get_config_manager, get_locales, get_templates_vec, get_templates_map, get_translations_manager};
+use app::{APP_ROOT, get_config_manager, get_locales, get_templates_vec, get_templates_map, get_translations_manager};
 use futures::executor::block_on;
 use perseus::{build_app, export_app, SsrNode};
 
@@ -30,6 +30,7 @@ fn real_main() -> i32 {
         get_templates_map(),
         "../index.html",
         &locales,
+        APP_ROOT,
         &config_manager
     );
     if let Err(err) = block_on(export_fut) {
