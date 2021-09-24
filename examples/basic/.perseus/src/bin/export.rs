@@ -1,11 +1,13 @@
 use app::{
     get_config_manager, get_locales, get_templates_map, get_templates_vec,
     get_translations_manager, APP_ROOT,
+    get_static_aliases
 };
 use futures::executor::block_on;
 use perseus::{build_app, export_app, SsrNode};
 use fs_extra::dir::{CopyOptions, copy as copy_dir};
 use std::path::PathBuf;
+use std::fs;
 
 fn main() {
     let exit_code = real_main();
@@ -50,6 +52,24 @@ fn real_main() -> i32 {
     if static_dir.exists() {
         if let Err(err) = copy_dir(&static_dir, "dist/exported/.perseus/", &CopyOptions::new()) {
             eprintln!("Static exporting failed: 'couldn't copy static directory: '{}''", err.to_string());
+            return 1;
+        }
+    }
+    // Loop through any static aliases and copy them in too
+    // Unlike with the server, these could override pages!
+    // We'll copy from the alias to the path (it could be a directory or a file)
+    // Remember: `alias` has a leading `/`!
+    for (alias, path) in get_static_aliases() {
+        let from = PathBuf::from(path);
+        let to = format!("dist/exported{}", alias);
+
+        if from.is_dir() {
+            if let Err(err) = copy_dir(&from, &to, &CopyOptions::new()) {
+                eprintln!("Static exporting failed: 'couldn't copy static alias directory: '{}''", err.to_string());
+                return 1;
+            }
+        } else if let Err(err) = fs::copy(&from, &to) {
+            eprintln!("Static exporting failed: 'couldn't copy static alias file: '{}''", err.to_string());
             return 1;
         }
     }
