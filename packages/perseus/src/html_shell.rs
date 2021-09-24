@@ -40,7 +40,7 @@ pub fn prep_html_shell(html_shell: String, render_cfg: &HashMap<String, String>)
 /// into.
 pub fn interpolate_page_data(
     html_shell: &str,
-    page_data: PageData,
+    page_data: &PageData,
     root_id: &str
 ) -> String {
     // Interpolate the document `<head>`

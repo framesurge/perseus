@@ -123,7 +123,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 }
             };
 
-            let final_html = interpolate_page_data(&html_shell, page_data, &opts.root_id);
+            let final_html = interpolate_page_data(&html_shell, &page_data, &opts.root_id);
 
             HttpResponse::Ok()
                 .content_type("text/html")

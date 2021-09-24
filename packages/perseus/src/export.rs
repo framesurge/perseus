@@ -8,14 +8,8 @@ use crate::serve::PageData;
 use crate::get_render_cfg;
 use std::fs;
 
-/// Creates a full HTML file, ready for initial loads, from the given data.
-async fn create_full_html(
-    path: &str,
-    has_state: bool,
-    html_shell: &str,
-    root_id: &str,
-    config_manager: &impl ConfigManager
-) -> Result<String> {
+/// Gets the static page data.
+async fn get_static_page_data(path: &str, has_state: bool, config_manager: &impl ConfigManager) -> Result<PageData> {
     // Get the partial HTML content and a state to go with it (if applicable)
     let content = config_manager.read(&format!("static/{}.html", path)).await?;
     let head = config_manager.read(&format!("static/{}.head.html", path)).await?;
@@ -24,13 +18,11 @@ async fn create_full_html(
         false => None
     };
     // Create an instance of `PageData`
-    let page_data = PageData {
+    Ok(PageData {
         content,
         state,
         head
-    };
-
-    Ok(interpolate_page_data(html_shell, page_data, root_id))
+    })
 }
 
 /// Exports your app to static files, which can be served from anywhere, without needing a server. This assumes that the app has already
@@ -70,18 +62,28 @@ pub async fn export_app(
         if locales.using_i18n {
             // Loop through all the app's locales
             for locale in locales.get_all() {
+                let page_data = get_static_page_data(&format!("{}-{}", locale, &path_encoded), has_state, config_manager).await?;
                 // Create a full HTML file from those that can be served for initial loads
                 // The build process writes these with a dummy default locale even though we're not using i18n
-                let full_html = create_full_html(&format!("{}-{}", locale, &path_encoded), has_state, &html_shell, root_id, config_manager).await?;
+                let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
                 // We don't add an extension because this will be queried directly
                 config_manager.write(&format!("exported/{}/{}", locale, &path), &full_html).await?;
+
+                // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
+                let partial = serde_json::to_string(&page_data).unwrap();
+                config_manager.write(&format!("exported/.perseus/page/{}/{}", locale, &path_encoded), &partial).await?;
             }
         } else {
+            let page_data = get_static_page_data(&format!("{}-{}", locales.default, &path_encoded), has_state, config_manager).await?;
             // Create a full HTML file from those that can be served for initial loads
             // The build process writes these with a dummy default locale even though we're not using i18n
-            let full_html = create_full_html(&format!("{}-{}", locales.default, &path_encoded), has_state, &html_shell, root_id, config_manager).await?;
-            // We don't add an extension because this will be queried directly
+            let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
+            // We don't add an extension because this will be queried directly by the browser
             config_manager.write(&format!("exported/{}", &path), &full_html).await?;
+
+            // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
+            let partial = serde_json::to_string(&page_data).unwrap();
+            config_manager.write(&format!("exported/.perseus/page/{}/{}", locales.default, &path_encoded), &partial).await?;
         }
     }
 
