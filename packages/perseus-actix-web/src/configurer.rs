@@ -95,7 +95,7 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             // We stream both together in a single JSON object so SSR works (otherwise we'd have request IDs and weird caching...)
             // A request to this should also provide the template name (routing should only be done once on the client) as a query parameter
             .route(
-                "/.perseus/page/{locale}/{filename:.*}",
+                "/.perseus/page/{locale}/{filename:.*}.json",
                 web::get().to(page_data::<C, T>),
             )
             // This allows the app shell to fetch translations for a given page

@@ -97,7 +97,7 @@ pub async fn export_app(
                 let partial = serde_json::to_string(&page_data).unwrap();
                 config_manager
                     .write(
-                        &format!("exported/.perseus/page/{}/{}", locale, &path_encoded),
+                        &format!("exported/.perseus/page/{}/{}.json", locale, &path_encoded),
                         &partial,
                     )
                     .await?;
@@ -122,7 +122,7 @@ pub async fn export_app(
             config_manager
                 .write(
                     &format!(
-                        "exported/.perseus/page/{}/{}",
+                        "exported/.perseus/page/{}/{}.json",
                         locales.default, &path_encoded
                     ),
                     &partial,

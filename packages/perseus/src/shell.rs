@@ -263,9 +263,15 @@ pub async fn app_shell(
         // If we have no initial state, we should proceed as usual, fetching the content and state from the server
         InitialState::NotPresent => {
             checkpoint("initial_state_not_present");
+            // If we're getting data about the index page, explicitly set it to that
+            // This can be handled by the Perseus server (and is), but not by static exporting
+            let path = match path.is_empty() {
+                true => "index".to_string(),
+                false => path
+            };
             // Get the static page data
             let asset_url = format!(
-                "/.perseus/page/{}/{}?template_name={}",
+                "/.perseus/page/{}/{}.json?template_name={}",
                 locale,
                 path.to_string(),
                 template.get_path()
