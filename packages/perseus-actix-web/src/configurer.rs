@@ -4,10 +4,10 @@ use crate::translations::translations;
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest};
 use perseus::{
-    get_render_cfg, ConfigManager, ErrorPages, Locales, SsrNode, TemplateMap, TranslationsManager,
+    get_render_cfg, html_shell::prep_html_shell, ConfigManager, ErrorPages, Locales, SsrNode,
+    TemplateMap, TranslationsManager,
 };
 use std::collections::HashMap;
-use std::env;
 use std::fs;
 
 /// The options for setting up the Actix Web integration. This should be literally constructed, as nothing is optional.
@@ -40,11 +40,6 @@ pub struct Options {
     pub static_aliases: HashMap<String, String>,
 }
 
-async fn render_conf(
-    render_conf: web::Data<HashMap<String, String>>,
-) -> web::Json<HashMap<String, String>> {
-    web::Json(render_conf.get_ref().clone())
-}
 async fn js_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.js_bundle)
 }
@@ -73,33 +68,8 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
         .expect("Couldn't get render configuration!");
     // Get the index file and inject the render configuration into ahead of time
     // Anything done here will affect any status code and all loads
-    // We do this by injecting a script that defines the render config as a global variable, which we put just before the close of the head
-    // We also inject a delimiter comment that will be used to wall off the constant document head from the interpolated document head
-    // We also inject a script to load the Wasm bundle (avoids extra trips)
-    // We also inject a global variable to identify that we're testing if we are (picked up by app shell to trigger helper DOM events)
     let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
-    let load_script = r#"<script type="module">
-    import init, { run } from "/.perseus/bundle.js";
-    async function main() {
-        await init("/.perseus/bundle.wasm");
-        run();
-    }
-    main();
-</script>"#;
-    let index_with_render_cfg = index_file.replace(
-        "</head>",
-        // It's safe to assume that something we just deserialized will serialize again in this case
-        &format!(
-            "<script>window.__PERSEUS_RENDER_CFG = '{}';{testing_var}</script>\n{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n</head>",
-            serde_json::to_string(&render_cfg).unwrap(),
-            load_script,
-            testing_var=if env::var("PERSEUS_TESTING").is_ok() {
-                "window.__PERSEUS_TESTING = true;"
-            } else {
-                ""
-            }
-        ),
-    );
+    let index_with_render_cfg = prep_html_shell(index_file, &render_cfg);
 
     move |cfg: &mut web::ServiceConfig| {
         cfg
@@ -114,12 +84,11 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             // This contains everything in the spirit of a pseudo-SPA
             .route("/.perseus/bundle.js", web::get().to(js_bundle))
             .route("/.perseus/bundle.wasm", web::get().to(wasm_bundle))
-            .route("/.perseus/render_conf.json", web::get().to(render_conf))
             // This allows getting the static HTML/JSON of a page
             // We stream both together in a single JSON object so SSR works (otherwise we'd have request IDs and weird caching...)
             // A request to this should also provide the template name (routing should only be done once on the client) as a query parameter
             .route(
-                "/.perseus/page/{locale}/{filename:.*}",
+                "/.perseus/page/{locale}/{filename:.*}.json",
                 web::get().to(page_data::<C, T>),
             )
             // This allows the app shell to fetch translations for a given page

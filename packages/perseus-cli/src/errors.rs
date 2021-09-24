@@ -99,6 +99,16 @@ error_chain! {
             description("can't clean after ejection unless `--force` is provided")
             display("The `clean` command removes the entire `.perseus/` directory, and you've already ejected, meaning that you can make modifications to that directory. If you proceed with this command, any modifications you've made to `.perseus/` will be PERMANENTLY lost! If you're sure you want to proceed, run `perseus clean --force`.")
         }
+        /// For when copying an asset into the export package failed.
+        MoveExportAssetFailed(to: String, from: String, err: String) {
+            description("couldn't copy asset for exporting")
+            display("Couldn't copy asset from '{}' to '{}' for exporting. Error was: '{}'.", to, from, err)
+        }
+        /// For when creating the export directory structure failed.
+        ExportDirStructureFailed {
+            description("couldn't create necessary directory structure for exporting")
+            display("Couldn't create directory structure necessary for exporting. Please ensure that you have the necessary permissions to write in this folder.")
+        }
     }
 }
 

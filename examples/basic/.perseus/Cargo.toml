@@ -5,6 +5,7 @@
 name = "perseus-cli-builder"
 version = "0.2.1"
 edition = "2018"
+default-run = "perseus-builder"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -23,6 +24,7 @@ serde_json = "1" # Possibly don't need?
 console_error_panic_hook = "0.1.6"
 urlencoding = "2.1"
 futures = "0.3"
+fs_extra = "1"
 
 # This section is needed for Wasm Pack (which we use instead of Trunk for flexibility)
 [lib]
@@ -30,5 +32,9 @@ crate-type = ["cdylib", "rlib"]
 
 # We define a binary for building, serving, and doing both
 [[bin]]
-name = "perseus-internal"
+name = "perseus-builder"
 path = "src/bin/build.rs"
+
+[[bin]]
+name = "perseus-exporter"
+path = "src/bin/export.rs"

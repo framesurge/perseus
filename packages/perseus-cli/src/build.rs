@@ -72,7 +72,7 @@ pub fn build_internal(
     let sg_target = target.clone();
     let wb_spinner = spinners.insert(1, ProgressBar::new_spinner());
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
-    let wb_target = target.clone();
+    let wb_target = target;
     let sg_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
@@ -106,7 +106,6 @@ pub fn build_internal(
 /// Builds the subcrates to get a directory that we can serve. Returns an exit code.
 pub fn build(dir: PathBuf, _prog_args: &[String]) -> Result<i32> {
     let spinners = MultiProgress::new();
-    // TODO support watching files
 
     let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 2)?;
     let sg_res = sg_thread

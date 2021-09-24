@@ -2,10 +2,11 @@ use crate::conv_req::convert_req;
 use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::error_pages::ErrorPageData;
+use perseus::html_shell::interpolate_page_data;
 use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::{
-    err_to_status_code, serve::get_page_for_template_and_translator, ConfigManager, ErrorPages,
-    SsrNode, TranslationsManager, Translator,
+    err_to_status_code, serve::get_page_for_template, ConfigManager, ErrorPages, SsrNode,
+    TranslationsManager, Translator,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -104,25 +105,14 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                     return html_err(400, &err.to_string());
                 }
             };
-            // Create a translator here, we'll use it twice
-            let translator_raw = translations_manager
-                .get_translator_for_locale(locale.to_string())
-                .await;
-            let translator_raw = match translator_raw {
-                Ok(translator_raw) => translator_raw,
-                Err(err) => {
-                    return html_err(500, &err.to_string());
-                }
-            };
-            let translator = Rc::new(translator_raw);
             // Actually render the page as we would if this weren't an initial load
-            let page_data = get_page_for_template_and_translator(
+            let page_data = get_page_for_template(
                 &path,
                 &locale,
                 &template,
                 http_req,
-                Rc::clone(&translator),
                 config_manager.get_ref(),
+                translations_manager.get_ref(),
             )
             .await;
             let page_data = match page_data {
@@ -133,46 +123,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 }
             };
 
-            // Render the HTML head and interpolate it
-            let head_str =
-                template.render_head_str(page_data.state.clone(), Rc::clone(&translator));
-            let html_with_head = html_shell.replace(
-                "<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->",
-                &format!("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->{}", head_str),
-            );
-
-            // Interpolate a global variable of the state so the app shell doesn't have to make any more trips
-            // The app shell will unset this after usage so it doesn't contaminate later non-initial loads
-            // Error pages (above) will set this to `error`
-            let state_var = format!("<script>window.__PERSEUS_INITIAL_STATE = '{}';</script>", {
-                if let Some(state) = &page_data.state {
-                    state
-                        // If we don't escape quotes, we get runtime syntax errors
-                        .replace(r#"'"#, r#"\'"#)
-                        .replace(r#"""#, r#"\""#)
-                } else {
-                    "None".to_string()
-                }
-            });
-            // We put this at the very end of the head (after the delimiter comment) because it doesn't matter if it's expunged on subsequent loads
-            let html_with_state =
-                html_with_head.replace("</head>", &format!("{}\n</head>", state_var));
-
-            // Figure out exactly what we're interpolating in terms of content
-            // The user MUST place have a `<div>` of this exact form (documented explicitly)
-            // We permit either double or single quotes
-            let html_to_replace_double = format!("<div id=\"{}\">", &opts.root_id);
-            let html_to_replace_single = format!("<div id='{}'>", &opts.root_id);
-            let html_replacement = format!(
-                // We give the content a specific ID so that it can be deleted if an error page needs to be rendered on the client-side
-                "{}<div id=\"__perseus_content\">{}</div>",
-                &html_to_replace_double,
-                &page_data.content
-            );
-            // Now interpolate that HTML into the HTML shell
-            let final_html = html_with_state
-                .replace(&html_to_replace_double, &html_replacement)
-                .replace(&html_to_replace_single, &html_replacement);
+            let final_html = interpolate_page_data(&html_shell, &page_data, &opts.root_id);
 
             HttpResponse::Ok()
                 .content_type("text/html")

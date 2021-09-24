@@ -116,7 +116,7 @@ impl TranslationsManager for FsTranslationsManager {
                 Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                     bail!(ErrorKind::NotFound(asset_path))
                 }
-                Err(err) => bail!(ErrorKind::ReadFailed(locale.to_string(), err.to_string())),
+                Err(err) => bail!(ErrorKind::ReadFailed(locale, err.to_string())),
             };
             Ok(translations_str)
         }

@@ -42,11 +42,26 @@ error_chain! {
             display("the locale '{}' is not supported", locale)
         }
 
-        /// For when a necessary template feautre was expected but not present. This just pertains to rendering strategies, and shouldn't
+        /// For when a necessary template feature was expected but not present. This just pertains to rendering strategies, and shouldn't
         /// ever be sensitive.
         TemplateFeatureNotEnabled(name: String, feature: String) {
             description("a template feature required by a function called was not present")
             display("the template '{}' is missing the feature '{}'", name, feature)
+        }
+        /// For when a template was using non-exportable features, but the user was trying to export.
+        TemplateNotExportable(name: String) {
+            description("attempted to export template with non-exportable features")
+            display("the template '{}' is using features that cannot be exported (only build state and build paths can be exported, you may wish to build instead)", name)
+        }
+        /// For when the HTML shell couldn't be found.
+        HtmlShellNotFound(path: String, err: String) {
+            description("html shell not found")
+            display("html shell couldn't be found at given path '{}', make sure that exists and that you have permission to read from there, error was: '{}'", path, err)
+        }
+        /// For when a template couldn't be found while exporting.
+        TemplateNotFound(path: String) {
+            description("template not found")
+            display("template '{}' couldn't be found, please try again", path)
         }
         /// For when the given path wasn't found, a 404 should never be sensitive.
         PageNotFound(path: String) {

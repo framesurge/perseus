@@ -54,7 +54,7 @@ fn build_server(
     // We deliberately insert the spinner at the end of the list
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
-    let sb_target = target.clone();
+    let sb_target = target;
     let sb_thread = spawn_thread(move || {
         let (stdout, _stderr) = handle_exit_code!(run_stage(
             vec![&format!(
@@ -203,7 +203,7 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
 
     // Now actually run that executable path if we should
     if should_run {
-        let exit_code = run_server(Arc::clone(&exec), dir.clone(), did_build)?;
+        let exit_code = run_server(Arc::clone(&exec), dir, did_build)?;
         Ok(exit_code)
     } else {
         // The user doesn't want to run the server, so we'll give them the executable path instead

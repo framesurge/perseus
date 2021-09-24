@@ -1,7 +1,7 @@
 use perseus_cli::errors::*;
 use perseus_cli::{
-    build, check_env, delete_artifacts, delete_bad_dir, eject, has_ejected, help, prepare, serve,
-    PERSEUS_VERSION,
+    build, check_env, delete_artifacts, delete_bad_dir, eject, export, has_ejected, help, prepare,
+    serve, PERSEUS_VERSION,
 };
 use std::env;
 use std::io::Write;
@@ -83,6 +83,14 @@ fn core(dir: PathBuf) -> Result<i32> {
                 delete_artifacts(dir.clone(), "static")?;
                 let exit_code = build(dir, &prog_args)?;
                 Ok(exit_code)
+            } else if prog_args[0] == "export" {
+                // Set up the '.perseus/' directory if needed
+                prepare(dir.clone())?;
+                // Delete old build/exportation artifacts
+                delete_artifacts(dir.clone(), "static")?;
+                delete_artifacts(dir.clone(), "exported")?;
+                let exit_code = export(dir, &prog_args)?;
+                Ok(exit_code)
             } else if prog_args[0] == "serve" {
                 // Set up the '.perseus/' directory if needed
                 prepare(dir.clone())?;
@@ -107,7 +115,7 @@ fn core(dir: PathBuf) -> Result<i32> {
             } else if prog_args[0] == "prep" {
                 // This command is deliberately undocumented, it's only used for testing
                 // Set up the '.perseus/' directory if needed
-                prepare(dir.clone())?;
+                prepare(dir)?;
                 Ok(0)
             } else if prog_args[0] == "eject" {
                 // Set up the '.perseus/' directory if needed
@@ -119,7 +127,7 @@ fn core(dir: PathBuf) -> Result<i32> {
                     // The user only wants to remove distribution artifacts
                     // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
                     delete_artifacts(dir.clone(), "static")?;
-                    delete_artifacts(dir.clone(), "pkg")?;
+                    delete_artifacts(dir, "pkg")?;
                 } else {
                     // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
                     if has_ejected(dir.clone()) && prog_args[1] != "--force" {

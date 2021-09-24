@@ -1,6 +1,6 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
-use crate::serve::PageDataWithHead;
+use crate::serve::PageData;
 use crate::template::Template;
 use crate::ClientTranslationsManager;
 use crate::ErrorPages;
@@ -263,9 +263,15 @@ pub async fn app_shell(
         // If we have no initial state, we should proceed as usual, fetching the content and state from the server
         InitialState::NotPresent => {
             checkpoint("initial_state_not_present");
+            // If we're getting data about the index page, explicitly set it to that
+            // This can be handled by the Perseus server (and is), but not by static exporting
+            let path = match path.is_empty() {
+                true => "index".to_string(),
+                false => path,
+            };
             // Get the static page data
             let asset_url = format!(
-                "/.perseus/page/{}/{}?template_name={}",
+                "/.perseus/page/{}/{}.json?template_name={}",
                 locale,
                 path.to_string(),
                 template.get_path()
@@ -276,7 +282,7 @@ pub async fn app_shell(
                 Ok(page_data_str) => match page_data_str {
                     Some(page_data_str) => {
                         // All good, deserialize the page data
-                        let page_data = serde_json::from_str::<PageDataWithHead>(&page_data_str);
+                        let page_data = serde_json::from_str::<PageData>(&page_data_str);
                         match page_data {
                             Ok(page_data) => {
                                 // We have the page data ready, render everything
