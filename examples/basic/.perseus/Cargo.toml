@@ -3,7 +3,7 @@
 
 [package]
 name = "perseus-cli-builder"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2018"
 default-run = "perseus-builder"
 

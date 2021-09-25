@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/arctic-hen7/perseus/compare/v0.2.1...v0.2.2) (2021-09-25)
+
+
+### Features
+
+* **templates:** ✨ added ability to set http headers for templates ([#25](https://github.com/arctic-hen7/perseus/issues/25)) ([058d625](https://github.com/arctic-hen7/perseus/commit/058d625575e28460004a6114c6fa6bacedf76515))
+* ✨ added static exporting ([#23](https://github.com/arctic-hen7/perseus/issues/23)) ([4838ba4](https://github.com/arctic-hen7/perseus/commit/4838ba43611b0156afa5c84d2454ca6cbbf5f5a1)), closes [#22](https://github.com/arctic-hen7/perseus/issues/22)
+
+
+### Bug Fixes
+
+* **cli:** 🐛 surrounded url with angular brackets ([7688d7d](https://github.com/arctic-hen7/perseus/commit/7688d7d4ebab0682dbdd1422f7df3feca117a30f)), closes [#24](https://github.com/arctic-hen7/perseus/issues/24)
+
+
+### Documentation Changes
+
+* 📝 removed duplication in changelog ([0ba3e2c](https://github.com/arctic-hen7/perseus/commit/0ba3e2c698fa880405f9ef930bfee0c227e8c886))
+* **book:** 📝 added docs on header modification ([bca6430](https://github.com/arctic-hen7/perseus/commit/bca6430ca0abeb1afdb2d48abfad414be6bf4ef4))
+* 📝 added badges to readme ([0441f80](https://github.com/arctic-hen7/perseus/commit/0441f80a2fcd43fd15e94c4baa56bfc9e11f0788))
+* 📝 removed unnecessary readme links ([295a7b5](https://github.com/arctic-hen7/perseus/commit/295a7b5c6c8404ef977c3d1924513103d94acd79))
+
 ### [0.2.1](https://github.com/arctic-hen7/perseus/compare/v0.2.0...v0.2.1) (2021-09-23)
 
 ### Features
