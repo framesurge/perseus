@@ -1,4 +1,7 @@
-use perseus::{GenericNode, StringResultWithCause, Template, http::header::{HeaderMap, HeaderName}};
+use perseus::{
+    http::header::{HeaderMap, HeaderName},
+    GenericNode, StringResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, Template as SycamoreTemplate};
@@ -52,7 +55,10 @@ pub fn head_fn() -> perseus::template::HeadFn {
 pub fn set_headers_fn() -> perseus::template::SetHeadersFn {
     Rc::new(|_| {
         let mut map = HeaderMap::new();
-        map.insert(HeaderName::from_lowercase(b"x-test").unwrap(), "custom value".parse().unwrap());
+        map.insert(
+            HeaderName::from_lowercase(b"x-test").unwrap(),
+            "custom value".parse().unwrap(),
+        );
         map
     })
 }

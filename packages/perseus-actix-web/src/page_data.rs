@@ -63,7 +63,7 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
                 }
 
                 http_res.body(serde_json::to_string(&page_data).unwrap())
-            },
+            }
             // We parse the error to return an appropriate status code
             Err(err) => {
                 HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())

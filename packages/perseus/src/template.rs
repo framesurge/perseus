@@ -1,17 +1,17 @@
 // This file contains logic to define how templates are rendered
 
+use crate::default_headers::default_headers;
 use crate::errors::*;
 use crate::Request;
 use crate::SsrNode;
 use crate::Translator;
-use crate::default_headers::default_headers;
 use futures::Future;
+use http::header::HeaderMap;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
-use http::header::HeaderMap;
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).

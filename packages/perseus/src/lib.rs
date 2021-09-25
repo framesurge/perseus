@@ -41,6 +41,7 @@ mod client_translations_manager;
 /// Utilities for creating custom config managers, as well as the default `FsConfigManager`.
 pub mod config_manager;
 mod decode_time_str;
+mod default_headers;
 /// Utilities regarding the formation of error pages for HTTP status codes, like a `404 Not Found` page.
 pub mod error_pages;
 pub mod errors;
@@ -65,7 +66,6 @@ mod test;
 pub mod translations_manager;
 /// Utilities regarding translators, including the default `FluentTranslator`.
 pub mod translator;
-mod default_headers;
 
 pub use http;
 pub use http::Request as HttpRequest;
