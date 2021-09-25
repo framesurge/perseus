@@ -4,12 +4,14 @@ use crate::errors::*;
 use crate::Request;
 use crate::SsrNode;
 use crate::Translator;
+use crate::default_headers::default_headers;
 use futures::Future;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
+use http::header::HeaderMap;
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
@@ -118,6 +120,8 @@ pub type TemplateFn<G> = Rc<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
 /// rendered in function (it may be rendered on the client, but it will always be used to create an HTML string, rather than a reactive
 /// template).
 pub type HeadFn = TemplateFn<SsrNode>;
+/// The type of functions that modify HTTP response headers.
+pub type SetHeadersFn = Rc<dyn Fn(Option<String>) -> HeaderMap>;
 /// The type of functions that get build paths.
 pub type GetBuildPathsFn = Rc<dyn GetBuildPathsFnType>;
 /// The type of functions that get build state.
@@ -146,6 +150,10 @@ pub struct Template<G: GenericNode> {
     /// the same way as `template`, but will always be rendered to a string, whcih will then be interpolated directly into the `<head>`,
     /// so reactivity here will not work!
     head: TemplateFn<SsrNode>,
+    /// A function to be run when the server returns an HTTP response. This should return headers for said response, given the template's
+    /// state. The most common use-case of this is to add cache control that respects revalidation. This will only be run on successful
+    /// responses, and does have the power to override existing headers. By default, this will create sensible cache control headers.
+    set_headers: SetHeadersFn,
     /// A function that gets the paths to render for at built-time. This is equivalent to `get_static_paths` in NextJS. If
     /// `incremental_generation` is `true`, more paths can be rendered at request time on top of these.
     get_build_paths: Option<GetBuildPathsFn>,
@@ -182,6 +190,9 @@ impl<G: GenericNode> Template<G> {
             template: Rc::new(|_: Option<String>| sycamore::template! {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             head: Rc::new(|_: Option<String>| sycamore::template! {}),
+            // We create sensible header defaults here
+            // TODO header defaults
+            set_headers: Rc::new(|_: Option<String>| default_headers()),
             get_build_paths: None,
             incremental_generation: false,
             get_build_state: None,
@@ -326,6 +337,12 @@ impl<G: GenericNode> Template<G> {
             ))
         }
     }
+    /// Gets the template's headers for the given state. These will be inserted into any successful HTTP responses for this template,
+    /// and they have the power to override.
+    #[allow(clippy::mutable_key_type)]
+    pub fn get_headers(&self, state: Option<String>) -> HeaderMap {
+        (self.set_headers)(state)
+    }
 
     // Value getters
     /// Gets the path of the template. This is the root path under which any generated pages will be served. In the simplest case, there will
@@ -371,7 +388,8 @@ impl<G: GenericNode> Template<G> {
     pub fn can_amalgamate_states(&self) -> bool {
         self.amalgamate_states.is_some()
     }
-    /// Checks if this template defines no rendering logic whatsoever. Such templates will be rendered using SSG.
+    /// Checks if this template defines no rendering logic whatsoever. Such templates will be rendered using SSG. Basic templates can
+    /// still modify headers.
     pub fn is_basic(&self) -> bool {
         !self.uses_build_paths()
             && !self.uses_build_state()
@@ -387,8 +405,13 @@ impl<G: GenericNode> Template<G> {
         self
     }
     /// Sets the document head rendering function to use.
-    pub fn head(mut self, val: TemplateFn<SsrNode>) -> Template<G> {
+    pub fn head(mut self, val: HeadFn) -> Template<G> {
         self.head = val;
+        self
+    }
+    /// Sets the function to set headers. This will override Perseus' inbuilt header defaults.
+    pub fn set_headers_fn(mut self, val: SetHeadersFn) -> Template<G> {
+        self.set_headers = val;
         self
     }
     /// Enables the *build paths* strategy with the given function.

@@ -1,4 +1,4 @@
-use perseus::{GenericNode, StringResultWithCause, Template};
+use perseus::{GenericNode, StringResultWithCause, Template, http::header::{HeaderMap, HeaderName}};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, Template as SycamoreTemplate};
@@ -21,6 +21,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .build_state_fn(Rc::new(get_build_props))
         .template(template_fn())
         .head(head_fn())
+        .set_headers_fn(set_headers_fn())
 }
 
 pub async fn get_build_props(_path: String) -> StringResultWithCause<String> {
@@ -45,5 +46,13 @@ pub fn head_fn() -> perseus::template::HeadFn {
         template! {
             title { "Index Page | Perseus Example – Basic" }
         }
+    })
+}
+
+pub fn set_headers_fn() -> perseus::template::SetHeadersFn {
+    Rc::new(|_| {
+        let mut map = HeaderMap::new();
+        map.insert(HeaderName::from_lowercase(b"x-test").unwrap(), "custom value".parse().unwrap());
+        map
     })
 }
