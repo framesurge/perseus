@@ -54,7 +54,16 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
         )
         .await;
         match page_data {
-            Ok(page_data) => HttpResponse::Ok().body(serde_json::to_string(&page_data).unwrap()),
+            Ok(page_data) => {
+                let mut http_res = HttpResponse::Ok();
+                http_res.content_type("text/html");
+                // Generate and add HTTP headers
+                for (key, val) in template.get_headers(page_data.state.clone()) {
+                    http_res.set_header(key.unwrap(), val);
+                }
+
+                http_res.body(serde_json::to_string(&page_data).unwrap())
+            }
             // We parse the error to return an appropriate status code
             Err(err) => {
                 HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
