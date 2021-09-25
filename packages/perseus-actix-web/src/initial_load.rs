@@ -125,9 +125,14 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
 
             let final_html = interpolate_page_data(&html_shell, &page_data, &opts.root_id);
 
-            HttpResponse::Ok()
-                .content_type("text/html")
-                .body(final_html)
+            let mut http_res = HttpResponse::Ok();
+            http_res.content_type("text/html");
+            // Generate and add HTTP headers
+            for (key, val) in template.get_headers(page_data.state.clone()) {
+                http_res.set_header(key.unwrap(), val);
+            }
+
+            http_res.body(final_html)
         }
         // For locale detection, we don't know the user's locale, so there's not much we can do except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
         RouteVerdict::LocaleDetection(_) => {
