@@ -12,6 +12,7 @@
 - [Debugging](./debugging.md)
 - [Templates and Routing](./templates/intro.md)
 	- [Modifying the `<head>`](./templates/metadata-modification.md)
+	- [Modifying HTTP Headers](./templates/setting-headers.md)
 - [Error Pages](./error-pages.md)
 - [Static Content](./static-content.md)
 - [Internationalization](./i18n/intro.md)
