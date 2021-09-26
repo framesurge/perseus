@@ -228,6 +228,8 @@ pub async fn app_shell(
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);
             initial_container.set_inner_html("");
+            // Make the initial container invisible
+            initial_container.set_attribute("style", "display: none;").unwrap();
             checkpoint("page_visible");
             // Now that the user can see something, we can get the translator
             let mut translations_manager_mut = translations_manager.borrow_mut();
