@@ -366,7 +366,7 @@ pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{is_client, Template};
+</span>use perseus::Template;
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
@@ -374,18 +374,6 @@ use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTe
 pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
     template! {
         p { &quot;About.&quot; }
-        p {
-            (
-                format!(
-                    &quot;This is currently being run on the {}.&quot;,
-                    if is_client!() {
-                        &quot;client&quot;
-                    } else {
-                        &quot;server&quot;
-                    }
-                )
-            )
-        }
     }
 }
 
