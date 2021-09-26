@@ -1,6 +1,6 @@
 [package]
 name = "perseus-macro"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2018"
 autotests = false
 description = "The Perseus macros."

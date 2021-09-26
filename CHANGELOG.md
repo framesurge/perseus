@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/arctic-hen7/perseus/compare/v0.2.2...v0.2.3) (2021-09-26)
+
+
+### Features
+
+* **templates:** ✨ added context to templates if they're beeing rendered on the server or client ([7600c95](https://github.com/arctic-hen7/perseus/commit/7600c95b6f7e10574b4597bda268cb0391810c99)), closes [#26](https://github.com/arctic-hen7/perseus/issues/26)
+* ✨ made initial content container invisible for errors as well ([0150c8d](https://github.com/arctic-hen7/perseus/commit/0150c8d376d39f355ee7c475f0529671e80915d4))
+* ✨ made initial content container invisible once content has loaded ([4daa8c2](https://github.com/arctic-hen7/perseus/commit/4daa8c2a4ec912bde118006dd4329cfa69d5a168))
+* ✨ renamed `__perseus_content` to `__perseus_content_initial` and made `__perseus_content` a class ([7242d74](https://github.com/arctic-hen7/perseus/commit/7242d74291e447d448640fc249c489515acc3abe))
+
+
+### Bug Fixes
+
+* 🚑 changed browser-checking logic to not use context ([4cd06c5](https://github.com/arctic-hen7/perseus/commit/4cd06c5a4e9d52fef53d7cbce8dbcee1348d21e9))
+* **i18n:** 🐛 used absolute paths in translation macros ([a413e85](https://github.com/arctic-hen7/perseus/commit/a413e85e683fd0dfa0ca0471c565432cec6eef6d))
+* 🐛 changed `__perseus_content_rx` to use `id` instead of `class` ([e504f6d](https://github.com/arctic-hen7/perseus/commit/e504f6d15ee4faaac7e34921fa3ef969210cbb38))
+
+
+### Documentation Changes
+
+* 📝 added docs for styling pitfalls ([66b43e1](https://github.com/arctic-hen7/perseus/commit/66b43e16b14d615c04fb5eb180d4c9530f9ac590)), closes [#28](https://github.com/arctic-hen7/perseus/issues/28)
+
 ### [0.2.2](https://github.com/arctic-hen7/perseus/compare/v0.2.1...v0.2.2) (2021-09-25)
 
 
