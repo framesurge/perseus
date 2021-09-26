@@ -106,8 +106,9 @@ pub fn run() -> Result<(), JsValue> {
                     // This template is reactive, and will be updated as necessary
                     // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
                     // The main reason for this is that the router only intercepts click events from its children
+                    // TODO remove class in v0.3.0 (deprecated)
                     template! {
-                        div(class="__perseus_content_rx", ref=container_rx) {}
+                        div(id="__perseus_content_rx", class="__perseus_content_rx", ref=container_rx) {}
                     }
                 }))
             }
