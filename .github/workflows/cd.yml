@@ -24,7 +24,7 @@ jobs:
         steps:
             - uses: actions/checkout@v2
             - name: Build
-              run: cargo build --release --locked
+              run: cargo build --release
               working-directory: packages/perseus-cli
             - name: Release binary
               uses: svenstaro/upload-release-action@v2
@@ -42,7 +42,7 @@ jobs:
             - name: Install musl toolchain
               run: rustup target add x86_64-unknown-linux-musl
             - name: Build
-              run: cargo build --release --target x86_64-unknown-linux-musl --locked
+              run: cargo build --release --target x86_64-unknown-linux-musl
               working-directory: packages/perseus-cli
             - name: Release binary
               uses: svenstaro/upload-release-action@v2
