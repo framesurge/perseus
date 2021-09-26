@@ -4,17 +4,17 @@ At the core of Perseus is its template system, which is how you'll define every 
 
 ## Templates vs Pages
 
-In Perseus, the idea of a *template* is very different to the idea of a *page*.
+In Perseus, the idea of a _template_ is very different to the idea of a _page_.
 
-A *page* corresponds to a URL in your app, like the about page, the landing page, or an individual blog post.
+A _page_ corresponds to a URL in your app, like the about page, the landing page, or an individual blog post.
 
-A *template* can generate *many* pages or only one by using *rendering strategies*.
+A _template_ can generate _many_ pages or only one by using _rendering strategies_.
 
 The best way to illustrate this is with the example of a simple blog, with each page stored in something like a CMS (content management system). This app would only need two templates (in addition to a landing page, an about page, etc.): `blog` and `post`. For simplicity, we'll put the list of all blog posts in `blog`, and then each post will have its own URL under `post`.
 
-The `blog` template will be rendered to `/blog`, and will only use the *build state* strategy, fetching a list of all our posts from the CMS every time the blog is rebuilt (or you could use revalidation and incremental generation to mean you never have to rebuild at all, but that's beyond the scope of this section). This template only generates one page, providing it the properties of the list of blog posts. So, in this case, the `blog` template has generated the `/blog` page.
+The `blog` template will be rendered to `/blog`, and will only use the _build state_ strategy, fetching a list of all our posts from the CMS every time the blog is rebuilt (or you could use revalidation and incremental generation to mean you never have to rebuild at all, but that's beyond the scope of this section). This template only generates one page, providing it the properties of the list of blog posts. So, in this case, the `blog` template has generated the `/blog` page.
 
-The `post` template is more complex, and it will generate *many* pages, one for each blog post. This would probably use the *build paths* strategy, which lets you fetch a list of blog posts from the CMS at build-time and invoke *build state* for each of them, which would then get their content, metadata, etc. Thus, the `post` template generates many pages.
+The `post` template is more complex, and it will generate _many_ pages, one for each blog post. This would probably use the _build paths_ strategy, which lets you fetch a list of blog posts from the CMS at build-time and invoke _build state_ for each of them, which would then get their content, metadata, etc. Thus, the `post` template generates many pages.
 
 Hopefully that explains the difference between a template and a post. This is a somewhat unintuitive part of Perseus, but it should be clear in the documentation what the difference is. Note however that old versions of the examples in the repository used these terms interchangeably, when they used to be the same. If you see any remaining ambiguity in the docs, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose)!
 
@@ -34,9 +34,9 @@ There's a list of all the methods available on a template [here](https://docs.rs
 
 Perseus' routing system is basically invisible, there's no router that you need to work with, nor any place for you to define explicit routes. Instead, Perseus automatically infers the routes for all your templates and the pages they generate from their names!
 
-The general rule is this: a template called `X` will be rendered at `/X`. Simple. What's more difficult to understand is what we call *template path domains*, which is the system that makes route inference possible. **A template can only ever generate pages within the scope of its root path.** Its root path is its name. In the example of a template called `X`, it can render `/X/Y`, `/X/Y/Z`, etc., but it can *never* render `/A`.
+The general rule is this: a template called `X` will be rendered at `/X`. Simple. What's more difficult to understand is what we call _template path domains_, which is the system that makes route inference possible. **A template can only ever generate pages within the scope of its root path.** Its root path is its name. In the example of a template called `X`, it can render `/X/Y`, `/X/Y/Z`, etc., but it can _never_ render `/A`.
 
-To generate paths within a template's domain, you can use the *build paths* and *incremental generation* strategies (more on those later). Both of these support dynamic parameters (which might be denoted in other languages as `/post/<title>/info` or the like).
+To generate paths within a template's domain, you can use the _build paths_ and _incremental generation_ strategies (more on those later). Both of these support dynamic parameters (which might be denoted in other languages as `/post/<title>/info` or the like).
 
 ### Dynamic Parameters Above the Domain
 
@@ -50,10 +50,4 @@ There is one use-case though that requires a bit more fiddling: having a differe
 
 ## Checking Render Context
 
-It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with `web_sys`, which will `panic!` if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with the `is_client!` macro, which does exactly what it says on the tin. Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/templates/about.rs):
-
-```rust,no_run,no_playground
-{{#include ../../../../examples/basic/src/templates/about.rs}}
-```
-
-This is a very contrived example, but what you should note if you try this is the flash from `server` to `client`, because the page is pre-rendered on the server and then hydrated on the client. This is an important principle of Perseus, and you should be aware of this potential flashing (easily solved by a less contrived example).
+> This feature is currently in development, the tracking issue is available [here](https://github.com/arctic-hen7/perseus/issues/26).

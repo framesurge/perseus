@@ -1,4 +1,4 @@
-use perseus::{is_client, Template};
+use perseus::Template;
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
@@ -6,18 +6,6 @@ use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTe
 pub fn about_page() -> SycamoreTemplate<G> {
     template! {
         p { "About." }
-        p {
-            (
-                format!(
-                    "This is currently being run on the {}.",
-                    if is_client!() {
-                        "client"
-                    } else {
-                        "server"
-                    }
-                )
-            )
-        }
     }
 }
 
