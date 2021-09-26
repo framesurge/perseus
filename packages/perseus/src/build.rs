@@ -67,11 +67,7 @@ pub async fn build_template(
                 .await?;
             // Prerender the template using that state
             let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(
-                    Some(initial_state.clone()),
-                    Rc::clone(&translator),
-                    true,
-                )
+                template.render_for_template(Some(initial_state.clone()), Rc::clone(&translator))
             });
             // Write that prerendered HTML to a static file
             config_manager
@@ -108,7 +104,7 @@ pub async fn build_template(
         // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
         if template.is_basic() {
             let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(None, Rc::clone(&translator), true)
+                template.render_for_template(None, Rc::clone(&translator))
             });
             let head_str = template.render_head_str(None, Rc::clone(&translator));
             // Write that prerendered HTML to a static file

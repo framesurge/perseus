@@ -69,7 +69,7 @@ async fn render_request_state(
     let state = Some(template.get_request_state(path.to_string(), req).await?);
     // Use that to render the static HTML
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(state.clone(), Rc::clone(&translator), true)
+        template.render_for_template(state.clone(), Rc::clone(&translator))
     });
     let head = template.render_head_str(state.clone(), Rc::clone(&translator));
 
@@ -142,7 +142,7 @@ async fn revalidate(
             .await?,
     );
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(state.clone(), Rc::clone(&translator), true)
+        template.render_for_template(state.clone(), Rc::clone(&translator))
     });
     let head = template.render_head_str(state.clone(), Rc::clone(&translator));
     // Handle revalidation, we need to parse any given time strings into datetimes
@@ -254,7 +254,7 @@ pub async fn get_page_for_template(
                     // We need to generate and cache this page for future usage
                     let state = Some(template.get_build_state(path.to_string()).await?);
                     let html_val = sycamore::render_to_string(|| {
-                        template.render_for_template(state.clone(), Rc::clone(&translator), true)
+                        template.render_for_template(state.clone(), Rc::clone(&translator))
                     });
                     let head_val = template.render_head_str(state.clone(), Rc::clone(&translator));
                     // Handle revalidation, we need to parse any given time strings into datetimes
