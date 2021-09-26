@@ -93,6 +93,8 @@ pub fn run() -> Result<(), JsValue> {
                                         let initial_html = initial_container.inner_html();
                                         container_rx_elem.set_inner_html(&initial_html);
                                         initial_container.set_inner_html("");
+                                        // Make the initial container invisible
+                                        initial_container.set_attribute("style", "display: none;").unwrap();
                                         // Hydrate the error pages
                                         // Right now, we don't provide translators to any error pages that have come from the server
                                         error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
