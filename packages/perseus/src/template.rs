@@ -13,6 +13,14 @@ use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
 
+/// Used to encapsulate whether or not a template is running on the client or server. We use a `struct` so as not to interfere with
+/// any user-set context.
+#[derive(Clone, Debug)]
+pub struct RenderCtx {
+    /// Whether or not we're being executed on the server-side.
+    pub is_server: bool,
+}
+
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
 #[derive(Default)]
@@ -209,12 +217,22 @@ impl<G: GenericNode> Template<G> {
         &self,
         props: Option<String>,
         translator: Rc<Translator>,
+        is_server: bool,
     ) -> SycamoreTemplate<G> {
         template! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
             ContextProvider(ContextProviderProps {
                 value: Rc::clone(&translator),
-                children: || (self.template)(props)
+                children: || template! {
+                    // We then provide whether this is being rendered on the client or the server as a context element
+                    // This allows easy specification of client-side-only logic without having to worry about `web_sys` panicking
+                    ContextProvider(ContextProviderProps {
+                        value: RenderCtx {
+                            is_server
+                        },
+                        children: || (self.template)(props)
+                    })
+                }
             })
         }
     }
@@ -470,6 +488,15 @@ macro_rules! get_templates_map {
 
             map
         }
+    };
+}
+
+/// Checks in a template if the code is being run on client-side or the server-side. This uses Sycamore context, and so will only work
+/// in a reactive scope.
+#[macro_export]
+macro_rules! is_client {
+    () => {
+        !::sycamore::context::use_context::<::perseus::template::RenderCtx>().is_server;
     };
 }
 

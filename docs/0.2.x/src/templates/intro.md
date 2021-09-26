@@ -47,3 +47,13 @@ One niche case is defining a route like this: `/<locale>/about`. In this case, t
 It's perfectly possible in Perseus to define one template for `/post` (and its children) and a different one for `/post/new`. In fact, this is exactly what [the showcase example](https://github.com/arctic-hen7/perseus/tree/main/examples/showcase) does, and you can check it out for inspiration. This is based on a simple idea: **more specific templates win** the routing contest.
 
 There is one use-case though that requires a bit more fiddling: having a different template for the root path. A very common use-case for this would be having one template for `/posts`'s children (one URl for each blog post) and a different template for `/posts` itself that lists all available posts. Currently, the only way to do this is to define a property on the `posts` template that will be `true` if you're rendering for that root, and then to conditionally render the list of posts. Otherwise, you would render the given post content. This does require a lot of `Option<T>`s, but they could be safely unwrapped (data passing in Perseus is logical and safe).
+
+## Checking Render Context
+
+It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with `web_sys`, which will `panic!` if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with the `is_client!` macro, which does exactly what it says on the tin. Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/templates/about.rs):
+
+```rust,no_run,no_playground
+{{#include ../../../../examples/basic/src/templates/about.rs}}
+```
+
+This is a very contrived example, but what you should note if you try this is the flash from `server` to `client`, because the page is pre-rendered on the server and then hydrated on the client. This is an important principle of Perseus, and you should be aware of this potential flashing (easily solved by a less contrived example).
