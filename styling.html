@@ -194,8 +194,16 @@
             <div id="content" class="content">
                 <main>
                     <h1 id="styling"><a class="header" href="#styling">Styling</a></h1>
-<p>Perseus uses <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> for writing views, and styling is still <a href="https://sycamore-rs.netlify.app/docs/v0.6/advanced/css">in development</a> there.</p>
-<p><em>Note: a blog post will be released soon on setting up TailwindCSS with Perseus if you're interested in that.</em></p>
+<blockquote>
+<p>Note: Perseus uses <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> for writing views, and styling is still <a href="https://sycamore-rs.netlify.app/docs/v0.6/advanced/css">in development</a> there.</p>
+</blockquote>
+<p>Perseus aims to make styling as easy as possible, though there are a number of things that you should definitely know about before you start to style a Perseus app!</p>
+<p>It's very easy to import stylesheets with Perseus (be they your own, something like <a href="https://tailwindcss.com">TailwindCSS</a>, etc.). You just add them to the <code>static/</code> directory at the root of your project, and then they'll be available at <code>/.perseus/static/your-filename-here</code>. That's described in more detail in <a href="./static-content.html">this section</a>.</p>
+<h2 id="full-page-layouts"><a class="header" href="#full-page-layouts">Full-Page Layouts</a></h2>
+<p>If you've tried to create something like a stick footer, you've probably become extremely frustrated by Perseus, which puts all your content in a container <code>&lt;div&gt;</code> (in addition to the <code>&lt;div id=&quot;root&quot;&gt;&lt;/div&gt;</code>). Unfortunately, this is necessary until Sycamore supports creating a template for an existing DOM node, and this does lead to some styling problems.</p>
+<p>Notably, there are actually two of these <code>&lt;div&gt;</code>s at the moment: one for the content that the server pre-renders in <a href="./advanced/initial-loads.html">initial loads</a> and another for when that content is hydrated by Perseus' client-side logic. That means that, if you only style one of these, you'll get a horrible flash of unstyled content, which nobody wants. To make this as easy as possible, Perseus provides a class <code>__perseus_content</code> that applies to both of these <code>&lt;div&gt;</code>s. Also, note that the <code>&lt;div&gt;</code> for the initial content will become <code>display: none;</code> as soon as the page is ready, which means you won't get it interfering with your layouts.</p>
+<p>Knowing this, the main changes you'll need to make to any full-page layout code is to apply the styles to <code>.__perseus_content</code> instead of <code>body</code> or <code>#root</code>. As with CSS generally, if you expect <code>.__perseus_content</code> to take up the whole page, you'll need to make all its parents (<code>#root</code>, <code>body</code>, <code>html</code>) also take up the whole page (you can do this by setting <code>height: 100vh;</code> on <code>body</code>).</p>
+<p>Any other issues should be solvable by inspecting the DOM with your browser's DevTools, but you're more than welcome to ask for help on the <a href="https://discord.gg/PgwPn7dKEk">Sycamore Discord server</a>, where Perseus has its own channel!</p>
 
                 </main>
 

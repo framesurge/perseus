@@ -157,7 +157,7 @@
 <li>Browser renders HTML package, user sees content immediately.</li>
 <li>Browser invokes Wasm, hands control to the app shell.</li>
 <li>App shell checks if initial state declaration global variable is present, finds that it is and unsets it (so that it doesn't interfere with subsequent loads).</li>
-<li>App shell moves server-rendered content out of <code>__perseus_content</code> and into <code>__perseus_content_rx</code>, which Sycamore's router had control over (allowing it to catch links and use the subsequent loads system).</li>
+<li>App shell moves server-rendered content out of <code>__perseus_content_initial</code> and into <code>__perseus_content_rx</code>, which Sycamore's router had control over (allowing it to catch links and use the subsequent loads system).</li>
 <li>App shell gets a translator if the app uses i18n.</li>
 <li>App shell hydrates content at <code>__perseus_content_rx</code> with Sycamore and returns, the page is now interactive and has a translator context.</li>
 </ol>
