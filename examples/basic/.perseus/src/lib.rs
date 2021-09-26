@@ -31,7 +31,7 @@ pub fn run() -> Result<(), JsValue> {
         .unwrap()
         .document()
         .unwrap()
-        .query_selector("#__perseus_content")
+        .query_selector("#__perseus_content_initial")
         .unwrap();
     // And create a node reference that we can use as a handle to the reactive verison
     let container_rx = NodeRef::new();
@@ -106,9 +106,8 @@ pub fn run() -> Result<(), JsValue> {
                     // This template is reactive, and will be updated as necessary
                     // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
                     // The main reason for this is that the router only intercepts click events from its children
-                    // TODO remove class in v0.3.0 (deprecated)
                     template! {
-                        div(id="__perseus_content_rx", class="__perseus_content_rx", ref=container_rx) {}
+                        div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
                     }
                 }))
             }

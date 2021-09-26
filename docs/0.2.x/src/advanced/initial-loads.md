@@ -1,6 +1,6 @@
 # Initial Loads
 
-Perseus handles *initial loads* very differently from *subsequent loads*. The former refers to what's done when a user visits a page on a Perseus app from an external source (e.g. visiting from a search engine, redirected from another site), and this requires a full HTMl page to be sent that can be interpreted by the browser. By contrast, subsequent loads are loads between pages within the same Perseus app, which can be performed by the app shell (described in the next section).
+Perseus handles _initial loads_ very differently from _subsequent loads_. The former refers to what's done when a user visits a page on a Perseus app from an external source (e.g. visiting from a search engine, redirected from another site), and this requires a full HTMl page to be sent that can be interpreted by the browser. By contrast, subsequent loads are loads between pages within the same Perseus app, which can be performed by the app shell (described in the next section).
 
 The process of initial loads is slightly complex, and occurs like so (this example is for a page called `/posts/test`, rendered with incremental generation):
 
@@ -14,7 +14,7 @@ The process of initial loads is slightly complex, and occurs like so (this examp
 8. Browser renders HTML package, user sees content immediately.
 9. Browser invokes Wasm, hands control to the app shell.
 10. App shell checks if initial state declaration global variable is present, finds that it is and unsets it (so that it doesn't interfere with subsequent loads).
-11. App shell moves server-rendered content out of `__perseus_content` and into `__perseus_content_rx`, which Sycamore's router had control over (allowing it to catch links and use the subsequent loads system).
+11. App shell moves server-rendered content out of `__perseus_content_initial` and into `__perseus_content_rx`, which Sycamore's router had control over (allowing it to catch links and use the subsequent loads system).
 12. App shell gets a translator if the app uses i18n.
 13. App shell hydrates content at `__perseus_content_rx` with Sycamore and returns, the page is now interactive and has a translator context.
 
