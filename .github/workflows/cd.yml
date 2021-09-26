@@ -1,0 +1,54 @@
+name: Build and Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+jobs:
+    # This builds and releases for Windows, MacOS, and Linux
+    usu-build-release:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      artifact_name: perseus
+                      asset_name: perseus-linux-amd64
+                    - os: macos-latest
+                      artifact_name: perseus
+                      asset_name: perseus-macos-amd64
+                    - os: windows-latest
+                      artifact_name: perseus.exe
+                      asset_name: perseus-windows-amd64
+        steps:
+            - uses: actions/checkout@v2
+            - name: Build
+              run: cargo build --release --locked
+              working_directory: packages/perseus-cli
+            - name: Release binary
+              uses: svenstaro/upload-release-action@v2
+              with:
+                  repo_token: ${{ secrets.GITHUB_TOKEN }}
+                  file: target/release/${{ matrix.artifact_name }}
+                  asset_name: ${{ matrix.asset_name }}
+                  tag: ${{ github.ref }}
+                  body: "The above binaries/executables are for the Perseus CLI. See [CHANGELOG.md](./CHANGELOG.md) for details of the changes in this version."
+    # This builds and releases for musl
+    musl-build-release:
+        runs-on: ubuntu-latest # We cross-compile from Ubuntu
+        steps:
+            - uses: actions/checkout@v2
+            - name: Install musl toolchain
+              run: rustup target add x86_64-unknown-linux-musl
+            - name: Build
+              run: cargo build --release --target x86_64-unknown-linux-musl --locked
+              working_directory: packages/perseus-cli
+            - name: Release binary
+              uses: svenstaro/upload-release-action@v2
+              with:
+                  repo_token: ${{ secrets.GITHUB_TOKEN }}
+                  file: target/x86_64-unknown-linux-musl/release/perseus
+                  asset_name: perseus-musl-amd64
+                  tag: ${{ github.ref }}
+                  body: "The above binaries/executables are for the Perseus CLI. See [CHANGELOG.md](./CHANGELOG.md) for details of the changes in this version."
