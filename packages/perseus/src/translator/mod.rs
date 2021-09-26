@@ -19,8 +19,8 @@ macro_rules! t {
     // When there are no arguments to interpolate
     ($id:expr) => {
         {
-            let translator = ::sycamore::context::use_context::<Rc<Translator>>();
-            translator.translate($id, None)
+            let translator = ::sycamore::context::use_context::<Rc<::perseus::Translator>>();
+            translator.translate($id, ::std::option::Option::None)
         }
     };
     // When there are arguments to interpolate
@@ -28,13 +28,13 @@ macro_rules! t {
         $($key:literal: $value:expr),+
     }) => {
         {
-            let translator = ::sycamore::context::use_context::<Rc<Translator>>();
-            let mut args = fluent_bundle::FluentArgs::new();
+            let translator = ::sycamore::context::use_context::<::std::rc::Rc<::perseus::Translator>>();
+            let mut args = ::fluent_bundle::FluentArgs::new();
             $(
                 args.set($key, $value);
             )+
 
-            translator.translate($id, Some(args))
+            translator.translate($id, ::std::option::Option::Some(args))
         }
     };
 }
@@ -43,7 +43,7 @@ macro_rules! t {
 #[macro_export]
 macro_rules! link {
     ($url:expr) => {{
-        let translator = ::sycamore::context::use_context::<Rc<Translator>>();
+        let translator = ::sycamore::context::use_context::<::std::rc::Rc<::perseus::Translator>>();
         translator.url($url)
     }};
 }
