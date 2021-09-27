@@ -2,7 +2,7 @@ use crate::errors::*;
 use perseus::{HttpRequest, Request};
 
 /// Converts an Actix Web request into an `http::request`.
-pub fn convert_req(raw: &actix_web::HttpRequest) -> Result<Request> {
+pub fn convert_req(raw: &actix_web::HttpRequest) -> Result<Request, Error> {
     let mut builder = HttpRequest::builder();
     // Add headers one by one
     for (name, val) in raw.headers() {
@@ -20,5 +20,5 @@ pub fn convert_req(raw: &actix_web::HttpRequest) -> Result<Request> {
         // We always use an empty body because, in a Perseus request, only the URI matters
         // Any custom data should therefore be sent in headers (if you're doing that, consider a dedicated API)
         .body(())
-        .map_err(|err| ErrorKind::RequestConversionFailed(err.to_string()).into())
+        .map_err(|err| Error::RequestConversionFailed { source: err })
 }

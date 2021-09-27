@@ -1,4 +1,5 @@
 use crate::conv_req::convert_req;
+use crate::errors::format_err;
 use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use perseus::{
@@ -32,7 +33,7 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
             // If this fails, the client request is malformed, so it's a 400
             Err(err) => {
                 return HttpResponse::build(StatusCode::from_u16(400).unwrap())
-                    .body(err.to_string())
+                    .body(format_err(&err))
             }
         };
         // Get the template to use
@@ -67,7 +68,7 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
             // We parse the error to return an appropriate status code
             Err(err) => {
                 HttpResponse::build(StatusCode::from_u16(err_to_status_code(&err)).unwrap())
-                    .body(err.to_string())
+                    .body(format_err(&err))
             }
         }
     } else {

@@ -1,3 +1,4 @@
+use crate::errors::format_err;
 use crate::Options;
 use actix_web::{web, HttpRequest, HttpResponse};
 use perseus::TranslationsManager;
@@ -18,7 +19,7 @@ pub async fn translations<T: TranslationsManager>(
             .await;
         let translations = match translations {
             Ok(translations) => translations,
-            Err(err) => return HttpResponse::InternalServerError().body(err.to_string()),
+            Err(err) => return HttpResponse::InternalServerError().body(format_err(&err)),
         };
 
         HttpResponse::Ok().body(translations)
