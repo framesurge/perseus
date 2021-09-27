@@ -28,9 +28,13 @@ pub struct PageData {
 /// Gets the configuration of how to render each page.
 pub async fn get_render_cfg(
     config_manager: &impl ConfigManager,
-) -> Result<HashMap<String, String>> {
+) -> Result<HashMap<String, String>, ServerError> {
     let content = config_manager.read("render_conf.json").await?;
-    let cfg = serde_json::from_str::<HashMap<String, String>>(&content)?;
+    let cfg = serde_json::from_str::<HashMap<String, String>>(&content).map_err(|e| {
+        // We have to convert it into a build error and then into a server error
+        let build_err: BuildError = e.into();
+        build_err
+    })?;
 
     Ok(cfg)
 }
@@ -39,7 +43,7 @@ pub async fn get_render_cfg(
 async fn render_build_state(
     path_encoded: &str,
     config_manager: &impl ConfigManager,
-) -> Result<(String, String, Option<String>)> {
+) -> Result<(String, String, Option<String>), ServerError> {
     // Get the static HTML
     let html = config_manager
         .read(&format!("static/{}.html", path_encoded))
@@ -64,7 +68,7 @@ async fn render_request_state(
     translator: Rc<Translator>,
     path: &str,
     req: Request,
-) -> Result<(String, String, Option<String>)> {
+) -> Result<(String, String, Option<String>), ServerError> {
     // Generate the initial state (this may generate an error, but there's no file that can't exist)
     let state = Some(template.get_request_state(path.to_string(), req).await?);
     // Use that to render the static HTML
@@ -102,7 +106,7 @@ async fn should_revalidate(
     template: &Template<SsrNode>,
     path_encoded: &str,
     config_manager: &impl ConfigManager,
-) -> Result<bool> {
+) -> Result<bool, ServerError> {
     let mut should_revalidate = false;
     // If it revalidates after a certain period of time, we needd to check that BEFORE the custom logic
     if template.revalidates_with_time() {
@@ -110,7 +114,11 @@ async fn should_revalidate(
         let datetime_to_revalidate_str = config_manager
             .read(&format!("static/{}.revld.txt", path_encoded))
             .await?;
-        let datetime_to_revalidate = DateTime::parse_from_rfc3339(&datetime_to_revalidate_str)?;
+        let datetime_to_revalidate = DateTime::parse_from_rfc3339(&datetime_to_revalidate_str)
+            .map_err(|e| {
+                let serve_err: ServeError = e.into();
+                serve_err
+            })?;
         // Get the current time (UTC)
         let now = Utc::now();
 
@@ -134,7 +142,7 @@ async fn revalidate(
     path: &str,
     path_encoded: &str,
     config_manager: &impl ConfigManager,
-) -> Result<(String, String, Option<String>)> {
+) -> Result<(String, String, Option<String>), ServerError> {
     // We need to regenerate and cache this page for future usage (until the next revalidation)
     let state = Some(
         template
@@ -185,7 +193,7 @@ pub async fn get_page_for_template(
     req: Request,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
-) -> Result<PageData> {
+) -> Result<PageData, ServerError> {
     // Get a translator for this locale (for sanity we hope the manager is caching)
     let translator = Rc::new(
         translations_manager
@@ -369,7 +377,7 @@ pub async fn get_page(
     templates: &TemplateMap<SsrNode>,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
-) -> Result<PageData> {
+) -> Result<PageData, ServerError> {
     let mut path = raw_path;
     // If the path is empty, we're looking for the special `index` page
     if path.is_empty() {
@@ -380,7 +388,12 @@ pub async fn get_page(
     let template = match template {
         Some(template) => template,
         // This shouldn't happen because the client should already have performed checks against the render config, but it's handled anyway
-        None => bail!(ErrorKind::PageNotFound(path.to_string())),
+        None => {
+            return Err(ServeError::PageNotFound {
+                path: path.to_string(),
+            }
+            .into())
+        }
     };
 
     let res = get_page_for_template(

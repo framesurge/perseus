@@ -19,7 +19,7 @@ pub async fn build_template(
     translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
     exporting: bool,
-) -> Result<(Vec<String>, bool)> {
+) -> Result<(Vec<String>, bool), ServerError> {
     let mut single_page = false;
     let template_path = template.get_path();
 
@@ -31,7 +31,10 @@ pub async fn build_template(
         // We check amalgamation as well because it involves request state, even if that wasn't provided
         template.can_amalgamate_states())
     {
-        bail!(ErrorKind::TemplateNotExportable(template_path.clone()))
+        return Err(ExportError::TemplateNotExportable {
+            template_name: template_path.clone(),
+        }
+        .into());
     }
 
     // Handle static path generation
@@ -129,7 +132,7 @@ async fn build_template_and_get_cfg(
     translator: Rc<Translator>,
     config_manager: &impl ConfigManager,
     exporting: bool,
-) -> Result<HashMap<String, String>> {
+) -> Result<HashMap<String, String>, ServerError> {
     let mut render_cfg = HashMap::new();
     let template_root_path = template.get_path();
     let is_incremental = template.uses_incremental();
@@ -167,7 +170,7 @@ pub async fn build_templates_for_locale(
     translator_raw: Translator,
     config_manager: &impl ConfigManager,
     exporting: bool,
-) -> Result<()> {
+) -> Result<(), ServerError> {
     let translator = Rc::new(translator_raw);
     // The render configuration stores a list of pages to the root paths of their templates
     let mut render_cfg: HashMap<String, String> = HashMap::new();
@@ -187,7 +190,10 @@ pub async fn build_templates_for_locale(
     }
 
     config_manager
-        .write("render_conf.json", &serde_json::to_string(&render_cfg)?)
+        .write(
+            "render_conf.json",
+            &serde_json::to_string(&render_cfg).unwrap(),
+        )
         .await?;
 
     Ok(())
@@ -200,7 +206,7 @@ async fn build_templates_and_translator_for_locale(
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
     exporting: bool,
-) -> Result<()> {
+) -> Result<(), ServerError> {
     let translator = translations_manager
         .get_translator_for_locale(locale)
         .await?;
@@ -217,7 +223,7 @@ pub async fn build_app(
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
     exporting: bool,
-) -> Result<()> {
+) -> Result<(), ServerError> {
     let locales = locales.get_all();
     let mut futs = Vec::new();
 
