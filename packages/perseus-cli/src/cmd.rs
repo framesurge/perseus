@@ -11,7 +11,11 @@ pub static FAILURE: Emoji<'_, '_> = Emoji("❌", "failed!");
 
 /// Runs the given command conveniently, returning the exit code. Notably, this parses the given command by separating it on spaces.
 /// Returns the command's output and the exit code.
-pub fn run_cmd(cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(String, String, i32)> {
+pub fn run_cmd(
+    cmd: String,
+    dir: &Path,
+    pre_dump: impl Fn(),
+) -> Result<(String, String, i32), ExecutionError> {
     // We run the command in a shell so that NPM/Yarn binaries can be recognized (see #5)
     #[cfg(unix)]
     let shell_exec = "sh";
@@ -27,7 +31,7 @@ pub fn run_cmd(cmd: String, dir: &Path, pre_dump: impl Fn()) -> Result<(String, 
         .args([shell_param, &cmd])
         .current_dir(dir)
         .output()
-        .map_err(|err| ErrorKind::CmdExecFailed(cmd.clone(), err.to_string()))?;
+        .map_err(|err| ExecutionError::CmdExecFailed { cmd, source: err })?;
 
     let exit_code = match output.status.code() {
         Some(exit_code) => exit_code,         // If we have an exit code, use it
@@ -73,7 +77,7 @@ pub fn run_stage(
     target: &Path,
     spinner: &ProgressBar,
     message: &str,
-) -> Result<(String, String, i32)> {
+) -> Result<(String, String, i32), ExecutionError> {
     let mut last_output = (String::new(), String::new());
     // Run the commands
     for cmd in cmds {

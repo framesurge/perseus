@@ -16,23 +16,23 @@ macro_rules! handle_exit_code {
     ($code:expr) => {
         let (_, _, code) = $code;
         if code != 0 {
-            return $crate::errors::Result::Ok(code);
+            return ::std::result::Result::Ok(code);
         }
     };
 }
 
 /// Finalizes the build by renaming some directories.
-pub fn finalize(target: &Path) -> Result<()> {
+pub fn finalize(target: &Path) -> Result<(), ExecutionError> {
     // Move the `pkg/` directory into `dist/pkg/`
     let pkg_dir = target.join("dist/pkg");
     if pkg_dir.exists() {
         if let Err(err) = fs::remove_dir_all(&pkg_dir) {
-            bail!(ErrorKind::MovePkgDirFailed(err.to_string()));
+            return Err(ExecutionError::MovePkgDirFailed { source: err });
         }
     }
     // The `fs::rename()` function will fail on Windows if the destination already exists, so this should work (we've just deleted it as per https://github.com/rust-lang/rust/issues/31301#issuecomment-177117325)
     if let Err(err) = fs::rename(target.join("pkg"), target.join("dist/pkg")) {
-        bail!(ErrorKind::MovePkgDirFailed(err.to_string()));
+        return Err(ExecutionError::MovePkgDirFailed { source: err });
     }
 
     Ok(())
@@ -46,10 +46,13 @@ pub fn build_internal(
     dir: PathBuf,
     spinners: &MultiProgress,
     num_steps: u8,
-) -> Result<(
-    ThreadHandle<impl FnOnce() -> Result<i32>, Result<i32>>,
-    ThreadHandle<impl FnOnce() -> Result<i32>, Result<i32>>,
-)> {
+) -> Result<
+    (
+        ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
+        ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
+    ),
+    ExecutionError,
+> {
     let target = dir.join(".perseus");
 
     // Static generation message
@@ -104,19 +107,19 @@ pub fn build_internal(
 }
 
 /// Builds the subcrates to get a directory that we can serve. Returns an exit code.
-pub fn build(dir: PathBuf, _prog_args: &[String]) -> Result<i32> {
+pub fn build(dir: PathBuf, _prog_args: &[String]) -> Result<i32, ExecutionError> {
     let spinners = MultiProgress::new();
 
     let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 2)?;
     let sg_res = sg_thread
         .join()
-        .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+        .map_err(|_| ExecutionError::ThreadWaitFailed)??;
     if sg_res != 0 {
         return Ok(sg_res);
     }
     let wb_res = wb_thread
         .join()
-        .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+        .map_err(|_| ExecutionError::ThreadWaitFailed)??;
     if wb_res != 0 {
         return Ok(wb_res);
     }

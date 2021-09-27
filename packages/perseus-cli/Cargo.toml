@@ -20,7 +20,8 @@ include = [
 
 [dependencies]
 include_dir = "0.6"
-error-chain = "0.12"
+thiserror = "1"
+anyhow = "1"
 cargo_toml = "0.9"
 indicatif = "0.17.0-beta.1" # Not stable, but otherwise error handling is just about impossible
 console = "0.14"

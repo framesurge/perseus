@@ -1,7 +1,7 @@
 use perseus_cli::errors::*;
 use perseus_cli::{
     build, check_env, delete_artifacts, delete_bad_dir, eject, export, has_ejected, help, prepare,
-    serve, PERSEUS_VERSION,
+    report_err, serve, PERSEUS_VERSION,
 };
 use std::env;
 use std::io::Write;
@@ -26,8 +26,7 @@ fn real_main() -> i32 {
     let dir = match dir {
         Ok(dir) => dir,
         Err(err) => {
-            let err = ErrorKind::CurrentDirUnavailable(err.to_string());
-            eprintln!("{}", err);
+            report_err!(PrepError::CurrentDirUnavailable { source: err });
             return 1;
         }
     };
@@ -37,11 +36,12 @@ fn real_main() -> i32 {
         Ok(exit_code) => exit_code,
         // If something failed, we print the error to `stderr` and return a failure exit code
         Err(err) => {
-            eprintln!("{}", err);
+            let should_cause_deletion = err_should_cause_deletion(&err);
+            report_err!(err);
             // Check if the error needs us to delete a partially-formed '.perseus/' directory
-            if err_should_cause_deletion(&err) {
+            if should_cause_deletion {
                 if let Err(err) = delete_bad_dir(dir) {
-                    eprintln!("{}", err);
+                    report_err!(err);
                 }
             }
             1
@@ -53,7 +53,7 @@ fn real_main() -> i32 {
 // This returns the exit code of the executed command, which we should return from the process itself
 // This prints warnings using the `writeln!` macro, which allows the parsing of `stdout` in production or a vector in testing
 // If at any point a warning can't be printed, the program will panic
-fn core(dir: PathBuf) -> Result<i32> {
+fn core(dir: PathBuf) -> Result<i32, Error> {
     // Get `stdout` so we can write warnings appropriately
     let stdout = &mut std::io::stdout();
     // Get the arguments to this program, removing the first one (something like `perseus`)
@@ -123,15 +123,16 @@ fn core(dir: PathBuf) -> Result<i32> {
                 eject(dir)?;
                 Ok(0)
             } else if prog_args[0] == "clean" {
-                if prog_args[1] == "--dist" {
+                if prog_args.get(1) == Some(&"--dist".to_string()) {
                     // The user only wants to remove distribution artifacts
                     // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
                     delete_artifacts(dir.clone(), "static")?;
                     delete_artifacts(dir, "pkg")?;
                 } else {
                     // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
-                    if has_ejected(dir.clone()) && prog_args[1] != "--force" {
-                        bail!(ErrorKind::CleanAfterEjection)
+                    if has_ejected(dir.clone()) && prog_args.get(1) != Some(&"--force".to_string())
+                    {
+                        return Err(EjectionError::CleanAfterEject.into());
                     }
                     // Just delete the '.perseus/' directory directly, as we'd do in a corruption
                     delete_bad_dir(dir)?;
