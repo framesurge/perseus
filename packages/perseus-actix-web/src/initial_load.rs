@@ -137,7 +137,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
             let mut http_res = HttpResponse::Ok();
             http_res.content_type("text/html");
             // Generate and add HTTP headers
-            for (key, val) in template.get_headers(page_data.state.clone()) {
+            for (key, val) in template.get_headers(page_data.state) {
                 http_res.set_header(key.unwrap(), val);
             }
 
