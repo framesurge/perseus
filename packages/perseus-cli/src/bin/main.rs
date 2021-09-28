@@ -1,7 +1,9 @@
+use clap::Clap;
 use perseus_cli::errors::*;
 use perseus_cli::{
-    build, check_env, delete_artifacts, delete_bad_dir, eject, export, has_ejected, help, prepare,
-    report_err, serve, PERSEUS_VERSION,
+    build, check_env, delete_artifacts, delete_bad_dir, eject, export, has_ejected,
+    parse::{Opts, Subcommand},
+    prepare, report_err, serve,
 };
 use std::env;
 use std::io::Write;
@@ -56,105 +58,75 @@ fn real_main() -> i32 {
 fn core(dir: PathBuf) -> Result<i32, Error> {
     // Get `stdout` so we can write warnings appropriately
     let stdout = &mut std::io::stdout();
-    // Get the arguments to this program, removing the first one (something like `perseus`)
-    let mut prog_args: Vec<String> = env::args().collect();
-    // This will panic if the first argument is not found (which is probably someone trying to fuzz us)
-    let _executable_name = prog_args.remove(0);
-    // Check the user's environment to make sure they have prerequisites
-    check_env()?;
+
     // Warn the user if they're using the CLI single-threaded mode
     if env::var("PERSEUS_CLI_SEQUENTIAL").is_ok() {
         writeln!(stdout, "Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.\n").expect("Failed to write to stdout.");
     }
-    // Check for special arguments
-    if matches!(prog_args.get(0), Some(_)) {
-        if prog_args[0] == "-v" || prog_args[0] == "--version" {
-            writeln!(stdout, "You are currently running the Perseus CLI v{}! You can see the latest release at https://github.com/arctic-hen7/perseus/releases.", PERSEUS_VERSION).expect("Failed to write to stdout.");
-            Ok(0)
-        } else if prog_args[0] == "-h" || prog_args[0] == "--help" {
-            help(stdout);
-            Ok(0)
-        } else {
-            // Now we can check commands
-            if prog_args[0] == "build" {
-                // Set up the '.perseus/' directory if needed
-                prepare(dir.clone())?;
-                // Delete old build artifacts
-                delete_artifacts(dir.clone(), "static")?;
-                let exit_code = build(dir, &prog_args)?;
-                Ok(exit_code)
-            } else if prog_args[0] == "export" {
-                // Set up the '.perseus/' directory if needed
-                prepare(dir.clone())?;
-                // Delete old build/exportation artifacts
-                delete_artifacts(dir.clone(), "static")?;
-                delete_artifacts(dir.clone(), "exported")?;
-                let exit_code = export(dir, &prog_args)?;
-                Ok(exit_code)
-            } else if prog_args[0] == "serve" {
-                // Set up the '.perseus/' directory if needed
-                prepare(dir.clone())?;
-                // Delete old build artifacts if `--no-build` wasn't specified
-                if !prog_args.contains(&"--no-build".to_string()) {
-                    delete_artifacts(dir.clone(), "static")?;
-                }
-                let exit_code = serve(dir, &prog_args)?;
-                Ok(exit_code)
-            } else if prog_args[0] == "test" {
-                // The `test` command serves in the exact same way, but it also sets `PERSEUS_TESTING`
-                // This will be used by the subcrates
-                env::set_var("PERSEUS_TESTING", "true");
-                // Set up the '.perseus/' directory if needed
-                prepare(dir.clone())?;
-                // Delete old build artifacts if `--no-build` wasn't specified
-                if !prog_args.contains(&"--no-build".to_string()) {
-                    delete_artifacts(dir.clone(), "static")?;
-                }
-                let exit_code = serve(dir, &prog_args)?;
-                Ok(exit_code)
-            } else if prog_args[0] == "prep" {
-                // This command is deliberately undocumented, it's only used for testing
-                // Set up the '.perseus/' directory if needed
-                prepare(dir)?;
-                Ok(0)
-            } else if prog_args[0] == "eject" {
-                // Set up the '.perseus/' directory if needed
-                prepare(dir.clone())?;
-                eject(dir)?;
-                Ok(0)
-            } else if prog_args[0] == "clean" {
-                if prog_args.get(1) == Some(&"--dist".to_string()) {
-                    // The user only wants to remove distribution artifacts
-                    // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
-                    delete_artifacts(dir.clone(), "static")?;
-                    delete_artifacts(dir, "pkg")?;
-                } else {
-                    // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
-                    if has_ejected(dir.clone()) && prog_args.get(1) != Some(&"--force".to_string())
-                    {
-                        return Err(EjectionError::CleanAfterEject.into());
-                    }
-                    // Just delete the '.perseus/' directory directly, as we'd do in a corruption
-                    delete_bad_dir(dir)?;
-                }
 
-                Ok(0)
-            } else {
-                writeln!(
-                    stdout,
-                    "Unknown command '{}'. You can see the help page with -h/--help.",
-                    prog_args[0]
-                )
-                .expect("Failed to write to stdout.");
-                Ok(1)
-            }
-        }
-    } else {
-        writeln!(
-            stdout,
-            "Please provide a command to run, or use -h/--help to see the help page."
-        )
-        .expect("Failed to write to stdout.");
-        Ok(1)
+    // Parse the CLI options with `clap`
+    let opts: Opts = Opts::parse();
+    // Check the user's environment to make sure they have prerequisites
+    // We do this after any help pages or version numbers have been parsed for snappiness
+    check_env()?;
+    // If we're not cleaning up artifacts, create them if needed
+    if !matches!(opts.subcmd, Subcommand::Clean(_)) {
+        prepare(dir.clone())?;
     }
+    let exit_code = match opts.subcmd {
+        Subcommand::Build(build_opts) => {
+            // Delete old build artifacts
+            delete_artifacts(dir.clone(), "static")?;
+            build(dir, build_opts)?
+        }
+        Subcommand::Export(export_opts) => {
+            // Delete old build/exportation artifacts
+            delete_artifacts(dir.clone(), "static")?;
+            delete_artifacts(dir.clone(), "exported")?;
+            export(dir, export_opts)?
+        }
+        Subcommand::Serve(serve_opts) => {
+            // Delete old build artifacts if `--no-build` wasn't specified
+            if !serve_opts.no_build {
+                delete_artifacts(dir.clone(), "static")?;
+            }
+            serve(dir, serve_opts)?
+        }
+        Subcommand::Test(test_opts) => {
+            // This will be used by the subcrates
+            env::set_var("PERSEUS_TESTING", "true");
+            // Set up the '.perseus/' directory if needed
+            prepare(dir.clone())?;
+            // Delete old build artifacts if `--no-build` wasn't specified
+            if !test_opts.no_build {
+                delete_artifacts(dir.clone(), "static")?;
+            }
+            serve(dir, test_opts)?
+        }
+        Subcommand::Clean(clean_opts) => {
+            if clean_opts.dist {
+                // The user only wants to remove distribution artifacts
+                // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
+                delete_artifacts(dir.clone(), "static")?;
+                delete_artifacts(dir, "pkg")?;
+            } else {
+                // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
+                if has_ejected(dir.clone()) && clean_opts.force {
+                    return Err(EjectionError::CleanAfterEject.into());
+                }
+                // Just delete the '.perseus/' directory directly, as we'd do in a corruption
+                delete_bad_dir(dir)?;
+            }
+            0
+        }
+        Subcommand::Eject => {
+            eject(dir)?;
+            0
+        }
+        Subcommand::Prep => {
+            // The `.perseus/` directory has already been set up in the preliminaries, so we don't need to do anything here
+            0
+        }
+    };
+    Ok(exit_code)
 }

@@ -1,5 +1,6 @@
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::errors::*;
+use crate::parse::ExportOpts;
 use crate::thread::{spawn_thread, ThreadHandle};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
@@ -191,7 +192,7 @@ pub fn export_internal(
 }
 
 /// Builds the subcrates to get a directory that we can serve. Returns an exit code.
-pub fn export(dir: PathBuf, _prog_args: &[String]) -> Result<i32, ExportError> {
+pub fn export(dir: PathBuf, _opts: ExportOpts) -> Result<i32, ExportError> {
     let spinners = MultiProgress::new();
 
     let (ep_thread, wb_thread) = export_internal(dir.clone(), &spinners, 2)?;
