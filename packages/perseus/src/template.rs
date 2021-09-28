@@ -59,12 +59,17 @@ impl States {
         }
     }
 }
-
-/// A generic error type that mandates a string error. This sidesteps horrible generics while maintaining DX.
-pub type StringResult<T> = std::result::Result<T, String>;
-/// A generic error type that mandates a string errorr and a statement of causation (client or server) for status code generation.
-// TODO let the user use any custom error type
-pub type StringResultWithCause<T> = std::result::Result<T, (String, ErrorCause)>;
+/// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
+/// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
+pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+/// A generic error type that can be adapted for any errors the user may want to return from a render function, as with `RenderFnResult<T>`.
+/// However, this also includes a mandatory statement of causation for any errors, which assigns blame for them to either the client
+/// or the server. In cases where this is ambiguous, this allows returning accurate HTTP status codes.
+///
+/// Note that you can automatically convert from your error type into this with `.into()` or `?`, which will blame the server for the
+/// error by default and return a *500 Internal Server Error* HTTP status code. Otherwise, you'll need to manually instantiate `ErrorWithCause`
+/// and return that as the error type.
+pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
 /// A generic return type for asynchronous functions that we need to store in a struct.
 type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T>>>;
@@ -110,20 +115,20 @@ macro_rules! make_async_trait {
 }
 
 // A series of asynchronous closure traits that prevent the user from having to pin their functions
-make_async_trait!(GetBuildPathsFnType, StringResult<Vec<String>>);
+make_async_trait!(GetBuildPathsFnType, RenderFnResult<Vec<String>>);
 // The build state strategy needs an error cause if it's invoked from incremental
 make_async_trait!(
     GetBuildStateFnType,
-    StringResultWithCause<String>,
+    RenderFnResultWithCause<String>,
     path: String
 );
 make_async_trait!(
     GetRequestStateFnType,
-    StringResultWithCause<String>,
+    RenderFnResultWithCause<String>,
     path: String,
     req: Request
 );
-make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
+make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
 
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
@@ -144,7 +149,7 @@ pub type GetRequestStateFn = Rc<dyn GetRequestStateFnType>;
 /// The type of functions that check if a template sghould revalidate.
 pub type ShouldRevalidateFn = Rc<dyn ShouldRevalidateFnType>;
 /// The type of functions that amalgamate build and request states.
-pub type AmalgamateStatesFn = Rc<dyn Fn(States) -> StringResultWithCause<Option<String>>>;
+pub type AmalgamateStatesFn = Rc<dyn Fn(States) -> RenderFnResultWithCause<Option<String>>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
@@ -263,7 +268,7 @@ impl<G: GenericNode> Template<G> {
                     fn_name: "get_build_paths".to_string(),
                     template_name: self.get_path(),
                     cause: ErrorCause::Server(None),
-                    source: err.into(),
+                    source: err,
                 }),
             }
         } else {
@@ -281,11 +286,11 @@ impl<G: GenericNode> Template<G> {
             let res = get_build_state.call(path).await;
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => Err(ServerError::RenderFnFailed {
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
                     fn_name: "get_build_state".to_string(),
                     template_name: self.get_path(),
                     cause,
-                    source: err.into(),
+                    source: error,
                 }),
             }
         } else {
@@ -308,11 +313,11 @@ impl<G: GenericNode> Template<G> {
             let res = get_request_state.call(path, req).await;
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => Err(ServerError::RenderFnFailed {
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
                     fn_name: "get_request_state".to_string(),
                     template_name: self.get_path(),
                     cause,
-                    source: err.into(),
+                    source: error,
                 }),
             }
         } else {
@@ -330,11 +335,11 @@ impl<G: GenericNode> Template<G> {
             let res = amalgamate_states(states);
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => Err(ServerError::RenderFnFailed {
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
                     fn_name: "amalgamate_states".to_string(),
                     template_name: self.get_path(),
                     cause,
-                    source: err.into(),
+                    source: error,
                 }),
             }
         } else {
@@ -353,11 +358,11 @@ impl<G: GenericNode> Template<G> {
             let res = should_revalidate.call().await;
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => Err(ServerError::RenderFnFailed {
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
                     fn_name: "should_revalidate".to_string(),
                     template_name: self.get_path(),
                     cause,
-                    source: err.into(),
+                    source: error,
                 }),
             }
         } else {

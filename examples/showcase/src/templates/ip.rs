@@ -1,4 +1,4 @@
-use perseus::{Request, StringResultWithCause, Template};
+use perseus::{RenderFnResultWithCause, Request, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -25,8 +25,11 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub async fn get_request_state(_path: String, req: Request) -> StringResultWithCause<String> {
-    // Err(("this is a test error!".to_string(), perseus::ErrorCause::Client(None)))
+pub async fn get_request_state(_path: String, req: Request) -> RenderFnResultWithCause<String> {
+    // Err(perseus::GenericErrorWithCause {
+    //     error: "this is a test error!".into(),
+    //     cause: perseus::ErrorCause::Client(None)
+    // })
     Ok(serde_json::to_string(&IpPageProps {
         // Gets the client's IP address
         ip: format!(
@@ -35,8 +38,7 @@ pub async fn get_request_state(_path: String, req: Request) -> StringResultWithC
                 .get("X-Forwarded-For")
                 .unwrap_or(&perseus::http::HeaderValue::from_str("hidden from view!").unwrap())
         ),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {

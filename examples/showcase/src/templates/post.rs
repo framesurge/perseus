@@ -1,4 +1,6 @@
-use perseus::{ErrorCause, StringResultWithCause, Template};
+use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -31,10 +33,13 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -> StringResultWithCause<String> {
+pub async fn get_static_props(path: String) -> RenderFnResultWithCause<String> {
     // This path is illegal, and can't be rendered
     if path == "post/tests" {
-        return Err(("illegal page".to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: "illegal page".into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     // This is just an example
     let title = urlencoding::decode(&path).unwrap();
@@ -46,11 +51,10 @@ pub async fn get_static_props(path: String) -> StringResultWithCause<String> {
     Ok(serde_json::to_string(&PostPageProps {
         title: title.to_string(),
         content,
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_static_paths() -> Result<Vec<String>, String> {
+pub async fn get_static_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
 }
 

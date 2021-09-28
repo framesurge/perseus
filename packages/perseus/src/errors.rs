@@ -139,3 +139,23 @@ pub enum ErrorCause {
     Client(Option<u16>),
     Server(Option<u16>),
 }
+
+/// An error that has an attached cause that blames either the client or the server for its occurrence. You can convert any error
+/// into this with `.into()` or `?`, which will set the cause to the server by default, resulting in a *500 Internal Server Error*
+/// HTTP status code. If this isn't what you want, you'll need to initialize this explicitly.
+#[derive(Debug)]
+pub struct GenericErrorWithCause {
+    /// The underlying error.
+    pub error: Box<dyn std::error::Error>,
+    /// The cause of the error.
+    pub cause: ErrorCause,
+}
+// We should be able to convert any error into this easily (e.g. with `?`) with the default being to blame the server
+impl<E: std::error::Error + 'static> From<E> for GenericErrorWithCause {
+    fn from(error: E) -> Self {
+        Self {
+            error: error.into(),
+            cause: ErrorCause::Server(None),
+        }
+    }
+}
