@@ -8,7 +8,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    ClientError(#[from] FetchError),
+    ClientError(#[from] ClientError),
     #[error(transparent)]
     ServerError(#[from] ServerError),
 }
