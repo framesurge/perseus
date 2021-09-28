@@ -1,6 +1,6 @@
-use crate::errors::format_err;
 use crate::Options;
 use actix_web::{web, HttpRequest, HttpResponse};
+use fmterr::fmt_err;
 use perseus::TranslationsManager;
 
 /// The handler for calls to `.perseus/translations/{locale}`. This will manage returning errors and the like. THe JSON body returned
@@ -19,7 +19,7 @@ pub async fn translations<T: TranslationsManager>(
             .await;
         let translations = match translations {
             Ok(translations) => translations,
-            Err(err) => return HttpResponse::InternalServerError().body(format_err(&err)),
+            Err(err) => return HttpResponse::InternalServerError().body(fmt_err(&err)),
         };
 
         HttpResponse::Ok().body(translations)

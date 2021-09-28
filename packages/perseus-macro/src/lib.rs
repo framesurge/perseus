@@ -31,7 +31,7 @@ mod test;
 use darling::FromMeta;
 use proc_macro::TokenStream;
 
-/// Marks the given function as a Perseus tests. Functions marked with this attribute must have the following signature:
+/// Marks the given function as a Perseus test. Functions marked with this attribute must have the following signature:
 /// `async fn foo(client: &mut fantoccini::Client) -> Result<>`.
 #[proc_macro_attribute]
 pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {

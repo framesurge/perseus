@@ -1,6 +1,4 @@
 #![allow(missing_docs)]
-
-pub use perseus::errors::format_err;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

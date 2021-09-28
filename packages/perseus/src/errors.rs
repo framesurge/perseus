@@ -139,9 +139,3 @@ pub enum ErrorCause {
     Client(Option<u16>),
     Server(Option<u16>),
 }
-
-/// Formats an error to be displayed to a user. This will include a series of indented sources.
-// TODO add a source chain etc.
-pub fn format_err(err: &impl std::error::Error) -> String {
-    err.to_string()
-}
