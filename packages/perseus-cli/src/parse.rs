@@ -32,14 +32,14 @@ pub enum Subcommand {
 pub struct BuildOpts {
     /// Build for production
     #[clap(long)]
-    release: bool,
+    pub release: bool,
 }
 /// Exports your app to purely static files
 #[derive(Clap)]
 pub struct ExportOpts {
     /// Export for production
     #[clap(long)]
-    release: bool,
+    pub release: bool,
 }
 /// Serves your app (set the `$HOST` and `$PORT` environment variables to change the location it's served at)
 #[derive(Clap)]
@@ -52,7 +52,7 @@ pub struct ServeOpts {
     pub no_build: bool,
     /// Build and serve for production
     #[clap(long)]
-    release: bool,
+    pub release: bool,
 }
 /// Removes `.perseus/` entirely for updates or to fix corruptions
 #[derive(Clap)]
