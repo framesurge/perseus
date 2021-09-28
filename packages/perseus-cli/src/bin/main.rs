@@ -1,9 +1,10 @@
 use clap::Clap;
+use fmterr::fmt_err;
 use perseus_cli::errors::*;
 use perseus_cli::{
     build, check_env, delete_artifacts, delete_bad_dir, eject, export, has_ejected,
     parse::{Opts, Subcommand},
-    prepare, report_err, serve,
+    prepare, serve,
 };
 use std::env;
 use std::io::Write;
@@ -28,7 +29,10 @@ fn real_main() -> i32 {
     let dir = match dir {
         Ok(dir) => dir,
         Err(err) => {
-            report_err!(PrepError::CurrentDirUnavailable { source: err });
+            eprintln!(
+                "{}",
+                fmt_err(&PrepError::CurrentDirUnavailable { source: err })
+            );
             return 1;
         }
     };
@@ -39,11 +43,11 @@ fn real_main() -> i32 {
         // If something failed, we print the error to `stderr` and return a failure exit code
         Err(err) => {
             let should_cause_deletion = err_should_cause_deletion(&err);
-            report_err!(err);
+            eprintln!("{}", fmt_err(&err));
             // Check if the error needs us to delete a partially-formed '.perseus/' directory
             if should_cause_deletion {
                 if let Err(err) = delete_bad_dir(dir) {
-                    report_err!(err);
+                    eprintln!("{}", fmt_err(&err));
                 }
             }
             1
@@ -108,10 +112,11 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
                 // The user only wants to remove distribution artifacts
                 // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
                 delete_artifacts(dir.clone(), "static")?;
-                delete_artifacts(dir, "pkg")?;
+                delete_artifacts(dir.clone(), "pkg")?;
+                delete_artifacts(dir.clone(), "exported")?;
             } else {
                 // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
-                if has_ejected(dir.clone()) && clean_opts.force {
+                if has_ejected(dir.clone()) && !clean_opts.force {
                     return Err(EjectionError::CleanAfterEject.into());
                 }
                 // Just delete the '.perseus/' directory directly, as we'd do in a corruption
