@@ -19,7 +19,7 @@ macro_rules! t {
     // When there are no arguments to interpolate
     ($id:expr) => {
         {
-            let translator = ::sycamore::context::use_context::<Rc<::perseus::Translator>>();
+            let translator = ::sycamore::context::use_context::<::std::rc::Rc<::perseus::Translator>>();
             translator.translate($id, ::std::option::Option::None)
         }
     };
