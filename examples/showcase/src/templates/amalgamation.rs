@@ -1,4 +1,4 @@
-use perseus::{Request, States, StringResultWithCause, Template};
+use perseus::{RenderFnResultWithCause, Request, States, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -23,37 +23,33 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .template(template_fn())
 }
 
-pub fn amalgamate_states(states: States) -> StringResultWithCause<Option<String>> {
+pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<String>> {
     // We know they'll both be defined
-    let build_state =
-        serde_json::from_str::<AmalagamationPageProps>(&states.build_state.unwrap()).unwrap();
-    let req_state =
-        serde_json::from_str::<AmalagamationPageProps>(&states.request_state.unwrap()).unwrap();
+    let build_state = serde_json::from_str::<AmalagamationPageProps>(&states.build_state.unwrap())?;
+    let req_state = serde_json::from_str::<AmalagamationPageProps>(&states.request_state.unwrap())?;
 
-    Ok(Some(
-        serde_json::to_string(&AmalagamationPageProps {
-            message: format!(
-                "Hello from the amalgamation! (Build says: '{}', server says: '{}'.)",
-                build_state.message, req_state.message
-            ),
-        })
-        .unwrap(),
-    ))
+    Ok(Some(serde_json::to_string(&AmalagamationPageProps {
+        message: format!(
+            "Hello from the amalgamation! (Build says: '{}', server says: '{}'.)",
+            build_state.message, req_state.message
+        ),
+    })?))
 }
 
-pub async fn get_build_state(_path: String) -> StringResultWithCause<String> {
+pub async fn get_build_state(_path: String) -> RenderFnResultWithCause<String> {
     Ok(serde_json::to_string(&AmalagamationPageProps {
         message: "Hello from the build process!".to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_request_state(_path: String, _req: Request) -> StringResultWithCause<String> {
-    // Err(("this is a test error!".to_string(), perseus::ErrorCause::Client(None)))
+pub async fn get_request_state(_path: String, _req: Request) -> RenderFnResultWithCause<String> {
+    // Err(perseus::GenericErrorWithCause {
+    //     error: "this is a test error!".into(),
+    //     cause: perseus::ErrorCause::Client(None)
+    // })
     Ok(serde_json::to_string(&AmalagamationPageProps {
         message: "Hello from the server!".to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {

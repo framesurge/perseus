@@ -14,7 +14,7 @@ async fn get_static_page_data(
     path: &str,
     has_state: bool,
     config_manager: &impl ConfigManager,
-) -> Result<PageData> {
+) -> Result<PageData, ServerError> {
     // Get the partial HTML content and a state to go with it (if applicable)
     let content = config_manager
         .read(&format!("static/{}.html", path))
@@ -48,13 +48,15 @@ pub async fn export_app(
     root_id: &str,
     config_manager: &impl ConfigManager,
     translations_manager: &impl TranslationsManager,
-) -> Result<()> {
+) -> Result<(), ServerError> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(config_manager).await?;
     // Get the HTML shell and prepare it by interpolating necessary values
-    let raw_html_shell = fs::read_to_string(html_shell_path).map_err(|err| {
-        ErrorKind::HtmlShellNotFound(html_shell_path.to_string(), err.to_string())
-    })?;
+    let raw_html_shell =
+        fs::read_to_string(html_shell_path).map_err(|err| BuildError::HtmlShellNotFound {
+            path: html_shell_path.to_string(),
+            source: err,
+        })?;
     let html_shell = prep_html_shell(raw_html_shell, &render_cfg);
 
     // Loop over every partial
@@ -65,7 +67,12 @@ pub async fn export_app(
         let template = templates.get(&template_path);
         let template = match template {
             Some(template) => template,
-            None => bail!(ErrorKind::PageNotFound(template_path)),
+            None => {
+                return Err(ServeError::PageNotFound {
+                    path: template_path,
+                }
+                .into())
+            }
         };
         // Create a locale detection file for it if we're using i18n
         // These just send the app shell, which will perform a redirect as necessary

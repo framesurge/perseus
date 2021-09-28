@@ -23,7 +23,10 @@ impl ClientTranslationsManager {
     }
     /// Gets an `Rc<Translator>` for the given locale. This will use the internally cached `Translator` if possible, and will otherwise
     /// fetch the translations from the server. This needs mutability because it will modify its internal cache if necessary.
-    pub async fn get_translator_for_locale(&mut self, locale: &str) -> Result<Rc<Translator>> {
+    pub async fn get_translator_for_locale(
+        &mut self,
+        locale: &str,
+    ) -> Result<Rc<Translator>, ClientError> {
         // Check if we've already cached
         if self.cached_translator.is_some()
             && self.cached_translator.as_ref().unwrap().get_locale() == locale
@@ -44,7 +47,11 @@ impl ClientTranslationsManager {
                             match translator {
                                 Ok(translator) => translator,
                                 Err(err) => {
-                                    bail!(ErrorKind::AssetSerFailed(asset_url, err.to_string()))
+                                    return Err(FetchError::SerFailed {
+                                        url: asset_url,
+                                        source: err.into(),
+                                    }
+                                    .into())
                                 }
                             }
                         }
@@ -54,12 +61,10 @@ impl ClientTranslationsManager {
                             locale
                         ),
                     },
-                    Err(err) => match err.kind() {
-                        ErrorKind::AssetNotOk(url, status, err) => bail!(ErrorKind::AssetNotOk(
-                            url.to_string(),
-                            *status,
-                            err.to_string()
-                        )),
+                    Err(err) => match err {
+                        not_ok_err @ ClientError::FetchError(FetchError::NotOk { .. }) => {
+                            return Err(not_ok_err)
+                        }
                         // No other errors should be returned
                         _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
                     },
@@ -76,7 +81,9 @@ impl ClientTranslationsManager {
                 // Now return that
                 Ok(Rc::clone(self.cached_translator.as_ref().unwrap()))
             } else {
-                bail!(ErrorKind::LocaleNotSupported(locale.to_string()))
+                Err(ClientError::LocaleNotSupported {
+                    locale: locale.to_string(),
+                })
             }
         }
     }

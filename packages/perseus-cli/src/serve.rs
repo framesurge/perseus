@@ -19,7 +19,7 @@ macro_rules! handle_exit_code {
     ($code:expr) => {{
         let (stdout, stderr, code) = $code;
         if code != 0 {
-            return $crate::errors::Result::Ok(code);
+            return ::std::result::Result::Ok(code);
         }
         (stdout, stderr)
     }};
@@ -34,7 +34,10 @@ fn build_server(
     spinners: &MultiProgress,
     did_build: bool,
     exec: Arc<Mutex<String>>,
-) -> Result<ThreadHandle<impl FnOnce() -> Result<i32>, Result<i32>>> {
+) -> Result<
+    ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
+    ExecutionError,
+> {
     let num_steps = match did_build {
         true => 4,
         false => 2,
@@ -55,58 +58,61 @@ fn build_server(
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = target;
-    let sb_thread = spawn_thread(move || {
-        let (stdout, _stderr) = handle_exit_code!(run_stage(
-            vec![&format!(
-                // This sets Cargo to tell us everything, including the executable path to the server
-                "{} build --message-format json",
-                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
-            )],
-            &sb_target,
-            &sb_spinner,
-            &sb_msg
-        )?);
+    let sb_thread =
+        spawn_thread(move || {
+            let (stdout, _stderr) = handle_exit_code!(run_stage(
+                vec![&format!(
+                    // This sets Cargo to tell us everything, including the executable path to the server
+                    "{} build --message-format json",
+                    env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+                )],
+                &sb_target,
+                &sb_spinner,
+                &sb_msg
+            )?);
 
-        let msgs: Vec<&str> = stdout.trim().split('\n').collect();
-        // If we got to here, the exit code was 0 and everything should've worked
-        // The last message will just tell us that the build finished, the second-last one will tell us the executable path
-        let msg = msgs.get(msgs.len() - 2);
-        let msg = match msg {
-            // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
-            Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
-                .map_err(|err| ErrorKind::GetServerExecutableFailed(err.to_string()))?,
-            None => bail!(ErrorKind::GetServerExecutableFailed(
-                "expected second-last message, none existed (too few messages)".to_string()
-            )),
-        };
-        let server_exec_path = msg.get("executable");
-        let server_exec_path = match server_exec_path {
+            let msgs: Vec<&str> = stdout.trim().split('\n').collect();
+            // If we got to here, the exit code was 0 and everything should've worked
+            // The last message will just tell us that the build finished, the second-last one will tell us the executable path
+            let msg = msgs.get(msgs.len() - 2);
+            let msg = match msg {
+                // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
+                Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
+                    .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
+                None => return Err(ExecutionError::ServerExectutableMsgNotFound),
+            };
+            let server_exec_path = msg.get("executable");
+            let server_exec_path = match server_exec_path {
             // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
             Some(server_exec_path) => match server_exec_path.as_str() {
                 Some(server_exec_path) => server_exec_path,
-                None => bail!(ErrorKind::GetServerExecutableFailed(
-                    "expected 'executable' field to be string".to_string()
-                )),
+                None => return Err(ExecutionError::ParseServerExecutableFailed {
+                    err: "expected 'executable' field to be string".to_string()
+                }),
             },
-            None => bail!(ErrorKind::GetServerExecutableFailed(
-                "expected 'executable' field in JSON map in second-last message, not present"
+            None => return Err(ExecutionError::ParseServerExecutableFailed {
+                err: "expected 'executable' field in JSON map in second-last message, not present"
                     .to_string()
-            )),
+            }),
         };
 
-        // And now the main thread needs to know about this
-        let mut exec_val = exec.lock().unwrap();
-        *exec_val = server_exec_path.to_string();
+            // And now the main thread needs to know about this
+            let mut exec_val = exec.lock().unwrap();
+            *exec_val = server_exec_path.to_string();
 
-        Ok(0)
-    });
+            Ok(0)
+        });
 
     Ok(sb_thread)
 }
 
 /// Runs the server at the given path, handling any errors therewith. This will likely be a black hole until the user manually terminates
 /// the process.
-fn run_server(exec: Arc<Mutex<String>>, dir: PathBuf, did_build: bool) -> Result<i32> {
+fn run_server(
+    exec: Arc<Mutex<String>>,
+    dir: PathBuf,
+    did_build: bool,
+) -> Result<i32, ExecutionError> {
     let target = dir.join(".perseus/server");
     let num_steps = match did_build {
         true => 4,
@@ -116,10 +122,10 @@ fn run_server(exec: Arc<Mutex<String>>, dir: PathBuf, did_build: bool) -> Result
     // First off, handle any issues with the executable path
     let exec_val = exec.lock().unwrap();
     if exec_val.is_empty() {
-        bail!(ErrorKind::GetServerExecutableFailed(
-            "mutex value empty, implies uncaught thread termination (please report this as a bug)"
+        return Err(ExecutionError::ParseServerExecutableFailed {
+            err: "mutex value empty, implies uncaught thread termination (please report this as a bug)"
                 .to_string()
-        ))
+    });
     }
     let server_exec_path = (*exec_val).to_string();
 
@@ -130,13 +136,16 @@ fn run_server(exec: Arc<Mutex<String>>, dir: PathBuf, did_build: bool) -> Result
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|err| ErrorKind::CmdExecFailed(server_exec_path, err.to_string()))?;
+        .map_err(|err| ExecutionError::CmdExecFailed {
+            cmd: server_exec_path,
+            source: err,
+        })?;
     // Figure out what host/port the app will be live on
     let host = env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("PORT")
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>()
-        .map_err(|err| ErrorKind::PortNotNumber(err.to_string()))?;
+        .map_err(|err| ExecutionError::PortNotNumber { source: err })?;
     // Give the user a nice informational message
     println!(
         "  {} {} Your app is now live on <http://{host}:{port}>! To change this, re-run this command with different settings of the HOST/PORT environment variables.",
@@ -164,7 +173,7 @@ fn run_server(exec: Arc<Mutex<String>>, dir: PathBuf, did_build: bool) -> Result
 }
 
 /// Builds the subcrates to get a directory that we can serve and then serves it.
-pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
+pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32, ExecutionError> {
     let spinners = MultiProgress::new();
     // TODO support watching files
     let did_build = !prog_args.contains(&"--no-build".to_string());
@@ -178,10 +187,10 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
         let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 4)?;
         let sg_res = sg_thread
             .join()
-            .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+            .map_err(|_| ExecutionError::ThreadWaitFailed)??;
         let wb_res = wb_thread
             .join()
-            .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+            .map_err(|_| ExecutionError::ThreadWaitFailed)??;
         if sg_res != 0 {
             return Ok(sg_res);
         } else if wb_res != 0 {
@@ -191,7 +200,7 @@ pub fn serve(dir: PathBuf, prog_args: &[String]) -> Result<i32> {
     // Handle errors from the server building
     let sb_res = sb_thread
         .join()
-        .map_err(|_| ErrorKind::ThreadWaitFailed)??;
+        .map_err(|_| ExecutionError::ThreadWaitFailed)??;
     if sb_res != 0 {
         return Ok(sb_res);
     }

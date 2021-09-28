@@ -1,6 +1,6 @@
 use perseus::{
     http::header::{HeaderMap, HeaderName},
-    GenericNode, StringResultWithCause, Template,
+    GenericNode, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -27,11 +27,10 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .set_headers_fn(set_headers_fn())
 }
 
-pub async fn get_build_props(_path: String) -> StringResultWithCause<String> {
+pub async fn get_build_props(_path: String) -> RenderFnResultWithCause<String> {
     Ok(serde_json::to_string(&IndexPageProps {
         greeting: "Hello World!".to_string(),
-    })
-    .unwrap())
+    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {

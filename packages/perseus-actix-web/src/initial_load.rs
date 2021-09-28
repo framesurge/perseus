@@ -1,6 +1,7 @@
 use crate::conv_req::convert_req;
 use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
+use fmterr::fmt_err;
 use perseus::error_pages::ErrorPageData;
 use perseus::html_shell::interpolate_page_data;
 use perseus::router::{match_route, RouteInfo, RouteVerdict};
@@ -15,6 +16,7 @@ use std::rc::Rc;
 fn return_error_page(
     url: &str,
     status: &u16,
+    // This should already have been transformed into a string (with a source chain etc.)
     err: &str,
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
@@ -31,9 +33,16 @@ fn return_error_page(
     })
     .unwrap();
     // Add a global variable that defines this as an error
+    // TODO fix lack of support for `\"` here (causes an error)
     let state_var = format!(
-        "<script>window.__PERSEUS_INITIAL_STATE = 'error-{}';</script>",
-        error_page_data.replace(r#"'"#, r#"\'"#) // If we don't escape single quotes, we get runtime syntax errors
+        "<script>window.__PERSEUS_INITIAL_STATE = `error-{}`;</script>",
+        error_page_data
+            // We escape any backslashes to prevent their interfering with JSON delimiters
+            .replace(r#"\"#, r#"\\"#)
+            // We escape any backticks, which would interfere with JS's raw strings system
+            .replace(r#"`"#, r#"\`"#)
+            // We escape any interpolations into JS's raw string system
+            .replace(r#"${"#, r#"\${"#)
     );
     let html_with_declaration = html.replace("</head>", &format!("{}\n</head>", state_var));
     // Interpolate the error page itself
@@ -102,7 +111,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 Ok(http_req) => http_req,
                 // If this fails, the client request is malformed, so it's a 400
                 Err(err) => {
-                    return html_err(400, &err.to_string());
+                    return html_err(400, &fmt_err(&err));
                 }
             };
             // Actually render the page as we would if this weren't an initial load
@@ -119,7 +128,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 Ok(page_data) => page_data,
                 // We parse the error to return an appropriate status code
                 Err(err) => {
-                    return html_err(err_to_status_code(&err), &err.to_string());
+                    return html_err(err_to_status_code(&err), &fmt_err(&err));
                 }
             };
 

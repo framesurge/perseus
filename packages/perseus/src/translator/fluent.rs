@@ -20,25 +20,34 @@ pub struct FluentTranslator {
 }
 impl FluentTranslator {
     /// Creates a new translator for a given locale, passing in translations in FTL syntax form.
-    pub fn new(locale: String, ftl_string: String) -> Result<Self> {
+    pub fn new(locale: String, ftl_string: String) -> Result<Self, TranslatorError> {
         let resource = FluentResource::try_new(ftl_string)
             // If this errors, we get it still and a vector of errors (wtf.)
-            .map_err(|(_, errs)| {
-                ErrorKind::TranslationsStrSerFailed(
-                    locale.clone(),
-                    errs.iter().map(|e| e.to_string()).collect(),
-                )
+            .map_err(|(_, errs)| TranslatorError::TranslationsStrSerFailed {
+                locale: locale.clone(),
+                source: errs
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<String>()
+                    .into(),
             })?;
         let lang_id: LanguageIdentifier =
             locale.parse().map_err(|err: LanguageIdentifierError| {
-                ErrorKind::InvalidLocale(locale.clone(), err.to_string())
+                TranslatorError::InvalidLocale {
+                    locale: locale.clone(),
+                    source: Box::new(err),
+                }
             })?;
         let mut bundle = FluentBundle::new(vec![lang_id]);
         bundle.add_resource(resource).map_err(|errs| {
-            ErrorKind::TranslationsStrSerFailed(
-                locale.clone(),
-                errs.iter().map(|e| e.to_string()).collect(),
-            )
+            TranslatorError::TranslationsStrSerFailed {
+                locale: locale.clone(),
+                source: errs
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<String>()
+                    .into(),
+            }
         })?;
 
         Ok(Self {
@@ -76,7 +85,7 @@ impl FluentTranslator {
         &self,
         id: I,
         args: Option<FluentArgs>,
-    ) -> Result<String> {
+    ) -> Result<String, TranslatorError> {
         let id_str = id.to_string();
         // Deal with the possibility of a specified variant
         let id_vec: Vec<&str> = id_str.split('.').collect();
@@ -88,10 +97,12 @@ impl FluentTranslator {
         let msg = self.bundle.get_message(&id_str);
         let msg = match msg {
             Some(msg) => msg,
-            None => bail!(ErrorKind::TranslationIdNotFound(
-                id_str,
-                self.locale.clone()
-            )),
+            None => {
+                return Err(TranslatorError::TranslationIdNotFound {
+                    id: id_str,
+                    locale: self.locale.clone(),
+                })
+            }
         };
         // This module accumulates errors in a provided buffer, we'll handle them later
         let mut errors = Vec::new();
@@ -118,26 +129,33 @@ impl FluentTranslator {
                     }
                 }
             } else {
-                bail!(ErrorKind::TranslationFailed(
-                    id_str,
-                    self.locale.clone(),
-                    "no variant provided for compound message".to_string()
-                ))
+                return Err(TranslatorError::TranslationFailed {
+                    id: id_str,
+                    locale: self.locale.clone(),
+                    source: "no variant provided for compound message".into(),
+                });
             }
         }
         // Check for any errors
         // TODO apparently these aren't all fatal, but how do we know?
         if !errors.is_empty() {
-            bail!(ErrorKind::TranslationFailed(
-                id_str,
-                self.locale.clone(),
-                errors.iter().map(|e| e.to_string()).collect()
-            ))
+            return Err(TranslatorError::TranslationFailed {
+                id: id_str,
+                locale: self.locale.clone(),
+                source: errors
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<String>()
+                    .into(),
+            });
         }
         // Make sure we've actually got a translation
         match translation {
             Some(translation) => Ok(translation.to_string()),
-            None => bail!(ErrorKind::NoTranslationDerived(id_str, self.locale.clone())),
+            None => Err(TranslatorError::NoTranslationDerived {
+                id: id_str,
+                locale: self.locale.clone(),
+            }),
         }
     }
     /// Gets the Fluent bundle for more advanced translation requirements.

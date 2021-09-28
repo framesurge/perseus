@@ -1,4 +1,4 @@
-use perseus::{StringResultWithCause, Template};
+use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -25,11 +25,10 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .build_state_fn(Rc::new(get_build_state))
 }
 
-pub async fn get_build_state(_path: String) -> StringResultWithCause<String> {
+pub async fn get_build_state(_path: String) -> RenderFnResultWithCause<String> {
     Ok(serde_json::to_string(&TimePageProps {
         time: format!("{:?}", std::time::SystemTime::now()),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {

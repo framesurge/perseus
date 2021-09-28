@@ -13,7 +13,7 @@ use chrono::{Duration, Utc};
 /// - w: week,
 /// - M: month (30 days used here, 12M ≠ 1y!),
 /// - y: year (365 days always, leap years ignored, if you want them add them as days)
-pub fn decode_time_str(time_str: &str) -> Result<String> {
+pub fn decode_time_str(time_str: &str) -> Result<String, BuildError> {
     let mut duration_after_current = Duration::zero();
     // Get the current datetime since Unix epoch, we'll add to that
     let current = Utc::now();
@@ -36,7 +36,11 @@ pub fn decode_time_str(time_str: &str) -> Result<String> {
                 'w' => Duration::weeks(interval_length),
                 'M' => Duration::days(interval_length * 30), // Multiplying the number of months by 30 days (assumed length of a month)
                 'y' => Duration::days(interval_length * 365), // Multiplying the number of years by 365 days (assumed length of a year)
-                c => bail!(ErrorKind::InvalidDatetimeIntervalIndicator(c.to_string())),
+                c => {
+                    return Err(BuildError::InvalidDatetimeIntervalIndicator {
+                        indicator: c.to_string(),
+                    })
+                }
             };
             duration_after_current = duration_after_current + duration;
             // Reset that working variable

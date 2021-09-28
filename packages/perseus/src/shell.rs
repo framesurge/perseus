@@ -4,6 +4,7 @@ use crate::serve::PageData;
 use crate::template::Template;
 use crate::ClientTranslationsManager;
 use crate::ErrorPages;
+use fmterr::fmt_err;
 use js_sys::Reflect;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -16,8 +17,8 @@ use web_sys::{Element, Request, RequestInit, RequestMode, Response};
 
 /// Fetches the given resource. This should NOT be used by end users, but it's required by the CLI.
 #[doc(hidden)]
-pub async fn fetch(url: &str) -> Result<Option<String>> {
-    let js_err_handler = |err: JsValue| ErrorKind::JsErr(format!("{:?}", err));
+pub async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
+    let js_err_handler = |err: JsValue| ClientError::Js(format!("{:?}", err));
     let mut opts = RequestInit::new();
     opts.method("GET").mode(RequestMode::Cors);
 
@@ -42,17 +43,23 @@ pub async fn fetch(url: &str) -> Result<Option<String>> {
     let body_str = body.as_string();
     let body_str = match body_str {
         Some(body_str) => body_str,
-        None => bail!(ErrorKind::AssetNotString(url.to_string())),
+        None => {
+            return Err(FetchError::NotString {
+                url: url.to_string(),
+            }
+            .into())
+        }
     };
     // Handle non-200 error codes
     if res.status() == 200 {
         Ok(Some(body_str))
     } else {
-        bail!(ErrorKind::AssetNotOk(
-            url.to_string(),
-            res.status(),
-            body_str
-        ))
+        Err(FetchError::NotOk {
+            url: url.to_string(),
+            status: res.status(),
+            err: body_str,
+        }
+        .into())
     }
 }
 
@@ -94,9 +101,15 @@ pub fn get_initial_state() -> InitialState {
     if state_str == "None" {
         InitialState::Present(None)
     } else if state_str.starts_with("error-") {
-        let err_page_data_str = state_str.strip_prefix("error-").unwrap();
+        // We strip the prefix and escape any tab/newline control characters (inserted by `fmterr`)
+        // Any others are user-inserted, and this is documented
+        let err_page_data_str = state_str
+            .strip_prefix("error-")
+            .unwrap()
+            .replace("\n", "\\n")
+            .replace("\t", "\\t");
         // There will be error page data encoded after `error-`
-        let err_page_data = match serde_json::from_str::<ErrorPageData>(err_page_data_str) {
+        let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str) {
             Ok(render_cfg) => render_cfg,
             // If there's a serialization error, we'll create a whole new error (500)
             Err(err) => ErrorPageData {
@@ -242,13 +255,13 @@ pub async fn app_shell(
             let translator = match translator {
                 Ok(translator) => translator,
                 Err(err) => {
-                    // Directly eliminate the HTMl sent in from the server before we render an error page
+                    // Directly eliminate the HTML sent in from the server before we render an error page
                     container_rx_elem.set_inner_html("");
-                    match err.kind() {
+                    match &err {
                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                        ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container_rx_elem),
-                        ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container_rx_elem),
-                        ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container_rx_elem),
+                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, status, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, &500, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::LocaleNotSupported { .. } => return error_pages.render_page(&format!("/{}/...", locale), &404, &fmt_err(&err), None, &container_rx_elem),
                         // No other errors should be returned
                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                     }
@@ -323,11 +336,11 @@ pub async fn app_shell(
                                     .await;
                                 let translator = match translator {
                                     Ok(translator) => translator,
-                                    Err(err) => match err.kind() {
+                                    Err(err) => match &err {
                                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                        ErrorKind::AssetNotOk(url, status, _) => return error_pages.render_page(url, status, &err.to_string(), None, &container_rx_elem),
-                                        ErrorKind::AssetSerFailed(url, _) => return error_pages.render_page(url, &500, &err.to_string(), None, &container_rx_elem),
-                                        ErrorKind::LocaleNotSupported(locale) => return error_pages.render_page(&format!("/{}/...", locale), &404, &err.to_string(),None,  &container_rx_elem),
+                                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, status, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, &500, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::LocaleNotSupported { locale } => return error_pages.render_page(&format!("/{}/...", locale), &404, &fmt_err(&err), None, &container_rx_elem),
                                         // No other errors should be returned
                                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                                     }
@@ -361,15 +374,10 @@ pub async fn app_shell(
                         &container_rx_elem,
                     ),
                 },
-                Err(err) => match err.kind() {
+                Err(err) => match &err {
                     // No translators ready yet
-                    ErrorKind::AssetNotOk(url, status, _) => error_pages.render_page(
-                        url,
-                        status,
-                        &err.to_string(),
-                        None,
-                        &container_rx_elem,
-                    ),
+                    ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages
+                        .render_page(url, status, &fmt_err(&err), None, &container_rx_elem),
                     // No other errors should be returned
                     _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
                 },

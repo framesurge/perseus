@@ -2,43 +2,47 @@
 // At simplest, this is just a filesystem interface, but it might be something like a database in production
 // This has its own error management logic because the user may implement it separately
 
+use thiserror::Error;
+
+/// Errors that can occur in a translations manager.
+#[allow(missing_docs)]
+#[derive(Error, Debug)]
+pub enum TranslationsManagerError {
+    #[error("translations not found for locale '{locale}'")]
+    NotFound { locale: String },
+    #[error("translations for locale '{locale}' couldn't be read")]
+    ReadFailed {
+        locale: String,
+        #[source]
+        source: Box<dyn std::error::Error>,
+    },
+    #[error("translations for locale '{locale}' couldn't be serialized into translator")]
+    SerializationFailed {
+        locale: String,
+        #[source]
+        source: Box<dyn std::error::Error>,
+    },
+}
+
 use crate::Translator;
-pub use error_chain::bail;
-use error_chain::error_chain;
 use futures::future::join_all;
 use std::collections::HashMap;
 use std::fs;
-
-// This has no foreign links because everything to do with config management should be isolated and generic
-error_chain! {
-    errors {
-        /// For when the locale wasn't found. Locales will be checked for existence before fetching is attempted, so this indicates
-        /// a bug in the storage system.
-        NotFound(locale: String) {
-            description("translations not found")
-            display("translations for locale '{}' not found", locale)
-        }
-        /// For when translations couldn't be read for some generic reason.
-        ReadFailed(locale: String, err: String) {
-            description("translations couldn't be read")
-            display("translations for locale '{}' couldn't be read, error was '{}'", locale, err)
-        }
-        /// For when serializing into the `Translator` data structure failed.
-        SerializationFailed(locale: String, err: String) {
-            description("translations couldn't be serialized into translator")
-            display("translations for locale '{}' couldn't be serialized into translator, error was '{}'", locale, err)
-        }
-    }
-}
 
 /// A trait for systems that manage where to put translations. At simplest, we'll just write them to static files, but they might also
 /// be stored in a CMS. It is **strongly** advised that any implementations use some form of caching, guided by `FsTranslationsManager`.
 #[async_trait::async_trait]
 pub trait TranslationsManager: Clone {
     /// Gets a translator for the given locale.
-    async fn get_translator_for_locale(&self, locale: String) -> Result<Translator>;
+    async fn get_translator_for_locale(
+        &self,
+        locale: String,
+    ) -> Result<Translator, TranslationsManagerError>;
     /// Gets the translations in string format for the given locale (avoids deserialize-then-serialize).
-    async fn get_translations_str_for_locale(&self, locale: String) -> Result<String>;
+    async fn get_translations_str_for_locale(
+        &self,
+        locale: String,
+    ) -> Result<String, TranslationsManagerError>;
 }
 
 /// A utility function for allowing parallel futures execution. This returns a tuple of the locale and the translations as a JSON string.
@@ -102,7 +106,10 @@ impl FsTranslationsManager {
 }
 #[async_trait::async_trait]
 impl TranslationsManager for FsTranslationsManager {
-    async fn get_translations_str_for_locale(&self, locale: String) -> Result<String> {
+    async fn get_translations_str_for_locale(
+        &self,
+        locale: String,
+    ) -> Result<String, TranslationsManagerError> {
         // Check if the locale is cached for
         // No dynamic caching, so if it isn't cached it stays that way
         if self.cached_locales.contains(&locale) {
@@ -111,17 +118,31 @@ impl TranslationsManager for FsTranslationsManager {
             // The file must be named as the locale it describes
             let asset_path = format!("{}/{}.{}", self.root_path, locale, self.file_ext);
             let translations_str = match fs::metadata(&asset_path) {
-                Ok(_) => fs::read_to_string(&asset_path)
-                    .map_err(|err| ErrorKind::ReadFailed(asset_path, err.to_string()))?,
+                Ok(_) => fs::read_to_string(&asset_path).map_err(|err| {
+                    TranslationsManagerError::ReadFailed {
+                        locale: locale.clone(),
+                        source: err.into(),
+                    }
+                })?,
                 Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                    bail!(ErrorKind::NotFound(asset_path))
+                    return Err(TranslationsManagerError::NotFound {
+                        locale: locale.clone(),
+                    })
                 }
-                Err(err) => bail!(ErrorKind::ReadFailed(locale, err.to_string())),
+                Err(err) => {
+                    return Err(TranslationsManagerError::ReadFailed {
+                        locale: locale.clone(),
+                        source: err.into(),
+                    })
+                }
             };
             Ok(translations_str)
         }
     }
-    async fn get_translator_for_locale(&self, locale: String) -> Result<Translator> {
+    async fn get_translator_for_locale(
+        &self,
+        locale: String,
+    ) -> Result<Translator, TranslationsManagerError> {
         // Check if the locale is cached for
         // No dynamic caching, so if it isn't cached it stays that way
         let translations_str;
@@ -131,8 +152,12 @@ impl TranslationsManager for FsTranslationsManager {
             translations_str = self.get_translations_str_for_locale(locale.clone()).await?;
         }
         // We expect the translations defined there, but not the locale itself
-        let translator = Translator::new(locale.clone(), translations_str)
-            .map_err(|err| ErrorKind::SerializationFailed(locale.clone(), err.to_string()))?;
+        let translator = Translator::new(locale.clone(), translations_str).map_err(|err| {
+            TranslationsManagerError::SerializationFailed {
+                locale: locale.clone(),
+                source: err.into(),
+            }
+        })?;
 
         Ok(translator)
     }
@@ -150,12 +175,22 @@ impl DummyTranslationsManager {
 }
 #[async_trait::async_trait]
 impl TranslationsManager for DummyTranslationsManager {
-    async fn get_translations_str_for_locale(&self, _locale: String) -> Result<String> {
+    async fn get_translations_str_for_locale(
+        &self,
+        _locale: String,
+    ) -> Result<String, TranslationsManagerError> {
         Ok(String::new())
     }
-    async fn get_translator_for_locale(&self, locale: String) -> Result<Translator> {
-        let translator = Translator::new(locale.clone(), String::new())
-            .map_err(|err| ErrorKind::SerializationFailed(locale.clone(), err.to_string()))?;
+    async fn get_translator_for_locale(
+        &self,
+        locale: String,
+    ) -> Result<Translator, TranslationsManagerError> {
+        let translator = Translator::new(locale.clone(), String::new()).map_err(|err| {
+            TranslationsManagerError::SerializationFailed {
+                locale,
+                source: err.into(),
+            }
+        })?;
 
         Ok(translator)
     }

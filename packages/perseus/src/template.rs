@@ -13,12 +13,16 @@ use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
 
-/// Used to encapsulate whether or not a template is running on the client or server. We use a `struct` so as not to interfere with
-/// any user-set context.
-#[derive(Clone, Debug)]
+/// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
+/// to make this easier for each thing in here.
+#[derive(Clone)]
 pub struct RenderCtx {
-    /// Whether or not we're being executed on the server-side.
+    /// Whether or not we're being executed on the server-side. This can be used to gate `web_sys` functions and the like that expect
+    /// to be run in the browser.
     pub is_server: bool,
+    /// A translator for templates to use. This will still be present in non-i18n apps, but it will have no message IDs and support for
+    /// the non-existent locale `xx-XX`.
+    pub translator: Rc<Translator>,
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -41,9 +45,9 @@ impl States {
     }
     /// Gets the only defined state if only one is defined. If no states are defined, this will just return `None`. If both are defined,
     /// this will return an error.
-    pub fn get_defined(&self) -> Result<Option<String>> {
+    pub fn get_defined(&self) -> Result<Option<String>, ServeError> {
         if self.both_defined() {
-            bail!(ErrorKind::BothStatesDefined)
+            return Err(ServeError::BothStatesDefined);
         }
 
         if self.build_state.is_some() {
@@ -55,11 +59,17 @@ impl States {
         }
     }
 }
-
-/// A generic error type that mandates a string error. This sidesteps horrible generics while maintaining DX.
-pub type StringResult<T> = std::result::Result<T, String>;
-/// A generic error type that mandates a string errorr and a statement of causation (client or server) for status code generation.
-pub type StringResultWithCause<T> = std::result::Result<T, (String, ErrorCause)>;
+/// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
+/// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
+pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+/// A generic error type that can be adapted for any errors the user may want to return from a render function, as with `RenderFnResult<T>`.
+/// However, this also includes a mandatory statement of causation for any errors, which assigns blame for them to either the client
+/// or the server. In cases where this is ambiguous, this allows returning accurate HTTP status codes.
+///
+/// Note that you can automatically convert from your error type into this with `.into()` or `?`, which will blame the server for the
+/// error by default and return a *500 Internal Server Error* HTTP status code. Otherwise, you'll need to manually instantiate `ErrorWithCause`
+/// and return that as the error type.
+pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
 /// A generic return type for asynchronous functions that we need to store in a struct.
 type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T>>>;
@@ -105,20 +115,20 @@ macro_rules! make_async_trait {
 }
 
 // A series of asynchronous closure traits that prevent the user from having to pin their functions
-make_async_trait!(GetBuildPathsFnType, StringResult<Vec<String>>);
+make_async_trait!(GetBuildPathsFnType, RenderFnResult<Vec<String>>);
 // The build state strategy needs an error cause if it's invoked from incremental
 make_async_trait!(
     GetBuildStateFnType,
-    StringResultWithCause<String>,
+    RenderFnResultWithCause<String>,
     path: String
 );
 make_async_trait!(
     GetRequestStateFnType,
-    StringResultWithCause<String>,
+    RenderFnResultWithCause<String>,
     path: String,
     req: Request
 );
-make_async_trait!(ShouldRevalidateFnType, StringResultWithCause<bool>);
+make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
 
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
@@ -139,7 +149,7 @@ pub type GetRequestStateFn = Rc<dyn GetRequestStateFnType>;
 /// The type of functions that check if a template sghould revalidate.
 pub type ShouldRevalidateFn = Rc<dyn ShouldRevalidateFnType>;
 /// The type of functions that amalgamate build and request states.
-pub type AmalgamateStatesFn = Rc<dyn Fn(States) -> StringResultWithCause<Option<String>>>;
+pub type AmalgamateStatesFn = Rc<dyn Fn(States) -> RenderFnResultWithCause<Option<String>>>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
@@ -217,13 +227,15 @@ impl<G: GenericNode> Template<G> {
         &self,
         props: Option<String>,
         translator: Rc<Translator>,
-        _is_server: bool,
+        is_server: bool,
     ) -> SycamoreTemplate<G> {
         template! {
-            // TODO tell templates where they're being rendered
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
             ContextProvider(ContextProviderProps {
-                value: Rc::clone(&translator),
+                value: RenderCtx {
+                    is_server,
+                    translator: Rc::clone(&translator)
+                },
                 children: || (self.template)(props)
             })
         }
@@ -235,121 +247,134 @@ impl<G: GenericNode> Template<G> {
             template! {
                 // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
                 ContextProvider(ContextProviderProps {
-                    value: Rc::clone(&translator),
+                    value: RenderCtx {
+                        // This function renders to a string, so we're effectively always on the server
+                        // It's also only ever run on the server
+                        is_server: true,
+                        translator: Rc::clone(&translator)
+                    },
                     children: || (self.head)(props)
                 })
             }
         })
     }
     /// Gets the list of templates that should be prerendered for at build-time.
-    pub async fn get_build_paths(&self) -> Result<Vec<String>> {
+    pub async fn get_build_paths(&self) -> Result<Vec<String>, ServerError> {
         if let Some(get_build_paths) = &self.get_build_paths {
             let res = get_build_paths.call().await;
             match res {
                 Ok(res) => Ok(res),
-                Err(err) => bail!(ErrorKind::RenderFnFailed(
-                    "get_build_paths".to_string(),
-                    self.get_path(),
-                    ErrorCause::Server(None),
-                    err
-                )),
+                Err(err) => Err(ServerError::RenderFnFailed {
+                    fn_name: "get_build_paths".to_string(),
+                    template_name: self.get_path(),
+                    cause: ErrorCause::Server(None),
+                    source: err,
+                }),
             }
         } else {
-            bail!(ErrorKind::TemplateFeatureNotEnabled(
-                self.path.clone(),
-                "build_paths".to_string()
-            ))
+            Err(BuildError::TemplateFeatureNotEnabled {
+                template_name: self.path.clone(),
+                feature_name: "build_paths".to_string(),
+            }
+            .into())
         }
     }
     /// Gets the initial state for a template. This needs to be passed the full path of the template, which may be one of those generated by
     /// `.get_build_paths()`.
-    pub async fn get_build_state(&self, path: String) -> Result<String> {
+    pub async fn get_build_state(&self, path: String) -> Result<String, ServerError> {
         if let Some(get_build_state) = &self.get_build_state {
             let res = get_build_state.call(path).await;
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
-                    "get_build_state".to_string(),
-                    self.get_path(),
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                    fn_name: "get_build_state".to_string(),
+                    template_name: self.get_path(),
                     cause,
-                    err
-                )),
+                    source: error,
+                }),
             }
         } else {
-            bail!(ErrorKind::TemplateFeatureNotEnabled(
-                self.path.clone(),
-                "build_state".to_string()
-            ))
+            Err(BuildError::TemplateFeatureNotEnabled {
+                template_name: self.path.clone(),
+                feature_name: "build_state".to_string(),
+            }
+            .into())
         }
     }
     /// Gets the request-time state for a template. This is equivalent to SSR, and will not be performed at build-time. Unlike
     /// `.get_build_paths()` though, this will be passed information about the request that triggered the render. Errors here can be caused
     /// by either the server or the client, so the user must specify an [`ErrorCause`].
-    pub async fn get_request_state(&self, path: String, req: Request) -> Result<String> {
+    pub async fn get_request_state(
+        &self,
+        path: String,
+        req: Request,
+    ) -> Result<String, ServerError> {
         if let Some(get_request_state) = &self.get_request_state {
             let res = get_request_state.call(path, req).await;
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
-                    "get_request_state".to_string(),
-                    self.get_path(),
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                    fn_name: "get_request_state".to_string(),
+                    template_name: self.get_path(),
                     cause,
-                    err
-                )),
+                    source: error,
+                }),
             }
         } else {
-            bail!(ErrorKind::TemplateFeatureNotEnabled(
-                self.path.clone(),
-                "request_state".to_string()
-            ))
+            Err(BuildError::TemplateFeatureNotEnabled {
+                template_name: self.path.clone(),
+                feature_name: "request_state".to_string(),
+            }
+            .into())
         }
     }
     /// Amalagmates given request and build states. Errors here can be caused by either the server or the client, so the user must specify
     /// an [`ErrorCause`].
-    pub fn amalgamate_states(&self, states: States) -> Result<Option<String>> {
+    pub fn amalgamate_states(&self, states: States) -> Result<Option<String>, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamate_states {
             let res = amalgamate_states(states);
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
-                    "amalgamate_states".to_string(),
-                    self.get_path(),
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                    fn_name: "amalgamate_states".to_string(),
+                    template_name: self.get_path(),
                     cause,
-                    err
-                )),
+                    source: error,
+                }),
             }
         } else {
-            bail!(ErrorKind::TemplateFeatureNotEnabled(
-                self.path.clone(),
-                "request_state".to_string()
-            ))
+            Err(BuildError::TemplateFeatureNotEnabled {
+                template_name: self.path.clone(),
+                feature_name: "request_state".to_string(),
+            }
+            .into())
         }
     }
     /// Checks, by the user's custom logic, if this template should revalidate. This function isn't presently parsed anything, but has
     /// network access etc., and can really do whatever it likes. Errors here can be caused by either the server or the client, so the
     /// user must specify an [`ErrorCause`].
-    pub async fn should_revalidate(&self) -> Result<bool> {
+    pub async fn should_revalidate(&self) -> Result<bool, ServerError> {
         if let Some(should_revalidate) = &self.should_revalidate {
             let res = should_revalidate.call().await;
             match res {
                 Ok(res) => Ok(res),
-                Err((err, cause)) => bail!(ErrorKind::RenderFnFailed(
-                    "should_revalidate".to_string(),
-                    self.get_path(),
+                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                    fn_name: "should_revalidate".to_string(),
+                    template_name: self.get_path(),
                     cause,
-                    err
-                )),
+                    source: error,
+                }),
             }
         } else {
-            bail!(ErrorKind::TemplateFeatureNotEnabled(
-                self.path.clone(),
-                "should_revalidate".to_string()
-            ))
+            Err(BuildError::TemplateFeatureNotEnabled {
+                template_name: self.path.clone(),
+                feature_name: "should_revalidate".to_string(),
+            }
+            .into())
         }
     }
     /// Gets the template's headers for the given state. These will be inserted into any successful HTTP responses for this template,
     /// and they have the power to override.
-    #[allow(clippy::mutable_key_type)]
     pub fn get_headers(&self, state: Option<String>) -> HeaderMap {
         (self.set_headers)(state)
     }
@@ -485,3 +510,13 @@ macro_rules! get_templates_map {
 
 /// A type alias for a `HashMap` of `Template`s.
 pub type TemplateMap<G> = HashMap<String, Template<G>>;
+
+/// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
+/// because it uses Sycamore context.
+#[macro_export]
+macro_rules! is_server {
+    () => {{
+        let render_ctx = ::sycamore::context::use_context::<::perseus::template::RenderCtx>();
+        render_ctx.is_server
+    }};
+}
