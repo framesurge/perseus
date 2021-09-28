@@ -32,7 +32,8 @@ mod cmd;
 mod eject;
 pub mod errors;
 mod export;
-mod help;
+/// Parsing utilities for arguments.
+pub mod parse;
 mod prepare;
 mod serve;
 mod thread;
@@ -48,7 +49,6 @@ pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use build::build;
 pub use eject::{eject, has_ejected};
 pub use export::export;
-pub use help::help;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
 

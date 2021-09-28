@@ -153,13 +153,3 @@ pub enum ExportError {
     #[error(transparent)]
     ExecutionError(#[from] ExecutionError),
 }
-
-/// Reports the given error to the user with `anyhow`.
-#[macro_export]
-macro_rules! report_err {
-    ($err:expr) => {
-        let err = ::anyhow::anyhow!($err);
-        // This will include a `Caused by` section
-        eprintln!("Error: {:?}", err);
-    };
-}

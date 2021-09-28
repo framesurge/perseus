@@ -21,12 +21,13 @@ include = [
 [dependencies]
 include_dir = "0.6"
 thiserror = "1"
-anyhow = "1"
+fmterr = "0.1"
 cargo_toml = "0.9"
 indicatif = "0.17.0-beta.1" # Not stable, but otherwise error handling is just about impossible
 console = "0.14"
 serde = "1"
 serde_json = "1"
+clap = "3.0.0-beta.4"
 
 [lib]
 name = "perseus_cli"
