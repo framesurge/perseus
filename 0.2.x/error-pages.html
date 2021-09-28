@@ -163,9 +163,10 @@ pub fn get_error_pages&lt;G: GenericNode&gt;() -&gt; ErrorPages&lt;G&gt; {
     }));
     error_pages.add_page(
         404,
-        Rc::new(|_, _, _, _| {
+        Rc::new(|_, _, err, _| {
             template! {
                 p { &quot;Page not found.&quot; }
+                p { (err) }
             }
         }),
     );

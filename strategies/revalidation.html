@@ -201,7 +201,9 @@
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -228,18 +230,20 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_build_paths))
 }
 
-pub async fn get_build_state(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;timeisr/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_build_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_build_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string()])
 }
 
@@ -271,7 +275,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -298,11 +302,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_state_fn(Rc::new(get_build_state))
 }
 
-pub async fn get_build_state(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {

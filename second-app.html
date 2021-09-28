@@ -302,7 +302,7 @@ pub mod index;
 </span><span class="boring">fn main() {
 </span>use perseus::{
     http::header::{HeaderMap, HeaderName},
-    GenericNode, StringResultWithCause, Template,
+    GenericNode, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -329,11 +329,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .set_headers_fn(set_headers_fn())
 }
 
-pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
-    })
-    .unwrap())
+    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -371,7 +370,7 @@ pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
 <ul>
 <li><code>perseus</code>
 <ul>
-<li><code>StringResultWithCause</code> -- see below for an explanation of this</li>
+<li><code>RenderFnResultWithCause</code> -- see below for an explanation of this</li>
 <li><code>Template</code> -- as before</li>
 <li><code>GenericNode</code> -- as before</li>
 </ul>
@@ -405,12 +404,15 @@ pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
 <p>Perseus' templating system is extremely versatile, and here we're using it to define our page itself through <code>.template()</code>, and to define a function that will modify the document <code>&lt;head&gt;</code> (which allows us to add a title) with <code>.head()</code>. Notably, we also use the <em>build state</em> rendering strategy, which tells Perseus to call the <code>get_build_props()</code> function when your app builds to get some state. More on that now.</p>
 <h3 id="get_build_props"><a class="header" href="#get_build_props"><code>get_build_props()</code></a></h3>
 <p>This function is part of Perseus' secret sauce (actually <em>open</em> sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is <code>async</code>. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!</p>
-<p>Note that this function returns a <code>StringResultWithCause&lt;String&gt;</code>, which means that it returns a normal Rust <code>Result&lt;String, E&gt;</code>, where <code>E</code> is a tuple of a <code>String</code> error message and a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book.</p>
+<p>Note that this function returns a <code>RenderFnResultWithCause&lt;String&gt;</code>, which means that it returns a normal Rust <code>Result&lt;String, E&gt;</code>, where <code>E</code> is a <code>GenericErrorWithCause</code>, a Perseus type that combines an arbitrary error message with a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book. Note that we use <code>?</code> in this example on errors from modules like <code>serde_json</code>, showing how versatile this type is. If you don't explicitly construct <code>GenericErrorWithCause</code>, blame for the error will be assigned to the server, resulting in a <em>500 Internal Server Error</em> HTTP status code.</p>
 <h3 id="template_fn"><a class="header" href="#template_fn"><code>template_fn()</code></a></h3>
 <p>The result of this function is what Perseus will call when it wants to render your template (which it does more than you might think), and it passes it the props that your template takes as an <code>Option&lt;String&gt;</code>. This might seem a bit weird, but there are reasons under the hood. All you need to know here is that if your template takes any properties, they <strong>will</strong> be here, and it's safe to <code>.unwrap()</code> them for deserialization.</p>
 <h3 id="head_fn"><a class="header" href="#head_fn"><code>head_fn()</code></a></h3>
 <p>This is very similar to <code>template_fn</code>, except it can't be reactive. In other words, anything you put in here is like a picture, it can't move (so no buttons, counters, etc.). This is because this modifies the document <code>&lt;head&gt;</code>, so you should put metadata, titles, etc. in here. Note that the function we return from here does take an argument (ignored with <code>_</code>), that's a string of the properties to your app, but we don't need it in this example. If this page was a generic template for blog posts, you might use this capability to render a different title for each blog post.</p>
 <p>All this does though is set the <code>&lt;title&gt;</code>. If you inspect the source code of the HTML in your browser, you'll find a big comment in the <code>&lt;head&gt;</code> that says <code>&lt;!--PERSEUS_INTERPOLATED_HEAD_BEGINS--&gt;</code>, that separates the stuff that should remain the same on every page from the stuff that should update for each page.</p>
+<h3 id="set_headers_fn"><a class="header" href="#set_headers_fn"><code>set_headers_fn()</code></a></h3>
+<p>This function represents a very powerful feature of Perseus, the ability to set any <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers">HTTP headers</a> for a given template. In this case, any time the Perseus server successfully returns our template to the browser, it will call this function on the HTTP response just before it sends it, which will add our custom header <code>x-test</code>, setting it to the value <code>custom value</code>.</p>
+<p>Note that this function has its own special return type, and that <code>HeaderMap</code> is distinct from other types, like a <code>HashMap</code>.</p>
 <h2 id="aboutrs"><a class="header" href="#aboutrs"><code>about.rs</code></a></h2>
 <p>Okay! We're past the hump, and now it's time to define the (much simpler) <code>/about</code> page. Create <code>src/templates/about.rs</code> and put the following inside:</p>
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">

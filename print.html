@@ -471,7 +471,7 @@ pub mod index;
 </span><span class="boring">fn main() {
 </span>use perseus::{
     http::header::{HeaderMap, HeaderName},
-    GenericNode, StringResultWithCause, Template,
+    GenericNode, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -498,11 +498,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .set_headers_fn(set_headers_fn())
 }
 
-pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
-    })
-    .unwrap())
+    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -540,7 +539,7 @@ pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
 <ul>
 <li><code>perseus</code>
 <ul>
-<li><code>StringResultWithCause</code> -- see below for an explanation of this</li>
+<li><code>RenderFnResultWithCause</code> -- see below for an explanation of this</li>
 <li><code>Template</code> -- as before</li>
 <li><code>GenericNode</code> -- as before</li>
 </ul>
@@ -574,12 +573,15 @@ pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
 <p>Perseus' templating system is extremely versatile, and here we're using it to define our page itself through <code>.template()</code>, and to define a function that will modify the document <code>&lt;head&gt;</code> (which allows us to add a title) with <code>.head()</code>. Notably, we also use the <em>build state</em> rendering strategy, which tells Perseus to call the <code>get_build_props()</code> function when your app builds to get some state. More on that now.</p>
 <h3 id="get_build_props"><a class="header" href="#get_build_props"><code>get_build_props()</code></a></h3>
 <p>This function is part of Perseus' secret sauce (actually <em>open</em> sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is <code>async</code>. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!</p>
-<p>Note that this function returns a <code>StringResultWithCause&lt;String&gt;</code>, which means that it returns a normal Rust <code>Result&lt;String, E&gt;</code>, where <code>E</code> is a tuple of a <code>String</code> error message and a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book.</p>
+<p>Note that this function returns a <code>RenderFnResultWithCause&lt;String&gt;</code>, which means that it returns a normal Rust <code>Result&lt;String, E&gt;</code>, where <code>E</code> is a <code>GenericErrorWithCause</code>, a Perseus type that combines an arbitrary error message with a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book. Note that we use <code>?</code> in this example on errors from modules like <code>serde_json</code>, showing how versatile this type is. If you don't explicitly construct <code>GenericErrorWithCause</code>, blame for the error will be assigned to the server, resulting in a <em>500 Internal Server Error</em> HTTP status code.</p>
 <h3 id="template_fn"><a class="header" href="#template_fn"><code>template_fn()</code></a></h3>
 <p>The result of this function is what Perseus will call when it wants to render your template (which it does more than you might think), and it passes it the props that your template takes as an <code>Option&lt;String&gt;</code>. This might seem a bit weird, but there are reasons under the hood. All you need to know here is that if your template takes any properties, they <strong>will</strong> be here, and it's safe to <code>.unwrap()</code> them for deserialization.</p>
 <h3 id="head_fn"><a class="header" href="#head_fn"><code>head_fn()</code></a></h3>
 <p>This is very similar to <code>template_fn</code>, except it can't be reactive. In other words, anything you put in here is like a picture, it can't move (so no buttons, counters, etc.). This is because this modifies the document <code>&lt;head&gt;</code>, so you should put metadata, titles, etc. in here. Note that the function we return from here does take an argument (ignored with <code>_</code>), that's a string of the properties to your app, but we don't need it in this example. If this page was a generic template for blog posts, you might use this capability to render a different title for each blog post.</p>
 <p>All this does though is set the <code>&lt;title&gt;</code>. If you inspect the source code of the HTML in your browser, you'll find a big comment in the <code>&lt;head&gt;</code> that says <code>&lt;!--PERSEUS_INTERPOLATED_HEAD_BEGINS--&gt;</code>, that separates the stuff that should remain the same on every page from the stuff that should update for each page.</p>
+<h3 id="set_headers_fn"><a class="header" href="#set_headers_fn"><code>set_headers_fn()</code></a></h3>
+<p>This function represents a very powerful feature of Perseus, the ability to set any <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers">HTTP headers</a> for a given template. In this case, any time the Perseus server successfully returns our template to the browser, it will call this function on the HTTP response just before it sends it, which will add our custom header <code>x-test</code>, setting it to the value <code>custom value</code>.</p>
+<p>Note that this function has its own special return type, and that <code>HeaderMap</code> is distinct from other types, like a <code>HashMap</code>.</p>
 <h2 id="aboutrs"><a class="header" href="#aboutrs"><code>about.rs</code></a></h2>
 <p>Okay! We're past the hump, and now it's time to define the (much simpler) <code>/about</code> page. Create <code>src/templates/about.rs</code> and put the following inside:</p>
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
@@ -797,9 +799,45 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 <p>It's perfectly possible in Perseus to define one template for <code>/post</code> (and its children) and a different one for <code>/post/new</code>. In fact, this is exactly what <a href="https://github.com/arctic-hen7/perseus/tree/main/examples/showcase">the showcase example</a> does, and you can check it out for inspiration. This is based on a simple idea: <strong>more specific templates win</strong> the routing contest.</p>
 <p>There is one use-case though that requires a bit more fiddling: having a different template for the root path. A very common use-case for this would be having one template for <code>/posts</code>'s children (one URl for each blog post) and a different template for <code>/posts</code> itself that lists all available posts. Currently, the only way to do this is to define a property on the <code>posts</code> template that will be <code>true</code> if you're rendering for that root, and then to conditionally render the list of posts. Otherwise, you would render the given post content. This does require a lot of <code>Option&lt;T&gt;</code>s, but they could be safely unwrapped (data passing in Perseus is logical and safe).</p>
 <h2 id="checking-render-context"><a class="header" href="#checking-render-context">Checking Render Context</a></h2>
-<blockquote>
-<p>This feature is currently in development, the tracking issue is available <a href="https://github.com/arctic-hen7/perseus/issues/26">here</a>.</p>
-</blockquote>
+<p>It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with <code>web_sys</code>, which will <code>panic!</code> if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with the <code>is_server!</code> macro, which does exactly what it says on the tin. Here's an example from <a href="https://github.com/arctic-hen7/perseus/blob/main/examples/i18n/src/templates/about.rs">here</a>:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::{is_server, t, Template};
+use std::rc::Rc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+
+#[component(AboutPage&lt;G&gt;)]
+pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
+    template! {
+        p { (t!(&quot;about&quot;)) }
+        p {
+            (
+                if is_server!() {
+                    &quot;This is running on the server.&quot;
+                } else {
+                    &quot;This is running on the client.&quot;
+                }
+            )
+        }
+    }
+}
+
+pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
+    Rc::new(|_| {
+        template! {
+            AboutPage()
+        }
+    })
+}
+
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;about&quot;).template(template_fn())
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This is a very contrived example, but what you should note if you try this is the flash from <code>server</code> to <code>client</code> (when you go to the page from the URL bar, not when you go in from the link on the index page), because the page is pre-rendered on the server and then hydrated on the client. This is an important principle of Perseus, and you should be aware of this potential flashing (easily solved by a less contrived example) when your users <a href="templates/../advanced/initial-loads.html">initially load</a> a page.</p>
+<p>One important thing to note with this macro is that it will only work in a <em>reactive scope</em> because it uses Sycamore's <a href="https://sycamore-rs.netlify.app/docs/advanced/contexts">context system</a>. In other words, you can only use it inside a <code>template!</code>, <code>create_effect</code>, or the like.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="modifying-the-head"><a class="header" href="#modifying-the-head">Modifying the <code>&lt;head&gt;</code></a></h1>
 <p>A big issue with only having one <code>index.html</code> file for your whole app is that you don't have the ability to define different <code>&lt;title&gt;</code>s and HTML metadata for each page.</p>
 <p>However, Perseus overcomes this easily by allowing you to specify <code>.head()</code> on a <code>Template&lt;G&gt;</code>, which should return a closure that returns a <code>Template&lt;SsrNode&gt;</code> (but just write <code>perseus::template::HeadFn</code> as the return type, it's an alias for that). The <code>template!</code> you define here will be rendered to a <code>String</code> and directly interpolated into the <code>&lt;head&gt;</code> of any pages this template renders. If you need it to be different based on the properties, you're covered, it takes the same properties as the normal tempalte function!</p>
@@ -810,7 +848,7 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">fn main() {
 </span><span class="boring">use perseus::{
 </span><span class="boring">    http::header::{HeaderMap, HeaderName},
-</span><span class="boring">    GenericNode, StringResultWithCause, Template,
+</span><span class="boring">    GenericNode, RenderFnResultWithCause, Template,
 </span><span class="boring">};
 </span><span class="boring">use serde::{Deserialize, Serialize};
 </span><span class="boring">use std::rc::Rc;
@@ -837,11 +875,10 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">        .set_headers_fn(set_headers_fn())
 </span><span class="boring">}
 </span><span class="boring">
-</span><span class="boring">pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+</span><span class="boring">pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
 </span><span class="boring">    Ok(serde_json::to_string(&amp;IndexPageProps {
 </span><span class="boring">        greeting: &quot;Hello World!&quot;.to_string(),
-</span><span class="boring">    })
-</span><span class="boring">    .unwrap())
+</span><span class="boring">    })?) // This `?` declares the default, that the server is the cause of the error
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -850,15 +887,15 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">            IndexPage(
 </span><span class="boring">                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
 </span><span class="boring">            )
-</span>        }
-    })
+</span><span class="boring">        }
+</span>    })
 }
 
 pub fn head_fn() -&gt; perseus::template::HeadFn {
     Rc::new(|_| {
         template! {
-<span class="boring">            title { &quot;Index Page | Perseus Example – Basic&quot; }
-</span><span class="boring">        }
+            title { &quot;Index Page | Perseus Example – Basic&quot; }
+<span class="boring">        }
 </span><span class="boring">    })
 </span><span class="boring">}
 </span><span class="boring">
@@ -882,7 +919,7 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">fn main() {
 </span>use perseus::{
     http::header::{HeaderMap, HeaderName},
-    GenericNode, StringResultWithCause, Template,
+    GenericNode, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -909,11 +946,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .set_headers_fn(set_headers_fn())
 }
 
-pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
-    })
-    .unwrap())
+    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -967,9 +1003,10 @@ pub fn get_error_pages&lt;G: GenericNode&gt;() -&gt; ErrorPages&lt;G&gt; {
     }));
     error_pages.add_page(
         404,
-        Rc::new(|_, _, _, _| {
+        Rc::new(|_, _, err, _| {
             template! {
                 p { &quot;Page not found.&quot; }
+                p { (err) }
             }
         }),
     );
@@ -1138,7 +1175,7 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1161,11 +1198,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -1179,13 +1215,15 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Note that Perseus passes around properties to pages as <code>String</code>s, so the function used for this strategy is expected to return a string. Note also the return type <code>StringResultWithCause</code>, which means you can specify an error as <code>(String, perseus::errors::ErrorCause)</code>, the later part of which can either be <code>Client(Option&lt;u16&gt;)</code> or <code>Server(Option&lt;u16&gt;)</code>. The <code>u16</code>s allow specifying a custom HTTP status code, otherwise the defaults are <em>400</em> and <em>500</em> respectively. This return type allows specifying who's responsible for an error. This is irrelevant if you use this strategy on its own or with <em>build paths</em>, but if you bring in <em>incremental generation</em>, this will be necessary.</p>
+<p>Note that Perseus passes around properties to pages as <code>String</code>s, so the function used for this strategy is expected to return a string. Note also the return type <code>RenderFnResultWithCause</code>, a Perseus type that represents the possibility of returning almost any kind of error, with an attached cause declaration that blames either the client or the server for the error. Most of the time, the server will be at fault (e.g. if serializing some obvious properties fails), and this is the default if you use <code>?</code> or <code>.into()</code> on another error type to run an automatic conversion. However, if you want to explicitly state a different cause (or provide a different HTTP status code), you can construct <code>GenericErrorWithCause</code>, as done in the below example (under the next subheading) if the path is <code>post/tests</code>. We set the error (a <code>Box&lt;dyn std::error::Error&gt;</code>) and then set the cause to be the client (they navigated to an illegal page) and tell the server to return a 404, which means our app will display something like <em>Page not found</em>.</p>
 <h3 id="with-build-paths-or-incremental-generation"><a class="header" href="#with-build-paths-or-incremental-generation">With <em>Build Paths</em> or <em>Incremental Generation</em></a></h3>
 <p>You may have noticed in the above example that the build state function takes a <code>path</code> parameter. This becomes useful once you bring the <em>build paths</em> or <em>incremental generation</em> strategies into play, which allow you to render many paths for a single template. In the following example (taken from <a href="https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/post.rs">here</a>), all three strategies are used together to pre-render some blog posts at build-time, and allow the rest to be requested and rendered if they exist (here, any post will exist except one called <code>tests</code>):</p>
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1218,10 +1256,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;post/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
@@ -1233,11 +1274,10 @@ pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;Strin
     Ok(serde_json::to_string(&amp;PostPageProps {
         title: title.to_string(),
         content,
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_static_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
 }
 
@@ -1263,7 +1303,9 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1296,10 +1338,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;post/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
@@ -1311,11 +1356,10 @@ pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;Strin
     Ok(serde_json::to_string(&amp;PostPageProps {
         title: title.to_string(),
         content,
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_static_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
 }
 
@@ -1330,7 +1374,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Note the return type of the <code>get_build_paths</code> function, which returns a vector of <code>String</code>s on success or a <code>String</code> error.</p>
+<p>Note the return type of the <code>get_build_paths</code> function, which returns a <code>RenderFnResult&lt;Vec&lt;String&gt;&gt;</code>, which is just an alias for <code>Result&lt;T, Box&lt;dyn std::error::Error&gt;&gt;</code>, which means that you can return any error you want. If you need to explicitly <code>return Err(..)</code>, then you should use <code>.into()</code> to perform the conversion from your error type to this type automatically. Perseus will then format your errors nicely for you using <a href="https://github.com/arctic-hen7/fmterr"><code>fmterr</code></a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="request-state"><a class="header" href="#request-state">Request State</a></h1>
 <p>While build-time strategies fulfill many use-cases, there are also scenarios in which you may need access to information only available at request-time, like an authentication key that the client sends over HTTP as a cookie. For these cases, Perseus supports the <em>request state</em> strategy, which is akin to traditional server-side rendering, whereby you render the page when a client requests it.</p>
 <p>If you can avoid this strategy, do, because it will bring your app's TTFB (time to first byte) down, remember that anything done in this strategy is done on the server while the client is waiting for a page.</p>
@@ -1339,7 +1383,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no-run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{Request, StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Request, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1366,8 +1410,11 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_request_state(_path: String, req: Request) -&gt; StringResultWithCause&lt;String&gt; {
-    // Err((&quot;this is a test error!&quot;.to_string(), perseus::ErrorCause::Client(None)))
+pub async fn get_request_state(_path: String, req: Request) -&gt; RenderFnResultWithCause&lt;String&gt; {
+    // Err(perseus::GenericErrorWithCause {
+    //     error: &quot;this is a test error!&quot;.into(),
+    //     cause: perseus::ErrorCause::Client(None)
+    // })
     Ok(serde_json::to_string(&amp;IpPageProps {
         // Gets the client's IP address
         ip: format!(
@@ -1376,8 +1423,7 @@ pub async fn get_request_state(_path: String, req: Request) -&gt; StringResultWi
                 .get(&quot;X-Forwarded-For&quot;)
                 .unwrap_or(&amp;perseus::http::HeaderValue::from_str(&quot;hidden from view!&quot;).unwrap())
         ),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -1391,7 +1437,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Note that, just like <em>build state</em>, this strategy generates stringified properties that will be passed to the page to render it, and it also uses <code>StringResultWithCause</code> (see the section on <a href="strategies/./build-state.html">build state</a> for more information). The key difference though is that this strategy receives a second, very powerful parameter: the HTTP request that the user sent (<code>perseus::Request</code>).</p>
+<p>Note that, just like <em>build state</em>, this strategy generates stringified properties that will be passed to the page to render it, and it also uses <code>RenderFnWithCause</code> (see the section on <a href="strategies/./build-state.html">build state</a> for more information). The key difference though is that this strategy receives a second, very powerful parameter: the HTTP request that the user sent (<code>perseus::Request</code>).</p>
 <details>
 <summary>How do you get the user's request information?</summary>
 <p><a href="https://actix.rs">Actix Web</a> (and any other framework worth its salt) automatically passes this information to handlers like Perseus. The slightly difficult thing is then converting this from Actix's custom format to Perseus' (which is just an alias for the <a href="https://docs.rs/http"><code>http</code></a> module's). This is done in the <a href="https://docs.rs/perseus-actix-web"><code>perseus-actix-web</code></a> crate.</p>
@@ -1406,7 +1452,9 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1433,18 +1481,20 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_build_paths))
 }
 
-pub async fn get_build_state(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;timeisr/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_build_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_build_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string()])
 }
 
@@ -1476,7 +1526,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1503,11 +1553,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_state_fn(Rc::new(get_build_state))
 }
 
-pub async fn get_build_state(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -1532,7 +1581,9 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1565,10 +1616,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;post/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
@@ -1580,11 +1634,10 @@ pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;Strin
     Ok(serde_json::to_string(&amp;PostPageProps {
         title: title.to_string(),
         content,
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_static_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
 }
 
@@ -1608,7 +1661,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no-playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{Request, States, StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Request, States, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1633,37 +1686,33 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub fn amalgamate_states(states: States) -&gt; StringResultWithCause&lt;Option&lt;String&gt;&gt; {
+pub fn amalgamate_states(states: States) -&gt; RenderFnResultWithCause&lt;Option&lt;String&gt;&gt; {
     // We know they'll both be defined
-    let build_state =
-        serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.build_state.unwrap()).unwrap();
-    let req_state =
-        serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.request_state.unwrap()).unwrap();
+    let build_state = serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.build_state.unwrap())?;
+    let req_state = serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.request_state.unwrap())?;
 
-    Ok(Some(
-        serde_json::to_string(&amp;AmalagamationPageProps {
-            message: format!(
-                &quot;Hello from the amalgamation! (Build says: '{}', server says: '{}'.)&quot;,
-                build_state.message, req_state.message
-            ),
-        })
-        .unwrap(),
-    ))
+    Ok(Some(serde_json::to_string(&amp;AmalagamationPageProps {
+        message: format!(
+            &quot;Hello from the amalgamation! (Build says: '{}', server says: '{}'.)&quot;,
+            build_state.message, req_state.message
+        ),
+    })?))
 }
 
-pub async fn get_build_state(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;AmalagamationPageProps {
         message: &quot;Hello from the build process!&quot;.to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_request_state(_path: String, _req: Request) -&gt; StringResultWithCause&lt;String&gt; {
-    // Err((&quot;this is a test error!&quot;.to_string(), perseus::ErrorCause::Client(None)))
+pub async fn get_request_state(_path: String, _req: Request) -&gt; RenderFnResultWithCause&lt;String&gt; {
+    // Err(perseus::GenericErrorWithCause {
+    //     error: &quot;this is a test error!&quot;.into(),
+    //     cause: perseus::ErrorCause::Client(None)
+    // })
     Ok(serde_json::to_string(&amp;AmalagamationPageProps {
         message: &quot;Hello from the server!&quot;.to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -1677,7 +1726,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>This example illustrates a very simple amalgamation, taking the states of both strategies to produce a new state that combines the two. Note that this also uses <code>StringResultWithCause</code> as a return type (see the section on the <a href="strategies/./build-state.html"><em>build state</em></a> strategy for more information). It will be passed an instance of <code>States</code>, which you can learn more about in the <a href="https://docs.rs/perseus">API docs</a>.</p>
+<p>This example illustrates a very simple amalgamation, taking the states of both strategies to produce a new state that combines the two. Note that this also uses <code>RenderFnWithCause</code> as a return type (see the section on the <a href="strategies/./build-state.html"><em>build state</em></a> strategy for more information). It will be passed an instance of <code>States</code>, which you can learn more about in the <a href="https://docs.rs/perseus">API docs</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="cli"><a class="header" href="#cli">CLI</a></h1>
 <p>One of the things that makes Perseus so different from most Rust frameworks is that it has its own CLI for development. The reason for this is to make using Perseus as simple as possible, and also because, if you have a look at what's in <code>.perseus/</code>, building without the CLI is really hard!</p>
 <h2 id="commands"><a class="header" href="#commands">Commands</a></h2>

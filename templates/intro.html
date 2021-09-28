@@ -254,9 +254,45 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 <p>It's perfectly possible in Perseus to define one template for <code>/post</code> (and its children) and a different one for <code>/post/new</code>. In fact, this is exactly what <a href="https://github.com/arctic-hen7/perseus/tree/main/examples/showcase">the showcase example</a> does, and you can check it out for inspiration. This is based on a simple idea: <strong>more specific templates win</strong> the routing contest.</p>
 <p>There is one use-case though that requires a bit more fiddling: having a different template for the root path. A very common use-case for this would be having one template for <code>/posts</code>'s children (one URl for each blog post) and a different template for <code>/posts</code> itself that lists all available posts. Currently, the only way to do this is to define a property on the <code>posts</code> template that will be <code>true</code> if you're rendering for that root, and then to conditionally render the list of posts. Otherwise, you would render the given post content. This does require a lot of <code>Option&lt;T&gt;</code>s, but they could be safely unwrapped (data passing in Perseus is logical and safe).</p>
 <h2 id="checking-render-context"><a class="header" href="#checking-render-context">Checking Render Context</a></h2>
-<blockquote>
-<p>This feature is currently in development, the tracking issue is available <a href="https://github.com/arctic-hen7/perseus/issues/26">here</a>.</p>
-</blockquote>
+<p>It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with <code>web_sys</code>, which will <code>panic!</code> if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with the <code>is_server!</code> macro, which does exactly what it says on the tin. Here's an example from <a href="https://github.com/arctic-hen7/perseus/blob/main/examples/i18n/src/templates/about.rs">here</a>:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::{is_server, t, Template};
+use std::rc::Rc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+
+#[component(AboutPage&lt;G&gt;)]
+pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
+    template! {
+        p { (t!(&quot;about&quot;)) }
+        p {
+            (
+                if is_server!() {
+                    &quot;This is running on the server.&quot;
+                } else {
+                    &quot;This is running on the client.&quot;
+                }
+            )
+        }
+    }
+}
+
+pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
+    Rc::new(|_| {
+        template! {
+            AboutPage()
+        }
+    })
+}
+
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;about&quot;).template(template_fn())
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This is a very contrived example, but what you should note if you try this is the flash from <code>server</code> to <code>client</code> (when you go to the page from the URL bar, not when you go in from the link on the index page), because the page is pre-rendered on the server and then hydrated on the client. This is an important principle of Perseus, and you should be aware of this potential flashing (easily solved by a less contrived example) when your users <a href="../advanced/initial-loads.html">initially load</a> a page.</p>
+<p>One important thing to note with this macro is that it will only work in a <em>reactive scope</em> because it uses Sycamore's <a href="https://sycamore-rs.netlify.app/docs/advanced/contexts">context system</a>. In other words, you can only use it inside a <code>template!</code>, <code>create_effect</code>, or the like.</p>
 
                 </main>
 

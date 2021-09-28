@@ -203,7 +203,7 @@
 </span><span class="boring">fn main() {
 </span><span class="boring">use perseus::{
 </span><span class="boring">    http::header::{HeaderMap, HeaderName},
-</span><span class="boring">    GenericNode, StringResultWithCause, Template,
+</span><span class="boring">    GenericNode, RenderFnResultWithCause, Template,
 </span><span class="boring">};
 </span><span class="boring">use serde::{Deserialize, Serialize};
 </span><span class="boring">use std::rc::Rc;
@@ -230,11 +230,10 @@
 </span><span class="boring">        .set_headers_fn(set_headers_fn())
 </span><span class="boring">}
 </span><span class="boring">
-</span><span class="boring">pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+</span><span class="boring">pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
 </span><span class="boring">    Ok(serde_json::to_string(&amp;IndexPageProps {
 </span><span class="boring">        greeting: &quot;Hello World!&quot;.to_string(),
-</span><span class="boring">    })
-</span><span class="boring">    .unwrap())
+</span><span class="boring">    })?) // This `?` declares the default, that the server is the cause of the error
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -243,15 +242,15 @@
 </span><span class="boring">            IndexPage(
 </span><span class="boring">                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
 </span><span class="boring">            )
-</span>        }
-    })
+</span><span class="boring">        }
+</span>    })
 }
 
 pub fn head_fn() -&gt; perseus::template::HeadFn {
     Rc::new(|_| {
         template! {
-<span class="boring">            title { &quot;Index Page | Perseus Example – Basic&quot; }
-</span><span class="boring">        }
+            title { &quot;Index Page | Perseus Example – Basic&quot; }
+<span class="boring">        }
 </span><span class="boring">    })
 </span><span class="boring">}
 </span><span class="boring">

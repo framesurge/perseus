@@ -421,7 +421,7 @@ pub mod index;
 </span><span class="boring">fn main() {
 </span>use perseus::{
     http::header::{HeaderMap, HeaderName},
-    GenericNode, StringResultWithCause, Template,
+    GenericNode, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -448,11 +448,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .set_headers_fn(set_headers_fn())
 }
 
-pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
-    })
-    .unwrap())
+    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -760,7 +759,7 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">fn main() {
 </span><span class="boring">use perseus::{
 </span><span class="boring">    http::header::{HeaderMap, HeaderName},
-</span><span class="boring">    GenericNode, StringResultWithCause, Template,
+</span><span class="boring">    GenericNode, RenderFnResultWithCause, Template,
 </span><span class="boring">};
 </span><span class="boring">use serde::{Deserialize, Serialize};
 </span><span class="boring">use std::rc::Rc;
@@ -787,11 +786,10 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">        .set_headers_fn(set_headers_fn())
 </span><span class="boring">}
 </span><span class="boring">
-</span><span class="boring">pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+</span><span class="boring">pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
 </span><span class="boring">    Ok(serde_json::to_string(&amp;IndexPageProps {
 </span><span class="boring">        greeting: &quot;Hello World!&quot;.to_string(),
-</span><span class="boring">    })
-</span><span class="boring">    .unwrap())
+</span><span class="boring">    })?) // This `?` declares the default, that the server is the cause of the error
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -800,15 +798,15 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">            IndexPage(
 </span><span class="boring">                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
 </span><span class="boring">            )
-</span>        }
-    })
+</span><span class="boring">        }
+</span>    })
 }
 
 pub fn head_fn() -&gt; perseus::template::HeadFn {
     Rc::new(|_| {
         template! {
-<span class="boring">            title { &quot;Index Page | Perseus Example – Basic&quot; }
-</span><span class="boring">        }
+            title { &quot;Index Page | Perseus Example – Basic&quot; }
+<span class="boring">        }
 </span><span class="boring">    })
 </span><span class="boring">}
 </span><span class="boring">
@@ -832,7 +830,7 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">fn main() {
 </span>use perseus::{
     http::header::{HeaderMap, HeaderName},
-    GenericNode, StringResultWithCause, Template,
+    GenericNode, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -859,11 +857,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .set_headers_fn(set_headers_fn())
 }
 
-pub async fn get_build_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
-    })
-    .unwrap())
+    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -917,9 +914,10 @@ pub fn get_error_pages&lt;G: GenericNode&gt;() -&gt; ErrorPages&lt;G&gt; {
     }));
     error_pages.add_page(
         404,
-        Rc::new(|_, _, _, _| {
+        Rc::new(|_, _, err, _| {
             template! {
                 p { &quot;Page not found.&quot; }
+                p { (err) }
             }
         }),
     );
@@ -1088,7 +1086,7 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1111,11 +1109,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -1135,7 +1132,9 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1168,10 +1167,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;post/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
@@ -1183,11 +1185,10 @@ pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;Strin
     Ok(serde_json::to_string(&amp;PostPageProps {
         title: title.to_string(),
         content,
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_static_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
 }
 
@@ -1213,7 +1214,9 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1246,10 +1249,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;post/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
@@ -1261,11 +1267,10 @@ pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;Strin
     Ok(serde_json::to_string(&amp;PostPageProps {
         title: title.to_string(),
         content,
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_static_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
 }
 
@@ -1289,7 +1294,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no-run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{Request, StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Request, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1316,8 +1321,11 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_request_state(_path: String, req: Request) -&gt; StringResultWithCause&lt;String&gt; {
-    // Err((&quot;this is a test error!&quot;.to_string(), perseus::ErrorCause::Client(None)))
+pub async fn get_request_state(_path: String, req: Request) -&gt; RenderFnResultWithCause&lt;String&gt; {
+    // Err(perseus::GenericErrorWithCause {
+    //     error: &quot;this is a test error!&quot;.into(),
+    //     cause: perseus::ErrorCause::Client(None)
+    // })
     Ok(serde_json::to_string(&amp;IpPageProps {
         // Gets the client's IP address
         ip: format!(
@@ -1326,8 +1334,7 @@ pub async fn get_request_state(_path: String, req: Request) -&gt; StringResultWi
                 .get(&quot;X-Forwarded-For&quot;)
                 .unwrap_or(&amp;perseus::http::HeaderValue::from_str(&quot;hidden from view!&quot;).unwrap())
         ),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -1356,7 +1363,9 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1383,18 +1392,20 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_build_paths))
 }
 
-pub async fn get_build_state(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;timeisr/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_build_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_build_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string()])
 }
 
@@ -1426,7 +1437,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1453,11 +1464,10 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_state_fn(Rc::new(get_build_state))
 }
 
-pub async fn get_build_state(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
@@ -1482,7 +1492,9 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{ErrorCause, StringResultWithCause, Template};
+</span>use perseus::{
+    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
+};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1515,10 +1527,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;post/tests&quot; {
-        return Err((&quot;illegal page&quot;.to_string(), ErrorCause::Client(Some(404))));
+        return Err(GenericErrorWithCause {
+            error: &quot;illegal page&quot;.into(),
+            cause: ErrorCause::Client(Some(404)),
+        });
     }
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
@@ -1530,11 +1545,10 @@ pub async fn get_static_props(path: String) -&gt; StringResultWithCause&lt;Strin
     Ok(serde_json::to_string(&amp;PostPageProps {
         title: title.to_string(),
         content,
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_static_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
 }
 
@@ -1558,7 +1572,7 @@ pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&l
 <pre><pre class="playground"><code class="language-rust no_run no-playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{Request, States, StringResultWithCause, Template};
+</span>use perseus::{RenderFnResultWithCause, Request, States, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -1583,37 +1597,33 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .template(template_fn())
 }
 
-pub fn amalgamate_states(states: States) -&gt; StringResultWithCause&lt;Option&lt;String&gt;&gt; {
+pub fn amalgamate_states(states: States) -&gt; RenderFnResultWithCause&lt;Option&lt;String&gt;&gt; {
     // We know they'll both be defined
-    let build_state =
-        serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.build_state.unwrap()).unwrap();
-    let req_state =
-        serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.request_state.unwrap()).unwrap();
+    let build_state = serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.build_state.unwrap())?;
+    let req_state = serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;states.request_state.unwrap())?;
 
-    Ok(Some(
-        serde_json::to_string(&amp;AmalagamationPageProps {
-            message: format!(
-                &quot;Hello from the amalgamation! (Build says: '{}', server says: '{}'.)&quot;,
-                build_state.message, req_state.message
-            ),
-        })
-        .unwrap(),
-    ))
+    Ok(Some(serde_json::to_string(&amp;AmalagamationPageProps {
+        message: format!(
+            &quot;Hello from the amalgamation! (Build says: '{}', server says: '{}'.)&quot;,
+            build_state.message, req_state.message
+        ),
+    })?))
 }
 
-pub async fn get_build_state(_path: String) -&gt; StringResultWithCause&lt;String&gt; {
+pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;AmalagamationPageProps {
         message: &quot;Hello from the build process!&quot;.to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
-pub async fn get_request_state(_path: String, _req: Request) -&gt; StringResultWithCause&lt;String&gt; {
-    // Err((&quot;this is a test error!&quot;.to_string(), perseus::ErrorCause::Client(None)))
+pub async fn get_request_state(_path: String, _req: Request) -&gt; RenderFnResultWithCause&lt;String&gt; {
+    // Err(perseus::GenericErrorWithCause {
+    //     error: &quot;this is a test error!&quot;.into(),
+    //     cause: perseus::ErrorCause::Client(None)
+    // })
     Ok(serde_json::to_string(&amp;AmalagamationPageProps {
         message: &quot;Hello from the server!&quot;.to_string(),
-    })
-    .unwrap())
+    })?)
 }
 
 pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
