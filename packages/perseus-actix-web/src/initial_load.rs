@@ -33,9 +33,16 @@ fn return_error_page(
     })
     .unwrap();
     // Add a global variable that defines this as an error
+    // TODO fix lack of support for `\"` here (causes an error)
     let state_var = format!(
-        "<script>window.__PERSEUS_INITIAL_STATE = 'error-{}';</script>",
-        error_page_data.replace(r#"'"#, r#"\'"#) // If we don't escape single quotes, we get runtime syntax errors
+        "<script>window.__PERSEUS_INITIAL_STATE = `error-{}`;</script>",
+        error_page_data
+            // We escape any backslashes to prevent their interfering with JSON delimiters
+            .replace(r#"\"#, r#"\\"#)
+            // We escape any backticks, which would interfere with JS's raw strings system
+            .replace(r#"`"#, r#"\`"#)
+            // We escape any interpolations into JS's raw string system
+            .replace(r#"${"#, r#"\${"#)
     );
     let html_with_declaration = html.replace("</head>", &format!("{}\n</head>", state_var));
     // Interpolate the error page itself

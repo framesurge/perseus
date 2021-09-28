@@ -48,12 +48,15 @@ pub fn interpolate_page_data(html_shell: &str, page_data: &PageData, root_id: &s
     // Interpolate a global variable of the state so the app shell doesn't have to make any more trips
     // The app shell will unset this after usage so it doesn't contaminate later non-initial loads
     // Error pages (above) will set this to `error`
-    let state_var = format!("<script>window.__PERSEUS_INITIAL_STATE = '{}';</script>", {
+    let state_var = format!("<script>window.__PERSEUS_INITIAL_STATE = `{}`;</script>", {
         if let Some(state) = &page_data.state {
             state
-                // If we don't escape quotes, we get runtime syntax errors
-                .replace(r#"'"#, r#"\'"#)
-                .replace(r#"""#, r#"\""#)
+                // We escape any backslashes to prevent their interfering with JSON delimiters
+                .replace(r#"\"#, r#"\\"#)
+                // We escape any backticks, which would interfere with JS's raw strings system
+                .replace(r#"`"#, r#"\`"#)
+                // We escape any interpolations into JS's raw string system
+                .replace(r#"${"#, r#"\${"#)
         } else {
             "None".to_string()
         }

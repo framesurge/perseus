@@ -101,9 +101,15 @@ pub fn get_initial_state() -> InitialState {
     if state_str == "None" {
         InitialState::Present(None)
     } else if state_str.starts_with("error-") {
-        let err_page_data_str = state_str.strip_prefix("error-").unwrap();
+        // We strip the prefix and escape any tab/newline control characters (inserted by `fmterr`)
+        // Any others are user-inserted, and this is documented
+        let err_page_data_str = state_str
+            .strip_prefix("error-")
+            .unwrap()
+            .replace("\n", "\\n")
+            .replace("\t", "\\t");
         // There will be error page data encoded after `error-`
-        let err_page_data = match serde_json::from_str::<ErrorPageData>(err_page_data_str) {
+        let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str) {
             Ok(render_cfg) => render_cfg,
             // If there's a serialization error, we'll create a whole new error (500)
             Err(err) => ErrorPageData {
