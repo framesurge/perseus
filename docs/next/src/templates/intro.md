@@ -50,4 +50,12 @@ There is one use-case though that requires a bit more fiddling: having a differe
 
 ## Checking Render Context
 
-> This feature is currently in development, the tracking issue is available [here](https://github.com/arctic-hen7/perseus/issues/26).
+It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with `web_sys`, which will `panic!` if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with the `is_server!` macro, which does exactly what it says on the tin. Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/i18n/src/templates/about.rs):
+
+```rust,no_run,no_playground
+{{#include ../../../../examples/i18n/src/templates/about.rs}}
+```
+
+This is a very contrived example, but what you should note if you try this is the flash from `server` to `client` (when you go to the page from the URL bar, not when you go in from the link on the index page), because the page is pre-rendered on the server and then hydrated on the client. This is an important principle of Perseus, and you should be aware of this potential flashing (easily solved by a less contrived example) when your users [initially load](../advanced/initial-loads.md) a page.
+
+One important thing to note with this macro is that it will only work in a _reactive scope_ because it uses Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/contexts). In other words, you can only use it inside a `template!`, `create_effect`, or the like.

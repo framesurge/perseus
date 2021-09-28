@@ -13,12 +13,16 @@ use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
 
-/// Used to encapsulate whether or not a template is running on the client or server. We use a `struct` so as not to interfere with
-/// any user-set context.
-#[derive(Clone, Debug)]
+/// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
+/// to make this easier for each thing in here.
+#[derive(Clone)]
 pub struct RenderCtx {
-    /// Whether or not we're being executed on the server-side.
+    /// Whether or not we're being executed on the server-side. This can be used to gate `web_sys` functions and the like that expect
+    /// to be run in the browser.
     pub is_server: bool,
+    /// A translator for templates to use. This will still be present in non-i18n apps, but it will have no message IDs and support for
+    /// the non-existent locale `xx-XX`.
+    pub translator: Rc<Translator>,
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -218,13 +222,15 @@ impl<G: GenericNode> Template<G> {
         &self,
         props: Option<String>,
         translator: Rc<Translator>,
-        _is_server: bool,
+        is_server: bool,
     ) -> SycamoreTemplate<G> {
         template! {
-            // TODO tell templates where they're being rendered
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
             ContextProvider(ContextProviderProps {
-                value: Rc::clone(&translator),
+                value: RenderCtx {
+                    is_server,
+                    translator: Rc::clone(&translator)
+                },
                 children: || (self.template)(props)
             })
         }
@@ -236,7 +242,12 @@ impl<G: GenericNode> Template<G> {
             template! {
                 // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
                 ContextProvider(ContextProviderProps {
-                    value: Rc::clone(&translator),
+                    value: RenderCtx {
+                        // This function renders to a string, so we're effectively always on the server
+                        // It's also only ever run on the server
+                        is_server: true,
+                        translator: Rc::clone(&translator)
+                    },
                     children: || (self.head)(props)
                 })
             }
@@ -494,3 +505,13 @@ macro_rules! get_templates_map {
 
 /// A type alias for a `HashMap` of `Template`s.
 pub type TemplateMap<G> = HashMap<String, Template<G>>;
+
+/// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
+/// because it uses Sycamore context.
+#[macro_export]
+macro_rules! is_server {
+    () => {{
+        let render_ctx = ::sycamore::context::use_context::<::perseus::template::RenderCtx>();
+        render_ctx.is_server
+    }};
+}
