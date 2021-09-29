@@ -35,10 +35,11 @@
 	- [Fantoccini Basics](./testing/fantoccini-basics.md)
 	- [Manual Testing](./testing/manual.md)
 - [Styling](./styling.md)
+- [Static Exporting](./exporting.md)
 - [Deploying](./deploying/intro.md)
-	- [Static Exporting](./deploying/exporting.md)
-	- [Server Deployment]()
-	- [Serverless Deployment]()
+	- [Server Deployment](./deploying/serverful.md)
+	- [Serverless Deployment](./deploying/serverless.md)
+	- [Optimizing Code Size](./deploying/size.md)
 - [Migrating from v0.1.x](./updating.md)
 ***
 # Advanced
