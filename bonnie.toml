@@ -39,6 +39,12 @@ check.cmd = [
 ]
 check.desc = "checks code for formatting errors and the like"
 
+ci-prep.cmd = [
+    "mkdir -p examples/basic/.perseus/dist",
+    "mkdir -p examples/basic/.perseus/dist/static",
+]
+ci-prep.desc = "creates empty directories to preserve the file structure that testing expects"
+
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
