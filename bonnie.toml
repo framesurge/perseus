@@ -32,17 +32,12 @@ copy-subcrates.cmd = [
 ]
 copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/usage"
 
-ci.cmd = [
-    "bonnie copy-subcrates",
-    # Create directories we need to preserve the file structure of
-    "mkdir -p examples/basic/.perseus/dist",
-    "mkdir -p examples/basic/.perseus/dist/static",
+check.cmd = [
     "cargo check --all",
     "cargo fmt --all -- --check",
-    "cargo clippy --all",
-    "bonnie test"
+    "cargo clippy --all"
 ]
-ci.desc = "the checks that are run on CI"
+check.desc = "checks code for formatting errors and the like"
 
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
