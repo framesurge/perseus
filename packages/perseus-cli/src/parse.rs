@@ -24,6 +24,7 @@ pub enum Subcommand {
     Clean(CleanOpts),
     /// Ejects you from the CLI harness, enabling you to work with the internals of Perseus
     Eject,
+    Deploy(DeployOpts),
     /// Prepares the `.perseus/` directory (done automatically by `build` and `serve`)
     Prep,
 }
@@ -63,4 +64,14 @@ pub struct CleanOpts {
     /// Remove the directory, even if you've ejected (this will permanently destroy any changes you've made to `.perseus/`!)
     #[clap(short, long)]
     pub force: bool,
+}
+/// Packages your app for deployment
+#[derive(Clap)]
+pub struct DeployOpts {
+    /// Change the output from `pkg/` to somewhere else
+    #[clap(short, long, default_value = "pkg")]
+    pub output: String,
+    /// Export you app to purely static files (see `export`)
+    #[clap(short, long)]
+    pub export_static: bool,
 }

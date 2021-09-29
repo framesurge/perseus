@@ -13,6 +13,8 @@ pub enum Error {
     EjectionError(#[from] EjectionError),
     #[error(transparent)]
     ExportError(#[from] ExportError),
+    #[error(transparent)]
+    DeployError(#[from] DeployError),
 }
 
 /// Errors that can occur while preparing.
@@ -142,7 +144,7 @@ pub enum ExportError {
         #[source]
         source: std::io::Error,
     },
-    #[error("couldn't copy asset from '{to}' to '{from}' for exporting")]
+    #[error("couldn't copy asset from '{from}' to '{to}' for exporting")]
     MoveAssetFailed {
         to: String,
         from: String,
@@ -152,4 +154,44 @@ pub enum ExportError {
     // We need to execute in exports
     #[error(transparent)]
     ExecutionError(#[from] ExecutionError),
+}
+
+/// Errors that can occur while running `perseus deploy`.
+#[derive(Error, Debug)]
+pub enum DeployError {
+    #[error("couldn't copy exported static files from '{from:?}' to '{to}'")]
+    MoveExportDirFailed {
+        to: String,
+        from: String,
+        #[source]
+        source: fs_extra::error::Error,
+    },
+    #[error("couldn't delete and recreate output directory '{path}'")]
+    ReplaceOutputDirFailed {
+        path: String,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't get path to server executable (if this persists, try `perseus clean`)")]
+    GetServerExecutableFailed,
+    #[error("couldn't copy file from '{from}' to '{to}' for deployment packaging")]
+    MoveAssetFailed {
+        to: String,
+        from: String,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't copy directory from '{from}' to '{to}' for deployment packaging")]
+    MoveDirFailed {
+        to: String,
+        from: String,
+        #[source]
+        source: fs_extra::error::Error,
+    },
+    #[error("couldn't read contents of export directory '{path}' for packaging (if this persists, try `perseus clean`)")]
+    ReadExportDirFailed {
+        path: String,
+        #[source]
+        source: std::io::Error,
+    },
 }

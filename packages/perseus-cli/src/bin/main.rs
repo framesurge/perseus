@@ -2,7 +2,7 @@ use clap::Clap;
 use fmterr::fmt_err;
 use perseus_cli::errors::*;
 use perseus_cli::{
-    build, check_env, delete_artifacts, delete_bad_dir, eject, export, has_ejected,
+    build, check_env, delete_artifacts, delete_bad_dir, deploy, eject, export, has_ejected,
     parse::{Opts, Subcommand},
     prepare, serve,
 };
@@ -94,7 +94,8 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
             if !serve_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
-            serve(dir, serve_opts)?
+            let (exit_code, _server_path) = serve(dir, serve_opts)?;
+            exit_code
         }
         Subcommand::Test(test_opts) => {
             // This will be used by the subcrates
@@ -105,7 +106,8 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
             if !test_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
-            serve(dir, test_opts)?
+            let (exit_code, _server_path) = serve(dir, test_opts)?;
+            exit_code
         }
         Subcommand::Clean(clean_opts) => {
             if clean_opts.dist {
@@ -123,6 +125,12 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
                 delete_bad_dir(dir)?;
             }
             0
+        }
+        Subcommand::Deploy(deploy_opts) => {
+            delete_artifacts(dir.clone(), "static")?;
+            delete_artifacts(dir.clone(), "exported")?;
+            delete_artifacts(dir.clone(), "pkg")?;
+            deploy(dir, deploy_opts)?
         }
         Subcommand::Eject => {
             eject(dir)?;

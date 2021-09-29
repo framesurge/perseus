@@ -131,10 +131,20 @@ macro_rules! define_get_static_aliases {
                     panic!("it's a security risk to include paths outside the current directory in `static_aliases`");
                 } else if resource.starts_with("./") {
                     // `./` -> `../` (moving to execution from `.perseus/`)
-                    format!(".{}", resource)
+                    // But if we're operating standalone, it stays the same
+                    if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
+                        resource
+                    } else {
+                        format!(".{}", resource)
+                    }
                 } else {
                     // Anything else gets a `../` prepended
-                    format!("../{}", resource)
+                    // But if we're operating standalone, it stays the same
+                    if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
+                        resource
+                    } else {
+                        format!("../{}", resource)
+                    }
                 };
                 static_aliases.insert($url.to_string(), resource);
             )*
