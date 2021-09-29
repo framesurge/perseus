@@ -3,27 +3,34 @@ use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
 use perseus::{
-    err_to_status_code, serve::get_page_for_template, stores::ImmutableStore, TranslationsManager,
+    err_to_status_code,
+    serve::get_page_for_template,
+    stores::{ImmutableStore, MutableStore},
+    TranslationsManager,
 };
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct PageDataReq {
     pub template_name: String,
+    pub was_incremental_match: bool,
 }
 
 /// The handler for calls to `.perseus/page/*`. This will manage returning errors and the like.
-// TODO make this take a mutable store as well to pass on to `serve.rs`
-pub async fn page_data<T: TranslationsManager>(
+pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Options>,
     immutable_store: web::Data<ImmutableStore>,
+    mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
     web::Query(query_params): web::Query<PageDataReq>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
     let locale = req.match_info().query("locale");
-    let template_name = query_params.template_name;
+    let PageDataReq {
+        template_name,
+        was_incremental_match,
+    } = query_params;
     // Check if the locale is supported
     if opts.locales.is_supported(locale) {
         let path = req.match_info().query("filename");
@@ -49,8 +56,9 @@ pub async fn page_data<T: TranslationsManager>(
             path,
             locale,
             template,
+            was_incremental_match,
             http_req,
-            immutable_store.get_ref(),
+            (immutable_store.get_ref(), mutable_store.get_ref()),
             translations_manager.get_ref(),
         )
         .await;

@@ -4,21 +4,26 @@ use crate::TemplateMap;
 use std::collections::HashMap;
 use sycamore::prelude::GenericNode;
 
-/// Determines the template to use for the given path by checking against the render configuration. This houses the central routing
-/// algorithm of Perseus, which is based fully on the fact that we know about every single page except those rendered with ISR, and we
-/// can infer about them based on template root path domains. If that domain system is violated, this routing algorithm will not
-/// behave as expected whatsoever (as far as routing goes, it's undefined behaviour)!
+/// Determines the template to use for the given path by checking against the render configuration., also returning whether we matched
+/// a simple page or an incrementally-generated one (`true` for incrementally generated). Note that simple pages include those on
+/// incrementally-generated templates that we pre-rendered with *build paths* at build-time (and are hence in an immutable store rather
+/// than a mutable store).
+///
+/// This houses the central routing algorithm of Perseus, which is based fully on the fact that we know about every single page except
+/// those rendered with ISR, and we can infer about them based on template root path domains. If that domain system is violated, this
+/// routing algorithm will not behave as expected whatsoever (as far as routing goes, it's undefined behaviour)!
 pub fn get_template_for_path<'a, G: GenericNode>(
     raw_path: &str,
     render_cfg: &HashMap<String, String>,
     templates: &'a TemplateMap<G>,
-) -> Option<&'a Template<G>> {
+) -> (Option<&'a Template<G>>, bool) {
     let mut path = raw_path;
     // If the path is empty, we're looking for the special `index` page
     if path.is_empty() {
         path = "index";
     }
 
+    let mut was_incremental_match = false;
     // Match the path to one of the templates
     let mut template_name = String::new();
     // We'll try a direct match first
@@ -36,6 +41,7 @@ pub fn get_template_for_path<'a, G: GenericNode>(
 
             // If we find something, keep going until we don't (maximise specificity)
             if let Some(template_root_path) = render_cfg.get(&path_to_try) {
+                was_incremental_match = true;
                 template_name = template_root_path.to_string();
             } else {
                 break;
@@ -44,11 +50,11 @@ pub fn get_template_for_path<'a, G: GenericNode>(
     }
     // If we still have nothing, then the page doesn't exist
     if template_name.is_empty() {
-        return None;
+        return (None, was_incremental_match);
     }
 
     // Get the template to use (the `Option<T>` this returns is perfect) if it exists
-    templates.get(&template_name)
+    (templates.get(&template_name), was_incremental_match)
 }
 
 /// Matches the given path to a `RouteVerdict`. This takes a `TemplateMap` to match against, the render configuration to index, and it
@@ -72,13 +78,15 @@ pub fn match_route<G: GenericNode>(
             // We'll assume this has already been i18ned (if one of your routes has the same name as a supported locale, ffs)
             let path_without_locale = path_slice[1..].to_vec().join("/");
             // Get the template to use
-            let template = get_template_for_path(&path_without_locale, render_cfg, templates);
+            let (template, was_incremental_match) =
+                get_template_for_path(&path_without_locale, render_cfg, templates);
             verdict = match template {
                 Some(template) => RouteVerdict::Found(RouteInfo {
                     locale: locale.to_string(),
                     // This will be used in asset fetching from the server
                     path: path_without_locale,
                     template: template.clone(),
+                    was_incremental_match,
                 }),
                 None => RouteVerdict::NotFound,
             };
@@ -93,13 +101,15 @@ pub fn match_route<G: GenericNode>(
         verdict = RouteVerdict::LocaleDetection(path_joined);
     } else {
         // Get the template to use
-        let template = get_template_for_path(&path_joined, render_cfg, templates);
+        let (template, was_incremental_match) =
+            get_template_for_path(&path_joined, render_cfg, templates);
         verdict = match template {
             Some(template) => RouteVerdict::Found(RouteInfo {
                 locale: locales.default.to_string(),
                 // This will be used in asset fetching from the server
                 path: path_joined,
                 template: template.clone(),
+                was_incremental_match,
             }),
             None => RouteVerdict::NotFound,
         };
@@ -115,6 +125,9 @@ pub struct RouteInfo<G: GenericNode> {
     pub path: String,
     /// The template that will be used. The app shell will derive pros and a translator to pass to the template function.
     pub template: Template<G>,
+    /// Whether or not the matched page was incrementally-generated at runtime (if it has been yet). If this is `true`, the server will
+    /// use a mutable store rather than an immutable one. See the book for more details.
+    pub was_incremental_match: bool,
     /// The locale for the template to be rendered in.
     pub locale: String,
 }

@@ -209,7 +209,6 @@ impl<G: GenericNode> Template<G> {
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             head: Rc::new(|_: Option<String>| sycamore::template! {}),
             // We create sensible header defaults here
-            // TODO header defaults
             set_headers: Rc::new(|_: Option<String>| default_headers()),
             get_build_paths: None,
             incremental_generation: false,

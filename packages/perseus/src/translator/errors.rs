@@ -10,7 +10,6 @@ pub enum TranslatorError {
     #[error("translations string for locale '{locale}' couldn't be parsed")]
     TranslationsStrSerFailed {
         locale: String,
-        // TODO
         #[source]
         source: Box<dyn std::error::Error>,
     },

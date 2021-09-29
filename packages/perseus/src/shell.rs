@@ -214,7 +214,7 @@ pub enum InitialState {
 // TODO handle exceptions higher up
 pub async fn app_shell(
     path: String,
-    template: Template<DomNode>,
+    (template, was_incremental_match): (Template<DomNode>, bool),
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
@@ -288,10 +288,11 @@ pub async fn app_shell(
             };
             // Get the static page data
             let asset_url = format!(
-                "/.perseus/page/{}/{}.json?template_name={}",
+                "/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",
                 locale,
                 path.to_string(),
-                template.get_path()
+                template.get_path(),
+                was_incremental_match
             );
             // If this doesn't exist, then it's a 404 (we went here by explicit navigation, but it may be an unservable ISR page or the like)
             let page_data_str = fetch(&asset_url).await;

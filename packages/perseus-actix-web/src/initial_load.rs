@@ -6,8 +6,10 @@ use perseus::error_pages::ErrorPageData;
 use perseus::html_shell::interpolate_page_data;
 use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::{
-    err_to_status_code, serve::get_page_for_template, stores::ImmutableStore, ErrorPages, SsrNode,
-    TranslationsManager, Translator,
+    err_to_status_code,
+    serve::get_page_for_template,
+    stores::{ImmutableStore, MutableStore},
+    ErrorPages, SsrNode, TranslationsManager, Translator,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -65,13 +67,13 @@ fn return_error_page(
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
 /// the app shell.
-// TODO make this take a mutable store as well to pass on to `serve.rs`
-pub async fn initial_load<T: TranslationsManager>(
+pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Options>,
     html_shell: web::Data<String>,
     render_cfg: web::Data<HashMap<String, String>>,
     immutable_store: web::Data<ImmutableStore>,
+    mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
@@ -104,6 +106,7 @@ pub async fn initial_load<T: TranslationsManager>(
             path,     // Used for asset fetching, this is what we'd get in `page_data`
             template, // The actual template to use
             locale,
+            was_incremental_match,
         }) => {
             // We need to turn the Actix Web request into one acceptable for Perseus (uses `http` internally)
             let http_req = convert_req(&req);
@@ -119,8 +122,9 @@ pub async fn initial_load<T: TranslationsManager>(
                 &path,
                 &locale,
                 &template,
+                was_incremental_match,
                 http_req,
-                immutable_store.get_ref(),
+                (immutable_store.get_ref(), mutable_store.get_ref()),
                 translations_manager.get_ref(),
             )
             .await;

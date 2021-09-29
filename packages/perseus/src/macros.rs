@@ -15,6 +15,24 @@ macro_rules! define_get_immutable_store {
         }
     };
 }
+/// An internal macro used for defining a function to get the user's preferred mutable store (which requires multiple branches).
+#[doc(hidden)]
+#[macro_export]
+macro_rules! define_get_mutable_store {
+    () => {
+        pub fn get_mutable_store() -> impl $crate::stores::MutableStore {
+            // This will be executed in the context of the user's directory, but moved into `.perseus`
+            // If we're in prod mode on the server though, this is fine too
+            // Note that this is separated out from the immutable store deliberately
+            $crate::stores::FsMutableStore::new("./dist/mutable".to_string())
+        }
+    };
+    ($mutable_store:expr) => {
+        pub fn get_mutable_store() -> impl $crate::stores::MutableStore {
+            $mutable_store
+        }
+    };
+}
 /// An internal macro used for defining the HTML `id` at which to render the Perseus app (which requires multiple branches). The default
 /// is `root`.
 #[doc(hidden)]
@@ -163,7 +181,7 @@ macro_rules! define_get_static_aliases {
 /// compatibility with the Perseus CLI significantly easier.
 ///
 /// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `locales`, `static_aliases`,
-/// `dist_path`, `translations_manager`).
+/// `dist_path`, `mutable_store`, `translations_manager`).
 #[macro_export]
 macro_rules! define_app {
     // With locales
@@ -183,6 +201,7 @@ macro_rules! define_app {
             $($url:literal => $resource:literal)*
         })?
         $(,dist_path: $dist_path:literal)?
+        $(,mutable_store: $mutable_store:expr)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
         $crate::define_app!(
@@ -202,6 +221,7 @@ macro_rules! define_app {
                     $($url => $resource)*
                 })?
                 $(,dist_path: $dist_path)?
+                $(,mutable_store: $mutable_store)?
                 $(,translations_manager: $translations_manager)?
             }
         );
@@ -217,6 +237,7 @@ macro_rules! define_app {
             $($url:literal => $resource:literal)*
         })?
         $(,dist_path: $dist_path:literal)?
+        $(,mutable_store: $mutable_store:expr)?
     } => {
         $crate::define_app!(
             @define_app,
@@ -236,6 +257,7 @@ macro_rules! define_app {
                     $($url => $resource)*
                 })?
                 $(,dist_path: $dist_path)?
+                $(,mutable_store: $mutable_store)?
             }
         );
     };
@@ -260,6 +282,7 @@ macro_rules! define_app {
                 $($url:literal => $resource:literal)*
             })?
             $(,dist_path: $dist_path:literal)?
+            $(,mutable_store: $mutable_store:expr)?
             $(,translations_manager: $translations_manager:expr)?
         }
     ) => {
@@ -267,9 +290,11 @@ macro_rules! define_app {
         /// the form <div id="root_id">` in your markup (double or single quotes, `root_id` replaced by what this property is set to).
         $crate::define_app_root!($($root_selector)?);
 
-        /// Gets the config manager to use. This allows the user to conveniently test production managers in development. If nothing is
-        /// given, the filesystem will be used.
+        /// Gets the immutable store to use. This allows the user to conveniently change the path of distribution artifacts.
         $crate::define_get_immutable_store!($($dist_path)?);
+        /// Gets the mutable store to use. This allows the user to conveniently substitute the default filesystem store for another
+        /// one in development and production.
+        $crate::define_get_mutable_store!($($mutable_store)?);
 
         /// Gets the translations manager to use. This allows the user to conveniently test production managers in development. If
         /// nothing is given, the filesystem will be used.

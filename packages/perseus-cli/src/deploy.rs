@@ -23,7 +23,6 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
 
 /// Deploys the user's app in its entirety, with a bundled server. This can return any kind of error because deploying involves working
 /// with other subcommands.
-// TODO
 fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
     // Build everything for production, not running the server
     let (serve_exit_code, server_path) = serve(

@@ -179,7 +179,6 @@ fn run_server(
 /// executable so that it can be used in deployment.
 pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), ExecutionError> {
     let spinners = MultiProgress::new();
-    // TODO support watching files
     let did_build = !opts.no_build;
     let should_run = !opts.no_run;
     // We need to have a way of knowing what the executable path to the server is

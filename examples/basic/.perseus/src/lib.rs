@@ -68,10 +68,11 @@ pub fn run() -> Result<(), JsValue> {
                                 RouteVerdict::Found(RouteInfo {
                                     path,
                                     template,
-                                    locale
+                                    locale,
+                                    was_incremental_match
                                 }) => app_shell(
                                     path.clone(),
-                                    template.clone(),
+                                    (template.clone(), *was_incremental_match),
                                     locale.clone(),
                                     // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
                                     Rc::clone(&translations_manager),
