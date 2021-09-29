@@ -1,6 +1,6 @@
 use actix_web::{App, HttpServer};
 use app::{
-    get_config_manager, get_error_pages, get_locales, get_static_aliases, get_templates_map,
+    get_error_pages, get_immutable_store, get_locales, get_static_aliases, get_templates_map,
     get_translations_manager, APP_ROOT,
 };
 use futures::executor::block_on;
@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
                     },
                     static_aliases: get_static_aliases(),
                 },
-                get_config_manager(),
+                get_immutable_store(),
                 block_on(get_translations_manager()),
             )))
         })

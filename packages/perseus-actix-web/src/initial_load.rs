@@ -6,7 +6,7 @@ use perseus::error_pages::ErrorPageData;
 use perseus::html_shell::interpolate_page_data;
 use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::{
-    err_to_status_code, serve::get_page_for_template, ConfigManager, ErrorPages, SsrNode,
+    err_to_status_code, serve::get_page_for_template, stores::ImmutableStore, ErrorPages, SsrNode,
     TranslationsManager, Translator,
 };
 use std::collections::HashMap;
@@ -33,7 +33,6 @@ fn return_error_page(
     })
     .unwrap();
     // Add a global variable that defines this as an error
-    // TODO fix lack of support for `\"` here (causes an error)
     let state_var = format!(
         "<script>window.__PERSEUS_INITIAL_STATE = `error-{}`;</script>",
         error_page_data
@@ -66,12 +65,13 @@ fn return_error_page(
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
 /// the app shell.
-pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
+// TODO make this take a mutable store as well to pass on to `serve.rs`
+pub async fn initial_load<T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Options>,
     html_shell: web::Data<String>,
     render_cfg: web::Data<HashMap<String, String>>,
-    config_manager: web::Data<C>,
+    immutable_store: web::Data<ImmutableStore>,
     translations_manager: web::Data<T>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
@@ -120,7 +120,7 @@ pub async fn initial_load<C: ConfigManager, T: TranslationsManager>(
                 &locale,
                 &template,
                 http_req,
-                config_manager.get_ref(),
+                immutable_store.get_ref(),
                 translations_manager.get_ref(),
             )
             .await;

@@ -38,8 +38,6 @@
 /// Utilities for building your app.
 pub mod build;
 mod client_translations_manager;
-/// Utilities for creating custom config managers, as well as the default `FsConfigManager`.
-pub mod config_manager;
 mod decode_time_str;
 mod default_headers;
 /// Utilities regarding the formation of error pages for HTTP status codes, like a `404 Not Found` page.
@@ -59,6 +57,8 @@ pub mod router;
 pub mod serve;
 /// Utilities to do with the app shell. You probably don't want to delve into here.
 pub mod shell;
+/// Utilities for mutable/immutable store managers. See the book for more details on this.
+pub mod stores;
 /// Utilities to do with templating. This is where the bulk of designing apps lies.
 pub mod template;
 mod test;
@@ -76,7 +76,6 @@ pub use sycamore_router::Route;
 
 pub use crate::build::{build_app, build_template, build_templates_for_locale};
 pub use crate::client_translations_manager::ClientTranslationsManager;
-pub use crate::config_manager::{ConfigManager, FsConfigManager};
 pub use crate::error_pages::ErrorPages;
 pub use crate::errors::{err_to_status_code, ErrorCause, GenericErrorWithCause};
 pub use crate::export::export_app;

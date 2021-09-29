@@ -1,5 +1,5 @@
 use app::{
-    get_config_manager, get_locales, get_static_aliases, get_templates_map, get_templates_vec,
+    get_immutable_store, get_locales, get_static_aliases, get_templates_map, get_templates_vec,
     get_translations_manager, APP_ROOT,
 };
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
@@ -14,7 +14,7 @@ fn main() {
 }
 
 fn real_main() -> i32 {
-    let config_manager = get_config_manager();
+    let config_manager = get_immutable_store();
     let translations_manager = block_on(get_translations_manager());
     let locales = get_locales();
 

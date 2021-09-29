@@ -1,17 +1,17 @@
-/// An internal macro used for defining a function to get the user's preferred config manager (which requires multiple branches).
+/// An internal macro used for defining a function to get the user's preferred immutable store (which requires multiple branches).
 #[doc(hidden)]
 #[macro_export]
-macro_rules! define_get_config_manager {
+macro_rules! define_get_immutable_store {
     () => {
-        pub fn get_config_manager() -> impl $crate::ConfigManager {
+        pub fn get_immutable_store() -> $crate::stores::ImmutableStore {
             // This will be executed in the context of the user's directory, but moved into `.perseus`
             // If we're in prod mode on the server though, this is fine too
-            $crate::FsConfigManager::new("./dist".to_string())
+            $crate::stores::ImmutableStore::new("./dist".to_string())
         }
     };
-    ($config_manager:expr) => {
-        pub fn get_config_manager() -> impl $crate::ConfigManager {
-            $config_manager
+    ($dist_path:literal) => {
+        pub fn get_immutable_store() -> $crate::stores::ImmutableStore {
+            $crate::stores::ImmutableStore::new($dist_path.to_string())
         }
     };
 }
@@ -163,7 +163,7 @@ macro_rules! define_get_static_aliases {
 /// compatibility with the Perseus CLI significantly easier.
 ///
 /// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `locales`, `static_aliases`,
-/// `config_manager`, `translations_manager`).
+/// `dist_path`, `translations_manager`).
 #[macro_export]
 macro_rules! define_app {
     // With locales
@@ -182,7 +182,7 @@ macro_rules! define_app {
         $(,static_aliases: {
             $($url:literal => $resource:literal)*
         })?
-        $(,config_manager: $config_manager:expr)?
+        $(,dist_path: $dist_path:literal)?
         $(,translations_manager: $translations_manager:expr)?
     } => {
         $crate::define_app!(
@@ -201,7 +201,7 @@ macro_rules! define_app {
                 $(,static_aliases: {
                     $($url => $resource)*
                 })?
-                $(,config_manager: $config_manager)?
+                $(,dist_path: $dist_path)?
                 $(,translations_manager: $translations_manager)?
             }
         );
@@ -216,7 +216,7 @@ macro_rules! define_app {
         $(,static_aliases: {
             $($url:literal => $resource:literal)*
         })?
-        $(,config_manager: $config_manager:expr)?
+        $(,dist_path: $dist_path:literal)?
     } => {
         $crate::define_app!(
             @define_app,
@@ -235,7 +235,7 @@ macro_rules! define_app {
                 $(,static_aliases: {
                     $($url => $resource)*
                 })?
-                $(,config_manager: $config_manager)?
+                $(,dist_path: $dist_path)?
             }
         );
     };
@@ -259,7 +259,7 @@ macro_rules! define_app {
             $(,static_aliases: {
                 $($url:literal => $resource:literal)*
             })?
-            $(,config_manager: $config_manager:expr)?
+            $(,dist_path: $dist_path:literal)?
             $(,translations_manager: $translations_manager:expr)?
         }
     ) => {
@@ -269,7 +269,7 @@ macro_rules! define_app {
 
         /// Gets the config manager to use. This allows the user to conveniently test production managers in development. If nothing is
         /// given, the filesystem will be used.
-        $crate::define_get_config_manager!($($config_manager)?);
+        $crate::define_get_immutable_store!($($dist_path)?);
 
         /// Gets the translations manager to use. This allows the user to conveniently test production managers in development. If
         /// nothing is given, the filesystem will be used.

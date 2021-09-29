@@ -1,4 +1,4 @@
-use app::{get_config_manager, get_locales, get_templates_vec, get_translations_manager};
+use app::{get_immutable_store, get_locales, get_templates_vec, get_translations_manager};
 use futures::executor::block_on;
 use perseus::{build_app, SsrNode};
 
@@ -8,7 +8,7 @@ fn main() {
 }
 
 fn real_main() -> i32 {
-    let config_manager = get_config_manager();
+    let config_manager = get_immutable_store();
     let translations_manager = block_on(get_translations_manager());
     let locales = get_locales();
 

@@ -1,8 +1,8 @@
 // This file contains the universal logic for a serving process, regardless of framework
 
-use crate::config_manager::ConfigManager;
 use crate::decode_time_str::decode_time_str;
 use crate::errors::*;
+use crate::stores::ImmutableStore;
 use crate::template::{States, Template, TemplateMap};
 use crate::Request;
 use crate::TranslationsManager;
@@ -25,11 +25,11 @@ pub struct PageData {
     pub head: String,
 }
 
-/// Gets the configuration of how to render each page.
+/// Gets the configuration of how to render each page using an immutable store.
 pub async fn get_render_cfg(
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
 ) -> Result<HashMap<String, String>, ServerError> {
-    let content = config_manager.read("render_conf.json").await?;
+    let content = immutable_store.read("render_conf.json").await?;
     let cfg = serde_json::from_str::<HashMap<String, String>>(&content).map_err(|e| {
         // We have to convert it into a build error and then into a server error
         let build_err: BuildError = e.into();
@@ -42,17 +42,17 @@ pub async fn get_render_cfg(
 /// Renders a template that uses state generated at build-time.
 async fn render_build_state(
     path_encoded: &str,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
 ) -> Result<(String, String, Option<String>), ServerError> {
     // Get the static HTML
-    let html = config_manager
+    let html = immutable_store
         .read(&format!("static/{}.html", path_encoded))
         .await?;
-    let head = config_manager
+    let head = immutable_store
         .read(&format!("static/{}.head.html", path_encoded))
         .await?;
     // Get the static JSON
-    let state = match config_manager
+    let state = match immutable_store
         .read(&format!("static/{}.json", path_encoded))
         .await
     {
@@ -62,7 +62,8 @@ async fn render_build_state(
 
     Ok((html, head, state))
 }
-/// Renders a template that generated its state at request-time. Note that revalidation and ISR have no impact on SSR-rendered pages.
+/// Renders a template that generated its state at request-time. Note that revalidation and incremental generation have no impact on
+/// SSR-rendered pages. This does everything at request-time, and so doesn't need a mutable or immutable store.
 async fn render_request_state(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
@@ -79,12 +80,15 @@ async fn render_request_state(
 
     Ok((html, head, state))
 }
-/// Checks if a template that uses ISR has already been cached.
+/// Checks if a template that uses incremental generation has already been cached. If the template was prerendered by *build paths*,
+/// then it will have already been matched because those are declared verbatim in the render configuration. Therefore, this function
+/// only searches for pages that have been cached later, which means it needs a mutable store.
+// TODO switch to a mutable store only here
 async fn get_incremental_cached(
     path_encoded: &str,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
 ) -> Option<(String, String)> {
-    let html_res = config_manager
+    let html_res = immutable_store
         .read(&format!("static/{}.html", path_encoded))
         .await;
 
@@ -92,7 +96,7 @@ async fn get_incremental_cached(
     match html_res {
         Ok(html) if !cfg!(debug_assertions) => {
             // If the HTML exists, the head must as well
-            let head = config_manager
+            let head = immutable_store
                 .read(&format!("static/{}.html", path_encoded))
                 .await
                 .unwrap();
@@ -101,17 +105,20 @@ async fn get_incremental_cached(
         Ok(_) | Err(_) => None,
     }
 }
-/// Checks if a template should revalidate by time.
+/// Checks if a template should revalidate by time. All revalidation timestamps are stored in a mutable store, so that's what this
+/// function uses.
+// TODO switch to a mutable store only here
 async fn should_revalidate(
     template: &Template<SsrNode>,
     path_encoded: &str,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
 ) -> Result<bool, ServerError> {
     let mut should_revalidate = false;
     // If it revalidates after a certain period of time, we needd to check that BEFORE the custom logic
     if template.revalidates_with_time() {
         // Get the time when it should revalidate (RFC 3339)
-        let datetime_to_revalidate_str = config_manager
+        // This will be updated, so it's in a mutable store
+        let datetime_to_revalidate_str = immutable_store
             .read(&format!("static/{}.revld.txt", path_encoded))
             .await?;
         let datetime_to_revalidate = DateTime::parse_from_rfc3339(&datetime_to_revalidate_str)
@@ -135,13 +142,15 @@ async fn should_revalidate(
     }
     Ok(should_revalidate)
 }
-/// Revalidates a template
+/// Revalidates a template. All information about templates that revalidate (timestamp, content. head, and state) is stored in a
+/// mutable store, so that's what this function uses.
+// TODO switch to a mutable store only here
 async fn revalidate(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
     path: &str,
     path_encoded: &str,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
 ) -> Result<(String, String, Option<String>), ServerError> {
     // We need to regenerate and cache this page for future usage (until the next revalidation)
     let state = Some(
@@ -159,23 +168,23 @@ async fn revalidate(
         // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not from the previous one
         // So if you're revalidating many pages weekly, they will NOT revalidate simultaneously, even if they're all queried thus
         let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
-        config_manager
+        immutable_store
             .write(
                 &format!("static/{}.revld.txt", path_encoded),
                 &datetime_to_revalidate,
             )
             .await?;
     }
-    config_manager
+    immutable_store
         .write(
             &format!("static/{}.json", path_encoded),
             &state.clone().unwrap(),
         )
         .await?;
-    config_manager
+    immutable_store
         .write(&format!("static/{}.html", path_encoded), &html)
         .await?;
-    config_manager
+    immutable_store
         .write(&format!("static/{}.head.html", path_encoded), &head)
         .await?;
 
@@ -183,15 +192,17 @@ async fn revalidate(
 }
 
 /// Internal logic behind `get_page`. The only differences are that this takes a full template rather than just a template name, which
-/// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing).
+/// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing). Because this
+/// handles templates with potentially revalidation and incremental generation, it uses both mutable and immutable stores.
 // TODO possible further optimizations on this for futures?
+// TODO switch to immutable stores in some places here
 pub async fn get_page_for_template(
     // This must not contain the locale
     raw_path: &str,
     locale: &str,
     template: &Template<SsrNode>,
     req: Request,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
     translations_manager: &impl TranslationsManager,
 ) -> Result<PageData, ServerError> {
     // Get a translator for this locale (for sanity we hope the manager is caching)
@@ -221,18 +232,18 @@ pub async fn get_page_for_template(
         // If the template uses incremental generation, that is its own contained process
         if template.uses_incremental() {
             // Get the cached content if it exists (otherwise `None`)
-            let html_and_head_opt = get_incremental_cached(&path_encoded, config_manager).await;
+            let html_and_head_opt = get_incremental_cached(&path_encoded, immutable_store).await;
             match html_and_head_opt {
                 // It's cached
                 Some((html_val, head_val)) => {
                     // Check if we need to revalidate
-                    if should_revalidate(template, &path_encoded, config_manager).await? {
+                    if should_revalidate(template, &path_encoded, immutable_store).await? {
                         let (html_val, head_val, state) = revalidate(
                             template,
                             Rc::clone(&translator),
                             path,
                             &path_encoded,
-                            config_manager,
+                            immutable_store,
                         )
                         .await?;
                         // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
@@ -248,7 +259,7 @@ pub async fn get_page_for_template(
                             head = head_val;
                         }
                         // Get the static JSON (if it exists, but it should)
-                        states.build_state = match config_manager
+                        states.build_state = match immutable_store
                             .read(&format!("static/{}.json", path_encoded))
                             .await
                         {
@@ -273,7 +284,7 @@ pub async fn get_page_for_template(
                             decode_time_str(&template.get_revalidate_interval().unwrap())?;
                         // Write that to a static file, we'll update it every time we revalidate
                         // Note that this runs for every path generated, so it's fully usable with ISR
-                        config_manager
+                        immutable_store
                             .write(
                                 &format!("static/{}.revld.txt", path_encoded),
                                 &datetime_to_revalidate,
@@ -281,17 +292,17 @@ pub async fn get_page_for_template(
                             .await?;
                     }
                     // Cache all that
-                    config_manager
+                    immutable_store
                         .write(
                             &format!("static/{}.json", path_encoded),
                             &state.clone().unwrap(),
                         )
                         .await?;
                     // Write that prerendered HTML to a static file
-                    config_manager
+                    immutable_store
                         .write(&format!("static/{}.html", path_encoded), &html_val)
                         .await?;
-                    config_manager
+                    immutable_store
                         .write(&format!("static/{}.head.html", path_encoded), &head_val)
                         .await?;
 
@@ -305,13 +316,13 @@ pub async fn get_page_for_template(
             }
         } else {
             // Handle if we need to revalidate
-            if should_revalidate(template, &path_encoded, config_manager).await? {
+            if should_revalidate(template, &path_encoded, immutable_store).await? {
                 let (html_val, head_val, state) = revalidate(
                     template,
                     Rc::clone(&translator),
                     path,
                     &path_encoded,
-                    config_manager,
+                    immutable_store,
                 )
                 .await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
@@ -322,7 +333,7 @@ pub async fn get_page_for_template(
                 states.build_state = state;
             } else {
                 let (html_val, head_val, state) =
-                    render_build_state(&path_encoded, config_manager).await?;
+                    render_build_state(&path_encoded, immutable_store).await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                 if html.is_empty() {
                     html = html_val;
@@ -366,8 +377,8 @@ pub async fn get_page_for_template(
     Ok(res)
 }
 
-/// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML generated
-/// at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
+/// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML
+/// generated at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
 pub async fn get_page(
     // This must not contain the locale
     raw_path: &str,
@@ -375,7 +386,7 @@ pub async fn get_page(
     template_name: &str,
     req: Request,
     templates: &TemplateMap<SsrNode>,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
     translations_manager: &impl TranslationsManager,
 ) -> Result<PageData, ServerError> {
     let mut path = raw_path;
@@ -401,7 +412,7 @@ pub async fn get_page(
         locale,
         template,
         req,
-        config_manager,
+        immutable_store,
         translations_manager,
     )
     .await?;

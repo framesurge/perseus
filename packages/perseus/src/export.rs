@@ -2,7 +2,7 @@ use crate::errors::*;
 use crate::get_render_cfg;
 use crate::html_shell::{interpolate_page_data, prep_html_shell};
 use crate::serve::PageData;
-use crate::ConfigManager;
+use crate::stores::ImmutableStore;
 use crate::Locales;
 use crate::SsrNode;
 use crate::TemplateMap;
@@ -13,18 +13,18 @@ use std::fs;
 async fn get_static_page_data(
     path: &str,
     has_state: bool,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
 ) -> Result<PageData, ServerError> {
     // Get the partial HTML content and a state to go with it (if applicable)
-    let content = config_manager
+    let content = immutable_store
         .read(&format!("static/{}.html", path))
         .await?;
-    let head = config_manager
+    let head = immutable_store
         .read(&format!("static/{}.head.html", path))
         .await?;
     let state = match has_state {
         true => Some(
-            config_manager
+            immutable_store
                 .read(&format!("static/{}.json", path))
                 .await?,
         ),
@@ -46,11 +46,11 @@ pub async fn export_app(
     html_shell_path: &str,
     locales: &Locales,
     root_id: &str,
-    config_manager: &impl ConfigManager,
+    immutable_store: &ImmutableStore,
     translations_manager: &impl TranslationsManager,
 ) -> Result<(), ServerError> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
-    let render_cfg = get_render_cfg(config_manager).await?;
+    let render_cfg = get_render_cfg(immutable_store).await?;
     // Get the HTML shell and prepare it by interpolating necessary values
     let raw_html_shell =
         fs::read_to_string(html_shell_path).map_err(|err| BuildError::HtmlShellNotFound {
@@ -77,7 +77,7 @@ pub async fn export_app(
         // Create a locale detection file for it if we're using i18n
         // These just send the app shell, which will perform a redirect as necessary
         if locales.using_i18n {
-            config_manager
+            immutable_store
                 .write(&format!("exported/{}.html", path), &html_shell)
                 .await?;
         }
@@ -89,20 +89,20 @@ pub async fn export_app(
                 let page_data = get_static_page_data(
                     &format!("{}-{}", locale, &path_encoded),
                     has_state,
-                    config_manager,
+                    immutable_store,
                 )
                 .await?;
                 // Create a full HTML file from those that can be served for initial loads
                 // The build process writes these with a dummy default locale even though we're not using i18n
                 let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
                 // We don't add an extension because this will be queried directly
-                config_manager
+                immutable_store
                     .write(&format!("exported/{}/{}.html", locale, &path), &full_html)
                     .await?;
 
                 // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
                 let partial = serde_json::to_string(&page_data).unwrap();
-                config_manager
+                immutable_store
                     .write(
                         &format!("exported/.perseus/page/{}/{}.json", locale, &path_encoded),
                         &partial,
@@ -113,20 +113,20 @@ pub async fn export_app(
             let page_data = get_static_page_data(
                 &format!("{}-{}", locales.default, &path_encoded),
                 has_state,
-                config_manager,
+                immutable_store,
             )
             .await?;
             // Create a full HTML file from those that can be served for initial loads
             // The build process writes these with a dummy default locale even though we're not using i18n
             let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
             // We don't add an extension because this will be queried directly by the browser
-            config_manager
+            immutable_store
                 .write(&format!("exported/{}.html", &path), &full_html)
                 .await?;
 
             // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
             let partial = serde_json::to_string(&page_data).unwrap();
-            config_manager
+            immutable_store
                 .write(
                     &format!(
                         "exported/.perseus/page/{}/{}.json",
@@ -145,7 +145,7 @@ pub async fn export_app(
                 .get_translations_str_for_locale(locale.to_string())
                 .await?;
             // Write it to an asset so that it can be served directly
-            config_manager
+            immutable_store
                 .write(
                     &format!("exported/.perseus/translations/{}", locale),
                     &translations_str,

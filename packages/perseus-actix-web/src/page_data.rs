@@ -3,7 +3,7 @@ use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
 use perseus::{
-    err_to_status_code, serve::get_page_for_template, ConfigManager, TranslationsManager,
+    err_to_status_code, serve::get_page_for_template, stores::ImmutableStore, TranslationsManager,
 };
 use serde::Deserialize;
 
@@ -13,10 +13,11 @@ pub struct PageDataReq {
 }
 
 /// The handler for calls to `.perseus/page/*`. This will manage returning errors and the like.
-pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
+// TODO make this take a mutable store as well to pass on to `serve.rs`
+pub async fn page_data<T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Options>,
-    config_manager: web::Data<C>,
+    immutable_store: web::Data<ImmutableStore>,
     translations_manager: web::Data<T>,
     web::Query(query_params): web::Query<PageDataReq>,
 ) -> HttpResponse {
@@ -49,7 +50,7 @@ pub async fn page_data<C: ConfigManager, T: TranslationsManager>(
             locale,
             template,
             http_req,
-            config_manager.get_ref(),
+            immutable_store.get_ref(),
             translations_manager.get_ref(),
         )
         .await;
