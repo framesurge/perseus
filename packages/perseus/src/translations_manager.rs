@@ -125,13 +125,11 @@ impl TranslationsManager for FsTranslationsManager {
                     }
                 })?,
                 Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                    return Err(TranslationsManagerError::NotFound {
-                        locale: locale.clone(),
-                    })
+                    return Err(TranslationsManagerError::NotFound { locale })
                 }
                 Err(err) => {
                     return Err(TranslationsManagerError::ReadFailed {
-                        locale: locale.clone(),
+                        locale,
                         source: err.into(),
                     })
                 }

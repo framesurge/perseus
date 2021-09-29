@@ -131,6 +131,7 @@ pub fn export_internal(
     dir: PathBuf,
     spinners: &MultiProgress,
     num_steps: u8,
+    is_release: bool,
 ) -> Result<
     (
         ThreadHandle<impl FnOnce() -> Result<i32, ExportError>, Result<i32, ExportError>>,
@@ -164,8 +165,9 @@ pub fn export_internal(
     let ep_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} run --bin perseus-exporter",
-                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+                "{} run --bin perseus-exporter {}",
+                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                if is_release { "--release" } else { "" }
             )],
             &ep_target,
             &ep_spinner,
@@ -177,8 +179,9 @@ pub fn export_internal(
     let wb_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} build --target web",
-                env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string())
+                "{} build --target web {}",
+                env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
+                if is_release { "--release" } else { "" }
             )],
             &wb_target,
             &wb_spinner,
@@ -192,10 +195,10 @@ pub fn export_internal(
 }
 
 /// Builds the subcrates to get a directory that we can serve. Returns an exit code.
-pub fn export(dir: PathBuf, _opts: ExportOpts) -> Result<i32, ExportError> {
+pub fn export(dir: PathBuf, opts: ExportOpts) -> Result<i32, ExportError> {
     let spinners = MultiProgress::new();
 
-    let (ep_thread, wb_thread) = export_internal(dir.clone(), &spinners, 2)?;
+    let (ep_thread, wb_thread) = export_internal(dir.clone(), &spinners, 2, opts.release)?;
     let ep_res = ep_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;

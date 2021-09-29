@@ -113,7 +113,7 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
                 // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
                 delete_artifacts(dir.clone(), "static")?;
                 delete_artifacts(dir.clone(), "pkg")?;
-                delete_artifacts(dir.clone(), "exported")?;
+                delete_artifacts(dir, "exported")?;
             } else {
                 // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
                 if has_ejected(dir.clone()) && !clean_opts.force {

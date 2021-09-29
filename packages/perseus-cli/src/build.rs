@@ -47,6 +47,7 @@ pub fn build_internal(
     dir: PathBuf,
     spinners: &MultiProgress,
     num_steps: u8,
+    is_release: bool,
 ) -> Result<
     (
         ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
@@ -80,8 +81,9 @@ pub fn build_internal(
     let sg_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} run",
-                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+                "{} run {}",
+                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                if is_release { "--release" } else { "" }
             )],
             &sg_target,
             &sg_spinner,
@@ -93,8 +95,9 @@ pub fn build_internal(
     let wb_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} build --target web",
-                env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string())
+                "{} build --target web {}",
+                env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
+                if is_release { "--release" } else { "" }
             )],
             &wb_target,
             &wb_spinner,
@@ -108,10 +111,10 @@ pub fn build_internal(
 }
 
 /// Builds the subcrates to get a directory that we can serve. Returns an exit code.
-pub fn build(dir: PathBuf, _opts: BuildOpts) -> Result<i32, ExecutionError> {
+pub fn build(dir: PathBuf, opts: BuildOpts) -> Result<i32, ExecutionError> {
     let spinners = MultiProgress::new();
 
-    let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 2)?;
+    let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 2, opts.release)?;
     let sg_res = sg_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;

@@ -35,6 +35,7 @@ fn build_server(
     spinners: &MultiProgress,
     did_build: bool,
     exec: Arc<Mutex<String>>,
+    is_release: bool,
 ) -> Result<
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     ExecutionError,
@@ -64,8 +65,9 @@ fn build_server(
             let (stdout, _stderr) = handle_exit_code!(run_stage(
                 vec![&format!(
                     // This sets Cargo to tell us everything, including the executable path to the server
-                    "{} build --message-format json",
-                    env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+                    "{} build --message-format json {}",
+                    env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                    if is_release { "--release" } else { "" }
                 )],
                 &sb_target,
                 &sb_spinner,
@@ -182,10 +184,16 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<i32, ExecutionError> {
     // We need to have a way of knowing what the executable path to the server is
     let exec = Arc::new(Mutex::new(String::new()));
     // We can begin building the server in a thread without having to deal with the rest of the build stage yet
-    let sb_thread = build_server(dir.clone(), &spinners, did_build, Arc::clone(&exec))?;
+    let sb_thread = build_server(
+        dir.clone(),
+        &spinners,
+        did_build,
+        Arc::clone(&exec),
+        opts.release,
+    )?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {
-        let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 4)?;
+        let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 4, opts.release)?;
         let sg_res = sg_thread
             .join()
             .map_err(|_| ExecutionError::ThreadWaitFailed)??;
