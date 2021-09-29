@@ -5,6 +5,7 @@ macro_rules! define_get_config_manager {
     () => {
         pub fn get_config_manager() -> impl $crate::ConfigManager {
             // This will be executed in the context of the user's directory, but moved into `.perseus`
+            // If we're in prod mode on the server though, this is fine too
             $crate::FsConfigManager::new("./dist".to_string())
         }
     };
@@ -42,8 +43,14 @@ macro_rules! define_get_translations_manager {
                 .cloned()
                 .cloned()
                 .collect();
+            // If we're running on a server, we should be using a flattened directory structure
+            let translations_dir = if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
+                "./translations"
+            } else {
+                "../translations"
+            };
             $crate::FsTranslationsManager::new(
-                "../translations".to_string(),
+                translations_dir.to_string(),
                 all_locales,
                 $crate::TRANSLATOR_FILE_EXT.to_string(),
             )
