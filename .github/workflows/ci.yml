@@ -18,6 +18,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
+            - run: cargo install bonnie
             - run: bonnie copy-subcrates
             - name: Run traditional tests
               run: cargo test --all
