@@ -25,7 +25,8 @@ Here's a list of everything you can provide to the macro and what each one does 
 	- `default` -- the default locale of your app (e.g. `en-US`)
 	- `other` -- a list of the other locales your app supports
 - `static_aliases` (optional) -- a list of aliases to static files in your project (e.g. for a favicon)
-- `config_manager` (optional) -- a custom configuration manager
+- `dist_path` (optional) -- a custom path to distribution artifacts (this is relative to `.perseus/`!)
+- `mutable_store` (optional) -- a custom mutable store
 - `translations_manager` (optional) -- a custom translations manager
 
 **WARNING:** if you try to include something from outside the current directory in `static_aliases`, **no part of your app will load**! If you could include such content, you might end up serving `/etc/passwd`, which would be a major security risk.

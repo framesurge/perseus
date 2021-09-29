@@ -6,40 +6,22 @@ You can prepare your production server by running `perseus deploy`, which will c
 
 ## Hosting Providers
 
-Perseus is quite unique because it **modifies its build artifacts at runtime**, which makes a number of modern hosting providers unsuitable for deployment, as they'll impose the restriction that the filesystem of your 'server' can't be written to, only read from (understandable in most cases). Again, if you aren't using any request-time strategies (so if you're only using *build state* and/or *build paths*), then you should be using [static exporting](../exporting.md) instead to avoid this entire category of problems.
+As you may recall from [this section](../stores.md) on immutable and mutable stores, Perseus modifies some data at runtime, which is problematic if your hosting provider imposes the restriction that you can't write to the filesystem (as Netlify does). Perseus automatically handles this as well as it can by separating out mutable from immutable data, and storing as much as it can on the filesystem without causing problems. However, data for pages that use the *revalidation* or *incremental generation* strategies must be placed in a location where it can be changed while Perseus is running.
 
-It's this quirk of Perseus that makes it incredibly powerful, but it can also make it annoying to select a hosting provider. If you've come from using [NextJS](https://nextjs.org), you may be surprised at this, as [Vercel](https://vercel.com) exists to serve apps made with that framework, which also has this issue. However, this scenario is mainly due to the fact that NextJS made a company out of hosting their apps, which is currently not a plan for Perseus!
+If you're only using *build state* and/or *build paths* (or neither), you should export your app to purely static files instead, which you can read more about doing [here](../exporting.md). That will avoid this entire category of problems, and you can deploy basically wherever you want.
 
-Essentially, you'll be able to host a Perseus server on any platform that supports writing to a filesystem, which is most old-school server solutions, or any where you get an actual virtual machine to work with.
+If you're bringing *request state* into the mix, you can't export to static files, but you can run on a read-only filesystem, because only the *revalidation* and *incremental generation* strategies require mutability. Perseus will use a mutable store on the filesystem in the background, but won't ever need it.
 
-<details>
-<summary>Why can't I run Perseus without writing to the filesystem?</summary>
+If you're using *revalidation* and *incremental generation*, you have two options, detailed below.
 
-In theory, you can. This is not for the faint of of heart though, as your app may well start experiencing very strange issues. There are three strategies that run at runtime in Perseus:
+### Writable Filesystems
 
-- *Request state* -- doesn't write to the filesystem
-- *Revalidation* -- uses the filesystem extensively for noting times for next revalidation
-- *Incremental generation* -- caches pages built on demand on the filesystem for better performance in future
+The first of these is to use an old-school provider that gives you a filesystem that you can write to. This may be more expensive for hosting, but it will allow you to take full advantage of all Perseus' features in a highly performant way.
 
-Based on that, if you app doesn't use revalidation, you can actually run the Perseus server on a provider that doesn't let you mutate the filesystem, but any incrementally generated pages won't be cached properly, and they'll be effectively rendered again for every user, which will make your site slower on those pages (reduces your time to first byte, to be specific).
+You can deploy to one of these providers without any further changes to your code, as they mimic your local system almost entirely (with a writable filesystem). Just run `perseus deploy` and copy the resulting `pkg/` folder to the server!
 
-If your app does use revalidation, running on a read-only filesystem will lead to pages that revalidate being re-rendered every single time they're visited, because the new revalidation times won't be written properly. This can be disastrous for performance.
+### Alternative Mutable Stores
 
-Also, some hosting providers may clear any writes to the filesystem after a certain period (common strategy), in which case you could run a Perseus server that doesn't use revalidation and incur the performance hit of incremental generation not working properly. However, if the provider doesn't permit writing to the filesystem at all (as in throws an error if you try it), Perseus will basically blow up in your face, and any time it tries to run revalidation or incremental generation, it will throw an error (which it can't recover from).
+The other option you have is deploying to a modern provider that has a read-only filesystem and then using an alternative mutable store. That is, you store your mutable data in a database or the like rather than on the filesystem. This requires you to implement the `MutableStore` `trait` for your storage system (see the [API docs](https://docs.rs/perseus)), which should be relatively easy. You can then provide this to the `define_app!` macro with the `mutable_store` parameter. Make sure to test this on your local system to ensure that your connections all work as expected before deploying to the server, which you can do with `perseus deploy` and by then copying the `pkg/` directory to the server.
 
-So basically, be careful with your hosting provider, and make sure you're not using revalidation if you choose to attempt this course of action!
-
-</details>
-
-## Avoiding Filesystem Writes
-
-You may have noticed earlier on in the book [this section](../config-managers.md) on config managers, which allow you to store configuration anywhere you like, for example in a database, rather than on an immutable filesystem. You can definitely use these to make Perseus work on a read-only filesystem, but you will incur *significant* performance hits from having to fetch files from an external system so frequently.
-
-With just a client and a server, you have to send every request to the server, and then back to the client. There are 2^1 requests. But with configuration managers and an external database, every request also has to go to and from the database, which means you have 2^2 requests. In other words, everything is literally twice as slow. Hence, this approach is not recommended.
-
-<details>
-<summary>So why do configuration managers exist then?</summary>
-
-Mostly so you can use alternative setups of Perseus, they aren't really intended for avoiding writing to the filesystem altogether. The reason they can do so is mostly a legacy thing from v0.1.x.
-
-</details>
+This approach may seem more resilient and modern, but it comes with a severe downside: speed. Every request that involves mutable data (so any request for a revalidating page or an incrementally generated one) must go through four trips (an extra one to and from the database) rather than two, which is twice as many as usual! This will bring down your site's time to first byte (TTFB) radically, so you should ensure that your mutable store is as close to your server as possible so that the latency between them is negligible. If this performance pitfall is not acceptable, you should use an old-school hosting provider instead.
