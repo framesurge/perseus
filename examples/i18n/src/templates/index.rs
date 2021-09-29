@@ -13,14 +13,10 @@ pub fn index_page() -> SycamoreTemplate<G> {
     }
 }
 
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|_| {
+pub fn get_template<G: GenericNode>() -> Template<G> {
+    Template::new("index").template(Rc::new(|_| {
         template! {
             IndexPage()
         }
-    })
-}
-
-pub fn get_template<G: GenericNode>() -> Template<G> {
-    Template::new("index").template(template_fn())
+    }))
 }

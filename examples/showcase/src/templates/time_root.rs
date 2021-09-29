@@ -17,7 +17,13 @@ pub fn time_page(props: TimePageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("time")
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                TimePage(
+                    serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()
+                )
+            }
+        }))
         // This page will revalidate every five seconds (to illustrate revalidation)
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
         .revalidate_after("5s".to_string())
@@ -29,14 +35,4 @@ pub async fn get_build_state(_path: String) -> RenderFnResultWithCause<String> {
     Ok(serde_json::to_string(&TimePageProps {
         time: format!("{:?}", std::time::SystemTime::now()),
     })?)
-}
-
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props| {
-        template! {
-            TimePage(
-                serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()
-            )
-        }
-    })
 }

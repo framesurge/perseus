@@ -27,7 +27,13 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("post")
         .build_paths_fn(Rc::new(get_static_paths))
         .build_state_fn(Rc::new(get_static_props))
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                PostPage(
+                    serde_json::from_str::<PostPageProps>(&props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_static_props(path: String) -> RenderFnResultWithCause<String> {
@@ -46,14 +52,4 @@ pub async fn get_static_props(path: String) -> RenderFnResultWithCause<String> {
 
 pub async fn get_static_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
-}
-
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props| {
-        template! {
-            PostPage(
-                serde_json::from_str::<PostPageProps>(&props.unwrap()).unwrap()
-            )
-        }
-    })
 }

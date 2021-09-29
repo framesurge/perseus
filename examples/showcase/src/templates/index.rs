@@ -18,21 +18,17 @@ pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("index")
         .build_state_fn(Rc::new(get_static_props))
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                IndexPage(
+                    serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_static_props(_path: String) -> RenderFnResultWithCause<String> {
     Ok(serde_json::to_string(&IndexPageProps {
         greeting: "Hello World!".to_string(),
     })?)
-}
-
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props| {
-        template! {
-            IndexPage(
-                serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
-            )
-        }
-    })
 }
