@@ -121,7 +121,7 @@ async fn get_incremental_cached(
         Ok(html) if !cfg!(debug_assertions) => {
             // If the HTML exists, the head must as well
             let head = mutable_store
-                .read(&format!("static/{}.html", path_encoded))
+                .read(&format!("static/{}.head.html", path_encoded))
                 .await
                 .unwrap();
             Some((html, head))
