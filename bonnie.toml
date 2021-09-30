@@ -26,8 +26,8 @@ site.subcommands.export.cmd = [
 ]
 site.subcommands.export.desc = "exports the site, watching for changes"
 site.subcommands.serve.cmd = [
-    "cd website/.perseus/dist",
-    "serve -p 8080 exported"
+    "cd website/",
+    "browser-sync start --server \".perseus/dist/exported\" --files .perseus/dist --no-open --port 8080"
 ]
 site.subcommands.serve.desc = "serves the site's exported content"
 
