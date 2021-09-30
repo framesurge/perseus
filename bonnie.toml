@@ -20,6 +20,17 @@ dev.subcommands.example.cmd = [
 dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
+site.subcommands.export.cmd = [
+    "cd website",
+    "find . -not -path \"./.perseus/*\" -not -path \"./target/*\" | entr -s \"perseus export\""
+]
+site.subcommands.export.desc = "exports the site, watching for changes"
+site.subcommands.serve.cmd = [
+    "cd website/.perseus/dist",
+    "serve -p 8080 exported"
+]
+site.subcommands.serve.desc = "serves the site's exported content"
+
 build = "cargo build"
 
 copy-subcrates.cmd = [
