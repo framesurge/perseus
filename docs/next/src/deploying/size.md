@@ -23,7 +23,7 @@ With the [basic example](https://github.com/arctic-hen7/perseus/tree/main/exampl
 
 ## Aggressive Optimizations
 
-More aggressive optimizations need to be applied to both Perseus' engine and your own code, so you'll need to [eject](../cli/ejecting.md) for this to work properly. Just run `perseus eject`, and then add the following to `.perseus/Cargo.toml`:
+More aggressive optimizations need to be applied to both Perseus' engine and your own code, so you'll need to [eject](../ejecting.md) for this to work properly. Just run `perseus eject`, and then add the following to `.perseus/Cargo.toml`:
 
 ```toml
 [profile.release]

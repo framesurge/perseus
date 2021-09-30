@@ -15,7 +15,7 @@ In that example, we've imported `perseus::t`, and we use it to translate the `he
 That said, there are some cases in which you'll want access to the underlying `Translator` so you can do more complex things. You can get it like so:
 
 ```rust,no_run,no_playground
-sycamore::context::use_context::<Rc<Translator>>();
+sycamore::context::use_context::<perseus::template::RenderCtx>().translator;
 ```
 
 To see all the methods available on `Translator`, see [the API docs](https://docs.rs/perseus).

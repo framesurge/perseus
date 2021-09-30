@@ -4,7 +4,7 @@ The most commonly-used rendering strategy for Perseus is static generation, whic
 
 Note that, depending on other strategies used, Perseus may call this strategy at build-time or while the server is running, so you shouldn't depend on anything only present in a build environment (particularly if you're using the _incremental generation_ or _revalidation_ strategies).
 
-_Note: Perseus currently still requires a server if you want to export to purely static files, though standalone exports may be added in a future release. In the meantime, check out [Zola](https://getzola.org), which does pure static generation fantastically._
+_Note: if you want to export your app to purely static files, see [this section](../exporting.md), which will help you use Perseus without any server._
 
 ## Usage
 
@@ -29,3 +29,7 @@ You may have noticed in the above example that the build state function takes a 
 When either of these additional strategies are used, _build state_ will be passed the path of the page to be rendered, which allows it to prepare unique properties for that page. In the above example, it just turns the URL into a title and renders that.
 
 For further details on _build paths_ and _incremental generation_, see the following sections.
+
+## Common Pitfalls
+
+When a user goes to your app from another website, Perseus will send all the data they need down straight away (in the [initial loads](../advanced/initial-loads.md) system), which involves setting any state you provide in a JavaScript global variable so that the browser can access it without needing to talk to the server again (which would slow things down). Unfortunately, JavaScript's concept of 'raw strings' (in which you don't need to escape anything) is quite a bit looser than Rust's, and so Perseus internally escapes any instances of backticks or `${` (JS interpolation syntax). This should all work fine, but, when your state is deserialized, it's not considered acceptable for it to contain *control characters*. In other words, anything like `\n`, `\t` or the like that have special meanings in strings must be escaped before being sent through Perseus! Note that this is a requirement imposed by the lower-level module [`serde_json`](https://github.com/serde-rs/json), not Perseus itself.

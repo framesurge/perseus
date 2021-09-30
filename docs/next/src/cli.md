@@ -14,6 +14,18 @@ Builds your app in the same way as `build`, and then builds the Perseus server (
 
 You can also provide `--no-build` to this command to make it skip building your app to Wasm and performing static generation. In this case, it will just build the serve rand run it (ideal for restarting the server if you've made no changes).
 
+### `test`
+
+Exactly the same as `serve`, but runs your app in testing mode, which you can read more about [here](./testing/intro.md).
+
+### `export`
+
+Builds and exports your app to a series of purely static files at `.perseus/dist/exported/`. This will only work if your app doesn't use any strategies that can't be run at build time, but if that's the case, then you can easily use Perseus without a server after running this command! You can read more about static exporting [here](./exporting.md).
+
+### `deploy`
+
+Builds your app for production and places it in `pkg/`. You can then upload that folder to a server of your choosing to deploy your app live! You can (and really should) read more about deployment and the potential problems you may encounter [here](./deploying/intro.md).
+
 ### `clean`
 
 This command is the solution to just about any problem in your app that doesn't make sense, it deletes the `.perseus/` directory entirely, which should remove any corruptions! If this doesn't work, then the problem is in your code (unless you just updated to a new version and now something doesn't work, then it's probably on us, please [open an issue](https://github.com/arctic-hen7/perseus)!).
