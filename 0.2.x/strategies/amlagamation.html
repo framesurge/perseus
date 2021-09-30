@@ -160,8 +160,8 @@ pub struct AmalagamationPageProps {
     pub message: String,
 }
 
-#[component(AboutPage&lt;G&gt;)]
-pub fn about_page(props: AmalagamationPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
+#[component(AmalgamationPage&lt;G&gt;)]
+pub fn amalgamation_page(props: AmalagamationPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
     template! {
         p { (format!(&quot;The message is: '{}'&quot;, props.message)) }
     }
@@ -172,7 +172,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_state_fn(Rc::new(get_build_state))
         .request_state_fn(Rc::new(get_request_state))
         .amalgamate_states_fn(Rc::new(amalgamate_states))
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                AmalgamationPage(
+                    serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub fn amalgamate_states(states: States) -&gt; RenderFnResultWithCause&lt;Option&lt;String&gt;&gt; {
@@ -202,16 +208,6 @@ pub async fn get_request_state(_path: String, _req: Request) -&gt; RenderFnResul
     Ok(serde_json::to_string(&amp;AmalagamationPageProps {
         message: &quot;Hello from the server!&quot;.to_string(),
     })?)
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            AboutPage(
-                serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>

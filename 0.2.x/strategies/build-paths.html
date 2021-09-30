@@ -184,7 +184,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_static_paths))
         .build_state_fn(Rc::new(get_static_props))
         .incremental_generation()
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                PostPage(
+                    serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -210,16 +216,6 @@ pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;Str
 
 pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            PostPage(
-                serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>

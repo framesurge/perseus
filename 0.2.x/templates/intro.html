@@ -171,24 +171,16 @@ pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;about&quot;)
-        .template(template_fn())
-        .head(head_fn())
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|_| {
-        template! {
-            AboutPage()
-        }
-    })
-}
-
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;About Page | Perseus Example – Basic&quot; }
-        }
-    })
+        .template(Rc::new(|_| {
+            template! {
+                AboutPage()
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { &quot;About Page | Perseus Example – Basic&quot; }
+            }
+        }))
 }
 <span class="boring">}
 </span></code></pre></pre>

@@ -274,9 +274,19 @@ pub fn index_page(props: IndexPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;index&quot;)
         .build_state_fn(Rc::new(get_build_props))
-        .template(template_fn())
-        .head(head_fn())
-        .set_headers_fn(set_headers_fn())
+        .template(Rc::new(|props: Option&lt;String&gt;| {
+            template! {
+                IndexPage(
+                    serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { &quot;Index Page | Perseus Example – Basic&quot; }
+            }
+        }))
+        .set_headers_fn(Rc::new(set_headers))
 }
 
 pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -285,33 +295,13 @@ pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;Str
     })?) // This `?` declares the default, that the server is the cause of the error
 }
 
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props: Option&lt;String&gt;| {
-        template! {
-            IndexPage(
-                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
-}
-
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;Index Page | Perseus Example – Basic&quot; }
-        }
-    })
-}
-
-pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
-    Rc::new(|_| {
-        let mut map = HeaderMap::new();
-        map.insert(
-            HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
-            &quot;custom value&quot;.parse().unwrap(),
-        );
-        map
-    })
+pub fn set_headers(_props: Option&lt;String&gt;) -&gt; HeaderMap {
+    let mut map = HeaderMap::new();
+    map.insert(
+        HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
+        &quot;custom value&quot;.parse().unwrap(),
+    );
+    map
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -378,24 +368,16 @@ pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;about&quot;)
-        .template(template_fn())
-        .head(head_fn())
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|_| {
-        template! {
-            AboutPage()
-        }
-    })
-}
-
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;About Page | Perseus Example – Basic&quot; }
-        }
-    })
+        .template(Rc::new(|_| {
+            template! {
+                AboutPage()
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { &quot;About Page | Perseus Example – Basic&quot; }
+            }
+        }))
 }
 <span class="boring">}
 </span></code></pre></pre>

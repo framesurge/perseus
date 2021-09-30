@@ -172,7 +172,13 @@ pub fn time_page(props: TimePageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;timeisr&quot;)
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                TimePage(
+                    serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
         // This page will revalidate every five seconds (to illustrate revalidation)
         .revalidate_after(&quot;5s&quot;.to_string())
         .incremental_generation()
@@ -195,16 +201,6 @@ pub async fn get_build_state(path: String) -&gt; RenderFnResultWithCause&lt;Stri
 
 pub async fn get_build_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string()])
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            TimePage(
-                serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -244,7 +240,13 @@ pub fn time_page(props: TimePageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;time&quot;)
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                TimePage(
+                    serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
         // This page will revalidate every five seconds (to illustrate revalidation)
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
         .revalidate_after(&quot;5s&quot;.to_string())
@@ -256,16 +258,6 @@ pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;Str
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
     })?)
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            TimePage(
-                serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>

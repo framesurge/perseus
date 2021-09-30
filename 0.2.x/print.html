@@ -443,9 +443,19 @@ pub fn index_page(props: IndexPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;index&quot;)
         .build_state_fn(Rc::new(get_build_props))
-        .template(template_fn())
-        .head(head_fn())
-        .set_headers_fn(set_headers_fn())
+        .template(Rc::new(|props: Option&lt;String&gt;| {
+            template! {
+                IndexPage(
+                    serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { &quot;Index Page | Perseus Example – Basic&quot; }
+            }
+        }))
+        .set_headers_fn(Rc::new(set_headers))
 }
 
 pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -454,33 +464,13 @@ pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;Str
     })?) // This `?` declares the default, that the server is the cause of the error
 }
 
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props: Option&lt;String&gt;| {
-        template! {
-            IndexPage(
-                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
-}
-
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;Index Page | Perseus Example – Basic&quot; }
-        }
-    })
-}
-
-pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
-    Rc::new(|_| {
-        let mut map = HeaderMap::new();
-        map.insert(
-            HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
-            &quot;custom value&quot;.parse().unwrap(),
-        );
-        map
-    })
+pub fn set_headers(_props: Option&lt;String&gt;) -&gt; HeaderMap {
+    let mut map = HeaderMap::new();
+    map.insert(
+        HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
+        &quot;custom value&quot;.parse().unwrap(),
+    );
+    map
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -547,24 +537,16 @@ pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;about&quot;)
-        .template(template_fn())
-        .head(head_fn())
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|_| {
-        template! {
-            AboutPage()
-        }
-    })
-}
-
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;About Page | Perseus Example – Basic&quot; }
-        }
-    })
+        .template(Rc::new(|_| {
+            template! {
+                AboutPage()
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { &quot;About Page | Perseus Example – Basic&quot; }
+            }
+        }))
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -713,24 +695,16 @@ pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;about&quot;)
-        .template(template_fn())
-        .head(head_fn())
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|_| {
-        template! {
-            AboutPage()
-        }
-    })
-}
-
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;About Page | Perseus Example – Basic&quot; }
-        }
-    })
+        .template(Rc::new(|_| {
+            template! {
+                AboutPage()
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { &quot;About Page | Perseus Example – Basic&quot; }
+            }
+        }))
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -781,44 +755,34 @@ pub fn head_fn() -&gt; perseus::template::HeadFn {
 </span><span class="boring">pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
 </span><span class="boring">    Template::new(&quot;index&quot;)
 </span><span class="boring">        .build_state_fn(Rc::new(get_build_props))
-</span><span class="boring">        .template(template_fn())
-</span><span class="boring">        .head(head_fn())
-</span><span class="boring">        .set_headers_fn(set_headers_fn())
+</span><span class="boring">        .template(Rc::new(|props: Option&lt;String&gt;| {
+</span><span class="boring">            template! {
+</span><span class="boring">                IndexPage(
+</span><span class="boring">                    serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
+</span><span class="boring">                )
+</span><span class="boring">            }
+</span><span class="boring">        }))
+</span><span class="boring">        .head(Rc::new(|_| {
+</span><span class="boring">            template! {
+</span><span class="boring">                title { &quot;Index Page | Perseus Example – Basic&quot; }
+</span><span class="boring">            }
+</span><span class="boring">        }))
+</span><span class="boring">        .set_headers_fn(Rc::new(set_headers))
 </span><span class="boring">}
 </span><span class="boring">
 </span><span class="boring">pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
 </span><span class="boring">    Ok(serde_json::to_string(&amp;IndexPageProps {
 </span><span class="boring">        greeting: &quot;Hello World!&quot;.to_string(),
-</span><span class="boring">    })?) // This `?` declares the default, that the server is the cause of the error
-</span><span class="boring">}
-</span><span class="boring">
-</span><span class="boring">pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-</span><span class="boring">    Rc::new(|props: Option&lt;String&gt;| {
-</span><span class="boring">        template! {
-</span><span class="boring">            IndexPage(
-</span><span class="boring">                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
-</span><span class="boring">            )
-</span><span class="boring">        }
-</span>    })
+</span>    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;Index Page | Perseus Example – Basic&quot; }
-<span class="boring">        }
-</span><span class="boring">    })
-</span><span class="boring">}
-</span><span class="boring">
-</span><span class="boring">pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
-</span><span class="boring">    Rc::new(|_| {
-</span><span class="boring">        let mut map = HeaderMap::new();
-</span><span class="boring">        map.insert(
-</span><span class="boring">            HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
-</span><span class="boring">            &quot;custom value&quot;.parse().unwrap(),
-</span><span class="boring">        );
-</span><span class="boring">        map
-</span><span class="boring">    })
+pub fn set_headers(_props: Option&lt;String&gt;) -&gt; HeaderMap {
+    let mut map = HeaderMap::new();
+    map.insert(
+        HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
+<span class="boring">        &quot;custom value&quot;.parse().unwrap(),
+</span><span class="boring">    );
+</span><span class="boring">    map
 </span><span class="boring">}
 </span><span class="boring">}
 </span></code></pre></pre>
@@ -852,9 +816,19 @@ pub fn index_page(props: IndexPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;index&quot;)
         .build_state_fn(Rc::new(get_build_props))
-        .template(template_fn())
-        .head(head_fn())
-        .set_headers_fn(set_headers_fn())
+        .template(Rc::new(|props: Option&lt;String&gt;| {
+            template! {
+                IndexPage(
+                    serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { &quot;Index Page | Perseus Example – Basic&quot; }
+            }
+        }))
+        .set_headers_fn(Rc::new(set_headers))
 }
 
 pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -863,33 +837,13 @@ pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;Str
     })?) // This `?` declares the default, that the server is the cause of the error
 }
 
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props: Option&lt;String&gt;| {
-        template! {
-            IndexPage(
-                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
-}
-
-pub fn head_fn() -&gt; perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { &quot;Index Page | Perseus Example – Basic&quot; }
-        }
-    })
-}
-
-pub fn set_headers_fn() -&gt; perseus::template::SetHeadersFn {
-    Rc::new(|_| {
-        let mut map = HeaderMap::new();
-        map.insert(
-            HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
-            &quot;custom value&quot;.parse().unwrap(),
-        );
-        map
-    })
+pub fn set_headers(_props: Option&lt;String&gt;) -&gt; HeaderMap {
+    let mut map = HeaderMap::new();
+    map.insert(
+        HeaderName::from_lowercase(b&quot;x-test&quot;).unwrap(),
+        &quot;custom value&quot;.parse().unwrap(),
+    );
+    map
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1035,16 +989,12 @@ pub fn index_page() -&gt; SycamoreTemplate&lt;G&gt; {
     }
 }
 
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|_| {
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;index&quot;).template(Rc::new(|_| {
         template! {
             IndexPage()
         }
-    })
-}
-
-pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
-    Template::new(&quot;index&quot;).template(template_fn())
+    }))
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1106,23 +1056,19 @@ pub fn index_page(props: IndexPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;index&quot;)
         .build_state_fn(Rc::new(get_static_props))
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                IndexPage(
+                    serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_static_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
     })?)
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            IndexPage(
-                serde_json::from_str::&lt;IndexPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1164,7 +1110,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_static_paths))
         .build_state_fn(Rc::new(get_static_props))
         .incremental_generation()
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                PostPage(
+                    serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -1190,16 +1142,6 @@ pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;Str
 
 pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            PostPage(
-                serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1246,7 +1188,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_static_paths))
         .build_state_fn(Rc::new(get_static_props))
         .incremental_generation()
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                PostPage(
+                    serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -1272,16 +1220,6 @@ pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;Str
 
 pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            PostPage(
-                serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1318,7 +1256,13 @@ pub fn dashboard_page(props: IpPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;ip&quot;)
         .request_state_fn(Rc::new(get_request_state))
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                IpPage(
+                    serde_json::from_str::&lt;IpPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_request_state(_path: String, req: Request) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -1335,16 +1279,6 @@ pub async fn get_request_state(_path: String, req: Request) -&gt; RenderFnResult
                 .unwrap_or(&amp;perseus::http::HeaderValue::from_str(&quot;hidden from view!&quot;).unwrap())
         ),
     })?)
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            IpPage(
-                serde_json::from_str::&lt;IpPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1384,7 +1318,13 @@ pub fn time_page(props: TimePageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;timeisr&quot;)
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                TimePage(
+                    serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
         // This page will revalidate every five seconds (to illustrate revalidation)
         .revalidate_after(&quot;5s&quot;.to_string())
         .incremental_generation()
@@ -1407,16 +1347,6 @@ pub async fn get_build_state(path: String) -&gt; RenderFnResultWithCause&lt;Stri
 
 pub async fn get_build_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string()])
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            TimePage(
-                serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1456,7 +1386,13 @@ pub fn time_page(props: TimePageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;time&quot;)
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                TimePage(
+                    serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
         // This page will revalidate every five seconds (to illustrate revalidation)
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
         .revalidate_after(&quot;5s&quot;.to_string())
@@ -1468,16 +1404,6 @@ pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;Str
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
     })?)
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            TimePage(
-                serde_json::from_str::&lt;TimePageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1524,7 +1450,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_static_paths))
         .build_state_fn(Rc::new(get_static_props))
         .incremental_generation()
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                PostPage(
+                    serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -1551,16 +1483,6 @@ pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;Str
 pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
     Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
 }
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            PostPage(
-                serde_json::from_str::&lt;PostPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
-}
 <span class="boring">}
 </span></code></pre></pre>
 <p>All we need to do is run <code>.incremental_generation()</code> on the <code>Template</code>, and it's ready.</p>
@@ -1582,8 +1504,8 @@ pub struct AmalagamationPageProps {
     pub message: String,
 }
 
-#[component(AboutPage&lt;G&gt;)]
-pub fn about_page(props: AmalagamationPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
+#[component(AmalgamationPage&lt;G&gt;)]
+pub fn amalgamation_page(props: AmalagamationPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
     template! {
         p { (format!(&quot;The message is: '{}'&quot;, props.message)) }
     }
@@ -1594,7 +1516,13 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_state_fn(Rc::new(get_build_state))
         .request_state_fn(Rc::new(get_request_state))
         .amalgamate_states_fn(Rc::new(amalgamate_states))
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                AmalgamationPage(
+                    serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub fn amalgamate_states(states: States) -&gt; RenderFnResultWithCause&lt;Option&lt;String&gt;&gt; {
@@ -1624,16 +1552,6 @@ pub async fn get_request_state(_path: String, _req: Request) -&gt; RenderFnResul
     Ok(serde_json::to_string(&amp;AmalagamationPageProps {
         message: &quot;Hello from the server!&quot;.to_string(),
     })?)
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            AboutPage(
-                serde_json::from_str::&lt;AmalagamationPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>

@@ -175,7 +175,13 @@ pub fn dashboard_page(props: IpPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
 pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;ip&quot;)
         .request_state_fn(Rc::new(get_request_state))
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                IpPage(
+                    serde_json::from_str::&lt;IpPageProps&gt;(&amp;props.unwrap()).unwrap()
+                )
+            }
+        }))
 }
 
 pub async fn get_request_state(_path: String, req: Request) -&gt; RenderFnResultWithCause&lt;String&gt; {
@@ -192,16 +198,6 @@ pub async fn get_request_state(_path: String, req: Request) -&gt; RenderFnResult
                 .unwrap_or(&amp;perseus::http::HeaderValue::from_str(&quot;hidden from view!&quot;).unwrap())
         ),
     })?)
-}
-
-pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
-    Rc::new(|props| {
-        template! {
-            IpPage(
-                serde_json::from_str::&lt;IpPageProps&gt;(&amp;props.unwrap()).unwrap()
-            )
-        }
-    })
 }
 <span class="boring">}
 </span></code></pre></pre>
