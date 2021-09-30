@@ -30,6 +30,16 @@ site.subcommands.serve.cmd = [
     "browser-sync start --server \".perseus/dist/exported\" --files .perseus/dist --no-open --port 8080"
 ]
 site.subcommands.serve.desc = "serves the site's exported content"
+site.subcommands.build-tailwind.cmd = [
+    "cd website",
+    "tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css"
+]
+site.subcommands.build-tailwind.desc = "builds a tailwind stylesheet for development (no purging)"
+site.subcommands.build-tailwind.subcommands.prod.cmd = [
+    "cd website",
+    "NODE_ENV=production tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css --minify"
+]
+site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind stylesheet for production (purging and minifying)"
 
 build = "cargo build"
 
