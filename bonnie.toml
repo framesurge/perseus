@@ -113,6 +113,7 @@ publish.cmd = [
     "bonnie check-branch stable",
     "cd packages/perseus-macro",
     "cargo publish %%",
+    "sleep 60", # Wait for `crates.io` to be ready
     "cd ../perseus",
     "cargo publish %%",
     "cd ../perseus-cli",
