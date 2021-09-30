@@ -35,7 +35,7 @@ jobs:
                   file: target/release/${{ matrix.artifact_name }}
                   asset_name: ${{ matrix.asset_name }}
                   tag: ${{ github.ref }}
-                  body: "The above binaries/executables are for the Perseus CLI. See [CHANGELOG.md](./CHANGELOG.md) for details of the changes in this version."
+                  body: "The below binaries/executables are for the Perseus CLI. See [CHANGELOG.md](./CHANGELOG.md) for details of the changes in this version."
     # This builds and releases for musl
     musl-build-release:
         runs-on: ubuntu-latest # We cross-compile from Ubuntu
