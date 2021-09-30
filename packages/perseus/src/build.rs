@@ -56,20 +56,22 @@ pub async fn build_template(
     for path in paths.iter() {
         // If needed, we'll contruct a full path that's URL encoded so we can easily save it as a file
         // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
-        let full_path = match template.uses_build_paths() {
+        let full_path_without_locale = match template.uses_build_paths() {
             true => urlencoding::encode(&format!("{}/{}", &template_path, path)).to_string(),
             // We don't want to concatenate the name twice if we don't have to
             false => urlencoding::encode(&template_path).to_string(),
         };
         // Add the current locale to the front of that
-        let full_path = format!("{}-{}", translator.get_locale(), full_path);
+        let full_path = format!("{}-{}", translator.get_locale(), full_path_without_locale);
 
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated
         // If the template revalidates, use a mutable store, otherwise use an immutable one
         if template.uses_build_state() && template.revalidates() {
             // We pass in the path to get a state (including the template path for consistency with the incremental logic)
-            let initial_state = template.get_build_state(full_path.clone()).await?;
+            let initial_state = template
+                .get_build_state(full_path_without_locale.clone())
+                .await?;
             // Write that intial state to a static JSON file
             mutable_store
                 .write(&format!("static/{}.json", full_path), &initial_state)
@@ -94,7 +96,9 @@ pub async fn build_template(
                 .await?;
         } else if template.uses_build_state() {
             // We pass in the path to get a state (including the template path for consistency with the incremental logic)
-            let initial_state = template.get_build_state(full_path.clone()).await?;
+            let initial_state = template
+                .get_build_state(full_path_without_locale.clone())
+                .await?;
             // Write that intial state to a static JSON file
             immutable_store
                 .write(&format!("static/{}.json", full_path), &initial_state)
