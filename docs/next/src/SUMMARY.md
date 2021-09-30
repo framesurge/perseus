@@ -40,7 +40,7 @@
 	- [Server Deployment](./deploying/serverful.md)
 	- [Serverless Deployment](./deploying/serverless.md)
 	- [Optimizing Code Size](./deploying/size.md)
-- [Migrating from v0.1.x](./updating.md)
+- [Migrating from v0.2.x](./updating.md)
 ***
 # Advanced
 
