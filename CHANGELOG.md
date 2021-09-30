@@ -2,6 +2,61 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.1](https://github.com/arctic-hen7/perseus/compare/v0.2.3...v0.3.0-beta.1) (2021-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* removed `ConfigManager` in favor of `ImmutableStore`, replaced `config_manager` with `dist_path` in `define_app!`
+
+* feat: ✨ created `MutableStore` for mutable build artifacts
+
+This replaces `ConfigManager` fully.
+* many function signatures now include `MutableStore`, changes to `dist/` structure, `mutable_store` now in `define_app!`, `RouteInfo` includes `was_incremental_match`
+
+* docs(book): 📝 added docs for new stores system
+
+* refactor(examples): ♻️ refactored perseus idioms to make more sense
+
+Specifically, template functions are now defined inside the `get_template` function.
+
+* docs(book): 📝 updated docs for current state of features
+
+* fix: 🐛 fixed inconsistencies in paths given to build paths vs incremental
+
+Build paths used to get locale as well in path, not anymore.
+
+* chore: 🙈 ignored testing deployments
+
+* fix: 🐛 fixed content being interpolated in head in production
+
+Just a missing `.head.html` rather than `.html`.
+* `StringResult`/`StringResultWithCause` are replaced by `RenderFnResult`/`RenderFnResultWithCause`
+
+* fix: 🐛 fixed newlines/tabs in initial state causing serialization errors
+
+We're now using JS raw strings, escaping as necessary, and then escaping control characters in the shell.
+
+* docs(book): 📝 updated docs fro new error systems
+
+### Features
+
+* ✨ added deployment ([#37](https://github.com/arctic-hen7/perseus/issues/37)) ([a8989dd](https://github.com/arctic-hen7/perseus/commit/a8989ddba203b4825531419cc29b0e6e0ab61ae0))
+* **cli:** ✨ added `--release` mode to cli ([#35](https://github.com/arctic-hen7/perseus/issues/35)) ([f66bbb9](https://github.com/arctic-hen7/perseus/commit/f66bbb9b9ae7030a22bd3f7320a83ef7cfe79f37))
+* ✨ switched to new error systems, added `is_server!`, and improved render function return types ([#33](https://github.com/arctic-hen7/perseus/issues/33)) ([53bb61e](https://github.com/arctic-hen7/perseus/commit/53bb61e6b9595f7746d0454355569ba79082b069))
+
+
+### Code Refactorings
+
+* **cli:** ♻️ migrated cli to `clap` ([#34](https://github.com/arctic-hen7/perseus/issues/34)) ([83e365c](https://github.com/arctic-hen7/perseus/commit/83e365c37cfa19a39edcc69562833052edfe8f1c))
+
+
+### Documentation Changes
+
+* **book:** 📝 added docs for v0.3.x and deprecated v0.2.x ([b2e3c57](https://github.com/arctic-hen7/perseus/commit/b2e3c57cb0da5a58141500a876e32542be49adb6))
+* **book:** 📝 added migration page for upgrading from v0.2.x ([df00cf3](https://github.com/arctic-hen7/perseus/commit/df00cf388b95c9705c487b97c0e6e14fa3e445b7))
+* **book:** 📝 updated latest stable version of docs ([ab19e78](https://github.com/arctic-hen7/perseus/commit/ab19e7883e9c57b55e9b780ea292aa10c6bd2763))
+
 ### [0.2.3](https://github.com/arctic-hen7/perseus/compare/v0.2.2...v0.2.3) (2021-09-26)
 
 
