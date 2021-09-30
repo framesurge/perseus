@@ -10,13 +10,9 @@ pub fn new_post_page() -> SycamoreTemplate<G> {
 }
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
-    Template::new("post/new").template(template_fn())
-}
-
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|_| {
+    Template::new("post/new").template(Rc::new(|_| {
         template! {
             NewPostPage()
         }
-    })
+    }))
 }

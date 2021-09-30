@@ -18,14 +18,10 @@ pub fn about_page() -> SycamoreTemplate<G> {
     }
 }
 
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|_| {
+pub fn get_template<G: GenericNode>() -> Template<G> {
+    Template::new("about").template(Rc::new(|_| {
         template! {
             AboutPage()
         }
-    })
-}
-
-pub fn get_template<G: GenericNode>() -> Template<G> {
-    Template::new("about").template(template_fn())
+    }))
 }

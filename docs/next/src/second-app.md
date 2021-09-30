@@ -112,21 +112,21 @@ This function is what we call in `lib.rs`, and it combines everything else in th
 
 Perseus' templating system is extremely versatile, and here we're using it to define our page itself through `.template()`, and to define a function that will modify the document `<head>` (which allows us to add a title) with `.head()`. Notably, we also use the _build state_ rendering strategy, which tells Perseus to call the `get_build_props()` function when your app builds to get some state. More on that now.
 
+#### `.template()`
+
+The result of this function is what Perseus will call when it wants to render your template (which it does more than you might think), and it passes it the props that your template takes as an `Option<String>`. This might seem a bit weird, but there are reasons under the hood. All you need to know here is that if your template takes any properties, they **will** be here, and it's safe to `.unwrap()` them for deserialization.
+
+#### `.head()`
+
+This is very similar to `template_fn`, except it can't be reactive. In other words, anything you put in here is like a picture, it can't move (so no buttons, counters, etc.). This is because this modifies the document `<head>`, so you should put metadata, titles, etc. in here. Note that the function we return from here does take an argument (ignored with `_`), that's a string of the properties to your app, but we don't need it in this example. If this page was a generic template for blog posts, you might use this capability to render a different title for each blog post.
+
+All this does though is set the `<title>`. If you inspect the source code of the HTML in your browser, you'll find a big comment in the `<head>` that says `<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->`, that separates the stuff that should remain the same on every page from the stuff that should update for each page.
+
 ### `get_build_props()`
 
 This function is part of Perseus' secret sauce (actually _open_ sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is `async`. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!
 
 Note that this function returns a `RenderFnResultWithCause<String>`, which means that it returns a normal Rust `Result<String, E>`, where `E` is a `GenericErrorWithCause`, a Perseus type that combines an arbitrary error message with a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book. Note that we use `?` in this example on errors from modules like `serde_json`, showing how versatile this type is. If you don't explicitly construct `GenericErrorWithCause`, blame for the error will be assigned to the server, resulting in a _500 Internal Server Error_ HTTP status code.
-
-### `template_fn()`
-
-The result of this function is what Perseus will call when it wants to render your template (which it does more than you might think), and it passes it the props that your template takes as an `Option<String>`. This might seem a bit weird, but there are reasons under the hood. All you need to know here is that if your template takes any properties, they **will** be here, and it's safe to `.unwrap()` them for deserialization.
-
-### `head_fn()`
-
-This is very similar to `template_fn`, except it can't be reactive. In other words, anything you put in here is like a picture, it can't move (so no buttons, counters, etc.). This is because this modifies the document `<head>`, so you should put metadata, titles, etc. in here. Note that the function we return from here does take an argument (ignored with `_`), that's a string of the properties to your app, but we don't need it in this example. If this page was a generic template for blog posts, you might use this capability to render a different title for each blog post.
-
-All this does though is set the `<title>`. If you inspect the source code of the HTML in your browser, you'll find a big comment in the `<head>` that says `<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->`, that separates the stuff that should remain the same on every page from the stuff that should update for each page.
 
 ### `set_headers_fn()`
 

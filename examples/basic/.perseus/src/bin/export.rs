@@ -1,6 +1,6 @@
 use app::{
-    get_config_manager, get_locales, get_static_aliases, get_templates_map, get_templates_vec,
-    get_translations_manager, APP_ROOT,
+    get_immutable_store, get_locales, get_mutable_store, get_static_aliases, get_templates_map,
+    get_templates_vec, get_translations_manager, APP_ROOT,
 };
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::executor::block_on;
@@ -14,7 +14,9 @@ fn main() {
 }
 
 fn real_main() -> i32 {
-    let config_manager = get_config_manager();
+    let immutable_store = get_immutable_store();
+    // We don't need this in exporting, but the build process does
+    let mutable_store = get_mutable_store();
     let translations_manager = block_on(get_translations_manager());
     let locales = get_locales();
 
@@ -22,7 +24,7 @@ fn real_main() -> i32 {
     let build_fut = build_app(
         get_templates_vec::<SsrNode>(),
         &locales,
-        &config_manager,
+        (&immutable_store, &mutable_store),
         &translations_manager,
         // We use another binary to handle normal building
         true,
@@ -37,7 +39,7 @@ fn real_main() -> i32 {
         "../index.html",
         &locales,
         APP_ROOT,
-        &config_manager,
+        &immutable_store,
         &translations_manager,
     );
     if let Err(err) = block_on(export_fut) {

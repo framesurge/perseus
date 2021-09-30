@@ -4,8 +4,10 @@ use crate::translations::translations;
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest};
 use perseus::{
-    get_render_cfg, html_shell::prep_html_shell, ConfigManager, ErrorPages, Locales, SsrNode,
-    TemplateMap, TranslationsManager,
+    get_render_cfg,
+    html_shell::prep_html_shell,
+    stores::{ImmutableStore, MutableStore},
+    ErrorPages, Locales, SsrNode, TemplateMap, TranslationsManager,
 };
 use std::collections::HashMap;
 use std::fs;
@@ -58,12 +60,13 @@ async fn static_alias(opts: web::Data<Options>, req: HttpRequest) -> std::io::Re
 
 /// Configures an existing Actix Web app for Perseus. This returns a function that does the configuring so it can take arguments. This
 /// includes a complete wildcard handler (`*`), and so it should be configured after any other routes on your server.
-pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'static>(
+pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     opts: Options,
-    config_manager: C,
+    immutable_store: ImmutableStore,
+    mutable_store: M,
     translations_manager: T,
 ) -> impl Fn(&mut web::ServiceConfig) {
-    let render_cfg = get_render_cfg(&config_manager)
+    let render_cfg = get_render_cfg(&immutable_store)
         .await
         .expect("Couldn't get render configuration!");
     // Get the index file and inject the render configuration into ahead of time
@@ -75,7 +78,8 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
         cfg
             // We implant the render config in the app data for better performance, it's needed on every request
             .data(render_cfg.clone())
-            .data(config_manager.clone())
+            .data(immutable_store.clone())
+            .data(mutable_store.clone())
             .data(translations_manager.clone())
             .data(opts.clone())
             .data(index_with_render_cfg.clone())
@@ -89,7 +93,7 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
             // A request to this should also provide the template name (routing should only be done once on the client) as a query parameter
             .route(
                 "/.perseus/page/{locale}/{filename:.*}.json",
-                web::get().to(page_data::<C, T>),
+                web::get().to(page_data::<M, T>),
             )
             // This allows the app shell to fetch translations for a given page
             .route(
@@ -110,6 +114,6 @@ pub async fn configurer<C: ConfigManager + 'static, T: TranslationsManager + 'st
         }
         // For everything else, we'll serve the app shell directly
         // This has to be done AFTER everything else, because it will match anything that's left
-        cfg.route("*", web::get().to(initial_load::<C, T>));
+        cfg.route("*", web::get().to(initial_load::<M, T>));
     }
 }

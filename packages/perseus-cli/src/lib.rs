@@ -38,6 +38,7 @@ mod prepare;
 mod serve;
 mod thread;
 
+mod deploy;
 mod extraction;
 
 use errors::*;
@@ -47,6 +48,7 @@ use std::path::PathBuf;
 /// The current version of the CLI, extracted from the crate version.
 pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use build::build;
+pub use deploy::deploy;
 pub use eject::{eject, has_ejected};
 pub use export::export;
 pub use prepare::{check_env, prepare};

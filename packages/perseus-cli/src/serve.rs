@@ -175,10 +175,10 @@ fn run_server(
     Ok(0)
 }
 
-/// Builds the subcrates to get a directory that we can serve and then serves it.
-pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<i32, ExecutionError> {
+/// Builds the subcrates to get a directory that we can serve and then serves it. If possible, this will return the path to the server
+/// executable so that it can be used in deployment.
+pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), ExecutionError> {
     let spinners = MultiProgress::new();
-    // TODO support watching files
     let did_build = !opts.no_build;
     let should_run = !opts.no_run;
     // We need to have a way of knowing what the executable path to the server is
@@ -201,9 +201,9 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<i32, ExecutionError> {
             .join()
             .map_err(|_| ExecutionError::ThreadWaitFailed)??;
         if sg_res != 0 {
-            return Ok(sg_res);
+            return Ok((sg_res, None));
         } else if wb_res != 0 {
-            return Ok(wb_res);
+            return Ok((wb_res, None));
         }
     }
     // Handle errors from the server building
@@ -211,7 +211,7 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<i32, ExecutionError> {
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;
     if sb_res != 0 {
-        return Ok(sb_res);
+        return Ok((sb_res, None));
     }
 
     // And now we can run the finalization stage (only if `--no-build` wasn't specified)
@@ -222,11 +222,11 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<i32, ExecutionError> {
     // Now actually run that executable path if we should
     if should_run {
         let exit_code = run_server(Arc::clone(&exec), dir, did_build)?;
-        Ok(exit_code)
+        Ok((exit_code, None))
     } else {
         // The user doesn't want to run the server, so we'll give them the executable path instead
         let exec_str: String = (*exec.lock().unwrap()).to_string();
-        println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable in `.perseus/server/`.\n{}", exec_str);
-        Ok(0)
+        println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable in `.perseus/server/`.\n{}", &exec_str);
+        Ok((0, Some(exec_str)))
     }
 }

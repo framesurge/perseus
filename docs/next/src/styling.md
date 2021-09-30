@@ -1,7 +1,5 @@
 # Styling
 
-> Note: Perseus uses [Sycamore](https://github.com/sycamore-rs/sycamore) for writing views, and styling is still [in development](https://sycamore-rs.netlify.app/docs/v0.6/advanced/css) there.
-
 Perseus aims to make styling as easy as possible, though there are a number of things that you should definitely know about before you start to style a Perseus app!
 
 It's very easy to import stylesheets with Perseus (be they your own, something like [TailwindCSS](https://tailwindcss.com), etc.). You just add them to the `static/` directory at the root of your project, and then they'll be available at `/.perseus/static/your-filename-here`. That's described in more detail in [this section](./static-content.md).

@@ -19,7 +19,13 @@ pub fn time_page(props: TimePageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("timeisr")
-        .template(template_fn())
+        .template(Rc::new(|props| {
+            template! {
+                TimePage(
+                    serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()
+                )
+            }
+        }))
         // This page will revalidate every five seconds (to illustrate revalidation)
         .revalidate_after("5s".to_string())
         .incremental_generation()
@@ -42,14 +48,4 @@ pub async fn get_build_state(path: String) -> RenderFnResultWithCause<String> {
 
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec!["test".to_string()])
-}
-
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props| {
-        template! {
-            TimePage(
-                serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()
-            )
-        }
-    })
 }

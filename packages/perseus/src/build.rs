@@ -4,7 +4,11 @@ use crate::errors::*;
 use crate::Locales;
 use crate::TranslationsManager;
 use crate::Translator;
-use crate::{config_manager::ConfigManager, decode_time_str::decode_time_str, template::Template};
+use crate::{
+    decode_time_str::decode_time_str,
+    stores::{ImmutableStore, MutableStore},
+    template::Template,
+};
 use futures::future::try_join_all;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -17,7 +21,7 @@ use sycamore::prelude::SsrNode;
 pub async fn build_template(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
-    config_manager: &impl ConfigManager,
+    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
 ) -> Result<(Vec<String>, bool), ServerError> {
     let mut single_page = false;
@@ -48,24 +52,28 @@ pub async fn build_template(
     };
 
     // Iterate through the paths to generate initial states if needed
+    // Note that build paths pages on incrementally generable pages will use the immutable store
     for path in paths.iter() {
         // If needed, we'll contruct a full path that's URL encoded so we can easily save it as a file
         // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
-        let full_path = match template.uses_build_paths() {
+        let full_path_without_locale = match template.uses_build_paths() {
             true => urlencoding::encode(&format!("{}/{}", &template_path, path)).to_string(),
             // We don't want to concatenate the name twice if we don't have to
             false => urlencoding::encode(&template_path).to_string(),
         };
         // Add the current locale to the front of that
-        let full_path = format!("{}-{}", translator.get_locale(), full_path);
+        let full_path = format!("{}-{}", translator.get_locale(), full_path_without_locale);
 
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated
-        if template.uses_build_state() {
+        // If the template revalidates, use a mutable store, otherwise use an immutable one
+        if template.uses_build_state() && template.revalidates() {
             // We pass in the path to get a state (including the template path for consistency with the incremental logic)
-            let initial_state = template.get_build_state(full_path.clone()).await?;
+            let initial_state = template
+                .get_build_state(full_path_without_locale.clone())
+                .await?;
             // Write that intial state to a static JSON file
-            config_manager
+            mutable_store
                 .write(&format!("static/{}.json", full_path), &initial_state)
                 .await?;
             // Prerender the template using that state
@@ -77,13 +85,40 @@ pub async fn build_template(
                 )
             });
             // Write that prerendered HTML to a static file
-            config_manager
+            mutable_store
                 .write(&format!("static/{}.html", full_path), &prerendered)
                 .await?;
             // Prerender the document `<head>` with that state
             // If the page also uses request state, amalgamation will be applied as for the normal content
             let head_str = template.render_head_str(Some(initial_state), Rc::clone(&translator));
-            config_manager
+            mutable_store
+                .write(&format!("static/{}.head.html", full_path), &head_str)
+                .await?;
+        } else if template.uses_build_state() {
+            // We pass in the path to get a state (including the template path for consistency with the incremental logic)
+            let initial_state = template
+                .get_build_state(full_path_without_locale.clone())
+                .await?;
+            // Write that intial state to a static JSON file
+            immutable_store
+                .write(&format!("static/{}.json", full_path), &initial_state)
+                .await?;
+            // Prerender the template using that state
+            let prerendered = sycamore::render_to_string(|| {
+                template.render_for_template(
+                    Some(initial_state.clone()),
+                    Rc::clone(&translator),
+                    true,
+                )
+            });
+            // Write that prerendered HTML to a static file
+            immutable_store
+                .write(&format!("static/{}.html", full_path), &prerendered)
+                .await?;
+            // Prerender the document `<head>` with that state
+            // If the page also uses request state, amalgamation will be applied as for the normal content
+            let head_str = template.render_head_str(Some(initial_state), Rc::clone(&translator));
+            immutable_store
                 .write(&format!("static/{}.head.html", full_path), &head_str)
                 .await?;
         }
@@ -96,7 +131,7 @@ pub async fn build_template(
             // Write that to a static file, we'll update it every time we revalidate
             // Note that this runs for every path generated, so it's fully usable with ISR
             // Yes, there's a different revalidation schedule for each locale, but that means we don't have to rebuild every locale simultaneously
-            config_manager
+            mutable_store
                 .write(
                     &format!("static/{}.revld.txt", full_path),
                     &datetime_to_revalidate.to_string(),
@@ -115,10 +150,10 @@ pub async fn build_template(
             });
             let head_str = template.render_head_str(None, Rc::clone(&translator));
             // Write that prerendered HTML to a static file
-            config_manager
+            immutable_store
                 .write(&format!("static/{}.html", full_path), &prerendered)
                 .await?;
-            config_manager
+            immutable_store
                 .write(&format!("static/{}.head.html", full_path), &head_str)
                 .await?;
         }
@@ -130,15 +165,20 @@ pub async fn build_template(
 async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: Rc<Translator>,
-    config_manager: &impl ConfigManager,
+    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
 ) -> Result<HashMap<String, String>, ServerError> {
     let mut render_cfg = HashMap::new();
     let template_root_path = template.get_path();
     let is_incremental = template.uses_incremental();
 
-    let (pages, single_page) =
-        build_template(template, translator, config_manager, exporting).await?;
+    let (pages, single_page) = build_template(
+        template,
+        translator,
+        (immutable_store, mutable_store),
+        exporting,
+    )
+    .await?;
     // If the template represents a single page itself, we don't need any concatenation
     if single_page {
         render_cfg.insert(template_root_path.clone(), template_root_path.clone());
@@ -168,7 +208,7 @@ async fn build_template_and_get_cfg(
 pub async fn build_templates_for_locale(
     templates: &[Template<SsrNode>],
     translator_raw: Translator,
-    config_manager: &impl ConfigManager,
+    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
 ) -> Result<(), ServerError> {
     let translator = Rc::new(translator_raw);
@@ -180,7 +220,7 @@ pub async fn build_templates_for_locale(
         futs.push(build_template_and_get_cfg(
             template,
             Rc::clone(&translator),
-            config_manager,
+            (immutable_store, mutable_store),
             exporting,
         ));
     }
@@ -189,7 +229,7 @@ pub async fn build_templates_for_locale(
         render_cfg.extend(template_cfg.into_iter())
     }
 
-    config_manager
+    immutable_store
         .write(
             "render_conf.json",
             &serde_json::to_string(&render_cfg).unwrap(),
@@ -203,14 +243,20 @@ pub async fn build_templates_for_locale(
 async fn build_templates_and_translator_for_locale(
     templates: &[Template<SsrNode>],
     locale: String,
-    config_manager: &impl ConfigManager,
+    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
     exporting: bool,
 ) -> Result<(), ServerError> {
     let translator = translations_manager
         .get_translator_for_locale(locale)
         .await?;
-    build_templates_for_locale(templates, translator, config_manager, exporting).await?;
+    build_templates_for_locale(
+        templates,
+        translator,
+        (immutable_store, mutable_store),
+        exporting,
+    )
+    .await?;
 
     Ok(())
 }
@@ -220,7 +266,7 @@ async fn build_templates_and_translator_for_locale(
 pub async fn build_app(
     templates: Vec<Template<SsrNode>>,
     locales: &Locales,
-    config_manager: &impl ConfigManager,
+    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
     exporting: bool,
 ) -> Result<(), ServerError> {
@@ -231,7 +277,7 @@ pub async fn build_app(
         futs.push(build_templates_and_translator_for_locale(
             &templates,
             locale.to_string(),
-            config_manager,
+            (immutable_store, mutable_store),
             translations_manager,
             exporting,
         ));

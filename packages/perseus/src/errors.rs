@@ -1,6 +1,5 @@
 #![allow(missing_docs)]
 
-use crate::config_manager::ConfigManagerError;
 use crate::translations_manager::TranslationsManagerError;
 use thiserror::Error;
 
@@ -35,12 +34,11 @@ pub enum ServerError {
         template_name: String,
         cause: ErrorCause,
         // This will be triggered by the user's custom render functions, which should be able to have any error type
-        // TODO figure out custom error types on render functions
         #[source]
         source: Box<dyn std::error::Error>,
     },
     #[error(transparent)]
-    ConfigManagerError(#[from] ConfigManagerError),
+    StoreError(#[from] StoreError),
     #[error(transparent)]
     TranslationsManagerError(#[from] TranslationsManagerError),
     #[error(transparent)]
@@ -62,6 +60,25 @@ pub fn err_to_status_code(err: &ServerError) -> u16 {
         // Any other errors go to a 500, they'll be misconfigurations or internal server errors
         _ => 500,
     }
+}
+
+/// Errors that can occur while reading from or writing to an immutable store.
+#[derive(Error, Debug)]
+pub enum StoreError {
+    #[error("asset '{name}' not found in store")]
+    NotFound { name: String },
+    #[error("asset '{name}' couldn't be read from store")]
+    ReadFailed {
+        name: String,
+        #[source]
+        source: Box<dyn std::error::Error>,
+    },
+    #[error("asset '{name}' couldn't be written to store")]
+    WriteFailed {
+        name: String,
+        #[source]
+        source: Box<dyn std::error::Error>,
+    },
 }
 
 /// Errors that can occur while fetching a resource from the server.

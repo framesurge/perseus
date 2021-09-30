@@ -22,9 +22,19 @@ pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("index")
         .build_state_fn(Rc::new(get_build_props))
-        .template(template_fn())
-        .head(head_fn())
-        .set_headers_fn(set_headers_fn())
+        .template(Rc::new(|props: Option<String>| {
+            template! {
+                IndexPage(
+                    serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
+                )
+            }
+        }))
+        .head(Rc::new(|_| {
+            template! {
+                title { "Index Page | Perseus Example – Basic" }
+            }
+        }))
+        .set_headers_fn(Rc::new(set_headers))
 }
 
 pub async fn get_build_props(_path: String) -> RenderFnResultWithCause<String> {
@@ -33,31 +43,11 @@ pub async fn get_build_props(_path: String) -> RenderFnResultWithCause<String> {
     })?) // This `?` declares the default, that the server is the cause of the error
 }
 
-pub fn template_fn<G: GenericNode>() -> perseus::template::TemplateFn<G> {
-    Rc::new(|props: Option<String>| {
-        template! {
-            IndexPage(
-                serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
-            )
-        }
-    })
-}
-
-pub fn head_fn() -> perseus::template::HeadFn {
-    Rc::new(|_| {
-        template! {
-            title { "Index Page | Perseus Example – Basic" }
-        }
-    })
-}
-
-pub fn set_headers_fn() -> perseus::template::SetHeadersFn {
-    Rc::new(|_| {
-        let mut map = HeaderMap::new();
-        map.insert(
-            HeaderName::from_lowercase(b"x-test").unwrap(),
-            "custom value".parse().unwrap(),
-        );
-        map
-    })
+pub fn set_headers(_props: Option<String>) -> HeaderMap {
+    let mut map = HeaderMap::new();
+    map.insert(
+        HeaderName::from_lowercase(b"x-test").unwrap(),
+        "custom value".parse().unwrap(),
+    );
+    map
 }
