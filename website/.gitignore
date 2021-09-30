@@ -1,3 +1,4 @@
 
 .perseus/
 node_modules/
+static/tailwind.css

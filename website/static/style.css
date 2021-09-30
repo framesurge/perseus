@@ -1,0 +1,30 @@
+body {
+    min-height: 100%;
+    height: 100vh;
+}
+.__perseus_content {
+    min-height: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 1fr auto;
+}
+header {
+    grid-row: 1;
+    position: fixed;
+    top: 0;
+}
+footer {
+    grid-row-start: 3;
+    grid-row-end: 4;
+}
+
+@media (prefers-color-scheme: dark) {
+    .bg-wavess {
+        background: url("/.perseus/static/dark_landing_page.svg");
+        background-size: cover;
+    }
+}
+.bg-wavess {
+    background: url("/.perseus/static/light_landing_page.svg");
+    background-size: cover;
+}

@@ -1,6 +1,6 @@
+mod components;
 mod error_pages;
 mod templates;
-mod components;
 
 use perseus::define_app;
 
