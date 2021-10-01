@@ -1953,6 +1953,9 @@ opt-level = &quot;z&quot;
 <p>As of time of writing, Netlify (and possibly other providers) doesn't support Rust binaries that use <code>lto = true</code> for some reason, it simply doesn't detect them, so you shouldn't use that particular optimization if you're working with Netlify.</p>
 </details>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="migrating-from-v02x"><a class="header" href="#migrating-from-v02x">Migrating from v0.2.x</a></h1>
+<blockquote>
+<p>Perseus v0.3.0 is still in beta, and you'll need to explicitly specify the latest version (0.3.0-beta.2) in your <code>Cargo.toml</code> and when you install the CLI by using the <code>--version</code> flag.</p>
+</blockquote>
 <p>Perseus v0.3.0 added significant architectural changes to Perseus under the hood, and also made it easier to use for you! Additionally, this update provides inbuilt deployment functionality for moving Perseus to production (though that's not recommended yet)! If you're currently running v0.2.x, here's how to upgrade!</p>
 <ol>
 <li>Update your <code>Cargo.toml</code> dependencies for <code>perseus</code> to <code>0.3</code>.</li>
