@@ -1,3 +1,4 @@
+use perseus::t;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
@@ -7,7 +8,7 @@ static COPYRIGHT_YEARS: &str = "2021";
 fn nav_links() -> SycamoreTemplate<G> {
     template! {
         li(class = "m-3 p-1") {
-            a(href = "/docs") { "Docs" }
+            a(href = "/docs") { (t!("navlinks-docs")) }
         }
     }
 }
@@ -74,17 +75,17 @@ pub fn container(props: ContainerProps<G>) -> SycamoreTemplate<G> {
                 }
             }
         }
-        div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
+        div(class = "overflow-y-scroll") {
             main(class="h-full") {
                 (props.children.clone())
             }
         }
-        // TODO add `mt-8` back here if spacing gets stuffed up
+        // TODO i18n in copyright text
         footer(class = "w-full flex justify-center py-5 bg-gray-100 dark:bg-navy-deep") {
             p(class = "dark:text-white mx-5 text-center") {
-                (format!("© arctic-hen7 {}, see license ", COPYRIGHT_YEARS))
-                a(href = "https://github.com/arctic-hen7/kris-kringle", class = "underline") { "here" }
-                "."
+                span(dangerously_set_inner_html = &t!("footer.copyright", {
+                    "years": COPYRIGHT_YEARS
+                }))
             }
         }
     }

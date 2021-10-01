@@ -48,23 +48,5 @@ module.exports = {
         },
     },
     variants: {},
-    plugins: [
-        require("tailwind-hamburgers"),
-        // Hack to show a different SVg in dark mode
-        plugin(function ({ addUtilities }) {
-            const newUtilities = {
-                ".bg-waves": {
-                    background:
-                        'url("/.perseus/static/light_landing_page.svg")',
-                    "background-size": "cover",
-                },
-                ".bg-waves-dark": {
-                    background: 'url("/.perseus/static/dark_landing_page.svg")',
-                    "background-size": "cover",
-                },
-            };
-
-            addUtilities(newUtilities, ["dark"]);
-        }),
-    ],
+    plugins: [require("tailwind-hamburgers")],
 };
