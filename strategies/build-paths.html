@@ -198,13 +198,11 @@
 <p>Note that it's often unwise to use this strategy to render all your blog posts or the like, but only render the top give most commonly accessed or the like, if any at all. This is relevant mostly when you have a large number of pages to be generated. The <em>incremental generation</em> strategy is better suited for this, and it also allows you to never need to rebuild your site for new content (as long as the server can access the new content).</p>
 <p>Note that, like <em>build state</em>, this strategy may be invoked at build-time or while the server is running if you use the <em>revalidation</em> strategy (<em>incremental generation</em> doesn't affect <em>build paths</em> though).</p>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
-<p>Here's the same example as given in the previous section (taken from <a href="https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/post.rs">here</a>), which uses <em>build paths</em> together with <em>build state</em> and <em>incremental generation</em>:</p>
+<p>Here's the same example as given in the previous section (taken from <a href="https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/i18n/templates/post.rs">here</a>), which uses <em>build paths</em> together with <em>build state</em>:</p>
 <pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use perseus::{
-    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
-};
+</span>use perseus::{link, RenderFnResult, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -226,6 +224,7 @@ pub fn post_page(props: PostPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
         p {
             (content)
         }
+        a(href = link!(&quot;/post&quot;)) { &quot;Root post page&quot; }
     }
 }
 
@@ -233,7 +232,6 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
     Template::new(&quot;post&quot;)
         .build_paths_fn(Rc::new(get_static_paths))
         .build_state_fn(Rc::new(get_static_props))
-        .incremental_generation()
         .template(Rc::new(|props| {
             template! {
                 PostPage(
@@ -244,13 +242,6 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
 }
 
 pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
-    // This path is illegal, and can't be rendered
-    if path == &quot;post/tests&quot; {
-        return Err(GenericErrorWithCause {
-            error: &quot;illegal page&quot;.into(),
-            cause: ErrorCause::Client(Some(404)),
-        });
-    }
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
     let content = format!(
@@ -261,15 +252,20 @@ pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;Str
     Ok(serde_json::to_string(&amp;PostPageProps {
         title: title.to_string(),
         content,
-    })?)
+    })?) // This `?` declares the default, that the server is the cause of the error
 }
 
 pub async fn get_static_paths() -&gt; RenderFnResult&lt;Vec&lt;String&gt;&gt; {
-    Ok(vec![&quot;test&quot;.to_string(), &quot;blah/test/blah&quot;.to_string()])
+    Ok(vec![
+        &quot;&quot;.to_string(),
+        &quot;test&quot;.to_string(),
+        &quot;blah/test/blah&quot;.to_string(),
+    ])
 }
 <span class="boring">}
 </span></code></pre></pre>
 <p>Note the return type of the <code>get_build_paths</code> function, which returns a <code>RenderFnResult&lt;Vec&lt;String&gt;&gt;</code>, which is just an alias for <code>Result&lt;T, Box&lt;dyn std::error::Error&gt;&gt;</code>, which means that you can return any error you want. If you need to explicitly <code>return Err(..)</code>, then you should use <code>.into()</code> to perform the conversion from your error type to this type automatically. Perseus will then format your errors nicely for you using <a href="https://github.com/arctic-hen7/fmterr"><code>fmterr</code></a>.</p>
+<p>Also note how this page renders the page <code>/docs</code> by specifying an empty string as one of the paths exported from <code>get_build_paths</code>.</p>
 
                 </main>
 
