@@ -44,7 +44,17 @@ pub async fn build_template(
     // Handle static path generation
     // Because we iterate over the paths, we need a base path if we're not generating custom ones (that'll be overriden if needed)
     let paths = match template.uses_build_paths() {
-        true => template.get_build_paths().await?,
+        true => template
+            .get_build_paths()
+            .await?
+            // Trim away any trailing `/`s so we don't insert them into the render config
+            // That makes rendering an index page from build paths impossible (see #39)
+            .iter()
+            .map(|p| match p.strip_suffix('/') {
+                Some(stripped) => stripped.to_string(),
+                None => p.to_string(),
+            })
+            .collect(),
         false => {
             single_page = true;
             vec![String::new()]
@@ -60,6 +70,11 @@ pub async fn build_template(
             true => urlencoding::encode(&format!("{}/{}", &template_path, path)).to_string(),
             // We don't want to concatenate the name twice if we don't have to
             false => urlencoding::encode(&template_path).to_string(),
+        };
+        // Strip trailing `/`s (but they're encoded) for the reasons described above
+        let full_path_without_locale = match full_path_without_locale.strip_suffix("%2F") {
+            Some(stripped) => stripped.to_string(),
+            None => full_path_without_locale,
         };
         // Add the current locale to the front of that
         let full_path = format!("{}-{}", translator.get_locale(), full_path_without_locale);
@@ -185,10 +200,13 @@ async fn build_template_and_get_cfg(
     } else {
         // Add each page that the template explicitly generated (ignoring ISR for now)
         for page in pages {
-            render_cfg.insert(
-                format!("{}/{}", &template_root_path, &page),
-                template_root_path.clone(),
-            );
+            let path = format!("{}/{}", &template_root_path, &page);
+            // Remove any trailing `/`s for the reasons described above
+            let path = match path.strip_suffix('/') {
+                Some(stripped) => stripped.to_string(),
+                None => path,
+            };
+            render_cfg.insert(path, template_root_path.clone());
         }
         // Now if the page uses ISR, add an explicit `/*` in there after the template root path
         // Incremental rendering requires build-time path generation
