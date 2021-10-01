@@ -1,4 +1,4 @@
-use perseus::t;
+use perseus::{link, t};
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
@@ -30,7 +30,7 @@ pub fn container(props: ContainerProps<G>) -> SycamoreTemplate<G> {
         // TODO click-away events
         header(class = "shadow-md sm:p-2 w-full bg-white dark:text-white dark:bg-navy mb-20") {
             div(class = "flex justify-between") {
-                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl", href = "/") {
+                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl", href = link!("/")) {
                     (title)
                 }
                 // The button for opening/closing the hamburger menu on mobile

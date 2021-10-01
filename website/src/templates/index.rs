@@ -10,7 +10,7 @@ use sycamore::prelude::*;
 pub fn index_page() -> SycamoreTemplate<G> {
     template! {
         Container(ContainerProps {
-            title: "Perseus".to_string(),
+            title: t!("perseus"),
             children: template! {
                 // Splash page
                 div(
@@ -53,14 +53,15 @@ pub fn index_page() -> SycamoreTemplate<G> {
                     br()
                     // Feature list (static, so we don't need Sycamore iteration)
                     div(class = "flex justify-center") {
-                        ul(class = "text-center max-w-7xl") {
+                        ul(class = "text-center max-w-7xl mx-2") {
                             (get_features_list())
                         }
                     }
                     br()
+                    br()
                     // Workflow explanation
                     div(class = "flex justify-center text-center text-lg w-full p-1 xs:p-4") {
-                        div(class = "p-4 shadow-2xl rounded-xl max-w-xl") {
+                        div(class = "p-4 shadow-2xl rounded-xl max-w-lg") {
                             p(class = "underline text-2xl mb-2") { (t!("index-workflow.heading")) }
                             ol(class = "list-decimal list-inside") {
                                 li {
@@ -101,10 +102,10 @@ pub fn index_page() -> SycamoreTemplate<G> {
                 }
                 // Second CTA
                 div(
-                    class = "p-24 flex flex-col justify-center text-white",
+                    class = "pb-24 flex flex-col justify-center text-white",
                     style = "background: url(\"/.perseus/static/cta_bg.svg\");background-size:cover;"
                 ) {
-                    div(class = "text-6xl p-2 font-extrabold text-center") {
+                    div(class = "text-3xl 2xs:text-4xl xs:text-5xl sm:text-6xl p-2 font-extrabold text-center") {
                         p { (t!("index-cta.first")) }
                         p { (t!("index-cta.second")) }
                     }
@@ -118,7 +119,7 @@ pub fn index_page() -> SycamoreTemplate<G> {
                     br()
                     div(class = "flex justify-center") {
                         a(
-                            class = "py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl ring-4 ring-indigo-500 hover:ring-indigo-400 transition-colors duration-200",
+                            class = "py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl text-white bg-indigo-500 hover:bg-indigo-400 transition-colors duration-200",
                             href = link!("/comparisons"),
                         ) { (t!("index-comparisons")) }
                     }
@@ -137,7 +138,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         }))
         .head(Rc::new(|_| {
             template! {
-                title { "Perseus" }
+                title { (t!("perseus")) }
             }
         }))
 }

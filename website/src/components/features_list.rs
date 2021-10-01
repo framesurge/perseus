@@ -14,14 +14,14 @@ pub fn get_features_list<G: GenericNode>() -> SycamoreTemplate<G> {
             let name_id = format!("feature-{}.name", &id_base);
             let desc_id = format!("feature-{}.desc", &id_base);
             template! {
-                li(class = "px-5 inline-block align-top") {
+                li(class = "inline-block align-top") {
                     div(
                         class = "text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm",
                         on:click = move |_| {
                             navigate(&link!(&link))
                         }
                     ) {
-                        p(class = "text-4xl") { ({
+                        p(class = "text-2xl xs:text-3xl sm:text-4xl") { ({
                             let translator = use_context::<RenderCtx>().translator;
                             translator.translate(&name_id, None)
                         }) }
