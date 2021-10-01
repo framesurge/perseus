@@ -100,7 +100,7 @@ pub fn run() -> Result<(), JsValue> {
                                         // Right now, we don't provide translators to any error pages that have come from the server
                                         error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
                                     } else {
-                                        get_error_pages::<DomNode>().get_template_for_page("", &404, "not found", None);
+                                        error_pages.hydrate_page("", &404, "not found", None, &container_rx_elem);
                                     }
                                 },
                             };

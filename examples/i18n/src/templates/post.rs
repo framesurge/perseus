@@ -1,4 +1,4 @@
-use perseus::{RenderFnResult, RenderFnResultWithCause, Template};
+use perseus::{link, RenderFnResult, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
@@ -20,6 +20,7 @@ pub fn post_page(props: PostPageProps) -> SycamoreTemplate<G> {
         p {
             (content)
         }
+        a(href = link!("/post")) { "Root post page" }
     }
 }
 
@@ -51,5 +52,9 @@ pub async fn get_static_props(path: String) -> RenderFnResultWithCause<String> {
 }
 
 pub async fn get_static_paths() -> RenderFnResult<Vec<String>> {
-    Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
+    Ok(vec![
+        "".to_string(),
+        "test".to_string(),
+        "blah/test/blah".to_string(),
+    ])
 }

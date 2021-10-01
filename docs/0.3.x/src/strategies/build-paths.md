@@ -8,10 +8,12 @@ Note that, like _build state_, this strategy may be invoked at build-time or whi
 
 ## Usage
 
-Here's the same example as given in the previous section (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/post.rs)), which uses _build paths_ together with _build state_ and _incremental generation_:
+Here's the same example as given in the previous section (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/i18n/templates/post.rs)), which uses _build paths_ together with _build state_:
 
 ```rust,no_run,no_playground
-{{#include ../../../../examples/showcase/src/templates/post.rs}}
+{{#include ../../../../examples/i18n/src/templates/post.rs}}
 ```
 
 Note the return type of the `get_build_paths` function, which returns a `RenderFnResult<Vec<String>>`, which is just an alias for `Result<T, Box<dyn std::error::Error>>`, which means that you can return any error you want. If you need to explicitly `return Err(..)`, then you should use `.into()` to perform the conversion from your error type to this type automatically. Perseus will then format your errors nicely for you using [`fmterr`](https://github.com/arctic-hen7/fmterr).
+
+Also note how this page renders the page `/docs` by specifying an empty string as one of the paths exported from `get_build_paths`.
