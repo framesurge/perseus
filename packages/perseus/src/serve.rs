@@ -96,7 +96,11 @@ async fn render_request_state(
     req: Request,
 ) -> Result<(String, String, Option<String>), ServerError> {
     // Generate the initial state (this may generate an error, but there's no file that can't exist)
-    let state = Some(template.get_request_state(path.to_string(), req).await?);
+    let state = Some(
+        template
+            .get_request_state(path.to_string(), translator.get_locale(), req)
+            .await?,
+    );
     // Use that to render the static HTML
     let html = sycamore::render_to_string(|| {
         template.render_for_template(state.clone(), Rc::clone(&translator), true)
@@ -177,7 +181,10 @@ async fn revalidate(
     // We need to regenerate and cache this page for future usage (until the next revalidation)
     let state = Some(
         template
-            .get_build_state(format!("{}/{}", template.get_path(), path))
+            .get_build_state(
+                format!("{}/{}", template.get_path(), path),
+                translator.get_locale(),
+            )
             .await?,
     );
     let html = sycamore::render_to_string(|| {
@@ -297,7 +304,11 @@ pub async fn get_page_for_template(
                 // All this uses the mutable store because this will be done at runtime
                 None => {
                     // We need to generate and cache this page for future usage
-                    let state = Some(template.get_build_state(path.to_string()).await?);
+                    let state = Some(
+                        template
+                            .get_build_state(path.to_string(), locale.to_string())
+                            .await?,
+                    );
                     let html_val = sycamore::render_to_string(|| {
                         template.render_for_template(state.clone(), Rc::clone(&translator), true)
                     });
