@@ -77,7 +77,11 @@ pub async fn build_template(
         };
         // Add the current locale to the front of that na dencode it as a URL so we can store a flat series of files
         // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
-        let full_path_encoded = format!("{}-{}", translator.get_locale(), full_path_without_locale);
+        let full_path_encoded = format!(
+            "{}-{}",
+            translator.get_locale(),
+            urlencoding::encode(&full_path_without_locale)
+        );
 
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated
