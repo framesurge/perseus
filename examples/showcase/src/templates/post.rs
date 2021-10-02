@@ -39,7 +39,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         }))
 }
 
-pub async fn get_static_props(path: String) -> RenderFnResultWithCause<String> {
+pub async fn get_static_props(path: String, _locale: String) -> RenderFnResultWithCause<String> {
     // This path is illegal, and can't be rendered
     if path == "post/tests" {
         return Err(GenericErrorWithCause {
