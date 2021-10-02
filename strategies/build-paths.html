@@ -225,6 +225,8 @@ pub fn post_page(props: PostPageProps) -&gt; SycamoreTemplate&lt;G&gt; {
             (content)
         }
         a(href = link!(&quot;/post&quot;)) { &quot;Root post page&quot; }
+        br()
+        a(href = link!(&quot;/post/blah/test/blah&quot;)) { &quot;Complex post page&quot; }
     }
 }
 
