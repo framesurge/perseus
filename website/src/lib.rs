@@ -7,7 +7,8 @@ use perseus::define_app;
 define_app! {
     templates: [
         templates::index::get_template::<G>(),
-        templates::comparisons::get_template::<G>()
+        templates::comparisons::get_template::<G>(),
+        templates::docs::get_template::<G>()
     ],
     error_pages: error_pages::get_error_pages(),
     locales: {

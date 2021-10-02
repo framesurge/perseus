@@ -8,7 +8,9 @@ static COPYRIGHT_YEARS: &str = "2021";
 fn nav_links() -> SycamoreTemplate<G> {
     template! {
         li(class = "m-3 p-1") {
-            a(href = "/docs") { (t!("navlinks-docs")) }
+            a(href = link!("/docs"), class = "px-2") { (t!("navlinks-docs")) }
+            a(href = link!("/comparisons"), class = "px-2") { (t!("navlinks-comparisons")) }
+
         }
     }
 }

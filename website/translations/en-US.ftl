@@ -1,6 +1,7 @@
 perseus = Perseus
 sycamore = Sycamore
 navlinks-docs = Docs
+navlinks-comparisons = Comparisons
 index-get-started = Get Started
 index-github = GitHub
 index-desc = Perseus is a web development framework built entirely in Rust, designed to empower efficient development of the next generation of lightning-fast sites for the modern web. It comes with server-side rendering, static site generation, internationalization, and inferred routing built-in, letting you build even the most complex sites in a breeze.
@@ -66,3 +67,5 @@ comparisons-table-headings =
     .supports_deployment = Easy deployment
     .supports_exporting = Static exporting
     .language = Language
+
+docs-title-base = Perseus Docs
