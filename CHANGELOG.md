@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.5](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.4...v0.3.0-beta.5) (2021-10-02)
+
+
+### Bug Fixes
+
+* 🚑 fixed page encodings ([6d2b7e6](https://github.com/arctic-hen7/perseus/commit/6d2b7e6641d4e59c6c6db2b42af494dbc667e21e))
+
 ## [0.3.0-beta.4](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.3...v0.3.0-beta.4) (2021-10-02)
 
 
