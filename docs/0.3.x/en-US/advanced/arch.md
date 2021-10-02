@@ -2,11 +2,11 @@
 
 Perseus has five main components:
 
-- `perseus` -- the core module that defines everything necessary to build a Perseus app if you try hard enough
-- `perseus-actix-web` -- an integration that makes it easy to run Perseus on the [Actix Web](https://actix.rs) framework
-- `perseus-cli` -- the command-line interface used to run Perseus apps conveniently
-- `perseus-cli-builder` -- an internal crate created by the CLI responsible for building an app
-- `perseus-cli-server` -- an internal crate created by the CLI responsible for serving an app and performing runtime logic
+-   `perseus` -- the core module that defines everything necessary to build a Perseus app if you try hard enough
+-   `perseus-actix-web` -- an integration that makes it easy to run Perseus on the [Actix Web](https://actix.rs) framework
+-   `perseus-cli` -- the command-line interface used to run Perseus apps conveniently
+-   `perseus-cli-builder` -- an internal crate created by the CLI responsible for building an app
+-   `perseus-cli-server` -- an internal crate created by the CLI responsible for serving an app and performing runtime logic
 
 ## Core
 
@@ -14,7 +14,7 @@ At the core of Perseus is the [`perseus`](https://docs.rs/perseus) module, which
 
 What is intended to be used directly is the `Template<G>` `struct`, which is integral to Perseus. This stores closures for every rendering strategy, which are executed as provided and necessary at build and runtime. Note that these are all stored in `Rc`s, and `Template<G>`s are cloned.
 
-The other commonly used system from this crate is the `Translator` system, explained in detail in [the i18n section](../i18n/intro.md). `Translator`s are passed around in `Rc`s, and `TranslationsManager` on the server caches all translations by default in memory on the server.
+The other commonly used system from this crate is the `Translator` system, explained in detail in [the i18n section](../i18n/intro). `Translator`s are passed around in `Rc`s, and `TranslationsManager` on the server caches all translations by default in memory on the server.
 
 ## Actix Web Integration
 
@@ -24,7 +24,7 @@ Note that this module provides a `configurer` function, which allows it to be mo
 
 ## CLI
 
-As documented in [this section](../cli.md), the CLI simply runs commands to execute the last two components of the Perseus system, acting as a convenience. It also contains these two components inside its binary (using [`include_dir!`](https://github.com/Michael-F-Bryan/include_dir))
+As documented in [this section](../cli), the CLI simply runs commands to execute the last two components of the Perseus system, acting as a convenience. It also contains these two components inside its binary (using [`include_dir!`](https://github.com/Michael-F-Bryan/include_dir))
 
 ## CLI Builder
 
@@ -38,12 +38,12 @@ This is a single binary that just imports the user's templates and some other in
 
 This is encapsulated in `.perseus/src/lib.rs`, and it performs a number of integral functions:
 
-- Ensures that any `panic!`s or the like ar printed properly in the browser console
-- Creates and manages the internal router
-- Renders your actual app
-- Handles locale detection
-- Invokes the core app shell to manage initial/subsequent loads and translations
-- Handles error page displaying
+-   Ensures that any `panic!`s or the like ar printed properly in the browser console
+-   Creates and manages the internal router
+-   Renders your actual app
+-   Handles locale detection
+-   Invokes the core app shell to manage initial/subsequent loads and translations
+-   Handles error page displaying
 
 ## CLI Server
 

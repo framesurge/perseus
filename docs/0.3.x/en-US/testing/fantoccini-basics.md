@@ -10,7 +10,7 @@ Remember, you're controlling an actual browser, so you basically have everything
 
 ## Going to a Page
 
-You can trivially go to a page of your app by running `c.goto("...")`. The above example ensures that the URL is valid, but you shouldn't have to do this unless you're testing a page that automatically redirects the user. Also, if you're using [i18n](../i18n/intro.md), don't worry about testing automatic locale redirection, we've already done that for you!
+You can trivially go to a page of your app by running `c.goto("...")`. The above example ensures that the URL is valid, but you shouldn't have to do this unless you're testing a page that automatically redirects the user. Also, if you're using [i18n](../i18n/intro), don't worry about testing automatic locale redirection, we've already done that for you!
 
 Once you've arrived at a page, you should wait for the `router_entry` (this example uses `begin` because it tests internal parts of Perseus) checkpoint, which will be reached when Perseus has decided what to do with your app. If you're testing particular page logic, you should wait instead for `page_visible`, which will be reached when the user could see content on your page, and then for `page_interactive`, which will be reached when the page is completely ready. Remember though, you only need to wait for the checkpoints that you actually use (e.g. you don't need to wait for `page_visible` and `page_interactive` if you're not doing anything in between).
 

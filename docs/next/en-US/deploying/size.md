@@ -1,6 +1,6 @@
 # Optimizing Code Size
 
-If you're used to working with Rust, you're probably used to two things: performance is everything, and Rust produces big binaries. With Wasm, these actually become problems because of the way the web works. If you think about it, your Wasm files (big because Rust optimizes for speed instead of size by default) need to be sent to browsers. So, the larger they are, the slower your site will be. Fortunately, Perseus only makes this relevant when a user first navigates to your site with its [subsequent loads](../advanced/subsequent-loads.md) system. However, it's still worth optimizing code size in places.
+If you're used to working with Rust, you're probably used to two things: performance is everything, and Rust produces big binaries. With Wasm, these actually become problems because of the way the web works. If you think about it, your Wasm files (big because Rust optimizes for speed instead of size by default) need to be sent to browsers. So, the larger they are, the slower your site will be. Fortunately, Perseus only makes this relevant when a user first navigates to your site with its [subsequent loads](../advanced/subsequent-loads) system. However, it's still worth optimizing code size in places.
 
 If you've worked with Rust and Wasm before, you may be familiar with `wasm-opt`, which performs a ton of optimizations for you. Perseus does this automatically with `wasm-pack`. But we can do better.
 
@@ -23,7 +23,7 @@ With the [basic example](https://github.com/arctic-hen7/perseus/tree/main/exampl
 
 ## Aggressive Optimizations
 
-More aggressive optimizations need to be applied to both Perseus' engine and your own code, so you'll need to [eject](../ejecting.md) for this to work properly. Just run `perseus eject`, and then add the following to `.perseus/Cargo.toml`:
+More aggressive optimizations need to be applied to both Perseus' engine and your own code, so you'll need to [eject](../ejecting) for this to work properly. Just run `perseus eject`, and then add the following to `.perseus/Cargo.toml`:
 
 ```toml
 [profile.release]

@@ -4,7 +4,7 @@ If you're using [Actix Web](https://actix.rs), then Perseus can automate nearly 
 
 This integration provides a configuration function, which you can use to configure an existing web server to support Perseus, so you could even run something like [Diana](https://github.com/arctic-hen7/diana) on the same server!
 
-This integration should support almost every use case of Perseus, but there may be some extremely advanced things that you'll need to go back to basics for. If that's the case, please let us know by [opening an issue]() (we want these integrations to be as powerful as possible), and in the meantime you can use the guide [here](./serving.md) to see how to set up a server without using the integrations. If you need implementation details, check out the actual source code for the integration in the [repository](https://github.com/arctic-hen7/perseus).
+This integration should support almost every use case of Perseus, but there may be some extremely advanced things that you'll need to go back to basics for. If that's the case, please let us know by [opening an issue]() (we want these integrations to be as powerful as possible), and in the meantime you can use the guide [here](./serving) to see how to set up a server without using the integrations. If you need implementation details, check out the actual source code for the integration in the [repository](https://github.com/arctic-hen7/perseus).
 
 ## Installation
 

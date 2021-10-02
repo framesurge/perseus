@@ -8,7 +8,7 @@ Perseus aims to be agnostic as to what framework you use to host your files, and
 
 If you're using one of our supported integrations, you don't have to bother with this page, nearly all of it can be done for you!
 
--   [Actix Web](./integrations/actix-web.md)
+-   [Actix Web](./integrations/actix-web)
 -   _More coming soon..._
 
 ## Endpoints
@@ -16,8 +16,8 @@ If you're using one of our supported integrations, you don't have to bother with
 Here are the endpoints that a server for Perseus must serve:
 
 -   `/.perseus/page/*` – used to serve the JSON data that the app shell needs to render a page (`*` should be extractable as a filename, e.g. `{filename:.*}` in Actix Web)
--   `/.perseus/bundle.js` – the JavaScript bundle file that calls your Wasm code (see [tutorial on building your first app](./tutorials/first_app/intro.md))
--   `/.perseus/bundle.wasm` – the Wasm bundle file that contains your code (see [tutorial on building your first app](./tutorials/first_app/intro.md))
+-   `/.perseus/bundle.js` – the JavaScript bundle file that calls your Wasm code (see [tutorial on building your first app](./tutorials/first_app/intro))
+-   `/.perseus/bundle.wasm` – the Wasm bundle file that contains your code (see [tutorial on building your first app](./tutorials/first_app/intro))
 -   `*` (anything else) – any page that the user actually requests, which will return the app shell to do the heavy lifting (or more accurately an HTML file that includes the bundle)
 
 ## Usage
@@ -27,7 +27,7 @@ This example shows what would be done to acquire a page for any framework. You'l
 -   The page path the user requested, e.g. `/post/test` for a request to `/.perseus/page/post/test`
 -   Data about the HTTP request the user sent (see below)
 -   A map of templates produced with [`get_templates_map!`]() (API docs WIP)
--   A [config manager](./config_managers.md)
+-   A [config manager](./config_managers)
 
 ```rust,no_run,no_playground
 use perseus::{get_page};
@@ -99,4 +99,4 @@ HttpRequest::new(());
 
 ## File Storage
 
-Perseus' systems of storing files in production are documented in-depth [here](./config_managers.md).
+Perseus' systems of storing files in production are documented in-depth [here](./config_managers).

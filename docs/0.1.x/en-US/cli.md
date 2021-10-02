@@ -60,16 +60,16 @@ define_app!{
 }
 ```
 
-This assumes you've defined a function to get your error pages elsewhere (you can read more about that [here](error_pages.md)), and that it's in a module called `error_pages`, you can customize that as needed.
+This assumes you've defined a function to get your error pages elsewhere (you can read more about that [here](error_pages)), and that it's in a module called `error_pages`, you can customize that as needed.
 
 The way the rest of this works is pretty simple. First off, you define a router with [Sycamore](https://sycamore-rs.netlify.app/docs/advanced/routing), which defines each of your templates and the paths on your site that it will accept. This **must** have a variant explicitly named `NotFound`, that's handled for you. Then, you define your app itself, which takes the following properties (which need to be in order right now!):
 
 -   `root` – the CSS selector for the element to render Perseus to, which should be unique, like an HTML `id`
 -   `route` – the `enum` for your app's routes that you just defined
 -   `router` – a match-like input that handles each of the variants of your `route`, except `NotFound` (handled for you); each one gets mapped to the corresponding page's path (e.g. `Post` with slug `test` might be mapped to `format!("post/{}", slug)`), which shouldn't include a leading or trailing `/`
--   `error_pages` – your [error pages](error_pages.md)
+-   `error_pages` – your [error pages](error_pages)
 -   `templates` – each of your templates, taking the `G` parameter (which will be used at runtime to render them for the server or the client)
--   `config_manager` (optional) – the [config manager](config_manager.md) your app should use, default is the inbuilt `FsConfigManager::new()`
+-   `config_manager` (optional) – the [config manager](config_manager) your app should use, default is the inbuilt `FsConfigManager::new()`
 
 ## Usage
 

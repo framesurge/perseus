@@ -10,11 +10,11 @@ The Perseus CLI supports the `--release` flag on the `build`, `serve`, and `expo
 
 ## `perseus deploy`
 
-If you haven't [ejected](../cli/ejecting.md), then you can prepare your app for deployment with a single command: `perseus deploy`. If you can use [static exporting](../exporting.md), then you should run `perseus deploy -e`, otherwise you should just use `perseus deploy`.
+If you haven't [ejected](../cli/ejecting), then you can prepare your app for deployment with a single command: `perseus deploy`. If you can use [static exporting](../exporting), then you should run `perseus deploy -e`, otherwise you should just use `perseus deploy`.
 
 This will create a new directory `pkg/` for you (you can change that by specifying `--output`) which will contain everything you need to deploy your app. That directory is entirely self-contained, and can be copied to an appropriate hosting provider for production deployment!
 
-Note that this command will run a number of optimizations in the background, including using the `--release` flag, but it won't try to aggressively minimize your Wasm code size. For tips on how to do that, see [here](./size.md).
+Note that this command will run a number of optimizations in the background, including using the `--release` flag, but it won't try to aggressively minimize your Wasm code size. For tips on how to do that, see [here](./size).
 
 ### Static Exporting
 

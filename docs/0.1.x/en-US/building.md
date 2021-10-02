@@ -1,6 +1,6 @@
 # Building
 
-*You only need this page if you're not using the Perseus CLI, which performs this process for you!*
+_You only need this page if you're not using the Perseus CLI, which performs this process for you!_
 
 After you've defined all your templates and the like, you'll of course need to build them into pages! Perseus tries to make this process as simple as possible.
 
@@ -49,4 +49,4 @@ The reason we don't just make this whole function asynchronous is so we don't ha
 
 ## File Storage
 
-It may have crossed your mind as to where all these static files are stored in production, and Perseus provides an excellent solution to this problem with custom read/write systems, documented in-depth [here](./config_managers.md).
+It may have crossed your mind as to where all these static files are stored in production, and Perseus provides an excellent solution to this problem with custom read/write systems, documented in-depth [here](./config_managers).
