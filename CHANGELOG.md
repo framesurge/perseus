@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.3](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.2...v0.3.0-beta.3) (2021-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **i18n:** build/request state now take locale as second parameter (request state takes request as third now)
+
+### Features
+
+* **i18n:** ✨ passed locale to build and request state ([#43](https://github.com/arctic-hen7/perseus/issues/43)) ([95d28bb](https://github.com/arctic-hen7/perseus/commit/95d28bb2525feb3eb332666d9c66f713bfd06fa3))
+
+
+### Documentation Changes
+
+* **book:** 📝 updated migration guide for beta ([643e51e](https://github.com/arctic-hen7/perseus/commit/643e51efc0da3f2d212cbcb1e9e83d3361d1c923))
+
 ## [0.3.0-beta.2](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.1...v0.3.0-beta.2) (2021-10-01)
 
 
