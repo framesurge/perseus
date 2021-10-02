@@ -65,19 +65,19 @@ pub async fn build_template(
     // Note that build paths pages on incrementally generable pages will use the immutable store
     for path in paths.iter() {
         // If needed, we'll contruct a full path that's URL encoded so we can easily save it as a file
-        // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
         let full_path_without_locale = match template.uses_build_paths() {
-            true => urlencoding::encode(&format!("{}/{}", &template_path, path)).to_string(),
+            true => format!("{}/{}", &template_path, path),
             // We don't want to concatenate the name twice if we don't have to
-            false => urlencoding::encode(&template_path).to_string(),
+            false => template_path.clone(),
         };
-        // Strip trailing `/`s (but they're encoded) for the reasons described above
-        let full_path_without_locale = match full_path_without_locale.strip_suffix("%2F") {
+        // Strip trailing `/`s for the reasons described above
+        let full_path_without_locale = match full_path_without_locale.strip_suffix('/') {
             Some(stripped) => stripped.to_string(),
             None => full_path_without_locale,
         };
-        // Add the current locale to the front of that
-        let full_path = format!("{}-{}", translator.get_locale(), full_path_without_locale);
+        // Add the current locale to the front of that na dencode it as a URL so we can store a flat series of files
+        // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
+        let full_path_encoded = format!("{}-{}", translator.get_locale(), full_path_without_locale);
 
         // Handle static initial state generation
         // We'll only write a static state if one is explicitly generated
@@ -89,7 +89,10 @@ pub async fn build_template(
                 .await?;
             // Write that intial state to a static JSON file
             mutable_store
-                .write(&format!("static/{}.json", full_path), &initial_state)
+                .write(
+                    &format!("static/{}.json", full_path_encoded),
+                    &initial_state,
+                )
                 .await?;
             // Prerender the template using that state
             let prerendered = sycamore::render_to_string(|| {
@@ -101,13 +104,16 @@ pub async fn build_template(
             });
             // Write that prerendered HTML to a static file
             mutable_store
-                .write(&format!("static/{}.html", full_path), &prerendered)
+                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
                 .await?;
             // Prerender the document `<head>` with that state
             // If the page also uses request state, amalgamation will be applied as for the normal content
             let head_str = template.render_head_str(Some(initial_state), Rc::clone(&translator));
             mutable_store
-                .write(&format!("static/{}.head.html", full_path), &head_str)
+                .write(
+                    &format!("static/{}.head.html", full_path_encoded),
+                    &head_str,
+                )
                 .await?;
         } else if template.uses_build_state() {
             // We pass in the path to get a state (including the template path for consistency with the incremental logic)
@@ -116,7 +122,10 @@ pub async fn build_template(
                 .await?;
             // Write that intial state to a static JSON file
             immutable_store
-                .write(&format!("static/{}.json", full_path), &initial_state)
+                .write(
+                    &format!("static/{}.json", full_path_encoded),
+                    &initial_state,
+                )
                 .await?;
             // Prerender the template using that state
             let prerendered = sycamore::render_to_string(|| {
@@ -128,13 +137,16 @@ pub async fn build_template(
             });
             // Write that prerendered HTML to a static file
             immutable_store
-                .write(&format!("static/{}.html", full_path), &prerendered)
+                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
                 .await?;
             // Prerender the document `<head>` with that state
             // If the page also uses request state, amalgamation will be applied as for the normal content
             let head_str = template.render_head_str(Some(initial_state), Rc::clone(&translator));
             immutable_store
-                .write(&format!("static/{}.head.html", full_path), &head_str)
+                .write(
+                    &format!("static/{}.head.html", full_path_encoded),
+                    &head_str,
+                )
                 .await?;
         }
 
@@ -148,7 +160,7 @@ pub async fn build_template(
             // Yes, there's a different revalidation schedule for each locale, but that means we don't have to rebuild every locale simultaneously
             mutable_store
                 .write(
-                    &format!("static/{}.revld.txt", full_path),
+                    &format!("static/{}.revld.txt", full_path_encoded),
                     &datetime_to_revalidate.to_string(),
                 )
                 .await?;
@@ -166,10 +178,13 @@ pub async fn build_template(
             let head_str = template.render_head_str(None, Rc::clone(&translator));
             // Write that prerendered HTML to a static file
             immutable_store
-                .write(&format!("static/{}.html", full_path), &prerendered)
+                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
                 .await?;
             immutable_store
-                .write(&format!("static/{}.head.html", full_path), &head_str)
+                .write(
+                    &format!("static/{}.head.html", full_path_encoded),
+                    &head_str,
+                )
                 .await?;
         }
     }
