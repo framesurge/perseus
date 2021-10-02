@@ -31,7 +31,11 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         }))
 }
 
-pub async fn get_request_state(_path: String, req: Request) -> RenderFnResultWithCause<String> {
+pub async fn get_request_state(
+    _path: String,
+    _locale: String,
+    req: Request,
+) -> RenderFnResultWithCause<String> {
     // Err(perseus::GenericErrorWithCause {
     //     error: "this is a test error!".into(),
     //     cause: perseus::ErrorCause::Client(None)

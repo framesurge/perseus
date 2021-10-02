@@ -85,7 +85,7 @@ pub async fn build_template(
         if template.uses_build_state() && template.revalidates() {
             // We pass in the path to get a state (including the template path for consistency with the incremental logic)
             let initial_state = template
-                .get_build_state(full_path_without_locale.clone())
+                .get_build_state(full_path_without_locale.clone(), translator.get_locale())
                 .await?;
             // Write that intial state to a static JSON file
             mutable_store
@@ -112,7 +112,7 @@ pub async fn build_template(
         } else if template.uses_build_state() {
             // We pass in the path to get a state (including the template path for consistency with the incremental logic)
             let initial_state = template
-                .get_build_state(full_path_without_locale.clone())
+                .get_build_state(full_path_without_locale.clone(), translator.get_locale())
                 .await?;
             // Write that intial state to a static JSON file
             immutable_store

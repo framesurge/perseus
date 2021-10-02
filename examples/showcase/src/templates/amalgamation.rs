@@ -42,13 +42,17 @@ pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<Strin
     })?))
 }
 
-pub async fn get_build_state(_path: String) -> RenderFnResultWithCause<String> {
+pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
     Ok(serde_json::to_string(&AmalagamationPageProps {
         message: "Hello from the build process!".to_string(),
     })?)
 }
 
-pub async fn get_request_state(_path: String, _req: Request) -> RenderFnResultWithCause<String> {
+pub async fn get_request_state(
+    _path: String,
+    _locale: String,
+    _req: Request,
+) -> RenderFnResultWithCause<String> {
     // Err(perseus::GenericErrorWithCause {
     //     error: "this is a test error!".into(),
     //     cause: perseus::ErrorCause::Client(None)

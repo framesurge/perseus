@@ -27,7 +27,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         }))
 }
 
-pub async fn get_static_props(_path: String) -> RenderFnResultWithCause<String> {
+pub async fn get_static_props(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
     Ok(serde_json::to_string(&IndexPageProps {
         greeting: "Hello World!".to_string(),
     })?)
