@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.6](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.5...v0.3.0-beta.6) (2021-10-02)
+
+
+### Bug Fixes
+
+* **exporting:** 🚑 fixed partial flattening in exporting ([bdbdc56](https://github.com/arctic-hen7/perseus/commit/bdbdc5628591dc33b8b170a74ea5ba647491fae3))
+
 ## [0.3.0-beta.5](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.4...v0.3.0-beta.5) (2021-10-02)
 
 
