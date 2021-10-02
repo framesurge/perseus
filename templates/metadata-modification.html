@@ -240,7 +240,7 @@
 <span class="boring">        .set_headers_fn(Rc::new(set_headers))
 </span><span class="boring">}
 </span><span class="boring">
-</span><span class="boring">pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
+</span><span class="boring">pub async fn get_build_props(_path: String, _locale: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
 </span><span class="boring">    Ok(serde_json::to_string(&amp;IndexPageProps {
 </span><span class="boring">        greeting: &quot;Hello World!&quot;.to_string(),
 </span><span class="boring">    })?) // This `?` declares the default, that the server is the cause of the error

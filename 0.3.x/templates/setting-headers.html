@@ -188,7 +188,7 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .set_headers_fn(Rc::new(set_headers))
 }
 
-pub async fn get_build_props(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
+pub async fn get_build_props(_path: String, _locale: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;IndexPageProps {
         greeting: &quot;Hello World!&quot;.to_string(),
     })?) // This `?` declares the default, that the server is the cause of the error

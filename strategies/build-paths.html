@@ -241,7 +241,7 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         }))
 }
 
-pub async fn get_static_props(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
+pub async fn get_static_props(path: String, _locale: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This is just an example
     let title = urlencoding::decode(&amp;path).unwrap();
     let content = format!(

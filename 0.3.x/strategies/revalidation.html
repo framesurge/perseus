@@ -186,7 +186,7 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_paths_fn(Rc::new(get_build_paths))
 }
 
-pub async fn get_build_state(path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
+pub async fn get_build_state(path: String, _locale: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     // This path is illegal, and can't be rendered
     if path == &quot;timeisr/tests&quot; {
         return Err(GenericErrorWithCause {
@@ -254,7 +254,7 @@ pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
         .build_state_fn(Rc::new(get_build_state))
 }
 
-pub async fn get_build_state(_path: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
+pub async fn get_build_state(_path: String, _locale: String) -&gt; RenderFnResultWithCause&lt;String&gt; {
     Ok(serde_json::to_string(&amp;TimePageProps {
         time: format!(&quot;{:?}&quot;, std::time::SystemTime::now()),
     })?)
