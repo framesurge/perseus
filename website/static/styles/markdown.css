@@ -1,10 +1,23 @@
 /* Styling to make Markdown text look good in a Tailwindy way */
+.markdown > * + *,
+.markdown li + li,
+.markdown li > p + p {
+    margin-top: 1.5rem;
+}
 .markdown stong,
-.markdown bol {
+.markdown bold {
     font-weight: 900;
 }
 .markdown a {
-    color: #d946ef;
+    color: #4f46e5;
+    text-decoration: underline;
+    /* Animate between colors to and from the hover state */
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 100ms;
+}
+.markdown a:hover {
+    color: #6366f1;
 }
 .markdown h1 {
     font-size: 2.25rem;
@@ -49,6 +62,7 @@
 }
 .markdown pre {
     border-radius: 0.5rem;
+    overflow-x: auto;
 }
 .markdown blockquote {
     border-left-width: 4px;

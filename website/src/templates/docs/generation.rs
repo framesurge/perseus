@@ -1,10 +1,11 @@
+use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
+use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::{t, GenericNode, RenderFnResult, RenderFnResultWithCause, Template};
+use perseus::{link, t, RenderFnResult, RenderFnResultWithCause};
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use std::rc::Rc;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use walkdir::WalkDir;
@@ -13,6 +14,7 @@ pub fn parse_md_to_html(markdown: &str) -> String {
     let mut opts = Options::empty();
     // TODO possibly enable further features here if necessary
     opts.insert(Options::ENABLE_STRIKETHROUGH);
+    opts.insert(Options::ENABLE_TABLES);
     let parser = Parser::new_ext(markdown, opts);
     let mut html_contents = String::new();
     html::push_html(&mut html_contents, parser);
@@ -29,16 +31,8 @@ lazy_static! {
     };
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct DocsPageProps {
-    // We don't need to use translation IDs here because the docs are i18ned at the filesystem level
-    pub title: String,
-    pub content: String,
-    pub sidebar_content: String,
-    pub status: DocsVersionStatus,
-}
 /// The stability of a version of the docs, which governs what kind of warning will be displayed.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DocsVersionStatus {
     /// This version is stable, and no warning is needed.
     Stable,
@@ -49,6 +43,66 @@ pub enum DocsVersionStatus {
     /// This documentation is for the unreleased next version, and the latest stable version is attached.
     Next(String),
 }
+impl DocsVersionStatus {
+    /// Renders the docs status to a Sycamore template for display.
+    pub fn render<G: GenericNode>(&self) -> SycamoreTemplate<G> {
+        match &self {
+            // No message should be displayed if it's the correct version
+            Self::Stable => template! {},
+            Self::Outdated(stable) => {
+                let stable = stable.to_string();
+                template! {
+                    div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
+                        div(class = "flex flex-col 2xs:flex-row") {
+                            span(
+                                class = "self-center mr-2",
+                                style = "fill: #f87171;",
+                                dangerously_set_inner_html = ERROR_ICON
+                            )
+                            p(dangerously_set_inner_html = &t!("docs-status.outdated", {
+                                "link": link!(&format!("/docs/{}/intro", stable))
+                            }))
+                        }
+                    }
+                }
+            }
+            Self::Beta(stable) => {
+                let stable = stable.to_string();
+                template! {
+                    div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
+                        div(class = "flex flex-col 2xs:flex-row") {
+                            span(
+                                class = "self-center mr-2",
+                                style = "fill: #fcd34d;",
+                                dangerously_set_inner_html = WARNING_ICON
+                            )
+                            p(dangerously_set_inner_html = &t!("docs-status.beta", {
+                                "link": link!(&format!("/docs/{}/intro", stable))
+                            }))
+                        }
+                    }
+                }
+            }
+            Self::Next(stable) => {
+                let stable = stable.to_string();
+                template! {
+                    div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
+                        div(class = "flex flex-col 2xs:flex-row") {
+                            span(
+                                class = "self-center mr-2",
+                                style = "fill: #fb923c;",
+                                dangerously_set_inner_html = ERROR_ICON
+                            )
+                            p(dangerously_set_inner_html = &t!("docs-status.next", {
+                                "link": link!(&format!("/docs/{}/intro", stable))
+                            }))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 /// Information about the current state of the documentation, including which versions are outdated and the like.
 #[derive(Serialize, Deserialize)]
 pub struct DocsManifest {
@@ -57,49 +111,24 @@ pub struct DocsManifest {
     pub beta: Vec<String>,
 }
 
-#[component(DocsPage<G>)]
-pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
-    // These come pre-translated for the current locale
-    // Note that all the docs files have a title emblazoned at the top already, so we only need the title in the `<head>`
-    let DocsPageProps {
-        content,
-        sidebar_content,
-        status,
-        ..
-    } = props;
-    template! {
-        div(class = "markdown", dangerously_set_inner_html = &content)
-        div(class = "markdown", dangerously_set_inner_html = &sidebar_content)
-        div { (format!("{:?}", status)) }
-    }
-}
-
-pub fn get_template<G: GenericNode>() -> Template<G> {
-    Template::new("docs")
-        .build_paths_fn(Rc::new(get_build_paths))
-        .build_state_fn(Rc::new(get_build_state))
-        .template(Rc::new(|props| {
-            template! {
-                DocsPage(serde_json::from_str(&props.unwrap()).unwrap())
-            }
-        }))
-        .head(Rc::new(|props| {
-            let props: DocsPageProps = serde_json::from_str(&props.unwrap()).unwrap();
-            template! {
-                title { (format!("{} | {}", props.title, t!("docs-title-base"))) }
-                link(rel = "stylesheet", href = "/.perseus/static/markdown.css")
-            }
-        }))
-}
-
 pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWithCause<String> {
     let path_vec: Vec<&str> = path.split('/').collect();
     // Localize the path again to what it'll be on the filesystem
     // TODO get Perseus to pass in props from build paths for ease of use?
     // We'll do that differently if it doesn't have a version in front of it, which would be the second part containing two dots
     // Or it could be `next`
-    let version;
-    let fs_path = if path_vec[1].split('.').count() == 3 || path_vec[1] == "next" {
+    // If the path is just `/docs` though, we'll render the introduction page for the stable version
+    let version: &str;
+    let fs_path = if path == "docs" {
+        version = &DOCS_MANIFEST.stable;
+        format!(
+            "{}/{}/{}/{}",
+            path_vec[0], // `docs`
+            &DOCS_MANIFEST.stable,
+            &locale,
+            "intro"
+        )
+    } else if path_vec[1].split('.').count() == 3 || path_vec[1] == "next" {
         version = path_vec[1];
         format!(
             "{}/{}/{}/{}",
@@ -125,6 +154,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
     let html_contents = parse_md_to_html(&contents);
     // Get the title from the first line of the contents, stripping the initial `#`
     // This is brittle, but surprisingly quite reliable as long as documentation files have headings
+    dbg!(&path);
     let title = contents.lines().collect::<Vec<&str>>()[0]
         .strip_prefix("# ")
         .unwrap();
@@ -163,7 +193,8 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
 }
 
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
-    let mut paths: Vec<String> = Vec::new();
+    // We start off by rendering the `/docs` page itself as an alias
+    let mut paths: Vec<String> = vec!["".to_string()];
     // Get the `docs/` directory (relative to `.perseus/`)
     let docs_dir = PathBuf::from("../../docs");
     // Loop through it
@@ -181,8 +212,8 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
             // Also disallow any of the `SUMMARY.md` files at this point (the extension has been stripped)
             // Also disallow the manifest file
             if path_str.contains("en-US/")
-                && !path.ends_with("SUMMARY")
-                && !path.ends_with("manifest.json")
+                && !path_str.ends_with("SUMMARY")
+                && !path_str.ends_with("manifest.json")
             {
                 // Now remove that locale (it'll be put at the front of the path in the URL)
                 let path_str = path_str.replace("en-US/", "");

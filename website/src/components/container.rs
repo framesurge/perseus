@@ -2,15 +2,17 @@ use perseus::{link, t};
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
-static COPYRIGHT_YEARS: &str = "2021";
+pub static COPYRIGHT_YEARS: &str = "2021";
 
 #[component(NavLinks<G>)]
-fn nav_links() -> SycamoreTemplate<G> {
+pub fn nav_links() -> SycamoreTemplate<G> {
     template! {
+        // TODO fix overly left alignment here on mobile
         li(class = "m-3 p-1") {
             a(href = link!("/docs"), class = "px-2") { (t!("navlinks-docs")) }
+        }
+        li(class = "m-3 p-1") {
             a(href = link!("/comparisons"), class = "px-2") { (t!("navlinks-comparisons")) }
-
         }
     }
 }
@@ -82,7 +84,6 @@ pub fn container(props: ContainerProps<G>) -> SycamoreTemplate<G> {
                 (props.children.clone())
             }
         }
-        // TODO i18n in copyright text
         footer(class = "w-full flex justify-center py-5 bg-gray-100 dark:bg-navy-deep") {
             p(class = "dark:text-white mx-5 text-center") {
                 span(dangerously_set_inner_html = &t!("footer.copyright", {
