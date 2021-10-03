@@ -10,7 +10,7 @@ Also, this strategy is fully compatible with _build paths_, meaning you could pr
 
 This is the simplest strategy in Perseus to enable, needing only one line of code. Here's the example from earlier (which you can find [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/post.rs)) that uses _incremental generation_ together with _build paths_ (and of course _build state_, which is mandatory for _incremental generation_ to work):
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/showcase/src/templates/post.rs}}
 ```
 

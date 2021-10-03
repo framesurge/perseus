@@ -4,7 +4,7 @@ Most of the time, you shouldn't need to touch the HTTP headers of your Perseus t
 
 Perseus supports inserting arbitrary HTTP headers for any response from the server that successfully returns a page generated from the template those headers are defined for. You can do this like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/templates/index.rs)):
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/basic/src/templates/index.rs}}
 ```
 

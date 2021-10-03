@@ -29,7 +29,7 @@ This example shows what would be done to acquire a page for any framework. You'l
 -   A map of templates produced with [`get_templates_map!`]() (API docs WIP)
 -   A [config manager](./config_managers)
 
-```rust,no_run,no_playground
+```rust
 use perseus::{get_page};
 
 // See below for details on this line

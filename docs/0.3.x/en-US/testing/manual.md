@@ -4,7 +4,7 @@ Occasionally, the Perseus testing harness may be a little too brittle for your n
 
 You should do this by wrapping your normal test function in another function and annotating that with `[tokio::test]`, which will mark it as a normal asynchronous test. Then, you can mimic the behavior of the Perseus test harness almost exactly with the following code (adapted from the macro [here](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus-macro/src/test.rs)):
 
-```rust,no_run,no_playground
+```rust
 // Only run the test if the environment variable is specified (avoids having to do exclusions for workspace `cargo test`)
 if ::std::env::var("PERSEUS_RUN_WASM_TESTS").is_ok() {
     let headless = ::std::env::var("PERSEUS_RUN_WASM_TESTS_HEADLESS").is_ok();

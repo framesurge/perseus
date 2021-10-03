@@ -2,17 +2,17 @@
 
 When building a web app, testing is extremely important, and also extremely helpful. If you're familiar with Rust, you're probably used to having two types of tests (unit tests and integration tests), but Perseus follows the JavaScript model of testing slightly more, which is better suited to a user-facing web app, and has three types of tests:
 
-- Unit tests -- same as in Rust, they test a small amount of logic in isolation
-- Integration tests -- same as in Rust, they test the system itself, but sometimes mocking things like a database
-- End-to-end tests -- not mocking anything at all, and fully testing the entire system as if a real user were operating it
+-   Unit tests -- same as in Rust, they test a small amount of logic in isolation
+-   Integration tests -- same as in Rust, they test the system itself, but sometimes mocking things like a database
+-   End-to-end tests -- not mocking anything at all, and fully testing the entire system as if a real user were operating it
 
 It's that last type that Perseus is particularly concerned with, because that's the way that you can create highly resilient web apps that are tested for real user interaction. In fact, most of Perseus itself is tested this way! Also, E2E tests are more effective at automating otherwise manual testing of going through a browser and checking that things work, and they're far less brittle than any other type of test (all that matters is the final user experience).
 
-In terms of unit tests, these can be done for normal logic (that doesn't render something) with Rust's own testing system. Any integration tests, as well as unit tests that do render things, should be done with [`wasm-bindgen-test`](https://rustwasm.github.io/wasm-bindgen/wasm-bindgen-test/index.html). This module provides a custom *test harness* macro (alternative to `#[test]`) that spins up a *headless browser* (browser without a GUI) that can be used to render your code. Note that this should be done for testing Sycamore components, and not for testing integrated Perseus systems.
+In terms of unit tests, these can be done for normal logic (that doesn't render something) with Rust's own testing system. Any integration tests, as well as unit tests that do render things, should be done with [`wasm-bindgen-test`](https://rustwasm.github.io/wasm-bindgen/wasm-bindgen-test/index.html). This module provides a custom _test harness_ macro (alternative to `#[test]`) that spins up a _headless browser_ (browser without a GUI) that can be used to render your code. Note that this should be done for testing Sycamore components, and not for testing integrated Perseus systems.
 
 When you want to test logic flows in your app, like the possibilities of how a user will interact with a login form, the best way is to use end-to-end testing, which Perseus supports with a custom test harness macro that can be used like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/tests/main.rs)):
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/basic/tests/main.rs}}
 ```
 
@@ -32,12 +32,12 @@ You'll also need to add the following to your `Cargo.toml` (`tokio` is needed fo
 
 ## Running Tests
 
-Perseus tests can be run with `cargo test` as usual, but you'll need to provide the `PERSEUS_RUN_WASM_TESTS` environment variable as true. This makes sure that you don't accidentally run tests that have external dependencies (like a headless browser). Note that, by default, your tests will run in a full browser, so you'll get GUI windows opening on  your screen that are controlled by your tests. These can be extremely useful for debugging, but they're hardly helpful on CI, so you can remove them and run *headlessly* (without a GUI window) by providing the `PERSEUS_RUN_WASM_TESTS_HEADLESS` environment variable.
+Perseus tests can be run with `cargo test` as usual, but you'll need to provide the `PERSEUS_RUN_WASM_TESTS` environment variable as true. This makes sure that you don't accidentally run tests that have external dependencies (like a headless browser). Note that, by default, your tests will run in a full browser, so you'll get GUI windows opening on your screen that are controlled by your tests. These can be extremely useful for debugging, but they're hardly helpful on CI, so you can remove them and run _headlessly_ (without a GUI window) by providing the `PERSEUS_RUN_WASM_TESTS_HEADLESS` environment variable.
 
 Before running E2E tests, you need to have two things running in the background:
 
-- Something that allows you to interact with a headless browser using the *WebDriver* protocol (see below)
-- Your app, invoked with `perseus test` (different to `perseus serve`)
+-   Something that allows you to interact with a headless browser using the _WebDriver_ protocol (see below)
+-   Your app, invoked with `perseus test` (different to `perseus serve`)
 
 <details>
 <summary>How would I automate all that?</summary>
@@ -46,7 +46,7 @@ It may be most convenient to create a shell script to do these for you, or to us
 
 </details>
 
-*Note: Cargo runs your tests in parallel by default, which won't work with some WebDrivers, like Firefox's `geckodriver`. To run your tests sequentially instead (slower), use `cargo test -- --test-threads 1` (this won't keep your tests in the same order though, but that's generally unnecessary).*
+_Note: Cargo runs your tests in parallel by default, which won't work with some WebDrivers, like Firefox's `geckodriver`. To run your tests sequentially instead (slower), use `cargo test -- --test-threads 1` (this won't keep your tests in the same order though, but that's generally unnecessary)._
 
 ## WebDrivers?
 
@@ -59,4 +59,4 @@ If you're completely new to headless browsers, here's a quick how-to guide with 
 3. Run `geckodriver` in a terminal window on its own and run your Perseus tests elsewhere.
 4. Press Ctrl+C in the `geckodriver` terminal when you're done.
 
-*Note: if your WebDriver instance is running somewhere other than <http://localhost:4444>, you can specify that with `#[perseus::test(webdriver_url = "custom-url-here")]`.*
+_Note: if your WebDriver instance is running somewhere other than <http://localhost:4444>, you can specify that with `#[perseus::test(webdriver_url = "custom-url-here")]`._

@@ -8,7 +8,7 @@ Note that checkpoints will never be reached if your app is not run with `perseus
 
 You can wait for a Perseus checkpoint to be reached like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/tests/main.rs)):
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/basic/tests/main.rs}}
 ```
 

@@ -63,14 +63,14 @@ Here's what this code does:
 
 1. Import the Perseus [`ErrorPages`](https://docs.rs/perseus/0.1.2/perseus/shell/struct.ErrorPages.html) `struct`, and the Sycamore templating macro for writing pseudo-HTML.
 2. Define a single function that will get all your error pages (you'll call this in `lib.rs`).
-3. Create a new instance of `ErrorPages` with the required fallback page. Error pages in Perseus are based on HTTP status codes (but you can create your own beyond this system if you need), and there are *a lot* of them, so the fallback page is used for all the status codes that you don't explicitly handle.
+3. Create a new instance of `ErrorPages` with the required fallback page. Error pages in Perseus are based on HTTP status codes (but you can create your own beyond this system if you need), and there are _a lot_ of them, so the fallback page is used for all the status codes that you don't explicitly handle.
 4. Add two new error pages, one for 404 (page not found) and another for 400 (generic client error). Note that the functions we provide have to be `Box`ed (so Rust can allocate the memory properly), and they'll also be provided three arguments, which you'll want to use in a production app. They are: the URL that caused the problem, the HTTP status code, and the error message that was the payload of the request.
 
 You can read more about error pages [here](https://arctic-hen7.github.io/perseus/error_pages.html).
 
 ## Setting up Some HTML
 
-Perseus is just a web framework, and it needs some good old HTML to cling to, so you'll need to create an `index.html` file in the root of your project (*next* to `src/`). Then put the following inside:
+Perseus is just a web framework, and it needs some good old HTML to cling to, so you'll need to create an `index.html` file in the root of your project (_next_ to `src/`). Then put the following inside:
 
 ```html
 <!DOCTYPE html>
@@ -97,7 +97,7 @@ Note the single `<script>` that imports from `/.perseus/bundle.js`. That's the s
 
 And now for the magic. Perseus does a ton of stuff to initialize your app, all of which can be abstracted through the `define_app!` macro that we imported earlier. Add the following to `lib.rs` (underneath your `Route` definition) to use it:
 
-```rust,no_run,no_playground
+```rust
 define_app! {
     root: "#root",
     route: Route,
@@ -114,13 +114,13 @@ define_app! {
 }
 ```
 
-*Note: these properties currently **must** be in order, otherwise they won't work.*
+_Note: these properties currently **must** be in order, otherwise they won't work._
 
 And again, here's an explanation:
 
 1. Define the CSS selector at which Perseus will render. This will be the `<div id="root"></div>` we defined in `index.html` in this case.
 2. Tell Perseus about the `Route` `enum` you defined earlier.
-3. Handle each of your roots with `match`-like syntax. You'll need to handle every variant of your `Route` `enum` here except the `NotFound` variant, which will use your 404 error page (or the fallback if you didn't define one for that status code). Each route that goes to the path at which it will be rendered (which may seem pointless, but it's *really* useful for more complex pages) and the `template_fn` helper function we defined in the last section.
+3. Handle each of your roots with `match`-like syntax. You'll need to handle every variant of your `Route` `enum` here except the `NotFound` variant, which will use your 404 error page (or the fallback if you didn't define one for that status code). Each route that goes to the path at which it will be rendered (which may seem pointless, but it's _really_ useful for more complex pages) and the `template_fn` helper function we defined in the last section.
 4. Tell Perseus about your error pages.
 5. Declare each of your templates, using that `get_template` helper function we defined in the last section. Notice the ambient `G` parameter here, which that function also took. That lets Perseus control whether it renders your page for the server (as for server-side rendering) or for the client (in the browser), and it needs to do both.
 

@@ -10,7 +10,7 @@ In development, you'll still need to specify a config manager, which allows you 
 
 Any custom config managers have to implement the `ConfigManager` trait, which only has two functions: `read` and `write`. Here's the trait definition:
 
-```rust,no_run,no_playground
+```rust
 pub trait ConfigManager {
     /// Reads data from the named asset.
     async fn read(&self, name: &str) -> Result<String>;
@@ -21,11 +21,11 @@ pub trait ConfigManager {
 
 ### Errors
 
-It's easily possible for CDNs of filesystems to throw errors when we try to interact with them, and Perseus provides a custom set of errors with [`error_chain!`]() to deal with this. Note that your implementation *must* use these, or it will not implement the trait and thus not be compatible with Perseus. The errors available to you are:
+It's easily possible for CDNs of filesystems to throw errors when we try to interact with them, and Perseus provides a custom set of errors with [`error_chain!`]() to deal with this. Note that your implementation _must_ use these, or it will not implement the trait and thus not be compatible with Perseus. The errors available to you are:
 
-- `NotFound`, takes a `String` asset name
-- `ReadFailed`, takes a `String` asset name and a `String` error (not chained because it might come back by carrier pigeon for all we know)
-- `WriteFailed`, takes a `String` asset name and a `String` error (not chained because it might come back by carrier pigeon for all we know)
+-   `NotFound`, takes a `String` asset name
+-   `ReadFailed`, takes a `String` asset name and a `String` error (not chained because it might come back by carrier pigeon for all we know)
+-   `WriteFailed`, takes a `String` asset name and a `String` error (not chained because it might come back by carrier pigeon for all we know)
 
 ## Best Practices
 

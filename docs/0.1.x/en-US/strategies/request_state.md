@@ -1,6 +1,6 @@
 # Request State
 
-This strategy allows you to define the state for a page at request-time, which gives you access to information like the headers of the user's HTTP request (including any authorization tokens) and real-time factors. This can be useful if you want to render something like a user dashboard on the server, which you wouldn't be able to do with the *build state* strategy, as it only has access to information at build-time.
+This strategy allows you to define the state for a page at request-time, which gives you access to information like the headers of the user's HTTP request (including any authorization tokens) and real-time factors. This can be useful if you want to render something like a user dashboard on the server, which you wouldn't be able to do with the _build state_ strategy, as it only has access to information at build-time.
 
 It should be noted that this strategy is much slower than build-time strategies, as it requires extra computations on the server every time a user requests a page. However, this strategy is superior to client-side rendering (rendering a page at build time with fillers for unique content that you then fill in in the browser) in some ways. This strategy is essentially server-side rendering, and you can read more about its performance [here](https://medium.com/walmartglobaltech/the-benefits-of-server-side-rendering-over-client-side-rendering-5d07ff2cefe8).
 
@@ -37,11 +37,11 @@ pub async fn get_request_state(_path: String, req: Request) -> Result<String, (S
 
 This function can produce two kinds of errors, broadly: those caused by the server, and those caused by the client. For that reason, you need to return a `(String, ErrorCause)` tuple, the second part of which specifies who's responsible for the error. This allows Perseus to figure out whether it should send a 400 (client error) or 500 (server error) HTTP status code in the event of an error. This function must also be asynchronous.
 
-As with the *build state* strategy, you must return state from this function as a string, and the path provided to this function is the same as the final path at which the page will be rendered.
+As with the _build state_ strategy, you must return state from this function as a string, and the path provided to this function is the same as the final path at which the page will be rendered.
 
 You can add this strategy to a template like so:
 
-```rust,no_run,no_playground
+```rust
 template
 	// ...
     .request_state_fn(Box::new(get_request_state))

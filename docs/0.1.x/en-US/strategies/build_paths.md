@@ -2,7 +2,7 @@
 
 This strategy allows you to define the pages a template will render. For example, you might use this for a blog posts system to get all the posts from a database and return a `Vec<String>` of them. This strategy is roughly equivalent to NextJS's `get_static_paths` function.
 
-Every element returned here will have the opportunity to create its state with the *build state* strategy, being passed the path defined here. Note that every element returned here will be built, so if you need to return more than about 10 elements, it's a better idea to only return the most used ones and leave the rest to the *incremental generation* strategy to reduce your build time.
+Every element returned here will have the opportunity to create its state with the _build state_ strategy, being passed the path defined here. Note that every element returned here will be built, so if you need to return more than about 10 elements, it's a better idea to only return the most used ones and leave the rest to the _incremental generation_ strategy to reduce your build time.
 
 ## Usage
 
@@ -21,7 +21,7 @@ Paths returned from this function will be rendered under `[template-path]/[retur
 
 You can add this strategy to a template like so:
 
-```rust,no_run,no_playground
+```rust
 template
 	// ...
 	.build_paths_fn(Box::new(get_static_paths))

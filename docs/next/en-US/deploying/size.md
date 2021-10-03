@@ -14,7 +14,7 @@ wee_alloc = "0.4"
 
 And then you can add it to the top of your `src/lib.rs`:
 
-```rust,no_run,no_playground
+```rust
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 ```

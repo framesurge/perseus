@@ -2,7 +2,7 @@
 
 The first part of setting up i18n in Perseus is to state that your app uses it, which is done in the `define-app!` macro like so (taken from [the i18n example](https://github.com/arctic-hen7/perseus/tree/main/examples/i18n)):
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/i18n/src/lib.rs}}
 ```
 
@@ -12,7 +12,7 @@ There are two subfields under the `locales` key: `default` and `other`. Each of 
 
 After you've enabled i18n like so, every page on your app will be rendered behind a locale. For example, `/about` will become `/en-US/about`, `/fr-FR/about`, and`/es-ES/about` in the above example. These are automatically rendered by Perseus at build-time, and they behave exactly the same as every other feature of Perseus.
 
-Of course, it's hardly optimal to direct users to a pre-translated page if they may prefer it in another language, which is why Perseus supports *locale detection* automatically. In other words, you can direct users to `/about`, and they'll automatically be redirected to `/<locale>/about`, where `<locale>` is their preferred locale according to `navigator.languages`. This matching is done based on [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt), which defines how locale detection should be done.
+Of course, it's hardly optimal to direct users to a pre-translated page if they may prefer it in another language, which is why Perseus supports _locale detection_ automatically. In other words, you can direct users to `/about`, and they'll automatically be redirected to `/<locale>/about`, where `<locale>` is their preferred locale according to `navigator.languages`. This matching is done based on [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt), which defines how locale detection should be done.
 
 ## Adding Translations
 
@@ -24,4 +24,4 @@ Here's an example of a translations file (taken from [here](https://github.com/a
 {{#include ../../../../examples/i18n/translations/en-US.ftl}}
 ```
 
-You can read more about Fluent's syntax [here](https://projectfluent.org) (it's *very* powerful).
+You can read more about Fluent's syntax [here](https://projectfluent.org) (it's _very_ powerful).

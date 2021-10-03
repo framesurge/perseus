@@ -10,7 +10,7 @@ Note that, like _build state_, this strategy may be invoked at build-time or whi
 
 Here's the same example as given in the previous section (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/i18n/templates/post.rs)), which uses _build paths_ together with _build state_:
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/i18n/src/templates/post.rs}}
 ```
 

@@ -22,7 +22,7 @@ Hopefully that explains the difference between a template and a post. This is a 
 
 You can define a template like so (taken from [the basic example](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/templates/about.rs)'s about page):
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/basic/src/templates/about.rs}}
 ```
 
@@ -52,7 +52,7 @@ There is one use-case though that requires a bit more fiddling: having a differe
 
 It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with `web_sys`, which will `panic!` if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with the `is_server!` macro, which does exactly what it says on the tin. Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/i18n/src/templates/about.rs):
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/i18n/src/templates/about.rs}}
 ```
 

@@ -4,7 +4,7 @@ Now that you know a bit more about how Perseus tests work, it's time to go throu
 
 Remember, you're controlling an actual browser, so you basically have everything available to you that a user can do (mostly). You can even take screenshots! All this is achieved with [Fantoccini](https://github.com/jonhoo/fantoccini), which you can learn more about [here](https://docs.rs/fantoccini). For now though, here's a quick tutorial on the basics, using [this](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/tests/main.rs) example:
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../../examples/basic/tests/main.rs}}
 ```
 

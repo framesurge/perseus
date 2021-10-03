@@ -45,7 +45,7 @@ The last thing we do is new, we define `static_aliases` to map the URL `/test.tx
 
 Before we get to the cool part of building the actual pages of the app, we should set up error pages again, which we'll do in `src/error_pages.rs`:
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../examples/basic/src/error_pages.rs}}
 ```
 
@@ -59,7 +59,7 @@ In this function, we also define a different error page for a 404 error, which w
 
 It's time to create the first page for this app! But first, we need to make sure that import in `src/lib.rs` of `mod templates;` works, which requires us to create a new file `src/templates/mod.rs`, which declares `src/templates` as a module with its own code. Add the following to that file:
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../examples/basic/src/templates/mod.rs}}
 ```
 
@@ -67,7 +67,7 @@ It's common practice to have a file for each _template_, which is slightly diffe
 
 Let's begin with the landing page. Create a new file `src/templates/index.rs` and put the following inside:
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../examples/basic/src/templates/index.rs}}
 ```
 
@@ -138,7 +138,7 @@ Note that this function has its own special return type, and that `HeaderMap` is
 
 Okay! We're past the hump, and now it's time to define the (much simpler) `/about` page. Create `src/templates/about.rs` and put the following inside:
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../examples/basic/src/templates/about.rs}}
 ```
 
@@ -165,7 +165,7 @@ Perseus is compatible with any browser that supports Wasm, which is most modern 
 
 By the way, remember this little bit of code in `src/lib.rs`?
 
-```rust,no_run,no_playground
+```rust
 {{#include ../../../examples/basic/src/lib.rs:12:14}}
 ```
 
