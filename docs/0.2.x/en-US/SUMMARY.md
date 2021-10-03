@@ -1,4 +1,4 @@
-# Summary
+# Introduction
 
 -   [Introduction](/docs/intro)
     -   [What is Perseus?](/docs/what-is-perseus)

@@ -1,5 +1,3 @@
-# Summary
-
 -   [Introduction](/docs/intro)
 -   [Setup](/docs/setup)
 -   [Architecture](/docs/arch)
