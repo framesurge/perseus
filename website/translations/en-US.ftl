@@ -73,3 +73,8 @@ docs-status =
     .outdated = This version of the documentation is outdated, and features documented here may work differently now. You can see the latest stable version of the docs <a href="{ $link }" class="underline">here</a>.
     .beta = This version of the documentation is for a version that has only been released in beta, and is not yet stable. Features documented here may not be present in the latest stable version, and they're subject to rapid and drastic change. You can see the latest stable version of the docs <a href="{ $link }" class="underline">here</a>.
     .next = This version of the documentation is for a version that has not yet been released, and features documented here may not be present in the latest release. You can see the latest stable version of the docs <a href="{ $link }" class="underline">here</a>.
+docs-version-switcher =
+    .next = Next (unreleased)
+    .beta = v{ $version } (beta)
+    .stable = v{ $version } (stable)
+    .outdated = v{ $version } (outdated)

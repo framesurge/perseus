@@ -1,15 +1,93 @@
 use crate::components::container::NavLinks;
 use crate::components::container::COPYRIGHT_YEARS;
-use crate::templates::docs::generation::DocsVersionStatus;
+use crate::templates::docs::generation::{DocsManifest, DocsVersionStatus};
 use perseus::{link, t};
+use sycamore::context::use_context;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
+use sycamore_router::navigate;
+use wasm_bindgen::JsCast;
+
+#[derive(Clone)]
+struct DocsVersionSwitcherProps {
+    manifest: DocsManifest,
+    current_version: String,
+}
+#[component(DocsVersionSwitcher<G>)]
+fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G> {
+    let manifest = props.manifest.clone();
+    let manifest_2 = manifest.clone();
+    let current_version = props.current_version.clone();
+    let current_version_2 = current_version.clone();
+    let current_version_3 = current_version.clone();
+    let current_version_4 = current_version.clone();
+    let stable_version = manifest.stable.clone();
+    let stable_version_2 = stable_version.clone();
+    let stable_version_3 = stable_version.clone();
+    // We'll fill this in from the reactive scope
+    // Astonishingly, this actually works...
+    let locale = Signal::new(String::new());
+    let locale_2 = locale.clone();
+
+    template! {
+        ({
+            locale.set(use_context::<perseus::template::RenderCtx>().translator.get_locale());
+            SycamoreTemplate::empty()
+        })
+
+        // This doesn't navigate to the same page in the new version, because it may well not exist
+        select(on:input = move |event| {
+            let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
+            let new_version = target.value();
+            // This isn't a reactive scope, so we can't use `link!` here
+            let link = format!("/{}/docs/{}/intro", *locale_2.get(), new_version);
+            navigate(&link);
+        }) {
+            option(value = "next", selected = current_version == "next") {
+                (t!("docs-version-switcher.next"))
+            }
+            (SycamoreTemplate::new_fragment(
+                manifest.beta.iter().map(cloned!((current_version_2) => move |version| {
+                    let version = version.clone();
+                    let version_2 = version.clone();
+                    let version_3 = version.clone();
+                    let current_version = current_version_2.to_string();
+                    template! {
+                        option(value = version, selected = current_version == version_2) { (t!("docs-version-switcher.beta", {
+                            "version": version_3.as_str()
+                        })) }
+                    }
+                })).collect()
+            ))
+            option(value = stable_version, selected = current_version_3 == stable_version_2) {
+                (t!("docs-version-switcher.stable", {
+                    "version": stable_version_3.as_str()
+                }))
+            }
+            (SycamoreTemplate::new_fragment(
+                manifest_2.outdated.iter().map(cloned!((current_version_4) => move |version| {
+                    let version = version.clone();
+                    let version_2 = version.clone();
+                    let version_3 = version.clone();
+                    let current_version = current_version_4.to_string();
+                    template! {
+                        option(value = version, selected = current_version == version_2) { (t!("docs-version-switcher.outdated", {
+                            "version": version_3.as_str()
+                        })) }
+                    }
+                })).collect()
+            ))
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct DocsContainerProps<G: GenericNode> {
     pub children: SycamoreTemplate<G>,
     pub docs_links: String,
     pub status: DocsVersionStatus,
+    pub manifest: DocsManifest,
+    pub current_version: String,
 }
 
 #[component(DocsContainer<G>)]
@@ -17,7 +95,11 @@ pub fn docs_container(props: DocsContainerProps<G>) -> SycamoreTemplate<G> {
     let docs_links = props.docs_links.clone();
     let docs_links_2 = docs_links.clone();
     let status = props.status.clone();
-    // TODO parse the status into a readable message (translation as well)
+    let docs_version_switcher_props = DocsVersionSwitcherProps {
+        manifest: props.manifest.clone(),
+        current_version: props.current_version.clone(),
+    };
+    let docs_version_switcher_props_2 = docs_version_switcher_props.clone();
 
     let menu_open = Signal::new(false);
     // We need to verbatim copy the value because of how it's used in Sycamore's reactivity system
@@ -77,6 +159,7 @@ pub fn docs_container(props: DocsContainerProps<G>) -> SycamoreTemplate<G> {
                     }
                     hr()
                     div(class = "text-left p-3") {
+                        DocsVersionSwitcher(docs_version_switcher_props)
                         div(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links)
                     }
                 }
@@ -97,7 +180,10 @@ pub fn docs_container(props: DocsContainerProps<G>) -> SycamoreTemplate<G> {
                 div(class = "h-full hidden md:block max-w-xs w-full border-r") {
                     div(class = "mr-5") {
                         div(class = "text-left text-black dark:text-white p-3") {
-                            aside(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links_2)
+                            aside {
+                                DocsVersionSwitcher(docs_version_switcher_props_2)
+                                div(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links_2)
+                            }
                         }
                     }
                 }

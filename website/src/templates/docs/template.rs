@@ -1,5 +1,7 @@
 use crate::templates::docs::container::{DocsContainer, DocsContainerProps};
-use crate::templates::docs::generation::{get_build_paths, get_build_state, DocsVersionStatus};
+use crate::templates::docs::generation::{
+    get_build_paths, get_build_state, DocsManifest, DocsVersionStatus,
+};
 use perseus::{t, GenericNode, Template};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -13,6 +15,8 @@ pub struct DocsPageProps {
     pub content: String,
     pub sidebar_content: String,
     pub status: DocsVersionStatus,
+    pub manifest: DocsManifest,
+    pub current_version: String,
 }
 
 #[component(DocsPage<G>)]
@@ -23,6 +27,8 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
         content,
         sidebar_content,
         status,
+        manifest,
+        current_version,
         ..
     } = props;
     template! {
@@ -31,7 +37,9 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
             children: template! {
                 div(class = "markdown", dangerously_set_inner_html = &content)
             },
-            status
+            status,
+            manifest,
+            current_version
         })
         // Because of how Perseus currently shifts everything, we need to re-highlight
         script {

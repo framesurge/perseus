@@ -104,7 +104,7 @@ impl DocsVersionStatus {
     }
 }
 /// Information about the current state of the documentation, including which versions are outdated and the like.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DocsManifest {
     pub stable: String,
     pub outdated: Vec<String>,
@@ -186,6 +186,8 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
         content: html_contents,
         sidebar_content: sidebar_html_contents,
         status,
+        manifest: DOCS_MANIFEST.clone(),
+        current_version: version.to_string(),
     };
 
     let props_str = serde_json::to_string(&props)?;
