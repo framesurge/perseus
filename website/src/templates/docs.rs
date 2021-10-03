@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use perseus::{t, GenericNode, RenderFnResult, RenderFnResultWithCause, Template};
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
@@ -19,9 +20,14 @@ pub fn parse_md_to_html(markdown: &str) -> String {
     html_contents
 }
 
-/// The latest version of the documentation. This will need to be updated as the docs are.
-// TODO get this from easily updatable config of some form
-static LATEST_STABLE_DOCS_VERSION: &str = "0.2.x";
+// By using a lazy static, we won't read from the filesystem in client-side code
+lazy_static! {
+    /// The latest version of the documentation. This will need to be updated as the docs are from the `docs/stable.txt` file.
+    static ref DOCS_MANIFEST: DocsManifest = {
+        let contents = fs::read_to_string("../../docs/manifest.json").unwrap();
+        serde_json::from_str(&contents).unwrap()
+    };
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct DocsPageProps {
@@ -29,6 +35,26 @@ pub struct DocsPageProps {
     pub title: String,
     pub content: String,
     pub sidebar_content: String,
+    pub status: DocsVersionStatus,
+}
+/// The stability of a version of the docs, which governs what kind of warning will be displayed.
+#[derive(Serialize, Deserialize, Debug)]
+pub enum DocsVersionStatus {
+    /// This version is stable, and no warning is needed.
+    Stable,
+    /// This version is outdated, and the latest stable version is attached.
+    Outdated(String),
+    /// This version is released, but in beta, and the latest stable version is attached.
+    Beta(String),
+    /// This documentation is for the unreleased next version, and the latest stable version is attached.
+    Next(String),
+}
+/// Information about the current state of the documentation, including which versions are outdated and the like.
+#[derive(Serialize, Deserialize)]
+pub struct DocsManifest {
+    pub stable: String,
+    pub outdated: Vec<String>,
+    pub beta: Vec<String>,
 }
 
 #[component(DocsPage<G>)]
@@ -38,11 +64,13 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
     let DocsPageProps {
         content,
         sidebar_content,
+        status,
         ..
     } = props;
     template! {
         div(class = "markdown", dangerously_set_inner_html = &content)
         div(class = "markdown", dangerously_set_inner_html = &sidebar_content)
+        div { (format!("{:?}", status)) }
     }
 }
 
@@ -81,12 +109,12 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
             path_vec[2..].join("/") // The rest of the path
         )
     } else {
-        version = LATEST_STABLE_DOCS_VERSION;
+        version = &DOCS_MANIFEST.stable;
         // If it doesn't have a version, we'll inject the latest stable one
         format!(
             "{}/{}/{}/{}",
             path_vec[0], // `docs`
-            LATEST_STABLE_DOCS_VERSION,
+            &DOCS_MANIFEST.stable,
             &locale,
             path_vec[1..].join("/") // The rest of the path
         )
@@ -110,10 +138,24 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
         sidebar_contents.replace("/docs", &format!("/{}/docs/{}", &locale, &version));
     let sidebar_html_contents = parse_md_to_html(&sidebar_contents);
 
+    // Work out the status of this page
+    let status = if version == "next" {
+        DocsVersionStatus::Next(DOCS_MANIFEST.stable.to_string())
+    } else if DOCS_MANIFEST.outdated.contains(&version.to_string()) {
+        DocsVersionStatus::Outdated(DOCS_MANIFEST.stable.to_string())
+    } else if DOCS_MANIFEST.beta.contains(&version.to_string()) {
+        DocsVersionStatus::Beta(DOCS_MANIFEST.stable.to_string())
+    } else if DOCS_MANIFEST.stable == version {
+        DocsVersionStatus::Stable
+    } else {
+        unreachable!()
+    };
+
     let props = DocsPageProps {
         title: title.to_string(),
         content: html_contents,
         sidebar_content: sidebar_html_contents,
+        status,
     };
 
     let props_str = serde_json::to_string(&props)?;
@@ -137,16 +179,20 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
             let path_str = path_str.strip_prefix("../../docs/").unwrap();
             // Only proceed for paths in the default locale (`en-US`), which we'll use to generate paths
             // Also disallow any of the `SUMMARY.md` files at this point (the extension has been stripped)
-            if path_str.contains("en-US/") && !path.ends_with("SUMMARY") {
+            // Also disallow the manifest file
+            if path_str.contains("en-US/")
+                && !path.ends_with("SUMMARY")
+                && !path.ends_with("manifest.json")
+            {
                 // Now remove that locale (it'll be put at the front of the path in the URL)
                 let path_str = path_str.replace("en-US/", "");
                 // This path should be rendered!
                 paths.push(path_str.clone());
                 // If it's for the latest stable version though, we should also render it without that prefix
                 // That way the latest stable verison is always at the docs without a version prefix (which I think is more sensible than having the unreleased version there)
-                if path_str.starts_with(LATEST_STABLE_DOCS_VERSION) {
+                if path_str.starts_with(&DOCS_MANIFEST.stable) {
                     let unprefixed_path_str = path_str
-                        .strip_prefix(&format!("{}/", LATEST_STABLE_DOCS_VERSION))
+                        .strip_prefix(&format!("{}/", &DOCS_MANIFEST.stable))
                         .unwrap();
                     paths.push(unprefixed_path_str.to_string());
                 }
