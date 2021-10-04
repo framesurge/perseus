@@ -28,7 +28,7 @@
     -   [Request State](/docs/strategies/request-state)
     -   [Revalidation](/docs/strategies/revalidation)
     -   [Incremental Generation](/docs/strategies/incremental)
-    -   [State Amalgamation](/docs/strategies/amlagamation)
+    -   [State Amalgamation](/docs/strategies/amalgamation)
 -   [CLI](/docs/cli)
     -   [Ejecting](/docs/ejecting)
 -   [Testing](/docs/testing/intro)
