@@ -151,10 +151,41 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
     let fs_path = format!("../../{}.md", fs_path);
     // Read that file
     let contents = fs::read_to_string(&fs_path)?;
+    // Handle the directives to include code from another file
+    // We only loop through the file's lines if it likely contains what we want
+    // TODO include only some lines
+    let contents = if contents.contains("{{#include") {
+        let mut contents_with_incls = contents.clone();
+        for line in contents.lines() {
+            let line = line.trim();
+            if line.starts_with("{{#include ") && line.ends_with("}}") {
+                // Strip the directive to get the path of the file we're including
+                let mut incl_path = line
+                    .strip_prefix("{{#include ")
+                    .unwrap()
+                    .strip_suffix("}}")
+                    .unwrap();
+                // All the files here are in `docs/`, and they'll be including from outside there, so strip away any `../`s
+                while let Some(new_path) = incl_path.strip_prefix("../") {
+                    incl_path = new_path;
+                }
+                // And now add a `../../` to the front so that it's relative from `.perseus/`, where we are now
+                let rel_incl_path = format!("../../{}", &incl_path);
+                dbg!(&rel_incl_path);
+                let incl_contents = fs::read_to_string(&rel_incl_path)?;
+                // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
+                contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
+            }
+        }
+        contents_with_incls
+    } else {
+        contents
+    };
+
+    // Parse the file to HTML
     let html_contents = parse_md_to_html(&contents);
     // Get the title from the first line of the contents, stripping the initial `#`
     // This is brittle, but surprisingly quite reliable as long as documentation files have headings
-    dbg!(&path);
     let title = contents.lines().collect::<Vec<&str>>()[0]
         .strip_prefix("# ")
         .unwrap();
