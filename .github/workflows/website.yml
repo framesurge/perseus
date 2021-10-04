@@ -1,0 +1,29 @@
+name: Compile and Deploy Website
+
+on:
+    push:
+        paths:
+            - "docs/**"
+            - "website/**"
+            - ".github/workflows/website.yml" # If we change this build script, it should rerun
+        branches:
+            - main
+            - feat-website # TODO remove this once the website is stable
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - run: cargo install bonnie
+            - run: cargo install wasm-pack
+            - run: cargo install perseus-cli --version 0.3.0-beta.6
+            - name: Build website
+              run: bonnie site deploy
+            - name: Deploy website to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v3
+              if: github.ref == 'refs/heads/main'
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: website/pkg
+                  publish_branch: gh-pages-website # TODO change this to `gh-pages` once the website is stable
