@@ -53,7 +53,7 @@ impl DocsVersionStatus {
                 let stable = stable.to_string();
                 template! {
                     div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
-                        div(class = "flex flex-col 2xs:flex-row") {
+                        div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
                                 class = "self-center mr-2",
                                 style = "fill: #f87171;",
@@ -70,7 +70,7 @@ impl DocsVersionStatus {
                 let stable = stable.to_string();
                 template! {
                     div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
-                        div(class = "flex flex-col 2xs:flex-row") {
+                        div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
                                 class = "self-center mr-2",
                                 style = "fill: #fcd34d;",
@@ -87,7 +87,7 @@ impl DocsVersionStatus {
                 let stable = stable.to_string();
                 template! {
                     div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
-                        div(class = "flex flex-col 2xs:flex-row") {
+                        div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
                                 class = "self-center mr-2",
                                 style = "fill: #fb923c;",
