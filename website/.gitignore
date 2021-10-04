@@ -2,3 +2,5 @@
 .perseus/
 node_modules/
 static/tailwind.css
+!pkg/
+!pkg/.perseus
