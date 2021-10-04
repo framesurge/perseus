@@ -1,0 +1,309 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+
+<head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>What is Perseus? - Perseus Book</title>
+        
+
+    <!-- Custom HTML head -->
+    
+
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+            <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/general.css">
+    <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+    
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="tomorrow-night.css">
+    <link rel="stylesheet" href="ayu-highlight.css">
+
+    <!-- Custom theme stylesheets -->
+    
+    </head>
+
+<body>
+    <!-- Provide site root to javascript -->
+    <script type="text/javascript">
+        var path_to_root = "";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+    </script>
+
+    <!-- Work around some values being stored in localStorage wrapped in quotes -->
+    <script type="text/javascript">
+        try {
+            var theme = localStorage.getItem('mdbook-theme');
+            var sidebar = localStorage.getItem('mdbook-sidebar');
+            if (theme.startsWith('"') && theme.endsWith('"')) {
+                localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+            }
+            if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+            }
+        } catch (e) { }
+    </script>
+
+    <!-- Set the theme before any content is loaded, prevents flash -->
+    <script type="text/javascript">
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch (e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+    </script>
+
+    <!-- Hide / unhide sidebar before it is displayed -->
+    <script type="text/javascript">
+        var html = document.querySelector('html');
+        var sidebar = 'hidden';
+        if (document.body.clientWidth >= 1080) {
+            try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch (e) { }
+            sidebar = sidebar || 'visible';
+        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+    </script>
+
+    <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+            <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="what-is-perseus.html" class="active"><strong aria-hidden="true">1.1.</strong> What is Perseus?</a></li><li class="chapter-item expanded "><a href="hello-world.html"><strong aria-hidden="true">1.2.</strong> Hello World!</a></li></ol></li><li class="chapter-item expanded "><a href="second-app.html"><strong aria-hidden="true">2.</strong> Your Second App</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Reference</li><li class="chapter-item expanded "><a href="define-app.html"><strong aria-hidden="true">3.</strong> define_app!</a></li><li class="chapter-item expanded "><a href="views.html"><strong aria-hidden="true">4.</strong> Writing Views</a></li><li class="chapter-item expanded "><a href="debugging.html"><strong aria-hidden="true">5.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="templates/intro.html"><strong aria-hidden="true">6.</strong> Templates and Routing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="templates/metadata-modification.html"><strong aria-hidden="true">6.1.</strong> Modifying the &lt;head&gt;</a></li><li class="chapter-item expanded "><a href="templates/setting-headers.html"><strong aria-hidden="true">6.2.</strong> Modifying HTTP Headers</a></li></ol></li><li class="chapter-item expanded "><a href="error-pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="static-content.html"><strong aria-hidden="true">8.</strong> Static Content</a></li><li class="chapter-item expanded "><a href="i18n/intro.html"><strong aria-hidden="true">9.</strong> Internationalization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="i18n/defining.html"><strong aria-hidden="true">9.1.</strong> Defining Translations</a></li><li class="chapter-item expanded "><a href="i18n/using.html"><strong aria-hidden="true">9.2.</strong> Using Translations</a></li><li class="chapter-item expanded "><a href="i18n/translations-managers.html"><strong aria-hidden="true">9.3.</strong> Translations Managers</a></li><li class="chapter-item expanded "><a href="i18n/other-engines.html"><strong aria-hidden="true">9.4.</strong> Other Translation Engines</a></li></ol></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">10.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build-state.html"><strong aria-hidden="true">10.1.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/build-paths.html"><strong aria-hidden="true">10.2.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/request-state.html"><strong aria-hidden="true">10.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">10.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">10.5.</strong> Incremental Generation</a></li><li class="chapter-item expanded "><a href="strategies/amlagamation.html"><strong aria-hidden="true">10.6.</strong> State Amalgamation</a></li></ol></li><li class="chapter-item expanded "><a href="cli.html"><strong aria-hidden="true">11.</strong> CLI</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ejecting.html"><strong aria-hidden="true">11.1.</strong> Ejecting</a></li></ol></li><li class="chapter-item expanded "><a href="testing/intro.html"><strong aria-hidden="true">12.</strong> Testing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="testing/checkpoints.html"><strong aria-hidden="true">12.1.</strong> Checkpoints</a></li><li class="chapter-item expanded "><a href="testing/fantoccini-basics.html"><strong aria-hidden="true">12.2.</strong> Fantoccini Basics</a></li><li class="chapter-item expanded "><a href="testing/manual.html"><strong aria-hidden="true">12.3.</strong> Manual Testing</a></li></ol></li><li class="chapter-item expanded "><a href="styling.html"><strong aria-hidden="true">13.</strong> Styling</a></li><li class="chapter-item expanded "><a href="stores.html"><strong aria-hidden="true">14.</strong> Stores</a></li><li class="chapter-item expanded "><a href="exporting.html"><strong aria-hidden="true">15.</strong> Static Exporting</a></li><li class="chapter-item expanded "><a href="deploying/intro.html"><strong aria-hidden="true">16.</strong> Deploying</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="deploying/serverful.html"><strong aria-hidden="true">16.1.</strong> Server Deployment</a></li><li class="chapter-item expanded "><a href="deploying/serverless.html"><strong aria-hidden="true">16.2.</strong> Serverless Deployment</a></li><li class="chapter-item expanded "><a href="deploying/size.html"><strong aria-hidden="true">16.3.</strong> Optimizing Code Size</a></li></ol></li><li class="chapter-item expanded "><a href="updating.html"><strong aria-hidden="true">17.</strong> Migrating from v0.2.x</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Advanced</li><li class="chapter-item expanded "><a href="advanced/intro.html"><strong aria-hidden="true">18.</strong> Under the Hood</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="advanced/arch.html"><strong aria-hidden="true">18.1.</strong> Architecture</a></li><li class="chapter-item expanded "><a href="advanced/initial-loads.html"><strong aria-hidden="true">18.2.</strong> Initial Loads</a></li><li class="chapter-item expanded "><a href="advanced/subsequent-loads.html"><strong aria-hidden="true">18.3.</strong> Subsequent Loads</a></li><li class="chapter-item expanded "><a href="advanced/routing.html"><strong aria-hidden="true">18.4.</strong> Routing</a></li></ol></li></ol>        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+    </nav>
+
+    <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+            <div id="menu-bar-hover-placeholder"></div>
+            <style>
+    header.warning {
+        background-color: rgb(242, 222, 222);
+        border-bottom-color: rgb(238, 211, 215);
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        border-bottom-style: solid;
+        border-bottom-width: 0.666667px;
+        border-image-outset: 0 0 0 0;
+        border-image-repeat: stretch stretch;
+        border-image-slice: 100% 100% 100% 100%;
+        border-image-source: none;
+        border-image-width: 1 1 1 1;
+        border-left-color: rgb(238, 211, 215);
+        border-left-style: solid;
+        border-left-width: 0.666667px;
+        border-right-color: rgb(238, 211, 215);
+        border-right-style: solid;
+        border-right-width: 0.666667px;
+        border-top-color: rgb(238, 211, 215);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-top-style: solid;
+        border-top-width: 0.666667px;
+        color: rgb(185, 74, 72);
+        padding-bottom: 8px;
+        padding-left: 14px;
+        padding-right: 35px;
+        padding-top: 8px;
+        text-align: center;
+        margin-bottom: 0px;
+        margin-left: 0px;
+        margin-right: 0px;
+        margin-top: 30px;
+    }
+</style>
+<header class="warning">
+    This documentation is for the <strong>unpublished</strong> next version of Perseus,
+    and features documented here may not yet be available in the existing releases.
+    <br>
+    You can find documentation for the most recently released version of Perseus
+    <a href="https://arctic-hen7.github.io/perseus/stable.html">here</a>.
+</header>
+
+            <div id="menu-bar" class="menu-bar sticky bordered">
+                <div class="left-buttons">
+                    <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents"
+                        aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button" type="button" title="Change theme"
+                        aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                        <i class="fa fa-paint-brush"></i>
+                    </button>
+                    <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                        <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button>
+                        </li>
+                    </ul>
+                                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)"
+                        aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S"
+                        aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                                    </div>
+
+                <h1 class="menu-title">Perseus Book</h1>
+
+                <div class="right-buttons">
+                                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                                                            
+                </div>
+            </div>
+
+                        <div id="search-wrapper" class="hidden">
+                <form id="searchbar-outer" class="searchbar-outer">
+                    <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..."
+                        aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                </form>
+                <div id="searchresults-outer" class="searchresults-outer hidden">
+                    <div id="searchresults-header" class="searchresults-header"></div>
+                    <ul id="searchresults">
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+            <script type="text/javascript">
+                document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                Array.from(document.querySelectorAll('#sidebar a')).forEach(function (link) {
+                    link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                });
+            </script>
+
+            <div id="content" class="content">
+                <main>
+                    <h1 id="what-is-perseus"><a class="header" href="#what-is-perseus">What is Perseus?</a></h1>
+<p>If you're familiar with <a href="https://nextjs.org">NextJS</a>, Perseus is that for Wasm. If you're familiar with <a href="https://kit.svelte.dev">SvelteKit</a>, it's that for <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a>.</p>
+<p>If none of that makes any sense, this is the section for you! If you're not in the mood for a lecture, <a href="#summary">here's a TL;DR</a>!</p>
+<h3 id="rust-web-development"><a class="header" href="#rust-web-development">Rust web development</a></h3>
+<p><a href="https://www.rust-lang.org/">Rust</a> is an extremely powerful programming language, but I'll leave the introduction of it <a href="https://www.rust-lang.org/">to its developers</a>.</p>
+<p><a href="https://webassembly.org">WebAssembly</a> (abbreviated Wasm) is like a low-level programming language for your browser. This is revolutionary, because it allows websites and web apps to be built in programming languages other than JavaScript. Also, it's <a href="https://medium.com/@torch2424/webassembly-is-fast-a-real-world-benchmark-of-webassembly-vs-es6-d85a23f8e193">really fast</a> (usually &gt;30% faster than JS).</p>
+<p>But developing directly for the web with Rust using something like <a href="https://docs.rs/web-sys"><code>web-sys</code></a> isn't a great experience, it's generally agreed in the web development community that developer experience and productivity are vastly improved by having a <em>reactive</em> framework. Let's approach this from a traditional JavaScript and HTML perspective first.</p>
+<p>Imagine you want to create a simple counter. Here's how you might do it in a non-reactive framework (again, JS and HTML here, no Rust yet):</p>
+<pre><code class="language-html">&lt;p id=&quot;counter&quot;&gt;0&lt;/p&gt;&lt;br/&gt;
+&lt;button onclick=&quot;document.getElementById('counter').innerHTML = parseInt(document.getElementById('counter').innerHTML) + 1&quot;&gt;Increment&lt;/button&gt;
+</code></pre>
+<p>If you're unfamiliar with HTML and JS, don't worry. All this does is create a paragraph with a number inside and then increment it. But the problem is clear in terms of expression: why can't we just put a variable in the paragraph and have that re-render when we increment that variable? Well, that's reactivity!</p>
+<p>In JS, there are frameworks like <a href="https://svelte.dev">Svelte</a> and <a href="https://reactjs.org">ReactJS</a> that solve this problem, but they're all bound significantly by the language itself. JavaScript is slow, dynamically typed, and <a href="https://medium.com/netscape/javascript-is-kinda-shit-im-sorry-2e973e36fec4">a bit of a mess</a>. Like all things to do with the web, changing things is really difficult because people have already started using them, and there will always be <em>someone</em> still using Internet Explorer, which supports almost no modern web standards at all.</p>
+<p><a href="https://webassembly.org">Wasm</a> solves all these problems by creating a unified format that other programming languages, like Rust, can compile into for the browser environment. This makes websites safer, faster, and development more productive. The equivalent of these reactive frameworks for Rust in particular would be projects like <a href="https://sycamore-rs.netlify.app">Sycamore</a>, <a href="https://seed-rs.org">Seed</a>, and <a href="https://yew.rs">Yew</a>. Sycamore is the most extensible and low-level of those options, and it's more performant because it doesn't use a <a href="https://svelte.dev/blog/virtual-dom-is-pure-overhead">virtual DOM</a> (link about JS rather than Rust), and so it was chosen to be the backbone of Perseus. Here's what that counter might look like in <a href="https://sycamore-rs.netlify.app">Sycamore</a> (the incrementation has been moved into a new closure for convenience):</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use sycamore::prelude::*;
+
+let counter = Signal::new(0);
+let increment = cloned!((counter) =&gt; move |_| counter.set(*counter.get() + 1));
+
+template! {
+    p { (counter.get()) }
+    button(on:click = increment) { &quot;Increment&quot; }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>You can learn more about Sycamore's amazing systems <a href="https://sycamore-rs.netlify.app">here</a>.</p>
+<h3 id="this-sounds-good"><a class="header" href="#this-sounds-good">This sounds good...</a></h3>
+<p>But there's a catch to all this: rendering. With all these approaches in Rust so far (except for a few mentioned later), all your pages are rendered <em>in the user's browser</em>. That means your users have to download your Wasm code and run it before they see anything at all on their screens. Not only does that increase your loading time (<a href="https://medium.com/@vikigreen/impact-of-slow-page-load-time-on-website-performance-40d5c9ce568a">which can drive away users</a>), it reduces your search engine rankings as well.</p>
+<p>This can be solved through <em>server-side rendering</em> (SSR), which means that we render pages on the server and send them to the client, which means your users see something very quickly, and then it becomes <em>interactive</em> (usable) a moment later. This is better for user retention (shorter loading times) and SEO (search engine optimization).</p>
+<p>The traditional approach to SSR is to wait for a request for a particular page (say <code>/about</code>), and then render it on the server and send that to the client. This is what <a href="https://seed-rs.org">Seed</a> (an alternative to Perseus) does. However, this means that your website's <em>time to first byte</em> (TTFB) is slower, because the user won't even get <em>anything</em> from the server until it has finished rendering. In times of high load, that can drive loading times up worryingly.</p>
+<p>The solution to this is <em>static site generation</em> (SSG), whereby your pages are rendered <em>at build time</em>, and they can be served almost instantly on any request. This approach is fantastic, and thus far widely unimplemented in Rust. The downside to this is that you don't get as much flexibility, because you have to render everything at build time. That means you don't have access to any user credentials or anything else like that. Every page you render statically has to be the same for every user.</p>
+<p>Perseus supports SSR <em>and</em> SSG out of the box, along with the ability to use both on the same page, rebuild pages after a certain period of time (e.g. to update a list of blog posts every 24 hours) or based on certain conditions (e.g. if the hash of a file has changed), or even to statically build pages on demand (the first request is SSR, all the rest are SSG), meaning you can get the best of every world and faster build times.</p>
+<p>To our knowledge, the only other framework in the world right now that supports this feature set is <a href="https://nextjs.org">NextJS</a> (with growing competition from <a href="https://www.gatsbyjs.com">GatsbyJS</a>), which only works with JavaScript. Perseus goes above and beyond this for Wasm by supporting whole new combinations of rendering options not previously available, allowing you to create optimized websites and web apps extremely efficiently.</p>
+<h2 id="how-fast-is-it"><a class="header" href="#how-fast-is-it">How fast is it?</a></h2>
+<p><a href="https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html">Benchmarks show</a> that <a href="https://sycamore-rs.netlify.app">Sycamore</a> is slightly faster than <a href="https://svelte.dev">Svelte</a> in places, one of the fastest JS frameworks ever. Perseus uses it and <a href="https://actix.rs">Actix Web</a>, one of the fastest web servers in the world. Essentially, Perseus is built on the fastest tech and is itself made to be fast.</p>
+<p>Right now, Perseus is undergoing major improvements to make it even faster and to introduce new features, like support for internationalization (making your app available in many languages) out of the box, which involves significant changes to the code. Once these are ready, benchmarks for Perseus itself will be written to show how fast Perseus really is, but right now none exist.</p>
+<h2 id="how-convenient-is-it"><a class="header" href="#how-convenient-is-it">How convenient is it?</a></h2>
+<p>Perseus aims to be more convenient than any other Rust web framework by taking an approach similar to that of <a href="https://reactjs.org">ReactJS</a>. Perseus itself is an extremely complex system consisting of many moving parts that can all be brought together to create something amazing, but the vast majority of apps don't need all that customizability, so we built a command-line interface (CLI) that handles all that complexity for you, allowing you to focus entirely on your app's code.</p>
+<p>Basically, here's your workflow:</p>
+<ol>
+<li>Create a new project.</li>
+<li>Define your app in around 12 lines of code and some listing.</li>
+<li>Code your amazing app.</li>
+<li>Run <code>perseus serve</code>.</li>
+</ol>
+<h2 id="how-stable-is-it"><a class="header" href="#how-stable-is-it">How stable is it?</a></h2>
+<p>Okay, there had to be one caveat! Perseus is <em>very</em> new, and as such can't be recommended for <em>production</em> usage yet. However, we're aiming to get it ready for that really soon, which will hopefully include even being able to deploy Perseus with <a href="https://en.wikipedia.org/wiki/Serverless_computing">serverless functions</a>, the step beyond a server!</p>
+<p>For now though, Perseus is perfect for anything that doesn't face the wider internet, like internal tools, personal projects, or the like. Just don't use it to run a nuclear power plant, okay?</p>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>If all that was way too long, here's a quick summary of what Perseus does and why it's useful!</p>
+<ul>
+<li>JS is slow and a bit of a mess, <a href="https://webassembly.org">Wasm</a> lets you run most programing languages, like Rust, in the browser, and is really fast</li>
+<li>Doing web development without reactivity is really annoying, so <a href="https://sycamore-rs.netlify.app">Sycamore</a> is great</li>
+<li>Perseus lets you render your app on the server, making the client's experience <em>really</em> fast, and adds a ton of features to make that possible, convenient, and productive (even for really complicated apps)</li>
+</ul>
+
+                </main>
+
+                <nav class="nav-wrapper" aria-label="Page navigation">
+                    <!-- Mobile navigation buttons -->
+                                        <a rel="prev" href="intro.html" class="mobile-nav-chapters previous"
+                        title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    
+                                        <a rel="next" href="hello-world.html" class="mobile-nav-chapters next"
+                        title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                    
+                    <div style="clear: both"></div>
+                </nav>
+            </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="intro.html" class="nav-chapters previous" title="Previous chapter"
+                aria-label="Previous chapter" aria-keyshortcuts="Left">
+                <i class="fa fa-angle-left"></i>
+            </a>
+            
+                        <a rel="next" href="hello-world.html" class="nav-chapters next" title="Next chapter"
+                aria-label="Next chapter" aria-keyshortcuts="Right">
+                <i class="fa fa-angle-right"></i>
+            </a>
+                    </nav>
+
+    </div>
+
+    
+    
+    
+        <script type="text/javascript">
+        window.playground_copyable = true;
+    </script>
+    
+    
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+    <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+    <!-- Custom JS scripts -->
+    
+    
+</body>
+
+</html>

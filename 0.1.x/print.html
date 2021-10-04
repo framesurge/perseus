@@ -1,0 +1,1165 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+
+<head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>Perseus Book</title>
+        <meta name="robots" content="noindex" />
+        
+
+    <!-- Custom HTML head -->
+    
+
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+            <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/general.css">
+    <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+    
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="tomorrow-night.css">
+    <link rel="stylesheet" href="ayu-highlight.css">
+
+    <!-- Custom theme stylesheets -->
+    
+    </head>
+
+<body>
+    <!-- Provide site root to javascript -->
+    <script type="text/javascript">
+        var path_to_root = "";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+    </script>
+
+    <!-- Work around some values being stored in localStorage wrapped in quotes -->
+    <script type="text/javascript">
+        try {
+            var theme = localStorage.getItem('mdbook-theme');
+            var sidebar = localStorage.getItem('mdbook-sidebar');
+            if (theme.startsWith('"') && theme.endsWith('"')) {
+                localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+            }
+            if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+            }
+        } catch (e) { }
+    </script>
+
+    <!-- Set the theme before any content is loaded, prevents flash -->
+    <script type="text/javascript">
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch (e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+    </script>
+
+    <!-- Hide / unhide sidebar before it is displayed -->
+    <script type="text/javascript">
+        var html = document.querySelector('html');
+        var sidebar = 'hidden';
+        if (document.body.clientWidth >= 1080) {
+            try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch (e) { }
+            sidebar = sidebar || 'visible';
+        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+    </script>
+
+    <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+            <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="setup.html"><strong aria-hidden="true">2.</strong> Setup</a></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architecture</a></li><li class="chapter-item expanded "><a href="tutorials/first_app/intro.html"><strong aria-hidden="true">4.</strong> Building Your First App</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tutorials/first_app/setup.html"><strong aria-hidden="true">4.1.</strong> Installation and Setup</a></li><li class="chapter-item expanded "><a href="tutorials/first_app/template.html"><strong aria-hidden="true">4.2.</strong> Writing Your First Template</a></li><li class="chapter-item expanded "><a href="tutorials/first_app/app.html"><strong aria-hidden="true">4.3.</strong> Setting up the App Itself</a></li></ol></li><li class="chapter-item expanded "><a href="cli.html"><strong aria-hidden="true">5.</strong> CLI</a></li><li class="chapter-item expanded "><a href="templates.html"><strong aria-hidden="true">6.</strong> Templates</a></li><li class="chapter-item expanded "><a href="routing.html"><strong aria-hidden="true">7.</strong> Routing</a></li><li class="chapter-item expanded "><a href="error_pages.html"><strong aria-hidden="true">8.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="strategies/intro.html"><strong aria-hidden="true">9.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="strategies/build_paths.html"><strong aria-hidden="true">9.1.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="strategies/build_state.html"><strong aria-hidden="true">9.2.</strong> Build State</a></li><li class="chapter-item expanded "><a href="strategies/request_state.html"><strong aria-hidden="true">9.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="strategies/revalidation.html"><strong aria-hidden="true">9.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="strategies/incremental.html"><strong aria-hidden="true">9.5.</strong> Incremental generation</a></li></ol></li><li class="chapter-item expanded "><a href="building.html"><strong aria-hidden="true">10.</strong> Building</a></li><li class="chapter-item expanded "><a href="serving.html"><strong aria-hidden="true">11.</strong> Serving</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations/actix-web.html"><strong aria-hidden="true">11.1.</strong> Actix Web Integration</a></li></ol></li><li class="chapter-item expanded "><a href="config_managers.html"><strong aria-hidden="true">12.</strong> Config Managers</a></li></ol>        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+    </nav>
+
+    <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+            <div id="menu-bar-hover-placeholder"></div>
+            <style>
+    header.warning {
+        background-color: rgb(242, 222, 222);
+        border-bottom-color: rgb(238, 211, 215);
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        border-bottom-style: solid;
+        border-bottom-width: 0.666667px;
+        border-image-outset: 0 0 0 0;
+        border-image-repeat: stretch stretch;
+        border-image-slice: 100% 100% 100% 100%;
+        border-image-source: none;
+        border-image-width: 1 1 1 1;
+        border-left-color: rgb(238, 211, 215);
+        border-left-style: solid;
+        border-left-width: 0.666667px;
+        border-right-color: rgb(238, 211, 215);
+        border-right-style: solid;
+        border-right-width: 0.666667px;
+        border-top-color: rgb(238, 211, 215);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-top-style: solid;
+        border-top-width: 0.666667px;
+        color: rgb(185, 74, 72);
+        padding-bottom: 8px;
+        padding-left: 14px;
+        padding-right: 35px;
+        padding-top: 8px;
+        text-align: center;
+        margin-bottom: 0px;
+        margin-left: 0px;
+        margin-right: 0px;
+        margin-top: 30px;
+    }
+</style>
+<header class="warning">
+    This documentation is for an <strong>outdated</strong> version of Perseus.
+    <br>
+    You can find the documentation for the latest version
+    <a href="https://arctic-hen7.github.io/perseus/stable.html">here</a>.
+</header>
+
+            <div id="menu-bar" class="menu-bar sticky bordered">
+                <div class="left-buttons">
+                    <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents"
+                        aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button" type="button" title="Change theme"
+                        aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                        <i class="fa fa-paint-brush"></i>
+                    </button>
+                    <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                        <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button>
+                        </li>
+                    </ul>
+                                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)"
+                        aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S"
+                        aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                                    </div>
+
+                <h1 class="menu-title">Perseus Book</h1>
+
+                <div class="right-buttons">
+                                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                                                            
+                </div>
+            </div>
+
+                        <div id="search-wrapper" class="hidden">
+                <form id="searchbar-outer" class="searchbar-outer">
+                    <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..."
+                        aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                </form>
+                <div id="searchresults-outer" class="searchresults-outer hidden">
+                    <div id="searchresults-header" class="searchresults-header"></div>
+                    <ul id="searchresults">
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+            <script type="text/javascript">
+                document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                Array.from(document.querySelectorAll('#sidebar a')).forEach(function (link) {
+                    link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                });
+            </script>
+
+            <div id="content" class="content">
+                <main>
+                    <h1 id="welcome-to-perseus"><a class="header" href="#welcome-to-perseus">Welcome to Perseus!</a></h1>
+<p><a href="https://github.com/arctic-hen7/perseus">Home</a> • <a href="https://crates.io/crates/perseus">Crate Page</a> • <a href="https://docs.rs/perseus">API Documentation</a> • <a href="./CONTRIBUTING.html">Contributing</a></p>
+<p>Welcome to the Perseus documentation! Here, you'll find guides on how to use Perseus, as well as documentation for specific features and plenty of examples!</p>
+<h2 id="what-does-it-do"><a class="header" href="#what-does-it-do">What does it do?</a></h2>
+<p>If you're familiar with <a href="https://nextjs.org">NextJS</a>, Perseus is that for Wasm. If you're familiar with <a href="https://kit.svelte.dev">SvelteKit</a>, it's that for <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a>.</p>
+<p>If none of that makes any sense, this is the section for you! If you're not in the mood for a lecture, <a href="intro.html#summary">here's a TL;DR</a>!</p>
+<h3 id="rust-web-development"><a class="header" href="#rust-web-development">Rust web development</a></h3>
+<p><a href="https://www.rust-lang.org/">Rust</a> is an extremely powerful programming language, but I'll leave the introduction of it <a href="https://www.rust-lang.org/">to its developers</a>.</p>
+<p><a href="https://webassembly.org">WebAssembly</a> (abbreviated Wasm) is like a low-level programming language for your browser. This is revolutionary, because it allows websites and web apps to built in programming languages other than JavaScript. Also, it's <a href="https://medium.com/@torch2424/webassembly-is-fast-a-real-world-benchmark-of-webassembly-vs-es6-d85a23f8e193">really fast</a> (usually &gt;30% faster than JS).</p>
+<p>But developing directly for the web with Rust using something like <a href="https://docs.rs/web-sys"><code>web-sys</code></a> isn't a great experience, it's generally agreed in the web development community that developer experience and productivity is vastly improved by having a <em>reactive</em> framework. Let's approach this from a traditional JavaScript and HTML perspective first.</p>
+<p>Imagine you want to create a simple counter. Here's how you might do it in a non-reactive framework (again, JS and HTML here, no Rust yet):</p>
+<pre><code class="language-html">&lt;p id=&quot;counter&quot;&gt;0&lt;/p&gt;&lt;br/&gt;
+&lt;button onclick=&quot;document.getElementById('counter').innerHTML = parseInt(document.getElementById('counter').innerHTML) + 1&quot;&gt;Increment&lt;/button&gt;
+</code></pre>
+<p>If you're unfamiliar with HTML and JS, don't worry. All this does is create a paragraph with a number inside and then increment it. But the problem is clear in terms of expression: why can't we just put a variable in the paragraph and have that re-render when we increment that variable? Well, that's reactivity!</p>
+<p>In JS, there are frameworks like <a href="https://svelte.dev">Svelte</a> and <a href="https://reactjs.org">ReactJS</a> that solve this problem, but they're all bound significantly by the language itself. JavaScript is slow, dynamically typed, and <a href="https://medium.com/netscape/javascript-is-kinda-shit-im-sorry-2e973e36fec4">a bit of a mess</a>. Like all things to do with the web, changing things is really difficult because people have already started using them, and there will always be <em>someone</em> still using Internet Explorer, which supports almost no modern web standards at all.</p>
+<p><a href="https://webassembly.org">Wasm</a> solves all these problems by creating a unified format that other programming languages, like Rust, can compile into for the browser environment. This makes websites safer, faster, and development more productive. The equivalent of these reactive frameworks for Rust in particular would be projects like <a href="https://sycamore-rs.netlify.app">Sycamore</a>, <a href="https://seed-rs.org">Seed</a>, and <a href="https://yew.rs">Yew</a>. Sycamore is the most extensible and low-level of those options, and it's more performant because it doesn't use a <a href="https://svelte.dev/blog/virtual-dom-is-pure-overhead">virtual DOM</a> (link about JS rather than Rust), and so it was chosen to be the backbone of Perseus. Here's what that counter might look like in <a href="https://sycamore-rs.netlify.app">Sycamore</a> (the incrementation has been moved into a new closure for convenience):</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use sycamore::prelude::*;
+
+let counter = Signal::new(0);
+let increment = cloned!((counter) =&gt; move |_| counter.set(*counter.get() + 1));
+
+template! {
+    p {(props.greeting)}
+    a(href = &quot;/about&quot;) { &quot;About!&quot; }
+
+    p { (counter.get()) }
+    button(on:click = increment) { &quot;Increment&quot; }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>You can learn more about Sycamore's amazing systems <a href="https://sycamore-rs.netlify.app">here</a>.</p>
+<h3 id="this-sounds-good"><a class="header" href="#this-sounds-good">This sounds good...</a></h3>
+<p>But there's a catch to all this: rendering. With all these approaches in Rust so far (except for a few mentioned later), all your pages are rendered <em>in the user's browser</em>. That means your users have to download you Wasm code and run it before they see anything at all on their screens. Not only does that increase your loading time (<a href="https://medium.com/@vikigreen/impact-of-slow-page-load-time-on-website-performance-40d5c9ce568a">which can drive away users</a>), it reduces your search engine rankings as well.</p>
+<p>This can be solved through <em>server-side rendering</em> (SSR), which means that we render pages on the server and send them to the client, which means your users see something very quickly, and then it becomes <em>interactive</em> (usable) a moment later. This is better for user retention (shorter loading times) and SEO (search engine optimization).</p>
+<p>The traditional approach to SSR is to wait for a request for a particular page (say <code>/about</code>), and then render it on the server and send that to the client. This is what <a href="https://seed-rs.org">Seed</a> (an alternative to Perseus) does. However, this means that your website's <em>time to first byte</em> (TTFB) is slower, because the user won't even get <em>anything</em> from the server until it has finished rendering. In times of high load, that can drive loading times up worryingly.</p>
+<p>The solution to this is <em>static site generation</em> (SSG), whereby your pages are rendered <em>at build time</em>, and they can be served almost instantly on any request. This approach is fantastic, and thus far widely unimplemented in Rust. The downside to this is that you don't get as much flexibility, because you have to render everything at build time. That means you don't have access to any user credentials or anything else like that. Every page you render statically has to be the same for every user.</p>
+<p>Perseus supports SSR <em>and</em> SSG out of the box, along with the ability to use both on the same page, rebuild pages after a certain period of time (e.g. to update a list of blog posts every 24 hours) or based on certain conditions (e.g. if the hash of a file has changed), or even to statically build pages on demand (the first request is SSR, all the rest are SSG), meaning you can get the best of every world and faster build times.</p>
+<p>To our knowledge, the only other framework in the world right now that supports this feature set is <a href="https://nextjs.org">NextJS</a> (with growing competition from <a href="https://www.gatsbyjs.com">GatsbyJS</a>), which only works with JavaScript. Perseus goes above and beyond this for Wasm by supporting whole new combinations of rendering options not previously available, allowing you to create optimized websites and web apps extremely efficiently.</p>
+<h2 id="how-fast-is-it"><a class="header" href="#how-fast-is-it">How fast is it?</a></h2>
+<p><a href="https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html">Benchmarks show</a> that <a href="https://sycamore-rs.netlify.app">Sycamore</a> is slightly faster than <a href="https://svelte.dev">Svelte</a> in places, one of the fastest JS frameworks ever. Perseus uses it and <a href="https://actix.rs">Actix Web</a>, one of the fastest web servers in the world. Essentially, Perseus is built on the fastest tech and is itself made to be fast.</p>
+<p>Right now, Perseus is undergoing major improvements to make it even faster and to introduce new features, like support for internationalization (making your app available in many languages) out of the box, which involves significant changes to the code. Once these are ready, benchmarks for Perseus itself will be written to show how fast Perseus really is, but right now none exist.</p>
+<h2 id="how-convenient-is-it"><a class="header" href="#how-convenient-is-it">How convenient is it?</a></h2>
+<p>Perseus aims to be more convenient than any other Rust web framework by taking an approach similar to that of <a href="https://reactjs.org">ReactJS</a>. Perseus itself is an extremely complex system consisting of many moving parts that can all be brought together to create something amazing, but the vast majority of apps don't need all that customizability, so we built a command-line interface (CLI) that handles all that complexity for you, allowing you to focus entirely on your app's code.</p>
+<p>Basically, here's your workflow:</p>
+<ol>
+<li>Create a new project.</li>
+<li>Define your app in under 30 lines of code (coming down to 15 with v0.2.0!)</li>
+<li>Code your amazing app.</li>
+<li>Run <code>perseus serve</code>.</li>
+</ol>
+<h2 id="how-stable-is-it"><a class="header" href="#how-stable-is-it">How stable is it?</a></h2>
+<p>Okay, there had to be one caveat! Perseus is <em>very</em> new, and as such can't be recommended for <em>production</em> usage yet. However, we're aiming to get it ready for that really soon, which will hopefully include even being able to deploy Perseus with <a href="https://en.wikipedia.org/wiki/Serverless_computing">serverless functions</a>, the step beyond a server!</p>
+<p>For now though, Perseus is perfect for anything that doesn't face the wider internet, like internal tools, personal projects, or the like. Just don't use it to run a nuclear power plant, okay?</p>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>If all that was way too long, here's a quick summary of what Perseus does and why it's useful!</p>
+<ul>
+<li>JS is slow and bad, <a href="https://webassembly.org">Wasm</a> lets you run most programing languages, like Rust, in the browser, and is really fast</li>
+<li>Doing web development without reactivity is really annoying, so <a href="https://sycamore-rs.netlify.app">Sycamore</a> is great</li>
+<li>Perseus lets you render your app on the server, making the client's experience <em>really</em> fast, and adds a ton of features to make that possible, convenient, and productive (even for really complicated apps)</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="setup"><a class="header" href="#setup">Setup</a></h1>
+<p>Perseus is designed to be server-agnostic, and can be hosted functionally anywhere you can run Rust (or at least execute a binary), for example in a serverless function.</p>
+<h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
+<p>You can install the Perseus crate by adding the following to your <code>Cargo.toml</code> under <code>[dependencies]</code>:</p>
+<pre><code class="language-toml">perseus = &quot;0.1&quot;
+</code></pre>
+<h2 id="project-structure"><a class="header" href="#project-structure">Project Structure</a></h2>
+<p>The structure of a Perseus project is described in detail in the <a href="./arch.html">architecture section</a>, but you'll need two crates, an app and a server. A great example of this is in the showcase example, which you can find on GitHub <a href="">here</a>. We advise setting up a Cargo workspace with an <code>app</code> and a <code>server</code> crate for development. Soon, Perseus will support a CLI to run your server for you so you can focus more on your app.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="architecture"><a class="header" href="#architecture">Architecture</a></h1>
+<p>Perseus is a complex system, and this page will aim to explain the basics in a beginner-friendly way. If you've already used similar frameworks from the JS world like NextJS, then some of this may be familiar to you. If you're having trouble following along, please <a href="https://github.com/arctic-hen7/perseus/issues/new/choose">open an issue</a> and ask us to clarify some sections, because this page in particular should be accessible to everyone. If you'd like more specific help, <a href="TODO">ask on Gitter</a>!</p>
+<h2 id="templates-and-pages"><a class="header" href="#templates-and-pages">Templates and Pages</a></h2>
+<p>The core of Perseus is the idea of templates. When you create a Perseus app, what you're basically doing is telling Perseus how to compile your code into a series of <em>pages</em>. <strong>Each page has a unique URL on your final website.</strong> If you have a blog, and every post is stored as something like <code>post/title</code>, then each post would be a unique page.</p>
+<p>But this doesn't mean you have to write the code for every page individually! Perseus does this for you, and only asks you to write <em>templates</em>. A template can generate one page or many, and a great example of one would be a <code>post</code> template. Each template has a <em>root path</em>, which is essentially like the space on your website that that template controls. For example, a post template might control <code>/post</code>, meaning it can render pages at <code>/post</code>, <code>/post/test</code>, <code>/post/longer/path</code>, etc. In theory, a template could render pages outside its domain, but this would be a bad idea for structure, and makes your code difficult to understand.</p>
+<h3 id="state"><a class="header" href="#state">State</a></h3>
+<p>What differentiates pages from templates is <em>state</em>, which tells a page how to fill out its template to give unique content. For example, our post template would probably have a <code>content</code> field in its state, and its pages would use that to render their unique content!</p>
+<p>In terms of writing code, a page's state is just a <code>struct</code> that can be serialized and deserialized with <a href="https://serde.rs">Serde</a>.</p>
+<h2 id="rendering-strategies"><a class="header" href="#rendering-strategies">Rendering Strategies</a></h2>
+<p>Each template has a rendering strategy, which it uses to create its pages. There are a number of rendering strategies in Perseus, each of which is documented in detail in its own section. What's important to understand for now is that there are two main ways a template can render pages, at <em>build time</em>, or at <em>request time</em>. If a template renders at build time, it generates the code for your pages when you build your app, which means you end up serving static pages. This is <em>really fast</em>. However, sometimes you need information specific to each request to render a page (e.g. an authentication token), and you can't render at build. Instead, you'd render at request time, which gives you access to information about the HTTP request a user sent for your page.</p>
+<p>Here's a list of Perseus' currently supported rendering strategies. These can all be combined, but some combinations make more sense than others.</p>
+<table><thead><tr><th>Strategy</th><th>Description</th><th>Type</th></tr></thead><tbody>
+<tr><td>Build paths</td><td>Generates a series of pages for a template</td><td>Build</td></tr>
+<tr><td>Build state</td><td>Generates page state</td><td>Build</td></tr>
+<tr><td>Request state</td><td>Generates page state</td><td>Request</td></tr>
+<tr><td>Revalidation</td><td>Rebuilds pages conditionally</td><td>Hybrid</td></tr>
+<tr><td>Incremental generation</td><td>Builds pages on-demand</td><td>Hybrid</td></tr>
+</tbody></table>
+<p>There are two <em>hybrid</em> strategies listed above. They're a little more complicated, and out of the scope of this page, but they operate at both build <em>and</em> request-time, allowing you to reap the benefits of both worlds!</p>
+<h2 id="routing"><a class="header" href="#routing">Routing</a></h2>
+<p><em>This section describes how Perseus works under the hood. Skip it if you want.</em></p>
+<p>Perseus doesn't just host your pages at their URLs though. In fact, Perseus has a generic handler for <em>any URL</em>, which returns what we call the <em>app shell</em>. That's a concept from the single-page app (e.g. ReactJS), where your app always has a constant shell around it, and each page is loaded into that shell, making page transitions more seamless. Perseus adopts this as well, but with the added benefits of super-fast static rendering strategies and a more lightweight shell.</p>
+<p>The shell includes a router (courtesy of <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a>), which determines what page the user wants, and then sends a request to a special endpoint behind <code>/.perseus</code>. That then renders the page and returns some static HTML and the page's state.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="building-your-first-app"><a class="header" href="#building-your-first-app">Building Your First App</a></h1>
+<p>This section is a tutorial on building your first app with Perseus! This will cover the basic usage of the Perseus CLI to build/serve your app, the setup of a routing system, and the creation of basic templates by teaching you by example how to create a simple site with a landing page.</p>
+<p>If learning by reading isn't really your thing, or you'd like a reference, you can see all the code in <a href="https://github.com/arctic-hen7/perseus-starter-app">this repository</a> (each commit being for each of the sections in this tutorial).</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="installation-and-setup"><a class="header" href="#installation-and-setup">Installation and Setup</a></h1>
+<p>Perseus aims to be as easy to use as possible with the default settings, but you will need to install a few things first.</p>
+<h2 id="rust-and-cargo"><a class="header" href="#rust-and-cargo">Rust and Cargo</a></h2>
+<p>Make sure you've got Rust and Cargo. If you haven't yet, install them from <a href="https://doc.rust-lang.org/stable/book/ch01-01-installation.html">here</a>, and you might want to check out the <a href="https://doc.rust-lang.org/book">Rust book</a> if you're unfamiliar with the language.</p>
+<p>After you've done this, make sure everything works by running <code>cargo</code> in a terminal. You should get a help page!</p>
+<h2 id="build-tools"><a class="header" href="#build-tools">Build Tools</a></h2>
+<p>Perseus is built on top of Wasm (WebAssembly), which basically lets you use programming languages other than JavaScript to build websites/webapps. That tech is <em>really</em> complicated, and you'll need two particular build tools to make your code work.</p>
+<p>The first one is <a href="tutorials/first_app/"><code>wasm-pack</code></a>, which helps to compile your Rust code to WebAssembly (sort of like how you'd compile code normally, but specially for the browser). You can install it with this command:</p>
+<pre><code>cargo install wasm-pack
+</code></pre>
+<p>Now, you should be able to type <code>wasm-pack</code> in your terminal to get another help page!</p>
+<p>The next tool is one you might be familiar with if you're coming from the JavaScript world: <a href="https://rollupjs.org">Rollup</a>. Rollup is a bundling tool for JavaScript, and it works really nicely with Wasm. If you loathe JavaScript with a passion, don't worry, the only JavaScript in Perseus just invokes your (infinitely superior) Rust code! You can install Rollup with the following command:</p>
+<pre><code>npm i -g rollup
+</code></pre>
+<p>or</p>
+<pre><code>yarn global add rollup
+</code></pre>
+<p>Both of those assume you have either <code>npm</code> or <code>yarn</code> installed. If not, you can check out other installation options <a href="https://rollupjs.org/guide/en/#installation">here</a>.</p>
+<h2 id="perseus-cli"><a class="header" href="#perseus-cli">Perseus CLI</a></h2>
+<p>Perseus is easiest to use with the official CLI, which will let you effortlessly develop apps and serve them locally. It's not quite designed for production serving yet, but development on that is actively underway!</p>
+<p>You can install the CLI with the following command:</p>
+<pre><code>cargo install perseus-cli
+</code></pre>
+<p>And it should be available as <code>perseus</code> in your terminal! Type <code>perseus -v</code> to check that everything works (you should see a version number).</p>
+<p>Note that the Perseus CLI will not work unless you've installed Cargo, <code>wasm-pack</code> and Rollup. If you've installed them at different paths, you can set the <code>PERSEUS_CARGO_PATH</code>/<code>PERSEUS_WASM_PACK_PATH</code>/<code>PERSEUS_ROLLUP_PATH</code> environment variables to define those. The default paths are <code>cargo</code>, <code>wasm-pack</code>, and <code>rollup</code> respectively.</p>
+<h2 id="setting-up-a-new-project"><a class="header" href="#setting-up-a-new-project">Setting Up a New Project</a></h2>
+<p>Okay! Now that you've got all the build tools and the CLI set up, you can create a new project with this command in the directory where you want your app:</p>
+<pre><code>cargo init --lib
+</code></pre>
+<p>You should now have an <code>src/</code> directory and a <code>Cargo.toml</code> file, which is what we'll edit first. You need quite a few dependencies for Perseus to work, which you can set up by adding the following to your <code>Cargo.toml</code> under the <code>[dependencies]</code> line:</p>
+<pre><code class="language-toml"># Perseus itself, which we (amazingly) need for a Perseus app
+perseus = &quot;0.1&quot;
+# Sycamore, the library Perseus depends on for lower-leve reactivity primitivity
+sycamore = { version = &quot;0.5&quot;, features = [&quot;ssr&quot;] }
+sycamore-router = &quot;0.5&quot;
+# Serde, which lets you work with representations of data, like JSON
+serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
+serde_json = &quot;1&quot;
+</code></pre>
+<p>Now run the following command to install and build everything for the first time (this will take a little while):</p>
+<pre><code>cargo build
+</code></pre>
+<p>If that all works, then congratulations, you've just created the scaffold of a Perseus app! It's time to make your app do something now!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="writing-your-first-template"><a class="header" href="#writing-your-first-template">Writing Your First Template</a></h1>
+<p>Now it's time to write your first template! Templates in Perseus are the things that create pages (e.g. you might have an about page template and a blog post template). You can read more about them <a href="https://arctic-hen7.github.io/perseus/arch.html#templates-and-pages">here</a>.</p>
+<p><em>Note: templates used to be called pages in Perseus, so some of the older examples may still use that term. Don't worry about it, just be aware of the inconsistency! We're cleaning it up gradually!</em></p>
+<h2 id="setting-up-templates"><a class="header" href="#setting-up-templates">Setting up Templates</a></h2>
+<ol>
+<li>Create a new folder under <code>src/</code> called <code>templates</code>. This is where all your templates will be housed.</li>
+<li>Add a file that declares that as a module (that's how Cargo handles subfolders) called <code>mod.rs</code> under <code>src/templates/</code>.</li>
+<li>Declare the module by adding <code>mod templates;</code> to the top of <code>src/lib.rs</code> (which Cargo should've created for you).</li>
+</ol>
+<h2 id="writing-an-index-page"><a class="header" href="#writing-an-index-page">Writing an Index Page</a></h2>
+<p>Let's write the landing page of your app! Create a new file under <code>src/templates/</code> called <code>index.rs</code>, and then declare it by adding <code>pub mod index;</code> to the top of <code>src/templates/mod.rs</code> (<code>pub</code> because it should be publicly accessible by <code>lib.rs</code>).</p>
+<p>Now add the following to that file:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::Template;
+use std::sync::Arc;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+
+#[component(IndexPage&lt;G&gt;)]
+pub fn index_page() -&gt; SycamoreTemplate&lt;G&gt; {
+    template! {
+        p { &quot;Welcome to the app!&quot; }
+    }
+}
+
+pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
+    Arc::new(|_| {
+        template! {
+            IndexPage()
+        }
+    })
+}
+
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;index&quot;).template(template_fn())
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This code needs a lot of explaining, so here goes!</p>
+<ol>
+<li>Import everything we need. That's the type for a Perseus template, an <a href="https://doc.rust-lang.org/std/sync/struct.Arc.html"><code>Arc</code></a> (magical Rust type wizardry if you're a beginner!), and some stuff from <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> that lets us make an interface.</li>
+<li>Define the component that will render your final page with the <code>index_page</code> function (annotated so that it becomes <code>IndexPage</code> with Sycamore's internal magic). Notice that this outputs a <code>SycamoreTemplate</code>, which is basically a Rust way of writing HTML. The syntax is a little weird, but you'll get used to it pretty quickly (and there's <a href="https://github.com/sycamore-rs/sycamore/issues/23">some work</a> happening to possibly make it more HTML-like in future). All this little <code>template!</code> does is render a <code>p</code> HTML element (paragraph) and will it with the text <code>Welcome to the app!</code>.</li>
+<li>Define the template function in <code>template_fn</code>. This is probably the weirdest part of Perseus, but it'll make more sense with more complex pages. Basically, the template function will be given any props your template takes (this template doesn't take any though, hence the <code>_</code>), and then it lets you render your template with them. <strong>Props are what turn a generic template into a unique page.</strong></li>
+<li>Finally define a utility function for using this called <code>get_template</code>. This actually defines the Perseus template, providing the root path at which it will be rendered as a page (<code>/index</code>, without the leading forward slash written). That needs to know about the template function, which we provide with <code>.template()</code>. Later, this is where you get to add cool rendering strategies like <a href="https://arctic-hen7.github.io/perseus/strategies/revalidation.html">revalidation</a>, <a href="https://arctic-hen7.github.io/perseus/strategies/request_state.html">SSR</a>, and <a href="https://arctic-hen7.github.io/perseus/strategies/incremental.html">incremental generation</a>!</li>
+</ol>
+<p>If you understand all that, then you understand how to write a basic template in Perseus! Well done! If not, don't worry, but you might want to go over the above explanation a few times until you're understanding the basics. If you're feeling clueless, reach out on the <a href="https://gitter.im/perseus-framework/support">Gitter support channel</a> for help!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="setting-up-the-app-itself"><a class="header" href="#setting-up-the-app-itself">Setting up the App Itself</a></h1>
+<p>Okay, you're over the hump! Now it's time to put your template into a functional app and get stuff happening in your browser!</p>
+<h2 id="defining-a-router"><a class="header" href="#defining-a-router">Defining a Router</a></h2>
+<p>Perseus needs to know where to put your final pages, which can be defined with a router, which is defined through <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> (which handles that side of things).</p>
+<p>In <code>src/lib.rs</code>, replace everything other than <code>mod templates;</code> with the following:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::define_app;
+
+#[derive(perseus::Route)]
+pub enum Route {
+    #[to(&quot;/&quot;)]
+    Index,
+    #[not_found]
+    NotFound,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This imports a macro we'll use in a moment to define your app, and then it sets up an <code>enum</code> for each of your pages. Notice that the <code>NotFound</code> page is special, and note that Perseus will pretty much handle it for you.</p>
+<p>All we've done for this simple app is defined an <code>Index</code> variant that will be served at the <code>/</code> path, the root of your app. Thus, it will be your landing page! But Perseus still needs you to connect that variant and the template we created in the last section.</p>
+<h2 id="error-pages"><a class="header" href="#error-pages">Error Pages</a></h2>
+<p>But first, let's define some custom error pages for if your users go to a page that doesn't exist. To keep everything clean, we'll do this in a new file. Create <code>src/error_pages.rs</code> and put the following inside (making sure to add <code>mod error_pages;</code> to the top of <code>lib.rs</code>):</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::ErrorPages;
+use sycamore::template;
+
+pub fn get_error_pages() -&gt; ErrorPages {
+    let mut error_pages = ErrorPages::new(Box::new(|_, _, _| {
+        template! {
+            p { &quot;Another error occurred.&quot; }
+        }
+    }));
+    error_pages.add_page(
+        404,
+        Box::new(|_, _, _| {
+            template! {
+                p { &quot;Page not found.&quot; }
+            }
+        }),
+    );
+    error_pages.add_page(
+        400,
+        Box::new(|_, _, _| {
+            template! {
+                p { &quot;Client error occurred...&quot; }
+            }
+        }),
+    );
+
+    error_pages
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Here's what this code does:</p>
+<ol>
+<li>Import the Perseus <a href="https://docs.rs/perseus/0.1.2/perseus/shell/struct.ErrorPages.html"><code>ErrorPages</code></a> <code>struct</code>, and the Sycamore templating macro for writing pseudo-HTML.</li>
+<li>Define a single function that will get all your error pages (you'll call this in <code>lib.rs</code>).</li>
+<li>Create a new instance of <code>ErrorPages</code> with the required fallback page. Error pages in Perseus are based on HTTP status codes (but you can create your own beyond this system if you need), and there are <em>a lot</em> of them, so the fallback page is used for all the status codes that you don't explicitly handle.</li>
+<li>Add two new error pages, one for 404 (page not found) and another for 400 (generic client error). Note that the functions we provide have to be <code>Box</code>ed (so Rust can allocate the memory properly), and they'll also be provided three arguments, which you'll want to use in a production app. They are: the URL that caused the problem, the HTTP status code, and the error message that was the payload of the request.</li>
+</ol>
+<p>You can read more about error pages <a href="https://arctic-hen7.github.io/perseus/error_pages.html">here</a>.</p>
+<h2 id="setting-up-some-html"><a class="header" href="#setting-up-some-html">Setting up Some HTML</a></h2>
+<p>Perseus is just a web framework, and it needs some good old HTML to cling to, so you'll need to create an <code>index.html</code> file in the root of your project (<em>next</em> to <code>src/</code>). Then put the following inside:</p>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+    &lt;head&gt;
+        &lt;meta charset=&quot;UTF-8&quot; /&gt;
+        &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot; /&gt;
+        &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot; /&gt;
+        &lt;title&gt;Perseus Starter App&lt;/title&gt;
+        &lt;!-- Importing this runs Perseus --&gt;
+        &lt;script src=&quot;/.perseus/bundle.js&quot; defer&gt;&lt;/script&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>This is all pretty typical, and you shouldn't have to worry about it. If you want to include analytics or some other script in your app, you can do it here, this HTML will be on every page of your app (including errors).</p>
+<p>Note the single <code>&lt;script&gt;</code> that imports from <code>/.perseus/bundle.js</code>. That's the stuff that Rollup generates, and the CLI will serve it automatically. We also <code>defer</code> it for best practice.</p>
+<h2 id="defining-your-app"><a class="header" href="#defining-your-app">Defining Your App</a></h2>
+<p>And now for the magic. Perseus does a ton of stuff to initialize your app, all of which can be abstracted through the <code>define_app!</code> macro that we imported earlier. Add the following to <code>lib.rs</code> (underneath your <code>Route</code> definition) to use it:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>define_app! {
+    root: &quot;#root&quot;,
+    route: Route,
+    router: {
+        Route::Index =&gt; [
+            &quot;index&quot;.to_string(),
+            templates::index::template_fn()
+        ]
+    },
+    error_pages: crate::error_pages::get_error_pages(),
+    templates: [
+        crate::templates::index::get_template::&lt;G&gt;()
+    ]
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><em>Note: these properties currently <strong>must</strong> be in order, otherwise they won't work.</em></p>
+<p>And again, here's an explanation:</p>
+<ol>
+<li>Define the CSS selector at which Perseus will render. This will be the <code>&lt;div id=&quot;root&quot;&gt;&lt;/div&gt;</code> we defined in <code>index.html</code> in this case.</li>
+<li>Tell Perseus about the <code>Route</code> <code>enum</code> you defined earlier.</li>
+<li>Handle each of your roots with <code>match</code>-like syntax. You'll need to handle every variant of your <code>Route</code> <code>enum</code> here except the <code>NotFound</code> variant, which will use your 404 error page (or the fallback if you didn't define one for that status code). Each route that goes to the path at which it will be rendered (which may seem pointless, but it's <em>really</em> useful for more complex pages) and the <code>template_fn</code> helper function we defined in the last section.</li>
+<li>Tell Perseus about your error pages.</li>
+<li>Declare each of your templates, using that <code>get_template</code> helper function we defined in the last section. Notice the ambient <code>G</code> parameter here, which that function also took. That lets Perseus control whether it renders your page for the server (as for server-side rendering) or for the client (in the browser), and it needs to do both.</li>
+</ol>
+<h2 id="ship-it"><a class="header" href="#ship-it">Ship It.</a></h2>
+<p>It's time to run your app for the first time! If you're using an editor like VS Code with a Rust plugin, then you shouldn't have any compile-time errors in your code (if you do, that's a problem...).</p>
+<p>We'll use the Perseus CLI to take care of everything from here. Go into your app's root folder (with <code>src/</code> and <code>Cargo.toml</code>) in a terminal, and run this command:</p>
+<pre><code>perseus serve
+</code></pre>
+<p>This will take quite a while the first time, because Perseus is literally creating another crate in the background (check out the new <code>.perseus/</code> folder if you're interested) and building all its dependencies. Also note that your <code>.gitignore</code> has been added to to ignore the <code>.perseus/</code> folder, which can be rebuilt on any machine with the Perseus CLI installed, so there's no point having it in Git.</p>
+<p>When all 5 steps have been completed, your app will be available in the browser! Go to <a href="http://localhost:8080">http://localhost:8080</a> and you should see <code>Welcome to the app!</code> on your screen! If so, then congratulations, you've just created your first ever Perseus app! (And don't worry, running it will be much faster next time.)</p>
+<p>You can see all the code put together <a href="https://github.com/arctic-hen7/perseus-starter-app">here</a>.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further Reading</a></h2>
+<p>Now that you've created your first app with Perseus, you're more than ready to venture into the rest of the documentation, which will explain each aspect of what you've achieved here in further detail, and will guide you in building more complex apps, particularly in the <a href="https://arctic-hen7.github.io/perseus/strategies/intro.html">rendering strategies</a> section, which explains the real magic of Perseus' rendering.</p>
+<p>So go forth and build something amazing!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="cli"><a class="header" href="#cli">CLI</a></h1>
+<p>Perseus has a CLI (command line interface) designed to make your life significantly easier when developing Perseus apps. Its primary functions are to build and serve your apps for you, meaning you can focus pretty much entirely on your application code and ignore all the boilerplate!</p>
+<h2 id="installation-1"><a class="header" href="#installation-1">Installation</a></h2>
+<p>You can install the Perseus CLI by running <code>cargo install perseus-cli</code>, it should then be available as <code>perseus</code> on your system!</p>
+<p>We currently don't provide independent executables installable without <code>cargo</code> because you'll need <code>cargo</code> and Rust generally to be able to write a Perseus app, and Perseus depends on the <code>cargo</code> commands being available, so there's really no point. That said, if you have a use-case for this, please <a href="https://github.com/arctic-hen7/perseus/issues/new/choose">open an issue</a>!</p>
+<h2 id="setup-1"><a class="header" href="#setup-1">Setup</a></h2>
+<p>Set up a library project with <code>cargo</code>, and add the following to the <code>[dependencies]</code> section in your <code>Cargo.toml</code>:</p>
+<pre><code class="language-toml">perseus = { path = &quot;../../packages/perseus&quot; }
+sycamore = { version = &quot;0.5&quot;, features = [&quot;ssr&quot;] }
+sycamore-router = &quot;0.5&quot;
+# You only need these for pages that take properties
+serde = { version = &quot;1&quot;, features = [&quot;derive&quot;] }
+serde_json = &quot;1&quot;
+</code></pre>
+<p>Then, add a <code>lib.rs</code> file to your project under <code>src/</code> that contains the following:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>mod pages;
+mod error_pages;
+
+use perseus::define_app;
+
+#[derive(perseus::Route)]
+pub enum Route {
+    #[to(&quot;/&quot;)]
+    Index,
+    #[to(&quot;/about&quot;)]
+    About,
+    #[not_found]
+    NotFound,
+}
+define_app!{
+    root: &quot;#root&quot;,
+    route: Route,
+    router: {
+        Route::Index =&gt; [
+            &quot;index&quot;.to_string(),
+            pages::index::template_fn()
+        ],
+        Route::About =&gt; [
+            &quot;about&quot;.to_string(),
+            pages::about::template_fn()
+        ]
+    }
+    error_pages: crate::error_pages::get_error_pages(),
+    templates: [
+        crate::pages::index::get_template::&lt;G&gt;(),
+        crate::pages::about::get_template::&lt;G&gt;()
+    ]
+    // config_manager: perseus::FsConfigManager::new()
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This assumes you've defined a function to get your error pages elsewhere (you can read more about that <a href="error_pages.html">here</a>), and that it's in a module called <code>error_pages</code>, you can customize that as needed.</p>
+<p>The way the rest of this works is pretty simple. First off, you define a router with <a href="https://sycamore-rs.netlify.app/docs/advanced/routing">Sycamore</a>, which defines each of your templates and the paths on your site that it will accept. This <strong>must</strong> have a variant explicitly named <code>NotFound</code>, that's handled for you. Then, you define your app itself, which takes the following properties (which need to be in order right now!):</p>
+<ul>
+<li><code>root</code> – the CSS selector for the element to render Perseus to, which should be unique, like an HTML <code>id</code></li>
+<li><code>route</code> – the <code>enum</code> for your app's routes that you just defined</li>
+<li><code>router</code> – a match-like input that handles each of the variants of your <code>route</code>, except <code>NotFound</code> (handled for you); each one gets mapped to the corresponding page's path (e.g. <code>Post</code> with slug <code>test</code> might be mapped to <code>format!(&quot;post/{}&quot;, slug)</code>), which shouldn't include a leading or trailing <code>/</code></li>
+<li><code>error_pages</code> – your <a href="error_pages.html">error pages</a></li>
+<li><code>templates</code> – each of your templates, taking the <code>G</code> parameter (which will be used at runtime to render them for the server or the client)</li>
+<li><code>config_manager</code> (optional) – the <a href="config_manager.html">config manager</a> your app should use, default is the inbuilt <code>FsConfigManager::new()</code></li>
+</ul>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<p>Once you've got that out of the way, go ahead and define your templates as usual, and then run the following command in your project's directory:</p>
+<pre><code>perseus serve
+</code></pre>
+<p>That will automatically prepare the CLI to work with your app, then it will build your app and statically generate everything as appropriate (using any custom config manager your specified), and then it will serve your app on <a href="http://localhost:8080">http://localhost:8080</a> by default!</p>
+<p>If you want to change the host/port your app is served on, just set the <code>HOST</code>/<code>PORT</code> environment variables as you'd like.</p>
+<h2 id="other-commands"><a class="header" href="#other-commands">Other Commands</a></h2>
+<p>If you just want to build your app, you can run <code>perseus build</code>. If you only want to prepare the CLI to interface with your app (which creates a <code>.perseus/</code> directory), you can run <code>perseus prep</code>.</p>
+<p>If you want to serve pre-built files (which you'll have to generate with <code>perseus build</code>), you can run <code>perseus serve --no-build</code>.</p>
+<h2 id="watching"><a class="header" href="#watching">Watching</a></h2>
+<p>All these commands act statically, they don't watch your code for any changes. This feature will be added <em>very</em> soon to the CLI, but until it is, we advise you to use a tool like <a href="https://github.com/eradman/entr"><code>entr</code></a>, which you can make work with Perseus like so (on Linux):</p>
+<pre><code>find . -not -path &quot;./.perseus/*&quot; -not -path &quot;./target/*&quot; | entr -s &quot;perseus serve&quot;
+</code></pre>
+<p>This just lists all files except those in <code>.perseus/</code> and <code>target/</code> and runs <code>perseus serve</code> on any changes. You should exclude anything else as necessary.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="templates"><a class="header" href="#templates">Templates</a></h1>
+<p>The most central part of Perseus is the definition of templates, which control how pages are built.</p>
+<h2 id="usage-1"><a class="header" href="#usage-1">Usage</a></h2>
+<p>An extremely simple template would look like this:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::Template;
+use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+
+#[component(AboutPage&lt;G&gt;)]
+pub fn about_page() -&gt; SycamoreTemplate&lt;G&gt; {
+    template! {
+        p { &quot;About.&quot; }
+    }
+}
+
+pub fn template_fn&lt;G: GenericNode&gt;() -&gt; perseus::template::TemplateFn&lt;G&gt; {
+    Box::new(|_| {
+        template! {
+            AboutPage()
+        }
+    })
+}
+
+pub fn get_template&lt;G: GenericNode&gt;() -&gt; Template&lt;G&gt; {
+    Template::new(&quot;about&quot;).template(template_fn())
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>First, we define the <em>component function</em>, which is done with Sycamore. This is the page itself, and it contains its actual markup, in Sycamore's templating syntax (you can read more about that <a href="">here</a>). Next is the <em>template function</em>, which simply defines a function that will actually render the page. We break this simple closure out into a function to get it because we'll reuse it in the routing process later. If your page takes a state, it will be passed to this closure <strong>as a string</strong>. You must then deserialize it, and it is safe to <code>.unwrap()</code> here (barring a horrific logic failure). The final function we define is the <em>page function</em>, which just creates the actual template for the page.</p>
+<h2 id="template-definition"><a class="header" href="#template-definition">Template Definition</a></h2>
+<p>You can define a template with the <code>Template::new()</code> method, which takes the template's path as an argument (with no leading or trailing slashes). In the above example, <code>about</code> renders only one page, which would be hosted at <code>/about</code>.</p>
+<p>The only mandatory builder function after that is <code>.template()</code>, which defines your template function (the closure inside <code>template_fn()</code> in the above example). There are a number of other functions available to customize how the template renders, all of which are documented <a href="./strategies/intro.html">here</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="routing-1"><a class="header" href="#routing-1">Routing</a></h1>
+<p><em>You only need this page if you're not using the Perseus CLI, which performs this process for you! It does provide some useful background even so though.</em></p>
+<p>Perseus will serve your pages on the backend, rendered however you like, but it depends on <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> for front-end rendering and routing, so you'll need to provide a router for your pages. You can see more information about Sycamore routing in their official documentation <a href="https://sycamore-rs.netlify.app/docs/advanced/routing">here</a>.</p>
+<h2 id="usage-2"><a class="header" href="#usage-2">Usage</a></h2>
+<p>You'll need to define a rout <code>enum</code> at the root of your app like so to define your app's routes:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use sycamore::prelude::*;
+
+#[derive(Route)]
+enum AppRoute {
+    #[to(&quot;/&quot;)]
+    Index,
+    #[to(&quot;/about&quot;)]
+    About,
+    #[to(&quot;/post/new&quot;)]
+    NewPost,
+    #[to(&quot;/post/&lt;slug..&gt;&quot;)]
+    Post { slug: Vec&lt;String&gt; },
+    #[to(&quot;/ip&quot;)]
+    Ip,
+    #[to(&quot;/time&quot;)]
+    TimeRoot,
+    #[to(&quot;/timeisr/&lt;slug&gt;&quot;)]
+    Time { slug: String },
+    #[not_found]
+    NotFound,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note in the above example the usage of the <code>NewPost</code> template to override a section of the domain of the <code>Post</code> template, specifically the <code>/post/new</code> path, where a post writing page is hosted. Notably, such intrusive routes must be placed before. In general, <strong>order your routes by specificity</strong>. If you're not having troubles though, put them in any order you like (but <code>NotFound</code> must come last).</p>
+<p>You can then match each of your routes and render it like so (subset of the previous example):</p>
+<pre><pre class="playground"><code class="language-rust no_run no_plyaground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let root = web_sys::window()
+        .unwrap()
+        .document()
+        .unwrap()
+        .query_selector(&quot;#_perseus_root&quot;)
+        .unwrap()
+        .unwrap();
+
+sycamore::render_to(
+        || {
+            template! {
+                BrowserRouter(|route: AppRoute| {
+                    match route {
+                        AppRoute::Index =&gt; app_shell(
+                            &quot;index&quot;.to_string(),
+                            pages::index::template_fn(),
+                            get_error_pages()
+                        ),
+                        AppRoute::About =&gt; app_shell(
+                            &quot;about&quot;.to_string(),
+                            pages::about::template_fn(),
+                            get_error_pages()
+                        ),
+                        AppRoute::Post { slug } =&gt; app_shell(
+                            format!(&quot;post/{}&quot;, slug.join(&quot;/&quot;)),
+                            pages::post::template_fn(),
+                            get_error_pages()
+                        ),
+                        AppRoute::NotFound =&gt; template! {
+                            p {&quot;Not Found.&quot;}
+                        }
+                    }
+                })
+            }
+        },
+        &amp;root,
+    );
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note that you pass your error pages to the app shell, allowing it to conditionally render them if need be. Also note the template function being reused for the router as well as in the template itself.</p>
+<p>The router is the core of your app, and should be rendered to a location from which you'll use Perseus. Perseus is a full framework for rendering, so if you want incremental adoption of reactivity, you should check out the underlying <a href="https://github.com/sycamore-rs/sycamore">Sycamore</a> library.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="error-pages-1"><a class="header" href="#error-pages-1">Error Pages</a></h1>
+<p>As in any app, errors may well happen in Perseus, and you should be prepared for them. However, because we're building a user-facing app, we need to be able to display pretty error pages to the user to explain what went wrong and what they can do to fix it (if applicable).</p>
+<p>In Perseus, error pages are defined by HTTP status codes, and you can define others as necessary for your own internal errors, Perseus is only concerned with those that may occur in communication with the backend.</p>
+<h2 id="defining-error-pages"><a class="header" href="#defining-error-pages">Defining Error Pages</a></h2>
+<p>The easiest way of defining your error pages is to put them into a function like <code>get_error_pages</code>, like so:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use sycamore::prelude::template;
+use perseus::ErrorPages;
+
+pub fn get_error_pages() -&gt; ErrorPages {
+    let mut error_pages = ErrorPages::new(Box::new(|_, _, _| {
+        template! {
+            p { &quot;Another error occurred.&quot; }
+        }
+    }));
+    error_pages.add_page(
+        404,
+        Box::new(|_, _, _| {
+            template! {
+                p { &quot;Page not found.&quot; }
+            }
+        }),
+    );
+    error_pages.add_page(
+        400,
+        Box::new(|_, _, _| {
+            template! {
+                p { &quot;Client error occurred...&quot; }
+            }
+        }),
+    );
+
+    error_pages
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This example creates three error pages, the first of which is mandatory: a fallback page. There are <a href="https://httpstatuses.com">a lot</a> of HTTP status codes, and it would be ridiculous for you to handle them all. However, occasionally you may get one that you didn't anticipate, and you should be ready for it.</p>
+<p>The rest of the error pages are defined specifically for error codes, like <code>404</code> and <code>400</code> above.</p>
+<p>Every error page is a function that takes three arguments: the URL that caused the problem, the HTTP status code, and the error message that was the payload of the request.</p>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best Practices</a></h2>
+<p>When designing error pages, remember that they should be intelligible to everyone, regardless of technical ability! To that end, the error message provided by the serve should probably only be accessible through a dropdown or the like that provides technical details so the user can report it.</p>
+<h2 id="security-concerns"><a class="header" href="#security-concerns">Security Concerns</a></h2>
+<p>Error messages can leak sensitive data, so Perseus tries to make sure that they don't! No Perseus error message will ever provide details more than the rendering strategy a page uses (which shouldn't be sensitive...), however they will include error messages generated by your custom rendering functions. Essentially, assume any error message generated and returned in the rendering process may at some point be visible to the client, so <strong>don't put sensitive information in your error messages</strong>!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="rendering-strategies-1"><a class="header" href="#rendering-strategies-1">Rendering Strategies</a></h1>
+<p>This section details each rendering strategy offered by Perseus in detail. Note that one of the aims of the rendering mechanism is that any rendering strategy can be used with other, however some combinations are more sensible than others!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="build-paths"><a class="header" href="#build-paths">Build Paths</a></h1>
+<p>This strategy allows you to define the pages a template will render. For example, you might use this for a blog posts system to get all the posts from a database and return a <code>Vec&lt;String&gt;</code> of them. This strategy is roughly equivalent to NextJS's <code>get_static_paths</code> function.</p>
+<p>Every element returned here will have the opportunity to create its state with the <em>build state</em> strategy, being passed the path defined here. Note that every element returned here will be built, so if you need to return more than about 10 elements, it's a better idea to only return the most used ones and leave the rest to the <em>incremental generation</em> strategy to reduce your build time.</p>
+<h2 id="usage-3"><a class="header" href="#usage-3">Usage</a></h2>
+<p>You can define a function for this strategy like so:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub async fn get_build_paths() -&gt; Result&lt;Vec&lt;String&gt;, String&gt; {
+    Ok(vec![
+        &quot;test&quot;.to_string(),
+        &quot;blah/test/blah&quot;.to_string()
+    ])
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Paths returned from this function will be rendered under <code>[template-path]/[returned-path]</code>, and they should not have a leading or trailing <code>/</code>. If you want to return a nested path, simply do so (but make sure to handle it properly in your router). Note that any errors must be returned as <code>String</code>s, and the function must be asynchronous.</p>
+<p>You can add this strategy to a template like so:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>template
+	// ...
+	.build_paths_fn(Box::new(get_static_paths))
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="build-state"><a class="header" href="#build-state">Build State</a></h1>
+<p>This strategy allows you to define the state for a page. The function you give will be provided with the path of the page being rendered from the template on which this strategy is defined.</p>
+<p>If used without the <em>build paths</em> strategy, this will simply render one state for the only page that the template will render. If used with it, this strategy will be invoked for every page that the template renders.</p>
+<p>Note also that this strategy will be invoked on every on-demand build if used with the <em>incremental</em> strategy.</p>
+<h2 id="usage-4"><a class="header" href="#usage-4">Usage</a></h2>
+<p>You can define a function for this strategy like so:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde::{Serialize, Deserialize};
+use perseus::ErrorCause;
+
+#[derive(Serialize, Deserialize)]
+pub struct PostPageProps {
+    title: String,
+    content: String,
+}
+// ...
+pub async fn get_build_state(path: String) -&gt; Result&lt;String, (String, ErrorCause)&gt; {
+   let title = urlencoding::decode(&amp;path).unwrap();
+    let content = format!(
+        &quot;This is a post entitled '{}'. Its original slug was '{}'.&quot;,
+        title, path
+    );
+
+    Ok(serde_json::to_string(&amp;PostPageProps {
+        title: title.to_string(),
+        content,
+    })
+    .unwrap())
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This function can produce two kinds of errors, broadly: those caused by the server, and those caused by the client (if this is called for a page that doesn't exist from the <em>incremental generation</em> strategy). For that reason, you need to return a <code>(String, ErrorCause)</code> tuple, the second part of which specifies who's responsible for the error. This allows Perseus to figure out whether it should send a 400 (client error) or 500 (server error) HTTP status code in the event of an error. While returning <code>String</code> errors may seem annoying, it prevents unnecessary internal heap allocation, and does overall make things faster (if you have a better way, please <a href="https://github.com/arctic-hen7/perseus/pulls">open a PR</a>!). This function must also be asynchronous and the state must be returned in a stringified format.</p>
+<p>The path provided to the function will be provided as <strong>whatever will end up being rendered</strong>. For example, if you returned the element <code>test</code> from the build paths strategy (intending it to be rendered as <code>/post/test</code>), it will be passed to this function as <code>post/test</code>.</p>
+<p>You can add this strategy to a template like so:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>template
+	// ...
+    .build_state_fn(Box::new(get_build_state))
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="request-state"><a class="header" href="#request-state">Request State</a></h1>
+<p>This strategy allows you to define the state for a page at request-time, which gives you access to information like the headers of the user's HTTP request (including any authorization tokens) and real-time factors. This can be useful if you want to render something like a user dashboard on the server, which you wouldn't be able to do with the <em>build state</em> strategy, as it only has access to information at build-time.</p>
+<p>It should be noted that this strategy is much slower than build-time strategies, as it requires extra computations on the server every time a user requests a page. However, this strategy is superior to client-side rendering (rendering a page at build time with fillers for unique content that you then fill in in the browser) in some ways. This strategy is essentially server-side rendering, and you can read more about its performance <a href="https://medium.com/walmartglobaltech/the-benefits-of-server-side-rendering-over-client-side-rendering-5d07ff2cefe8">here</a>.</p>
+<h2 id="using-with-build-state"><a class="header" href="#using-with-build-state">Using with Build State</a></h2>
+<p>Perseus supports using both build and request state simultaneously, though it's not advised unless absolutely necessary. This will result in the generation of two competing states, one from build and one from request, which you can then amalgamate by using the <code>amalgamate_states</code> strategy. Due to the phenomenally niche nature of this approach, it's not covered in depth in the documentation, but you can check out the <code>showcase</code> example if you want to see it in action (specifically the <code>amalgamate</code> page).</p>
+<h2 id="usage-5"><a class="header" href="#usage-5">Usage</a></h2>
+<p>You can define a function for this strategy like so (this will tell the user their own IP address):</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde::{Deserialize, Serialize};
+use perseus::ErrorCause;
+
+#[derive(Serialize, Deserialize)]
+pub struct IpPageProps {
+    ip: String,
+}
+pub async fn get_request_state(_path: String, req: Request) -&gt; Result&lt;String, (String, ErrorCause)&gt; {
+    Ok(serde_json::to_string(&amp;IpPageProps {
+        // Gets the client's IP address
+        ip: format!(
+            &quot;{:?}&quot;,
+            req
+                .headers()
+                .get(&quot;X-Forwarded-For&quot;)
+                .unwrap_or(&amp;perseus::http::HeaderValue::from_str(&quot;hidden from view!&quot;).unwrap())
+        ),
+    })
+    .unwrap())
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This function can produce two kinds of errors, broadly: those caused by the server, and those caused by the client. For that reason, you need to return a <code>(String, ErrorCause)</code> tuple, the second part of which specifies who's responsible for the error. This allows Perseus to figure out whether it should send a 400 (client error) or 500 (server error) HTTP status code in the event of an error. This function must also be asynchronous.</p>
+<p>As with the <em>build state</em> strategy, you must return state from this function as a string, and the path provided to this function is the same as the final path at which the page will be rendered.</p>
+<p>You can add this strategy to a template like so:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>template
+	// ...
+    .request_state_fn(Box::new(get_request_state))
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="revalidation"><a class="header" href="#revalidation">Revalidation</a></h1>
+<p>This strategy allows you to rebuild pages built with the <em>build state</em> strategy on a later request. A common reason for this might be to update a statically rendered list of blog posts every 24 hours so it's up-to-date relatively regularly. Perseus' revalidation strategy allows you re-render a page on two conditions: time-based and logic-based. The time-based variant lets you provide a string like <code>1w</code>, and then your page will be re-rendered every week. The logic-based variant lets you provide a function that returns a boolean as to whether or not to re-render, which will be run on every request to the page. Notably, the variants can be combined so that you run a logic check only after some length of time.</p>
+<p>The time-based strategy adds very little server overhead, as it simply performs a time check, though it does involve another read from your data cache, which may be computationally expensive. The logic-based check is as expensive as you make it.</p>
+<h2 id="time-based-variant"><a class="header" href="#time-based-variant">Time-Based Variant</a></h2>
+<p>The time based variant does have some slightly weird behaviour to watch out for though, which is best explained by explaining how it works.</p>
+<ol>
+<li>Evaluates your time string (e.g. <code>1w</code> for 1 week) to a number of seconds after January 1 1970 (how computers represent time). This provides a timestamp in the future, past which your page should be revalidated.</li>
+<li>On every request, Perseus checks if this timestamp has been passed yet. If it has, it re-renders your page. This means that <strong>your page will only be revalidated after the time has elapsed <em>and</em> a user has queried it</strong>.</li>
+<li>After revalidation, Perseus repeats from step 1. However, this may not be 2 weeks after the original build (in our example of <code>1w</code>), but 1 week after the revalidation, whcih may have been later than a week after the original setting.</li>
+</ol>
+<p>To put it simply, Perseus will only revalidate when requested, so don't expect different pages to be synchronised in their revalidations, even if they all have the same timestamp.</p>
+<p>This logic is a bit weird, so you may need to think about it for a bit. Don't worry though, it shouldn't impact your app negatively in any way, it's just something to take note of!</p>
+<h2 id="time-syntax"><a class="header" href="#time-syntax">Time Syntax</a></h2>
+<p>Perseus lets you define revalidation intervals as strings, the syntax for which is as follows: <code>xXyYzZ...</code>, where lower-case letters are numbers meaning the number of the interval X/Y/Z (e.g. 1m4d -- one month four days).</p>
+<p>The available intervals are:</p>
+<ul>
+<li>s: second,</li>
+<li>m: minute,</li>
+<li>h: hour,</li>
+<li>d: day,</li>
+<li>w: week,</li>
+<li>M: month (30 days used here, 12M ≠ 1y!),</li>
+<li>y: year (365 days always, leap years ignored, if you want them add them as days)</li>
+</ul>
+<h2 id="usage-6"><a class="header" href="#usage-6">Usage</a></h2>
+<p>You can add this strategy to a template like so:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>template
+	// ...
+    .revalidate_after(&quot;5s&quot;.to_string())
+    .should_revalidate_fn(Box::new(|| async { Ok(true) }))
+<span class="boring">}
+</span></code></pre></pre>
+<p>That example uses both variants of revalidation, but you can use one or both as necessary. Note that the logic-based variant must be asynchronous, and errors must be returned as <code>String</code>s.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="incremental-generation"><a class="header" href="#incremental-generation">Incremental Generation</a></h1>
+<p>This strategy is both the most complex and most simple that Perseus offers. It's simple in that you don't have to write any extra code except telling Perseus to use it (see below), but it's complex in what it does.</p>
+<p>Let's say you have an online store, where every item you sell is rendered by the template <code>item</code>. If you have 5 items, you might fetch them from a database at build-time and tell Perseus to render each one with the <em>build paths</em> strategy. But what if you have 5 million items? If you were to render every single one of these at build time, your builds would take a very long time, especially if you're fetching data for every single item! Enter <em>incremental generation</em>, which allows you to return a subset of items with <em>build paths</em>, like only the 5 most commonly accessed items, and then the rest are left unspoken.</p>
+<p>When a user requests a pre-rendered item, it's served as usual, but if they request something under <code>/item</code>, Perseus will detect that that page may well exist, but hasn't been rendered yet, and so it will invoke the <em>build state</em> strategy as it would've if this page were being built at build-time, it just does it at request-time! And here's the magic of it, <strong>after the first request, Perseus will cache the page</strong>! So basically, pages are built on demand, and then cached for everyone else! Only the first user to access a page will see the slightest delay.</p>
+<p>The one caveat with this strategy is that you need to handle the possibility in the <em>build state</em> strategy that the given path may not actually exist, and you'll need to return a 404 (page not found error) in that case. You can do that like so:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::ErrorCause
+
+return Err((&quot;custom error message&quot;.to_string(), ErrorCause::Client(Some(404))))
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note that this tells Perseus that the client caused an error, particularly a 404, which should be handled in your app to return something like 'Page not found'.</p>
+<h2 id="usage-7"><a class="header" href="#usage-7">Usage</a></h2>
+<p>This strategy can be added to a template like so:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>template
+	// ...
+	.incremental(true)
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="building"><a class="header" href="#building">Building</a></h1>
+<p><em>You only need this page if you're not using the Perseus CLI, which performs this process for you!</em></p>
+<p>After you've defined all your templates and the like, you'll of course need to build them into pages! Perseus tries to make this process as simple as possible.</p>
+<h2 id="usage-8"><a class="header" href="#usage-8">Usage</a></h2>
+<p>You'll want to be able to execute this code as part of an executable, so defining a new binary in your <code>Cargo.toml</code> is advised like so:</p>
+<pre><code class="language-toml">[[bin]]
+name = &quot;ssg&quot;
+path = &quot;src/bin/build.rs&quot;
+</code></pre>
+<p>Then put this code in <code>bin/build.rs</code> (or wherever else you put your binary)</p>
+<pre><pre class="playground"><code class="language-rust edition2018">use futures::executor::block_on;
+use perseus::{build::build_templates, config_manager::FsConfigManager};
+use perseus_showcase_app::pages;
+use sycamore::prelude::SsrNode;
+
+fn main() {
+    let config_manager = FsConfigManager::new();
+
+    let fut = build_templates(
+        vec![
+            pages::index::get_page::&lt;SsrNode&gt;(),
+            pages::about::get_page::&lt;SsrNode&gt;(),
+            pages::post::get_page::&lt;SsrNode&gt;(),
+            pages::new_post::get_page::&lt;SsrNode&gt;(),
+            pages::ip::get_page::&lt;SsrNode&gt;(),
+            pages::time::get_page::&lt;SsrNode&gt;(),
+            pages::time_root::get_page::&lt;SsrNode&gt;(),
+        ],
+        &amp;config_manager,
+    );
+    block_on(fut).expect(&quot;Static generation failed!&quot;);
+
+    println!(&quot;Static generation successfully completed!&quot;);
+}
+</code></pre></pre>
+<p>This code defines a synchronous <code>main</code> function that blocks to call <code>build_templates</code>, which, unsurprisingly, builds your templates! Each entry in the vector you give this function should be a template, and note that we specify they should be <code>SsrNode</code>s, which is Sycamore's way of saying they should be prepared to be rendered on the server rather than in the browser, which makes sense given that we're building them!</p>
+<p>The reason we don't just make this whole function asynchronous is so we don't have to include a runtime like <code>tokio</code>, which would be unnecessary.</p>
+<h2 id="file-storage"><a class="header" href="#file-storage">File Storage</a></h2>
+<p>It may have crossed your mind as to where all these static files are stored in production, and Perseus provides an excellent solution to this problem with custom read/write systems, documented in-depth <a href="./config_managers.html">here</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="serving"><a class="header" href="#serving">Serving</a></h1>
+<p><em>You only need this page if you're not using the Perseus CLI, which performs this process for you!</em></p>
+<p>Having generated a large number of static files, you'll need a system to host your files for you! Due to the dynamic nature of some rendering strategies, Perseus needs to be involved in this process (for executing request-time logic), and so it provides a simple API interface for serving pages.</p>
+<p>Perseus aims to be agnostic as to what framework you use to host your files, and any framework that gives you access to request headers and wildcard paths should work (in other words, any framework worth its salt).</p>
+<p>If you're using one of our supported integrations, you don't have to bother with this page, nearly all of it can be done for you!</p>
+<ul>
+<li><a href="./integrations/actix-web.html">Actix Web</a></li>
+<li><em>More coming soon...</em></li>
+</ul>
+<h2 id="endpoints"><a class="header" href="#endpoints">Endpoints</a></h2>
+<p>Here are the endpoints that a server for Perseus must serve:</p>
+<ul>
+<li><code>/.perseus/page/*</code> – used to serve the JSON data that the app shell needs to render a page (<code>*</code> should be extractable as a filename, e.g. <code>{filename:.*}</code> in Actix Web)</li>
+<li><code>/.perseus/bundle.js</code> – the JavaScript bundle file that calls your Wasm code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
+<li><code>/.perseus/bundle.wasm</code> – the Wasm bundle file that contains your code (see <a href="./tutorials/first_app/intro.html">tutorial on building your first app</a>)</li>
+<li><code>*</code> (anything else) – any page that the user actually requests, which will return the app shell to do the heavy lifting (or more accurately an HTML file that includes the bundle)</li>
+</ul>
+<h2 id="usage-9"><a class="header" href="#usage-9">Usage</a></h2>
+<p>This example shows what would be done to acquire a page for any framework. You'll need to have access to these data to get a page:</p>
+<ul>
+<li>The page path the user requested, e.g. <code>/post/test</code> for a request to <code>/.perseus/page/post/test</code></li>
+<li>Data about the HTTP request the user sent (see below)</li>
+<li>A map of templates produced with <a href=""><code>get_templates_map!</code></a> (API docs WIP)</li>
+<li>A <a href="./config_managers.html">config manager</a></li>
+</ul>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::{get_page};
+
+// See below for details on this line
+let http_req = convert_req(&amp;req).unwrap();
+
+let page_data = get_page(path, http_req, &amp;render_cfg, &amp;templates, config_manager.get_ref()).await;
+
+match page_data {
+    Ok(page_data) =&gt; // Return a 200 with the stringified `page_data`
+    // We parse the error to return an appropriate status code
+    Err(err) =&gt; // Return the error dictated by `err_to_status_code(&amp;err)` with the body of the stringified `err`
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="request-data"><a class="header" href="#request-data">Request Data</a></h2>
+<p>Perseus needs access to information about HTTP requests so it can perform tasks related to the <em>request state</em> strategy, which provides access to headers and the like. Internally, Perseus uses <a href="https://docs.rs/http/0.2.4/http/request/struct.Request.html"><code>http::Request</code></a> for this, with the body type <code>()</code> (payloads are irrelevant in requests that ask for a page at a URL).</p>
+<p>Unfortunately, different web server frameworks represent request data differently, and so you'll need to convert from your framework's system to <code>http</code>'s. When integrations are ready, this will be done for you!</p>
+<h3 id="writing-a-converter"><a class="header" href="#writing-a-converter">Writing a Converter</a></h3>
+<p>This is a simplified version of an Actix Web converter:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::{HttpRequest, Request};
+
+/// Converts an Actix Web request into an `http::request`.
+pub fn convert_req(raw: &amp;actix_web::HttpRequest) -&gt; Result&lt;Request, String&gt; {
+	let mut builder = HttpRequest::builder();
+	// Add headers one by one
+	for (name, val) in raw.headers() {
+		// Each method call consumes and returns `self`, so we re-self-assign
+		builder = builder.header(name, val);
+	}
+	// The URI to which the request was sent
+	builder = builder.uri(raw.uri());
+	// The method (e.g. GET, POST, etc.)
+	builder = builder.method(raw.method());
+	// The HTTP version used
+	builder = builder.version(raw.version());
+
+	let req = builder
+		// We always use an empty body because, in a Perseus request, only the URI matters
+		// Any custom data should therefore be sent in headers (if you're doing that, consider a dedicated API)
+		.body(())
+		.map_err(|err| format!(&quot;converting actix web request to perseus-compliant request failed: '{}'&quot;, err))?;
+
+	Ok(req)
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Notably, the data that need to be converted are:</p>
+<ul>
+<li>Headers</li>
+<li>URI to which the request was sent</li>
+<li>HTTP method (subject to change in future Perseus versions, currently <code>GET</code>)</li>
+<li>HTTP version used</li>
+</ul>
+<p>Note that mis-converting any of these data will not affect Perseus (which doesn't require any of them to function), only your own code. So if you have no intention of using the <em>request state</em> strategy in your app, you could theoretically just parse an empty request to Perseus like so:</p>
+<pre><pre class="playground"><code class="language-rust edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perseus::HttpRequest
+
+HttpRequest::new(());
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="file-storage-1"><a class="header" href="#file-storage-1">File Storage</a></h2>
+<p>Perseus' systems of storing files in production are documented in-depth <a href="./config_managers.html">here</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="actix-web-integration"><a class="header" href="#actix-web-integration">Actix Web Integration</a></h1>
+<p>If you're using <a href="https://actix.rs">Actix Web</a>, then Perseus can automate nearly all the boilerplate of serving your app for you!</p>
+<p>This integration provides a configuration function, which you can use to configure an existing web server to support Perseus, so you could even run something like <a href="https://github.com/arctic-hen7/diana">Diana</a> on the same server!</p>
+<p>This integration should support almost every use case of Perseus, but there may be some extremely advanced things that you'll need to go back to basics for. If that's the case, please let us know by <a href="integrations/">opening an issue</a> (we want these integrations to be as powerful as possible), and in the meantime you can use the guide <a href="integrations/./serving.html">here</a> to see how to set up a server without using the integrations. If you need implementation details, check out the actual source code for the integration in the <a href="https://github.com/arctic-hen7/perseus">repository</a>.</p>
+<h2 id="installation-2"><a class="header" href="#installation-2">Installation</a></h2>
+<p>You can install the Actix Web integration by adding the following to your <code>Cargo.toml</code> under the <code>dependencies</code> section:</p>
+<pre><code class="language-toml">perseus-actix-web = &quot;0.1&quot;
+</code></pre>
+<p>Note that you will still need <code>actix-web</code>, <code>futures</code>, and <code>perseus</code> itself, even in a server repository.</p>
+<p>All Perseus integrations follow the same version format as the core library, meaning they're all updated simultaneously. This makes version management much easier, and it means that you can just install the same version of every Perseus package and not have to worry about compatibility issues.</p>
+<h2 id="usage-10"><a class="header" href="#usage-10">Usage</a></h2>
+<p>This is an example of a web server that only uses Perseus, but you can call <code>.configure()</code> on any existing web server. Note though that <strong>Perseus must be configured after all other logic</strong>, because it adds a generic handler for all remaining pages, which will break other more specific logic that comes after it.</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2018">use perseus::{FsConfigManager, SsrNode};
+use perseus_actix_web::{configurer, Options};
+use perseus_showcase_app::pages;
+use actix_web::{HttpServer, App};
+use futures::executor::block_on;
+
+#[actix_web::main]
+async fn main() -&gt; std::io::Result&lt;()&gt; {
+	HttpServer::new(|| {
+        App::new()
+			// Other server logic here
+        	.configure(
+				block_on(configurer(
+					Options {
+						index: &quot;../app/index.html&quot;.to_string(),
+						js_bundle: &quot;../app/pkg/bundle.js&quot;.to_string(),
+						wasm_bundle: &quot;../app/pkg/perseus_showcase_app_bg.wasm&quot;.to_string(),
+						templates_map: pages::get_templates_map::&lt;SsrNode&gt;()
+					},
+					FsConfigManager::new()
+				))
+			)
+    })
+    	.bind((&quot;localhost&quot;, 8080))?
+    	.run()
+    	.await
+}
+</code></pre></pre>
+<p>When you use the integration, you'll have to define a few options to tell it what exactly to serve. Specifically, you'll need to tell it where your <code>index.html</code> file, your JS bundle, and your Wasm bundle all are. In addition, you'll need to a provide it with a template map (which you'll often define a getter function for as above).</p>
+<p>Also, because this plugs into an existing server, you have full control over hosting options, like the port to be used!</p>
+<p>It's worth mentioning the blocking component of this design. The function that returns the closure that actually configures your server for Perseus is asynchronous because it needs to get your render configuration and add it as data to the server (this improves performance by reducing reads), which unfortunately is an asynchronous operation. We also can't <code>.await</code> that without causing ownership errors due to Actix Web's closure structure, which means the best solution for now is to <code>block_on</code> that configuration (which won't impact performance other than in your startup times, and all that's happening is a read from a file). If you have a better solution, <a href="https://github.com/arctic-hen7/pulls">PRs are welcome</a>!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="config-managers"><a class="header" href="#config-managers">Config Managers</a></h1>
+<p>As you may have noticed, Perseus generates a considerable volume of static files to speed up serving your app and to cache various data. Storing these is trivial in development, they can just be put in a <code>dist</code> folder or the like. However, when in production, we don't always have access to such luxuries as a stateful filesystem, and we may need to access files from elsewhere, like a database or a CDN.</p>
+<h2 id="default"><a class="header" href="#default">Default</a></h2>
+<p>In development, you'll still need to specify a config manager, which allows you to test out your production config manager even in local development! The easiest one to use for typical development though is the inbuilt <code>FsConfigManager</code>.</p>
+<h2 id="writing-a-config-manager"><a class="header" href="#writing-a-config-manager">Writing a Config Manager</a></h2>
+<p>Any custom config managers have to implement the <code>ConfigManager</code> trait, which only has two functions: <code>read</code> and <code>write</code>. Here's the trait definition:</p>
+<pre><pre class="playground"><code class="language-rust no_run no_playground edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait ConfigManager {
+    /// Reads data from the named asset.
+    async fn read(&amp;self, name: &amp;str) -&gt; Result&lt;String&gt;;
+    /// Writes data to the named asset. This will create a new asset if one doesn't exist already.
+    async fn write(&amp;self, name: &amp;str, content: &amp;str) -&gt; Result&lt;()&gt;;
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="errors"><a class="header" href="#errors">Errors</a></h3>
+<p>It's easily possible for CDNs of filesystems to throw errors when we try to interact with them, and Perseus provides a custom set of errors with <a href=""><code>error_chain!</code></a> to deal with this. Note that your implementation <em>must</em> use these, or it will not implement the trait and thus not be compatible with Perseus. The errors available to you are:</p>
+<ul>
+<li><code>NotFound</code>, takes a <code>String</code> asset name</li>
+<li><code>ReadFailed</code>, takes a <code>String</code> asset name and a <code>String</code> error (not chained because it might come back by carrier pigeon for all we know)</li>
+<li><code>WriteFailed</code>, takes a <code>String</code> asset name and a <code>String</code> error (not chained because it might come back by carrier pigeon for all we know)</li>
+</ul>
+<h2 id="best-practices-1"><a class="header" href="#best-practices-1">Best Practices</a></h2>
+<p>Some storage solutions will be significantly faster in production than others, and a CDN is recommended over a database or the like. Generally speaking, go with something lightning-fast, or a local filesystem if you can. Unfortunately, Perseus must run its own logic to know what files to fetch, so direct communication between the app shell and the CDN is not possible, so speed of connection with your storage provider is essential.</p>
+<p>We're currently working on framework support on providers like Netlify so this process is fully seamless for you, but for now it will be very inconvenient. Hence, <strong>Perseus is presently not recommended for production use, but soon will be</strong>! Once integrations are up and running, the project has matured some more, and setup on platforms like Vercel is done, have at it!</p>
+
+                </main>
+
+                <nav class="nav-wrapper" aria-label="Page navigation">
+                    <!-- Mobile navigation buttons -->
+                    
+                    
+                    <div style="clear: both"></div>
+                </nav>
+            </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+            
+                    </nav>
+
+    </div>
+
+    
+    
+    
+        <script type="text/javascript">
+        window.playground_copyable = true;
+    </script>
+    
+    
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+    <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+    <!-- Custom JS scripts -->
+    
+            <script type="text/javascript">
+        window.addEventListener('load', function () {
+            window.setTimeout(window.print, 100);
+        });
+    </script>
+        
+</body>
+
+</html>

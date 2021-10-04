@@ -1,0 +1,265 @@
+
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+
+<head>
+    <!-- Book generated using mdBook -->
+    <meta charset="UTF-8">
+    <title>Server Deployment - Perseus Book</title>
+        
+
+    <!-- Custom HTML head -->
+    
+
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../favicon.svg">
+            <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/general.css">
+    <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+    
+    <!-- Highlight.js Stylesheets -->
+    <link rel="stylesheet" href="../highlight.css">
+    <link rel="stylesheet" href="../tomorrow-night.css">
+    <link rel="stylesheet" href="../ayu-highlight.css">
+
+    <!-- Custom theme stylesheets -->
+    
+    </head>
+
+<body>
+    <!-- Provide site root to javascript -->
+    <script type="text/javascript">
+        var path_to_root = "../";
+        var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+    </script>
+
+    <!-- Work around some values being stored in localStorage wrapped in quotes -->
+    <script type="text/javascript">
+        try {
+            var theme = localStorage.getItem('mdbook-theme');
+            var sidebar = localStorage.getItem('mdbook-sidebar');
+            if (theme.startsWith('"') && theme.endsWith('"')) {
+                localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+            }
+            if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+            }
+        } catch (e) { }
+    </script>
+
+    <!-- Set the theme before any content is loaded, prevents flash -->
+    <script type="text/javascript">
+        var theme;
+        try { theme = localStorage.getItem('mdbook-theme'); } catch (e) { }
+        if (theme === null || theme === undefined) { theme = default_theme; }
+        var html = document.querySelector('html');
+        html.classList.remove('no-js')
+        html.classList.remove('light')
+        html.classList.add(theme);
+        html.classList.add('js');
+    </script>
+
+    <!-- Hide / unhide sidebar before it is displayed -->
+    <script type="text/javascript">
+        var html = document.querySelector('html');
+        var sidebar = 'hidden';
+        if (document.body.clientWidth >= 1080) {
+            try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch (e) { }
+            sidebar = sidebar || 'visible';
+        }
+        html.classList.remove('sidebar-visible');
+        html.classList.add("sidebar-" + sidebar);
+    </script>
+
+    <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <div class="sidebar-scrollbox">
+            <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../what-is-perseus.html"><strong aria-hidden="true">1.1.</strong> What is Perseus?</a></li><li class="chapter-item expanded "><a href="../hello-world.html"><strong aria-hidden="true">1.2.</strong> Hello World!</a></li></ol></li><li class="chapter-item expanded "><a href="../second-app.html"><strong aria-hidden="true">2.</strong> Your Second App</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Reference</li><li class="chapter-item expanded "><a href="../define-app.html"><strong aria-hidden="true">3.</strong> define_app!</a></li><li class="chapter-item expanded "><a href="../views.html"><strong aria-hidden="true">4.</strong> Writing Views</a></li><li class="chapter-item expanded "><a href="../debugging.html"><strong aria-hidden="true">5.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="../templates/intro.html"><strong aria-hidden="true">6.</strong> Templates and Routing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../templates/metadata-modification.html"><strong aria-hidden="true">6.1.</strong> Modifying the &lt;head&gt;</a></li><li class="chapter-item expanded "><a href="../templates/setting-headers.html"><strong aria-hidden="true">6.2.</strong> Modifying HTTP Headers</a></li></ol></li><li class="chapter-item expanded "><a href="../error-pages.html"><strong aria-hidden="true">7.</strong> Error Pages</a></li><li class="chapter-item expanded "><a href="../static-content.html"><strong aria-hidden="true">8.</strong> Static Content</a></li><li class="chapter-item expanded "><a href="../i18n/intro.html"><strong aria-hidden="true">9.</strong> Internationalization</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../i18n/defining.html"><strong aria-hidden="true">9.1.</strong> Defining Translations</a></li><li class="chapter-item expanded "><a href="../i18n/using.html"><strong aria-hidden="true">9.2.</strong> Using Translations</a></li><li class="chapter-item expanded "><a href="../i18n/translations-managers.html"><strong aria-hidden="true">9.3.</strong> Translations Managers</a></li><li class="chapter-item expanded "><a href="../i18n/other-engines.html"><strong aria-hidden="true">9.4.</strong> Other Translation Engines</a></li></ol></li><li class="chapter-item expanded "><a href="../strategies/intro.html"><strong aria-hidden="true">10.</strong> Rendering Strategies</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../strategies/build-state.html"><strong aria-hidden="true">10.1.</strong> Build State</a></li><li class="chapter-item expanded "><a href="../strategies/build-paths.html"><strong aria-hidden="true">10.2.</strong> Build Paths</a></li><li class="chapter-item expanded "><a href="../strategies/request-state.html"><strong aria-hidden="true">10.3.</strong> Request State</a></li><li class="chapter-item expanded "><a href="../strategies/revalidation.html"><strong aria-hidden="true">10.4.</strong> Revalidation</a></li><li class="chapter-item expanded "><a href="../strategies/incremental.html"><strong aria-hidden="true">10.5.</strong> Incremental Generation</a></li><li class="chapter-item expanded "><a href="../strategies/amlagamation.html"><strong aria-hidden="true">10.6.</strong> State Amalgamation</a></li></ol></li><li class="chapter-item expanded "><a href="../cli.html"><strong aria-hidden="true">11.</strong> CLI</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../ejecting.html"><strong aria-hidden="true">11.1.</strong> Ejecting</a></li></ol></li><li class="chapter-item expanded "><a href="../testing/intro.html"><strong aria-hidden="true">12.</strong> Testing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../testing/checkpoints.html"><strong aria-hidden="true">12.1.</strong> Checkpoints</a></li><li class="chapter-item expanded "><a href="../testing/fantoccini-basics.html"><strong aria-hidden="true">12.2.</strong> Fantoccini Basics</a></li><li class="chapter-item expanded "><a href="../testing/manual.html"><strong aria-hidden="true">12.3.</strong> Manual Testing</a></li></ol></li><li class="chapter-item expanded "><a href="../styling.html"><strong aria-hidden="true">13.</strong> Styling</a></li><li class="chapter-item expanded "><a href="../stores.html"><strong aria-hidden="true">14.</strong> Stores</a></li><li class="chapter-item expanded "><a href="../exporting.html"><strong aria-hidden="true">15.</strong> Static Exporting</a></li><li class="chapter-item expanded "><a href="../deploying/intro.html"><strong aria-hidden="true">16.</strong> Deploying</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../deploying/serverful.html" class="active"><strong aria-hidden="true">16.1.</strong> Server Deployment</a></li><li class="chapter-item expanded "><a href="../deploying/serverless.html"><strong aria-hidden="true">16.2.</strong> Serverless Deployment</a></li><li class="chapter-item expanded "><a href="../deploying/size.html"><strong aria-hidden="true">16.3.</strong> Optimizing Code Size</a></li></ol></li><li class="chapter-item expanded "><a href="../updating.html"><strong aria-hidden="true">17.</strong> Migrating from v0.2.x</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Advanced</li><li class="chapter-item expanded "><a href="../advanced/intro.html"><strong aria-hidden="true">18.</strong> Under the Hood</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../advanced/arch.html"><strong aria-hidden="true">18.1.</strong> Architecture</a></li><li class="chapter-item expanded "><a href="../advanced/initial-loads.html"><strong aria-hidden="true">18.2.</strong> Initial Loads</a></li><li class="chapter-item expanded "><a href="../advanced/subsequent-loads.html"><strong aria-hidden="true">18.3.</strong> Subsequent Loads</a></li><li class="chapter-item expanded "><a href="../advanced/routing.html"><strong aria-hidden="true">18.4.</strong> Routing</a></li></ol></li></ol>        </div>
+        <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+    </nav>
+
+    <div id="page-wrapper" class="page-wrapper">
+
+        <div class="page">
+            <div id="menu-bar-hover-placeholder"></div>
+            <style>
+    header.warning {
+        background-color: rgb(242, 222, 222);
+        border-bottom-color: rgb(238, 211, 215);
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        border-bottom-style: solid;
+        border-bottom-width: 0.666667px;
+        border-image-outset: 0 0 0 0;
+        border-image-repeat: stretch stretch;
+        border-image-slice: 100% 100% 100% 100%;
+        border-image-source: none;
+        border-image-width: 1 1 1 1;
+        border-left-color: rgb(238, 211, 215);
+        border-left-style: solid;
+        border-left-width: 0.666667px;
+        border-right-color: rgb(238, 211, 215);
+        border-right-style: solid;
+        border-right-width: 0.666667px;
+        border-top-color: rgb(238, 211, 215);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-top-style: solid;
+        border-top-width: 0.666667px;
+        color: rgb(185, 74, 72);
+        padding-bottom: 8px;
+        padding-left: 14px;
+        padding-right: 35px;
+        padding-top: 8px;
+        text-align: center;
+        margin-bottom: 0px;
+        margin-left: 0px;
+        margin-right: 0px;
+        margin-top: 30px;
+    }
+</style>
+<header class="warning">
+    This documentation is for the <strong>unpublished</strong> next version of Perseus,
+    and features documented here may not yet be available in the existing releases.
+    <br>
+    You can find documentation for the most recently released version of Perseus
+    <a href="https://arctic-hen7.github.io/perseus/stable.html">here</a>.
+</header>
+
+            <div id="menu-bar" class="menu-bar sticky bordered">
+                <div class="left-buttons">
+                    <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents"
+                        aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button" type="button" title="Change theme"
+                        aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                        <i class="fa fa-paint-brush"></i>
+                    </button>
+                    <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                        <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                        <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button>
+                        </li>
+                    </ul>
+                                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)"
+                        aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S"
+                        aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                                    </div>
+
+                <h1 class="menu-title">Perseus Book</h1>
+
+                <div class="right-buttons">
+                                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                                                            
+                </div>
+            </div>
+
+                        <div id="search-wrapper" class="hidden">
+                <form id="searchbar-outer" class="searchbar-outer">
+                    <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..."
+                        aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                </form>
+                <div id="searchresults-outer" class="searchresults-outer hidden">
+                    <div id="searchresults-header" class="searchresults-header"></div>
+                    <ul id="searchresults">
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+            <script type="text/javascript">
+                document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                Array.from(document.querySelectorAll('#sidebar a')).forEach(function (link) {
+                    link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                });
+            </script>
+
+            <div id="content" class="content">
+                <main>
+                    <h1 id="server-deployment"><a class="header" href="#server-deployment">Server Deployment</a></h1>
+<p>If your app uses rendering strategies that need a server, you won't be able to export your app to purely static files, and so you'll need to host the Perseus server itself.</p>
+<p>You can prepare your production server by running <code>perseus deploy</code>, which will create a new directory called <code>pkg/</code>, which will contain the standalone binary and everything needed to run it. You should then upload this file to your server and set the <code>PERSEUS_STANDALONE</code> environment variable to <code>true</code> so that Perseus expects a standalone binary configuration. Note that this process will vary depending on your hosting provider.</p>
+<h2 id="hosting-providers"><a class="header" href="#hosting-providers">Hosting Providers</a></h2>
+<p>As you may recall from <a href="../stores.html">this section</a> on immutable and mutable stores, Perseus modifies some data at runtime, which is problematic if your hosting provider imposes the restriction that you can't write to the filesystem (as Netlify does). Perseus automatically handles this as well as it can by separating out mutable from immutable data, and storing as much as it can on the filesystem without causing problems. However, data for pages that use the <em>revalidation</em> or <em>incremental generation</em> strategies must be placed in a location where it can be changed while Perseus is running.</p>
+<p>If you're only using <em>build state</em> and/or <em>build paths</em> (or neither), you should export your app to purely static files instead, which you can read more about doing <a href="../exporting.html">here</a>. That will avoid this entire category of problems, and you can deploy basically wherever you want.</p>
+<p>If you're bringing <em>request state</em> into the mix, you can't export to static files, but you can run on a read-only filesystem, because only the <em>revalidation</em> and <em>incremental generation</em> strategies require mutability. Perseus will use a mutable store on the filesystem in the background, but won't ever need it.</p>
+<p>If you're using <em>revalidation</em> and <em>incremental generation</em>, you have two options, detailed below.</p>
+<h3 id="writable-filesystems"><a class="header" href="#writable-filesystems">Writable Filesystems</a></h3>
+<p>The first of these is to use an old-school provider that gives you a filesystem that you can write to. This may be more expensive for hosting, but it will allow you to take full advantage of all Perseus' features in a highly performant way.</p>
+<p>You can deploy to one of these providers without any further changes to your code, as they mimic your local system almost entirely (with a writable filesystem). Just run <code>perseus deploy</code> and copy the resulting <code>pkg/</code> folder to the server!</p>
+<h3 id="alternative-mutable-stores"><a class="header" href="#alternative-mutable-stores">Alternative Mutable Stores</a></h3>
+<p>The other option you have is deploying to a modern provider that has a read-only filesystem and then using an alternative mutable store. That is, you store your mutable data in a database or the like rather than on the filesystem. This requires you to implement the <code>MutableStore</code> <code>trait</code> for your storage system (see the <a href="https://docs.rs/perseus">API docs</a>), which should be relatively easy. You can then provide this to the <code>define_app!</code> macro with the <code>mutable_store</code> parameter. Make sure to test this on your local system to ensure that your connections all work as expected before deploying to the server, which you can do with <code>perseus deploy</code> and by then copying the <code>pkg/</code> directory to the server.</p>
+<p>This approach may seem more resilient and modern, but it comes with a severe downside: speed. Every request that involves mutable data (so any request for a revalidating page or an incrementally generated one) must go through four trips (an extra one to and from the database) rather than two, which is twice as many as usual! This will bring down your site's time to first byte (TTFB) radically, so you should ensure that your mutable store is as close to your server as possible so that the latency between them is negligible. If this performance pitfall is not acceptable, you should use an old-school hosting provider instead.</p>
+
+                </main>
+
+                <nav class="nav-wrapper" aria-label="Page navigation">
+                    <!-- Mobile navigation buttons -->
+                                        <a rel="prev" href="../deploying/intro.html" class="mobile-nav-chapters previous"
+                        title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    
+                                        <a rel="next" href="../deploying/serverless.html" class="mobile-nav-chapters next"
+                        title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                    
+                    <div style="clear: both"></div>
+                </nav>
+            </div>
+        </div>
+
+        <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                        <a rel="prev" href="../deploying/intro.html" class="nav-chapters previous" title="Previous chapter"
+                aria-label="Previous chapter" aria-keyshortcuts="Left">
+                <i class="fa fa-angle-left"></i>
+            </a>
+            
+                        <a rel="next" href="../deploying/serverless.html" class="nav-chapters next" title="Next chapter"
+                aria-label="Next chapter" aria-keyshortcuts="Right">
+                <i class="fa fa-angle-right"></i>
+            </a>
+                    </nav>
+
+    </div>
+
+    
+    
+    
+        <script type="text/javascript">
+        window.playground_copyable = true;
+    </script>
+    
+    
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+    <!-- Custom JS scripts -->
+    
+    
+</body>
+
+</html>
