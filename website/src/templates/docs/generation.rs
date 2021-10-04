@@ -154,7 +154,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
     // Handle the directives to include code from another file
     // We only loop through the file's lines if it likely contains what we want
     // TODO include only some lines
-    let contents = if contents.contains("{{#include") {
+    let contents = if contents.contains("{{#") {
         let mut contents_with_incls = contents.clone();
         for line in contents.lines() {
             let line = line.trim();
@@ -171,10 +171,37 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                 }
                 // And now add a `../../` to the front so that it's relative from `.perseus/`, where we are now
                 let rel_incl_path = format!("../../{}", &incl_path);
-                dbg!(&rel_incl_path);
                 let incl_contents = fs::read_to_string(&rel_incl_path)?;
                 // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
+            } else if line.starts_with("{{#lines_include ") && line.ends_with("}}") {
+                // Strip the directive to get the path of the file we're including
+                let mut incl_path_with_lines_suffix = line
+                    .strip_prefix("{{#lines_include ")
+                    .unwrap()
+                    .strip_suffix("}}")
+                    .unwrap();
+                // All the files here are in `docs/`, and they'll be including from outside there, so strip away any `../`s
+                while let Some(new_path) = incl_path_with_lines_suffix.strip_prefix("../") {
+                    incl_path_with_lines_suffix = new_path;
+                }
+                // Now remove the suffix that specifies the lines to get
+                let (incl_path, lines_start, lines_end) = {
+                    let vec: Vec<&str> = incl_path_with_lines_suffix.split(':').collect();
+                    (vec[0], vec[1].parse::<usize>()?, vec[2].parse::<usize>()?)
+                };
+                // And now add a `../../` to the front so that it's relative from `.perseus/`, where we are now
+                let rel_incl_path = format!("../../{}", &incl_path);
+                let incl_contents_full = fs::read_to_string(&rel_incl_path)?;
+                // Get the specific lines wanted
+                let incl_contents_lines = incl_contents_full
+                    .lines()
+                    .collect::<Vec<&str>>()
+                    .get((lines_start - 1)..(lines_end))
+                    .unwrap()
+                    .join("\n");
+                // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
+                contents_with_incls = contents_with_incls.replace(&line, &incl_contents_lines);
             }
         }
         contents_with_incls
