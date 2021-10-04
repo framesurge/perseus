@@ -62,6 +62,7 @@ pub async fn export_app(
     // Loop over every partial
     for (path, template_path) in render_cfg {
         // We need the encoded path to reference flattened build artifacts
+        // But we don't create a flattened system with exporting, everything is properly created in a directory structure
         let path_encoded = urlencoding::encode(&path).to_string();
         // Get the template itself
         let template = templates.get(&template_path);
@@ -104,7 +105,7 @@ pub async fn export_app(
                 let partial = serde_json::to_string(&page_data).unwrap();
                 immutable_store
                     .write(
-                        &format!("exported/.perseus/page/{}/{}.json", locale, &path_encoded),
+                        &format!("exported/.perseus/page/{}/{}.json", locale, &path),
                         &partial,
                     )
                     .await?;
@@ -128,10 +129,7 @@ pub async fn export_app(
             let partial = serde_json::to_string(&page_data).unwrap();
             immutable_store
                 .write(
-                    &format!(
-                        "exported/.perseus/page/{}/{}.json",
-                        locales.default, &path_encoded
-                    ),
+                    &format!("exported/.perseus/page/{}/{}.json", locales.default, &path),
                     &partial,
                 )
                 .await?;
