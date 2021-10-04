@@ -78,3 +78,4 @@ docs-version-switcher =
     .beta = v{ $version } (beta)
     .stable = v{ $version } (stable)
     .outdated = v{ $version } (outdated)
+comparisons-todo = 🚧 This page is currently under construction. Check back soon to see how Perseus compares to other frameworks! 🚧
