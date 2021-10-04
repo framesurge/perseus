@@ -36,13 +36,16 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
         })
 
         // This doesn't navigate to the same page in the new version, because it may well not exist
-        select(on:input = move |event| {
-            let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
-            let new_version = target.value();
-            // This isn't a reactive scope, so we can't use `link!` here
-            let link = format!("/{}/docs/{}/intro", *locale_2.get(), new_version);
-            navigate(&link);
-        }) {
+        select(
+            class = "p-1 rounded-sm dark:bg-navy",
+            on:input = move |event| {
+                let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
+                let new_version = target.value();
+                // This isn't a reactive scope, so we can't use `link!` here
+                let link = format!("/{}/docs/{}/intro", *locale_2.get(), new_version);
+                navigate(&link);
+            }
+        ) {
             option(value = "next", selected = current_version == "next") {
                 (t!("docs-version-switcher.next"))
             }
