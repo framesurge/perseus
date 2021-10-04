@@ -1,9 +1,0 @@
-[book]
-authors = ["arctic_hen7"]
-language = "en"
-multilingual = false
-src = "src"
-title = "Perseus Book"
-
-[rust]
-edition = "2018"

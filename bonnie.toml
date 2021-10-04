@@ -20,6 +20,33 @@ dev.subcommands.example.cmd = [
 dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
+site.subcommands.export.cmd = [
+    "cd website",
+    "find . -not -path \"./.perseus/*\" -not -path \"./target/*\" | entr -s \"perseus export\""
+]
+site.subcommands.export.desc = "exports the site, watching for changes"
+site.subcommands.serve.cmd = [
+    "cd website",
+    "browser-sync start --server \".perseus/dist/exported\" --files .perseus/dist --no-open --port 8080 --extensions html"
+]
+site.subcommands.serve.desc = "serves the site's exported content"
+site.subcommands.build-tailwind.cmd = [
+    "cd website",
+    "tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css"
+]
+site.subcommands.build-tailwind.desc = "builds a tailwind stylesheet for development (no purging)"
+site.subcommands.build-tailwind.subcommands.prod.cmd = [
+    "cd website",
+    "NODE_ENV=production npx tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css --minify"
+]
+site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind stylesheet for production (purging and minifying)"
+site.subcommands.deploy.cmd = [
+    "bonnie site build-tailwind prod",
+    "cd website",
+    "perseus deploy -e"
+]
+site.subcommands.deploy.desc = "builds the website for production and finalizes it at `website/pkg`"
+
 build = "cargo build"
 
 copy-subcrates.cmd = [
