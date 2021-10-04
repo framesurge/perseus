@@ -27,7 +27,7 @@ You can write your own tests by creating files of whatever names you'd like unde
 You'll also need to add the following to your `Cargo.toml` (`tokio` is needed for running your tests asynchronously):
 
 ```toml
-{{#include ../../../../examples/basic/Cargo.toml:14:16}}
+{{#lines_include ../../../../examples/basic/Cargo.toml:14:16}}
 ```
 
 ## Running Tests

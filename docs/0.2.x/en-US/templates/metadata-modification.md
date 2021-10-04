@@ -9,5 +9,5 @@ The only particular thing to note here is that, because this is rendered to a `S
 Here's an example of modifying a page's metadata (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/templates/index.rs)):
 
 ```rust
-{{#rustdoc_include ../../../../examples/basic/src/templates/index.rs:43:49}}
+{{#lines_include ../../../../examples/basic/src/templates/index.rs:43:49}}
 ```

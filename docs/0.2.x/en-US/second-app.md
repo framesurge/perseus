@@ -160,7 +160,7 @@ Perseus is compatible with any browser that supports Wasm, which is most modern 
 By the way, remember this little bit of code in `src/lib.rs`?
 
 ```rust
-{{#include ../../../examples/basic/src/lib.rs:12:14}}
+{{#lines_include ../../../examples/basic/src/lib.rs:12:14}}
 ```
 
 If you navigate to <http://localhost:8080/test.txt>, you should see the contents on `static/test.txt`! You can also access them at <http://localhost:8080/.perseus/static/test.txt>
