@@ -8,7 +8,6 @@ on:
             - ".github/workflows/website.yml" # If we change this build script, it should rerun
         branches:
             - main
-            - feat-website # TODO remove this once the website is stable
 
 jobs:
     deploy:
@@ -28,4 +27,4 @@ jobs:
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   publish_dir: website/pkg
-                  publish_branch: gh-pages-website # TODO change this to `gh-pages` once the website is stable
+                  publish_branch: gh-pages
