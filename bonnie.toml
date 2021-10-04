@@ -37,7 +37,7 @@ site.subcommands.build-tailwind.cmd = [
 site.subcommands.build-tailwind.desc = "builds a tailwind stylesheet for development (no purging)"
 site.subcommands.build-tailwind.subcommands.prod.cmd = [
     "cd website",
-    "NODE_ENV=production tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css --minify"
+    "NODE_ENV=production npx tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css --minify"
 ]
 site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind stylesheet for production (purging and minifying)"
 site.subcommands.deploy.cmd = [
