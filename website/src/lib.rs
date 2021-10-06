@@ -14,5 +14,6 @@ define_app! {
     locales: {
         default: "en-US",
         other: []
-    }
+    }// ,
+    // path_prefix: "/perseus"
 }

@@ -48,6 +48,7 @@ pub async fn export_app(
     root_id: &str,
     immutable_store: &ImmutableStore,
     translations_manager: &impl TranslationsManager,
+    path_prefix: String,
 ) -> Result<(), ServerError> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(immutable_store).await?;
@@ -57,7 +58,7 @@ pub async fn export_app(
             path: html_shell_path.to_string(),
             source: err,
         })?;
-    let html_shell = prep_html_shell(raw_html_shell, &render_cfg);
+    let html_shell = prep_html_shell(raw_html_shell, &render_cfg, path_prefix);
 
     // Loop over every partial
     for (path, template_path) in render_cfg {

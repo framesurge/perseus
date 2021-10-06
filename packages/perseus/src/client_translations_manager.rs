@@ -1,4 +1,5 @@
 use crate::errors::*;
+use crate::path_prefix::get_path_prefix_client;
 use crate::shell::fetch;
 use crate::Locales;
 use crate::Translator;
@@ -27,6 +28,7 @@ impl ClientTranslationsManager {
         &mut self,
         locale: &str,
     ) -> Result<Rc<Translator>, ClientError> {
+        let path_prefix = get_path_prefix_client();
         // Check if we've already cached
         if self.cached_translator.is_some()
             && self.cached_translator.as_ref().unwrap().get_locale() == locale
@@ -36,14 +38,15 @@ impl ClientTranslationsManager {
             // Check if the locale is supported and we're actually using i18n
             if self.locales.is_supported(locale) && self.locales.using_i18n {
                 // Get the translations data
-                let asset_url = format!("/.perseus/translations/{}", locale);
+                let asset_url = format!("{}/.perseus/translations/{}", path_prefix, locale);
                 // If this doesn't exist, then it's a 404 (we went here by explicit navigation after checking the locale, so that's a bug)
                 let translations_str = fetch(&asset_url).await;
                 let translator = match translations_str {
                     Ok(translations_str) => match translations_str {
                         Some(translations_str) => {
                             // All good, turn the translations into a translator
-                            let translator = Translator::new(locale.to_string(), translations_str);
+                            let translator =
+                                Translator::new(locale.to_string(), translations_str, &path_prefix);
                             match translator {
                                 Ok(translator) => translator,
                                 Err(err) => {
@@ -75,7 +78,8 @@ impl ClientTranslationsManager {
                 Ok(Rc::clone(self.cached_translator.as_ref().unwrap()))
             } else if !self.locales.using_i18n {
                 // If we aren't even using i18n, then it would be pointless to fetch translations
-                let translator = Translator::new("xx-XX".to_string(), "".to_string()).unwrap();
+                let translator =
+                    Translator::new("xx-XX".to_string(), "".to_string(), &path_prefix).unwrap();
                 // Cache that translator
                 self.cached_translator = Some(Rc::new(translator));
                 // Now return that

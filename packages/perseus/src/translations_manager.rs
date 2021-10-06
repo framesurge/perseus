@@ -76,6 +76,8 @@ pub struct FsTranslationsManager {
     cached_locales: Vec<String>,
     /// The file extension expected (e.g. JSON, FTL, etc). This allows for greater flexibility of translation engines (future).
     file_ext: String,
+    /// The path prefix for the app.
+    path_prefix: String,
 }
 impl FsTranslationsManager {
     /// Creates a new filesystem translations manager. You should provide a path like `/translations` here. You should also provide
@@ -83,13 +85,19 @@ impl FsTranslationsManager {
     /// will not be cached, and must have their translations read from disk on every request. If fetching translations for any of the
     /// given locales fails, this will panic (locales to be cached should always be hardcoded).
     // TODO performance analysis of manual caching strategy
-    pub async fn new(root_path: String, locales_to_cache: Vec<String>, file_ext: String) -> Self {
+    pub async fn new(
+        root_path: String,
+        locales_to_cache: Vec<String>,
+        file_ext: String,
+        path_prefix: String,
+    ) -> Self {
         // Initialize a new instance without any caching first
         let mut manager = Self {
             root_path,
             cached_translations: HashMap::new(),
             cached_locales: Vec::new(),
             file_ext,
+            path_prefix,
         };
         // Now use that to get the translations for the locales we want to cache (all done in parallel)
         let mut futs = Vec::new();
@@ -150,12 +158,11 @@ impl TranslationsManager for FsTranslationsManager {
             translations_str = self.get_translations_str_for_locale(locale.clone()).await?;
         }
         // We expect the translations defined there, but not the locale itself
-        let translator = Translator::new(locale.clone(), translations_str).map_err(|err| {
-            TranslationsManagerError::SerializationFailed {
+        let translator = Translator::new(locale.clone(), translations_str, &self.path_prefix)
+            .map_err(|err| TranslationsManagerError::SerializationFailed {
                 locale: locale.clone(),
                 source: err.into(),
-            }
-        })?;
+            })?;
 
         Ok(translator)
     }
@@ -163,6 +170,7 @@ impl TranslationsManager for FsTranslationsManager {
 
 /// A dummy translations manager for use if you don't want i18n. This avoids errors of not being able to find translations. If you set
 /// `no_i18n: true` in the `locales` section of `define_app!`, this will be used by default. If you intend to use i18n, do not use this!
+/// Using the `link!` macro with this will NOT prepend the path prefix, and it will result in a nonsensical URL that won't work.
 #[derive(Clone, Default)]
 pub struct DummyTranslationsManager;
 impl DummyTranslationsManager {
@@ -183,7 +191,7 @@ impl TranslationsManager for DummyTranslationsManager {
         &self,
         locale: String,
     ) -> Result<Translator, TranslationsManagerError> {
-        let translator = Translator::new(locale.clone(), String::new()).map_err(|err| {
+        let translator = Translator::new(locale.clone(), String::new(), "").map_err(|err| {
             TranslationsManagerError::SerializationFailed {
                 locale,
                 source: err.into(),

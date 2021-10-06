@@ -51,6 +51,8 @@ mod locale_detector;
 mod locales;
 mod log;
 mod macros;
+/// Utilities relating to working with path prefixes for when a site is hosted at a relative path.
+pub mod path_prefix;
 /// Utilities regarding routing.
 pub mod router;
 /// Utilities for serving your app. These are platform-agnostic, and you probably want an integration like [perseus-actix-web](https://crates.io/crates/perseus-actix-web).
@@ -72,7 +74,7 @@ pub use http::Request as HttpRequest;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
 pub use sycamore::{generic_node::GenericNode, DomNode, SsrNode};
-pub use sycamore_router::Route;
+pub use sycamore_router::{navigate, Route};
 
 pub use crate::build::{build_app, build_template, build_templates_for_locale};
 pub use crate::client_translations_manager::ClientTranslationsManager;

@@ -1,5 +1,6 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
+use crate::path_prefix::get_path_prefix_client;
 use crate::serve::PageData;
 use crate::template::Template;
 use crate::ClientTranslationsManager;
@@ -218,8 +219,7 @@ pub async fn app_shell(
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
-    initial_container: Element, // The container that the server put initial load content into
-    container_rx_elem: Element, // The container that we'll actually use (reactive)
+    (initial_container, container_rx_elem): (Element, Element), // The container that the server put initial load content into and the reactive container tht we'll actually use
 ) {
     checkpoint("app_shell_entry");
     // Check if this was an initial load and we already have the state
@@ -288,7 +288,8 @@ pub async fn app_shell(
             };
             // Get the static page data
             let asset_url = format!(
-                "/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",
+                "{}/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",
+                get_path_prefix_client(),
                 locale,
                 path.to_string(),
                 template.get_path(),

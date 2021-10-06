@@ -6,6 +6,7 @@ use actix_web::{web, HttpRequest};
 use perseus::{
     get_render_cfg,
     html_shell::prep_html_shell,
+    path_prefix::get_path_prefix_server,
     stores::{ImmutableStore, MutableStore},
     ErrorPages, Locales, SsrNode, TemplateMap, TranslationsManager,
 };
@@ -72,7 +73,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
     // Get the index file and inject the render configuration into ahead of time
     // Anything done here will affect any status code and all loads
     let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
-    let index_with_render_cfg = prep_html_shell(index_file, &render_cfg);
+    let index_with_render_cfg = prep_html_shell(index_file, &render_cfg, get_path_prefix_server());
 
     move |cfg: &mut web::ServiceConfig| {
         cfg

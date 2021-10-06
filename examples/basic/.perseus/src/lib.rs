@@ -77,8 +77,7 @@ pub fn run() -> Result<(), JsValue> {
                                     // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
                                     Rc::clone(&translations_manager),
                                     Rc::clone(&error_pages),
-                                    initial_container.unwrap().clone(),
-                                    container_rx_elem.clone()
+                                    (initial_container.unwrap().clone(), container_rx_elem.clone())
                                 ).await,
                                 // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
                                 // Those all go to the same system that redirects to the appropriate locale

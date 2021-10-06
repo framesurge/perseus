@@ -4,7 +4,7 @@ use app::{
 };
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::executor::block_on;
-use perseus::{build_app, export_app, SsrNode};
+use perseus::{build_app, export_app, path_prefix::get_path_prefix_server, SsrNode};
 use std::fs;
 use std::path::PathBuf;
 
@@ -41,6 +41,7 @@ fn real_main() -> i32 {
         APP_ROOT,
         &immutable_store,
         &translations_manager,
+        get_path_prefix_server(),
     );
     if let Err(err) = block_on(export_fut) {
         eprintln!("Static exporting failed: '{}'.", err);

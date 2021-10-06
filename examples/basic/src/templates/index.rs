@@ -15,7 +15,7 @@ pub struct IndexPageProps {
 pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
     template! {
         p {(props.greeting)}
-        a(href = "/about", id = "about-link") { "About!" }
+        a(href = "about", id = "about-link") { "About!" }
     }
 }
 
