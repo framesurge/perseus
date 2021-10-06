@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.7](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.6...v0.3.0-beta.7) (2021-10-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **routing:** multiple *internal* function signatures accept exxtra parameter for path prefix
+
+### Features
+
+* **routing:** ✨ added support for relative path hosting with `PERSEUS_BASE_PATH` environment variable ([b7d6eb6](https://github.com/arctic-hen7/perseus/commit/b7d6eb680d3a4368b6d74bfe748fa70207436107)), closes [#48](https://github.com/arctic-hen7/perseus/issues/48)
+* ✨ added website ([#47](https://github.com/arctic-hen7/perseus/issues/47)) ([45a0f6c](https://github.com/arctic-hen7/perseus/commit/45a0f6c327fc9386ca31dd6f305cdb387dda5ce0)), closes [#46](https://github.com/arctic-hen7/perseus/issues/46)
+
+
+### Bug Fixes
+
+* **routing:** 🐛 made back button work with locale redirection ([cf60c12](https://github.com/arctic-hen7/perseus/commit/cf60c123600a1dad936fb0ed0b4855d903ee25a3)), closes [#50](https://github.com/arctic-hen7/perseus/issues/50)
+
+
+### Documentation Changes
+
+* **book:** 📝 added docs for relative path deployment ([1ecc94f](https://github.com/arctic-hen7/perseus/commit/1ecc94f5fd6a8399fc8ae13e931968c7d1df05b3))
+
 ## [0.3.0-beta.6](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.5...v0.3.0-beta.6) (2021-10-02)
 
 
