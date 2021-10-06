@@ -1,6 +1,6 @@
 [package]
 name = "perseus-website"
-version = "0.3.0-beta.5"
+version = "0.3.0-beta.7"
 edition = "2018"
 description = "The official website for the Perseus framework."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -13,7 +13,7 @@ readme = "./README.md"
 
 [dependencies]
 # We use the current version of Perseus, not the local one
-perseus = "0.3.0-beta.6"
+perseus = "0.3.0-beta.7"
 sycamore = "0.6"
 sycamore-router = "0.6"
 serde = "1"
