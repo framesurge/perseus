@@ -28,7 +28,7 @@
     -   [Request State](/docs/strategies/request-state)
     -   [Revalidation](/docs/strategies/revalidation)
     -   [Incremental Generation](/docs/strategies/incremental)
-    -   [State Amalgamation](/docs/strategies/amalgamation)
+    -   [State Amalgamation](/docs/strategies/amlagamation)
 -   [CLI](/docs/cli)
     -   [Ejecting](/docs/ejecting)
 -   [Testing](/docs/testing/intro)
@@ -42,6 +42,7 @@
     -   [Server Deployment](/docs/deploying/serverful)
     -   [Serverless Deployment](/docs/deploying/serverless)
     -   [Optimizing Code Size](/docs/deploying/size)
+    -   [Relative Paths](/docs/deploying/relative-paths)
 -   [Migrating from v0.2.x](/docs/updating)
 
 ---

@@ -1,4 +1,4 @@
-# Summary
+# Introduction
 
 -   [Introduction](/docs/intro)
     -   [What is Perseus?](/docs/what-is-perseus)
@@ -42,6 +42,7 @@
     -   [Server Deployment](/docs/deploying/serverful)
     -   [Serverless Deployment](/docs/deploying/serverless)
     -   [Optimizing Code Size](/docs/deploying/size)
+    -   [Relative Paths](/docs/deploying/relative-paths)
 -   [Migrating from v0.2.x](/docs/updating)
 
 ---
