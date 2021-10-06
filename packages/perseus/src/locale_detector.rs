@@ -41,7 +41,7 @@ pub fn detect_locale(url: String, locales: Locales) {
     web_sys::window()
         .unwrap()
         .location()
-        .set_href(&format!("/{}/{}", locale, url))
+        .replace(&format!("/{}/{}", locale, url))
         .unwrap();
 }
 
