@@ -20,7 +20,7 @@ jobs:
             - run: npm install
               working-directory: website
             - name: Build website
-              run: bonnie site deploy
+              run: bonnie site deploy-prod
             - name: Deploy website to GitHub Pages
               uses: peaceiris/actions-gh-pages@v3
               if: github.ref == 'refs/heads/main'
