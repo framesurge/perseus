@@ -62,7 +62,16 @@ site.subcommands.deploy.cmd = [
     "TEST_EXAMPLE=../../website/website PERSEUS_BASE_PATH=http://localhost:8080/perseus cargo run -- deploy -e"
 
 ]
-site.subcommands.deploy.desc = "builds the website for production and finalizes it at `website/pkg`"
+site.subcommands.deploy.desc = "builds the website for production and finalizes it at `website/website/pkg`"
+site.subcommands.deploy-prod.cmd = [
+    "bonnie site build-tailwind prod",
+    "bonnie copy-subcrates",
+    "cd packages/perseus-cli",
+    # Point this live version of the CLI at the given example
+    "TEST_EXAMPLE=../../website/website PERSEUS_BASE_PATH=https://arctic-hen7.github.io/perseus cargo run -- deploy -e"
+
+]
+site.subcommands.deploy-prod.desc = "builds the website for production on GitHub Pages and finalizes it at `website/website/pkg`"
 site.subcommands.deploy.subcommands.serve.cmd = [
     "cd website/website",
     "mkdir pkgs",
