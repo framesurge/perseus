@@ -64,7 +64,7 @@ site.subcommands.deploy.cmd = [
 ]
 site.subcommands.deploy.desc = "builds the website for production and finalizes it at `website/website/pkg`"
 site.subcommands.deploy-prod.cmd = [
-    "mkdir -p examples/basic/.perseus/dist && mkdir -p examples/basic/.perseus/dist/static && mkdir -p examples/basic/.perseus/dist/exported"
+    "mkdir -p examples/basic/.perseus/dist && mkdir -p examples/basic/.perseus/dist/static && mkdir -p examples/basic/.perseus/dist/exported",
     "bonnie copy-subcrates",
     "bonnie site build-tailwind prod",
     "cd packages/perseus-cli",
