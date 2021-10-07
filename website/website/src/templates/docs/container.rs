@@ -42,7 +42,8 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
                 let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
                 let new_version = target.value();
                 // This isn't a reactive scope, so we can't use `link!` here
-                let link = format!("/{}/docs/{}/intro", *locale_2.get(), new_version);
+                // The base path will be included by HTML automatically
+                let link = format!("{}/docs/{}/intro", *locale_2.get(), new_version);
                 navigate(&link);
             }
         ) {
