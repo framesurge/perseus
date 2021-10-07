@@ -6,6 +6,7 @@ on:
             - "docs/**"
             - "website/**"
             - ".github/workflows/website.yml" # If we change this build script, it should rerun
+            - "bonnie.toml" # Any changes to the `deploy-prod` command should trigger a rebuild
         branches:
             - main
 
