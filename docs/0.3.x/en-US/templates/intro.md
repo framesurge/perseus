@@ -16,7 +16,7 @@ The `blog` template will be rendered to `/blog`, and will only use the _build st
 
 The `post` template is more complex, and it will generate _many_ pages, one for each blog post. This would probably use the _build paths_ strategy, which lets you fetch a list of blog posts from the CMS at build-time and invoke _build state_ for each of them, which would then get their content, metadata, etc. Thus, the `post` template generates many pages.
 
-Hopefully that explains the difference between a template and a post. This is a somewhat unintuitive part of Perseus, but it should be clear in the documentation what the difference is. Note however that old versions of the examples in the repository used these terms interchangeably, when they used to be the same. If you see any remaining ambiguity in the docs, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose)!
+Hopefully that explains the difference between a template and a page. This is a somewhat unintuitive part of Perseus, but it should be clear in the documentation what the difference is. Note however that old versions of the examples in the repository used these terms interchangeably, when they used to be the same. If you see any remaining ambiguity in the docs, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose)!
 
 ## Defining a Template
 
