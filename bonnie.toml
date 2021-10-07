@@ -1,6 +1,18 @@
 version="0.3.2"
 
 [scripts]
+setup.cmd = [
+    # Create the dist directories for the CLI in the `basic` example
+    # These are gitignored, and so not placed into Git unfortunately
+    "mkdir -p examples/basic/.perseus/dist",
+    "mkdir -p examples/basic/.perseus/dist/static",
+    "mkdir -p examples/basic/.perseus/dist/exported",
+    "bonnie copy-subcrates",
+    "cargo build",
+    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss' ('npm i -g tailwindcss') if you'll be working with the website.\""
+]
+setup.desc = "sets everything up for local development"
+
 dev.subcommands.cli.cmd = [
 	"cd packages/perseus-cli",
     # We need to copy in the directory where we actually work on the subcrate
