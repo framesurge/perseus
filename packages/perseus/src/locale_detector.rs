@@ -1,3 +1,4 @@
+use crate::path_prefix::get_path_prefix_client;
 use crate::Locales;
 
 /// Detects which locale the user should be served and redirects appropriately. This should only be used when the user navigates to a
@@ -36,12 +37,19 @@ pub fn detect_locale(url: String, locales: Locales) {
         }
     }
 
+    // Figure out what the new localized route should be
+    // This is complex because we need to strip away the base path
+    // We use the pathname part of the URL because the base path getter gets the pathname too
+    let base_path = get_path_prefix_client(); // We know this doesn't have a trailing slash
+    let loc = url.strip_prefix(&base_path).unwrap_or(&url);
+    let new_loc = format!("{}/{}/{}", base_path, locale, loc);
+
     // Imperatively navigate to the localized route
     // This certainly shouldn't fail...
     web_sys::window()
         .unwrap()
         .location()
-        .replace(&format!("/{}/{}", locale, url))
+        .replace(&new_loc)
         .unwrap();
 }
 
