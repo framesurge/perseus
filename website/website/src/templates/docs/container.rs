@@ -17,7 +17,7 @@ struct DocsVersionSwitcherProps {
 fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G> {
     let manifest = props.manifest.clone();
     let manifest_2 = manifest.clone();
-    let current_version = props.current_version.clone();
+    let current_version = props.current_version;
     let current_version_2 = current_version.clone();
     let current_version_3 = current_version.clone();
     let current_version_4 = current_version.clone();

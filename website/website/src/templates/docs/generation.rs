@@ -1,7 +1,9 @@
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::{link, t, RenderFnResult, RenderFnResultWithCause, path_prefix::get_path_prefix_server};
+use perseus::{
+    link, path_prefix::get_path_prefix_server, t, RenderFnResult, RenderFnResultWithCause,
+};
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -222,8 +224,10 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
     let sidebar_contents = fs::read_to_string(&sidebar_fs_path)?;
     // Replace all links in that file with localized equivalents with versions as well (with the base path added)
     // That means unversioned paths will redirect to the appropriate stable version
-    let sidebar_contents =
-        sidebar_contents.replace("/docs", &format!("{}/{}/docs/{}", get_path_prefix_server(), &locale, &version));
+    let sidebar_contents = sidebar_contents.replace(
+        "/docs",
+        &format!("{}/{}/docs/{}", get_path_prefix_server(), &locale, &version),
+    );
     let sidebar_html_contents = parse_md_to_html(&sidebar_contents);
 
     // Work out the status of this page
