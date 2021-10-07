@@ -15,7 +15,7 @@ pub fn index_page() -> SycamoreTemplate<G> {
                 // Splash page
                 div(
                     class = "bg-cover h-full flex justify-center items-center text-center dark:text-white",
-                    style = "background-image: url(\".perseus/static/svg/splash_page_bg.svg\"), url(\".perseus/static/svg/polygon_scatter.svg\");"
+                    style = "background-image: url(\"/.perseus/static/svg/splash_page_bg.svg\"), url(\"/.perseus/static/svg/polygon_scatter.svg\");"
                 ) {
                     div {
                         p(class = "text-7xl xs:text-8xl sm:text-9xl p-2 font-extrabold") { (t!("perseus")) }
@@ -41,7 +41,7 @@ pub fn index_page() -> SycamoreTemplate<G> {
                 }
                 div(
                     class = "bg-cover py-4 text-white",
-                    style = "background-image: url(\".perseus/static/svg/stacked_waves.svg\");"
+                    style = "background-image: url(\"/.perseus/static/svg/stacked_waves.svg\");"
                 ) {
                     // Brief description
                     div(class = "flex justify-center text-center text-lg w-full") {
@@ -102,7 +102,7 @@ pub fn index_page() -> SycamoreTemplate<G> {
                 // Second CTA
                 div(
                     class = "pb-24 flex flex-col justify-center text-white",
-                    style = "background: url(\".perseus/static/svg/cta_bg.svg\");background-size:cover;"
+                    style = "background: url(\"/.perseus/static/svg/cta_bg.svg\");background-size:cover;"
                 ) {
                     div(class = "text-3xl 2xs:text-4xl xs:text-5xl sm:text-6xl p-2 font-extrabold text-center") {
                         p { (t!("index-cta.first")) }

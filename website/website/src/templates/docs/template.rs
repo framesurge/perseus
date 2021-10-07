@@ -43,7 +43,7 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
         })
         // Because of how Perseus currently shifts everything, we need to re-highlight
         // And if the user starts on a page with nothing, they'll see no highlighting on any other pages, so we rerun every time the URL changes
-        script(src = ".perseus/static/prism.js", defer = true)
+        script(src = "/.perseus/static/prism.js", defer = true)
         script {
             "window.Prism.highlightAll();"
         }
@@ -63,9 +63,9 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
             let props: DocsPageProps = serde_json::from_str(&props.unwrap()).unwrap();
             template! {
                 title { (format!("{} | {}", props.title, t!("docs-title-base"))) }
-                link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
-                link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
-                link(rel = "stylesheet", href = ".perseus/static/prism.css")
+                link(rel = "stylesheet", href = "/.perseus/static/styles/markdown.css")
+                link(rel = "stylesheet", href = "/.perseus/static/styles/docs_links_markdown.css")
+                link(rel = "stylesheet", href = "/.perseus/static/prism.css")
             }
         }))
 }

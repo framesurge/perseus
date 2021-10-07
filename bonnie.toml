@@ -21,31 +21,44 @@ dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
 site.subcommands.export.cmd = [
-    "cd website",
-    "find . -not -path \"./.perseus/*\" -not -path \"./target/*\" | entr -s \"perseus export\""
+    "bonnie copy-subcrates",
+    "cd packages/perseus-cli",
+    # Point this live version of the CLI at the given example
+    "find ../../website/website -not -path \"./.perseus/*\" -not -path \"./target/*\" | entr -s \"TEST_EXAMPLE=../../website/website cargo run -- export\""
 ]
 site.subcommands.export.desc = "exports the site, watching for changes"
 site.subcommands.serve.cmd = [
-    "cd website",
+    "cd website/website",
     "browser-sync start --server \".perseus/dist/exported\" --files .perseus/dist --no-open --port 8080 --extensions html"
 ]
 site.subcommands.serve.desc = "serves the site's exported content"
 site.subcommands.build-tailwind.cmd = [
-    "cd website",
+    "cd website/website",
     "tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css"
 ]
 site.subcommands.build-tailwind.desc = "builds a tailwind stylesheet for development (no purging)"
 site.subcommands.build-tailwind.subcommands.prod.cmd = [
-    "cd website",
+    "cd website/website",
     "NODE_ENV=production npx tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css --minify"
 ]
 site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind stylesheet for production (purging and minifying)"
 site.subcommands.deploy.cmd = [
     "bonnie site build-tailwind prod",
-    "cd website",
-    "perseus deploy -e"
+    "bonnie copy-subcrates",
+    "cd packages/perseus-cli",
+    # Point this live version of the CLI at the given example
+    "TEST_EXAMPLE=../../website/website PERSEUS_BASE_PATH=http://localhost:8080/perseus cargo run -- deploy -e"
+
 ]
 site.subcommands.deploy.desc = "builds the website for production and finalizes it at `website/pkg`"
+site.subcommands.deploy.subcommands.serve.cmd = [
+    "cd website/website",
+    "mkdir pkgs",
+    "mv pkg pkgs/perseus",
+    "mv pkgs pkg",
+    "serve -p 8080 pkg/"
+]
+site.subcommands.deploy.subcommands.serve.desc = "serves the website for local testing after it's been built for production"
 
 build = "cargo build"
 

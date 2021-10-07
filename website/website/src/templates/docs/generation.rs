@@ -26,7 +26,7 @@ pub fn parse_md_to_html(markdown: &str) -> String {
 lazy_static! {
     /// The latest version of the documentation. This will need to be updated as the docs are from the `docs/stable.txt` file.
     static ref DOCS_MANIFEST: DocsManifest = {
-        let contents = fs::read_to_string("../../docs/manifest.json").unwrap();
+        let contents = fs::read_to_string("../../../docs/manifest.json").unwrap();
         serde_json::from_str(&contents).unwrap()
     };
 }
@@ -148,7 +148,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
             path_vec[1..].join("/") // The rest of the path
         )
     };
-    let fs_path = format!("../../{}.md", fs_path);
+    let fs_path = format!("../../../{}.md", fs_path);
     // Read that file
     let contents = fs::read_to_string(&fs_path)?;
     // Handle the directives to include code from another file
@@ -169,8 +169,8 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                 while let Some(new_path) = incl_path.strip_prefix("../") {
                     incl_path = new_path;
                 }
-                // And now add a `../../` to the front so that it's relative from `.perseus/`, where we are now
-                let rel_incl_path = format!("../../{}", &incl_path);
+                // And now add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
+                let rel_incl_path = format!("../../../{}", &incl_path);
                 let incl_contents = fs::read_to_string(&rel_incl_path)?;
                 // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
@@ -190,8 +190,8 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                     let vec: Vec<&str> = incl_path_with_lines_suffix.split(':').collect();
                     (vec[0], vec[1].parse::<usize>()?, vec[2].parse::<usize>()?)
                 };
-                // And now add a `../../` to the front so that it's relative from `.perseus/`, where we are now
-                let rel_incl_path = format!("../../{}", &incl_path);
+                // And now add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
+                let rel_incl_path = format!("../../../{}", &incl_path);
                 let incl_contents_full = fs::read_to_string(&rel_incl_path)?;
                 // Get the specific lines wanted
                 let incl_contents_lines = incl_contents_full
@@ -218,7 +218,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
         .unwrap();
 
     // Get the sidebar from `SUMMARY.md`
-    let sidebar_fs_path = format!("../../docs/{}/{}/SUMMARY.md", &version, &locale);
+    let sidebar_fs_path = format!("../../../docs/{}/{}/SUMMARY.md", &version, &locale);
     let sidebar_contents = fs::read_to_string(&sidebar_fs_path)?;
     // Replace all links in that file with localized equivalents with versions as well
     // That means unversioned paths will redirect to the appropriate stable version
@@ -256,7 +256,7 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     // We start off by rendering the `/docs` page itself as an alias
     let mut paths: Vec<String> = vec!["".to_string()];
     // Get the `docs/` directory (relative to `.perseus/`)
-    let docs_dir = PathBuf::from("../../docs");
+    let docs_dir = PathBuf::from("../../../docs");
     // Loop through it
     for entry in WalkDir::new(docs_dir) {
         let entry = entry?;
@@ -264,10 +264,10 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
         // Ignore any empty directories or the like
         if path.is_file() {
             // This should all pass, there are no non-Unicode filenames in the docs (and i18n titles are handled outside filenames)
-            // Also, all these are relative, which means we can safely strip away the `../../docs/`
+            // Also, all these are relative, which means we can safely strip away the `../../../docs/`
             // We also remove the file extensions (which are all `.md`)
             let path_str = path.to_str().unwrap().replace(".md", "");
-            let path_str = path_str.strip_prefix("../../docs/").unwrap();
+            let path_str = path_str.strip_prefix("../../../docs/").unwrap();
             // Only proceed for paths in the default locale (`en-US`), which we'll use to generate paths
             // Also disallow any of the `SUMMARY.md` files at this point (the extension has been stripped)
             // Also disallow the manifest file
