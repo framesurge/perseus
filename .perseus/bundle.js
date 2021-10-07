@@ -709,15 +709,15 @@ imports.wbg.__wbindgen_debug_string = function(arg0, arg1) {
 imports.wbg.__wbindgen_throw = function(arg0, arg1) {
     throw new Error(getStringFromWasm0(arg0, arg1));
 };
-imports.wbg.__wbindgen_closure_wrapper1195 = function(arg0, arg1, arg2) {
+imports.wbg.__wbindgen_closure_wrapper1196 = function(arg0, arg1, arg2) {
     var ret = makeMutClosure(arg0, arg1, 506, __wbg_adapter_20);
     return addHeapObject(ret);
 };
-imports.wbg.__wbindgen_closure_wrapper1515 = function(arg0, arg1, arg2) {
+imports.wbg.__wbindgen_closure_wrapper1516 = function(arg0, arg1, arg2) {
     var ret = makeMutClosure(arg0, arg1, 680, __wbg_adapter_23);
     return addHeapObject(ret);
 };
-imports.wbg.__wbindgen_closure_wrapper1575 = function(arg0, arg1, arg2) {
+imports.wbg.__wbindgen_closure_wrapper1576 = function(arg0, arg1, arg2) {
     var ret = makeClosure(arg0, arg1, 702, __wbg_adapter_26);
     return addHeapObject(ret);
 };
