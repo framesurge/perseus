@@ -40,16 +40,20 @@ pub fn detect_locale(url: String, locales: Locales) {
     // Figure out what the new localized route should be
     // This is complex because we need to strip away the base path
     // We use the pathname part of the URL because the base path getter gets the pathname too
+    let url = url.strip_suffix('/').unwrap_or(&url);
+    let url = url.strip_prefix('/').unwrap_or(url);
+    let url = format!("/{}", url);
     let base_path = get_path_prefix_client(); // We know this doesn't have a trailing slash
     let loc = url.strip_prefix(&base_path).unwrap_or(&url);
     let new_loc = format!("{}/{}/{}", base_path, locale, loc);
+    let new_loc = new_loc.strip_suffix('/').unwrap_or(&new_loc);
 
     // Imperatively navigate to the localized route
     // This certainly shouldn't fail...
     web_sys::window()
         .unwrap()
         .location()
-        .replace(&new_loc)
+        .replace(new_loc)
         .unwrap();
 }
 
