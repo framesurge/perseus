@@ -1,3 +1,6 @@
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 mod components;
 mod error_pages;
 mod templates;
@@ -14,6 +17,5 @@ define_app! {
     locales: {
         default: "en-US",
         other: []
-    }// ,
-    // path_prefix: "/perseus"
+    }
 }
