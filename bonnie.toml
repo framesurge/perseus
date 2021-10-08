@@ -9,7 +9,7 @@ setup.cmd = [
     "mkdir -p examples/basic/.perseus/dist/exported",
     "bonnie copy-subcrates",
     "cargo build",
-    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss' ('npm i -g tailwindcss') if you'll be working with the website.\""
+    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss' and 'browser-sync' ('npm i -g tailwindcss browser-sync') if you'll be working with the website.\""
 ]
 setup.desc = "sets everything up for local development"
 
