@@ -27,13 +27,12 @@ pub fn index_page() -> SycamoreTemplate<G> {
                         ) { (t!("index-get-started")) }
                         a(
                             // The difference in y-axis padding is deliberate, it looks better with the ring
-                            class = "py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl dark:text-white ring-4 ring-indigo-500 hover:ring-indigo-400 transition-colors duration-200",
-                            href = "https://github.com/arctic-hen7/perseus",
-                            // I genuinely have no clue why this works, but it does
-                            style = "display: ruby;"
+                            class = "inline-flex items-center py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl dark:text-white ring-4 ring-indigo-500 hover:ring-indigo-400 transition-colors duration-200",
+                            href = "https://github.com/arctic-hen7/perseus"
                         ) {
                             span(
-                               dangerously_set_inner_html = GITHUB_SVG
+                                class = "m-1",
+                                dangerously_set_inner_html = GITHUB_SVG
                             )
                             span { (format!(" {}", t!("index-github"))) }
                         }
