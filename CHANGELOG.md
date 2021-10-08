@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.8](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.7...v0.3.0-beta.8) (2021-10-08)
+
+
+### Bug Fixes
+
+* **i18n:** 🐛 fixed path prefixing with locale redirection ([241741f](https://github.com/arctic-hen7/perseus/commit/241741ff3055665f5721635d08b5770910f74add))
+* **i18n:** 🐛 made locale redirection work without trailing forward slash ([90b3a99](https://github.com/arctic-hen7/perseus/commit/90b3a990c19baafb763422575a1ef188baacf495))
+* **templates:** 🐛 inserted `<base>` element at top of `<head>` ([25959d7](https://github.com/arctic-hen7/perseus/commit/25959d79cf8ab40764100b9ababbe4ede8ededad))
+* **website:** 🐛 fixed absolute path links in website ([221fa24](https://github.com/arctic-hen7/perseus/commit/221fa24e48f7374c427256c5d9ab6884d68755e3))
+* **website:** 🐛 fixed index page styling on non-firefox browsers ([#54](https://github.com/arctic-hen7/perseus/issues/54)) ([aced234](https://github.com/arctic-hen7/perseus/commit/aced2346fdce10ff0c16daf5c95e73de7120cac4))
+* **website:** 🐛 fixed website links ([54de491](https://github.com/arctic-hen7/perseus/commit/54de49130ec253ab61d6217a60379d2fa0eedd97))
+* **website:** 💄 made github button same size as get started button on index page ([c472e04](https://github.com/arctic-hen7/perseus/commit/c472e04a0d29615909a49248179ca8b27cdb0f60)), closes [#54](https://github.com/arctic-hen7/perseus/issues/54)
+
+
+### Performance Improvements
+
+* **website:** ⚡️ added size optimizations on website ([31fb1f8](https://github.com/arctic-hen7/perseus/commit/31fb1f84a0b21f4f5a3da646cd396f58f6dd4c37))
+
+
+### Code Refactorings
+
+* **website:** ♻️ updated website routes for path prefixing ([28bba42](https://github.com/arctic-hen7/perseus/commit/28bba423a75329f9610f7b61ee7e846e266c3d52))
+
 ## [0.3.0-beta.7](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.6...v0.3.0-beta.7) (2021-10-06)
 
 
