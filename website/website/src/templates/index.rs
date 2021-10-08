@@ -21,20 +21,22 @@ pub fn index_page() -> SycamoreTemplate<G> {
                         p(class = "text-7xl xs:text-8xl sm:text-9xl p-2 font-extrabold") { (t!("perseus")) }
                         p(class = "text-lg") { (t!("index-caption")) }
                         br()
-                        a(
-                            class = "py-3 px-4 m-2 font-semibold rounded-lg shadow-2xl text-white bg-indigo-500 hover:bg-indigo-400 transition-colors duration-200",
-                            href = link!("/docs")
-                        ) { (t!("index-get-started")) }
-                        a(
-                            // The difference in y-axis padding is deliberate, it looks better with the ring
-                            class = "inline-flex items-center py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl dark:text-white ring-4 ring-indigo-500 hover:ring-indigo-400 transition-colors duration-200",
-                            href = "https://github.com/arctic-hen7/perseus"
-                        ) {
-                            span(
-                                class = "m-1",
-                                dangerously_set_inner_html = GITHUB_SVG
-                            )
-                            span { (format!(" {}", t!("index-github"))) }
+                        div(class = "flex items-center justify-center") {
+                            a(
+                                class = "py-3 px-4 m-2 font-semibold rounded-lg shadow-2xl text-white bg-indigo-500 hover:bg-indigo-400 transition-colors duration-200",
+                                href = link!("/docs")
+                            ) { (t!("index-get-started")) }
+                            a(
+                                // The difference in y-axis padding is deliberate, it looks better with the ring
+                                class = "inline-flex items-center py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl dark:text-white ring-4 ring-indigo-500 hover:ring-indigo-400 transition-colors duration-200",
+                                href = "https://github.com/arctic-hen7/perseus"
+                            ) {
+                                span(
+                                    class = "mr-1",
+                                    dangerously_set_inner_html = GITHUB_SVG
+                                )
+                                span { (format!(" {}", t!("index-github"))) }
+                            }
                         }
                     }
                 }
