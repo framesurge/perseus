@@ -6,9 +6,9 @@ You can prepare your production server by running `perseus deploy`, which will c
 
 ## Hosting Providers
 
-As you may recall from [this section](../stores) on immutable and mutable stores, Perseus modifies some data at runtime, which is problematic if your hosting provider imposes the restriction that you can't write to the filesystem (as Netlify does). Perseus automatically handles this as well as it can by separating out mutable from immutable data, and storing as much as it can on the filesystem without causing problems. However, data for pages that use the _revalidation_ or _incremental generation_ strategies must be placed in a location where it can be changed while Perseus is running.
+As you may recall from [this section](:stores) on immutable and mutable stores, Perseus modifies some data at runtime, which is problematic if your hosting provider imposes the restriction that you can't write to the filesystem (as Netlify does). Perseus automatically handles this as well as it can by separating out mutable from immutable data, and storing as much as it can on the filesystem without causing problems. However, data for pages that use the _revalidation_ or _incremental generation_ strategies must be placed in a location where it can be changed while Perseus is running.
 
-If you're only using _build state_ and/or _build paths_ (or neither), you should export your app to purely static files instead, which you can read more about doing [here](../exporting). That will avoid this entire category of problems, and you can deploy basically wherever you want.
+If you're only using _build state_ and/or _build paths_ (or neither), you should export your app to purely static files instead, which you can read more about doing [here](:exporting). That will avoid this entire category of problems, and you can deploy basically wherever you want.
 
 If you're bringing _request state_ into the mix, you can't export to static files, but you can run on a read-only filesystem, because only the _revalidation_ and _incremental generation_ strategies require mutability. Perseus will use a mutable store on the filesystem in the background, but won't ever need it.
 

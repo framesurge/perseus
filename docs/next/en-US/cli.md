@@ -16,15 +16,15 @@ You can also provide `--no-build` to this command to make it skip building your 
 
 ### `test`
 
-Exactly the same as `serve`, but runs your app in testing mode, which you can read more about [here](./testing/intro).
+Exactly the same as `serve`, but runs your app in testing mode, which you can read more about [here](:testing/intro).
 
 ### `export`
 
-Builds and exports your app to a series of purely static files at `.perseus/dist/exported/`. This will only work if your app doesn't use any strategies that can't be run at build time, but if that's the case, then you can easily use Perseus without a server after running this command! You can read more about static exporting [here](./exporting).
+Builds and exports your app to a series of purely static files at `.perseus/dist/exported/`. This will only work if your app doesn't use any strategies that can't be run at build time, but if that's the case, then you can easily use Perseus without a server after running this command! You can read more about static exporting [here](:exporting).
 
 ### `deploy`
 
-Builds your app for production and places it in `pkg/`. You can then upload that folder to a server of your choosing to deploy your app live! You can (and really should) read more about deployment and the potential problems you may encounter [here](./deploying/intro).
+Builds your app for production and places it in `pkg/`. You can then upload that folder to a server of your choosing to deploy your app live! You can (and really should) read more about deployment and the potential problems you may encounter [here](:deploying/intro).
 
 ### `clean`
 

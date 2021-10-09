@@ -11,3 +11,11 @@ Here's an example of modifying a page's metadata (taken from [here](https://gith
 ```rust
 {{#lines_include ../../../../examples/basic/src/templates/index.rs:32:36}}
 ```
+
+## Script Loading
+
+One unfortunate caveat with Perseus' current approach to modifying the `<head>` is that any new `<script>`s you add will fail to load. This is because browsers only run new new scripts if they're appended as individual nodes, and Perseus sets the entire new `<head>` in bulk. for this reason, you should put `<script>`s at the top of the rest of your template instead. That way, they'll still load before your code, but they'll also actually load!
+
+If you really need to put a `<script>` in the `<head>` for some reason, you could append it directly using [`web_sys`](https://docs.rs/web-sys), though you should make sure that it doesn't work with the rest of your code first.
+
+Note that any scripts in your `index.html` are constant across all pages, and will load correctly.

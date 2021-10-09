@@ -62,7 +62,16 @@ To our knowledge, the only other framework in the world right now that supports 
 
 [Benchmarks show](https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html) that [Sycamore](https://sycamore-rs.netlify.app) is slightly faster than [Svelte](https://svelte.dev) in places, one of the fastest JS frameworks ever. Perseus uses it and [Actix Web](https://actix.rs), one of the fastest web servers in the world. Essentially, Perseus is built on the fastest tech and is itself made to be fast.
 
-Right now, Perseus is undergoing major improvements to make it even faster and to introduce new features, like support for internationalization (making your app available in many languages) out of the box, which involves significant changes to the code. Once these are ready, benchmarks for Perseus itself will be written to show how fast Perseus really is, but right now none exist.
+The speed of web frameworks is often measured by [Lighthouse] scores, which are scores out of 100 (higher is better) that measure a whole host of things, like *total blocking time*, *first contentful paint*, and *time to interactive*. These are then aggregated into a final score and grouped into three brackets: 0-49 (slow), 50-89 (medium), and 90-100 (fast). This website, which is built with Perseus, using [static exporting](:exporting) and [size optimizations](:deploying/size), consistently scores a 100 on desktop and above 90 for mobile. You can see this for yourself [here](https://developers.google.com/speed/pagespeed/insights/?url=https%3A%2F%2Farctic-hen7.github.io%2Fperseus%2Fen-US%2F&tab=desktop) on Google's PageSpeed Insights tool.
+
+<details>
+<summary>Why not 100 on mobile?</summary>
+
+The only issue that prevents Perseus from achieving a consistent perfect score on mobile is *total blocking time*, which measures the time between when the first content appears on the page and wehn that content is interactive. Of course, WebAssembly code is used for this part (compiled from Rust), which isn't completely optimized for yet on many mobile devices. As mobile browsers get better at parsing WebAssembly, TBT will likely decrease further from the medium range to the green range (which we see for more poerful desktop systems).
+
+</details>
+
+If you're interested in seeing how Perseus compares on speed and a number of other features to other frameworks, check out the [comparisons page](comparisons).
 
 ## How convenient is it?
 
@@ -77,7 +86,7 @@ Basically, here's your workflow:
 
 ## How stable is it?
 
-Okay, there had to be one caveat! Perseus is _very_ new, and as such can't be recommended for _production_ usage yet. However, we're aiming to get it ready for that really soon, which will hopefully include even being able to deploy Perseus with [serverless functions](https://en.wikipedia.org/wiki/Serverless_computing), the step beyond a server!
+Perseus is considered reasonably stable at this point, though it still can't be recommended for *production* usage just yet. That said, this very website is built entirely with Perseus and Sycamore, and it works pretty well!
 
 For now though, Perseus is perfect for anything that doesn't face the wider internet, like internal tools, personal projects, or the like. Just don't use it to run a nuclear power plant, okay?
 
