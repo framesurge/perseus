@@ -158,11 +158,12 @@ impl TranslationsManager for FsTranslationsManager {
             translations_str = self.get_translations_str_for_locale(locale.clone()).await?;
         }
         // We expect the translations defined there, but not the locale itself
-        let translator = Translator::new(locale.clone(), translations_str, &self.path_prefix)
-            .map_err(|err| TranslationsManagerError::SerializationFailed {
+        let translator = Translator::new(locale.clone(), translations_str).map_err(|err| {
+            TranslationsManagerError::SerializationFailed {
                 locale: locale.clone(),
                 source: err.into(),
-            })?;
+            }
+        })?;
 
         Ok(translator)
     }
@@ -191,7 +192,7 @@ impl TranslationsManager for DummyTranslationsManager {
         &self,
         locale: String,
     ) -> Result<Translator, TranslationsManagerError> {
-        let translator = Translator::new(locale.clone(), String::new(), "").map_err(|err| {
+        let translator = Translator::new(locale.clone(), String::new()).map_err(|err| {
             TranslationsManagerError::SerializationFailed {
                 locale,
                 source: err.into(),
