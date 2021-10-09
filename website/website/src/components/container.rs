@@ -7,7 +7,6 @@ pub static COPYRIGHT_YEARS: &str = "2021";
 #[component(NavLinks<G>)]
 pub fn nav_links() -> SycamoreTemplate<G> {
     template! {
-        // TODO fix overly left alignment here on mobile
         li(class = "m-3 p-1") {
             a(href = link!("/docs"), class = "px-2") { (t!("navlinks-docs")) }
         }

@@ -14,7 +14,6 @@ use walkdir::WalkDir;
 
 pub fn parse_md_to_html(markdown: &str) -> String {
     let mut opts = Options::empty();
-    // TODO possibly enable further features here if necessary
     opts.insert(Options::ENABLE_STRIKETHROUGH);
     opts.insert(Options::ENABLE_TABLES);
     let parser = Parser::new_ext(markdown, opts);
@@ -155,7 +154,6 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
     let contents = fs::read_to_string(&fs_path)?;
     // Handle the directives to include code from another file
     // We only loop through the file's lines if it likely contains what we want
-    // TODO include only some lines
     let contents = if contents.contains("{{#") {
         let mut contents_with_incls = contents.clone();
         for line in contents.lines() {
