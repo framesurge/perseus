@@ -36,6 +36,7 @@
     -   [Fantoccini Basics](/docs/testing/fantoccini-basics)
     -   [Manual Testing](/docs/testing/manual)
 -   [Styling](/docs/styling)
+-   [Communicating with a Server](/docs/server-communication)
 -   [Stores](/docs/stores)
 -   [Static Exporting](/docs/exporting)
 -   [Deploying](/docs/deploying/intro)
