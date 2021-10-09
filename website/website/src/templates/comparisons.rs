@@ -1,12 +1,17 @@
-use crate::components::comparisons::{
-    get_comparisons, get_perseus_comparison, render_lighthouse_score, Comparison,
-};
+use crate::components::comparisons::{render_lighthouse_score, Comparison};
 use crate::components::container::{Container, ContainerProps};
 use crate::components::info_svg::INFO_SVG;
-use perseus::{t, GenericNode, Template};
+use perseus::{
+    t, ErrorCause, GenericErrorWithCause, GenericNode, RenderFnResultWithCause, Template,
+};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::rc::Rc;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
+use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
 
 struct ComparisonRowProps {
@@ -62,8 +67,13 @@ fn comparison_row(props: ComparisonRowProps) -> SycamoreTemplate<G> {
     }
 }
 
+struct ComparisonTableProps {
+    comparison: StateHandle<Comparison>,
+    perseus_comparison: Comparison,
+}
 #[component(ComparisonTable<G>)]
-fn comparison_table(comparison: StateHandle<Comparison>) -> SycamoreTemplate<G> {
+fn comparison_table(props: ComparisonTableProps) -> SycamoreTemplate<G> {
+    let comparison = props.comparison.clone();
     let Comparison {
         name: _perseus_name, // We'll use the translation ID
         supports_ssg: perseus_supports_ssg,
@@ -80,7 +90,7 @@ fn comparison_table(comparison: StateHandle<Comparison>) -> SycamoreTemplate<G> 
         language: perseus_language,
         homepage_lighthouse_desktop: perseus_homepage_lighthouse_desktop,
         homepage_lighthouse_mobile: perseus_homepage_lighthouse_mobile,
-    } = get_perseus_comparison();
+    } = props.perseus_comparison;
     // We now need to deconstruct the comparison with memos (actual pain)
     let comparison_name =
         create_memo(cloned!((comparison) => move || comparison.get().name.clone()));
@@ -152,11 +162,6 @@ fn comparison_table(comparison: StateHandle<Comparison>) -> SycamoreTemplate<G> 
                     perseus_val: perseus_supports_ssg.render(),
                     comparison_val: comparison_supports_ssg.clone(),
                     name: "supports_ssg".to_string()
-                })
-                ComparisonRow(ComparisonRowProps {
-                    perseus_val: perseus_supports_ssr.render(),
-                    comparison_val: comparison_supports_ssr.clone(),
-                    name: "supports_ssr".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_ssr.render(),
@@ -278,9 +283,16 @@ fn comparison_table(comparison: StateHandle<Comparison>) -> SycamoreTemplate<G> 
     }
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct ComparisonsPageProps {
+    pub comparisons: HashMap<String, Comparison>,
+    /// The comparison data for Perseus itself.
+    pub perseus_comparison: Comparison,
+}
 #[component(ComparisonsPage<G>)]
-pub fn comparisons_page() -> SycamoreTemplate<G> {
-    let comparisons = get_comparisons();
+pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
+    let comparisons = props.comparisons.clone();
+    let perseus_comparison = props.perseus_comparison;
     let mut comparison_names: Vec<String> = comparisons.keys().cloned().collect();
     comparison_names.sort();
     // The current comparison should be the first element in the list alphabetically
@@ -338,7 +350,10 @@ pub fn comparisons_page() -> SycamoreTemplate<G> {
                         br()
                         div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
                             div(class = "flex justify-center") {
-                                ComparisonTable(curr_comparison.clone())
+                                ComparisonTable(ComparisonTableProps {
+                                    comparison: curr_comparison.clone(),
+                                    perseus_comparison
+                                })
                             }
                         }
                     }
@@ -350,9 +365,9 @@ pub fn comparisons_page() -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("comparisons")
-        .template(Rc::new(|_| {
+        .template(Rc::new(|props| {
             template! {
-                ComparisonsPage()
+                ComparisonsPage(serde_json::from_str(&props.unwrap()).unwrap())
             }
         }))
         .head(Rc::new(|_| {
@@ -360,4 +375,48 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
                 title { (format!("{} | {}", t!("comparisons-title"), t!("perseus"))) }
             }
         }))
+        .build_state_fn(Rc::new(get_build_state))
+}
+
+pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
+    // Get all the comparisons from JSON
+    // This includes the special properties for Perseus itself
+    let mut perseus_comparison: Option<Comparison> = None;
+    let mut comparisons: HashMap<String, Comparison> = HashMap::new();
+
+    // Get the `comparisons/` directory in `website` (relative to `.perseus/`)
+    // This can have any file structure we want for organization, we just want the files
+    let comparisons_dir = PathBuf::from("../comparisons");
+    // Loop through it
+    for entry in WalkDir::new(comparisons_dir) {
+        let entry = entry?;
+        let path = entry.path();
+        // Ignore any empty directories or the like
+        if path.is_file() {
+            // There shouldn't be any non-Unicode comparison files
+            let path_str = path.to_str().unwrap();
+            // Get the JSON contents and parse them as a comparison
+            let contents = fs::read_to_string(&path)?;
+            let comparison = serde_json::from_str::<Comparison>(&contents)?;
+            // If the file is `perseus.json`, we'll add this to a special variable, otherwise it gets added to the generic map
+            if path_str.ends_with("perseus.json") {
+                perseus_comparison = Some(comparison);
+            } else {
+                comparisons.insert(comparison.name.clone(), comparison);
+            }
+        }
+    }
+
+    let props = ComparisonsPageProps {
+        comparisons,
+        perseus_comparison: match perseus_comparison {
+            Some(perseus_comparison) => perseus_comparison,
+            None => return Err(GenericErrorWithCause {
+                error: "perseus comparison data not recorded, please ensure `comparisons/perseus.json` exists".into(),
+                cause: ErrorCause::Server(None)
+            })
+        }
+    };
+    let props_str = serde_json::to_string(&props)?;
+    Ok(props_str)
 }

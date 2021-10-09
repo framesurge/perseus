@@ -1,0 +1,17 @@
+{
+    "name": "GatsbyJS",
+    "supports_ssg": "full",
+    "supports_ssr": "none",
+    "supports_ssr_ssg_same_page": "none",
+    "supports_i18n": "partial",
+    "supports_incremental": "none",
+    "supports_revalidation": "none",
+    "inbuilt_cli": "full",
+    "inbuilt_routing": "full",
+    "supports_shell": "full",
+    "supports_deployment": "full",
+    "supports_exporting": "full",
+    "language": "JavaScript/TypeScript",
+    "homepage_lighthouse_desktop": 75,
+    "homepage_lighthouse_mobile": 45
+}
