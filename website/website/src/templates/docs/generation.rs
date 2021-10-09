@@ -1,9 +1,7 @@
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::{
-    link, path_prefix::get_path_prefix_server, t, RenderFnResult, RenderFnResultWithCause,
-};
+use perseus::{path_prefix::get_path_prefix_server, t, RenderFnResult, RenderFnResultWithCause};
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -38,11 +36,11 @@ pub enum DocsVersionStatus {
     /// This version is stable, and no warning is needed.
     Stable,
     /// This version is outdated, and the latest stable version is attached.
-    Outdated(String),
+    Outdated,
     /// This version is released, but in beta, and the latest stable version is attached.
-    Beta(String),
+    Beta,
     /// This documentation is for the unreleased next version, and the latest stable version is attached.
-    Next(String),
+    Next,
 }
 impl DocsVersionStatus {
     /// Renders the docs status to a Sycamore template for display.
@@ -50,8 +48,7 @@ impl DocsVersionStatus {
         match &self {
             // No message should be displayed if it's the correct version
             Self::Stable => template! {},
-            Self::Outdated(stable) => {
-                let stable = stable.to_string();
+            Self::Outdated => {
                 template! {
                     div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
@@ -60,15 +57,12 @@ impl DocsVersionStatus {
                                 style = "fill: #f87171;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.outdated", {
-                                "link": link!(&format!("/docs/{}/intro", stable))
-                            }))
+                            p(dangerously_set_inner_html = &t!("docs-status.outdated"))
                         }
                     }
                 }
             }
-            Self::Beta(stable) => {
-                let stable = stable.to_string();
+            Self::Beta => {
                 template! {
                     div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
@@ -77,15 +71,12 @@ impl DocsVersionStatus {
                                 style = "fill: #fcd34d;",
                                 dangerously_set_inner_html = WARNING_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.beta", {
-                                "link": link!(&format!("/docs/{}/intro", stable))
-                            }))
+                            p(dangerously_set_inner_html = &t!("docs-status.beta"))
                         }
                     }
                 }
             }
-            Self::Next(stable) => {
-                let stable = stable.to_string();
+            Self::Next => {
                 template! {
                     div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
@@ -94,9 +85,7 @@ impl DocsVersionStatus {
                                 style = "fill: #fb923c;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.next", {
-                                "link": link!(&format!("/docs/{}/intro", stable))
-                            }))
+                            p(dangerously_set_inner_html = &t!("docs-status.next"))
                         }
                     }
                 }
@@ -243,11 +232,11 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
 
     // Work out the status of this page
     let status = if version == "next" {
-        DocsVersionStatus::Next(DOCS_MANIFEST.stable.to_string())
+        DocsVersionStatus::Next
     } else if DOCS_MANIFEST.outdated.contains(&version.to_string()) {
-        DocsVersionStatus::Outdated(DOCS_MANIFEST.stable.to_string())
+        DocsVersionStatus::Outdated
     } else if DOCS_MANIFEST.beta.contains(&version.to_string()) {
-        DocsVersionStatus::Beta(DOCS_MANIFEST.stable.to_string())
+        DocsVersionStatus::Beta
     } else if DOCS_MANIFEST.stable == version {
         DocsVersionStatus::Stable
     } else {
