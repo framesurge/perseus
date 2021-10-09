@@ -209,6 +209,19 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
         contents
     };
 
+    // Parse any relative links to other pages in the docs
+    // We add the base path, the locale, and the docs version
+    // We use the special token `:` to denote these (e.g. `[static exporting](:exporting)`)
+    let contents = contents.replace(
+        "](:",
+        &format!(
+            "]({}/{}/docs/{}/",
+            get_path_prefix_server(),
+            &locale,
+            &version
+        ),
+    );
+
     // Parse the file to HTML
     let html_contents = parse_md_to_html(&contents);
     // Get the title from the first line of the contents, stripping the initial `#`
