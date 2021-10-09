@@ -1,6 +1,5 @@
 const defaultTheme = require("tailwindcss/defaultTheme");
 const colors = require("tailwindcss/colors");
-const plugin = require("tailwindcss/plugin");
 
 module.exports = {
     purge: {
@@ -26,7 +25,6 @@ module.exports = {
         },
         colors: {
             // Full color palette
-            // TODO trim this down to what's needed
             transparent: "transparent",
             current: "currentColor",
             navy: "#001122",
@@ -36,16 +34,10 @@ module.exports = {
             gray: colors.coolGray,
             red: colors.red,
             orange: colors.orange,
+            amber: colors.amber,
             yellow: colors.amber,
             green: colors.emerald,
-            blue: colors.blue,
             indigo: colors.indigo,
-            purple: colors.violet,
-            pink: colors.pink,
-            cyan: colors.cyan,
-            fuchsia: colors.fuchsia,
-            sky: colors.sky,
-            teal: colors.teal,
         },
     },
     variants: {},

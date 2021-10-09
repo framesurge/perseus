@@ -36,7 +36,7 @@ site.subcommands.export.cmd = [
     "bonnie copy-subcrates",
     "cd packages/perseus-cli",
     # Point this live version of the CLI at the given example
-    "find ../../website/website -not -path \"./.perseus/*\" -not -path \"./target/*\" | entr -s \"TEST_EXAMPLE=../../website/website cargo run -- export\""
+    "find ../../website/website -not -path \"../../website/website/.perseus/*\" -not -path \"../../website/website/target/*\" | entr -s \"TEST_EXAMPLE=../../website/website cargo run -- export\""
 ]
 site.subcommands.export.desc = "exports the site, watching for changes"
 site.subcommands.serve.cmd = [
