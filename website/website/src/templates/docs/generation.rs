@@ -1,9 +1,11 @@
+use crate::templates::docs::get_file_at_version::get_file_at_version;
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
 use perseus::{path_prefix::get_path_prefix_server, t, RenderFnResult, RenderFnResultWithCause};
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use sycamore::prelude::Template as SycamoreTemplate;
@@ -99,6 +101,8 @@ pub struct DocsManifest {
     pub stable: String,
     pub outdated: Vec<String>,
     pub beta: Vec<String>,
+    /// A map of versions to points in the Git version history.
+    pub history_map: HashMap<String, String>,
 }
 
 pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWithCause<String> {
@@ -141,6 +145,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
     let fs_path = format!("../../../{}.md", fs_path);
     // Read that file
     let contents = fs::read_to_string(&fs_path)?;
+
     // Handle the directives to include code from another file
     // We only loop through the file's lines if it likely contains what we want
     let contents = if contents.contains("{{#") {
@@ -158,9 +163,21 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                 while let Some(new_path) = incl_path.strip_prefix("../") {
                     incl_path = new_path;
                 }
-                // And now add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
-                let rel_incl_path = format!("../../../{}", &incl_path);
-                let incl_contents = fs::read_to_string(&rel_incl_path)?;
+                // If we're on the `next` version, read from the filesystem directly
+                // Otherwise, use Git to get the appropriate version (otherwise we get #60)
+                let incl_contents = if version == "next" {
+                    // Add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
+                    fs::read_to_string(format!("../../../{}", &incl_path))?
+                } else {
+                    // Get the corresponding history point for this version
+                    let history_point = DOCS_MANIFEST.history_map.get(version);
+                    let history_point = match history_point {
+                        Some(history_point) => history_point,
+                        None => panic!("docs version '{}' not present in history map", version),
+                    };
+                    // We want the path relative to the root of the project directory (where the Git repo is)
+                    get_file_at_version(incl_path, history_point, PathBuf::from("../../../"))?
+                };
                 // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
             } else if line.starts_with("{{#lines_include ") && line.ends_with("}}") {
@@ -179,9 +196,22 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                     let vec: Vec<&str> = incl_path_with_lines_suffix.split(':').collect();
                     (vec[0], vec[1].parse::<usize>()?, vec[2].parse::<usize>()?)
                 };
-                // And now add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
-                let rel_incl_path = format!("../../../{}", &incl_path);
-                let incl_contents_full = fs::read_to_string(&rel_incl_path)?;
+                // TODO use Git to get file contents if we're no on the `next` version
+                // If we're on the `next` version, read from the filesystem directly
+                // Otherwise, use Git to get the appropriate version (otherwise we get #60)
+                let incl_contents_full = if version == "next" {
+                    // Add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
+                    fs::read_to_string(format!("../../../{}", &incl_path))?
+                } else {
+                    // Get the corresponding history point for this version
+                    let history_point = DOCS_MANIFEST.history_map.get(version);
+                    let history_point = match history_point {
+                        Some(history_point) => history_point,
+                        None => panic!("docs version '{}' not present in history map", version),
+                    };
+                    // We want the path relative to the root of the project directory (where the Git repo is)
+                    get_file_at_version(incl_path, history_point, PathBuf::from("../../../"))?
+                };
                 // Get the specific lines wanted
                 let incl_contents_lines = incl_contents_full
                     .lines()
@@ -233,14 +263,14 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
     // Work out the status of this page
     let status = if version == "next" {
         DocsVersionStatus::Next
-    } else if DOCS_MANIFEST.outdated.contains(&version.to_string()) {
+    } else if DOCS_MANIFEST.outdated.iter().any(|v| v == version) {
         DocsVersionStatus::Outdated
-    } else if DOCS_MANIFEST.beta.contains(&version.to_string()) {
+    } else if DOCS_MANIFEST.beta.iter().any(|v| v == version) {
         DocsVersionStatus::Beta
     } else if DOCS_MANIFEST.stable == version {
         DocsVersionStatus::Stable
     } else {
-        unreachable!()
+        panic!("version '{}' isn't listed in the docs manifest", version)
     };
 
     let props = DocsPageProps {
