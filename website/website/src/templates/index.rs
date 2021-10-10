@@ -2,7 +2,6 @@ use crate::components::container::{Container, ContainerProps};
 use crate::components::features_list::get_features_list;
 use crate::components::github_svg::GITHUB_SVG;
 use perseus::{link, t, GenericNode, Template};
-use std::rc::Rc;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
@@ -131,14 +130,14 @@ pub fn index_page() -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("index")
-        .template(Rc::new(|_| {
+        .template(|_| {
             template! {
                 IndexPage()
             }
-        }))
-        .head(Rc::new(|_| {
+        })
+        .head(|_| {
             template! {
                 title { (t!("perseus")) }
             }
-        }))
+        })
 }

@@ -1,6 +1,5 @@
 use perseus::{RenderFnResultWithCause, Request, States, Template};
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,16 +16,16 @@ pub fn amalgamation_page(props: AmalagamationPageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("amalgamation")
-        .build_state_fn(Rc::new(get_build_state))
-        .request_state_fn(Rc::new(get_request_state))
-        .amalgamate_states_fn(Rc::new(amalgamate_states))
-        .template(Rc::new(|props| {
+        .build_state_fn(get_build_state)
+        .request_state_fn(get_request_state)
+        .amalgamate_states_fn(amalgamate_states)
+        .template(|props| {
             template! {
                 AmalgamationPage(
                     serde_json::from_str::<AmalagamationPageProps>(&props.unwrap()).unwrap()
                 )
             }
-        }))
+        })
 }
 
 pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<String>> {

@@ -4,7 +4,6 @@ use crate::templates::docs::generation::{
 };
 use perseus::{t, GenericNode, Template};
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
@@ -53,14 +52,14 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("docs")
-        .build_paths_fn(Rc::new(get_build_paths))
-        .build_state_fn(Rc::new(get_build_state))
-        .template(Rc::new(|props| {
+        .build_paths_fn(get_build_paths)
+        .build_state_fn(get_build_state)
+        .template(|props| {
             template! {
                 DocsPage(serde_json::from_str(&props.unwrap()).unwrap())
             }
-        }))
-        .head(Rc::new(|props| {
+        })
+        .head(|props| {
             let props: DocsPageProps = serde_json::from_str(&props.unwrap()).unwrap();
             template! {
                 title { (format!("{} | {}", props.title, t!("docs-title-base"))) }
@@ -68,5 +67,5 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
                 link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
                 link(rel = "stylesheet", href = ".perseus/static/prism.css")
             }
-        }))
+        })
 }

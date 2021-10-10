@@ -20,16 +20,22 @@ pub struct ErrorPages<G: GenericNode> {
 }
 impl<G: GenericNode> ErrorPages<G> {
     /// Creates a new definition of error pages with just a fallback.
-    pub fn new(fallback: ErrorPageTemplate<G>) -> Self {
+    pub fn new(
+        fallback: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G> + 'static,
+    ) -> Self {
         Self {
             status_pages: HashMap::default(),
-            fallback,
+            fallback: Rc::new(fallback),
         }
     }
     /// Adds a new page for the given status code. If a page was already defined for the given code, it will be updated by the mechanics of
     /// the internal `HashMap`.
-    pub fn add_page(&mut self, status: u16, page: ErrorPageTemplate<G>) {
-        self.status_pages.insert(status, page);
+    pub fn add_page(
+        &mut self,
+        status: u16,
+        page: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G> + 'static,
+    ) {
+        self.status_pages.insert(status, Rc::new(page));
     }
     /// Gets the internal template function to render.
     fn get_template_fn(&self, status: &u16) -> &ErrorPageTemplate<G> {

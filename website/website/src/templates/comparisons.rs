@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::rc::Rc;
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use walkdir::WalkDir;
@@ -365,17 +364,17 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("comparisons")
-        .template(Rc::new(|props| {
+        .template(|props| {
             template! {
                 ComparisonsPage(serde_json::from_str(&props.unwrap()).unwrap())
             }
-        }))
-        .head(Rc::new(|_| {
+        })
+        .head(|_| {
             template! {
                 title { (format!("{} | {}", t!("comparisons-title"), t!("perseus"))) }
             }
-        }))
-        .build_state_fn(Rc::new(get_build_state))
+        })
+        .build_state_fn(get_build_state)
 }
 
 pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
