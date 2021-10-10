@@ -45,6 +45,8 @@ pub fn detect_locale(url: String, locales: Locales) {
     let url = format!("/{}", url);
     let base_path = get_path_prefix_client(); // We know this doesn't have a trailing slash
     let loc = url.strip_prefix(&base_path).unwrap_or(&url);
+    // The location develops a leading slash during the base path stripping, so we remove it (again)
+    let loc = loc.strip_prefix('/').unwrap_or(loc);
     let new_loc = format!("{}/{}/{}", base_path, locale, loc);
     let new_loc = new_loc.strip_suffix('/').unwrap_or(&new_loc);
 
