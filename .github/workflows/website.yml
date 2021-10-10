@@ -14,7 +14,10 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
+            # The website builder accesses Git history for old examples, so we need everything
             - uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
             - run: cargo install bonnie
             - run: cargo install wasm-pack
             - run: npm install
