@@ -6,8 +6,6 @@
 [![Top Language](https://img.shields.io/github/languages/top/arctic-hen7/perseus?style=for-the-badge)]()
 [![Discord Chat](https://img.shields.io/discord/820400041332179004?label=Discord&style=for-the-badge)](https://discord.gg/PgwPn7dKEk)
 
-> Warning: examples on the website for versions of the docs other than `next` and 0.3.x are currently invalid. Until [this issue](https://github.com/arctic-hen7/perseus/issues/60) is fixed, please use the docs for 0.3.x, which will move to stable very shortly.
-
 Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)!
 
 -   📕 Supports static generation (serving only static resources)
