@@ -11,7 +11,7 @@ fn get_test_plugin() -> Plugin {
         functional_actions_registrar: Box::new(|mut actions| {
             actions
                 .build_actions
-                .on_after_successful_build
+                .after_successful_build
                 .register_plugin(
                     "test-plugin".to_string(),
                     Box::new(|_, _| {
@@ -40,7 +40,7 @@ fn get_test_plugin_2() -> Plugin {
         functional_actions_registrar: Box::new(|mut actions| {
             actions
                 .build_actions
-                .on_after_successful_build
+                .after_successful_build
                 .register_plugin(
                     "test-plugin-2".to_string(),
                     Box::new(|_, _| {

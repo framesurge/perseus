@@ -12,6 +12,7 @@ edition = "2018"
 # We alias here because the package name will change based on whatever's in the user's manifest
 app = { package = "perseus-example-basic", path = "../../" }
 
+perseus = { path = "../../../../packages/perseus" }
 perseus-actix-web = { path = "../../../../packages/perseus-actix-web" }
 actix-web = "3.3"
 futures = "0.3"

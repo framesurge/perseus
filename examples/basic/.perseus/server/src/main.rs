@@ -1,9 +1,10 @@
 use actix_web::{App, HttpServer};
 use app::{
-    get_error_pages, get_immutable_store, get_locales, get_mutable_store, get_static_aliases,
-    get_templates_map, get_translations_manager, APP_ROOT,
+    get_error_pages, get_immutable_store, get_locales, get_mutable_store, get_plugins,
+    get_static_aliases, get_templates_map, get_translations_manager, APP_ROOT,
 };
 use futures::executor::block_on;
+use perseus::plugins::PluginAction;
 use perseus_actix_web::{configurer, Options};
 use std::collections::HashMap;
 use std::env;
@@ -16,12 +17,20 @@ use std::fs;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let plugins = get_plugins();
+
     // So we don't have to define a different `FsConfigManager` just for the server, we shift the execution context to the same level as everything else
     // The server has to be a separate crate because otherwise the dependencies don't work with Wasm bundling
     // If we're not running as a standalone binary, assume we're running in dev mode under `.perseus/`
     if env::var("PERSEUS_STANDALONE").is_err() {
         env::set_current_dir("../").unwrap();
     }
+
+    plugins
+        .functional_actions
+        .server_actions
+        .before_serve
+        .run((), plugins.get_plugin_data());
 
     // This allows us to operate inside `.perseus/` and as a standalone binary in production
     let (html_shell_path, static_dir_path) = if env::var("PERSEUS_STANDALONE").is_ok() {
@@ -36,7 +45,8 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>();
     if let Ok(port) = port {
         HttpServer::new(move || {
-            App::new().configure(block_on(configurer(
+            // TODO find a way to configure the server with plugins without using `actix-web` in the `perseus` crate (it won't compile to Wasm)
+            let app = App::new().configure(block_on(configurer(
                 Options {
                     index: html_shell_path.to_string(), // The user must define their own `index.html` file
                     js_bundle: "dist/pkg/perseus_cli_builder.js".to_string(),
@@ -61,7 +71,9 @@ async fn main() -> std::io::Result<()> {
                 get_immutable_store(),
                 get_mutable_store(),
                 block_on(get_translations_manager()),
-            )))
+            )));
+
+            app
         })
         .bind((host, port))?
         .run()

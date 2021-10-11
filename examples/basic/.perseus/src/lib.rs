@@ -1,5 +1,6 @@
-use app::{get_error_pages, get_locales, get_templates_map, APP_ROOT};
+use app::{get_error_pages, get_locales, get_plugins, get_templates_map, APP_ROOT};
 use perseus::error_pages::ErrorPageData;
+use perseus::plugins::PluginAction;
 use perseus::router::{RouteInfo, RouteVerdict};
 use perseus::shell::{checkpoint, get_initial_state, get_render_cfg, InitialState};
 use perseus::{app_shell, create_app_route, detect_locale, ClientTranslationsManager, DomNode};
@@ -12,9 +13,19 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 /// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
+    let plugins = get_plugins();
+
     checkpoint("begin");
     // Panics should always go to the console
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+    plugins
+        .functional_actions
+        .client_actions
+        .start
+        .run((), plugins.get_plugin_data());
+    checkpoint("begin_plugins_complete");
+
     // Get the root we'll be injecting the router into
     let root = web_sys::window()
         .unwrap()

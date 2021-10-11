@@ -1,20 +1,20 @@
 use crate::plugins::{PluginAction, PluginData, Runner};
 use std::collections::HashMap;
 
-/// An action for a control plugin, which can only be taken by one plugin.
-#[derive(Default)]
-pub struct ControlPluginAction<A> {
+/// An action for a control plugin, which can only be taken by one plugin. When run, control actions will return an `Option<R>` on what
+/// their runners return, which will be `None` if no runner is set.
+pub struct ControlPluginAction<A, R> {
     /// The name of the plugin that controls this action. As this is a control plugin action, only one plugin can manage a single
     /// action.
     controller_name: String,
     /// The single runner function for this action. This may not be defined if no plugin takes this action.
-    runner: Option<Runner<A>>,
+    runner: Option<Runner<A, R>>,
 }
-impl<A> PluginAction<A> for ControlPluginAction<A> {
+impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
     /// Runs the single registered runner for the action.
-    fn run(&self, action_data: A, plugin_data: &HashMap<String, Box<dyn PluginData>>) {
+    fn run(&self, action_data: A, plugin_data: &HashMap<String, Box<dyn PluginData>>) -> Option<R> {
         // If no runner is defined, this won't have any effect (same as functional actions with no registered runners)
-        if let Some(runner) = &self.runner {
+        self.runner.as_ref().map(|runner| {
             runner(
                 &action_data,
                 // We must have data registered for every active plugin (even if it's empty)
@@ -24,10 +24,10 @@ impl<A> PluginAction<A> for ControlPluginAction<A> {
                         &self.controller_name
                     )
                 }),
-            );
-        }
+            )
+        })
     }
-    fn register_plugin(&mut self, name: String, runner: Runner<A>) {
+    fn register_plugin(&mut self, name: String, runner: Runner<A, R>) {
         // Check if the action has already been taken by another plugin
         if self.runner.is_some() {
             // We panic here because an explicitly requested plugin couldn't be loaded, so we have to assume that any further behavior in the engine is unwanted
@@ -37,6 +37,15 @@ impl<A> PluginAction<A> for ControlPluginAction<A> {
 
         self.controller_name = name;
         self.runner = Some(runner);
+    }
+}
+// Using a default implementation allows us to avoid the action data having to implement `Default` as well, which is frequently infeasible
+impl<A, R> Default for ControlPluginAction<A, R> {
+    fn default() -> Self {
+        Self {
+            controller_name: String::default(),
+            runner: None,
+        }
     }
 }
 
@@ -59,7 +68,7 @@ pub struct ControlPluginActions {
 #[derive(Default)]
 pub struct ControlPluginBuildActions {
     /// Runs after the build process if it completes successfully.
-    pub on_after_successful_build: ControlPluginAction<()>,
+    pub on_after_successful_build: ControlPluginAction<(), ()>,
 }
 /// The actions a control plugin can take that pertain to the export process.
 #[derive(Default)]

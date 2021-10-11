@@ -14,6 +14,12 @@ fn main() {
 fn real_main() -> i32 {
     let plugins = Rc::new(get_plugins());
 
+    plugins
+        .functional_actions
+        .build_actions
+        .before_build
+        .run((), plugins.get_plugin_data());
+
     let immutable_store = get_immutable_store();
     let mutable_store = get_mutable_store();
     let translations_manager = block_on(get_translations_manager());
@@ -30,13 +36,19 @@ fn real_main() -> i32 {
     );
     let res = block_on(fut);
     if let Err(err) = res {
-        eprintln!("Static generation failed: '{}'.", err);
+        let err_msg = format!("Static generation failed: '{}'.", &err);
+        plugins
+            .functional_actions
+            .build_actions
+            .after_failed_build
+            .run(err, plugins.get_plugin_data());
+        eprintln!("{}", err_msg);
         1
     } else {
         plugins
             .functional_actions
             .build_actions
-            .on_after_successful_build
+            .after_successful_build
             .run((), plugins.get_plugin_data());
         println!("Static generation successfully completed!");
         0

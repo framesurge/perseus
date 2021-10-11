@@ -89,10 +89,15 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
             &format!("\"{}\"", PERSEUS_VERSION),
         );
         #[cfg(not(debug_assertions))]
-        let updated_server_manifest = updated_server_manifest.replace(
-            "{ path = \"../../../../packages/perseus-actix-web\" }",
-            &format!("\"{}\"", PERSEUS_VERSION),
-        );
+        let updated_server_manifest = updated_server_manifest
+            .replace(
+                "{ path = \"../../../../packages/perseus\" }",
+                &format!("\"{}\"", PERSEUS_VERSION),
+            )
+            .replace(
+                "{ path = \"../../../../packages/perseus-actix-web\" }",
+                &format!("\"{}\"", PERSEUS_VERSION),
+            );
 
         // Write the updated manifests back
         if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {
