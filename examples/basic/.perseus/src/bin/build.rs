@@ -1,9 +1,10 @@
 use app::{
-    get_immutable_store, get_locales, get_mutable_store, get_templates_vec,
+    get_immutable_store, get_locales, get_mutable_store, get_plugins, get_templates_vec,
     get_translations_manager,
 };
 use futures::executor::block_on;
-use perseus::{build_app, SsrNode};
+use perseus::{build_app, plugins::PluginAction, SsrNode};
+use std::rc::Rc;
 
 fn main() {
     let exit_code = real_main();
@@ -11,6 +12,8 @@ fn main() {
 }
 
 fn real_main() -> i32 {
+    let plugins = Rc::new(get_plugins());
+
     let immutable_store = get_immutable_store();
     let mutable_store = get_mutable_store();
     let translations_manager = block_on(get_translations_manager());
@@ -30,6 +33,11 @@ fn real_main() -> i32 {
         eprintln!("Static generation failed: '{}'.", err);
         1
     } else {
+        plugins
+            .functional_actions
+            .build_actions
+            .on_after_successful_build
+            .run((), plugins.get_plugin_data());
         println!("Static generation successfully completed!");
         0
     }

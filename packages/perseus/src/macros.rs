@@ -176,6 +176,21 @@ macro_rules! define_get_static_aliases {
         }
     };
 }
+/// An internal macro used for defining the plugins for an app.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! define_plugins {
+    () => {
+        pub fn get_plugins() -> $crate::plugins::Plugins {
+            $crate::plugins::Plugins::new()
+        }
+    };
+    ($plugins:expr) => {
+        pub fn get_plugins() -> $crate::plugins::Plugins {
+            $plugins
+        }
+    };
+}
 
 /// Defines the components to create an entrypoint for the app. The actual entrypoint is created in the `.perseus/` crate (where we can
 /// get all the dependencies without driving the user's `Cargo.toml` nuts). This also defines the template map. This is intended to make
@@ -201,6 +216,7 @@ macro_rules! define_app {
         $(,static_aliases: {
             $($url:literal => $resource:literal)*
         })?
+        $(,plugins: $plugins:expr)?
         $(,dist_path: $dist_path:literal)?
         $(,mutable_store: $mutable_store:expr)?
         $(,translations_manager: $translations_manager:expr)?
@@ -221,6 +237,7 @@ macro_rules! define_app {
                 $(,static_aliases: {
                     $($url => $resource)*
                 })?
+                $(,plugins: $plugins)?
                 $(,dist_path: $dist_path)?
                 $(,mutable_store: $mutable_store)?
                 $(,translations_manager: $translations_manager)?
@@ -237,6 +254,7 @@ macro_rules! define_app {
         $(,static_aliases: {
             $($url:literal => $resource:literal)*
         })?
+        $(,plugins: $plugins:expr)?
         $(,dist_path: $dist_path:literal)?
         $(,mutable_store: $mutable_store:expr)?
     } => {
@@ -257,6 +275,7 @@ macro_rules! define_app {
                 $(,static_aliases: {
                     $($url => $resource)*
                 })?
+                $(,plugins: $plugins)?
                 $(,dist_path: $dist_path)?
                 $(,mutable_store: $mutable_store)?
             }
@@ -282,6 +301,7 @@ macro_rules! define_app {
             $(,static_aliases: {
                 $($url:literal => $resource:literal)*
             })?
+            $(,plugins: $plugins:expr)?
             $(,dist_path: $dist_path:literal)?
             $(,mutable_store: $mutable_store:expr)?
             $(,translations_manager: $translations_manager:expr)?
@@ -310,6 +330,9 @@ macro_rules! define_app {
             ]
             $(, no_i18n: $no_i18n)?
         }
+
+        /// Gets the plugins for the app.
+       $crate::define_plugins!($($plugins)?);
 
         /// Gets a map of all the templates in the app by their root paths.
         pub fn get_templates_map<G: $crate::GenericNode>() -> $crate::TemplateMap<G> {

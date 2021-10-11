@@ -8,6 +8,7 @@
         "testing",
         "templates",
         "exporting",
-        "website"
+        "website",
+        "plugins"
     ]
 }
