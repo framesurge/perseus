@@ -36,30 +36,12 @@ async fn main() -> std::io::Result<()> {
         .before_serve
         .run((), plugins.get_plugin_data());
 
-    let html_shell_path = plugins
-        .control_actions
-        .server_actions
-        .get_html_shell_path
-        .run(is_standalone, plugins.get_plugin_data())
-        .unwrap_or_else(|| {
-            if is_standalone {
-                "./index.html".to_string()
-            } else {
-                "../index.html".to_string()
-            }
-        });
-    let static_dir_path = plugins
-        .control_actions
-        .server_actions
-        .get_static_dir_path
-        .run(is_standalone, plugins.get_plugin_data())
-        .unwrap_or_else(|| {
-            if is_standalone {
-                "./static".to_string()
-            } else {
-                "../static".to_string()
-            }
-        });
+    // This allows us to operate inside `.perseus/` and as a standalone binary in production
+    let (html_shell_path, static_dir_path) = if is_standalone {
+        ("./index.html", "./static")
+    } else {
+        ("../index.html", "../static")
+    };
 
     let host = env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("PORT")

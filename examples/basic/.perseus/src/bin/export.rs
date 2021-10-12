@@ -35,19 +35,6 @@ fn real_main() -> i32 {
     let translations_manager = block_on(get_translations_manager());
     let locales = get_locales();
 
-    let index_shell_path = plugins
-        .control_actions
-        .export_actions
-        .get_html_shell_path
-        .run((), plugins.get_plugin_data())
-        .unwrap_or_else(|| "../index.html".to_string());
-    let static_dir_path = plugins
-        .control_actions
-        .export_actions
-        .get_static_dir_path
-        .run((), plugins.get_plugin_data())
-        .unwrap_or_else(|| "../static".to_string());
-
     // Build the site for all the common locales (done in parallel), denying any non-exportable features
     let build_fut = build_app(
         get_templates_vec::<SsrNode>(),
@@ -75,7 +62,8 @@ fn real_main() -> i32 {
     // Turn the build artifacts into self-contained static files
     let export_fut = export_app(
         get_templates_map(),
-        &index_shell_path,
+        // Perseus always uses one HTML file, and there's no point in letting a plugin change that
+        "../index.html",
         &locales,
         APP_ROOT,
         &immutable_store,
@@ -94,7 +82,8 @@ fn real_main() -> i32 {
     }
 
     // Copy the `static` directory into the export package if it exists
-    let static_dir = PathBuf::from(&static_dir_path);
+    // If the user wants extra, they can use static aliases, plugins are unnecessary here
+    let static_dir = PathBuf::from("../static");
     if static_dir.exists() {
         if let Err(err) = copy_dir(&static_dir, "dist/exported/.perseus/", &CopyOptions::new()) {
             let err_msg = format!(
