@@ -22,8 +22,12 @@ async fn main() -> std::io::Result<()> {
     // So we don't have to define a different `FsConfigManager` just for the server, we shift the execution context to the same level as everything else
     // The server has to be a separate crate because otherwise the dependencies don't work with Wasm bundling
     // If we're not running as a standalone binary, assume we're running in dev mode under `.perseus/`
+    let is_standalone;
     if env::var("PERSEUS_STANDALONE").is_err() {
         env::set_current_dir("../").unwrap();
+        is_standalone = false;
+    } else {
+        is_standalone = true;
     }
 
     plugins
@@ -32,22 +36,47 @@ async fn main() -> std::io::Result<()> {
         .before_serve
         .run((), plugins.get_plugin_data());
 
-    // This allows us to operate inside `.perseus/` and as a standalone binary in production
-    let (html_shell_path, static_dir_path) = if env::var("PERSEUS_STANDALONE").is_ok() {
-        ("./index.html", "./static")
-    } else {
-        ("../index.html", "../static")
-    };
+    let html_shell_path = plugins
+        .control_actions
+        .server_actions
+        .get_html_shell_path
+        .run(is_standalone, plugins.get_plugin_data())
+        .unwrap_or_else(|| {
+            if is_standalone {
+                "./index.html".to_string()
+            } else {
+                "../index.html".to_string()
+            }
+        });
+    let static_dir_path = plugins
+        .control_actions
+        .server_actions
+        .get_static_dir_path
+        .run(is_standalone, plugins.get_plugin_data())
+        .unwrap_or_else(|| {
+            if is_standalone {
+                "./static".to_string()
+            } else {
+                "../static".to_string()
+            }
+        });
 
     let host = env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("PORT")
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>();
     if let Ok(port) = port {
+        let immutable_store = plugins
+            .control_actions
+            .server_actions
+            .get_immutable_store
+            .run((), plugins.get_plugin_data())
+            .unwrap_or_else(get_immutable_store);
         HttpServer::new(move || {
             // TODO find a way to configure the server with plugins without using `actix-web` in the `perseus` crate (it won't compile to Wasm)
             let app = App::new().configure(block_on(configurer(
                 Options {
+                    // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)
                     index: html_shell_path.to_string(), // The user must define their own `index.html` file
                     js_bundle: "dist/pkg/perseus_cli_builder.js".to_string(),
                     // Our crate has the same name, so this will be predictable
@@ -59,7 +88,7 @@ async fn main() -> std::io::Result<()> {
                     error_pages: get_error_pages(),
                     // The CLI supports static content in `../static` by default if it exists
                     // This will be available directly at `/.perseus/static`
-                    static_dirs: if fs::metadata(static_dir_path).is_ok() {
+                    static_dirs: if fs::metadata(&static_dir_path).is_ok() {
                         let mut static_dirs = HashMap::new();
                         static_dirs.insert("".to_string(), static_dir_path.to_string());
                         static_dirs
@@ -68,7 +97,7 @@ async fn main() -> std::io::Result<()> {
                     },
                     static_aliases: get_static_aliases(),
                 },
-                get_immutable_store(),
+                immutable_store.clone(),
                 get_mutable_store(),
                 block_on(get_translations_manager()),
             )));

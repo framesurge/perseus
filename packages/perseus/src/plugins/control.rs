@@ -67,15 +67,34 @@ pub struct ControlPluginActions {
 /// The actions a control plugin can take that pertain to the build process.
 #[derive(Default)]
 pub struct ControlPluginBuildActions {
-    /// Runs after the build process if it completes successfully.
-    pub on_after_successful_build: ControlPluginAction<(), ()>,
+    /// Gets an immutable store to be used by the build process.
+    pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
 }
 /// The actions a control plugin can take that pertain to the export process.
 #[derive(Default)]
-pub struct ControlPluginExportActions {}
+pub struct ControlPluginExportActions {
+    /// Gets an immutable store to be used by the export process.
+    pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
+    /// Gets the path to the `index.html` file, relative to `.perseus/`. This is the only way to use an alternative path for that.
+    pub get_html_shell_path: ControlPluginAction<(), String>,
+    /// Gets the path to the directory that stores static files, relative to `.perseus/`. This is the only way to use an alternative
+    /// path for that.
+    pub get_static_dir_path: ControlPluginAction<(), String>,
+}
 /// The actions a control plugin can take that pertain to the server.
 #[derive(Default)]
-pub struct ControlPluginServerActions {}
-/// The actions a control plugin can take that pertain to the client-side code.
+pub struct ControlPluginServerActions {
+    /// Gets the path to the `index.html` file on the server. Because this may run as a standalone binary, this will be passed a variable
+    /// `is_standalone`. If that's `true`, the server binary in not inside `.perseus/`, and you should consider it basically relative
+    /// to the project root (but any files outside Perseus' normal purview must be copied manually in deployment).
+    pub get_html_shell_path: ControlPluginAction<bool, String>,
+    /// Gets the path to the static directory on the server. Because this may run as a standalone binary, this will be passed a variable
+    /// `is_standalone`. If that's `true`, the server binary in not inside `.perseus/`, and you should consider it basically relative
+    /// to the project root (but any files outside Perseus' normal purview must be copied manually in deployment).
+    pub get_static_dir_path: ControlPluginAction<bool, String>,
+    /// Gets an immutable store to be used by the server.
+    pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
+}
+/// The actions a control plugin can take that pertain to the client-side code. As yet, there are none of these.
 #[derive(Default)]
 pub struct ControlPluginClientActions {}

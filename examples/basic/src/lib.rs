@@ -22,35 +22,6 @@ fn get_test_plugin() -> Plugin {
         }),
     }
 }
-fn get_test_plugin_2() -> Plugin {
-    Plugin {
-        name: "test-plugin-2".to_string(),
-        plugin_type: PluginType::Control(Box::new(|mut actions| {
-            actions
-                .build_actions
-                .on_after_successful_build
-                .register_plugin(
-                    "test-plugin-2".to_string(),
-                    Box::new(|_, _| {
-                        dbg!("Hello from a control plugin!");
-                    }),
-                );
-            actions
-        })),
-        functional_actions_registrar: Box::new(|mut actions| {
-            actions
-                .build_actions
-                .after_successful_build
-                .register_plugin(
-                    "test-plugin-2".to_string(),
-                    Box::new(|_, _| {
-                        dbg!("Hello from a control plugin's functional action!");
-                    }),
-                );
-            actions
-        }),
-    }
-}
 
 define_app! {
     templates: [
@@ -63,5 +34,4 @@ define_app! {
     },
     plugins: Plugins::new()
         .plugin(get_test_plugin(), ())
-        .plugin(get_test_plugin_2(), ())
 }

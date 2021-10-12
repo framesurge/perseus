@@ -24,11 +24,29 @@ fn real_main() -> i32 {
         .before_build
         .run((), plugins.get_plugin_data());
 
-    let immutable_store = get_immutable_store();
+    let immutable_store = plugins
+        .control_actions
+        .export_actions
+        .get_immutable_store
+        .run((), plugins.get_plugin_data())
+        .unwrap_or_else(get_immutable_store);
     // We don't need this in exporting, but the build process does
     let mutable_store = get_mutable_store();
     let translations_manager = block_on(get_translations_manager());
     let locales = get_locales();
+
+    let index_shell_path = plugins
+        .control_actions
+        .export_actions
+        .get_html_shell_path
+        .run((), plugins.get_plugin_data())
+        .unwrap_or_else(|| "../index.html".to_string());
+    let static_dir_path = plugins
+        .control_actions
+        .export_actions
+        .get_static_dir_path
+        .run((), plugins.get_plugin_data())
+        .unwrap_or_else(|| "../static".to_string());
 
     // Build the site for all the common locales (done in parallel), denying any non-exportable features
     let build_fut = build_app(
@@ -57,7 +75,7 @@ fn real_main() -> i32 {
     // Turn the build artifacts into self-contained static files
     let export_fut = export_app(
         get_templates_map(),
-        "../index.html",
+        &index_shell_path,
         &locales,
         APP_ROOT,
         &immutable_store,
@@ -76,8 +94,7 @@ fn real_main() -> i32 {
     }
 
     // Copy the `static` directory into the export package if it exists
-    // We don't use a config manager here because static files are always handled on-disk in Perseus (for now)
-    let static_dir = PathBuf::from("../static");
+    let static_dir = PathBuf::from(&static_dir_path);
     if static_dir.exists() {
         if let Err(err) = copy_dir(&static_dir, "dist/exported/.perseus/", &CopyOptions::new()) {
             let err_msg = format!(

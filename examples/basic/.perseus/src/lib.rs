@@ -37,7 +37,7 @@ pub fn run() -> Result<(), JsValue> {
 
     // Get the root that the server will have injected initial load content into
     // This will be moved into a reactive `<div>` by the app shell
-    // This is an `Option<Element>` until we know we aren't doing loclae detection (in which case it wouldn't exist)
+    // This is an `Option<Element>` until we know we aren't doing locale detection (in which case it wouldn't exist)
     let initial_container = web_sys::window()
         .unwrap()
         .document()
