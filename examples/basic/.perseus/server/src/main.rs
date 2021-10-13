@@ -56,7 +56,7 @@ async fn main() -> std::io::Result<()> {
             .unwrap_or_else(get_immutable_store);
         HttpServer::new(move || {
             // TODO find a way to configure the server with plugins without using `actix-web` in the `perseus` crate (it won't compile to Wasm)
-            let app = App::new().configure(block_on(configurer(
+            App::new().configure(block_on(configurer(
                 Options {
                     // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)
                     index: html_shell_path.to_string(), // The user must define their own `index.html` file
@@ -82,9 +82,7 @@ async fn main() -> std::io::Result<()> {
                 immutable_store.clone(),
                 get_mutable_store(),
                 block_on(get_translations_manager()),
-            )));
-
-            app
+            )))
         })
         .bind((host, port))?
         .run()

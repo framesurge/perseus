@@ -24,7 +24,7 @@ pub fn run() -> Result<(), JsValue> {
         .client_actions
         .start
         .run((), plugins.get_plugin_data());
-    checkpoint("begin_plugins_complete");
+    checkpoint("initial_plugins_complete");
 
     // Get the root we'll be injecting the router into
     let root = web_sys::window()

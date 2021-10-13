@@ -196,7 +196,6 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                     let vec: Vec<&str> = incl_path_with_lines_suffix.split(':').collect();
                     (vec[0], vec[1].parse::<usize>()?, vec[2].parse::<usize>()?)
                 };
-                // TODO use Git to get file contents if we're no on the `next` version
                 // If we're on the `next` version, read from the filesystem directly
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents_full = if version == "next" {

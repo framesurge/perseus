@@ -62,8 +62,6 @@ pub struct ControlPluginActions {
     pub client_actions: ControlPluginClientActions,
 }
 
-// TODO add actions
-
 /// The actions a control plugin can take that pertain to the build process.
 #[derive(Default)]
 pub struct ControlPluginBuildActions {

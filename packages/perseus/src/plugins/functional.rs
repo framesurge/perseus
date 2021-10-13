@@ -54,8 +54,6 @@ pub struct FunctionalPluginActions {
     pub client_actions: FunctionalPluginClientActions,
 }
 
-// TODO add actions
-
 /// The actions a functional plugin can take that pertain to the build process. Note that these actions are not available for the build
 /// stage of the export process, and those should be registered separately.
 #[derive(Default)]
@@ -93,13 +91,6 @@ pub struct FunctionalPluginServerActions {
     /// Runs before the server activates. This runs AFTER the current directory has been appropriately set for a standalone binary vs
     /// running in the development environment (inside `.perseus/`).
     pub before_serve: FunctionalPluginAction<(), ()>,
-    // TODO
-    // /// Runs after the server has been configured for Perseus, allowing further configuration to take place. In nearly all cases, this
-    // /// will be useless, as Perseus adds a wildcard handler, so any routes here will be ignored by Actix Web.
-    // pub configure_server_after_perseus: FunctionalPluginAction<(), ()>,
-    // /// Runs before the server has been configured by Perseus, allowing the setting of custom API routes before a wildcard handler is
-    // /// put in place by Perseus.
-    // pub configure_server_before_perseus: FunctionalPluginAction<(), ()>,
 }
 /// The actions a functional plugin can take that pertain to the client-side code. These in particular should be as fast as possible.
 #[derive(Default)]
