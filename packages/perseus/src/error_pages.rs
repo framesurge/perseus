@@ -37,6 +37,11 @@ impl<G: GenericNode> ErrorPages<G> {
     ) {
         self.status_pages.insert(status, Rc::new(page));
     }
+    /// Adds a new page for the given status code. If a page was already defined for the given code, it will be updated by the mechanics of
+    /// the internal `HashMap`. This differs from `.add_page()` in that it takes an `Rc`, which is useful for plugins.
+    pub fn add_page_rc(&mut self, status: u16, page: ErrorPageTemplate<G>) {
+        self.status_pages.insert(status, page);
+    }
     /// Gets the internal template function to render.
     fn get_template_fn(&self, status: &u16) -> &ErrorPageTemplate<G> {
         // Check if we have an explicitly defined page for this status code

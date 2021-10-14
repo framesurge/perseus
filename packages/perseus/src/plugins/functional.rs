@@ -1,4 +1,5 @@
 use crate::plugins::{PluginAction, PluginData, Runner};
+use crate::GenericNode;
 use std::collections::HashMap;
 
 /// An action for a functional plugin, which can be taken by many plugins. When run, a functional action will return a map of plugin
@@ -27,8 +28,15 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
 
         returns
     }
-    fn register_plugin(&mut self, name: String, runner: Runner<A, R>) {
-        self.runners.insert(name, runner);
+    fn register_plugin(
+        &mut self,
+        name: &str,
+        runner: impl Fn(&A, &Box<dyn PluginData>) -> R + 'static,
+    ) {
+        self.register_plugin_box(name, Box::new(runner))
+    }
+    fn register_plugin_box(&mut self, name: &str, runner: Runner<A, R>) {
+        self.runners.insert(name.to_string(), runner);
     }
 }
 // Using a default implementation allows us to avoid the action data having to implement `Default` as well, which is frequently infeasible
@@ -42,8 +50,9 @@ impl<A, R> Default for FunctionalPluginAction<A, R> {
 
 /// All the actions that a functional plugin can perform. These are all designed to be compatible with other plugins such that two plugins
 /// can execute the same action.
-#[derive(Default)]
-pub struct FunctionalPluginActions {
+pub struct FunctionalPluginActions<G: GenericNode> {
+    /// Actions pertaining to the modification of settings created with the `define_app!` macro.
+    pub settings_actions: FunctionalPluginSettingsActions<G>,
     /// Actions pertaining to the build process.
     pub build_actions: FunctionalPluginBuildActions,
     /// Actions pertaining to the export process.
@@ -52,6 +61,41 @@ pub struct FunctionalPluginActions {
     pub server_actions: FunctionalPluginServerActions,
     /// Actions pertaining to the client-side code.
     pub client_actions: FunctionalPluginClientActions,
+}
+impl<G: GenericNode> Default for FunctionalPluginActions<G> {
+    fn default() -> Self {
+        Self {
+            settings_actions: FunctionalPluginSettingsActions::<G>::default(),
+            build_actions: FunctionalPluginBuildActions::default(),
+            export_actions: FunctionalPluginExportActions::default(),
+            server_actions: FunctionalPluginServerActions::default(),
+            client_actions: FunctionalPluginClientActions::default(),
+        }
+    }
+}
+
+/// The actions a functional plugin can take that pertain to altering the settings exported from the `define_app!` macro.
+pub struct FunctionalPluginSettingsActions<G: GenericNode> {
+    /// Adds additional static aliases. Note that a static alias is a mapping of a URL path to a filesystem path (relative to the
+    /// project root). These will be vetted to ensure they don't access anything outside the project root for security reasons. If they
+    /// do, the user's app will not run. Note that these have the power to override the user's static aliases.
+    pub add_static_aliases: FunctionalPluginAction<(), HashMap<String, String>>,
+    /// Adds additional templates. These will be applied to both the templates map and the templates list (separate entities), and
+    /// they must be generic about Sycamore rendering backends. Note that these have the power to override the user's templates.
+    pub add_templates: FunctionalPluginAction<(), Vec<crate::Template<G>>>,
+    /// Adds additional error pages. This must return a map of HTTP status codes to erro page templates. Note that these have the
+    /// power to override the user's error pages.
+    pub add_error_pages:
+        FunctionalPluginAction<(), HashMap<u16, crate::error_pages::ErrorPageTemplate<G>>>,
+}
+impl<G: GenericNode> Default for FunctionalPluginSettingsActions<G> {
+    fn default() -> Self {
+        Self {
+            add_static_aliases: FunctionalPluginAction::default(),
+            add_templates: FunctionalPluginAction::default(),
+            add_error_pages: FunctionalPluginAction::default(),
+        }
+    }
 }
 
 /// The actions a functional plugin can take that pertain to the build process. Note that these actions are not available for the build

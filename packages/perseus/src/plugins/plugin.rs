@@ -1,7 +1,8 @@
 use crate::plugins::*;
+use crate::GenericNode;
 
 /// A plugin, either functional or control.
-pub struct Plugin {
+pub struct Plugin<G: GenericNode> {
     /// The machine name of the plugin, which will be used as a key in a HashMap with many other plugins. This should be the public
     /// crate name in all cases.
     pub name: String,
@@ -10,7 +11,7 @@ pub struct Plugin {
     /// A function that will be provided functional plugin actions. It should then register runners from the plugin for every action
     /// that it takes.
     pub functional_actions_registrar:
-        Box<dyn Fn(FunctionalPluginActions) -> FunctionalPluginActions>,
+        Box<dyn Fn(FunctionalPluginActions<G>) -> FunctionalPluginActions<G>>,
 }
 
 /// A plugin type, with the relevant associated actions.

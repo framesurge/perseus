@@ -18,5 +18,11 @@ pub trait PluginAction<A, R, R2> {
     /// If the action type can only be taken by one plugin, and one has already been set, this may panic (e.g. for control plugins),
     /// as this is a critical, unrecoverable error that Perseus doesn't need to do anything after. If a plugin registration fails,
     /// we have to assume that all work in the engine may be not what the user intended.
-    fn register_plugin(&mut self, name: String, runner: Runner<A, R>);
+    fn register_plugin(
+        &mut self,
+        name: &str,
+        runner: impl Fn(&A, &Box<dyn PluginData>) -> R + 'static,
+    );
+    /// Same as `.register_plugin()`, but takes a prepared runner in a `Box`.
+    fn register_plugin_box(&mut self, name: &str, runner: Runner<A, R>);
 }

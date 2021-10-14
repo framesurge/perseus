@@ -1,11 +1,11 @@
-use app::{
-    get_immutable_store, get_locales, get_mutable_store, get_plugins, get_static_aliases,
-    get_templates_map, get_templates_vec, get_translations_manager, APP_ROOT,
-};
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::executor::block_on;
 use perseus::{
     build_app, export_app, path_prefix::get_path_prefix_server, plugins::PluginAction, SsrNode,
+};
+use perseus_engine::app::{
+    get_app_root, get_immutable_store, get_locales, get_mutable_store, get_plugins,
+    get_static_aliases, get_templates_map, get_translations_manager,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -16,7 +16,7 @@ fn main() {
 }
 
 fn real_main() -> i32 {
-    let plugins = get_plugins();
+    let plugins = get_plugins::<SsrNode>();
 
     plugins
         .functional_actions
@@ -29,15 +29,16 @@ fn real_main() -> i32 {
         .export_actions
         .get_immutable_store
         .run((), plugins.get_plugin_data())
-        .unwrap_or_else(get_immutable_store);
+        .unwrap_or_else(|| get_immutable_store(&plugins));
     // We don't need this in exporting, but the build process does
     let mutable_store = get_mutable_store();
     let translations_manager = block_on(get_translations_manager());
-    let locales = get_locales();
+    let locales = get_locales(&plugins);
 
     // Build the site for all the common locales (done in parallel), denying any non-exportable features
+    let templates_map = get_templates_map::<SsrNode>(&plugins);
     let build_fut = build_app(
-        get_templates_vec::<SsrNode>(),
+        &templates_map,
         &locales,
         (&immutable_store, &mutable_store),
         &translations_manager,
@@ -60,12 +61,13 @@ fn real_main() -> i32 {
         .after_successful_build
         .run((), plugins.get_plugin_data());
     // Turn the build artifacts into self-contained static files
+    let app_root = get_app_root(&plugins);
     let export_fut = export_app(
-        get_templates_map(),
+        &templates_map,
         // Perseus always uses one HTML file, and there's no point in letting a plugin change that
         "../index.html",
         &locales,
-        APP_ROOT,
+        &app_root,
         &immutable_store,
         &translations_manager,
         get_path_prefix_server(),
@@ -103,7 +105,7 @@ fn real_main() -> i32 {
     // Unlike with the server, these could override pages!
     // We'll copy from the alias to the path (it could be a directory or a file)
     // Remember: `alias` has a leading `/`!
-    for (alias, path) in get_static_aliases() {
+    for (alias, path) in get_static_aliases(&plugins) {
         let from = PathBuf::from(path);
         let to = format!("dist/exported{}", alias);
 

@@ -1,4 +1,5 @@
 /// An internal macro used for defining a function to get the user's preferred immutable store (which requires multiple branches).
+/// This can be reset by a control plugin.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_immutable_store {
@@ -15,7 +16,8 @@ macro_rules! define_get_immutable_store {
         }
     };
 }
-/// An internal macro used for defining a function to get the user's preferred mutable store (which requires multiple branches).
+/// An internal macro used for defining a function to get the user's preferred mutable store (which requires multiple branches). This
+/// can be reset by a control plugin.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_mutable_store {
@@ -34,7 +36,7 @@ macro_rules! define_get_mutable_store {
     };
 }
 /// An internal macro used for defining the HTML `id` at which to render the Perseus app (which requires multiple branches). The default
-/// is `root`.
+/// is `root`. This can be reset by a control plugin.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_app_root {
@@ -46,6 +48,7 @@ macro_rules! define_app_root {
     };
 }
 /// An internal macro used for defining a function to get the user's preferred translations manager (which requires multiple branches).
+/// This is not plugin-extensible, but a control plugin can reset it later.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_translations_manager {
@@ -93,7 +96,8 @@ macro_rules! define_get_translations_manager {
         }
     };
 }
-/// An internal macro used for defining locales data. This is abstracted because it needs multiple branches.
+/// An internal macro used for defining locales data. This is abstracted because it needs multiple branches. The `Locales` `struct` is
+/// plugin-extensible.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_locales {
@@ -127,45 +131,19 @@ macro_rules! define_get_locales {
     };
 }
 /// An internal macro for defining a function that gets the user's static content aliases (abstracted because it needs multiple
-/// branches).
+/// branches). This returns a plugin-extensible `HashMap`.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_static_aliases {
     (
         static_aliases: {
-            $($url:literal => $resource:literal)*
+            $($url:literal => $resource:literal),*
         }
     ) => {
         pub fn get_static_aliases() -> ::std::collections::HashMap<String, String> {
             let mut static_aliases = ::std::collections::HashMap::new();
             $(
-                let resource = $resource.to_string();
-                // We need to move this from being scoped to the app to being scoped for `.perseus/`
-                // TODO make sure this works properly on Windows
-                let resource = if resource.starts_with("/") {
-                    // Absolute paths are a security risk and are disallowed
-                    panic!("it's a security risk to include absolute paths in `static_aliases`");
-                }  else if resource.starts_with("../") {
-                    // Anything outside this directory is a security risk as well
-                    panic!("it's a security risk to include paths outside the current directory in `static_aliases`");
-                } else if resource.starts_with("./") {
-                    // `./` -> `../` (moving to execution from `.perseus/`)
-                    // But if we're operating standalone, it stays the same
-                    if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
-                        resource
-                    } else {
-                        format!(".{}", resource)
-                    }
-                } else {
-                    // Anything else gets a `../` prepended
-                    // But if we're operating standalone, it stays the same
-                    if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
-                        resource
-                    } else {
-                        format!("../{}", resource)
-                    }
-                };
-                static_aliases.insert($url.to_string(), resource);
+                static_aliases.insert($url.to_string(), $resource.to_string());
             )*
             static_aliases
         }
@@ -176,17 +154,18 @@ macro_rules! define_get_static_aliases {
         }
     };
 }
-/// An internal macro used for defining the plugins for an app.
+/// An internal macro used for defining the plugins for an app. Unsurprisingly, the results of this are not plugin-extensible! That
+/// said, plugins can certainly register third-party runners in their own registrars (though they need to be mindful of security).
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_plugins {
     () => {
-        pub fn get_plugins() -> $crate::plugins::Plugins {
+        pub fn get_plugins<G: $crate::GenericNode>() -> $crate::plugins::Plugins<G> {
             $crate::plugins::Plugins::new()
         }
     };
     ($plugins:expr) => {
-        pub fn get_plugins() -> $crate::plugins::Plugins {
+        pub fn get_plugins<G: $crate::GenericNode>() -> $crate::plugins::Plugins<G> {
             $plugins
         }
     };
@@ -197,7 +176,7 @@ macro_rules! define_plugins {
 /// compatibility with the Perseus CLI significantly easier.
 ///
 /// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `locales`, `static_aliases`,
-/// `dist_path`, `mutable_store`, `translations_manager`).
+/// `plugins`, `dist_path`, `mutable_store`, `translations_manager`).
 #[macro_export]
 macro_rules! define_app {
     // With locales
@@ -214,7 +193,7 @@ macro_rules! define_app {
             other: [$($other_locale:literal),*]
         }
         $(,static_aliases: {
-            $($url:literal => $resource:literal)*
+            $($url:literal => $resource:literal),*
         })?
         $(,plugins: $plugins:expr)?
         $(,dist_path: $dist_path:literal)?
@@ -235,7 +214,7 @@ macro_rules! define_app {
                     other: [$($other_locale),*]
                 }
                 $(,static_aliases: {
-                    $($url => $resource)*
+                    $($url => $resource),*
                 })?
                 $(,plugins: $plugins)?
                 $(,dist_path: $dist_path)?
@@ -252,7 +231,7 @@ macro_rules! define_app {
         ],
         error_pages: $error_pages:expr
         $(,static_aliases: {
-            $($url:literal => $resource:literal)*
+            $($url:literal => $resource:literal),*
         })?
         $(,plugins: $plugins:expr)?
         $(,dist_path: $dist_path:literal)?
@@ -273,7 +252,7 @@ macro_rules! define_app {
                     no_i18n: true
                 }
                 $(,static_aliases: {
-                    $($url => $resource)*
+                    $($url => $resource),*
                 })?
                 $(,plugins: $plugins)?
                 $(,dist_path: $dist_path)?
@@ -299,7 +278,7 @@ macro_rules! define_app {
                 $(,no_i18n: $no_i18n:literal)?
             }
             $(,static_aliases: {
-                $($url:literal => $resource:literal)*
+                $($url:literal => $resource:literal),*
             })?
             $(,plugins: $plugins:expr)?
             $(,dist_path: $dist_path:literal)?
@@ -307,6 +286,9 @@ macro_rules! define_app {
             $(,translations_manager: $translations_manager:expr)?
         }
     ) => {
+        /// Gets the plugins for the app.
+       $crate::define_plugins!($($plugins)?);
+
         /// The html `id` that will find the app root to render Perseus in. For server-side interpolation, this MUST be an element of
         /// the form <div id="root_id">` in your markup (double or single quotes, `root_id` replaced by what this property is set to).
         $crate::define_app_root!($($root_selector)?);
@@ -331,33 +313,23 @@ macro_rules! define_app {
             $(, no_i18n: $no_i18n)?
         }
 
-        /// Gets the plugins for the app.
-       $crate::define_plugins!($($plugins)?);
+        /// Gets any static content aliases provided by the user.
+        $crate::define_get_static_aliases!(
+            $(static_aliases: {
+                $($url => $resource),*
+            })?
+        );
 
-        /// Gets a map of all the templates in the app by their root paths.
+        /// Gets a map of all the templates in the app by their root paths. This returns a `HashMap` that is plugin-extensible.
         pub fn get_templates_map<G: $crate::GenericNode>() -> $crate::TemplateMap<G> {
             $crate::get_templates_map![
                 $($template),+
             ]
         }
 
-        /// Gets a list of all the templates in the app in the order the user provided them.
-        pub fn get_templates_vec<G: $crate::GenericNode>() -> Vec<$crate::Template<G>> {
-            vec![
-                $($template),+
-            ]
-        }
-
-        /// Gets the error pages (done here so the user doesn't have to worry about naming).
+        /// Gets the error pages (done here so the user doesn't have to worry about naming). This is plugin-extensible.
         pub fn get_error_pages<G: $crate::GenericNode>() -> $crate::ErrorPages<G> {
             $error_pages
         }
-
-        /// Gets any static content aliases provided by the user.
-        $crate::define_get_static_aliases!(
-            $(static_aliases: {
-                $($url => $resource)*
-            })?
-        );
     };
 }

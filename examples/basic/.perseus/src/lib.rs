@@ -1,4 +1,6 @@
-use app::{get_error_pages, get_locales, get_plugins, get_templates_map, APP_ROOT};
+pub mod app;
+
+use crate::app::{get_app_root, get_error_pages, get_locales, get_plugins, get_templates_map};
 use perseus::error_pages::ErrorPageData;
 use perseus::plugins::PluginAction;
 use perseus::router::{RouteInfo, RouteVerdict};
@@ -13,7 +15,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 /// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
-    let plugins = get_plugins();
+    let plugins = get_plugins::<DomNode>();
 
     checkpoint("begin");
     // Panics should always go to the console
@@ -31,7 +33,7 @@ pub fn run() -> Result<(), JsValue> {
         .unwrap()
         .document()
         .unwrap()
-        .query_selector(&format!("#{}", APP_ROOT))
+        .query_selector(&format!("#{}", get_app_root(&plugins)))
         .unwrap()
         .unwrap();
 
@@ -48,29 +50,34 @@ pub fn run() -> Result<(), JsValue> {
     let container_rx = NodeRef::new();
 
     // Create a mutable translations manager to control caching
-    let translations_manager =
-        Rc::new(RefCell::new(ClientTranslationsManager::new(&get_locales())));
+    let locales = get_locales(&plugins);
+    let translations_manager = Rc::new(RefCell::new(ClientTranslationsManager::new(&locales)));
     // Get the error pages in an `Rc` so we aren't creating hundreds of them
-    let error_pages = Rc::new(get_error_pages());
+    let error_pages = Rc::new(get_error_pages(&plugins));
 
     // Create the router we'll use for this app, based on the user's app definition
     create_app_route! {
         name => AppRoute,
         // The render configuration is injected verbatim into the HTML shell, so it certainly should be present
         render_cfg => &get_render_cfg().expect("render configuration invalid or not injected"),
-        templates => &get_templates_map(),
-        locales => &get_locales()
+        // TODO avoid unnecessary allocation here (major problem!)
+        // The `G` parameter is ambient here for `RouteVerdict`
+        templates => &get_templates_map::<G>(&get_plugins()),
+        locales => &get_locales::<G>(&get_plugins())
     }
 
+    // Put the locales into an `Rc` so we can use them in locale detection (which is inside a future)
+    let locales = Rc::new(locales);
+
     sycamore::render_to(
-        || {
+        move || {
             template! {
                 Router(RouterProps::new(HistoryIntegration::new(), move |route: StateHandle<AppRoute<DomNode>>| {
                     create_effect(cloned!((container_rx) => move || {
                         // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                         // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                         let _ = route.get();
-                        wasm_bindgen_futures::spawn_local(cloned!((route, container_rx, translations_manager, error_pages, initial_container) => async move {
+                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, translations_manager, error_pages, initial_container) => async move {
                             let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
                             checkpoint("router_entry");
                             match &route.get().as_ref().0 {
@@ -93,7 +100,7 @@ pub fn run() -> Result<(), JsValue> {
                                 // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
                                 // Those all go to the same system that redirects to the appropriate locale
                                 // Note that `container` doesn't exist for this scenario
-                                RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), get_locales()),
+                                RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
                                 // To get a translator here, we'd have to go async and dangerously check the URL
                                 // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
                                 RouteVerdict::NotFound => {

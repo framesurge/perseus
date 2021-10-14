@@ -27,7 +27,14 @@ impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
             )
         })
     }
-    fn register_plugin(&mut self, name: String, runner: Runner<A, R>) {
+    fn register_plugin(
+        &mut self,
+        name: &str,
+        runner: impl Fn(&A, &Box<dyn PluginData>) -> R + 'static,
+    ) {
+        self.register_plugin_box(name, Box::new(runner))
+    }
+    fn register_plugin_box(&mut self, name: &str, runner: Runner<A, R>) {
         // Check if the action has already been taken by another plugin
         if self.runner.is_some() {
             // We panic here because an explicitly requested plugin couldn't be loaded, so we have to assume that any further behavior in the engine is unwanted
@@ -35,7 +42,7 @@ impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
             panic!("attempted to register runner from plugin '{}' for control action that already had a registered runner from plugin '{}' (these plugins conflict, see the book for further details)", name, self.controller_name);
         }
 
-        self.controller_name = name;
+        self.controller_name = name.to_string();
         self.runner = Some(runner);
     }
 }
@@ -52,6 +59,8 @@ impl<A, R> Default for ControlPluginAction<A, R> {
 /// All the actions that a control plugin can perform.
 #[derive(Default)]
 pub struct ControlPluginActions {
+    /// Actions pertaining to the modification of settings created with the `define_app!` macro.
+    pub settings_actions: ControlPluginSettingsActions,
     /// Actions pertaining to the build process.
     pub build_actions: ControlPluginBuildActions,
     /// Actions pertaining to the export process.
@@ -62,6 +71,17 @@ pub struct ControlPluginActions {
     pub client_actions: ControlPluginClientActions,
 }
 
+/// The actions a control plugin can take that pertain to altering settings from `define_app!`.
+#[derive(Default)]
+pub struct ControlPluginSettingsActions {
+    /// Sets an immutable store to be used everywhere. This will provided the current immutable store for reference.
+    pub set_immutable_store:
+        ControlPluginAction<crate::stores::ImmutableStore, crate::stores::ImmutableStore>,
+    /// Sets the locales to be used everywhere, providing the current ones for reference.
+    pub set_locales: ControlPluginAction<crate::Locales, crate::Locales>,
+    /// Sets the app root to be used everywhere. This must correspond to the ID of an empty HTML `div`.
+    pub set_app_root: ControlPluginAction<(), String>,
+}
 /// The actions a control plugin can take that pertain to the build process.
 #[derive(Default)]
 pub struct ControlPluginBuildActions {
