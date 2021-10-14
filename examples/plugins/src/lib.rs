@@ -1,7 +1,9 @@
 mod error_pages;
+mod plugin;
 mod templates;
 
 use perseus::define_app;
+use perseus::plugins::Plugins;
 
 define_app! {
     templates: [
@@ -9,7 +11,6 @@ define_app! {
         crate::templates::about::get_template::<G>()
     ],
     error_pages: crate::error_pages::get_error_pages(),
-    static_aliases: {
-        "/test.txt" => "static/test.txt"
-    }
+    plugins: Plugins::new()
+        .plugin(plugin::get_test_plugin(), ())
 }
