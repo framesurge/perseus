@@ -51,6 +51,14 @@ impl<A, R> Default for FunctionalPluginAction<A, R> {
 /// All the actions that a functional plugin can perform. These are all designed to be compatible with other plugins such that two plugins
 /// can execute the same action.
 pub struct FunctionalPluginActions<G: GenericNode> {
+    /// The all-powerful action that can modify the Perseus engine itself. Because modifying the code you're running doesn't work with
+    /// compiled languages like Rust, this has its own command in the CLI, `perseus tinker`. This is best used for modifying
+    /// `.perseus/Cargo.toml` or other files. Ensure that you add signal comments so you don't apply the same modifications twice!
+    /// This will be executed in the context of `.perseus/`. As usual, do NOT change the directory here, because that will affect every
+    /// other plugin as well, just use `../`s if you need to work outside `.perseus/`.
+    ///
+    /// If your plugin uses this action in a way that may confuse other plugins, you should note this in your documentation.
+    pub tinker: FunctionalPluginAction<(), ()>,
     /// Actions pertaining to the modification of settings created with the `define_app!` macro.
     pub settings_actions: FunctionalPluginSettingsActions<G>,
     /// Actions pertaining to the build process.
@@ -65,6 +73,7 @@ pub struct FunctionalPluginActions<G: GenericNode> {
 impl<G: GenericNode> Default for FunctionalPluginActions<G> {
     fn default() -> Self {
         Self {
+            tinker: FunctionalPluginAction::default(),
             settings_actions: FunctionalPluginSettingsActions::<G>::default(),
             build_actions: FunctionalPluginBuildActions::default(),
             export_actions: FunctionalPluginExportActions::default(),

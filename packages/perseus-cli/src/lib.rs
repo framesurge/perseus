@@ -37,6 +37,7 @@ pub mod parse;
 mod prepare;
 mod serve;
 mod thread;
+mod tinker;
 
 mod deploy;
 mod extraction;
@@ -53,6 +54,7 @@ pub use eject::{eject, has_ejected};
 pub use export::export;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
+pub use tinker::tinker;
 
 /// Deletes a corrupted '.perseus/' directory. This will be called on certain error types that would leave the user with a half-finished
 /// product, which is better to delete for safety and sanity.

@@ -27,6 +27,7 @@ pub enum Subcommand {
     Deploy(DeployOpts),
     /// Prepares the `.perseus/` directory (done automatically by `build` and `serve`)
     Prep,
+    Tinker(TinkerOpts),
 }
 /// Builds your app
 #[derive(Clap)]
@@ -74,4 +75,14 @@ pub struct DeployOpts {
     /// Export you app to purely static files (see `export`)
     #[clap(short, long)]
     pub export_static: bool,
+}
+/// Runs the `tinker` action of plugins, which lets them modify the Perseus engine
+#[derive(Clap)]
+pub struct TinkerOpts {
+    /// Don't remove and recreate the `.perseus/` directory
+    #[clap(long)]
+    pub no_clean: bool,
+    /// Force this command to run, even if you've ejected (this may result in some or all of your changes being removed, it depends on the plugins you're using)
+    #[clap(long)]
+    pub force: bool,
 }

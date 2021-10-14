@@ -25,6 +25,9 @@ fn get_test_plugin<G: perseus::GenericNode>() -> Plugin<G> {
                     vec![Template::new("about")
                         .template(|_| sycamore::template! { p { "Hey from a plugin!" } })]
                 });
+            actions.tinker.register_plugin("test-plugin", |_, _| {
+                println!("{:?}", std::env::current_dir().unwrap())
+            });
             actions
         }),
     }

@@ -39,3 +39,7 @@ path = "src/bin/build.rs"
 [[bin]]
 name = "perseus-exporter"
 path = "src/bin/export.rs"
+
+[[bin]]
+name = "perseus-tinker" # Yes, the noun is 'tinker', not 'tinkerer'
+path = "src/bin/tinker.rs"
