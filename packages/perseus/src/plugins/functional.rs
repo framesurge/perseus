@@ -3,8 +3,7 @@ use crate::GenericNode;
 use std::any::Any;
 use std::collections::HashMap;
 
-/// An action for a functional plugin, which can be taken by many plugins. When run, a functional action will return a map of plugin
-/// names to their return types.
+/// An action which can be taken by many plugins. When run, a functional action will return a map of plugin names to their return types.
 pub struct FunctionalPluginAction<A, R> {
     /// The runners that will be called when this action is run.
     runners: HashMap<String, Runner<A, R>>,
@@ -45,8 +44,7 @@ impl<A, R> Default for FunctionalPluginAction<A, R> {
     }
 }
 
-/// All the actions that a functional plugin can perform. These are all designed to be compatible with other plugins such that two plugins
-/// can execute the same action.
+/// Actions designed to be compatible with other plugins such that two plugins can execute the same action.
 pub struct FunctionalPluginActions<G: GenericNode> {
     /// The all-powerful action that can modify the Perseus engine itself. Because modifying the code you're running doesn't work with
     /// compiled languages like Rust, this has its own command in the CLI, `perseus tinker`. This is best used for modifying
@@ -80,7 +78,7 @@ impl<G: GenericNode> Default for FunctionalPluginActions<G> {
     }
 }
 
-/// The actions a functional plugin can take that pertain to altering the settings exported from the `define_app!` macro.
+/// Functional actions that pertain to altering the settings exported from the `define_app!` macro.
 pub struct FunctionalPluginSettingsActions<G: GenericNode> {
     /// Adds additional static aliases. Note that a static alias is a mapping of a URL path to a filesystem path (relative to the
     /// project root). These will be vetted to ensure they don't access anything outside the project root for security reasons. If they
@@ -104,7 +102,7 @@ impl<G: GenericNode> Default for FunctionalPluginSettingsActions<G> {
     }
 }
 
-/// The actions a functional plugin can take that pertain to the build process. Note that these actions are not available for the build
+/// Functional actions that pertain to the build process. Note that these actions are not available for the build
 /// stage of the export process, and those should be registered separately.
 #[derive(Default)]
 pub struct FunctionalPluginBuildActions {
@@ -115,7 +113,7 @@ pub struct FunctionalPluginBuildActions {
     /// Runs after the build process if it fails.
     pub after_failed_build: FunctionalPluginAction<crate::errors::ServerError, ()>,
 }
-/// The actions a functional plugin can take that pertain to the export process.
+/// Functional actions that pertain to the export process.
 #[derive(Default)]
 pub struct FunctionalPluginExportActions {
     /// Runs before the export process.
@@ -135,14 +133,14 @@ pub struct FunctionalPluginExportActions {
     /// Runs after the export process if it completes successfully.
     pub after_successful_export: FunctionalPluginAction<(), ()>,
 }
-/// The actions a functional plugin can take that pertain to the server.
+/// Functional actions that pertain to the server.
 #[derive(Default)]
 pub struct FunctionalPluginServerActions {
     /// Runs before the server activates. This runs AFTER the current directory has been appropriately set for a standalone binary vs
     /// running in the development environment (inside `.perseus/`).
     pub before_serve: FunctionalPluginAction<(), ()>,
 }
-/// The actions a functional plugin can take that pertain to the client-side code. These in particular should be as fast as possible.
+/// Functional actions that pertain to the client-side code. These in particular should be as fast as possible.
 #[derive(Default)]
 pub struct FunctionalPluginClientActions {
     /// Runs before anything else in the browser. Note that this runs after panics have been set to go to the console.

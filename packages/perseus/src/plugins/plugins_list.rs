@@ -8,10 +8,10 @@ type PluginDataMap = HashMap<String, Box<dyn Any>>;
 /// A representation of all the plugins used by an app. Due to the sheer number and compexity of nested fields, this is best transferred
 /// in an `Rc`, which unfortunately results in double indirection for runner functions.
 pub struct Plugins<G: GenericNode> {
-    /// The actions that functional plugins can take. This is defined by default such that all actions are assigned to a default, and so
-    /// they can all be run without long chains of matching `Option<T>`s.
+    /// The functional actions that this plugin takes. This is defined by default such that all actions are assigned to a default, and
+    /// so they can all be run without long chains of matching `Option<T>`s.
     pub functional_actions: FunctionalPluginActions<G>,
-    /// The actions that control plugins can take. This is defined by default such that all actions are assigned to a default, and so
+    /// The control actions that this plugin takes. This is defined by default such that all actions are assigned to a default, and so
     /// they can all be run without long chains of matching `Option<T>`s.
     pub control_actions: ControlPluginActions,
     plugin_data: PluginDataMap,
@@ -30,9 +30,8 @@ impl<G: GenericNode> Plugins<G> {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Registers a new plugin, consuming `self`. For functional plugins, this will simply register the plugin on each of the actions
-    /// that it takes. For control plugins, this will check if a plugin has already registered on an action, and throw an error if one
-    /// has, noting the conflict explicitly in the error message.
+    /// Registers a new plugin, consuming `self`. For control actions, this will check if a plugin has already registered on an action,
+    /// and throw an error if one has, noting the conflict explicitly in the error message.
     pub fn plugin<D: Any>(mut self, plugin: Plugin<G, D>, plugin_data: D) -> Self {
         // Insert the plugin data
         let plugin_data: Box<dyn Any> = Box::new(plugin_data);
@@ -41,14 +40,9 @@ impl<G: GenericNode> Plugins<G> {
         if res.is_some() {
             panic!("two plugins have the same name '{}', which could lead to arbitrary and inconsistent behavior modification (please file an issue with the plugin that doesn't have the same name as its crate)", &plugin.name);
         }
-        // Register functional actions using the plugin's provided registrar
-        // This has no access to control actions
+        // Register functional and control actions using the plugin's provided registrar
         self.functional_actions = (plugin.functional_actions_registrar)(self.functional_actions);
-
-        // If this is a control plugin, register control actions as well with the plugin's provided registrar
-        if let PluginType::Control(control_actions_registrar) = plugin.plugin_type {
-            self.control_actions = (control_actions_registrar)(self.control_actions);
-        }
+        self.control_actions = (plugin.control_actions_registrar)(self.control_actions);
 
         self
     }

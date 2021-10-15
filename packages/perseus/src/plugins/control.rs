@@ -2,11 +2,10 @@ use crate::plugins::{PluginAction, Runner};
 use std::any::Any;
 use std::collections::HashMap;
 
-/// An action for a control plugin, which can only be taken by one plugin. When run, control actions will return an `Option<R>` on what
+/// A control action, which can only be taken by one plugin. When run, control actions will return an `Option<R>` on what
 /// their runners return, which will be `None` if no runner is set.
 pub struct ControlPluginAction<A, R> {
-    /// The name of the plugin that controls this action. As this is a control plugin action, only one plugin can manage a single
-    /// action.
+    /// The name of the plugin that controls this action. As this is a control action, only one plugin can manage a single action.
     controller_name: String,
     /// The single runner function for this action. This may not be defined if no plugin takes this action.
     runner: Option<Runner<A, R>>,
@@ -53,7 +52,7 @@ impl<A, R> Default for ControlPluginAction<A, R> {
     }
 }
 
-/// All the actions that a control plugin can perform.
+/// All the control actions that a plugin can take.
 #[derive(Default)]
 pub struct ControlPluginActions {
     /// Actions pertaining to the modification of settings created with the `define_app!` macro.
@@ -68,7 +67,7 @@ pub struct ControlPluginActions {
     pub client_actions: ControlPluginClientActions,
 }
 
-/// The actions a control plugin can take that pertain to altering settings from `define_app!`.
+/// Control actions that pertain to altering settings from `define_app!`.
 #[derive(Default)]
 pub struct ControlPluginSettingsActions {
     /// Sets an immutable store to be used everywhere. This will provided the current immutable store for reference.
@@ -79,24 +78,24 @@ pub struct ControlPluginSettingsActions {
     /// Sets the app root to be used everywhere. This must correspond to the ID of an empty HTML `div`.
     pub set_app_root: ControlPluginAction<(), String>,
 }
-/// The actions a control plugin can take that pertain to the build process.
+/// Control actions that pertain to the build process.
 #[derive(Default)]
 pub struct ControlPluginBuildActions {
     /// Gets an immutable store to be used by the build process.
     pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
 }
-/// The actions a control plugin can take that pertain to the export process.
+/// Control actions that pertain to the export process.
 #[derive(Default)]
 pub struct ControlPluginExportActions {
     /// Gets an immutable store to be used by the export process.
     pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
 }
-/// The actions a control plugin can take that pertain to the server.
+/// Control actions that pertain to the server.
 #[derive(Default)]
 pub struct ControlPluginServerActions {
     /// Gets an immutable store to be used by the server.
     pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
 }
-/// The actions a control plugin can take that pertain to the client-side code. As yet, there are none of these.
+/// Control actions that pertain to the client-side code. As yet, there are none of these.
 #[derive(Default)]
 pub struct ControlPluginClientActions {}

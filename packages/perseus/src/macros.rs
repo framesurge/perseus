@@ -1,5 +1,5 @@
 /// An internal macro used for defining a function to get the user's preferred immutable store (which requires multiple branches).
-/// This can be reset by a control plugin.
+/// This can be reset by a control action.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_immutable_store {
@@ -17,7 +17,7 @@ macro_rules! define_get_immutable_store {
     };
 }
 /// An internal macro used for defining a function to get the user's preferred mutable store (which requires multiple branches). This
-/// can be reset by a control plugin.
+/// can be reset by a control action.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_mutable_store {
@@ -36,7 +36,7 @@ macro_rules! define_get_mutable_store {
     };
 }
 /// An internal macro used for defining the HTML `id` at which to render the Perseus app (which requires multiple branches). The default
-/// is `root`. This can be reset by a control plugin.
+/// is `root`. This can be reset by a control action.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_app_root {
@@ -48,7 +48,7 @@ macro_rules! define_app_root {
     };
 }
 /// An internal macro used for defining a function to get the user's preferred translations manager (which requires multiple branches).
-/// This is not plugin-extensible, but a control plugin can reset it later.
+/// This is not plugin-extensible, but a control action can reset it later.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_translations_manager {
