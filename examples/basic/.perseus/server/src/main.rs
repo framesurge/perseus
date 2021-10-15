@@ -49,12 +49,7 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>();
     if let Ok(port) = port {
-        let immutable_store = plugins
-            .control_actions
-            .server_actions
-            .get_immutable_store
-            .run((), plugins.get_plugin_data())
-            .unwrap_or_else(|| get_immutable_store(&plugins));
+        let immutable_store = get_immutable_store(&plugins);
         let locales = get_locales(&plugins);
         let app_root = get_app_root(&plugins);
         let static_aliases = get_static_aliases(&plugins);

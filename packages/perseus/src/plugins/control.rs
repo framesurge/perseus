@@ -80,22 +80,13 @@ pub struct ControlPluginSettingsActions {
 }
 /// Control actions that pertain to the build process.
 #[derive(Default)]
-pub struct ControlPluginBuildActions {
-    /// Gets an immutable store to be used by the build process.
-    pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
-}
+pub struct ControlPluginBuildActions {}
 /// Control actions that pertain to the export process.
 #[derive(Default)]
-pub struct ControlPluginExportActions {
-    /// Gets an immutable store to be used by the export process.
-    pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
-}
+pub struct ControlPluginExportActions {}
 /// Control actions that pertain to the server.
 #[derive(Default)]
-pub struct ControlPluginServerActions {
-    /// Gets an immutable store to be used by the server.
-    pub get_immutable_store: ControlPluginAction<(), crate::stores::ImmutableStore>,
-}
+pub struct ControlPluginServerActions {}
 /// Control actions that pertain to the client-side code. As yet, there are none of these.
 #[derive(Default)]
 pub struct ControlPluginClientActions {}

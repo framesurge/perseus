@@ -24,12 +24,7 @@ fn real_main() -> i32 {
         .before_build
         .run((), plugins.get_plugin_data());
 
-    let immutable_store = plugins
-        .control_actions
-        .export_actions
-        .get_immutable_store
-        .run((), plugins.get_plugin_data())
-        .unwrap_or_else(|| get_immutable_store(&plugins));
+    let immutable_store = get_immutable_store(&plugins);
     // We don't need this in exporting, but the build process does
     let mutable_store = get_mutable_store();
     let translations_manager = block_on(get_translations_manager());
