@@ -1,8 +1,9 @@
 use crate::plugins::*;
 use crate::GenericNode;
+use std::any::Any;
 use std::collections::HashMap;
 
-type PluginDataMap = HashMap<String, Box<dyn PluginData>>;
+type PluginDataMap = HashMap<String, Box<dyn Any>>;
 
 /// A representation of all the plugins used by an app. Due to the sheer number and compexity of nested fields, this is best transferred
 /// in an `Rc`, which unfortunately results in double indirection for runner functions.
@@ -32,9 +33,9 @@ impl<G: GenericNode> Plugins<G> {
     /// Registers a new plugin, consuming `self`. For functional plugins, this will simply register the plugin on each of the actions
     /// that it takes. For control plugins, this will check if a plugin has already registered on an action, and throw an error if one
     /// has, noting the conflict explicitly in the error message.
-    pub fn plugin(mut self, plugin: Plugin<G>, plugin_data: impl PluginData) -> Self {
+    pub fn plugin<D: Any>(mut self, plugin: Plugin<G, D>, plugin_data: D) -> Self {
         // Insert the plugin data
-        let plugin_data: Box<dyn PluginData> = Box::new(plugin_data);
+        let plugin_data: Box<dyn Any> = Box::new(plugin_data);
         let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
         // If there was an old value, there are two plugins with the same name, which is very bad (arbitrarily inconsistent behavior overriding)
         if res.is_some() {

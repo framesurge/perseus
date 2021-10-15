@@ -1,4 +1,5 @@
-use crate::plugins::{PluginAction, PluginData, Runner};
+use crate::plugins::{PluginAction, Runner};
+use std::any::Any;
 use std::collections::HashMap;
 
 /// An action for a control plugin, which can only be taken by one plugin. When run, control actions will return an `Option<R>` on what
@@ -12,13 +13,13 @@ pub struct ControlPluginAction<A, R> {
 }
 impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
     /// Runs the single registered runner for the action.
-    fn run(&self, action_data: A, plugin_data: &HashMap<String, Box<dyn PluginData>>) -> Option<R> {
+    fn run(&self, action_data: A, plugin_data: &HashMap<String, Box<dyn Any>>) -> Option<R> {
         // If no runner is defined, this won't have any effect (same as functional actions with no registered runners)
         self.runner.as_ref().map(|runner| {
             runner(
                 &action_data,
                 // We must have data registered for every active plugin (even if it's empty)
-                plugin_data.get(&self.controller_name).unwrap_or_else(|| {
+                &**plugin_data.get(&self.controller_name).unwrap_or_else(|| {
                     panic!(
                         "no plugin data for registered plugin {}",
                         &self.controller_name
@@ -27,11 +28,7 @@ impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
             )
         })
     }
-    fn register_plugin(
-        &mut self,
-        name: &str,
-        runner: impl Fn(&A, &Box<dyn PluginData>) -> R + 'static,
-    ) {
+    fn register_plugin(&mut self, name: &str, runner: impl Fn(&A, &dyn Any) -> R + 'static) {
         self.register_plugin_box(name, Box::new(runner))
     }
     fn register_plugin_box(&mut self, name: &str, runner: Runner<A, R>) {

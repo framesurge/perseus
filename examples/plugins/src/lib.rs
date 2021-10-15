@@ -12,5 +12,7 @@ define_app! {
     ],
     error_pages: crate::error_pages::get_error_pages(),
     plugins: Plugins::new()
-        .plugin(plugin::get_test_plugin(), ())
+        .plugin(plugin::get_test_plugin(), plugin::TestPluginData {
+            about_page_greeting: "Hey from a plugin!".to_string()
+        })
 }

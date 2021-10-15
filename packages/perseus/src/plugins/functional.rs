@@ -1,5 +1,6 @@
-use crate::plugins::{PluginAction, PluginData, Runner};
+use crate::plugins::{PluginAction, Runner};
 use crate::GenericNode;
+use std::any::Any;
 use std::collections::HashMap;
 
 /// An action for a functional plugin, which can be taken by many plugins. When run, a functional action will return a map of plugin
@@ -12,14 +13,14 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
     fn run(
         &self,
         action_data: A,
-        plugin_data: &HashMap<String, Box<dyn PluginData>>,
+        plugin_data: &HashMap<String, Box<dyn Any>>,
     ) -> HashMap<String, R> {
         let mut returns: HashMap<String, R> = HashMap::new();
         for (plugin_name, runner) in &self.runners {
             let ret = runner(
                 &action_data,
                 // We must have data registered for every active plugin (even if it's empty)
-                plugin_data.get(plugin_name).unwrap_or_else(|| {
+                &**plugin_data.get(plugin_name).unwrap_or_else(|| {
                     panic!("no plugin data for registered plugin {}", plugin_name)
                 }),
             );
@@ -28,11 +29,7 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
 
         returns
     }
-    fn register_plugin(
-        &mut self,
-        name: &str,
-        runner: impl Fn(&A, &Box<dyn PluginData>) -> R + 'static,
-    ) {
+    fn register_plugin(&mut self, name: &str, runner: impl Fn(&A, &dyn Any) -> R + 'static) {
         self.register_plugin_box(name, Box::new(runner))
     }
     fn register_plugin_box(&mut self, name: &str, runner: Runner<A, R>) {

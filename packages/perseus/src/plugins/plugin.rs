@@ -1,8 +1,13 @@
 use crate::plugins::*;
 use crate::GenericNode;
+use std::any::Any;
+use std::marker::PhantomData;
+
+type FunctionalActionsRegistrar<G> =
+    Box<dyn Fn(FunctionalPluginActions<G>) -> FunctionalPluginActions<G>>;
 
 /// A plugin, either functional or control.
-pub struct Plugin<G: GenericNode> {
+pub struct Plugin<G: GenericNode, D: Any> {
     /// The machine name of the plugin, which will be used as a key in a HashMap with many other plugins. This should be the public
     /// crate name in all cases.
     pub name: String,
@@ -10,8 +15,25 @@ pub struct Plugin<G: GenericNode> {
     pub plugin_type: PluginType,
     /// A function that will be provided functional plugin actions. It should then register runners from the plugin for every action
     /// that it takes.
-    pub functional_actions_registrar:
-        Box<dyn Fn(FunctionalPluginActions<G>) -> FunctionalPluginActions<G>>,
+    pub functional_actions_registrar: FunctionalActionsRegistrar<G>,
+
+    plugin_data_type: PhantomData<D>,
+}
+impl<G: GenericNode, D: Any> Plugin<G, D> {
+    /// Creates a new plugin with a name, functional actions, and optional control actions.
+    pub fn new(
+        name: &str,
+        plugin_type: PluginType,
+        functional_actions_registrar: impl Fn(FunctionalPluginActions<G>) -> FunctionalPluginActions<G>
+            + 'static,
+    ) -> Self {
+        Self {
+            name: name.to_string(),
+            plugin_type,
+            functional_actions_registrar: Box::new(functional_actions_registrar),
+            plugin_data_type: PhantomData::default(),
+        }
+    }
 }
 
 /// A plugin type, with the relevant associated actions.
