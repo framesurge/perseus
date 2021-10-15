@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.9](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.8...v0.3.0-beta.9) (2021-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* `Rc`s are eliminated and done behind the scenes
+
+### Features
+
+* ✨ removed `Rc`s completely ([d02189b](https://github.com/arctic-hen7/perseus/commit/d02189bc4b0fbec0ddb96ade8fa87275f39f3042))
+* **website:** ✨ added comparisons page ([#56](https://github.com/arctic-hen7/perseus/issues/56)) ([61dac01](https://github.com/arctic-hen7/perseus/commit/61dac01b838df23cc0f33b0d65fcb7bf5f252770))
+* **website:** ✨ added proper docs links parsing system ([cfa2d60](https://github.com/arctic-hen7/perseus/commit/cfa2d6025e624cf658236bbdc80b8d6470085c6d))
+
+
+### Bug Fixes
+
+* **i18n:** 🐛 fixed `link!` macro with base path ([d676471](https://github.com/arctic-hen7/perseus/commit/d676471f28608618e7693583f5a0e8bd9bf29805))
+* **i18n:** 🐛 fixed locale redirection `//` ([488a9a0](https://github.com/arctic-hen7/perseus/commit/488a9a081429805e25a6415366cd464ee1234fd4))
+* **website:** 🐛 fetched examples from git so they don't go obsolete in older versions ([5608a6a](https://github.com/arctic-hen7/perseus/commit/5608a6ad2486909091b067e144607c6a39c56075)), closes [#60](https://github.com/arctic-hen7/perseus/issues/60)
+* **website:** 🐛 fixed links in docs version warnings ([295b875](https://github.com/arctic-hen7/perseus/commit/295b8757283a407e321565ae1c15ee4d98ef9125))
+* **website:** 🚑️ pinned website to sycamore v0.6.1 to prevent base path problems ([71a142d](https://github.com/arctic-hen7/perseus/commit/71a142dc2496ee020447cda1dde9380365386e68)), closes [#60](https://github.com/arctic-hen7/perseus/issues/60)
+
+
+### Documentation Changes
+
+* 📝 removed warning about [#60](https://github.com/arctic-hen7/perseus/issues/60) from readme ([4ed3783](https://github.com/arctic-hen7/perseus/commit/4ed37835b79298fc9d07957810ff9efd5fa76794))
+* **book:** 📝 merged 0.3.x and next versions of docs ([9a4a956](https://github.com/arctic-hen7/perseus/commit/9a4a9565172afe96ebcaf8e44f9362e09e453d33))
+* **book:** 📝 updated docs and added new information on a few things ([8169153](https://github.com/arctic-hen7/perseus/commit/816915333b51b8df21841adbf294462c10c6e3a8)), closes [#46](https://github.com/arctic-hen7/perseus/issues/46)
+* **book:** 📝 updated links in docs ([c5398a3](https://github.com/arctic-hen7/perseus/commit/c5398a3b231786d771020532912ef7f80b7e4ac9))
+* 📝 removed warning about book being down ([1cb9ec6](https://github.com/arctic-hen7/perseus/commit/1cb9ec6ab4cb76bc144a680bb1d21ff5f1c3c2d2))
+* **website:** 📝 mention `browser-sync` as dependency for working with website ([#55](https://github.com/arctic-hen7/perseus/issues/55)) ([a97c325](https://github.com/arctic-hen7/perseus/commit/a97c3251f446c40655edba8d795875a88805fd92))
+
 ## [0.3.0-beta.8](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.7...v0.3.0-beta.8) (2021-10-08)
 
 
