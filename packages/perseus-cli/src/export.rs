@@ -52,12 +52,12 @@ pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
 
     // Copy files over (the directory structure should already exist from exporting the pages)
     copy_file!(
-        "dist/pkg/perseus_cli_builder.js",
+        "dist/pkg/perseus_engine.js",
         "dist/exported/.perseus/bundle.js",
         target
     );
     copy_file!(
-        "dist/pkg/perseus_cli_builder_bg.wasm",
+        "dist/pkg/perseus_engine_bg.wasm",
         "dist/exported/.perseus/bundle.wasm",
         target
     );
