@@ -1,6 +1,5 @@
 use perseus::{RenderFnResultWithCause, Request, Template};
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize)]
@@ -21,14 +20,14 @@ pub fn dashboard_page(props: IpPageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("ip")
-        .request_state_fn(Rc::new(get_request_state))
-        .template(Rc::new(|props| {
+        .request_state_fn(get_request_state)
+        .template(|props| {
             template! {
                 IpPage(
                     serde_json::from_str::<IpPageProps>(&props.unwrap()).unwrap()
                 )
             }
-        }))
+        })
 }
 
 pub async fn get_request_state(

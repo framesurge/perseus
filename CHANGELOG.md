@@ -2,6 +2,108 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.11](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.10...v0.3.0-beta.11) (2021-10-16)
+
+
+### Bug Fixes
+
+* 🐛 fixed naive current directory handling for standalone deployment binary ([e9e24da](https://github.com/arctic-hen7/perseus/commit/e9e24dad1e70807bf0694a729e619035e8810b3a)), closes [#63](https://github.com/arctic-hen7/perseus/issues/63)
+
+## [0.3.0-beta.10](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.9...v0.3.0-beta.10) (2021-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* `build_app`/`export_app`now take a `&TemplateMap` (`get_templates_vec` abolished)
+
+* feat(plugins): ✨ added `tinker` action and command
+
+* feat(examples): ✨ added `plugins` example and removed plugins code from other examples
+
+This includes tests.
+
+* fix(plugins): 🐛 fixed plugin data system
+
+Note that `PluginData` is now replaced by `Any`.
+
+* docs(book): ✏️ fixed missing link to lighthouse in book intro
+
+* refactor(plugins): ♻️ removed plugin type system
+
+Any plugin can now take functional or control actions. Docs still need updating.
+
+* refactor(plugins): 🔥 removed old `get_immutable_store` actions
+
+These are replaced by the `set_immutable_store` settings action
+
+* fix(exporting): 🐛 fixed engine crate name change bug in exporting
+
+* docs(book): 📝 added docs for plugins
+
+### Features
+
+* ✨ add plugins system ([#62](https://github.com/arctic-hen7/perseus/issues/62)) ([ca0aaa2](https://github.com/arctic-hen7/perseus/commit/ca0aaa2cd9cd5c22eb653af820c0e437fa4d9f2b))
+
+
+### Documentation Changes
+
+* **book:** 📝 merged `next` docs with 0.3.x docs for plugins ([c1e8033](https://github.com/arctic-hen7/perseus/commit/c1e8033687b1aaa5efecefe0502467d2b8ce6694))
+
+## [0.3.0-beta.9](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.8...v0.3.0-beta.9) (2021-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* `Rc`s are eliminated and done behind the scenes
+
+### Features
+
+* ✨ removed `Rc`s completely ([d02189b](https://github.com/arctic-hen7/perseus/commit/d02189bc4b0fbec0ddb96ade8fa87275f39f3042))
+* **website:** ✨ added comparisons page ([#56](https://github.com/arctic-hen7/perseus/issues/56)) ([61dac01](https://github.com/arctic-hen7/perseus/commit/61dac01b838df23cc0f33b0d65fcb7bf5f252770))
+* **website:** ✨ added proper docs links parsing system ([cfa2d60](https://github.com/arctic-hen7/perseus/commit/cfa2d6025e624cf658236bbdc80b8d6470085c6d))
+
+
+### Bug Fixes
+
+* **i18n:** 🐛 fixed `link!` macro with base path ([d676471](https://github.com/arctic-hen7/perseus/commit/d676471f28608618e7693583f5a0e8bd9bf29805))
+* **i18n:** 🐛 fixed locale redirection `//` ([488a9a0](https://github.com/arctic-hen7/perseus/commit/488a9a081429805e25a6415366cd464ee1234fd4))
+* **website:** 🐛 fetched examples from git so they don't go obsolete in older versions ([5608a6a](https://github.com/arctic-hen7/perseus/commit/5608a6ad2486909091b067e144607c6a39c56075)), closes [#60](https://github.com/arctic-hen7/perseus/issues/60)
+* **website:** 🐛 fixed links in docs version warnings ([295b875](https://github.com/arctic-hen7/perseus/commit/295b8757283a407e321565ae1c15ee4d98ef9125))
+* **website:** 🚑️ pinned website to sycamore v0.6.1 to prevent base path problems ([71a142d](https://github.com/arctic-hen7/perseus/commit/71a142dc2496ee020447cda1dde9380365386e68)), closes [#60](https://github.com/arctic-hen7/perseus/issues/60)
+
+
+### Documentation Changes
+
+* 📝 removed warning about [#60](https://github.com/arctic-hen7/perseus/issues/60) from readme ([4ed3783](https://github.com/arctic-hen7/perseus/commit/4ed37835b79298fc9d07957810ff9efd5fa76794))
+* **book:** 📝 merged 0.3.x and next versions of docs ([9a4a956](https://github.com/arctic-hen7/perseus/commit/9a4a9565172afe96ebcaf8e44f9362e09e453d33))
+* **book:** 📝 updated docs and added new information on a few things ([8169153](https://github.com/arctic-hen7/perseus/commit/816915333b51b8df21841adbf294462c10c6e3a8)), closes [#46](https://github.com/arctic-hen7/perseus/issues/46)
+* **book:** 📝 updated links in docs ([c5398a3](https://github.com/arctic-hen7/perseus/commit/c5398a3b231786d771020532912ef7f80b7e4ac9))
+* 📝 removed warning about book being down ([1cb9ec6](https://github.com/arctic-hen7/perseus/commit/1cb9ec6ab4cb76bc144a680bb1d21ff5f1c3c2d2))
+* **website:** 📝 mention `browser-sync` as dependency for working with website ([#55](https://github.com/arctic-hen7/perseus/issues/55)) ([a97c325](https://github.com/arctic-hen7/perseus/commit/a97c3251f446c40655edba8d795875a88805fd92))
+
+## [0.3.0-beta.8](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.7...v0.3.0-beta.8) (2021-10-08)
+
+
+### Bug Fixes
+
+* **i18n:** 🐛 fixed path prefixing with locale redirection ([241741f](https://github.com/arctic-hen7/perseus/commit/241741ff3055665f5721635d08b5770910f74add))
+* **i18n:** 🐛 made locale redirection work without trailing forward slash ([90b3a99](https://github.com/arctic-hen7/perseus/commit/90b3a990c19baafb763422575a1ef188baacf495))
+* **templates:** 🐛 inserted `<base>` element at top of `<head>` ([25959d7](https://github.com/arctic-hen7/perseus/commit/25959d79cf8ab40764100b9ababbe4ede8ededad))
+* **website:** 🐛 fixed absolute path links in website ([221fa24](https://github.com/arctic-hen7/perseus/commit/221fa24e48f7374c427256c5d9ab6884d68755e3))
+* **website:** 🐛 fixed index page styling on non-firefox browsers ([#54](https://github.com/arctic-hen7/perseus/issues/54)) ([aced234](https://github.com/arctic-hen7/perseus/commit/aced2346fdce10ff0c16daf5c95e73de7120cac4))
+* **website:** 🐛 fixed website links ([54de491](https://github.com/arctic-hen7/perseus/commit/54de49130ec253ab61d6217a60379d2fa0eedd97))
+* **website:** 💄 made github button same size as get started button on index page ([c472e04](https://github.com/arctic-hen7/perseus/commit/c472e04a0d29615909a49248179ca8b27cdb0f60)), closes [#54](https://github.com/arctic-hen7/perseus/issues/54)
+
+
+### Performance Improvements
+
+* **website:** ⚡️ added size optimizations on website ([31fb1f8](https://github.com/arctic-hen7/perseus/commit/31fb1f84a0b21f4f5a3da646cd396f58f6dd4c37))
+
+
+### Code Refactorings
+
+* **website:** ♻️ updated website routes for path prefixing ([28bba42](https://github.com/arctic-hen7/perseus/commit/28bba423a75329f9610f7b61ee7e846e266c3d52))
+
 ## [0.3.0-beta.7](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.6...v0.3.0-beta.7) (2021-10-06)
 
 

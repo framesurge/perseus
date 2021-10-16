@@ -45,8 +45,7 @@ impl ClientTranslationsManager {
                     Ok(translations_str) => match translations_str {
                         Some(translations_str) => {
                             // All good, turn the translations into a translator
-                            let translator =
-                                Translator::new(locale.to_string(), translations_str, &path_prefix);
+                            let translator = Translator::new(locale.to_string(), translations_str);
                             match translator {
                                 Ok(translator) => translator,
                                 Err(err) => {
@@ -78,8 +77,7 @@ impl ClientTranslationsManager {
                 Ok(Rc::clone(self.cached_translator.as_ref().unwrap()))
             } else if !self.locales.using_i18n {
                 // If we aren't even using i18n, then it would be pointless to fetch translations
-                let translator =
-                    Translator::new("xx-XX".to_string(), "".to_string(), &path_prefix).unwrap();
+                let translator = Translator::new("xx-XX".to_string(), "".to_string()).unwrap();
                 // Cache that translator
                 self.cached_translator = Some(Rc::new(translator));
                 // Now return that

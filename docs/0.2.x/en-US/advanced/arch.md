@@ -14,7 +14,7 @@ At the core of Perseus is the [`perseus`](https://docs.rs/perseus) module, which
 
 What is intended to be used directly is the `Template<G>` `struct`, which is integral to Perseus. This stores closures for every rendering strategy, which are executed as provided and necessary at build and runtime. Note that these are all stored in `Rc`s, and `Template<G>`s are cloned.
 
-The other commonly used system from this crate is the `Translator` system, explained in detail in [the i18n section](../i18n/intro). `Translator`s are passed around in `Rc`s, and `TranslationsManager` on the server caches all translations by default in memory on the server.
+The other commonly used system from this crate is the `Translator` system, explained in detail in [the i18n section](:i18n/intro). `Translator`s are passed around in `Rc`s, and `TranslationsManager` on the server caches all translations by default in memory on the server.
 
 ## Actix Web Integration
 
@@ -24,7 +24,7 @@ Note that this module provides a `configurer` function, which allows it to be mo
 
 ## CLI
 
-As documented in [this section](../cli), the CLI simply runs commands to execute the last two components of the Perseus system, acting as a convenience. It also contains these two components inside its binary (using [`include_dir!`](https://github.com/Michael-F-Bryan/include_dir))
+As documented in [this section](:cli), the CLI simply runs commands to execute the last two components of the Perseus system, acting as a convenience. It also contains these two components inside its binary (using [`include_dir!`](https://github.com/Michael-F-Bryan/include_dir))
 
 ## CLI Builder
 

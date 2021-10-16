@@ -4,6 +4,8 @@ The Perseus CLI is fantastic at enabling rapid and efficient development, but so
 
 However, there are some things that are too advanced for the CLI to support, and, in those cases, you'll need to eject. Don't worry, you'll still be able to use the CLI itself for running your app, but you'll be given access to the engine that underlies it, and you'll be able to tweak basically anything you want.
 
+Before you proceed though, you should know that Perseus supports modularizing the functionality of ejected code through [plugins](:plugins/intro), which let you modify the `.perseus/` directory in all sorts of ways (including arbitrary file modification), without needing to eject in the first place. In nearly all cases (even for smaller apps), plugins are a better way to go than ejecting. In future, you'll even be able to replace the entire `.perseus/` directory with a custom engine (planned for v0.4.0)!
+
 *Note: ejecting from Perseus exposes the bones of the system, and you should be quite familiar with Rust before doing this. That said, if you're just doing it for fun, go right ahead!*
 
 ## Ejecting

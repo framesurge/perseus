@@ -1,6 +1,6 @@
 # Incremental Generation
 
-Arguable the most powerful strategy in Perseus is _incremental generation_, which is an extension of _build paths_ such that any path in the template's root path domain (more info on that concept [here](../templates/intro)) will result in calling the _build state_ strategy while the server is running.
+Arguable the most powerful strategy in Perseus is _incremental generation_, which is an extension of _build paths_ such that any path in the template's root path domain (more info on that concept [here](:templates/intro)) will result in calling the _build state_ strategy while the server is running.
 
 A perfect example of this would be an retail site with thousands of products, all using the `product` template. If we built all these with _build paths_, and they all require fetching information from a database, builds could take a very long time. Instead, it's far more efficient to use _incremental generation_, which will allow any path under `/product` to call the _build state_ strategy, which you can then use to render the product when it's first requested. This is on-demand building. But how is this different from the _request state_ strategy? It caches the pages after they've been built the first time, meaning **you build once on-demand, and then it's static generation from there**. In other words, this strategy provides support for rendering thousands, millions, or even billions of pages from a single template while maintaining static generation times of less than a second!
 

@@ -1,3 +1,4 @@
+use crate::path_prefix::get_path_prefix_client;
 use crate::Locales;
 
 /// Detects which locale the user should be served and redirects appropriately. This should only be used when the user navigates to a
@@ -5,7 +6,7 @@ use crate::Locales;
 /// that direct to this should be explicitly excluded from search engines (they don't show anything until redirected). This is guided
 /// by [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt), but is not yet fully compliant (only supports `xx-XX` form locales).
 /// Note that this bypasses Sycamore's routing logic and triggers a full reload.
-pub fn detect_locale(url: String, locales: Locales) {
+pub fn detect_locale(url: String, locales: &Locales) {
     // If nothing matches, we'll use the default locale
     let mut locale = locales.default.clone();
 
@@ -18,7 +19,7 @@ pub fn detect_locale(url: String, locales: Locales) {
         if let Some(lang) = navigator.language() {
             locale = match compare_locale(&lang, &locales.get_all()) {
                 LocaleMatch::Exact(matched) | LocaleMatch::Language(matched) => matched,
-                LocaleMatch::None => locales.default,
+                LocaleMatch::None => locales.default.to_string(),
             }
         }
     } else {
@@ -36,12 +37,25 @@ pub fn detect_locale(url: String, locales: Locales) {
         }
     }
 
+    // Figure out what the new localized route should be
+    // This is complex because we need to strip away the base path
+    // We use the pathname part of the URL because the base path getter gets the pathname too
+    let url = url.strip_suffix('/').unwrap_or(&url);
+    let url = url.strip_prefix('/').unwrap_or(url);
+    let url = format!("/{}", url);
+    let base_path = get_path_prefix_client(); // We know this doesn't have a trailing slash
+    let loc = url.strip_prefix(&base_path).unwrap_or(&url);
+    // The location develops a leading slash during the base path stripping, so we remove it (again)
+    let loc = loc.strip_prefix('/').unwrap_or(loc);
+    let new_loc = format!("{}/{}/{}", base_path, locale, loc);
+    let new_loc = new_loc.strip_suffix('/').unwrap_or(&new_loc);
+
     // Imperatively navigate to the localized route
     // This certainly shouldn't fail...
     web_sys::window()
         .unwrap()
         .location()
-        .replace(&format!("/{}/{}", locale, url))
+        .replace(new_loc)
         .unwrap();
 }
 

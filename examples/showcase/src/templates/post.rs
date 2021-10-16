@@ -2,7 +2,6 @@ use perseus::{
     ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize)]
@@ -27,16 +26,16 @@ pub fn post_page(props: PostPageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("post")
-        .build_paths_fn(Rc::new(get_static_paths))
-        .build_state_fn(Rc::new(get_static_props))
+        .build_paths_fn(get_static_paths)
+        .build_state_fn(get_static_props)
         .incremental_generation()
-        .template(Rc::new(|props| {
+        .template(|props| {
             template! {
                 PostPage(
                     serde_json::from_str::<PostPageProps>(&props.unwrap()).unwrap()
                 )
             }
-        }))
+        })
 }
 
 pub async fn get_static_props(path: String, _locale: String) -> RenderFnResultWithCause<String> {

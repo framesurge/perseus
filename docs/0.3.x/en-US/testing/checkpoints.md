@@ -41,7 +41,7 @@ Perseus has a number of internal checkpoints that are listed below. Note that th
 -   `router_entry` -- when the Perseus router has reached a verdict and is about to either render a new page, detect the user's locale and redirect, or show an error page
 -   `not_found` -- when the page wasn't found
 -   `app_shell_entry` -- when the page was found and it's being rendered
--   `initial_state_present` -- when the page has been rendered for the first time, and the server has preloaded everything (see [here](../advanced/initial-loads) for details)
+-   `initial_state_present` -- when the page has been rendered for the first time, and the server has preloaded everything (see [here](:advanced/initial-loads) for details)
 -   `page_visible` -- when the user is able to see page content (but the page isn't interactive yet)
 -   `page_interactive` -- when the page has been hydrated, and is now interactive
 -   `initial_state_not_present` -- when the initial state is not present, and the app shell will need to fetch page data from the server

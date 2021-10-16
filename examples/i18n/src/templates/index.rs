@@ -1,5 +1,4 @@
 use perseus::{link, t, Template};
-use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[component(IndexPage<G>)]
@@ -14,9 +13,9 @@ pub fn index_page() -> SycamoreTemplate<G> {
 }
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
-    Template::new("index").template(Rc::new(|_| {
+    Template::new("index").template(|_| {
         template! {
             IndexPage()
         }
-    }))
+    })
 }

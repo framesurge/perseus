@@ -6,6 +6,7 @@ on:
             - "docs/**"
             - "website/**"
             - ".github/workflows/website.yml" # If we change this build script, it should rerun
+            - "bonnie.toml" # Any changes to the `deploy-prod` command should trigger a rebuild
         branches:
             - main
 
@@ -13,18 +14,20 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
+            # The website builder accesses Git history for old examples, so we need everything
             - uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
             - run: cargo install bonnie
             - run: cargo install wasm-pack
-            - run: cargo install perseus-cli --version 0.3.0-beta.7
             - run: npm install
-              working-directory: website
+              working-directory: website/website
             - name: Build website
-              run: bonnie site deploy
+              run: bonnie site deploy-prod
             - name: Deploy website to GitHub Pages
               uses: peaceiris/actions-gh-pages@v3
               if: github.ref == 'refs/heads/main'
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
-                  publish_dir: website/pkg
+                  publish_dir: website/website/pkg
                   publish_branch: gh-pages

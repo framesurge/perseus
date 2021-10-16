@@ -49,4 +49,4 @@ The reason we don't just make this whole function asynchronous is so we don't ha
 
 ## File Storage
 
-It may have crossed your mind as to where all these static files are stored in production, and Perseus provides an excellent solution to this problem with custom read/write systems, documented in-depth [here](./config_managers).
+It may have crossed your mind as to where all these static files are stored in production, and Perseus provides an excellent solution to this problem with custom read/write systems, documented in-depth [here](:config_managers).

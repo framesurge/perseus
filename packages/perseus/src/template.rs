@@ -442,23 +442,32 @@ impl<G: GenericNode> Template<G> {
 
     // Builder setters
     /// Sets the template rendering function to use.
-    pub fn template(mut self, val: TemplateFn<G>) -> Template<G> {
-        self.template = val;
+    pub fn template(
+        mut self,
+        val: impl Fn(Option<String>) -> SycamoreTemplate<G> + 'static,
+    ) -> Template<G> {
+        self.template = Rc::new(val);
         self
     }
     /// Sets the document head rendering function to use.
-    pub fn head(mut self, val: HeadFn) -> Template<G> {
-        self.head = val;
+    pub fn head(
+        mut self,
+        val: impl Fn(Option<String>) -> SycamoreTemplate<SsrNode> + 'static,
+    ) -> Template<G> {
+        self.head = Rc::new(val);
         self
     }
     /// Sets the function to set headers. This will override Perseus' inbuilt header defaults.
-    pub fn set_headers_fn(mut self, val: SetHeadersFn) -> Template<G> {
-        self.set_headers = val;
+    pub fn set_headers_fn(
+        mut self,
+        val: impl Fn(Option<String>) -> HeaderMap + 'static,
+    ) -> Template<G> {
+        self.set_headers = Rc::new(val);
         self
     }
     /// Enables the *build paths* strategy with the given function.
-    pub fn build_paths_fn(mut self, val: GetBuildPathsFn) -> Template<G> {
-        self.get_build_paths = Some(val);
+    pub fn build_paths_fn(mut self, val: impl GetBuildPathsFnType + 'static) -> Template<G> {
+        self.get_build_paths = Some(Rc::new(val));
         self
     }
     /// Enables the *incremental generation* strategy.
@@ -467,18 +476,21 @@ impl<G: GenericNode> Template<G> {
         self
     }
     /// Enables the *build state* strategy with the given function.
-    pub fn build_state_fn(mut self, val: GetBuildStateFn) -> Template<G> {
-        self.get_build_state = Some(val);
+    pub fn build_state_fn(mut self, val: impl GetBuildStateFnType + 'static) -> Template<G> {
+        self.get_build_state = Some(Rc::new(val));
         self
     }
     /// Enables the *request state* strategy with the given function.
-    pub fn request_state_fn(mut self, val: GetRequestStateFn) -> Template<G> {
-        self.get_request_state = Some(val);
+    pub fn request_state_fn(mut self, val: impl GetRequestStateFnType + 'static) -> Template<G> {
+        self.get_request_state = Some(Rc::new(val));
         self
     }
     /// Enables the *revalidation* strategy (logic variant) with the given function.
-    pub fn should_revalidate_fn(mut self, val: ShouldRevalidateFn) -> Template<G> {
-        self.should_revalidate = Some(val);
+    pub fn should_revalidate_fn(
+        mut self,
+        val: impl ShouldRevalidateFnType + 'static,
+    ) -> Template<G> {
+        self.should_revalidate = Some(Rc::new(val));
         self
     }
     /// Enables the *revalidation* strategy (time variant). This takes a time string of a form like `1w` for one week. More details are available
@@ -488,8 +500,11 @@ impl<G: GenericNode> Template<G> {
         self
     }
     /// Enables state amalgamation with the given function.
-    pub fn amalgamate_states_fn(mut self, val: AmalgamateStatesFn) -> Template<G> {
-        self.amalgamate_states = Some(val);
+    pub fn amalgamate_states_fn(
+        mut self,
+        val: impl Fn(States) -> RenderFnResultWithCause<Option<String>> + 'static,
+    ) -> Template<G> {
+        self.amalgamate_states = Some(Rc::new(val));
         self
     }
 }

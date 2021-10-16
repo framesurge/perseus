@@ -1,6 +1,6 @@
 # Routing
 
-Perseus' routing system is quite unique in that it's almost entirely _inferred_, meaning that you don't ever have to define a router or explain to the system which paths go where. Instead, they're inferred from templates in a system that's explained in detail in the [templates section](../templates/intro).
+Perseus' routing system is quite unique in that it's almost entirely _inferred_, meaning that you don't ever have to define a router or explain to the system which paths go where. Instead, they're inferred from templates in a system that's explained in detail in the [templates section](:templates/intro).
 
 ## Template Selection Algorithm
 

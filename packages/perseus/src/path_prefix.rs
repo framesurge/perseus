@@ -3,7 +3,8 @@ use wasm_bindgen::JsCast;
 use web_sys::{HtmlBaseElement, Url};
 
 /// Gets the path prefix to apply on the server. This uses the `PERSEUS_BASE_PATH` environment variable, which avoids hardcoding
-/// something as changeable as this into the final binary. Hence however, that variable must be the same as wht's set in `<base>`.
+/// something as changeable as this into the final binary. Hence however, that variable must be the same as what's set in `<base>` (done
+/// automatically).
 /// Trailing forward slashes will be trimmed automatically.
 pub fn get_path_prefix_server() -> String {
     let base_path = env::var("PERSEUS_BASE_PATH").unwrap_or_else(|_| "".to_string());

@@ -12,7 +12,7 @@ That's fantastic! You can check out the [roadmap](./README.md#Roadmap) or the [i
 
 ## How do I contribute?
 
-Contributing to a project on Github is pretty straight forward. If this is you're first time contributing to a project, all you need to do is fork this repository to your own GitHub account, add then change the code you want to (usually on your local machine, you'd pull your fork down). Commit your changes as necessary, and when you're done, submit a pull request on this repository and we'll review it as soon as possible!
+Contributing to a project on Github is pretty straight forward. If this is you're first time contributing to a project, all you need to do is fork this repository to your own GitHub account and then change the code you want to (usually on your local machine, you'd pull your fork down). Commit your changes as necessary, and when you're done, submit a pull request on this repository and we'll review it as soon as possible!
 
 Make sure your code doesn't break anything existing, that all tests pass, and, if necessary, add tests so your code can be confirmed to work automatically.
 
@@ -23,6 +23,8 @@ After you've submitted a pull request, a maintainer will review your changes. Un
 Perseus uses [Bonnie](https://github.com/arctic-hen7/bonnie) for command aliasing (you can install it with `cargo install bonnie`), and most of the project testing is done in the `examples` directory. You can run `bonnie help` to see all available commands, but this is the one you'll use the most:
 
 -   `bonnie dev example showcase serve` -- serves the `showcase` example to <http://localhost:8080>
+
+Before you do anything though, you should run `bonnie setup`, which will do a few thigns to prepare your local development. This includes running `cargo build`, so it will takea a little while. Note that, without running this command, most other actions you try to take will cause errors.
 
 ## Testing
 

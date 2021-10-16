@@ -260,7 +260,6 @@ pub async fn get_page_for_template(
     // Handle build state (which might use revalidation or incremental)
     if template.uses_build_state() || template.is_basic() {
         // If the template uses incremental generation, that is its own contained process
-        // TODO separate out build paths pages, which are in the immutable store
         if template.uses_incremental() && was_incremental_match {
             // This template uses incremental generation, and this page was built and cached at runtime in the mutable store
             // Get the cached content if it exists (otherwise `None`)

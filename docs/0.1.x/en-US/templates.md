@@ -36,4 +36,4 @@ First, we define the _component function_, which is done with Sycamore. This is 
 
 You can define a template with the `Template::new()` method, which takes the template's path as an argument (with no leading or trailing slashes). In the above example, `about` renders only one page, which would be hosted at `/about`.
 
-The only mandatory builder function after that is `.template()`, which defines your template function (the closure inside `template_fn()` in the above example). There are a number of other functions available to customize how the template renders, all of which are documented [here](./strategies/intro).
+The only mandatory builder function after that is `.template()`, which defines your template function (the closure inside `template_fn()` in the above example). There are a number of other functions available to customize how the template renders, all of which are documented [here](:strategies/intro).

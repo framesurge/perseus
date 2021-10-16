@@ -12,7 +12,7 @@ Here's an example taken from [here](https://github.com/arctic-hen7/perseus/blob/
 {{#include ../../../../examples/showcase/src/templates/ip.rs}}
 ```
 
-Note that, just like _build state_, this strategy generates stringified properties that will be passed to the page to render it, and it also uses `RenderFnWithCause` (see the section on [build state](./build-state) for more information). The key difference though is that this strategy receives a second, very powerful parameter: the HTTP request that the user sent (`perseus::Request`).
+Note that, just like _build state_, this strategy generates stringified properties that will be passed to the page to render it, and it also uses `RenderFnWithCause` (see the section on [build state](:strategies/build-state) for more information). The key difference though is that this strategy receives a second, very powerful parameter: the HTTP request that the user sent (`perseus::Request`).
 
 <details>
 <summary>How do you get the user's request information?</summary>

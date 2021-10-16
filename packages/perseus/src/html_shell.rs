@@ -29,21 +29,29 @@ pub fn prep_html_shell(
         "</head>",
         // It's safe to assume that something we just deserialized will serialize again in this case
         &format!(
-            "<base href=\"{path_prefix}\" />\n<script>window.__PERSEUS_RENDER_CFG = '{}';{testing_var}</script>\n{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n</head>",
+            "<script>window.__PERSEUS_RENDER_CFG = '{}';{testing_var}</script>\n{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n</head>",
             serde_json::to_string(&render_cfg).unwrap(),
             load_script,
             testing_var=if env::var("PERSEUS_TESTING").is_ok() {
                 "window.__PERSEUS_TESTING = true;"
             } else {
                 ""
-            },
+            }
+        ),
+    );
+    // Add in the `<base>` element at the very top so that it applies to everything in the HTML shell
+    // Otherwise any stylesheets loaded before it won't work properly
+    let prepared_with_base = prepared.replace(
+        "<head>",
+        &format!(
+            "<head>\n<base href=\"{path_prefix}\" />",
             // We add a trailing `/` to the base URL (https://stackoverflow.com/a/26043021)
             // Note that it's already had any pre-existing ones stripped away
-            path_prefix=format!("{}/", path_prefix)
+            path_prefix = format!("{}/", path_prefix)
         ),
     );
 
-    prepared
+    prepared_with_base
 }
 
 /// Interpolates content, metadata, and state into the HTML shell, ready to be sent to the user for initial loads. This should be passed

@@ -17,16 +17,10 @@ pub struct FluentTranslator {
     bundle: Rc<FluentBundle<FluentResource>>,
     /// The locale for which translations are being managed by this instance.
     locale: String,
-    /// The path prefix to apply when calling the `.url()` method.
-    path_prefix: String,
 }
 impl FluentTranslator {
     /// Creates a new translator for a given locale, passing in translations in FTL syntax form.
-    pub fn new(
-        locale: String,
-        ftl_string: String,
-        path_prefix: &str,
-    ) -> Result<Self, TranslatorError> {
+    pub fn new(locale: String, ftl_string: String) -> Result<Self, TranslatorError> {
         let resource = FluentResource::try_new(ftl_string)
             // If this errors, we get it still and a vector of errors (wtf.)
             .map_err(|(_, errs)| TranslatorError::TranslationsStrSerFailed {
@@ -59,12 +53,11 @@ impl FluentTranslator {
         Ok(Self {
             bundle: Rc::new(bundle),
             locale,
-            path_prefix: path_prefix.to_string(),
         })
     }
     /// Gets the path to the given URL in whatever locale the instance is configured for. This also applies the path prefix.
     pub fn url<S: Into<String> + std::fmt::Display>(&self, url: S) -> String {
-        format!("{}/{}{}", self.path_prefix, self.locale, url)
+        format!("{}{}", self.locale, url)
     }
     /// Gets the locale for which this instancce is configured.
     pub fn get_locale(&self) -> String {

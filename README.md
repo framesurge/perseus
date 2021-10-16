@@ -6,8 +6,6 @@
 [![Top Language](https://img.shields.io/github/languages/top/arctic-hen7/perseus?style=for-the-badge)]()
 [![Discord Chat](https://img.shields.io/discord/820400041332179004?label=Discord&style=for-the-badge)](https://discord.gg/PgwPn7dKEk)
 
-> **WARNING:** the book is currently down for maintenance, but itll be back up soon as a fully-fledged website built with Perseus!
-
 Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)!
 
 -   📕 Supports static generation (serving only static resources)
@@ -24,21 +22,20 @@ Here's a taste of Perseus (see [the _tiny_ example](https://github.com/arctic-he
 
 ```rust
 use perseus::{define_app, ErrorPages, Template};
-use std::rc::Rc;
 use sycamore::template;
 define_app! {
     templates: [
-        Template::<G>::new("index").template(Rc::new(|_| {
+        Template::<G>::new("index").template(|_| {
             template! {
                 p { "Hello World!" }
             }
-        }))
+        })
     ],
-    error_pages: ErrorPages::new(Rc::new(|url, status, err, _| {
+    error_pages: ErrorPages::new(|url, status, err, _| {
         template! {
             p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
         }
-    }))
+    })
 }
 ```
 

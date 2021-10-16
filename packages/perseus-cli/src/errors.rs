@@ -134,6 +134,8 @@ pub enum EjectionError {
     },
     #[error("can't clean after ejection unless `--force` is provided (maybe you meant to use `--dist`?)")]
     CleanAfterEject,
+    #[error("can't tinker after ejection unless `--force` is provided (ejecting and using plugins can be problematic depending on the plugins used)")]
+    TinkerAfterEject,
 }
 
 /// Errors that can occur while running `perseus export`.

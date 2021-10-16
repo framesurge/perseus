@@ -1,0 +1,17 @@
+{
+    "name": "Perseus",
+    "supports_ssg": "full",
+    "supports_ssr": "full",
+    "supports_ssr_ssg_same_page": "full",
+    "supports_i18n": "full",
+    "supports_incremental": "full",
+    "supports_revalidation": "full",
+    "inbuilt_cli": "full",
+    "inbuilt_routing": "full",
+    "supports_shell": "full",
+    "supports_deployment": "full",
+    "supports_exporting": "full",
+    "language": "Rust",
+    "homepage_lighthouse_desktop": 100,
+    "homepage_lighthouse_mobile": 95
+}

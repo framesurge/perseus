@@ -1,6 +1,5 @@
 use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,14 +16,14 @@ pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("index")
-        .build_state_fn(Rc::new(get_static_props))
-        .template(Rc::new(|props| {
+        .build_state_fn(get_static_props)
+        .template(|props| {
             template! {
                 IndexPage(
                     serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
                 )
             }
-        }))
+        })
 }
 
 pub async fn get_static_props(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
