@@ -38,6 +38,18 @@ You can also run a full check on all your code with `bonnie check`, which is the
 
 If the code you write needs to be documented in, the README, the book, or elsewhere, please do so! Also, **please ensure your code is commented**, it makes everything so much easier.
 
+All the Perseus documentation is stored inside `docs/`, which is then split into a folder for each version of the documentation (e.g. `0.1.x`, `0.2.x`, `0.3.x`), with the additional special folder `next`, which is rolling release. There's also a `manifest.json` file that defines which versions are outdated, stable, or in beta, as well as the points in the Git history that they correspond to. In each version folder, there are folders for each language of the docs, and contributions in the area of internationalization are very welcome!
+
+The docs are rendered [here](https://arctic-hen7/.github.io/perseus/en-US/docs/intro), with a sidebar that acts as a table of contents. That sidebar is rendered from the special file `SUMMARY.md`, whcih links to pages in the docs as `/docs/path/to/file`, a locale and version will be inserted automatically at build time. For adding to the documentation, you should add to this file with an entry for each file you've added.
+
+Documentation files are written in Markdown, and will be served on the website at their filenames (without the `.md` extension though). All documentation files must start with `# Title Here`, which will be used as the document's title in the browser. If you want to link to other pages in the docs from your page, use the special linking syntax `:path/to/file`, and the appropriate locale and version will be inserted automatically.
+
+All code examples in the docs must come from real-world files, which can be done with the special syntax `{{#include path/to/file/relative/to/current/file}}`. If you want to include particular lines, use `#include_lines` instead and provide the lines as `relative/path:start:end` (where `start` and `end` are the starting and ending lines you want, 1-indexed). Code examples for languages other than Rust (e.g. `Dockerfile`s) may be directly written into the document, but they'll need to be kept up-to-date. Note that any time you use the current version of Perseus anywhere in your files, it will be updated as the Perseus version is updated (with a find-and-replace that affects everything except for the `CHANGELOG.md`).
+
+Note that if you're updating the docs to fix a typo, you may need to change the typo in multiple versions. If you're adding new documentation, you should add it to both `next` and the latest applicable version (which could be a beta version).
+
+Finally, you can see the documentation you've written by running `bonnie site run` (assuming you've already run `bonnie setup`), whcih requires no prerequisites other than [Bonnie](https://github.com/arctic-hen7/bonnie) and [TailwindCSS](https://tailwindcss.com) (`npm i -g tailwindcss`). Note that this will use the local, bleeding-edge, unreleased version of the Perseus CLI, not the one on `crates.io`, so you don't have to install the CLI. You'll be able to see the website at <http://localhost:8080>.
+
 ## Branches
 
 Perseus uses a relatively intuitive branching system:
