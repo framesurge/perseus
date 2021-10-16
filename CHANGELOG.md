@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.11](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.10...v0.3.0-beta.11) (2021-10-16)
+
+
+### Bug Fixes
+
+* 🐛 fixed naive current directory handling for standalone deployment binary ([e9e24da](https://github.com/arctic-hen7/perseus/commit/e9e24dad1e70807bf0694a729e619035e8810b3a)), closes [#63](https://github.com/arctic-hen7/perseus/issues/63)
+
 ## [0.3.0-beta.10](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.9...v0.3.0-beta.10) (2021-10-16)
 
 
