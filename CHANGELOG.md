@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.10](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.9...v0.3.0-beta.10) (2021-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* `build_app`/`export_app`now take a `&TemplateMap` (`get_templates_vec` abolished)
+
+* feat(plugins): ✨ added `tinker` action and command
+
+* feat(examples): ✨ added `plugins` example and removed plugins code from other examples
+
+This includes tests.
+
+* fix(plugins): 🐛 fixed plugin data system
+
+Note that `PluginData` is now replaced by `Any`.
+
+* docs(book): ✏️ fixed missing link to lighthouse in book intro
+
+* refactor(plugins): ♻️ removed plugin type system
+
+Any plugin can now take functional or control actions. Docs still need updating.
+
+* refactor(plugins): 🔥 removed old `get_immutable_store` actions
+
+These are replaced by the `set_immutable_store` settings action
+
+* fix(exporting): 🐛 fixed engine crate name change bug in exporting
+
+* docs(book): 📝 added docs for plugins
+
+### Features
+
+* ✨ add plugins system ([#62](https://github.com/arctic-hen7/perseus/issues/62)) ([ca0aaa2](https://github.com/arctic-hen7/perseus/commit/ca0aaa2cd9cd5c22eb653af820c0e437fa4d9f2b))
+
+
+### Documentation Changes
+
+* **book:** 📝 merged `next` docs with 0.3.x docs for plugins ([c1e8033](https://github.com/arctic-hen7/perseus/commit/c1e8033687b1aaa5efecefe0502467d2b8ce6694))
+
 ## [0.3.0-beta.9](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.8...v0.3.0-beta.9) (2021-10-12)
 
 
