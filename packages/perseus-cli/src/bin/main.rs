@@ -4,7 +4,7 @@ use perseus_cli::errors::*;
 use perseus_cli::{
     build, check_env, delete_artifacts, delete_bad_dir, deploy, eject, export, has_ejected,
     parse::{Opts, Subcommand},
-    prepare, serve,
+    prepare, serve, tinker,
 };
 use std::env;
 use std::io::Write;
@@ -135,6 +135,18 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
         Subcommand::Eject => {
             eject(dir)?;
             0
+        }
+        Subcommand::Tinker(tinker_opts) => {
+            // We shouldn't run arbitrary plugin code designed to alter the engine if the user has made their own changes after ejecting
+            if has_ejected(dir.clone()) && !tinker_opts.force {
+                return Err(EjectionError::TinkerAfterEject.into());
+            }
+            // Unless we've been told not to, we start with a blank slate
+            // This will remove old tinkerings and eliminate any possible corruptions (which are very likely with tinkering!)
+            if !tinker_opts.no_clean {
+                delete_bad_dir(dir.clone())?;
+            }
+            tinker(dir)?
         }
         Subcommand::Prep => {
             // The `.perseus/` directory has already been set up in the preliminaries, so we don't need to do anything here

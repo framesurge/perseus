@@ -53,6 +53,8 @@ mod log;
 mod macros;
 /// Utilities relating to working with path prefixes for when a site is hosted at a relative path.
 pub mod path_prefix;
+/// Utilities for managing and creating plugins.
+pub mod plugins;
 /// Utilities regarding routing.
 pub mod router;
 /// Utilities for serving your app. These are platform-agnostic, and you probably want an integration like [perseus-actix-web](https://crates.io/crates/perseus-actix-web).

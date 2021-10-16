@@ -7,7 +7,7 @@ use crate::Translator;
 use crate::{
     decode_time_str::decode_time_str,
     stores::{ImmutableStore, MutableStore},
-    template::Template,
+    Template, TemplateMap,
 };
 use futures::future::try_join_all;
 use std::collections::HashMap;
@@ -243,7 +243,7 @@ async fn build_template_and_get_cfg(
 /// Runs the build process of building many different templates for a single locale. If you're not using i18n, provide a `Translator::empty()`
 /// for this. You should only build the most commonly used locales here (the rest should be built on demand).
 pub async fn build_templates_for_locale(
-    templates: &[Template<SsrNode>],
+    templates: &TemplateMap<SsrNode>,
     translator_raw: Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
@@ -253,7 +253,7 @@ pub async fn build_templates_for_locale(
     let mut render_cfg: HashMap<String, String> = HashMap::new();
     // Create each of the templates
     let mut futs = Vec::new();
-    for template in templates {
+    for template in templates.values() {
         futs.push(build_template_and_get_cfg(
             template,
             Rc::clone(&translator),
@@ -278,7 +278,7 @@ pub async fn build_templates_for_locale(
 
 /// Gets a translator and builds templates for a single locale.
 async fn build_templates_and_translator_for_locale(
-    templates: &[Template<SsrNode>],
+    templates: &TemplateMap<SsrNode>,
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
@@ -301,7 +301,7 @@ async fn build_templates_and_translator_for_locale(
 /// Runs the build process of building many templates for the given locales data, building directly for all supported locales. This is
 /// fine because of how ridiculously fast builds are.
 pub async fn build_app(
-    templates: Vec<Template<SsrNode>>,
+    templates: &TemplateMap<SsrNode>,
     locales: &Locales,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
@@ -312,7 +312,7 @@ pub async fn build_app(
 
     for locale in locales {
         futs.push(build_templates_and_translator_for_locale(
-            &templates,
+            templates,
             locale.to_string(),
             (immutable_store, mutable_store),
             translations_manager,

@@ -42,7 +42,7 @@ async fn get_static_page_data(
 /// been built, and that no templates are using non-static features (which can be ensured by passing `true` as the last parameter to
 /// `build_app`).
 pub async fn export_app(
-    templates: TemplateMap<SsrNode>,
+    templates: &TemplateMap<SsrNode>,
     html_shell_path: &str,
     locales: &Locales,
     root_id: &str,

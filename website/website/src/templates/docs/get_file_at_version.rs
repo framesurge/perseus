@@ -12,7 +12,6 @@ pub fn get_file_at_version(
         .args(["show", &format!("{}:{}", version, filename)])
         .current_dir(git_dir)
         .output()?;
-    // TODO error handling
     let contents = String::from_utf8(output.stdout)
         .map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))?;
     Ok(contents)

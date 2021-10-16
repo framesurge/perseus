@@ -2,7 +2,7 @@
 # IMPORTANT: spacing matters in this file for runtime replacements, do NOT change it!
 
 [package]
-name = "perseus-cli-builder"
+name = "perseus-engine"
 version = "0.3.0-beta.9"
 edition = "2018"
 default-run = "perseus-builder"
@@ -25,6 +25,7 @@ console_error_panic_hook = "0.1.6"
 urlencoding = "2.1"
 futures = "0.3"
 fs_extra = "1"
+lazy_static = "1"
 
 # This section is needed for Wasm Pack (which we use instead of Trunk for flexibility)
 [lib]
@@ -38,3 +39,7 @@ path = "src/bin/build.rs"
 [[bin]]
 name = "perseus-exporter"
 path = "src/bin/export.rs"
+
+[[bin]]
+name = "perseus-tinker" # Yes, the noun is 'tinker', not 'tinkerer'
+path = "src/bin/tinker.rs"

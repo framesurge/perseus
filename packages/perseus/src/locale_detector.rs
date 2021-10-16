@@ -6,7 +6,7 @@ use crate::Locales;
 /// that direct to this should be explicitly excluded from search engines (they don't show anything until redirected). This is guided
 /// by [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt), but is not yet fully compliant (only supports `xx-XX` form locales).
 /// Note that this bypasses Sycamore's routing logic and triggers a full reload.
-pub fn detect_locale(url: String, locales: Locales) {
+pub fn detect_locale(url: String, locales: &Locales) {
     // If nothing matches, we'll use the default locale
     let mut locale = locales.default.clone();
 
@@ -19,7 +19,7 @@ pub fn detect_locale(url: String, locales: Locales) {
         if let Some(lang) = navigator.language() {
             locale = match compare_locale(&lang, &locales.get_all()) {
                 LocaleMatch::Exact(matched) | LocaleMatch::Language(matched) => matched,
-                LocaleMatch::None => locales.default,
+                LocaleMatch::None => locales.default.to_string(),
             }
         }
     } else {
