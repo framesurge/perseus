@@ -28,6 +28,10 @@ async fn main() -> std::io::Result<()> {
         env::set_current_dir("../").unwrap();
         is_standalone = false;
     } else {
+        // If we are running as a standalone binary, we have no idea where we're being executed from (#63), so we should set the working directory to be the same as the binary location
+        let binary_loc = env::current_exe().unwrap();
+        let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close to sanity
+        env::set_current_dir(binary_dir).unwrap();
         is_standalone = true;
     }
 
