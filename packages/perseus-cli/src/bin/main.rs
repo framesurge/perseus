@@ -145,6 +145,8 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
             // This will remove old tinkerings and eliminate any possible corruptions (which are very likely with tinkering!)
             if !tinker_opts.no_clean {
                 delete_bad_dir(dir.clone())?;
+                // Recreate the '.perseus/' directory
+                prepare(dir.clone())?;
             }
             tinker(dir)?
         }
