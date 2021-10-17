@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.12](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.11...v0.3.0-beta.12) (2021-10-17)
+
+
+### Bug Fixes
+
+* **plugins:** 🐛 fixed `perseus tinker` deleting `.perseus/` without recreating it ([0e9bed5](https://github.com/arctic-hen7/perseus/commit/0e9bed5fa2ee2f918391167eaeb795d50811c496))
+
+
+### Documentation Changes
+
+* **book:** ✏️ fixed typos in intro ([#53](https://github.com/arctic-hen7/perseus/issues/53)) ([1aff29c](https://github.com/arctic-hen7/perseus/commit/1aff29c8c6aab21da96a61a77fcdb58d419179cf))
+* 📝 added docs for contributing to the docs ([7a211eb](https://github.com/arctic-hen7/perseus/commit/7a211ebf5d34354877177dd75fffacf91efff9a5))
+
 ## [0.3.0-beta.11](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.10...v0.3.0-beta.11) (2021-10-16)
 
 
