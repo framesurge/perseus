@@ -1,4 +1,4 @@
-use clap::Clap;
+use clap::Parser;
 use fmterr::fmt_err;
 use perseus_cli::errors::*;
 use perseus_cli::{
