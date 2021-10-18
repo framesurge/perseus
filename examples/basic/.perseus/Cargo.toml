@@ -3,7 +3,7 @@
 
 [package]
 name = "perseus-engine"
-version = "0.3.0-beta.12"
+version = "0.3.0-beta.13"
 edition = "2018"
 default-run = "perseus-builder"
 
