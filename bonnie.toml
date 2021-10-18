@@ -120,6 +120,7 @@ test.cmd = [
     # Run tests for each example
     "bonnie test example basic --headless",
     "bonnie test example i18n --headless",
+    "bonnie test example plugins --headless",
     "bonnie test example showcase --headless"
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"

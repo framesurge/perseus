@@ -50,6 +50,19 @@ jobs:
             - run: bonnie ci-prep
             - name: Run E2E tests
               run: bonnie test example i18n --headless
+    e2e-test-example-plugins:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - run: cargo install bonnie
+            - run: cargo install wasm-pack
+            - run: sudo apt install firefox firefox-geckodriver
+            - name: Run Firefox WebDriver
+              run: geckodriver &
+            - run: bonnie copy-subcrates
+            - run: bonnie ci-prep
+            - name: Run E2E tests
+              run: bonnie test example plugins --headless
     # This one is liable to fail for no particular reason (`geckodriver` seems to get tired...)
     # It should be re-run if it fails unexpectedly, especially if the error message is something to do with WebDriver sessions
     e2e-test-example-showcase:
