@@ -27,7 +27,7 @@ pub fn parse_md_to_html(markdown: &str) -> String {
 lazy_static! {
     /// The latest version of the documentation. This will need to be updated as the docs are from the `docs/stable.txt` file.
     static ref DOCS_MANIFEST: DocsManifest = {
-        let contents = fs::read_to_string("../../../docs/manifest.json").unwrap();
+        let contents = fs::read_to_string("../../docs/manifest.json").unwrap();
         serde_json::from_str(&contents).unwrap()
     };
 }
@@ -142,7 +142,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
             path_vec[1..].join("/") // The rest of the path
         )
     };
-    let fs_path = format!("../../../{}.md", fs_path);
+    let fs_path = format!("../../{}.md", fs_path);
     // Read that file
     let contents = fs::read_to_string(&fs_path)?;
 
@@ -166,8 +166,8 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                 // If we're on the `next` version, read from the filesystem directly
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents = if version == "next" {
-                    // Add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
-                    fs::read_to_string(format!("../../../{}", &incl_path))?
+                    // Add a `../../` to the front so that it's relative from `.perseus/`, where we are now
+                    fs::read_to_string(format!("../../{}", &incl_path))?
                 } else {
                     // Get the corresponding history point for this version
                     let history_point = DOCS_MANIFEST.history_map.get(version);
@@ -176,7 +176,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                         None => panic!("docs version '{}' not present in history map", version),
                     };
                     // We want the path relative to the root of the project directory (where the Git repo is)
-                    get_file_at_version(incl_path, history_point, PathBuf::from("../../../"))?
+                    get_file_at_version(incl_path, history_point, PathBuf::from("../../"))?
                 };
                 // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
@@ -199,8 +199,8 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                 // If we're on the `next` version, read from the filesystem directly
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents_full = if version == "next" {
-                    // Add a `../../../` to the front so that it's relative from `.perseus/`, where we are now
-                    fs::read_to_string(format!("../../../{}", &incl_path))?
+                    // Add a `../../` to the front so that it's relative from `.perseus/`, where we are now
+                    fs::read_to_string(format!("../../{}", &incl_path))?
                 } else {
                     // Get the corresponding history point for this version
                     let history_point = DOCS_MANIFEST.history_map.get(version);
@@ -209,7 +209,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
                         None => panic!("docs version '{}' not present in history map", version),
                     };
                     // We want the path relative to the root of the project directory (where the Git repo is)
-                    get_file_at_version(incl_path, history_point, PathBuf::from("../../../"))?
+                    get_file_at_version(incl_path, history_point, PathBuf::from("../../"))?
                 };
                 // Get the specific lines wanted
                 let incl_contents_lines = incl_contents_full
@@ -249,7 +249,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
         .unwrap();
 
     // Get the sidebar from `SUMMARY.md`
-    let sidebar_fs_path = format!("../../../docs/{}/{}/SUMMARY.md", &version, &locale);
+    let sidebar_fs_path = format!("../../docs/{}/{}/SUMMARY.md", &version, &locale);
     let sidebar_contents = fs::read_to_string(&sidebar_fs_path)?;
     // Replace all links in that file with localized equivalents with versions as well (with the base path added)
     // That means unversioned paths will redirect to the appropriate stable version
@@ -289,7 +289,7 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     // We start off by rendering the `/docs` page itself as an alias
     let mut paths: Vec<String> = vec!["".to_string()];
     // Get the `docs/` directory (relative to `.perseus/`)
-    let docs_dir = PathBuf::from("../../../docs");
+    let docs_dir = PathBuf::from("../../docs");
     // Loop through it
     for entry in WalkDir::new(docs_dir) {
         let entry = entry?;
@@ -297,10 +297,10 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
         // Ignore any empty directories or the like
         if path.is_file() {
             // This should all pass, there are no non-Unicode filenames in the docs (and i18n titles are handled outside filenames)
-            // Also, all these are relative, which means we can safely strip away the `../../../docs/`
+            // Also, all these are relative, which means we can safely strip away the `../../docs/`
             // We also remove the file extensions (which are all `.md`)
             let path_str = path.to_str().unwrap().replace(".md", "");
-            let path_str = path_str.strip_prefix("../../../docs/").unwrap();
+            let path_str = path_str.strip_prefix("../../docs/").unwrap();
             // Only proceed for paths in the default locale (`en-US`), which we'll use to generate paths
             // Also disallow any of the `SUMMARY.md` files at this point (the extension has been stripped)
             // Also disallow the manifest file
