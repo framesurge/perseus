@@ -43,7 +43,7 @@ pub fn tinker_internal(
     // We make sure to add them at the top (other spinners may have already been instantiated)
     let tk_spinner = spinners.insert(0, ProgressBar::new_spinner());
     let tk_spinner = cfg_spinner(tk_spinner, &tk_msg);
-    let tk_target = target.clone();
+    let tk_target = target;
     let tk_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
@@ -66,7 +66,7 @@ pub fn tinker_internal(
 pub fn tinker(dir: PathBuf) -> Result<i32, Error> {
     let spinners = MultiProgress::new();
 
-    let tk_thread = tinker_internal(dir.clone(), &spinners, 1)?;
+    let tk_thread = tinker_internal(dir, &spinners, 1)?;
     let tk_res = tk_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;

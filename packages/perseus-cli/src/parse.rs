@@ -1,7 +1,7 @@
 #![allow(missing_docs)] // Prevents double-documenting some things
 
 use crate::PERSEUS_VERSION;
-use clap::{AppSettings, Parser};
+use clap::Parser;
 
 // The documentation for the `Opts` struct will appear in the help page, hence the lack of puncutation and the lowercasing in places
 
