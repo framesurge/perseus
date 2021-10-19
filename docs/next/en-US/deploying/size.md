@@ -4,40 +4,6 @@ If you're used to working with Rust, you're probably used to two things: perform
 
 If you've worked with Rust and Wasm before, you may be familiar with `wasm-opt`, which performs a ton of optimizations for you. Perseus does this automatically with `wasm-pack`. But we can do better.
 
-## `wee_alloc`
+The easiest way to apply size optimizations for Perseus is the [`perseus-size-opt` plugin](https://github.com/arctic-hen7/perseus-size-opt), which prevents the need for ejecting to apply optimizations in `.perseus/`, and requires only a single line of code to use. Check it out [here](https://github.com/arctic-hen7/perseus-size-opt) for more details! It's recommended that all Perseus apps use this plugin before they deploy to production, because it can result in size decreases of upwards of 100kb, which translates into real increases in loading time for your users.
 
-Rust's memory allocator takes up quite a lot of space in your final Wasm binary, and this can be solved by trading off performance for smaller sizes, which can actually make your site snappier because it will load faster. `wee_alloc` is an alternative allocator built for Wasm, and you can enable it by adding it to your `Cargo.toml` as a dependency:
-
-```toml
-wee_alloc = "0.4"
-```
-
-And then you can add it to the top of your `src/lib.rs`:
-
-```rust
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-```
-
-With the [basic example](https://github.com/arctic-hen7/perseus/tree/main/examples/basic), we saw improvements from 369.2kb to 367.8kb with `wee_alloc` and release mode. These aren't much though, and we can do better.
-
-## Aggressive Optimizations
-
-More aggressive optimizations need to be applied to both Perseus' engine and your own code, so you'll need to [eject](:ejecting) for this to work properly. Just run `perseus eject`, and then add the following to `.perseus/Cargo.toml`:
-
-```toml
-[profile.release]
-lto = true
-opt-level = "z"
-```
-
-Then add the same thing to your own `Cargo.toml`. Note that, if this is the only modification you make after ejecting, `perseus deploy` will still work perfectly as expected.
-
-What this does is enable link-time optimizations, which do magic stuff to make your code smaller, and then we set the compiler to optimize aggressively for speed. On the [basic example](https://github.com/arctic-hen7/perseus/tree/main/examples/basic), we say improvements from 367.8kb with `wee_alloc` and release mode to 295.3kb when we added these extra optimizations. That's very significant, and we recommend using these if you don't have a specific reason not to. Note however that you should definitely test your site's performance after applying these to make sure that you feel you've achieved the right trade-off between performance and speed. If not, you could try setting `opt-level = "s"` instead of `z` to optimize less aggressively for speed, or you could try disabling some optimizations.
-
-<details>
-<summary>Read this if something blows up in your face.</summary>
-
-As of time of writing, Netlify (and possibly other providers) doesn't support Rust binaries that use `lto = true` for some reason, it simply doesn't detect them, so you shouldn't use that particular optimization if you're working with Netlify.
-
-</details>
+_Note: every size optimization has a trade-off with either speed or compile-time, and you should test the performance of your app after applying these optimizations to make sure you're happy with the results, because the balance between speed and size will be different for every app. That said, using even all these optimizations usually has a negligible performance impact._
