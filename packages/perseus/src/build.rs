@@ -1,13 +1,14 @@
 // This binary builds all the templates with SSG
 
 use crate::errors::*;
-use crate::Locales;
-use crate::TranslationsManager;
-use crate::Translator;
+use crate::locales::Locales;
+use crate::translations_manager::TranslationsManager;
+use crate::translator::Translator;
 use crate::{
     decode_time_str::decode_time_str,
     stores::{ImmutableStore, MutableStore},
-    Template, TemplateMap,
+    template::TemplateMap,
+    Template,
 };
 use futures::future::try_join_all;
 use std::collections::HashMap;

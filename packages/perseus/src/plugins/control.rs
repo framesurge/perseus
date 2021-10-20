@@ -74,7 +74,7 @@ pub struct ControlPluginSettingsActions {
     pub set_immutable_store:
         ControlPluginAction<crate::stores::ImmutableStore, crate::stores::ImmutableStore>,
     /// Sets the locales to be used everywhere, providing the current ones for reference.
-    pub set_locales: ControlPluginAction<crate::Locales, crate::Locales>,
+    pub set_locales: ControlPluginAction<crate::locales::Locales, crate::locales::Locales>,
     /// Sets the app root to be used everywhere. This must correspond to the ID of an empty HTML `div`.
     pub set_app_root: ControlPluginAction<(), String>,
 }

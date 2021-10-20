@@ -3,9 +3,8 @@
 
 pub use app::get_plugins;
 use perseus::{
-    plugins::{PluginAction, Plugins},
-    stores::ImmutableStore,
-    ErrorPages, GenericNode, Locales, TemplateMap,
+    internal::i18n::Locales, stores::ImmutableStore, templates::TemplateMap, ErrorPages,
+    GenericNode, PluginAction, Plugins,
 };
 use std::collections::HashMap;
 

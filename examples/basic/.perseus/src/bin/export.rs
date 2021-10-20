@@ -1,7 +1,8 @@
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::executor::block_on;
 use perseus::{
-    build_app, export_app, path_prefix::get_path_prefix_server, plugins::PluginAction, SsrNode,
+    internal::{build::build_app, export::export_app, get_path_prefix_server},
+    PluginAction, SsrNode,
 };
 use perseus_engine::app::{
     get_app_root, get_immutable_store, get_locales, get_mutable_store, get_plugins,

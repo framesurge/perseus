@@ -1,5 +1,5 @@
+use crate::locales::Locales;
 use crate::path_prefix::get_path_prefix_client;
-use crate::Locales;
 
 /// Detects which locale the user should be served and redirects appropriately. This should only be used when the user navigates to a
 /// page like `/about`, without a locale. This will only work on the client-side (needs access to browser i18n settings). Any pages

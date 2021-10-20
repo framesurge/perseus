@@ -2,9 +2,9 @@
 
 use crate::default_headers::default_headers;
 use crate::errors::*;
+use crate::translator::Translator;
 use crate::Request;
 use crate::SsrNode;
-use crate::Translator;
 use futures::Future;
 use http::header::HeaderMap;
 use std::collections::HashMap;
@@ -538,7 +538,7 @@ pub type TemplateMap<G> = HashMap<String, Template<G>>;
 #[macro_export]
 macro_rules! is_server {
     () => {{
-        let render_ctx = ::sycamore::context::use_context::<::perseus::template::RenderCtx>();
+        let render_ctx = ::sycamore::context::use_context::<::perseus::templates::RenderCtx>();
         render_ctx.is_server
     }};
 }

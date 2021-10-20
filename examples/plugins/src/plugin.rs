@@ -1,4 +1,4 @@
-use perseus::plugins::*;
+use perseus::plugins::{empty_control_actions_registrar, Plugin, PluginAction};
 use perseus::Template;
 
 #[derive(Debug)]

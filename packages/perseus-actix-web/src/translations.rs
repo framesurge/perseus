@@ -1,7 +1,7 @@
 use crate::Options;
 use actix_web::{web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
-use perseus::TranslationsManager;
+use perseus::internal::i18n::TranslationsManager;
 
 /// The handler for calls to `.perseus/translations/{locale}`. This will manage returning errors and the like. THe JSON body returned
 /// from this does NOT include the `locale` key, just a `HashMap<String, String>` of the translations themselves.

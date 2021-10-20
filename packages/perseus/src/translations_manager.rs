@@ -24,7 +24,7 @@ pub enum TranslationsManagerError {
     },
 }
 
-use crate::Translator;
+use crate::translator::Translator;
 use futures::future::join_all;
 use std::collections::HashMap;
 use std::fs;

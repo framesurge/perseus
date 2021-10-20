@@ -1,11 +1,17 @@
 pub mod app;
 
 use crate::app::{get_app_root, get_error_pages, get_locales, get_plugins, get_templates_map};
-use perseus::error_pages::ErrorPageData;
-use perseus::plugins::PluginAction;
-use perseus::router::{RouteInfo, RouteVerdict};
-use perseus::shell::{checkpoint, get_initial_state, get_render_cfg, InitialState};
-use perseus::{app_shell, create_app_route, detect_locale, ClientTranslationsManager, DomNode};
+use perseus::{
+    checkpoint, create_app_route,
+    internal::{
+        error_pages::ErrorPageData,
+        i18n::{detect_locale, ClientTranslationsManager},
+        router::{RouteInfo, RouteVerdict},
+        shell::{app_shell, get_initial_state, get_render_cfg, InitialState},
+    },
+    plugins::PluginAction,
+    DomNode,
+};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{cloned, create_effect, template, NodeRef, StateHandle};

@@ -19,7 +19,7 @@ macro_rules! t {
     // When there are no arguments to interpolate
     ($id:expr) => {
         {
-            let render_ctx = ::sycamore::context::use_context::<::perseus::template::RenderCtx>();
+            let render_ctx = ::sycamore::context::use_context::<::perseus::templates::RenderCtx>();
             let translator = render_ctx.translator;
             translator.translate($id, ::std::option::Option::None)
         }
@@ -29,7 +29,7 @@ macro_rules! t {
         $($key:literal: $value:expr),+
     }) => {
         {
-            let render_ctx = ::sycamore::context::use_context::<::perseus::template::RenderCtx>();
+            let render_ctx = ::sycamore::context::use_context::<::perseus::templates::RenderCtx>();
             let translator = render_ctx.translator;
             let mut args = ::fluent_bundle::FluentArgs::new();
             $(
@@ -45,7 +45,7 @@ macro_rules! t {
 #[macro_export]
 macro_rules! link {
     ($url:expr) => {{
-        let render_ctx = ::sycamore::context::use_context::<::perseus::template::RenderCtx>();
+        let render_ctx = ::sycamore::context::use_context::<::perseus::templates::RenderCtx>();
         let translator = render_ctx.translator;
         translator.url($url)
     }};

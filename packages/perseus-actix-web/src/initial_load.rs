@@ -2,14 +2,16 @@ use crate::conv_req::convert_req;
 use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
-use perseus::error_pages::ErrorPageData;
-use perseus::html_shell::interpolate_page_data;
-use perseus::router::{match_route, RouteInfo, RouteVerdict};
 use perseus::{
-    err_to_status_code,
-    serve::get_page_for_template,
+    errors::err_to_status_code,
+    internal::{
+        error_pages::ErrorPageData,
+        i18n::{TranslationsManager, Translator},
+        router::{match_route, RouteInfo, RouteVerdict},
+        serve::{get_page_for_template, interpolate_page_data},
+    },
     stores::{ImmutableStore, MutableStore},
-    ErrorPages, SsrNode, TranslationsManager, Translator,
+    ErrorPages, SsrNode,
 };
 use std::collections::HashMap;
 use std::rc::Rc;

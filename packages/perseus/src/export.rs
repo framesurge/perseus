@@ -1,12 +1,12 @@
 use crate::errors::*;
-use crate::get_render_cfg;
 use crate::html_shell::{interpolate_page_data, prep_html_shell};
+use crate::locales::Locales;
+use crate::serve::get_render_cfg;
 use crate::serve::PageData;
 use crate::stores::ImmutableStore;
-use crate::Locales;
+use crate::template::TemplateMap;
+use crate::translations_manager::TranslationsManager;
 use crate::SsrNode;
-use crate::TemplateMap;
-use crate::TranslationsManager;
 use std::fs;
 
 /// Gets the static page data.
