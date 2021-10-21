@@ -75,12 +75,13 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
             None => return Err(PrepError::MalformedUserManifest),
         };
         // Update the name of the user's crate (Cargo needs more than just a path and an alias)
-        // Also create a workspace so the subcrates share a `target/` directory (speeds up builds)
+        // We don't need to do that in the server manifest because it uses the root code (which does parsing after `define_app!`)
+        // We used to add a workspace here, but that means size optimizations apply to both the client and the server, so that's not done anymore
+        // Now, we use an empty workspace to make sure we don't ninclude the engine in any user workspaces
         let updated_root_manifest = root_manifest_contents
             .replace("perseus-example-basic", &user_crate_name)
-            + "\n[workspace]\nmembers = [ \"server\" ]";
-        let updated_server_manifest =
-            server_manifest_contents.replace("perseus-example-basic", &user_crate_name);
+            + "\n[workspace]";
+        let updated_server_manifest = server_manifest_contents + "\n[workspace]";
 
         // If we're not in development, also update relative path references
         #[cfg(not(debug_assertions))]
