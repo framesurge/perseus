@@ -92,7 +92,7 @@ fn real_main() -> i32 {
                 .functional_actions
                 .export_actions
                 .after_failed_static_copy
-                .run(err, plugins.get_plugin_data());
+                .run(err.to_string(), plugins.get_plugin_data());
             eprintln!("{}", err_msg);
             return 1;
         }
@@ -115,7 +115,7 @@ fn real_main() -> i32 {
                     .functional_actions
                     .export_actions
                     .after_failed_static_alias_dir_copy
-                    .run(err, plugins.get_plugin_data());
+                    .run(err.to_string(), plugins.get_plugin_data());
                 eprintln!("{}", err_msg);
                 return 1;
             }

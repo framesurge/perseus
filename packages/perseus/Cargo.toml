@@ -17,24 +17,21 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 sycamore = { version = "0.6", features = ["ssr"] }
 sycamore-router = "0.6"
 perseus-macro = { path = "../perseus-macro", version = "0.3.0-beta.13" }
+# TODO review feature flags here
 web-sys = { version = "0.3", features = ["Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-typetag = "0.1"
 thiserror = "1"
 fmterr = "0.1"
 futures = "0.3"
-console_error_panic_hook = "0.1.6"
 urlencoding = "2.1"
 chrono = "0.4"
 http = "0.2"
 async-trait = "0.1"
 fluent-bundle = { version = "0.15", optional = true }
 unic-langid = { version = "0.9", optional = true }
-js-sys = "0.3"
-fs_extra = "1"
 
 [features]
 default = ["translator-fluent", "translator-dflt-fluent"]
@@ -42,3 +39,5 @@ default = ["translator-fluent", "translator-dflt-fluent"]
 # One MUST be specified, or the crate will not compile
 translator-fluent = ["fluent-bundle", "unic-langid"]
 translator-dflt-fluent = ["translator-fluent", "fluent-bundle", "unic-langid"]
+
+plugins = []

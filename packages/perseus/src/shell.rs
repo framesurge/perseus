@@ -6,13 +6,12 @@ use crate::serve::PageData;
 use crate::template::Template;
 use crate::ErrorPages;
 use fmterr::fmt_err;
-use js_sys::Reflect;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::*;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
+use sycamore::rt::Reflect; // We can piggyback off Sycamore to avoid bringing in `js_sys`
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Element, Request, RequestInit, RequestMode, Response};
 
