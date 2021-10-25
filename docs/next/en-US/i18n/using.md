@@ -1,6 +1,12 @@
 # Using Translations
 
-Perseus tries to make it as easy as possible to use translations in your app by exposing the low-level Fluent primitives necessary to work with very complex translations, as well as a `t!` macro that does the basics.
+Perseus tries to make it as easy as possible to use translations in your app by exposing the low-level Fluent primitives necessary to work with very complex translations, as well as a `t!` macro that does the basics. Note that, to use i18n, you'll need to enable a translator, the usual one is for [Fluent](https://projectfluent.org). Change your Perseus import in your `Cargo.toml` to look like this:
+
+```toml
+perseus = { version = "<version of Perseus that you're using>", features = [ "translator-fluent" ] }
+```
+
+If you don't do this, your app won't build.
 
 All translations in Perseus are done with an instance of `Translator`, which is provided through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/v0.6/advanced/contexts). Here's an example taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/i18n/src/templates/index.rs):
 

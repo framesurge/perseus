@@ -9,7 +9,8 @@ Perseus v0.3.0 added significant architectural changes to Perseus under the hood
 3. Run `perseus clean` to remove the old `.perseus/` directory.
 4. Remove any custom config managers you may have, they've been replaced by [mutable and immutable stores](:stores).
 5. Take anything Perseus-related wrapped in `Rc::new` (these will be all through your template definitions and error pages) and remove the `Rc::new`, Perseus now handles that internally, with no performance cost!
-6. Update your code for the remaining breaking changes listed in [the CHANGELOG](https://github.com/arctic-hen7/perseus/blob/main/CHANGELOG).
+6. If you're using i18n, add the `translator-fluent` flag to `perseus` in your `Cargo.toml`. If you're not, your Wasm bundle size has been reduced!
+7. Update your code for the remaining breaking changes listed in [the CHANGELOG](https://github.com/arctic-hen7/perseus/blob/main/CHANGELOG).
 
 Perseus v0.3.0 also changed a few common idioms, like breaking out the `.template()` call into a separate function `template_fn()`. This is no longer recommended, though it will still work fine. You can check out the [examples directory](https://github.com/arctic-hen7/perseus/tree/main/examples) to see how things are a bit nicer now in terms of formatting.
 

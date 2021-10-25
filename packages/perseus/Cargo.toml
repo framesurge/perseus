@@ -30,14 +30,12 @@ urlencoding = "2.1"
 chrono = "0.4"
 http = "0.2"
 async-trait = "0.1"
+cfg-if = "1"
 fluent-bundle = { version = "0.15", optional = true }
 unic-langid = { version = "0.9", optional = true }
 
 [features]
-default = ["translator-fluent", "translator-dflt-fluent"]
+default = []
 # Each `translator-dflt-*` feature enables a certain translator as the default, and is mutually exclusive with others like it
-# One MUST be specified, or the crate will not compile
+# If none are specified, a dummy translator will be used
 translator-fluent = ["fluent-bundle", "unic-langid"]
-translator-dflt-fluent = ["translator-fluent", "fluent-bundle", "unic-langid"]
-
-plugins = []

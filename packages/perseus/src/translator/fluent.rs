@@ -1,6 +1,7 @@
 use crate::translator::errors::*;
 use fluent_bundle::{FluentArgs, FluentBundle, FluentResource};
 use std::rc::Rc;
+use sycamore::context::use_context;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 /// The file extension used by the Fluent translator, which expects FTL files.
@@ -56,7 +57,7 @@ impl FluentTranslator {
         })
     }
     /// Gets the path to the given URL in whatever locale the instance is configured for. This also applies the path prefix.
-    pub fn url<S: Into<String> + std::fmt::Display>(&self, url: S) -> String {
+    pub fn url(&self, url: &str) -> String {
         format!("{}{}", self.locale, url)
     }
     /// Gets the locale for which this instancce is configured.
@@ -68,11 +69,7 @@ impl FluentTranslator {
     /// # Panics
     /// This will `panic!` if any errors occur while trying to prepare the given ID. Therefore, this method should only be used for
     /// hardcoded IDs that can be confirmed as valid. If you need to parse arbitrary IDs, use `.translate_checked()` instead.
-    pub fn translate<I: Into<String> + std::fmt::Display>(
-        &self,
-        id: I,
-        args: Option<FluentArgs>,
-    ) -> String {
+    pub fn translate(&self, id: &str, args: Option<FluentArgs>) -> String {
         let translation_res = self.translate_checked(&id.to_string(), args);
         match translation_res {
             Ok(translation) => translation,
@@ -81,9 +78,9 @@ impl FluentTranslator {
     }
     /// Translates the given ID, returning graceful errors. This additionally takes any arguments that should be interpolated. If your
     /// i18n system also has variants, they should be specified somehow in the ID.
-    pub fn translate_checked<I: Into<String> + std::fmt::Display>(
+    pub fn translate_checked(
         &self,
-        id: I,
+        id: &str,
         args: Option<FluentArgs>,
     ) -> Result<String, TranslatorError> {
         let id_str = id.to_string();
@@ -162,4 +159,31 @@ impl FluentTranslator {
     pub fn get_bundle(&self) -> Rc<FluentBundle<FluentResource>> {
         Rc::clone(&self.bundle)
     }
+}
+
+/// An alias for `FluentArgs`. This is a workaround until conditional compilation of expressions is supported, which will simplify this
+/// system significantly.
+#[doc(hidden)]
+pub type TranslationArgs<'args> = FluentArgs<'args>;
+
+/// The internal Fluent backend for the `t!` macro.
+#[doc(hidden)]
+pub fn t_macro_backend(id: &str) -> String {
+    let render_ctx = use_context::<crate::templates::RenderCtx>();
+    let translator = render_ctx.translator;
+    translator.translate(id, None)
+}
+/// The internal Fluent backend for the `t!` macro, when it's used with arguments.
+#[doc(hidden)]
+pub fn t_macro_backend_with_args(id: &str, args: FluentArgs) -> String {
+    let render_ctx = use_context::<crate::templates::RenderCtx>();
+    let translator = render_ctx.translator;
+    translator.translate(id, Some(args))
+}
+/// The internal Fluent backend for the `link!` macro.
+#[doc(hidden)]
+pub fn link_macro_backend(url: &str) -> String {
+    let render_ctx = use_context::<crate::templates::RenderCtx>();
+    let translator = render_ctx.translator;
+    translator.url(url)
 }
