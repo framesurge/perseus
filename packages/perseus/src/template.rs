@@ -441,6 +441,7 @@ impl<G: GenericNode> Template<G> {
     }
 
     // Builder setters
+    // These will only be enabled under the `server-side` feature to prevent server-side code leaking into the Wasm binary (only the template setter is needed)
     /// Sets the template rendering function to use.
     pub fn template(
         mut self,
@@ -450,61 +451,106 @@ impl<G: GenericNode> Template<G> {
         self
     }
     /// Sets the document head rendering function to use.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn head(
         mut self,
         val: impl Fn(Option<String>) -> SycamoreTemplate<SsrNode> + 'static,
     ) -> Template<G> {
-        self.head = Rc::new(val);
+        #[cfg(feature = "server-side")]
+        {
+            self.head = Rc::new(val);
+        }
         self
     }
     /// Sets the function to set headers. This will override Perseus' inbuilt header defaults.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn set_headers_fn(
         mut self,
         val: impl Fn(Option<String>) -> HeaderMap + 'static,
     ) -> Template<G> {
-        self.set_headers = Rc::new(val);
+        #[cfg(feature = "server-side")]
+        {
+            self.set_headers = Rc::new(val);
+        }
         self
     }
     /// Enables the *build paths* strategy with the given function.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn build_paths_fn(mut self, val: impl GetBuildPathsFnType + 'static) -> Template<G> {
-        self.get_build_paths = Some(Rc::new(val));
+        #[cfg(feature = "server-side")]
+        {
+            self.get_build_paths = Some(Rc::new(val));
+        }
         self
     }
     /// Enables the *incremental generation* strategy.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn incremental_generation(mut self) -> Template<G> {
-        self.incremental_generation = true;
+        #[cfg(feature = "server-side")]
+        {
+            self.incremental_generation = true;
+        }
         self
     }
     /// Enables the *build state* strategy with the given function.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn build_state_fn(mut self, val: impl GetBuildStateFnType + 'static) -> Template<G> {
-        self.get_build_state = Some(Rc::new(val));
+        #[cfg(feature = "server-side")]
+        {
+            self.get_build_state = Some(Rc::new(val));
+        }
         self
     }
     /// Enables the *request state* strategy with the given function.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn request_state_fn(mut self, val: impl GetRequestStateFnType + 'static) -> Template<G> {
-        self.get_request_state = Some(Rc::new(val));
+        #[cfg(feature = "server-side")]
+        {
+            self.get_request_state = Some(Rc::new(val));
+        }
         self
     }
     /// Enables the *revalidation* strategy (logic variant) with the given function.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn should_revalidate_fn(
         mut self,
         val: impl ShouldRevalidateFnType + 'static,
     ) -> Template<G> {
-        self.should_revalidate = Some(Rc::new(val));
+        #[cfg(feature = "server-side")]
+        {
+            self.should_revalidate = Some(Rc::new(val));
+        }
         self
     }
     /// Enables the *revalidation* strategy (time variant). This takes a time string of a form like `1w` for one week. More details are available
     /// [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn revalidate_after(mut self, val: String) -> Template<G> {
-        self.revalidate_after = Some(val);
+        #[cfg(feature = "server-side")]
+        {
+            self.revalidate_after = Some(val);
+        }
         self
     }
     /// Enables state amalgamation with the given function.
+    #[allow(unused_mut)]
+    #[allow(unused_variables)]
     pub fn amalgamate_states_fn(
         mut self,
         val: impl Fn(States) -> RenderFnResultWithCause<Option<String>> + 'static,
     ) -> Template<G> {
-        self.amalgamate_states = Some(Rc::new(val));
+        #[cfg(feature = "server-side")]
+        {
+            self.amalgamate_states = Some(Rc::new(val));
+        }
         self
     }
 }
@@ -535,6 +581,7 @@ pub type TemplateMap<G> = HashMap<String, Template<G>>;
 
 /// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
 /// because it uses Sycamore context.
+// TODO use `GenericNode` downcasting here
 #[macro_export]
 macro_rules! is_server {
     () => {{

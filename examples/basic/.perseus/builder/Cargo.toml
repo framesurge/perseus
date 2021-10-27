@@ -12,7 +12,7 @@ default-run = "perseus-builder"
 
 [dependencies]
 perseus-engine = { path = "../" }
-perseus = { path = "../../../../packages/perseus", features = [ "tinker-plugins" ] }
+perseus = { path = "../../../../packages/perseus", features = [ "tinker-plugins", "server-side" ] }
 futures = "0.3"
 fs_extra = "1"
 
