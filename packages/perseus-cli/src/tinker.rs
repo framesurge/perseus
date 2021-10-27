@@ -31,7 +31,7 @@ pub fn tinker_internal(
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     Error,
 > {
-    let target = dir.join(".perseus");
+    let target = dir.join(".perseus/builder");
 
     // Tinkering message
     let tk_msg = format!(

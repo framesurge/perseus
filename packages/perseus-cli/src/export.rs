@@ -158,7 +158,7 @@ pub fn export_internal(
     // We make sure to add them at the top (the server spinner may have already been instantiated)
     let ep_spinner = spinners.insert(0, ProgressBar::new_spinner());
     let ep_spinner = cfg_spinner(ep_spinner, &ep_msg);
-    let ep_target = target.clone();
+    let ep_target = target.join("builder");
     let wb_spinner = spinners.insert(1, ProgressBar::new_spinner());
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
     let wb_target = target;

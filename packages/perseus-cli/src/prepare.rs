@@ -45,14 +45,12 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
         // Use the current version of this crate (and thus all Perseus crates) to replace the relative imports
         // That way everything works in dev and in prod on another system!
         // We have to store `Cargo.toml` as `Cargo.toml.old` for packaging
-        let mut root_manifest_pkg = target.clone();
-        root_manifest_pkg.extend(["Cargo.toml.old"]);
-        let mut root_manifest = target.clone();
-        root_manifest.extend(["Cargo.toml"]);
-        let mut server_manifest_pkg = target.clone();
-        server_manifest_pkg.extend(["server", "Cargo.toml.old"]);
-        let mut server_manifest = target.clone();
-        server_manifest.extend(["server", "Cargo.toml"]);
+        let root_manifest_pkg = target.join("Cargo.toml.old");
+        let root_manifest = target.join("Cargo.toml");
+        let server_manifest_pkg = target.join("server/Cargo.toml.old");
+        let server_manifest = target.join("server/Cargo.toml");
+        let builder_manifest_pkg = target.join("builder/Cargo.toml.old");
+        let builder_manifest = target.join("builder/Cargo.toml");
         let root_manifest_contents = fs::read_to_string(&root_manifest_pkg).map_err(|err| {
             PrepError::ManifestUpdateFailed {
                 target_dir: root_manifest_pkg.to_str().map(|s| s.to_string()),
@@ -65,6 +63,13 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
                 source: err,
             }
         })?;
+        let builder_manifest_contents =
+            fs::read_to_string(&builder_manifest_pkg).map_err(|err| {
+                PrepError::ManifestUpdateFailed {
+                    target_dir: builder_manifest_pkg.to_str().map(|s| s.to_string()),
+                    source: err,
+                }
+            })?;
         // Get the name of the user's crate (which the subcrates depend on)
         // We assume they're running this in a folder with a Cargo.toml...
         let user_manifest = Manifest::from_path("./Cargo.toml")
@@ -82,23 +87,29 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
             .replace("perseus-example-basic", &user_crate_name)
             + "\n[workspace]";
         let updated_server_manifest = server_manifest_contents + "\n[workspace]";
+        let updated_builder_manifest = builder_manifest_contents + "\n[workspace]";
 
         // If we're not in development, also update relative path references
         #[cfg(not(debug_assertions))]
         let updated_root_manifest = updated_root_manifest.replace(
-            "{ path = \"../../../packages/perseus\" }",
-            &format!("\"{}\"", PERSEUS_VERSION),
+            "path = \"../../../packages/perseus\"",
+            &format!("version = \"{}\"", PERSEUS_VERSION),
         );
         #[cfg(not(debug_assertions))]
         let updated_server_manifest = updated_server_manifest
             .replace(
-                "{ path = \"../../../../packages/perseus\" }",
-                &format!("\"{}\"", PERSEUS_VERSION),
+                "path = \"../../../../packages/perseus\"",
+                &format!("version = \"{}\"", PERSEUS_VERSION),
             )
             .replace(
                 "{ path = \"../../../../packages/perseus-actix-web\" }",
                 &format!("\"{}\"", PERSEUS_VERSION),
             );
+        #[cfg(not(debug_assertions))]
+        let updated_builder_manifest = updated_builder_manifest.replace(
+            "path = \"../../../../packages/perseus\"",
+            &format!("version = \"{}\"", PERSEUS_VERSION),
+        );
 
         // Write the updated manifests back
         if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {
@@ -110,6 +121,12 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
         if let Err(err) = fs::write(&server_manifest, updated_server_manifest) {
             return Err(PrepError::ManifestUpdateFailed {
                 target_dir: server_manifest.to_str().map(|s| s.to_string()),
+                source: err,
+            });
+        }
+        if let Err(err) = fs::write(&builder_manifest, updated_builder_manifest) {
+            return Err(PrepError::ManifestUpdateFailed {
+                target_dir: builder_manifest.to_str().map(|s| s.to_string()),
                 source: err,
             });
         }

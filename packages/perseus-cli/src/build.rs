@@ -74,7 +74,7 @@ pub fn build_internal(
     // We make sure to add them at the top (the server spinner may have already been instantiated)
     let sg_spinner = spinners.insert(0, ProgressBar::new_spinner());
     let sg_spinner = cfg_spinner(sg_spinner, &sg_msg);
-    let sg_target = target.clone();
+    let sg_target = target.join("builder"); // Static generation needs the `perseus-engine-builder` crate
     let wb_spinner = spinners.insert(1, ProgressBar::new_spinner());
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
     let wb_target = target;

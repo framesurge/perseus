@@ -13,16 +13,6 @@ setup.cmd = [
 ]
 setup.desc = "sets everything up for local development"
 
-dev.subcommands.cli.cmd = [
-	"cd packages/perseus-cli",
-    # We need to copy in the directory where we actually work on the subcrate
-    "rm -rf ./.perseus",
-    "cp -r ../../examples/basic/.perseus/ .perseus/",
-    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
-    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
-	"cargo run -- %%"
-]
-dev.subcommands.cli.desc = "runs the cli in its own directory (which should test `examples/basic`)"
 dev.subcommands.example.cmd = [
     "bonnie copy-subcrates",
     "cd packages/perseus-cli",
@@ -98,6 +88,7 @@ copy-subcrates.cmd = [
     "cp -r ../../examples/basic/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
+    "mv .perseus/builder/Cargo.toml .perseus/builder/Cargo.toml.old"
 ]
 copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/usage"
 

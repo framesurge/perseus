@@ -39,3 +39,5 @@ default = []
 # Each `translator-dflt-*` feature enables a certain translator as the default, and is mutually exclusive with others like it
 # If none are specified, a dummy translator will be used
 translator-fluent = ["fluent-bundle", "unic-langid"]
+# This feature makes tinker-only plugins be registered (this flag is enabled internally in the engine)
+tinker-plugins = []

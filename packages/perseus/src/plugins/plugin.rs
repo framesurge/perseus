@@ -18,21 +18,25 @@ pub struct Plugin<G: GenericNode, D: Any> {
     /// A function that will be provided control actions. It should then register runners from the plugin for every action
     /// that it takes.
     pub control_actions_registrar: ControlActionsRegistrar,
+    /// Whether or not the plugin is tinker-only, in which case it will only be loaded at tinker-time, and will not be sent to the client.
+    pub is_tinker_only: bool,
 
     plugin_data_type: PhantomData<D>,
 }
 impl<G: GenericNode, D: Any> Plugin<G, D> {
-    /// Creates a new plugin with a name, functional actions, and optional control actions.
+    /// Creates a new plugin with a name, functional actions, control actions, and whether or not the plugin is tinker-only.
     pub fn new(
         name: &str,
         functional_actions_registrar: impl Fn(FunctionalPluginActions<G>) -> FunctionalPluginActions<G>
             + 'static,
         control_actions_registrar: impl Fn(ControlPluginActions) -> ControlPluginActions + 'static,
+        is_tinker_only: bool,
     ) -> Self {
         Self {
             name: name.to_string(),
             functional_actions_registrar: Box::new(functional_actions_registrar),
             control_actions_registrar: Box::new(control_actions_registrar),
+            is_tinker_only,
             plugin_data_type: PhantomData::default(),
         }
     }
