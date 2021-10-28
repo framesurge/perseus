@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.14](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.13...v0.3.0-beta.14) (2021-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* exports now majorly restructured, some exports may be in different places, please check docs.rs
+
+* refactor: ♻️ refactored to remove unnecessary dependencies
+* `fs_extra` errors now accepted as `String`s for all relevant plugin actions
+
+* fix(engine): 🐛 removed engine workspace to allow server or client optimizations
+
+Otherwise client size optimizations also affect the server (which reduces its speed).
+
+* feat(i18n): ✨ added dummy translator to use by default
+* the `translator-fluent` flag is now required to use i18n
+
+* feat(engine): ✨ added tinker-only plugins and split engine to reduce bundle sizes
+
+The engine is now composed of a server, a builder (new), and a browser client.
+
+* perf(templates): ⚡️ feature-gated templates to decrease bundle sizes
+
+* docs(book): 📝 added docs for tinker-only plugins
+
+### Features
+
+* ✨ trim bundle sizes with feature-gating ([#68](https://github.com/arctic-hen7/perseus/issues/68)) ([ffea205](https://github.com/arctic-hen7/perseus/commit/ffea205d3e0353800db6468c17b7aa857734cd45))
+* **website:** ✨ added size optimizations plugin to website ([60e2658](https://github.com/arctic-hen7/perseus/commit/60e265896e7b9fbfeffb459336b038cb1b491550)), closes [#66](https://github.com/arctic-hen7/perseus/issues/66)
+
+
+### Code Refactorings
+
+* **i18n:** ♻️ fixed clippy warnings and removed an unused import ([c831fe1](https://github.com/arctic-hen7/perseus/commit/c831fe10c400f1b64ef8fe4463f0fbdbd25129ce))
+
+
+### Documentation Changes
+
+* **book:** 📝 updated docs for size optimizations plugin ([7b2ff84](https://github.com/arctic-hen7/perseus/commit/7b2ff84b28bc3c99ca401c39d4edc6ee0d4f2321))
+
 ## [0.3.0-beta.13](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.12...v0.3.0-beta.13) (2021-10-18)
 
 
