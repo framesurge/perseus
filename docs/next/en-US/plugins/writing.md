@@ -8,11 +8,12 @@ A plugin will usually occupy its own crate, but it may also be part of a larger 
 
 ## Defining a Plugin
 
-To define a plugin, you'll call `perseus::plugins::Plugin::new()`, which takes three:
+To define a plugin, you'll call `perseus::plugins::Plugin::new()`, which takes four parameters:
 
 - The name of the plugin as a `&str`, which should be the name of the crate the plugin is in (or the name of a larger app with some extension) (**all plugins MUST have unique names**)
 - A [functional actions](:plugins/functional) registrar function, which is given some functional actions and then extends them
 - A [control actions](:plugins/control) registrar, which is given some control actions and then extends them
+- Whether or not the plugin should only run at `tinker`-time (see below)
 
 Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:plugins/tinker)-time (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/plugins/src/plugin.rs)):
 
@@ -39,3 +40,16 @@ Right now, there are few things that you can't do with Perseus plugins, which ca
 - You can't extend the engine's server (due to a limitation of Actix Web types), you'll need to manually run a `tinker` on it (add your code into the file by writing it in using [the `tinker` action](:plugins/tinker))
 - You can't set the [mutable store](:stores) from a plugin due to a traits issue, so you'll need to provide something for the user to provide to the `mutable_store` parameter of the `define_app!` macro
 - Similarly, you can't set the translations manager from a plugin
+
+## Tinker-Only Plugins
+
+There are some cases of plugin development in which a plugin only uses [the `tinker` action](:plugins/tinker), and therefore it should only be included when the user is running `perseus tinker`. The main reason you'd want to do this is to prevent your plugin from becoming part of the client-side Wasm bundle, which will be served to browsers. For example, a size optimizations plugin only needs to run at tinker-time, and, if it were allowed to leak into the client-side bundle, it would actually increase the bundle size because it draws in all its dependencies!
+
+You can make your plugin tinker-only by setting the fourth argument to `Plugin::new()` to `true`.
+
+<details>
+<summary>I want my plugin to run on the server, but not the client.</summary>
+
+You should make it a tinker-only plugin. As a technicality, tinker-only plugins will actually run on the server and in the build process in addition to the `tinker` process. They just won't run on the client. Be warned though: a future release may well change this.
+
+</details>
