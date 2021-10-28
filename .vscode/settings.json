@@ -9,6 +9,7 @@
         "templates",
         "exporting",
         "website",
-        "plugins"
+        "plugins",
+        "engine"
     ]
 }

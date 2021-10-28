@@ -124,10 +124,12 @@ pub struct FunctionalPluginExportActions {
     pub after_failed_build: FunctionalPluginAction<crate::errors::ServerError, ()>,
     /// Runs after the export process if it fails.
     pub after_failed_export: FunctionalPluginAction<crate::errors::ServerError, ()>,
-    /// Runs if copying the static directory failed.
-    pub after_failed_static_copy: FunctionalPluginAction<fs_extra::error::Error, ()>,
-    /// Runs if copying a static alias that was a directory failed.
-    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<fs_extra::error::Error, ()>,
+    /// Runs if copying the static directory failed. The error type here is likely from a third-party library, so it's
+    /// provided as a string (otherwise we'd be hauling in an extra library for one type).
+    pub after_failed_static_copy: FunctionalPluginAction<String, ()>,
+    /// Runs if copying a static alias that was a directory failed. The error type here is likely from a third-party library, so it's
+    /// provided as a string (otherwise we'd be hauling in an extra library for one type).
+    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<String, ()>,
     /// Runs if copying a static alias that was a file failed.
     pub after_failed_static_alias_file_copy: FunctionalPluginAction<std::io::Error, ()>,
     /// Runs after the export process if it completes successfully.

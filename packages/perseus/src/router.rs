@@ -1,6 +1,6 @@
-use crate::Locales;
+use crate::locales::Locales;
+use crate::template::TemplateMap;
 use crate::Template;
-use crate::TemplateMap;
 use std::collections::HashMap;
 use sycamore::prelude::GenericNode;
 
@@ -156,10 +156,10 @@ macro_rules! create_app_route {
         locales => $locales:expr
     } => {
         /// The route type for the app, with all routing logic inbuilt through the generation macro.
-        struct $name<G: $crate::GenericNode>($crate::router::RouteVerdict<G>);
+        struct $name<G: $crate::GenericNode>($crate::internal::router::RouteVerdict<G>);
         impl<G: $crate::GenericNode> ::sycamore_router::Route for $name<G> {
             fn match_route(path: &[&str]) -> Self {
-                let verdict = $crate::router::match_route(path, $render_cfg, $templates, $locales);
+                let verdict = $crate::internal::router::match_route(path, $render_cfg, $templates, $locales);
                 // BUG Sycamore doesn't call the route verdict matching logic for some reason, but we get to this point
                 Self(verdict)
             }

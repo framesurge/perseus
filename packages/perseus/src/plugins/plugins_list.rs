@@ -33,16 +33,36 @@ impl<G: GenericNode> Plugins<G> {
     /// Registers a new plugin, consuming `self`. For control actions, this will check if a plugin has already registered on an action,
     /// and throw an error if one has, noting the conflict explicitly in the error message.
     pub fn plugin<D: Any>(mut self, plugin: Plugin<G, D>, plugin_data: D) -> Self {
-        // Insert the plugin data
-        let plugin_data: Box<dyn Any> = Box::new(plugin_data);
-        let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
-        // If there was an old value, there are two plugins with the same name, which is very bad (arbitrarily inconsistent behavior overriding)
-        if res.is_some() {
-            panic!("two plugins have the same name '{}', which could lead to arbitrary and inconsistent behavior modification (please file an issue with the plugin that doesn't have the same name as its crate)", &plugin.name);
+        // Check if the plugin is tinker-only
+        if plugin.is_tinker_only {
+            // If we're not at tinker-time, no tinker plugin should be registered (avoid larger bundles)
+            #[cfg(feature = "tinker-plugins")]
+            {
+                // Insert the plugin data
+                let plugin_data: Box<dyn Any> = Box::new(plugin_data);
+                let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
+                // If there was an old value, there are two plugins with the same name, which is very bad (arbitrarily inconsistent behavior overriding)
+                if res.is_some() {
+                    panic!("two plugins have the same name '{}', which could lead to arbitrary and inconsistent behavior modification (please file an issue with the plugin that doesn't have the same name as its crate)", &plugin.name);
+                }
+                // Register functional actions using the plugin's provided registrar
+                // We don't need to do control actions because `tinker` is a functional action
+                self.functional_actions =
+                    (plugin.functional_actions_registrar)(self.functional_actions);
+            };
+        } else {
+            // Insert the plugin data
+            let plugin_data: Box<dyn Any> = Box::new(plugin_data);
+            let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
+            // If there was an old value, there are two plugins with the same name, which is very bad (arbitrarily inconsistent behavior overriding)
+            if res.is_some() {
+                panic!("two plugins have the same name '{}', which could lead to arbitrary and inconsistent behavior modification (please file an issue with the plugin that doesn't have the same name as its crate)", &plugin.name);
+            }
+            // Register functional and control actions using the plugin's provided registrar
+            self.functional_actions =
+                (plugin.functional_actions_registrar)(self.functional_actions);
+            self.control_actions = (plugin.control_actions_registrar)(self.control_actions);
         }
-        // Register functional and control actions using the plugin's provided registrar
-        self.functional_actions = (plugin.functional_actions_registrar)(self.functional_actions);
-        self.control_actions = (plugin.control_actions_registrar)(self.control_actions);
 
         self
     }

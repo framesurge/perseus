@@ -3,7 +3,7 @@ mod plugin;
 mod templates;
 
 use perseus::define_app;
-use perseus::plugins::Plugins;
+use perseus::Plugins;
 
 define_app! {
     templates: [

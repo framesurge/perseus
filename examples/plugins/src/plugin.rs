@@ -1,4 +1,4 @@
-use perseus::plugins::*;
+use perseus::plugins::{empty_control_actions_registrar, Plugin, PluginAction};
 use perseus::Template;
 
 #[derive(Debug)]
@@ -36,10 +36,11 @@ pub fn get_test_plugin<G: perseus::GenericNode>() -> Plugin<G, TestPluginData> {
                 },
             );
             actions.tinker.register_plugin("test-plugin", |_, _| {
-                println!("{:?}", std::env::current_dir().unwrap())
+                println!("{:?}", std::env::current_dir().unwrap());
             });
             actions
         },
         empty_control_actions_registrar,
+        false, // We'd set this to `true` if we only wanted the plugin to run at tinker-time
     )
 }

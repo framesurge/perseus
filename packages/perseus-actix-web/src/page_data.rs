@@ -3,10 +3,9 @@ use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
 use perseus::{
-    err_to_status_code,
-    serve::get_page_for_template,
+    errors::err_to_status_code,
+    internal::{i18n::TranslationsManager, serve::get_page_for_template},
     stores::{ImmutableStore, MutableStore},
-    TranslationsManager,
 };
 use serde::Deserialize;
 

@@ -53,7 +53,8 @@ macro_rules! define_app_root {
 #[macro_export]
 macro_rules! define_get_translations_manager {
     ($locales:expr) => {
-        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
+        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
+        {
             // This will be executed in the context of the user's directory, but moved into `.perseus`
             // Note that `translations/` must be next to `src/`, not within it
             // By default, all translations are cached
@@ -70,28 +71,31 @@ macro_rules! define_get_translations_manager {
             } else {
                 "../translations"
             };
-            $crate::FsTranslationsManager::new(
+            $crate::internal::i18n::FsTranslationsManager::new(
                 translations_dir.to_string(),
                 all_locales,
-                $crate::TRANSLATOR_FILE_EXT.to_string(),
-                $crate::path_prefix::get_path_prefix_server(),
+                $crate::internal::i18n::TRANSLATOR_FILE_EXT.to_string(),
+                $crate::internal::get_path_prefix_server(),
             )
             .await
         }
     };
     ($locales:expr, $no_i18n:literal) => {
-        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
-            $crate::translations_manager::DummyTranslationsManager::new()
+        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
+        {
+            $crate::internal::i18n::DummyTranslationsManager::new()
         }
     };
     ($locales:expr, $translations_manager:expr) => {
-        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
+        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
+        {
             $translations_manager
         }
     };
     // If the user doesn't want i18n but also sets their own transations manager, the latter takes priority
     ($locales:expr, $no_i18n:literal, $translations_manager:expr) => {
-        pub async fn get_translations_manager() -> impl $crate::TranslationsManager {
+        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
+        {
             $translations_manager
         }
     };
@@ -105,8 +109,8 @@ macro_rules! define_get_locales {
         default: $default_locale:literal,
         other: [$($other_locale:literal),*]
     } => {
-        pub fn get_locales() -> $crate::Locales {
-            $crate::Locales {
+        pub fn get_locales() -> $crate::internal::i18n::Locales {
+            $crate::internal::i18n::Locales {
                 default: $default_locale.to_string(),
                 other: vec![
                     $($other_locale.to_string()),*
@@ -121,8 +125,8 @@ macro_rules! define_get_locales {
         other: [$($other_locale:literal),*],
         no_i18n: $no_i18n:literal
     } => {
-        pub fn get_locales() -> $crate::Locales {
-            $crate::Locales {
+        pub fn get_locales() -> $crate::internal::i18n::Locales {
+            $crate::internal::i18n::Locales {
                 default: "xx-XX".to_string(),
                 other: Vec::new(),
                 using_i18n: false
@@ -160,12 +164,12 @@ macro_rules! define_get_static_aliases {
 #[macro_export]
 macro_rules! define_plugins {
     () => {
-        pub fn get_plugins<G: $crate::GenericNode>() -> $crate::plugins::Plugins<G> {
-            $crate::plugins::Plugins::new()
+        pub fn get_plugins<G: $crate::GenericNode>() -> $crate::Plugins<G> {
+            $crate::Plugins::new()
         }
     };
     ($plugins:expr) => {
-        pub fn get_plugins<G: $crate::GenericNode>() -> $crate::plugins::Plugins<G> {
+        pub fn get_plugins<G: $crate::GenericNode>() -> $crate::Plugins<G> {
             $plugins
         }
     };
@@ -321,7 +325,7 @@ macro_rules! define_app {
         );
 
         /// Gets a map of all the templates in the app by their root paths. This returns a `HashMap` that is plugin-extensible.
-        pub fn get_templates_map<G: $crate::GenericNode>() -> $crate::TemplateMap<G> {
+        pub fn get_templates_map<G: $crate::GenericNode>() -> $crate::templates::TemplateMap<G> {
             $crate::get_templates_map![
                 $($template),+
             ]

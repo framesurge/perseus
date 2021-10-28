@@ -1,5 +1,5 @@
 use futures::executor::block_on;
-use perseus::{build_app, plugins::PluginAction, SsrNode};
+use perseus::{internal::build::build_app, PluginAction, SsrNode};
 use perseus_engine::app::{
     get_immutable_store, get_locales, get_mutable_store, get_plugins, get_templates_map,
     get_translations_manager,
@@ -11,6 +11,8 @@ fn main() {
 }
 
 fn real_main() -> i32 {
+    // We want to be working in the root of `.perseus/`
+    std::env::set_current_dir("../").unwrap();
     let plugins = get_plugins::<SsrNode>();
 
     plugins

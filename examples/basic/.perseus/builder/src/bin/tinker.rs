@@ -7,6 +7,9 @@ fn main() {
 }
 
 fn real_main() -> i32 {
+    // We want to be working in the root of `.perseus/`
+    std::env::set_current_dir("../").unwrap();
+
     let plugins = get_plugins::<SsrNode>();
     // Run all the tinker actions
     plugins

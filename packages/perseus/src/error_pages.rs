@@ -1,4 +1,4 @@
-use crate::Translator;
+use crate::translator::Translator;
 use crate::{DomNode, GenericNode, SsrNode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

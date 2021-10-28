@@ -1,8 +1,8 @@
 use crate::errors::*;
+use crate::locales::Locales;
 use crate::path_prefix::get_path_prefix_client;
 use crate::shell::fetch;
-use crate::Locales;
-use crate::Translator;
+use crate::translator::Translator;
 use std::rc::Rc;
 
 /// Manages translations in the app shell. This handles fetching translations from the server as well as caching for performance.

@@ -1,7 +1,8 @@
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::executor::block_on;
 use perseus::{
-    build_app, export_app, path_prefix::get_path_prefix_server, plugins::PluginAction, SsrNode,
+    internal::{build::build_app, export::export_app, get_path_prefix_server},
+    PluginAction, SsrNode,
 };
 use perseus_engine::app::{
     get_app_root, get_immutable_store, get_locales, get_mutable_store, get_plugins,
@@ -16,6 +17,9 @@ fn main() {
 }
 
 fn real_main() -> i32 {
+    // We want to be working in the root of `.perseus/`
+    std::env::set_current_dir("../").unwrap();
+
     let plugins = get_plugins::<SsrNode>();
 
     plugins
@@ -91,7 +95,7 @@ fn real_main() -> i32 {
                 .functional_actions
                 .export_actions
                 .after_failed_static_copy
-                .run(err, plugins.get_plugin_data());
+                .run(err.to_string(), plugins.get_plugin_data());
             eprintln!("{}", err_msg);
             return 1;
         }
@@ -114,7 +118,7 @@ fn real_main() -> i32 {
                     .functional_actions
                     .export_actions
                     .after_failed_static_alias_dir_copy
-                    .run(err, plugins.get_plugin_data());
+                    .run(err.to_string(), plugins.get_plugin_data());
                 eprintln!("{}", err_msg);
                 return 1;
             }

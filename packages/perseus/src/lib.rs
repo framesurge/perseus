@@ -35,60 +35,89 @@
 #![deny(missing_docs)]
 #![recursion_limit = "256"]
 
-/// Utilities for building your app.
-pub mod build;
+pub mod errors;
+/// Utilities for working with plugins.
+pub mod plugins;
+/// Utilities for working with immutable and mutable stores. You can learn more about these in the book.
+pub mod stores;
+
+mod build;
 mod client_translations_manager;
 mod decode_time_str;
 mod default_headers;
-/// Utilities regarding the formation of error pages for HTTP status codes, like a `404 Not Found` page.
-pub mod error_pages;
-pub mod errors;
-/// Utilities to do with exporting your app to purely static files.
-pub mod export;
-/// Utilities for manipulating the HTML shell. These are primarily used in exporting and serving.
-pub mod html_shell;
+mod error_pages;
+mod export;
+mod html_shell;
 mod locale_detector;
 mod locales;
 mod log;
 mod macros;
-/// Utilities relating to working with path prefixes for when a site is hosted at a relative path.
-pub mod path_prefix;
-/// Utilities for managing and creating plugins.
-pub mod plugins;
-/// Utilities regarding routing.
-pub mod router;
-/// Utilities for serving your app. These are platform-agnostic, and you probably want an integration like [perseus-actix-web](https://crates.io/crates/perseus-actix-web).
-pub mod serve;
-/// Utilities to do with the app shell. You probably don't want to delve into here.
-pub mod shell;
-/// Utilities for mutable/immutable store managers. See the book for more details on this.
-pub mod stores;
-/// Utilities to do with templating. This is where the bulk of designing apps lies.
-pub mod template;
+mod path_prefix;
+mod router;
+mod serve;
+mod shell;
+mod template;
 mod test;
-/// Utilities for creating custom translations managers, as well as the default `FsTranslationsManager`.
-pub mod translations_manager;
-/// Utilities regarding translators, including the default `FluentTranslator`.
-pub mod translator;
+mod translations_manager;
+mod translator;
 
+// The rest of this file is devoted to module structuring
+// Re-exports
 pub use http;
 pub use http::Request as HttpRequest;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
+pub use perseus_macro::test;
 pub use sycamore::{generic_node::GenericNode, DomNode, SsrNode};
 pub use sycamore_router::{navigate, Route};
 
-pub use crate::build::{build_app, build_template, build_templates_for_locale};
-pub use crate::client_translations_manager::ClientTranslationsManager;
+// Items that should be available at the root (this should be nearly everything used in a typical Perseus app)
 pub use crate::error_pages::ErrorPages;
-pub use crate::errors::{err_to_status_code, ErrorCause, GenericErrorWithCause};
-pub use crate::export::export_app;
-pub use crate::locale_detector::detect_locale;
-pub use crate::locales::Locales;
-pub use crate::serve::{get_page, get_render_cfg};
-pub use crate::shell::app_shell;
-pub use crate::template::{RenderFnResult, RenderFnResultWithCause, States, Template, TemplateMap};
-pub use crate::translations_manager::{FsTranslationsManager, TranslationsManager};
-pub use crate::translator::{Translator, TRANSLATOR_FILE_EXT};
-
-pub use perseus_macro::test;
+pub use crate::errors::{ErrorCause, GenericErrorWithCause};
+pub use crate::plugins::{Plugin, PluginAction, Plugins};
+pub use crate::shell::checkpoint;
+pub use crate::template::{RenderFnResult, RenderFnResultWithCause, States, Template};
+/// Utilities for developing templates, particularly including return types for various rendering strategies.
+pub mod templates {
+    pub use crate::errors::{ErrorCause, GenericErrorWithCause};
+    pub use crate::template::*;
+}
+/// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
+/// engines.
+pub mod internal {
+    /// Internal utilities for working with internationalization.
+    pub mod i18n {
+        pub use crate::client_translations_manager::*;
+        pub use crate::locale_detector::*;
+        pub use crate::locales::*;
+        pub use crate::translations_manager::*;
+        pub use crate::translator::*;
+    }
+    /// Internal utilities for working with the serving process. These will be useful for building integrations for hosting Perseus
+    /// on different platforms.
+    pub mod serve {
+        pub use crate::html_shell::*;
+        pub use crate::serve::*;
+    }
+    /// Internal utilities for working with the Perseus router.
+    pub mod router {
+        pub use crate::router::*;
+    }
+    /// Internal utilities for working with error pages.
+    pub mod error_pages {
+        pub use crate::error_pages::*;
+    }
+    /// Internal utilities for working with the app shell.
+    pub mod shell {
+        pub use crate::shell::*;
+    }
+    /// Internal utilities for building.
+    pub mod build {
+        pub use crate::build::*;
+    }
+    /// Internal utilities for exporting.
+    pub mod export {
+        pub use crate::export::*;
+    }
+    pub use crate::path_prefix::{get_path_prefix_client, get_path_prefix_server};
+}
