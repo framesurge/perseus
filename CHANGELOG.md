@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.15](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.14...v0.3.0-beta.15) (2021-10-30)
+
+
+### Features
+
+* **plugins:** ✨ added client privileged plugins ([686f369](https://github.com/arctic-hen7/perseus/commit/686f369ca211030566db78295fe19f72ba300f58))
+
+
+### Code Refactorings
+
+* **website:** 👽️ updated website for 0.3.0-beta.14 ([71b6f42](https://github.com/arctic-hen7/perseus/commit/71b6f42c43faf0f1203ef80279c8e64b6e25de07))
+
+
+### Documentation Changes
+
+* **book:** 📝 updated docs for plugins system changes ([a85f150](https://github.com/arctic-hen7/perseus/commit/a85f15020e5c344f0a0c821c92473644b42ad405))
+
 ## [0.3.0-beta.14](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.13...v0.3.0-beta.14) (2021-10-28)
 
 
