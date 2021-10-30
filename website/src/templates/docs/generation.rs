@@ -2,7 +2,7 @@ use crate::templates::docs::get_file_at_version::get_file_at_version;
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::{path_prefix::get_path_prefix_server, t, RenderFnResult, RenderFnResultWithCause};
+use perseus::{internal::get_path_prefix_server, t, RenderFnResult, RenderFnResultWithCause};
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

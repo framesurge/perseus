@@ -1,5 +1,5 @@
 use perseus::link;
-use perseus::template::RenderCtx;
+use perseus::templates::RenderCtx;
 use sycamore::context::use_context;
 use sycamore::prelude::*;
 use sycamore::template::Template as SycamoreTemplate;

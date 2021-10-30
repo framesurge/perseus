@@ -31,7 +31,7 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
 
     template! {
         ({
-            locale.set(use_context::<perseus::template::RenderCtx>().translator.get_locale());
+            locale.set(use_context::<perseus::templates::RenderCtx>().translator.get_locale());
             SycamoreTemplate::empty()
         })
 
