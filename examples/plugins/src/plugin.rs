@@ -1,4 +1,4 @@
-use perseus::plugins::{empty_control_actions_registrar, Plugin, PluginAction};
+use perseus::plugins::{empty_control_actions_registrar, Plugin, PluginAction, PluginEnv};
 use perseus::Template;
 
 #[derive(Debug)]
@@ -37,10 +37,14 @@ pub fn get_test_plugin<G: perseus::GenericNode>() -> Plugin<G, TestPluginData> {
             );
             actions.tinker.register_plugin("test-plugin", |_, _| {
                 println!("{:?}", std::env::current_dir().unwrap());
+                // This is completely pointless, but demonstrates how plugin dependencies can blow up binary sizes if they aren't made tinker-only plugins
+                let test = "[package]\nname = \"test\"";
+                let parsed: toml::Value = toml::from_str(test).unwrap();
+                println!("{}", toml::to_string(&parsed).unwrap());
             });
             actions
         },
         empty_control_actions_registrar,
-        false, // We'd set this to `true` if we only wanted the plugin to run at tinker-time
+        PluginEnv::Both,
     )
 }

@@ -2,8 +2,7 @@ mod error_pages;
 mod plugin;
 mod templates;
 
-use perseus::define_app;
-use perseus::Plugins;
+use perseus::{define_app, Plugins};
 
 define_app! {
     templates: [
@@ -12,7 +11,7 @@ define_app! {
     ],
     error_pages: crate::error_pages::get_error_pages(),
     plugins: Plugins::new()
-        .plugin(plugin::get_test_plugin(), plugin::TestPluginData {
+        .plugin_with_client_privilege(plugin::get_test_plugin, plugin::TestPluginData {
             about_page_greeting: "Hey from a plugin!".to_string()
         })
 }
