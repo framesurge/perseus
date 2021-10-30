@@ -35,7 +35,6 @@ site.subcommands.serve.desc = "serves the site's exported content"
 site.subcommands.tinker.cmd = [
     "cd website",
     "perseus tinker"
-
 ]
 site.subcommands.tinker.desc = "runs tinkers on the website"
 site.subcommands.build-tailwind.cmd = [
@@ -51,6 +50,7 @@ site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind style
 site.subcommands.deploy.cmd = [
     "bonnie site build-tailwind prod",
     "cd website",
+    "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus tinker",
     # Point this live version of the CLI at the given example
     "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus deploy -e"
 
@@ -59,6 +59,7 @@ site.subcommands.deploy.desc = "builds the website for production and finalizes 
 site.subcommands.deploy-prod.cmd = [
     "bonnie site build-tailwind prod",
     "cd website",
+    "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus tinker",
     # Point this live version of the CLI at the given example
     "PERSEUS_BASE_PATH=https://arctic-hen7.github.io/perseus perseus deploy -e"
 ]

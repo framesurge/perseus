@@ -2,8 +2,8 @@ mod components;
 mod error_pages;
 mod templates;
 
-use perseus::define_app;
-// use perseus_size_opt::{perseus_size_opt, SizeOpts};
+use perseus::{define_app, Plugins};
+use perseus_size_opt::{perseus_size_opt, SizeOpts};
 
 define_app! {
     templates: [
@@ -15,6 +15,6 @@ define_app! {
     locales: {
         default: "en-US",
         other: []
-    }
-    // plugins: Plugins::new().plugin(perseus_size_opt(), SizeOpts::default())
+    },
+    plugins: Plugins::new().plugin(perseus_size_opt, SizeOpts::default())
 }

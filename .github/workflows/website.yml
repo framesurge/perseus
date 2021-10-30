@@ -19,7 +19,7 @@ jobs:
               with:
                   fetch-depth: 0
             - run: cargo install bonnie wasm-pack
-            - run: cargo install perseus-cli --version 0.3.0-beta.14
+            - run: cargo install perseus-cli --version 0.3.0-beta.15
             - run: npm install
               working-directory: website
             - name: Build website
