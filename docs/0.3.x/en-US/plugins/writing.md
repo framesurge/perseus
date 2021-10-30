@@ -13,7 +13,7 @@ To define a plugin, you'll call `perseus::plugins::Plugin::new()`, which takes f
 -   The name of the plugin as a `&str`, which should be the name of the crate the plugin is in (or the name of a larger app with some extension) (**all plugins MUST have unique names**)
 -   A [functional actions](:plugins/functional) registrar function, which is given some functional actions and then extends them
 -   A [control actions](:plugins/control) registrar, which is given some control actions and then extends them
--   Whether or not the plugin should only run at `tinker`-time (see below)
+-   The environment for the plugin to run in (see below)
 
 Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:plugins/tinker)-time (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/plugins/src/plugin.rs)):
 
@@ -41,15 +41,8 @@ Right now, there are few things that you can't do with Perseus plugins, which ca
 -   You can't set the [mutable store](:stores) from a plugin due to a traits issue, so you'll need to provide something for the user to provide to the `mutable_store` parameter of the `define_app!` macro
 -   Similarly, you can't set the translations manager from a plugin
 
-## Tinker-Only Plugins
+## Plugin Environments
 
-There are some cases of plugin development in which a plugin only uses [the `tinker` action](:plugins/tinker), and therefore it should only be included when the user is running `perseus tinker`. The main reason you'd want to do this is to prevent your plugin from becoming part of the client-side Wasm bundle, which will be served to browsers. For example, a size optimizations plugin only needs to run at tinker-time, and, if it were allowed to leak into the client-side bundle, it would actually increase the bundle size because it draws in all its dependencies!
+As explained [here](:plugins/using), plugins can either run on the client (`PluginEnv::Client`), the server-side (`PluginEnv::Server`), or on both (`PluginEnv::Both`). Note that the server-side includes `tinker`-time and during the build process. If your plugin does not absolutely need to run on the client, use `PluginEnv::Server`! Your users will thank you for their much smaller bundles! If you don't do this, every single dependency of your plugin will end up in the user's final Wasm bundle, which has to be sent to browsers, and bundle sizes can end up doubling or more as a result! If this is the case though, make sure to tell your users to register your plugin using `.plugin_with_client_privilege()` rather than just `.plugin()` (but don't stress, they'll get an explanatory error if they use the wrong one accidentally).
 
-You can make your plugin tinker-only by setting the fourth argument to `Plugin::new()` to `true`.
-
-<details>
-<summary>I want my plugin to run on the server, but not the client.</summary>
-
-You should make it a tinker-only plugin. As a technicality, tinker-only plugins will actually run on the server and in the build process in addition to the `tinker` process. They just won't run on the client. Be warned though: a future release may well change this.
-
-</details>
+You can set the environment your plugin runs on by changing the fourth argument to a variant of `PluginEnv`.
