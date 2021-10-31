@@ -8,6 +8,7 @@ pub struct PostPageProps {
     content: String,
 }
 
+#[perseus::template(PostPage)]
 #[component(PostPage<G>)]
 pub fn post_page(props: PostPageProps) -> SycamoreTemplate<G> {
     let title = props.title;
@@ -29,13 +30,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("post")
         .build_paths_fn(get_static_paths)
         .build_state_fn(get_static_props)
-        .template(|props| {
-            template! {
-                PostPage(
-                    serde_json::from_str::<PostPageProps>(&props.unwrap()).unwrap()
-                )
-            }
-        })
+        .template(post_page)
 }
 
 pub async fn get_static_props(path: String, _locale: String) -> RenderFnResultWithCause<String> {

@@ -26,10 +26,47 @@
  * - [Discord server channel](https://discord.com/channels/820400041332179004/883168134331256892) (for Sycamore-related stuff)
  */
 
+mod autoserde;
+mod template;
 mod test;
 
 use darling::FromMeta;
 use proc_macro::TokenStream;
+
+/// Automatically serializes/deserializes properties for a template. Perseus handles your templates' properties as `String`s under the
+/// hood for both simplicity and to avoid bundle size increases from excessive monomorphization. This macro aims to prevent the need for
+/// manually serializing and deserializing everything! This takes the type of function that it's working on, which must be one of the
+/// following:
+///
+/// - `build_state` (serializes return type)
+/// - `request_state` (serializes return type)
+/// - `set_headers` (deserializes parameter)
+/// - `amalgamate_states` (serializes return type, you'll still need to deserializes from `States` manually)
+#[proc_macro_attribute]
+pub fn autoserde(args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as autoserde::AutoserdeFn);
+    let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
+    // Parse macro arguments with `darling`
+    let args = match autoserde::AutoserdeArgs::from_list(&attr_args) {
+        Ok(v) => v,
+        Err(e) => {
+            return TokenStream::from(e.write_errors());
+        }
+    };
+
+    autoserde::autoserde_impl(parsed, args).into()
+}
+
+/// Labels a Sycamore component as a Perseus template, turning it into something that can be easily inserted into the `.template()`
+/// function, avoiding the need for you to manually serialize/deserialize things. This should be provided the name of the Sycamore component (same as given
+/// to Sycamore's `#[component()]`, but without the `<G>`).
+#[proc_macro_attribute]
+pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as template::TemplateFn);
+    let arg = syn::parse_macro_input!(args as syn::Ident);
+
+    template::template_impl(parsed, arg).into()
+}
 
 /// Marks the given function as a Perseus test. Functions marked with this attribute must have the following signature:
 /// `async fn foo(client: &mut fantoccini::Client) -> Result<>`.

@@ -7,6 +7,7 @@ pub struct AmalagamationPageProps {
     pub message: String,
 }
 
+#[perseus::template(AmalgamationPage)]
 #[component(AmalgamationPage<G>)]
 pub fn amalgamation_page(props: AmalagamationPageProps) -> SycamoreTemplate<G> {
     template! {
@@ -19,13 +20,7 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .build_state_fn(get_build_state)
         .request_state_fn(get_request_state)
         .amalgamate_states_fn(amalgamate_states)
-        .template(|props| {
-            template! {
-                AmalgamationPage(
-                    serde_json::from_str::<AmalagamationPageProps>(&props.unwrap()).unwrap()
-                )
-            }
-        })
+        .template(amalgamation_page)
 }
 
 pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<String>> {

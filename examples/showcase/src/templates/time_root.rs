@@ -7,6 +7,7 @@ pub struct TimePageProps {
     pub time: String,
 }
 
+#[perseus::template(TimePage)]
 #[component(TimePage<G>)]
 pub fn time_page(props: TimePageProps) -> SycamoreTemplate<G> {
     template! {
@@ -16,13 +17,7 @@ pub fn time_page(props: TimePageProps) -> SycamoreTemplate<G> {
 
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("time")
-        .template(|props| {
-            template! {
-                TimePage(
-                    serde_json::from_str::<TimePageProps>(&props.unwrap()).unwrap()
-                )
-            }
-        })
+        .template(time_page)
         // This page will revalidate every five seconds (to illustrate revalidation)
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
         .revalidate_after("5s".to_string())

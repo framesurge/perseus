@@ -6,7 +6,7 @@ use syn::{
     Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
 };
 
-/// The arguments that the test annotation macro takes.
+/// The arguments that the `test` annotation macro takes.
 #[derive(Debug, FromMeta)]
 pub struct TestArgs {
     // We'll fall back to a sensible default if no URL is given for the WebDriver
@@ -20,7 +20,7 @@ pub struct TestFn {
     pub block: Box<Block>,
     // The single argument for the Fantoccini client.
     pub arg: FnArg,
-    /// THe visibility of the function.
+    /// The visibility of the function.
     pub vis: Visibility,
     /// Any attributes the function uses.
     pub attrs: Vec<Attribute>,

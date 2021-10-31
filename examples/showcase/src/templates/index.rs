@@ -7,6 +7,7 @@ pub struct IndexPageProps {
     pub greeting: String,
 }
 
+#[perseus::template(IndexPage)]
 #[component(IndexPage<G>)]
 pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
     template! {
@@ -17,13 +18,7 @@ pub fn index_page(props: IndexPageProps) -> SycamoreTemplate<G> {
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_static_props)
-        .template(|props| {
-            template! {
-                IndexPage(
-                    serde_json::from_str::<IndexPageProps>(&props.unwrap()).unwrap()
-                )
-            }
-        })
+        .template(index_page)
 }
 
 pub async fn get_static_props(_path: String, _locale: String) -> RenderFnResultWithCause<String> {

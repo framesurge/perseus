@@ -457,6 +457,7 @@ impl<G: GenericNode> Template<G> {
         mut self,
         val: impl Fn(Option<String>) -> SycamoreTemplate<SsrNode> + 'static,
     ) -> Template<G> {
+        // Headers are always prerendered on the server-side
         #[cfg(feature = "server-side")]
         {
             self.head = Rc::new(val);

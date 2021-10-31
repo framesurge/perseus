@@ -7,8 +7,9 @@ pub struct IpPageProps {
     ip: String,
 }
 
+#[perseus::template(IpPage)]
 #[component(IpPage<G>)]
-pub fn dashboard_page(props: IpPageProps) -> SycamoreTemplate<G> {
+pub fn ip_page(props: IpPageProps) -> SycamoreTemplate<G> {
     template! {
         p {
             (
@@ -21,13 +22,7 @@ pub fn dashboard_page(props: IpPageProps) -> SycamoreTemplate<G> {
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("ip")
         .request_state_fn(get_request_state)
-        .template(|props| {
-            template! {
-                IpPage(
-                    serde_json::from_str::<IpPageProps>(&props.unwrap()).unwrap()
-                )
-            }
-        })
+        .template(ip_page)
 }
 
 pub async fn get_request_state(

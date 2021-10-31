@@ -67,7 +67,7 @@ pub use http;
 pub use http::Request as HttpRequest;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
-pub use perseus_macro::test;
+pub use perseus_macro::{autoserde, template, test};
 pub use sycamore::{generic_node::GenericNode, DomNode, SsrNode};
 pub use sycamore_router::{navigate, Route};
 
