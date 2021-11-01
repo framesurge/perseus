@@ -33,7 +33,11 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .template(post_page)
 }
 
-pub async fn get_static_props(path: String, _locale: String) -> RenderFnResultWithCause<String> {
+#[perseus::autoserde(build_state)]
+pub async fn get_static_props(
+    path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<PostPageProps> {
     // This path is illegal, and can't be rendered
     if path == "post/tests" {
         return Err(GenericErrorWithCause {
@@ -48,10 +52,10 @@ pub async fn get_static_props(path: String, _locale: String) -> RenderFnResultWi
         title, path
     );
 
-    Ok(serde_json::to_string(&PostPageProps {
+    Ok(PostPageProps {
         title: title.to_string(),
         content,
-    })?)
+    })
 }
 
 pub async fn get_static_paths() -> RenderFnResult<Vec<String>> {

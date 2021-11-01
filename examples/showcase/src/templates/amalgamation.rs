@@ -23,35 +23,43 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .template(amalgamation_page)
 }
 
-pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<String>> {
+#[perseus::autoserde(amalgamate_states)]
+pub fn amalgamate_states(
+    states: States,
+) -> RenderFnResultWithCause<Option<AmalagamationPageProps>> {
     // We know they'll both be defined
     let build_state = serde_json::from_str::<AmalagamationPageProps>(&states.build_state.unwrap())?;
     let req_state = serde_json::from_str::<AmalagamationPageProps>(&states.request_state.unwrap())?;
 
-    Ok(Some(serde_json::to_string(&AmalagamationPageProps {
+    Ok(Some(AmalagamationPageProps {
         message: format!(
             "Hello from the amalgamation! (Build says: '{}', server says: '{}'.)",
             build_state.message, req_state.message
         ),
-    })?))
+    }))
 }
 
-pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
-    Ok(serde_json::to_string(&AmalagamationPageProps {
+#[perseus::autoserde(build_state)]
+pub async fn get_build_state(
+    _path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<AmalagamationPageProps> {
+    Ok(AmalagamationPageProps {
         message: "Hello from the build process!".to_string(),
-    })?)
+    })
 }
 
+#[perseus::autoserde(request_state)]
 pub async fn get_request_state(
     _path: String,
     _locale: String,
     _req: Request,
-) -> RenderFnResultWithCause<String> {
+) -> RenderFnResultWithCause<AmalagamationPageProps> {
     // Err(perseus::GenericErrorWithCause {
     //     error: "this is a test error!".into(),
     //     cause: perseus::ErrorCause::Client(None)
     // })
-    Ok(serde_json::to_string(&AmalagamationPageProps {
+    Ok(AmalagamationPageProps {
         message: "Hello from the server!".to_string(),
-    })?)
+    })
 }

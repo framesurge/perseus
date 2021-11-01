@@ -25,8 +25,12 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .build_state_fn(get_build_state)
 }
 
-pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
-    Ok(serde_json::to_string(&TimePageProps {
+#[perseus::autoserde(build_state)]
+pub async fn get_build_state(
+    _path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<TimePageProps> {
+    Ok(TimePageProps {
         time: format!("{:?}", std::time::SystemTime::now()),
-    })?)
+    })
 }

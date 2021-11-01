@@ -9,7 +9,7 @@ use syn::{
 pub struct TemplateFn {
     /// The body of the function.
     pub block: Box<Block>,
-    // The possible single argument for custom properties, or there might be no arguments.
+    /// The possible single argument for custom properties, or there might be no arguments.
     pub arg: Option<FnArg>,
     /// The visibility of the function.
     pub vis: Visibility,
@@ -56,12 +56,12 @@ impl Parse for TemplateFn {
                         "external functions can't be used as templates",
                     ));
                 }
-                // Must return `std::result::Result<(), fantoccini::error::CmdError>`
+                // Must have an explicit return type
                 let return_type = match sig.output {
                     ReturnType::Default => {
                         return Err(syn::Error::new_spanned(
                             sig,
-                            "test function must return `std::result::Result<(), fantoccini::error::CmdError>`",
+                            "template function can't return default/inferred type",
                         ))
                     }
                     ReturnType::Type(_, ty) => ty,
@@ -79,7 +79,7 @@ impl Parse for TemplateFn {
                     let params: TokenStream = inputs.map(|it| it.to_token_stream()).collect();
                     return Err(syn::Error::new_spanned(
                         params,
-                        "test functions must accept either one argument for custom properties or no arguments",
+                        "template functions must accept either one argument for custom properties or no arguments",
                     ));
                 }
 

@@ -1,30 +1,33 @@
 use darling::FromMeta;
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
+    punctuated::Punctuated, token::Comma, Attribute, Block, FnArg, Generics, Ident, Item, ItemFn,
+    Result, ReturnType, Type, Visibility,
 };
 
 /// The arguments that the `autoserde` annotation takes.
-#[derive(Debug, FromMeta)]
-pub enum AutoserdeArgs {
-    #[darling(rename = "build_state")]
-    BuildState,
-    #[darling(rename = "request_state")]
-    RequestState,
-    #[darling(rename = "set_headers")]
-    SetHeaders,
-    #[darling(rename = "amalgamate_states")]
-    AmalgamateStates,
+// TODO prevent the user from providing more than one of these
+#[derive(Debug, FromMeta, PartialEq, Eq)]
+pub struct AutoserdeArgs {
+    #[darling(default)]
+    build_state: bool,
+    #[darling(default)]
+    request_state: bool,
+    #[darling(default)]
+    set_headers: bool,
+    #[darling(default)]
+    amalgamate_states: bool,
 }
 
 /// A function that can be wrapped in the Perseus test sub-harness.
 pub struct AutoserdeFn {
     /// The body of the function.
     pub block: Box<Block>,
-    // The possible single argument for custom properties, or there might be no arguments.
-    pub arg: Option<FnArg>,
+    /// The arguments that the function takes. We don't need to modify these because we wrap them with a functin that does serializing/
+    /// deserializing.
+    pub args: Punctuated<FnArg, Comma>,
     /// The visibility of the function.
     pub vis: Visibility,
     /// Any attributes the function uses.
@@ -33,7 +36,7 @@ pub struct AutoserdeFn {
     pub name: Ident,
     /// The return type of the function.
     pub return_type: Box<Type>,
-    /// Any generics the function takes (should be one for the Sycamore `GenericNode`).
+    /// Any generics the function takes (shouldn't be any, but it's possible).
     pub generics: Generics,
 }
 impl Parse for AutoserdeFn {
@@ -49,57 +52,34 @@ impl Parse for AutoserdeFn {
                     block,
                 } = func;
                 // Validate each part of this function to make sure it fulfills the requirements
-                // Mustn't be async
-                if sig.asyncness.is_some() {
-                    return Err(syn::Error::new_spanned(
-                        sig.asyncness,
-                        "templates cannot be asynchronous",
-                    ));
-                }
                 // Can't be const
                 if sig.constness.is_some() {
                     return Err(syn::Error::new_spanned(
                         sig.constness,
-                        "const functions can't be used as templates",
+                        "const functions can't be automatically serialized and deserialized for",
                     ));
                 }
                 // Can't be external
                 if sig.abi.is_some() {
                     return Err(syn::Error::new_spanned(
                         sig.abi,
-                        "external functions can't be used as templates",
+                        "external functions can't be automatically serialized and deserialized for",
                     ));
                 }
-                // Must return `std::result::Result<(), fantoccini::error::CmdError>`
+                // Must have an explicit return type
                 let return_type = match sig.output {
                     ReturnType::Default => {
                         return Err(syn::Error::new_spanned(
                             sig,
-                            "test function must return `std::result::Result<(), fantoccini::error::CmdError>`",
+                            "template functions can't return default/inferred type",
                         ))
                     }
                     ReturnType::Type(_, ty) => ty,
                 };
-                // Can either accept a single argument for properties or no arguments
-                let mut inputs = sig.inputs.into_iter();
-                let arg: Option<FnArg> = inputs.next();
-                // We don't care what the type is, as long as it's not `self`
-                if let Some(FnArg::Receiver(arg)) = arg {
-                    return Err(syn::Error::new_spanned(arg, "templates can't take `self`"));
-                }
-
-                // This operates on what's left over after calling `.next()`
-                if inputs.len() > 0 {
-                    let params: TokenStream = inputs.map(|it| it.to_token_stream()).collect();
-                    return Err(syn::Error::new_spanned(
-                        params,
-                        "test functions must accept either one argument for custom properties or no arguments",
-                    ));
-                }
 
                 Ok(Self {
                     block,
-                    arg,
+                    args: sig.inputs,
                     vis,
                     attrs,
                     name: sig.ident,
@@ -115,16 +95,87 @@ impl Parse for AutoserdeFn {
     }
 }
 
-pub fn autoserde_impl(input: AutoserdeFn, args: AutoserdeArgs) -> TokenStream {
-    // let AutoserdeFn {
-    //     block,
-    //     arg,
-    //     generics,
-    //     vis,
-    //     attrs,
-    //     name,
-    //     return_type,
-    // } = input;
+pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream {
+    let AutoserdeFn {
+        block,
+        args,
+        generics,
+        vis,
+        attrs,
+        name,
+        return_type,
+    } = input;
 
-    todo!()
+    if fn_type.build_state {
+        // This will always be asynchronous
+        quote! {
+            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
+                // The user's function
+                // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
+                #(#attrs)*
+                async fn #name#generics(#args) -> #return_type {
+                    #block
+                }
+                // Call the user's function with the usual arguments and then serialize the result to a string
+                // We only serialize the `Ok` outcome, errors are left as-is
+                // We also assume that this will serialize correctly
+                let build_state = #name(path, locale).await;
+                let build_state_with_str = build_state.map(|val| ::serde_json::to_string(&val).unwrap());
+                build_state_with_str
+            }
+        }
+    } else if fn_type.request_state {
+        // This will always be asynchronous
+        quote! {
+            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, req: ::perseus::Request) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
+                // The user's function
+                // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
+                #(#attrs)*
+                async fn #name#generics(#args) -> #return_type {
+                    #block
+                }
+                // Call the user's function with the usual arguments and then serialize the result to a string
+                // We only serialize the `Ok` outcome, errors are left as-is
+                // We also assume that this will serialize correctly
+                let req_state = #name(path, locale, req).await;
+                let req_state_with_str = req_state.map(|val| ::serde_json::to_string(&val).unwrap());
+                req_state_with_str
+            }
+        }
+    } else if fn_type.set_headers {
+        // This will always be synchronous
+        quote! {
+            #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
+                // The user's function
+                // We can assume the return type to be `HeaderMap`
+                #(#attrs)*
+                fn #name#generics(#args) -> #return_type {
+                    #block
+                }
+                // Deserialize the props and then call the user's function
+                let props_de = props.map(|val| ::serde_json::from_str(&val).unwrap());
+                #name(props_de)
+            }
+        }
+    } else if fn_type.amalgamate_states {
+        // This will always be synchronous
+        quote! {
+            #vis fn #name(states: ::perseus::States) -> ::perseus::RenderFnResultWithCause<::std::option::Option<::std::string::String>> {
+                // The user's function
+                // We can assume the return type to be `RenderFnResultWithCause<Option<CustomTemplatePropsType>>`
+                #(#attrs)*
+                fn #name#generics(#args) -> #return_type {
+                    #block
+                }
+                // Call the user's function with the usual arguments and then serialize the result to a string
+                // We only serialize the `Ok(Some(_))` outcome, errors are left as-is
+                // We also assume that this will serialize correctly
+                let amalgamated_state = #name(states);
+                let amalgamated_state_with_str = amalgamated_state.map(|val| val.map(|val| ::serde_json::to_string(&val).unwrap()));
+                amalgamated_state_with_str
+            }
+        }
+    } else {
+        todo!()
+    }
 }

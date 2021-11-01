@@ -31,17 +31,22 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .set_headers_fn(set_headers)
 }
 
-pub async fn get_build_props(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
-    Ok(serde_json::to_string(&IndexPageProps {
+#[perseus::autoserde(build_state)]
+pub async fn get_build_props(
+    _path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<IndexPageProps> {
+    Ok(IndexPageProps {
         greeting: "Hello World!".to_string(),
-    })?) // This `?` declares the default, that the server is the cause of the error
+    })
 }
 
-pub fn set_headers(_props: Option<String>) -> HeaderMap {
+#[perseus::autoserde(set_headers)]
+pub fn set_headers(props: Option<IndexPageProps>) -> HeaderMap {
     let mut map = HeaderMap::new();
     map.insert(
-        HeaderName::from_lowercase(b"x-test").unwrap(),
-        "custom value".parse().unwrap(),
+        HeaderName::from_lowercase(b"x-greeting").unwrap(),
+        props.unwrap().greeting.parse().unwrap(),
     );
     map
 }

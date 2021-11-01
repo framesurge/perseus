@@ -25,16 +25,17 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .template(ip_page)
 }
 
+#[perseus::autoserde(request_state)]
 pub async fn get_request_state(
     _path: String,
     _locale: String,
     req: Request,
-) -> RenderFnResultWithCause<String> {
+) -> RenderFnResultWithCause<IpPageProps> {
     // Err(perseus::GenericErrorWithCause {
     //     error: "this is a test error!".into(),
     //     cause: perseus::ErrorCause::Client(None)
     // })
-    Ok(serde_json::to_string(&IpPageProps {
+    Ok(IpPageProps {
         // Gets the client's IP address
         ip: format!(
             "{:?}",
@@ -42,5 +43,5 @@ pub async fn get_request_state(
                 .get("X-Forwarded-For")
                 .unwrap_or(&perseus::http::HeaderValue::from_str("hidden from view!").unwrap())
         ),
-    })?)
+    })
 }

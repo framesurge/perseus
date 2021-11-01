@@ -27,7 +27,11 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
         .build_paths_fn(get_build_paths)
 }
 
-pub async fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<String> {
+#[perseus::autoserde(build_state)]
+pub async fn get_build_state(
+    path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<TimePageProps> {
     // This path is illegal, and can't be rendered
     if path == "timeisr/tests" {
         return Err(GenericErrorWithCause {
@@ -35,9 +39,9 @@ pub async fn get_build_state(path: String, _locale: String) -> RenderFnResultWit
             cause: ErrorCause::Client(Some(404)),
         });
     }
-    Ok(serde_json::to_string(&TimePageProps {
+    Ok(TimePageProps {
         time: format!("{:?}", std::time::SystemTime::now()),
-    })?)
+    })
 }
 
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {

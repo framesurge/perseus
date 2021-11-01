@@ -18,7 +18,7 @@ pub struct TestArgs {
 pub struct TestFn {
     /// The body of the function.
     pub block: Box<Block>,
-    // The single argument for the Fantoccini client.
+    /// The single argument for the Fantoccini client.
     pub arg: FnArg,
     /// The visibility of the function.
     pub vis: Visibility,
