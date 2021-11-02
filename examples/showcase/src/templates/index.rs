@@ -22,8 +22,11 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
 }
 
 #[perseus::autoserde(build_state)]
-pub async fn get_static_props(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
-    Ok(serde_json::to_string(&IndexPageProps {
+pub async fn get_static_props(
+    _path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<IndexPageProps> {
+    Ok(IndexPageProps {
         greeting: "Hello World!".to_string(),
-    })?)
+    })
 }
