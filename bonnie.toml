@@ -89,7 +89,12 @@ copy-subcrates.cmd = [
     "cp -r ../../examples/basic/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
-    "mv .perseus/builder/Cargo.toml .perseus/builder/Cargo.toml.old"
+    "mv .perseus/builder/Cargo.toml .perseus/builder/Cargo.toml.old",
+    # Remove distribution artifacts (they clog up the final bundle)
+    "rm -rf .perseus/dist",
+    "mkdir -p .perseus/dist",
+    "mkdir -p .perseus/dist/static",
+    "mkdir -p .perseus/dist/exported",
 ]
 copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/usage"
 
