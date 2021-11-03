@@ -8,4 +8,4 @@ Perseus supports inserting arbitrary HTTP headers for any response from the serv
 {{#include ../../../../examples/basic/src/templates/index.rs}}
 ```
 
-Of note here is the `set_headers_fn` function, which returns a `HeaderMap`. This is then used on the template with `.set_headers_fn()`. Note that the function you provide will be given the state as an argument (ignored here), and you must return some headers (you can't return an error).
+Of note here is the `set_headers_fn` function, which returns a `HeaderMap`. This is then used on the template with `.set_headers_fn()`. Note that the function you provide will be given the state as an argument (ignored here, but it will be deserialized for you with `#[perseus::autoserde(set_headers)]`), and you must return some headers (you can't return an error).

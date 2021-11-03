@@ -28,7 +28,9 @@ You can define a template like so (taken from [the basic example](https://github
 
 It's seen as convention in Perseus to define each template in its own file, which should expose a `get_template()` file. Note that this is just convention, and as long as you get an instance of `Template<G>` to the `define_app!` macro, it really doesn't matter. That said, using community conventions makes your code easier to understand and debug for others.
 
-There's a list of all the methods available on a template [here](https://docs.rs/perseus/0.2/perseus/template/struct.Template.html#implementations), along with explanations of what they all do. Technically, you could just define a template without calling any of these, but that would just render a blank page, which would probably be useless.
+There's a list of all the methods available on a template [here](https://docs.rs/perseus/0.3/perseus/template/struct.Template.html#implementations), along with explanations of what they all do. Technically, you could just define a template without calling any of these, but that would just render a blank page, which would probably be useless.
+
+Also note the use of the `#[perseus::template(...)]` macro on the `about_page` function in the above example. As mentioned elsewhere in the book, this will perform some boilerplate work for you: namely deserializing your template's properties for you (if it takes any). While you don't have to use this, it makes things more convenient and there's no reason not to.
 
 ## Routing
 
