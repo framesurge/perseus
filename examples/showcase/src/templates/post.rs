@@ -1,6 +1,4 @@
-use perseus::{
-    ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
-};
+use perseus::{blame_err, RenderFnResult, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
 
@@ -40,10 +38,11 @@ pub async fn get_static_props(
 ) -> RenderFnResultWithCause<PostPageProps> {
     // This path is illegal, and can't be rendered
     if path == "post/tests" {
-        return Err(GenericErrorWithCause {
-            error: "illegal page".into(),
-            cause: ErrorCause::Client(Some(404)),
-        });
+        // return Err(GenericErrorWithCause {
+        //     error: "illegal page".into(),
+        //     cause: ErrorCause::Client(Some(404)),
+        // });
+        blame_err!(client, 404, "illegal page");
     }
     // This is just an example
     let title = urlencoding::decode(&path).unwrap();

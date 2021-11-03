@@ -176,3 +176,42 @@ impl<E: std::error::Error + 'static> From<E> for GenericErrorWithCause {
         }
     }
 }
+
+/// Creates a new `GenericErrorWithCause` efficiently. This allows you to explicitly return errors from anything that returns
+/// `RenderFnResultWithCause`, which includes both an error and a statement of whether the server or the client is responsible. With
+/// this macro, you can use any of the following syntaxes (substituting `"error!"` for any error that can be converted with `.into()`
+/// into a `Box<dyn std::error::Error>`):
+///
+/// - `blame_err!(client, "error!")` -- an error that's the client's fault, with the default HTTP status code (400, a generic client error)
+/// - `blame_err!(server, "error!")` -- an error that's the server's fault, with the default HTTP status code (500, a generic server error)
+/// - `blame_err!(client, 404, "error!")` -- an error that's the client's fault, with a custom HTTP status code (404 in this example)
+/// - `blame_err!(server, 501, "error!")` -- an error that's the server's fault, with a custom HTTP status code (501 in this example)
+///
+/// Note that this macro will automatically `return` the error it creates.
+#[macro_export]
+macro_rules! blame_err {
+    (client, $err:expr) => {
+        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Client(::std::option::Option::None),
+        })
+    };
+    (client, $code:literal, $err:expr) => {
+        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Client(::std::option::Option::Some($code)),
+        })
+    };
+    (server, $err:expr) => {
+        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Server(::std::option::Option::None),
+        })
+    };
+    (server, $code:literal, $err:expr) => {
+        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Server(::std::option::Option::Some($code)),
+        })
+    };
+}
