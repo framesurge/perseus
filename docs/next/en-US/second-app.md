@@ -15,7 +15,7 @@ Much like the _Hello World!_ app, we'll start off by creating a new directory fo
 The only difference between this and the last `Cargo.toml` we created is two new dependencies:
 
 -   [`serde`](https://serde.rs) -- a really useful Rust library for serializing/deserializing data
--   [`serde_json`](https://github.com/serde-rs/json) -- Serde's integration for JSON, which lets us pass around properties for more advanced pages in Perseus
+-   [`serde_json`](https://github.com/serde-rs/json) -- Serde's integration for JSON, which lets us pass around properties for more advanced pages in Perseus (you may not explicitly use this, but you'll need it as a dependency for some Perseus macros)
 
 The next thing to do is to create `index.html`, which is pretty much the same as last time:
 
@@ -79,6 +79,7 @@ First, we import a whole ton of stuff:
     -   `RenderFnResultWithCause` -- see below for an explanation of this
     -   `Template` -- as before
     -   `GenericNode` -- as before
+    -   `http::header::{HeaderMap, HeaderName}` -- some types for adding HTTP headers to our page
 -   `serde`
     -   `Serialize` -- a trait for `struct`s that can be turned into a string (like JSON)
     -   `Deserialize` -- a trait for `struct`s that can be *de*serialized from a string (like JSON)
@@ -98,9 +99,9 @@ Any template can take arguments in Perseus, which should always be given inside 
 
 ### `index_page()`
 
-This is the actual component that your page is. Technically, you could just put this under `template_fn()`, but it's conventional to break it out independently. By annotating it with `#[component(IndexPage<G>)]`, we tell Sycamore to turn it into a complex `struct` that can be called inside `template!` (which we do in `template_fn()`).
+This is the actual component that your page is. By annotating it with `#[component(IndexPage<G>)]`, we tell Sycamore to turn it into a complex `struct` that can be called inside `template!` (which we do in `template_fn()`), and the `#[perseus::template(IndexPage)]` tells Perseus to do a little bit of work behind the scenes so that you can use `index_page` directly in the later `.template()` call. In previous versions of Perseus, you needed to do that boilerplate work yourself.
 
-Note that this takes `IndexPageProps` as an argument, which it can then access in the `template!`. This is Sycamore's interpolation system, which you can read about [here](https://sycamore-rs.netlify.app/docs/basics/template), but all you need to know is that it's basically seamless and works exactly as you'd expect.
+Note that `index_page()` takes `IndexPageProps` as an argument, which it can then access in the `template!`. This is Sycamore's interpolation system, which you can read about [here](https://sycamore-rs.netlify.app/docs/basics/template), but all you need to know is that it's basically seamless and works exactly as you'd expect.
 
 The only other thing we do here is define an `<a>` (an HTML link) to `/about`. This link, and any others you define, will automatically be detected by Sycamore's systems, which will pass them to Perseus' routing logic, which means your users **never leave the page**. In this way, Perseus only pulls in the content that needs to change, and gives your users the feeling of a lightning-fast and weightless app.
 
@@ -110,11 +111,15 @@ _Note: external links will automatically be excluded from this, and you can excl
 
 This function is what we call in `lib.rs`, and it combines everything else in this file to produce an actual Perseus `Template` to be used. Note the name of the template as `index`, which Perseus interprets as special, which causes this template to be rendered at `/` (the landing page).
 
-Perseus' templating system is extremely versatile, and here we're using it to define our page itself through `.template()`, and to define a function that will modify the document `<head>` (which allows us to add a title) with `.head()`. Notably, we also use the _build state_ rendering strategy, which tells Perseus to call the `get_build_props()` function when your app builds to get some state. More on that now.
+Perseus' templating system is extremely versatile, and here we're using it to define our page itself through `.template()`, and to define a function that will modify the document `<head>` (which allows us to add a title) with `.head()`. Notably, we also use the _build state_ rendering strategy, which tells Perseus to call the `get_build_props()` function when your app builds to get some state. More on that in a moment.
 
 #### `.template()`
 
-The result of this function is what Perseus will call when it wants to render your template (which it does more than you might think), and it passes it the props that your template takes as an `Option<String>`. This might seem a bit weird, but there are reasons under the hood. All you need to know here is that if your template takes any properties, they **will** be here, and it's safe to `.unwrap()` them for deserialization.
+This function is what Perseus will call when it wants to render your template (which it does more than you might think). If you've used the `#[perseus::template(...)]` macro on `index_page()`, you can provide `index_page` directly here, but it can be useful to understand what that macro is doing.
+
+Behind the scenes, that macro transforms your `index_page()` function to take properties as an `Option<String>` instead of as `IndexPageProps`, because Perseus actually passes your properties around internally as `String`s. At first, this might seem weird, but it avoids a few common problems that would increase your final Wasm binary size and make your website take a very long time to load. Interestingly, it's actually also more performant to use `String`s everywhere, because we need to perform that conversion anyway when we send your properties to a user's browser.
+
+If that all went over your head, don't worry, that's just what Perseus does behind the scenes, and what you used to have to do by hand! The `#[perseus::template(...)]` macro does all that for you now.
 
 #### `.head()`
 
@@ -122,11 +127,17 @@ This is very similar to `template_fn`, except it can't be reactive. In other wor
 
 All this does though is set the `<title>`. If you inspect the source code of the HTML in your browser, you'll find a big comment in the `<head>` that says `<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->`, that separates the stuff that should remain the same on every page from the stuff that should update for each page.
 
+**Warning:** the parameter that this function takes is an `Option<String>` (as it is for `.template()`), though there is currently no macro for handling this. That means you'll have to manually deserialize that parameter to `IndexPageProps` if you want to use it. Note that it's perfectly safe to `.unwrap()` the `Option<String>` if you know your template uses properties, because Perseus will provide them (we just can't easily prove that to the Rust compiler).
+
 ### `get_build_props()`
 
 This function is part of Perseus' secret sauce (actually _open_ sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is `async`. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!
 
-Note that this function returns a `RenderFnResultWithCause<String>`, which means that it returns a normal Rust `Result<String, E>`, where `E` is a `GenericErrorWithCause`, a Perseus type that combines an arbitrary error message with a declaration of who caused the error (either the client or the server). This becomes important when you combine this rendering strategy with others, which are explained in depth later in the book. Note that we use `?` in this example on errors from modules like `serde_json`, showing how versatile this type is. If you don't explicitly construct `GenericErrorWithCause`, blame for the error will be assigned to the server, resulting in a _500 Internal Server Error_ HTTP status code.
+This function returns a rather special type, `RenderFnResultWithCause<IndexPageProps>`, which declares that your function will return `IndexPageProps` if it succeeds, and a special error if it fails. That error can be anything you want (it's a `Box<dyn std::error::Error>` internally), but it will also have a blame assigned to it that records whether it was the server or the client that caused the error, which will impact the final HTTP status code. You can use the `blame_err!` macro to create these errors easily, but any time you use `?` in functions that return this type will simply use the default of blaming the server and returning an HTTP status code of *500 Internal Server Error*.
+
+It may seem a little pointless to blame the client in the build process, but the reason this can happen is because, in more advanced uses of Perseus (particularly [incremental generation](:strategies/incremental)), this function could be called as a result of a client's request with parameters that it provides, which could be invalid. Essentially, know that it's a thing that's important in more complex use-cases of Perseus.
+
+That `#[perseus::autoserde(build_state)]` is also something you'll see quite a lot of (but not in older versions of Perseus). It's a convenience macro that automatically serializes the return of your function to a `String` for Perseus to use internally, which is basically just the opposite of the `#[perseus::template(IndexPage)]` annotation we used earlier. You don't technically need this, but it eliminates some boilerplate code that you don't need to bother writing yourself.
 
 ### `set_headers_fn()`
 
