@@ -1,6 +1,6 @@
 use perseus::{
     http::header::{HeaderMap, HeaderName},
-    GenericNode, RenderFnResultWithCause, Template,
+    GenericNode, RenderFnResultWithCause, SsrNode, Template,
 };
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, template, Template as SycamoreTemplate};
@@ -23,12 +23,15 @@ pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_props)
         .template(index_page)
-        .head(|_| {
-            template! {
-                title { "Index Page | Perseus Example – Basic" }
-            }
-        })
+        .head(head)
         .set_headers_fn(set_headers)
+}
+
+#[perseus::head]
+pub fn head(_props: IndexPageProps) -> SycamoreTemplate<SsrNode> {
+    template! {
+        title { "Index Page | Perseus Example – Basic" }
+    }
 }
 
 #[perseus::autoserde(build_state)]

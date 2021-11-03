@@ -88,6 +88,7 @@ First, we import a whole ton of stuff:
     -   `component` -- a macro that turns a function into a Sycamore component
     -   `template` -- the `template!` macro, same as before
     -   `Template as SycamoreTemplate` -- the output of the `template!` macro, aliased as `SycamoreTemplate` so it doesn't conflict with `perseus::Template`, which is very different
+    -   `SsrNode` -- Sycamore's representation of a node that will only be rendered on the server (this is re-exported from Perseus as well for convenience)
 
 Then we define a number of different functions and a `struct`, each of which gets a section now.
 
@@ -107,6 +108,16 @@ The only other thing we do here is define an `<a>` (an HTML link) to `/about`. T
 
 _Note: external links will automatically be excluded from this, and you can exclude manually by adding `rel="external"` if you need._
 
+### `head()`
+
+This function is very similar to `index_page()`, except that it isn't a fully fledged Sycamore component, it just returns a `template! {}` instead. What this is used for is to define the content of the `<head>`, which is metadata for your website, like its `<title>`. As you can see, this is given the properties that `index_page()` takes, but we aren't using them for anything in this example. The `#[perseus::head]` macro tells Perseus to do some boilerplate work behind the scenes that's very similar to that done with `index_page`, but specialized for the `<head>`.
+
+What's really important to note about this function is that it only renders to an `SsrNode`, which means you cannot use reactivity in here! Whatever is rendered the first time will be turned into a `String` and then statically interpolated into the document's `<head>`.
+
+The difference between metadata defined here and metadata defined in your `index.html` file is that the latter will apply to every page, while this will only apply to the template. So, this is more useful for things like titles, while you might use `index.html` to import stylesheets or analytics.
+
+If you inspect the source code of the HTML in your browser, you'll find a big comment in the `<head>` that says `<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->`, that separates the stuff that should remain the same on every page from the stuff that should update for each page.
+
 ### `get_template()`
 
 This function is what we call in `lib.rs`, and it combines everything else in this file to produce an actual Perseus `Template` to be used. Note the name of the template as `index`, which Perseus interprets as special, which causes this template to be rendered at `/` (the landing page).
@@ -123,11 +134,7 @@ If that all went over your head, don't worry, that's just what Perseus does behi
 
 #### `.head()`
 
-This is very similar to `template_fn`, except it can't be reactive. In other words, anything you put in here is like a picture, it can't move (so no buttons, counters, etc.). This is because this modifies the document `<head>`, so you should put metadata, titles, etc. in here. Note that the function we return from here does take an argument (ignored with `_`), that's a string of the properties to your app, but we don't need it in this example. If this page was a generic template for blog posts, you might use this capability to render a different title for each blog post.
-
-All this does though is set the `<title>`. If you inspect the source code of the HTML in your browser, you'll find a big comment in the `<head>` that says `<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->`, that separates the stuff that should remain the same on every page from the stuff that should update for each page.
-
-**Warning:** the parameter that this function takes is an `Option<String>` (as it is for `.template()`), though there is currently no macro for handling this. That means you'll have to manually deserialize that parameter to `IndexPageProps` if you want to use it. Note that it's perfectly safe to `.unwrap()` the `Option<String>` if you know your template uses properties, because Perseus will provide them (we just can't easily prove that to the Rust compiler).
+This is just the equivalent of `.template()` for the `head()` function, and it does basically the exact same thing. The only particular thing of note here is that the properties this expects are again as an `Option<String>`, and those are deserialized automatically by the `#[perseus::head]` macro that we used on `head()` earlier.
 
 ### `get_build_props()`
 

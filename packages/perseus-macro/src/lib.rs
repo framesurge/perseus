@@ -27,6 +27,7 @@
  */
 
 mod autoserde;
+mod head;
 mod template;
 mod test;
 
@@ -66,6 +67,15 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
     let arg = syn::parse_macro_input!(args as syn::Ident);
 
     template::template_impl(parsed, arg).into()
+}
+
+/// Labels a function as a Perseus head function, which is very similar to a template, but
+/// for the HTML metadata in the document `<head>`.
+#[proc_macro_attribute]
+pub fn head(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as head::HeadFn);
+
+    head::head_impl(parsed).into()
 }
 
 /// Marks the given function as a Perseus test. Functions marked with this attribute must have the following signature:
