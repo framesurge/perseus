@@ -5,6 +5,7 @@ use perseus::{link, t, GenericNode, Template};
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
+#[perseus::template(IndexPage)]
 #[component(IndexPage<G>)]
 pub fn index_page() -> SycamoreTemplate<G> {
     template! {
@@ -128,16 +129,13 @@ pub fn index_page() -> SycamoreTemplate<G> {
     }
 }
 
+#[perseus::head]
+pub fn head() -> SycamoreTemplate<SsrNode> {
+    template! {
+        title { (t!("perseus")) }
+    }
+}
+
 pub fn get_template<G: GenericNode>() -> Template<G> {
-    Template::new("index")
-        .template(|_| {
-            template! {
-                IndexPage()
-            }
-        })
-        .head(|_| {
-            template! {
-                title { (t!("perseus")) }
-            }
-        })
+    Template::new("index").template(index_page).head(head)
 }

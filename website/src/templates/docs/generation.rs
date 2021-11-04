@@ -105,7 +105,11 @@ pub struct DocsManifest {
     pub history_map: HashMap<String, String>,
 }
 
-pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWithCause<String> {
+#[perseus::autoserde(build_state)]
+pub async fn get_build_state(
+    path: String,
+    locale: String,
+) -> RenderFnResultWithCause<DocsPageProps> {
     let path_vec: Vec<&str> = path.split('/').collect();
     // Localize the path again to what it'll be on the filesystem
     // TODO get Perseus to pass in props from build paths for ease of use?
@@ -281,8 +285,7 @@ pub async fn get_build_state(path: String, locale: String) -> RenderFnResultWith
         current_version: version.to_string(),
     };
 
-    let props_str = serde_json::to_string(&props)?;
-    Ok(props_str)
+    Ok(props)
 }
 
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {

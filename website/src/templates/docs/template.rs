@@ -18,6 +18,7 @@ pub struct DocsPageProps {
     pub current_version: String,
 }
 
+#[perseus::template(DocsPage)]
 #[component(DocsPage<G>)]
 pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
     // These come pre-translated for the current locale
@@ -50,22 +51,20 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
     }
 }
 
+#[perseus::head]
+pub fn head(props: DocsPageProps) -> SycamoreTemplate<SsrNode> {
+    template! {
+        title { (format!("{} | {}", props.title, t!("docs-title-base"))) }
+        link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
+        link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
+        link(rel = "stylesheet", href = ".perseus/static/prism.css")
+    }
+}
+
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("docs")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
-        .template(|props| {
-            template! {
-                DocsPage(serde_json::from_str(&props.unwrap()).unwrap())
-            }
-        })
-        .head(|props| {
-            let props: DocsPageProps = serde_json::from_str(&props.unwrap()).unwrap();
-            template! {
-                title { (format!("{} | {}", props.title, t!("docs-title-base"))) }
-                link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
-                link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
-                link(rel = "stylesheet", href = ".perseus/static/prism.css")
-            }
-        })
+        .template(docs_page)
+        .head(head)
 }

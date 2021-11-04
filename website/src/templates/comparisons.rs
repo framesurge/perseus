@@ -288,6 +288,8 @@ pub struct ComparisonsPageProps {
     /// The comparison data for Perseus itself.
     pub perseus_comparison: Comparison,
 }
+
+#[perseus::template(ComparisonsPage)]
 #[component(ComparisonsPage<G>)]
 pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
     let comparisons = props.comparisons.clone();
@@ -362,22 +364,25 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
     }
 }
 
+#[perseus::head]
+pub fn head() -> SycamoreTemplate<SsrNode> {
+    template! {
+        title { (format!("{} | {}", t!("comparisons-title"), t!("perseus"))) }
+    }
+}
+
 pub fn get_template<G: GenericNode>() -> Template<G> {
     Template::new("comparisons")
-        .template(|props| {
-            template! {
-                ComparisonsPage(serde_json::from_str(&props.unwrap()).unwrap())
-            }
-        })
-        .head(|_| {
-            template! {
-                title { (format!("{} | {}", t!("comparisons-title"), t!("perseus"))) }
-            }
-        })
+        .template(comparisons_page)
+        .head(head)
         .build_state_fn(get_build_state)
 }
 
-pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<String> {
+#[perseus::autoserde(build_state)]
+pub async fn get_build_state(
+    _path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<ComparisonsPageProps> {
     // Get all the comparisons from JSON
     // This includes the special properties for Perseus itself
     let mut perseus_comparison: Option<Comparison> = None;
@@ -416,6 +421,5 @@ pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWi
             })
         }
     };
-    let props_str = serde_json::to_string(&props)?;
-    Ok(props_str)
+    Ok(props)
 }
