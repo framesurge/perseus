@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.16](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.15...v0.3.0-beta.16) (2021-11-04)
+
+
+### Features
+
+* **templates:** ✨ added `autoserde` macro to improve ergonomics ([eb21299](https://github.com/arctic-hen7/perseus/commit/eb212996192749ba3cb370a239ffe0f31a6707e8)), closes [#57](https://github.com/arctic-hen7/perseus/issues/57)
+* **templates:** ✨ added `blame_err!` convenience macro ([6ab178a](https://github.com/arctic-hen7/perseus/commit/6ab178a54a95e5a64b918556c803b8f91ce306a6))
+* **templates:** ✨ added `head` ergonomics macro ([fb17e03](https://github.com/arctic-hen7/perseus/commit/fb17e03ce614f94e4d84ed7c6aa1ce6bb99a3025)), closes [#57](https://github.com/arctic-hen7/perseus/issues/57)
+* **templates:** ✨ added `template` macro to automate template fn creation ([810ae1b](https://github.com/arctic-hen7/perseus/commit/810ae1b1fb17ce52892454cdbbdd5215ae4b3861)), closes [#57](https://github.com/arctic-hen7/perseus/issues/57)
+* **website:** ✨ re-added size optimizations plugin to website ([4364d99](https://github.com/arctic-hen7/perseus/commit/4364d99f94ed3f25c13989c2d7ccd020adbafd36))
+
+
+### Bug Fixes
+
+* **cli:** 🐛 removed distribution artifacts from cli subcrates ([ebca95c](https://github.com/arctic-hen7/perseus/commit/ebca95c7fcb629a5fc8ff1cf5445424553fc0012))
+* **examples:** 🐛 fixed type mismatch in `showcase` example ([7a3dd63](https://github.com/arctic-hen7/perseus/commit/7a3dd630b6aae7168a24aff2f167af4b9d552eac))
+
+
+### Documentation Changes
+
+* **book:** 🐛 fixed broken amalgamation page link ([1966fd1](https://github.com/arctic-hen7/perseus/commit/1966fd1b176e6e98693f25fc06e6063f9274add9))
+* **book:** 📝 added docs for new ergonomics macros ([0c4f3b2](https://github.com/arctic-hen7/perseus/commit/0c4f3b22e069020b3c8bc5940252f58b93fae1a0))
+* **book:** 📝 updated `next` from `0.3.x` ([7f8e2f2](https://github.com/arctic-hen7/perseus/commit/7f8e2f2af3f8f1d3a8f2e578f1df8b6b8b0031c9))
+
 ## [0.3.0-beta.15](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.14...v0.3.0-beta.15) (2021-10-30)
 
 
