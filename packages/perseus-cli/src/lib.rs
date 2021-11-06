@@ -84,7 +84,8 @@ pub fn delete_artifacts(dir: PathBuf, dir_to_remove: &str) -> Result<(), Executi
         }
     }
     // No matter what, it's gone now, so recreate it
-    if let Err(err) = fs::create_dir(&target) {
+    // We also create parent directories because that's an issue for some reason in Docker (see #69)
+    if let Err(err) = fs::create_dir_all(&target) {
         return Err(ExecutionError::RemoveArtifactsFailed {
             target: target.to_str().map(|s| s.to_string()),
             source: err,
