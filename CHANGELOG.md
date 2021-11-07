@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.17](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.16...v0.3.0-beta.17) (2021-11-07)
+
+
+### Bug Fixes
+
+* **cli:** 🐛 created parent directories with CLI ([#72](https://github.com/arctic-hen7/perseus/issues/72)) ([6dc0aab](https://github.com/arctic-hen7/perseus/commit/6dc0aabaad88df9cb32a72e24f91b31cc7aaefd3)), closes [#69](https://github.com/arctic-hen7/perseus/issues/69)
+
+
+### Code Refactorings
+
+* **website:** ♻️ refactored website to use new ergonomics macros ([bb879c6](https://github.com/arctic-hen7/perseus/commit/bb879c6476fb68336f0e4afb2d56783cc559f201))
+
 ## [0.3.0-beta.16](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.15...v0.3.0-beta.16) (2021-11-04)
 
 
