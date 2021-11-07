@@ -1,3 +1,2 @@
 # We copy in the subcrate under development in the `cli` example for packaging only
-# TODO change this back after fixing #69 is done!
-!.perseus/
+.perseus/
