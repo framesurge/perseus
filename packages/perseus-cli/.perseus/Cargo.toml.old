@@ -1,0 +1,25 @@
+# This crate defines the user's app in terms that Wasm can understand, making development significantly simpler.
+# IMPORTANT: spacing matters in this file for runtime replacements, do NOT change it!
+
+[package]
+name = "perseus-engine"
+version = "0.3.0-beta.16"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# We alias here because the package name will change based on whatever's in the user's manifest
+app = { package = "perseus-example-basic", path = "../" }
+
+perseus = { path = "../../../packages/perseus" }
+sycamore = { version = "0.6", features = ["ssr"] }
+sycamore-router = "0.6"
+web-sys = { version = "0.3", features = ["Event", "Headers", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_error_panic_hook = "0.1.6"
+
+# This section is needed for Wasm Pack (which we use instead of Trunk for flexibility)
+[lib]
+crate-type = ["cdylib", "rlib"]
