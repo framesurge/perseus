@@ -65,6 +65,15 @@ pub async fn export_app(
         // We need the encoded path to reference flattened build artifacts
         // But we don't create a flattened system with exporting, everything is properly created in a directory structure
         let path_encoded = urlencoding::encode(&path).to_string();
+        // All initial load pages should be written into their own folders, which prevents a situation of a template root page outside the directory for the rest of that template's pages (see #73)
+        // The `.html` file extension is added when this variable is used (for contrast to the `.json`s)
+        let initial_load_path = if path.ends_with("index") {
+            // However, if it's already an index page, we dont want `index/index.html`
+            path.to_string()
+        } else {
+            format!("{}/index", &path)
+        };
+
         // Get the template itself
         let template = templates.get(&template_path);
         let template = match template {
@@ -78,9 +87,13 @@ pub async fn export_app(
         };
         // Create a locale detection file for it if we're using i18n
         // These just send the app shell, which will perform a redirect as necessary
+        // TODO put everything inside its own folder for initial loads?
         if locales.using_i18n {
             immutable_store
-                .write(&format!("exported/{}.html", path), &html_shell)
+                .write(
+                    &format!("exported/{}.html", &initial_load_path),
+                    &html_shell,
+                )
                 .await?;
         }
         // Check if that template uses build state (in which case it should have a JSON file)
@@ -97,9 +110,11 @@ pub async fn export_app(
                 // Create a full HTML file from those that can be served for initial loads
                 // The build process writes these with a dummy default locale even though we're not using i18n
                 let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
-                // We don't add an extension because this will be queried directly
                 immutable_store
-                    .write(&format!("exported/{}/{}.html", locale, &path), &full_html)
+                    .write(
+                        &format!("exported/{}/{}.html", locale, initial_load_path),
+                        &full_html,
+                    )
                     .await?;
 
                 // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
@@ -123,7 +138,7 @@ pub async fn export_app(
             let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
             // We don't add an extension because this will be queried directly by the browser
             immutable_store
-                .write(&format!("exported/{}.html", &path), &full_html)
+                .write(&format!("exported/{}.html", initial_load_path), &full_html)
                 .await?;
 
             // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
@@ -136,7 +151,7 @@ pub async fn export_app(
                 .await?;
         }
     }
-    // If we're using i18n, loop through the locales
+    // If we're using i18n, loop through the locales to create translations files
     if locales.using_i18n {
         for locale in locales.get_all() {
             // Get the translations string for that
