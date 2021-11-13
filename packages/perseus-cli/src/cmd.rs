@@ -39,9 +39,11 @@ pub fn run_cmd(
         None => 1, // If we don't know an exit code but we know that the command failed, return 1 (general error code)
     };
 
-    // Print `stderr` only if there's something therein and the exit code is non-zero
+    // Print `stderr` and `stdout` only if there's something therein and the exit code is non-zero
+    // If we only print `stderr`, we can miss some things (see #74)
     if !output.stderr.is_empty() && exit_code != 0 {
         pre_dump();
+        std::io::stderr().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
     }
 

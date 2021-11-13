@@ -165,9 +165,10 @@ fn run_server(
         None if output.status.success() => 0, // If we don't, but we know the command succeeded, return 0 (success code)
         None => 1, // If we don't know an exit code but we know that the command failed, return 1 (general error code)
     };
-    // Print `stderr` only if there's something therein and the exit code is non-zero
+    // Print `stderr` and stdout` only if there's something therein and the exit code is non-zero
     if !output.stderr.is_empty() && exit_code != 0 {
         // We don't print any failure message other than the actual error right now (see if people want something else?)
+        std::io::stderr().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Ok(1);
     }
