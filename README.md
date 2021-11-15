@@ -76,7 +76,7 @@ These tasks will be done after Perseus is stable.
 
 We appreciate all kinds of contributions, check out our [contributing guidelines](./CONTRIBUTING.md) for more information! Also, please be sure to follow our [code of conduct](./CODE_OF_CONDUCT.md).
 
-You can also chat about Perseus on [our channel on Sycamore's Discord server](https://discord.com/channels/820400041332179004/883168134331256892).
+You can also chat about Perseus on [our channel on Sycamore's Discord server](https://discord.com/invite/GNqWYWNTdp).
 
 ## License
 
