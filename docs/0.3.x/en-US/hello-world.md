@@ -61,7 +61,9 @@ Finally, we tell Perseus what to do if something in your app fails, like if the 
 
 </details>
 
-Now install the Perseus CLI with `cargo install perseus-cli` (you'll need `wasm-pack` to let Perseus build your app, use `cargo install wasm-pack` to install it) to make your life way easier, and deploy your app to <http://localhost:8080> by running `perseus serve` inside the root of your project! This will take a while the first time, because it's got to fetch all your dependencies and build your app.
+Now, tell Rust that you want to be compiling for WebAssembly by adding that platform as a target. You can do this by running `rustup target add wasm32-unknown-unknown`.
+
+After that's finished, you can install the Perseus CLI with `cargo install perseus-cli --version 0.3.0-beta.17` (you'll need `wasm-pack` to let Perseus build your app, use `cargo install wasm-pack` to install it) to make your life way easier, and deploy your app to <http://localhost:8080> by running `perseus serve` inside the root of your project! This will take a while the first time, because it's got to fetch all your dependencies and build your app.
 
 <details>
 <summary>Why do I need a CLI?</summary>
