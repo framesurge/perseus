@@ -2,7 +2,7 @@
 
 If you're familiar with [NextJS](https://nextjs.org), Perseus is that for Wasm. If you're familiar with [SvelteKit](https://kit.svelte.dev), it's that for [Sycamore](https://github.com/sycamore-rs/sycamore).
 
-If none of that makes any sense, this is the section for you! If you're not in the mood for a lecture, [here's a TL;DR](#summary)!
+If none of that makes any sense, this is the section for you! If you're not in the mood for a lecture, there's a TL;DR at the bottom of this page!
 
 ### Rust web development
 
