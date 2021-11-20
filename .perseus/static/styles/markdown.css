@@ -2,7 +2,7 @@
 .markdown > * + *,
 .markdown li + li,
 .markdown li > p + p {
-    margin-top: 1.5rem;
+    margin-top: 0.5rem;
 }
 .markdown stong,
 .markdown bold {
@@ -22,37 +22,26 @@
 .markdown h1 {
     font-size: 2.25rem;
     line-height: 2.5rem;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
+    margin-top: 0.5rem; /* Otherwise the warnings about versions look quite cramped */
 }
 .markdown h2 {
     font-size: 1.875rem;
     line-height: 2.25rem;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
 }
 .markdown h3 {
     font-size: 1.5rem;
     line-height: 2rem;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
 }
 .markdown h4 {
     font-size: 1.25rem;
     line-height: 1.75rem;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
 }
 .markdown h5 {
     font-size: 1.125rem;
     line-height: 1.75rem;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
 }
 .markdown h6 {
     line-height: 1.25;
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
 }
 .markdown :not(pre) code {
     background-color: #2d2d2d;
@@ -82,4 +71,8 @@
     @media (min-width: 640px) {
         padding-left: 2.5rem;
     }
+}
+.markdown details :not(summary) {
+    /* Makes dropdown text indented (don't worry, this actually looks quite good on mobile)  */
+    margin-left: 1.5rem;
 }
