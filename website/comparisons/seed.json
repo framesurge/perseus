@@ -1,0 +1,17 @@
+{
+    "name": "Seed",
+    "supports_ssg": "partial",
+    "supports_ssr": "none",
+    "supports_ssr_ssg_same_page": "none",
+    "supports_i18n": "none",
+    "supports_incremental": "none",
+    "supports_revalidation": "none",
+    "inbuilt_cli": "none",
+    "inbuilt_routing": "full",
+    "supports_shell": "full",
+    "supports_deployment": "none",
+    "supports_exporting": "none",
+    "language": "Rust",
+    "homepage_lighthouse_desktop": 100,
+    "homepage_lighthouse_mobile": 79
+}
