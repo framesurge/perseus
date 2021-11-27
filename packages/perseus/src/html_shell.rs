@@ -99,3 +99,46 @@ pub fn interpolate_page_data(html_shell: &str, page_data: &PageData, root_id: &s
         .replace(&html_to_replace_double, &html_replacement)
         .replace(&html_to_replace_single, &html_replacement)
 }
+
+/// Intepolates a fallback for locale redirection pages such that, even if JavaScript is disabled, the user will still be redirected to the default locale.
+/// From there, Perseus' inbuilt progressive enhancement can occur, but without this a user directed to an unlocalized page with JS disabled would see a
+/// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enable dbut Wasm is disabled.
+pub fn interpolate_locale_redirection_fallback(html_shell: &str, redirect_url: &str) -> String {
+    // This will be used if JavaScript is completely disabled (it's then the site's responsibility to show a further message)
+    let dumb_redirector = format!(
+        r#"<noscript>
+    <meta http-equiv="refresh" content="0; url=/{}" />
+</noscript>"#,
+        redirect_url
+    );
+    // This will be used if JS is enabled, but Wasm is disabled or not supported (it's then the site's responsibility to show a further message)
+    // Wasm support detector courtesy https://stackoverflow.com/a/47880734
+    let js_redirector = format!(
+        r#"<script>
+    function wasmSupported() {{
+        try {{
+            if (typeof WebAssembly === "object"
+                && typeof WebAssembly.instantiate === "function") {{
+                const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+                if (module instanceof WebAssembly.Module) {{
+                    return new WebAssembly.Instance(module) instanceof WebAssembly.Instance;
+                }}
+            }}
+        }} catch (e) {{}}
+        return false;
+    }}
+
+    if (!wasmSupported()) {{
+        window.location.replace("{}");
+    }}
+</script>"#,
+        redirect_url
+    );
+
+    let html = html_shell.replace(
+        "</head>",
+        &format!("{}\n{}\n</head>", js_redirector, dumb_redirector),
+    );
+
+    html
+}

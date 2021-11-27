@@ -1,5 +1,7 @@
 use crate::errors::*;
-use crate::html_shell::{interpolate_page_data, prep_html_shell};
+use crate::html_shell::{
+    interpolate_locale_redirection_fallback, interpolate_page_data, prep_html_shell,
+};
 use crate::locales::Locales;
 use crate::serve::get_render_cfg;
 use crate::serve::PageData;
@@ -87,12 +89,16 @@ pub async fn export_app(
         };
         // Create a locale detection file for it if we're using i18n
         // These just send the app shell, which will perform a redirect as necessary
+        // Notably, these also include fallback redirectors if either Wasm or JS is disabled (or both)
         // TODO put everything inside its own folder for initial loads?
         if locales.using_i18n {
             immutable_store
                 .write(
                     &format!("exported/{}.html", &initial_load_path),
-                    &html_shell,
+                    &interpolate_locale_redirection_fallback(
+                        &html_shell,
+                        &format!("{}/{}", locales.default, &path),
+                    ),
                 )
                 .await?;
         }

@@ -8,7 +8,9 @@ use perseus::{
         error_pages::ErrorPageData,
         i18n::{TranslationsManager, Translator},
         router::{match_route, RouteInfo, RouteVerdict},
-        serve::{get_page_for_template, interpolate_page_data},
+        serve::{
+            get_page_for_template, interpolate_locale_redirection_fallback, interpolate_page_data,
+        },
     },
     stores::{ImmutableStore, MutableStore},
     ErrorPages, SsrNode,
@@ -150,12 +152,16 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             http_res.body(final_html)
         }
         // For locale detection, we don't know the user's locale, so there's not much we can do except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
-        RouteVerdict::LocaleDetection(_) => {
+        RouteVerdict::LocaleDetection(path) => {
             // We use a `302 Found` status code to indicate a redirect
             // We 'should' generate a `Location` field for the redirect, but it's not RFC-mandated, so we can use the app shell
-            HttpResponse::Found()
-                .content_type("text/html")
-                .body(html_shell.get_ref())
+            HttpResponse::Found().content_type("text/html").body(
+                interpolate_locale_redirection_fallback(
+                    html_shell.get_ref(),
+                    // We'll redirect the user to the default locale
+                    &format!("{}/{}", opts.locales.default, path),
+                ),
+            )
         }
         RouteVerdict::NotFound => html_err(404, "page not found"),
     }
