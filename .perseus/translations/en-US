@@ -3,8 +3,10 @@
 
 perseus = Perseus
 sycamore = Sycamore
-navlinks-docs = Docs
-navlinks-comparisons = Comparisons
+navlinks =
+    .docs = Docs
+    .comparisons = Comparisons
+    .plugins = Plugins
 index-get-started = Get Started
 index-github = GitHub
 index-desc = Perseus is a web development framework built entirely in Rust, designed to empower efficient development of the next generation of lightning-fast sites for the modern web. It comes with server-side rendering, static site generation, internationalization, and inferred routing built-in, letting you build even the most complex sites in a breeze.
@@ -101,3 +103,18 @@ docs-version-switcher =
     .beta = v{ $version } (beta)
     .stable = v{ $version } (stable)
     .outdated = v{ $version } (outdated)
+
+plugins-title = Plugins
+plugins-title-full = Perseus Plugins
+plugin-card-author = By { $author }
+plugin-details =
+    .repo_link = Repository:
+    .crates_link = Crate page:
+    .docs_link = Docs:
+    .site_link = Site:
+    .metadata_heading = Metadata
+    .no_link_text = N/A
+plugin-search =
+    .placeholder = Search
+    .no_results = No results found.
+plugins-desc = These are all the public plugins for Perseus! If you've made a plugin, and you'd like it to be listed here, please open an issue on our repository!
