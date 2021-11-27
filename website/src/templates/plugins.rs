@@ -1,0 +1,155 @@
+// The structure of the `plugins` directory is to have a subdirectory for each locale, and then a list of plugins inside
+// Note that the same plugins must be defined for every locale
+
+use crate::components::container::{Container, ContainerProps};
+use crate::components::trusted_svg::TRUSTED_SVG;
+use perseus::{t, RenderFnResultWithCause, Template};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use sycamore::prelude::Template as SycamoreTemplate;
+use sycamore::prelude::*;
+use walkdir::WalkDir;
+use wasm_bindgen::JsCast;
+use web_sys::HtmlInputElement;
+
+#[derive(Serialize, Deserialize)]
+struct PluginsPageProps {
+    /// The list of plugins with minimal details. These will be displayed in cards on the
+    /// index page.
+    plugins: Vec<PluginDetails>,
+}
+/// The minimal amount of details for a plugin, which will be displayed in a card on the
+/// root page. This is a subset of `PluginDetails` (except for the `slug`). This needs to be `Eq` for Sycamore's keyed list diffing algorithm.
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+struct PluginDetails {
+    /// The plugins's name.
+    name: String,
+    /// A short description of the plugin.
+    description: String,
+    /// The author of the plugin.
+    author: String,
+    /// Whether or not the plugin is trusted by the Perseus development team. Note that this is just a superficial measure, and it does not indicate
+    /// security, audit status, or anything else of the like. It should NOT be relied on when deciding whether or not a plugin is secure!
+    trusted: bool,
+    /// The plugin's home URL, which the plugins registry will redirect the user to. This avoids developers having to update documentation in many places
+    /// or ask for the website to be rebuilt every time their READMEs change.
+    url: String,
+}
+
+#[perseus::template(PluginsPage)]
+#[component(PluginsPage<G>)]
+fn plugins_page(props: PluginsPageProps) -> SycamoreTemplate<G> {
+    let plugins = Signal::new(props.plugins);
+    // This will store the plugins relevant to the user's search (all of them by
+    // This stores the search that the user provides
+    let filter = Signal::new(String::new());
+    // A derived state that will filter the plugins that the user searches for
+    let filtered_plugins = create_memo(cloned!((plugins, filter) => move || {
+        plugins.get().iter().filter(|plugin| {
+            let filter_text = &*filter.get().to_lowercase();
+            plugin.name.to_lowercase().contains(filter_text) ||
+                plugin.author.to_lowercase().contains(filter_text) ||
+                plugin.description.to_lowercase().contains(filter_text)
+        }).cloned().collect::<Vec<PluginDetails>>()
+    }));
+    // This renders a single plugin card
+    let plugin_renderer = |plugin: PluginDetails| {
+        let PluginDetails {
+            name,
+            description,
+            author,
+            trusted,
+            url,
+        } = plugin;
+        template! {
+            li(class = "inline-block align-top m-2") {
+                a(
+                    class = "block text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm dark:text-white",
+                    href = &url // This is an external link to the plugin's homepage
+                ) {
+                    p(class = "text-xl xs:text-2xl inline-flex") {
+                        (name)
+                        (if trusted {
+                            template! {
+                                div(class = "ml-1 self-center", dangerously_set_inner_html = TRUSTED_SVG)
+                            }
+                        } else {
+                            SycamoreTemplate::empty()
+                        })
+                    }
+                    p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!("plugin-card-author", { "author": author.clone() })) }
+                    p { (description) }
+                }
+            }
+        }
+    };
+
+    template! {
+        Container(ContainerProps {
+            title: t!("perseus"),
+            children: template! {
+                div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
+                    div(class = "w-full flex flex-col justify-center text-center") {
+                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold mb-5") { (t!("plugins-title")) }
+                        br()
+                        p(class = "mx-1") { (t!("plugins-desc")) }
+                        // TODO Remove `hidden` class once next Sycamore version is released and search bar works again
+                        input(class = "mx-2 sm:mx-4 md:mx-8 p-3 rounded-lg border-2 border-indigo-600 mb-3 dark:bg-navy hidden", on:input = cloned!((filter) => move |ev| {
+                            // This longwinded code gets the actual value that the user typed in
+                            let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
+                            let new_input = target.value();
+                            filter.set(new_input);
+                        }), placeholder = t!("plugin-search.placeholder"))
+                    }
+                    div(class = "w-full flex justify-center") {
+                        ul(class = "text-center w-full max-w-7xl mx-2 mb-16") {
+                            Indexed(IndexedProps {
+                                iterable: filtered_plugins,
+                                template: plugin_renderer
+                            })
+                        }
+                    }
+                }
+            }
+        })
+    }
+}
+
+#[perseus::head]
+fn head() -> SycamoreTemplate<SsrNode> {
+    template! {
+        title { (format!("{} | {}", t!("plugins-title"), t!("perseus"))) }
+        link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
+    }
+}
+
+pub fn get_template<G: GenericNode>() -> Template<G> {
+    Template::new("plugins")
+        .template(plugins_page)
+        .head(head)
+        .build_state_fn(get_build_state)
+}
+
+#[perseus::autoserde(build_state)]
+async fn get_build_state(
+    _path: String,
+    locale: String,
+) -> RenderFnResultWithCause<PluginsPageProps> {
+    // This is the root page, so we want a list of plugins and a small amount of information about each
+    // This directory loop is relative to `.perseus/`
+    let mut plugins = Vec::new();
+    for entry in WalkDir::new(&format!("../plugins/{}", locale)) {
+        let entry = entry?;
+        let path = entry.path();
+        // Ignore any empty directories or the like
+        if path.is_file() {
+            // Get the JSON contents and parse them as plugin details
+            let contents = fs::read_to_string(&path)?;
+            let details = serde_json::from_str::<PluginDetails>(&contents)?;
+
+            plugins.push(details);
+        }
+    }
+
+    Ok(PluginsPageProps { plugins })
+}

@@ -1,5 +1,5 @@
 mod container;
-mod generation;
+pub mod generation; // This needs to be public so that we can reuse the `parse_md_to_html` function
 mod get_file_at_version;
 mod icons;
 mod template;

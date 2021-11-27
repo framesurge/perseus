@@ -2,16 +2,20 @@ use perseus::{link, t};
 use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
+// This is imported by all alternative containers as well
 pub static COPYRIGHT_YEARS: &str = "2021";
 
 #[component(NavLinks<G>)]
 pub fn nav_links() -> SycamoreTemplate<G> {
     template! {
         li(class = "m-3 p-1") {
-            a(href = link!("/docs"), class = "px-2") { (t!("navlinks-docs")) }
+            a(href = link!("/docs"), class = "px-2") { (t!("navlinks.docs")) }
         }
         li(class = "m-3 p-1") {
-            a(href = link!("/comparisons"), class = "px-2") { (t!("navlinks-comparisons")) }
+            a(href = link!("/comparisons"), class = "px-2") { (t!("navlinks.comparisons")) }
+        }
+        li(class = "m-3 p-1") {
+            a(href = link!("/plugins"), class = "px-2") { (t!("navlinks.plugins")) }
         }
     }
 }
