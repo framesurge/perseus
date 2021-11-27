@@ -6,6 +6,7 @@ use perseus::{
     errors::err_to_status_code,
     internal::{
         error_pages::ErrorPageData,
+        get_path_prefix_server,
         i18n::{TranslationsManager, Translator},
         router::{match_route, RouteInfo, RouteVerdict},
         serve::{
@@ -159,7 +160,12 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                 interpolate_locale_redirection_fallback(
                     html_shell.get_ref(),
                     // We'll redirect the user to the default locale
-                    &format!("{}/{}", opts.locales.default, path),
+                    &format!(
+                        "{}/{}/{}",
+                        get_path_prefix_server(),
+                        opts.locales.default,
+                        path
+                    ),
                 ),
             )
         }

@@ -6,7 +6,7 @@ use std::env;
 pub fn prep_html_shell(
     html_shell: String,
     render_cfg: &HashMap<String, String>,
-    path_prefix: String,
+    path_prefix: &str,
 ) -> String {
     // Define the script that will load the Wasm bundle (inlined to avoid unnecessary extra requests)
     let load_script = format!(
@@ -102,12 +102,13 @@ pub fn interpolate_page_data(html_shell: &str, page_data: &PageData, root_id: &s
 
 /// Intepolates a fallback for locale redirection pages such that, even if JavaScript is disabled, the user will still be redirected to the default locale.
 /// From there, Perseus' inbuilt progressive enhancement can occur, but without this a user directed to an unlocalized page with JS disabled would see a
-/// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enable dbut Wasm is disabled.
+/// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enabled but Wasm is disabled. Note that the redirect URL
+/// is expected to be generated with a path prefix inbuilt.
 pub fn interpolate_locale_redirection_fallback(html_shell: &str, redirect_url: &str) -> String {
     // This will be used if JavaScript is completely disabled (it's then the site's responsibility to show a further message)
     let dumb_redirector = format!(
         r#"<noscript>
-    <meta http-equiv="refresh" content="0; url=/{}" />
+    <meta http-equiv="refresh" content="0; url={}" />
 </noscript>"#,
         redirect_url
     );

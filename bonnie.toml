@@ -9,9 +9,27 @@ setup.cmd = [
     "mkdir -p examples/basic/.perseus/dist/exported",
     "bonnie copy-subcrates",
     "cargo build",
-    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss' and 'browser-sync' ('npm i -g tailwindcss browser-sync') if you'll be working with the website.\""
+    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `serve` and 'browser-sync' ('npm i -g tailwindcss serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.desc = "sets everything up for local development"
+
+dev.subcommands.export-serve.cmd = [
+    "bonnie dev example %example export",
+    "serve -p 8080 examples/%example/.perseus/dist/exported/"
+]
+dev.subcommands.export-serve.args = [ "example" ]
+dev.subcommands.export-serve.desc = "exports and serves the given example locally"
+dev.subcommands.export-serve-deploy-relative.cmd = [
+    "PERSEUS_BASE_PATH=http://localhost:8080/relative bonnie dev example %example deploy --export-static",
+    "cd examples/%example",
+    "mkdir pkg.new",
+    "mv pkg/ pkg.new/",
+    "mv pkg.new/ pkg/",
+    "mv pkg/pkg/ pkg/relative",
+    "serve -p 8080 pkg/"
+]
+dev.subcommands.export-serve-deploy-relative.args = [ "example" ]
+dev.subcommands.export-serve-deploy-relative.desc = "deploy exports and serves the given example at a relative local path"
 
 dev.subcommands.example.cmd = [
     "bonnie copy-subcrates",

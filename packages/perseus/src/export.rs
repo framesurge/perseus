@@ -60,7 +60,7 @@ pub async fn export_app(
             path: html_shell_path.to_string(),
             source: err,
         })?;
-    let html_shell = prep_html_shell(raw_html_shell, &render_cfg, path_prefix);
+    let html_shell = prep_html_shell(raw_html_shell, &render_cfg, &path_prefix);
 
     // Loop over every partial
     for (path, template_path) in render_cfg {
@@ -97,7 +97,8 @@ pub async fn export_app(
                     &format!("exported/{}.html", &initial_load_path),
                     &interpolate_locale_redirection_fallback(
                         &html_shell,
-                        &format!("{}/{}", locales.default, &path),
+                        // If we don't include  the path prefix, fallback redirection will fail for relative paths
+                        &format!("{}/{}/{}", path_prefix, locales.default, &path),
                     ),
                 )
                 .await?;
