@@ -37,7 +37,7 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
 
         // This doesn't navigate to the same page in the new version, because it may well not exist
         select(
-            class = "p-1 rounded-sm dark:bg-navy",
+            class = "p-2 rounded-md text-white bg-indigo-500",
             on:input = move |event| {
                 let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
                 let new_version = target.value();

@@ -14,14 +14,28 @@
     padding-left: 1em;
     display: block;
 }
-/* This makes nested lists look like `1.1.`, `1.2.`, etc. */
-.docs-links-markdown li:before {
-    content: counters(item, ".") ". ";
-    counter-increment: item;
-    font-weight: 500;
+.docs-links-markdown li a {
+    display: block;
+    width: 100%;
+    padding: 0.25rem;
+    padding-left: 0.5rem;
+    border-radius: 0.5rem;
+    transition-property: background-color, border-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 75ms;
 }
-.docs-links-markdown ul {
-    list-style-type: decimal;
-    list-style-position: inside;
-    counter-reset: item;
+.docs-links-markdown li a:hover {
+    color: white;
+    background-color: #6366F1;
 }
+/* /\* This makes nested lists look like `1.1.`, `1.2.`, etc. *\/ */
+/* .docs-links-markdown li:before { */
+/*     content: counters(item, ".") ". "; */
+/*     counter-increment: item; */
+/*     font-weight: 500; */
+/* } */
+/* .docs-links-markdown ul { */
+/*     list-style-type: decimal; */
+/*     list-style-position: inside; */
+/*     counter-reset: item; */
+/* } */
