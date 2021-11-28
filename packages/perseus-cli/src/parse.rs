@@ -28,6 +28,9 @@ pub enum Subcommand {
     /// Prepares the `.perseus/` directory (done automatically by `build` and `serve`)
     Prep,
     Tinker(TinkerOpts),
+    /// Runs one of the underlying commands that builds your app, allowing you to see more detailed logs
+    #[clap(subcommand)]
+    Snoop(SnoopSubcommand),
 }
 /// Builds your app
 #[derive(Parser)]
@@ -85,4 +88,14 @@ pub struct TinkerOpts {
     /// Force this command to run, even if you've ejected (this may result in some or all of your changes being removed, it depends on the plugins you're using)
     #[clap(long)]
     pub force: bool,
+}
+
+#[derive(Parser)]
+pub enum SnoopSubcommand {
+    /// Snoops on the static generation process (this will let you see `dbg!` calls and the like)
+    Build,
+    /// Snoops on the Wasm building process (mostly for debugging errors)
+    WasmBuild,
+    /// Snoops on the server process (run `perseus build` before this)
+    Serve,
 }

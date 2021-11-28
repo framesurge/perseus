@@ -36,6 +36,7 @@ mod export;
 pub mod parse;
 mod prepare;
 mod serve;
+mod snoop;
 mod thread;
 mod tinker;
 
@@ -54,6 +55,7 @@ pub use eject::{eject, has_ejected};
 pub use export::export;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
+pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};
 pub use tinker::tinker;
 
 /// Deletes a corrupted '.perseus/' directory. This will be called on certain error types that would leave the user with a half-finished

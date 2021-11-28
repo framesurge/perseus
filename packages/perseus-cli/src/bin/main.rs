@@ -1,11 +1,12 @@
 use clap::Parser;
 use fmterr::fmt_err;
-use perseus_cli::errors::*;
+use perseus_cli::parse::SnoopSubcommand;
 use perseus_cli::{
     build, check_env, delete_artifacts, delete_bad_dir, deploy, eject, export, has_ejected,
     parse::{Opts, Subcommand},
     prepare, serve, tinker,
 };
+use perseus_cli::{errors::*, snoop_build, snoop_server, snoop_wasm_build};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -150,6 +151,11 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
             }
             tinker(dir)?
         }
+        Subcommand::Snoop(snoop_subcmd) => match snoop_subcmd {
+            SnoopSubcommand::Build => snoop_build(dir)?,
+            SnoopSubcommand::WasmBuild => snoop_wasm_build(dir)?,
+            SnoopSubcommand::Serve => snoop_server(dir)?,
+        },
         Subcommand::Prep => {
             // The `.perseus/` directory has already been set up in the preliminaries, so we don't need to do anything here
             0
