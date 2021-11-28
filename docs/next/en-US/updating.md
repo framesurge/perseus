@@ -1,6 +1,6 @@
 # Migrating from v0.2.x
 
-> Perseus v0.3.0 is still in beta, and you'll need to explicitly specify the latest version (0.3.0-beta.17) in your `Cargo.toml` and when you install the CLI by using the `--version` flag.
+> Perseus v0.3.0 is still in beta, and you'll need to explicitly specify the latest version (0.3.0-beta.18) in your `Cargo.toml` and when you install the CLI by using the `--version` flag.
 
 Perseus v0.3.0 added significant architectural changes to Perseus under the hood, and also made it easier to use for you! Additionally, this update provides inbuilt deployment functionality for moving Perseus to production (though that's not recommended yet)! If you're currently running v0.2.x, here's how to upgrade!
 

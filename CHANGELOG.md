@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.18](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.17...v0.3.0-beta.18) (2021-11-28)
+
+
+### Features
+
+* **website:** made docs sidebar nicer ([107b9d3](https://github.com/arctic-hen7/perseus/commit/107b9d3264fb30602c672d359eb187d9b4c58f08))
+* added `perseus snoop` and docs for common pitfalls ([3c1a919](https://github.com/arctic-hen7/perseus/commit/3c1a919f074a99423f26f54a3761e3468b13d6d0))
+* **i18n:** added fallback non-wasm locale redirection ([589ac1b](https://github.com/arctic-hen7/perseus/commit/589ac1b85f4a035dec36aa19c92a0d2157cea71e))
+* **website:** added plugins registry ([de1c217](https://github.com/arctic-hen7/perseus/commit/de1c217f1073206bee5e493ca9571325735d0e71))
+
+
+### Bug Fixes
+
+* **cli:** 🐛 printed `stdout` and well as `stderr` if a stage fails ([ea1f1f1](https://github.com/arctic-hen7/perseus/commit/ea1f1f1f1ca9e45927eacfbbff6e8cd844f40221)), closes [#74](https://github.com/arctic-hen7/perseus/issues/74)
+* **exporting:** 🐛 fixed [#73](https://github.com/arctic-hen7/perseus/issues/73) ([a3f879c](https://github.com/arctic-hen7/perseus/commit/a3f879c20eb2bcfc4592cb41ff0e9052a98d4f84))
+* **i18n:** fixed fallback locale redirection with relative paths ([5095388](https://github.com/arctic-hen7/perseus/commit/5095388a275332af5069ef6e4fc94a9ad51b37aa))
+
+
+### Documentation Changes
+
+* **website:** added more comparisons ([d4dabaf](https://github.com/arctic-hen7/perseus/commit/d4dabaf1a7f4e8396fdecee1dfc03ab9fe99cee5))
+* made markdown styles more readable and fixed tldr link ([a74b285](https://github.com/arctic-hen7/perseus/commit/a74b2858155706cef6ed83e118062beb40b9f35d))
+* **book:** fixed dependency versions in docs ([2171e9c](https://github.com/arctic-hen7/perseus/commit/2171e9c196671a5aa10bffda1413eb9da566a1cf)), closes [#79](https://github.com/arctic-hen7/perseus/issues/79)
+* **readme:** updated contact links ([5f74b07](https://github.com/arctic-hen7/perseus/commit/5f74b07ec0c53851e904e5782e37266b33083f92)), closes [#77](https://github.com/arctic-hen7/perseus/issues/77)
+* ✏️ fixed typos in contributing guidelines ([#76](https://github.com/arctic-hen7/perseus/issues/76)) ([5dfedc1](https://github.com/arctic-hen7/perseus/commit/5dfedc16864718837be1a273fe0b28b1d1e24e46))
+
 ## [0.3.0-beta.17](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.16...v0.3.0-beta.17) (2021-11-07)
 
 
