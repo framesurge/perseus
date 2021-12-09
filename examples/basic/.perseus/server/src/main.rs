@@ -2,7 +2,7 @@ use actix_web::{App, HttpServer};
 use futures::executor::block_on;
 use perseus::plugins::PluginAction;
 use perseus::SsrNode;
-use perseus_actix_web::{configurer, Options};
+use perseus_actix_web::{configurer, ServerOptions};
 use perseus_engine::app::{
     get_app_root, get_error_pages_contained, get_immutable_store, get_locales, get_mutable_store,
     get_plugins, get_static_aliases, get_templates_map_contained, get_translations_manager,
@@ -60,7 +60,7 @@ async fn main() -> std::io::Result<()> {
         HttpServer::new(move || {
             // TODO find a way to configure the server with plugins without using `actix-web` in the `perseus` crate (it won't compile to Wasm)
             App::new().configure(block_on(configurer(
-                Options {
+                ServerOptions {
                     // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)
                     index: html_shell_path.to_string(), // The user must define their own `index.html` file
                     js_bundle: "dist/pkg/perseus_engine.js".to_string(),

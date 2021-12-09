@@ -35,4 +35,5 @@ mod initial_load;
 mod page_data;
 mod translations;
 
-pub use crate::configurer::{configurer, Options};
+pub use crate::configurer::configurer;
+pub use perseus::internal::serve::ServerOptions;

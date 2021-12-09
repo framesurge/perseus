@@ -1,8 +1,8 @@
 use crate::client_translations_manager::ClientTranslationsManager;
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
+use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
-use crate::serve::PageData;
 use crate::template::Template;
 use crate::ErrorPages;
 use fmterr::fmt_err;

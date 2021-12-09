@@ -1,16 +1,15 @@
 use crate::conv_req::convert_req;
-use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
 use perseus::{
     errors::err_to_status_code,
     internal::{
-        error_pages::ErrorPageData,
         get_path_prefix_server,
         i18n::{TranslationsManager, Translator},
         router::{match_route, RouteInfo, RouteVerdict},
         serve::{
-            get_page_for_template, interpolate_locale_redirection_fallback, interpolate_page_data,
+            build_error_page, get_path_slice, interpolate_locale_redirection_fallback,
+            interpolate_page_data, render::get_page_for_template, ServerOptions,
         },
     },
     stores::{ImmutableStore, MutableStore},
@@ -19,7 +18,7 @@ use perseus::{
 use std::collections::HashMap;
 use std::rc::Rc;
 
-/// Returns a fully formed error page to the client, with parameters for hydration.
+/// Builds on the internal Perseus primitives to provide a utility function that returns an `HttpResponse` automatically.
 fn return_error_page(
     url: &str,
     status: &u16,
@@ -30,51 +29,17 @@ fn return_error_page(
     html: &str,
     root_id: &str,
 ) -> HttpResponse {
-    let error_html = error_pages.render_to_string(url, status, err, translator);
-    // We create a JSON representation of the data necessary to hydrate the error page on the client-side
-    // Right now, translators are never included in transmitted error pages
-    let error_page_data = serde_json::to_string(&ErrorPageData {
-        url: url.to_string(),
-        status: *status,
-        err: err.to_string(),
-    })
-    .unwrap();
-    // Add a global variable that defines this as an error
-    let state_var = format!(
-        "<script>window.__PERSEUS_INITIAL_STATE = `error-{}`;</script>",
-        error_page_data
-            // We escape any backslashes to prevent their interfering with JSON delimiters
-            .replace(r#"\"#, r#"\\"#)
-            // We escape any backticks, which would interfere with JS's raw strings system
-            .replace(r#"`"#, r#"\`"#)
-            // We escape any interpolations into JS's raw string system
-            .replace(r#"${"#, r#"\${"#)
-    );
-    let html_with_declaration = html.replace("</head>", &format!("{}\n</head>", state_var));
-    // Interpolate the error page itself
-    let html_to_replace_double = format!("<div id=\"{}\">", root_id);
-    let html_to_replace_single = format!("<div id='{}'>", root_id);
-    let html_replacement = format!(
-        // We give the content a specific ID so that it can be hydrated properly
-        "{}<div id=\"__perseus_content_initial\" class=\"__perseus_content\">{}</div>",
-        &html_to_replace_double,
-        &error_html
-    );
-    // Now interpolate that HTML into the HTML shell
-    let final_html = html_with_declaration
-        .replace(&html_to_replace_double, &html_replacement)
-        .replace(&html_to_replace_single, &html_replacement);
-
+    let html = build_error_page(url, status, err, translator, error_pages, html, root_id);
     HttpResponse::build(StatusCode::from_u16(*status).unwrap())
         .content_type("text/html")
-        .body(final_html)
+        .body(html)
 }
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
 /// the app shell.
 pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
-    opts: web::Data<Options>,
+    opts: web::Data<Rc<ServerOptions>>,
     html_shell: web::Data<String>,
     render_cfg: web::Data<HashMap<String, String>>,
     immutable_store: web::Data<ImmutableStore>,
@@ -84,11 +49,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
     let path = req.path();
-    let path_slice: Vec<&str> = path
-        .split('/')
-        // Removing empty elements is particularly important, because the path will have a leading `/`
-        .filter(|p| !p.is_empty())
-        .collect();
+    let path_slice = get_path_slice(path);
     // Create a closure to make returning error pages easier (most have the same data)
     let html_err = |status: u16, err: &str| {
         return return_error_page(

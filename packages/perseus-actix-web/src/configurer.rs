@@ -6,53 +6,24 @@ use actix_web::{web, HttpRequest};
 use perseus::{
     internal::{
         get_path_prefix_server,
-        i18n::{Locales, TranslationsManager},
-        serve::{get_render_cfg, prep_html_shell},
+        i18n::TranslationsManager,
+        serve::{get_render_cfg, prep_html_shell, ServerOptions},
     },
     stores::{ImmutableStore, MutableStore},
-    templates::TemplateMap,
-    ErrorPages, SsrNode,
 };
-use std::collections::HashMap;
 use std::fs;
+use std::rc::Rc;
 
-/// The options for setting up the Actix Web integration. This should be literally constructed, as nothing is optional.
-#[derive(Clone)]
-pub struct Options {
-    /// The location on the filesystem of your JavaScript bundle.
-    pub js_bundle: String,
-    /// The location on the filesystem of your Wasm bundle.
-    pub wasm_bundle: String,
-    /// The location on the filesystem of your `index.html` file that includes the JS bundle.
-    pub index: String,
-    /// A `HashMap` of your app's templates by their paths.
-    pub templates_map: TemplateMap<SsrNode>,
-    /// The locales information for the app.
-    pub locales: Locales,
-    /// The HTML `id` of the element at which to render Perseus. On the server-side, interpolation will be done here in a highly
-    /// efficient manner by not parsing the HTML, so this MUST be of the form `<div id="root_id">` in your markup (double or single
-    /// quotes, `root_id` replaced by what this property is set to).
-    pub root_id: String,
-    /// The location of the JS interop snippets to be served as static files.
-    pub snippets: String,
-    /// The error pages for the app. These will be server-rendered if an initial load fails.
-    pub error_pages: ErrorPages<SsrNode>,
-    /// Directories to serve static content from, mapping URL to folder path. Note that the URL provided will be gated behind
-    /// `.perseus/static/`, and must have a leading `/`. If you're using a CMS instead, you should set these up outside the Perseus
-    /// server (but they might still be on the same machine, you can still add more routes after Perseus is configured).
-    pub static_dirs: HashMap<String, String>,
-    /// A map of URLs to act as aliases for certain static resources. These are particularly designed for things like a site manifest or
-    /// favicons, which should be stored in a static directory, but need to be aliased at a path like `/favicon.ico`.
-    pub static_aliases: HashMap<String, String>,
-}
-
-async fn js_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
+async fn js_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.js_bundle)
 }
-async fn wasm_bundle(opts: web::Data<Options>) -> std::io::Result<NamedFile> {
+async fn wasm_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.wasm_bundle)
 }
-async fn static_alias(opts: web::Data<Options>, req: HttpRequest) -> std::io::Result<NamedFile> {
+async fn static_alias(
+    opts: web::Data<Rc<ServerOptions>>,
+    req: HttpRequest,
+) -> std::io::Result<NamedFile> {
     let filename = opts.static_aliases.get(req.path());
     let filename = match filename {
         Some(filename) => filename,
@@ -65,11 +36,12 @@ async fn static_alias(opts: web::Data<Options>, req: HttpRequest) -> std::io::Re
 /// Configures an existing Actix Web app for Perseus. This returns a function that does the configuring so it can take arguments. This
 /// includes a complete wildcard handler (`*`), and so it should be configured after any other routes on your server.
 pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'static>(
-    opts: Options,
+    opts: ServerOptions,
     immutable_store: ImmutableStore,
     mutable_store: M,
     translations_manager: T,
 ) -> impl Fn(&mut web::ServiceConfig) {
+    let opts = Rc::new(opts); // TODO Find a more efficient way of doing this
     let render_cfg = get_render_cfg(&immutable_store)
         .await
         .expect("Couldn't get render configuration!");

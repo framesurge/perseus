@@ -1,43 +1,14 @@
-// This file contains the universal logic for a serving process, regardless of framework
-
 use crate::decode_time_str::decode_time_str;
 use crate::errors::*;
+use crate::page_data::PageData;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{States, Template, TemplateMap};
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
 use crate::Request;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::SsrNode;
-
-/// Represents the data necessary to render a page, including document metadata.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PageData {
-    /// Prerendered HTML content.
-    pub content: String,
-    /// The state for hydration. This is kept as a string for ease of typing. Some pages may not need state or generate it in another way,
-    /// so this might be `None`.
-    pub state: Option<String>,
-    /// The string to interpolate into the document's `<head>`.
-    pub head: String,
-}
-
-/// Gets the configuration of how to render each page using an immutable store.
-pub async fn get_render_cfg(
-    immutable_store: &ImmutableStore,
-) -> Result<HashMap<String, String>, ServerError> {
-    let content = immutable_store.read("render_conf.json").await?;
-    let cfg = serde_json::from_str::<HashMap<String, String>>(&content).map_err(|e| {
-        // We have to convert it into a build error and then into a server error
-        let build_err: BuildError = e.into();
-        build_err
-    })?;
-
-    Ok(cfg)
-}
 
 /// Renders a template that uses state generated at build-time. This can't be used for pages that revalidate because their data are
 /// stored in a mutable store.
