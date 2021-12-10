@@ -35,7 +35,7 @@ pub enum ServerError {
         cause: ErrorCause,
         // This will be triggered by the user's custom render functions, which should be able to have any error type
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     #[error(transparent)]
     StoreError(#[from] StoreError),
@@ -71,13 +71,13 @@ pub enum StoreError {
     ReadFailed {
         name: String,
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     #[error("asset '{name}' couldn't be written to store")]
     WriteFailed {
         name: String,
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
 }
 
@@ -97,7 +97,7 @@ pub enum FetchError {
     SerFailed {
         url: String,
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
 }
 
@@ -163,12 +163,12 @@ pub enum ErrorCause {
 #[derive(Debug)]
 pub struct GenericErrorWithCause {
     /// The underlying error.
-    pub error: Box<dyn std::error::Error>,
+    pub error: Box<dyn std::error::Error + Send + Sync>,
     /// The cause of the error.
     pub cause: ErrorCause,
 }
 // We should be able to convert any error into this easily (e.g. with `?`) with the default being to blame the server
-impl<E: std::error::Error + 'static> From<E> for GenericErrorWithCause {
+impl<E: std::error::Error + Send + Sync + 'static> From<E> for GenericErrorWithCause {
     fn from(error: E) -> Self {
         Self {
             error: error.into(),

@@ -1,6 +1,6 @@
 use crate::translator::errors::*;
-use fluent_bundle::{FluentArgs, FluentBundle, FluentResource};
-use std::rc::Rc;
+use fluent_bundle::{bundle::FluentBundle, FluentArgs, FluentResource};
+use intl_memoizer::concurrent::IntlLangMemoizer;
 use sycamore::context::use_context;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
@@ -13,9 +13,11 @@ pub const FLUENT_TRANSLATOR_FILE_EXT: &str = "ftl";
 ///
 /// Fluent supports compound messages, with many variants, which can specified here using the form `[id].[variant]` in a translation ID,
 /// as a `.` is not valid in an ID anyway, and so can be used as a delimiter. More than one dot will result in an error.
+///
+/// Note that this uses the concurrent version of `FluentBundle` to support server-side usage.
 pub struct FluentTranslator {
     /// Stores the internal Fluent data for translating. This bundle directly owns its attached resources (translations).
-    bundle: Rc<FluentBundle<FluentResource>>,
+    bundle: FluentBundle<FluentResource, IntlLangMemoizer>,
     /// The locale for which translations are being managed by this instance.
     locale: String,
 }
@@ -39,7 +41,8 @@ impl FluentTranslator {
                     source: Box::new(err),
                 }
             })?;
-        let mut bundle = FluentBundle::new(vec![lang_id]);
+        let mut bundle: FluentBundle<FluentResource, _> =
+            FluentBundle::new_concurrent(vec![lang_id]);
         bundle.add_resource(resource).map_err(|errs| {
             TranslatorError::TranslationsStrSerFailed {
                 locale: locale.clone(),
@@ -51,10 +54,7 @@ impl FluentTranslator {
             }
         })?;
 
-        Ok(Self {
-            bundle: Rc::new(bundle),
-            locale,
-        })
+        Ok(Self { bundle, locale })
     }
     /// Gets the path to the given URL in whatever locale the instance is configured for. This also applies the path prefix.
     pub fn url(&self, url: &str) -> String {
@@ -156,8 +156,8 @@ impl FluentTranslator {
         }
     }
     /// Gets the Fluent bundle for more advanced translation requirements.
-    pub fn get_bundle(&self) -> Rc<FluentBundle<FluentResource>> {
-        Rc::clone(&self.bundle)
+    pub fn get_bundle(&self) -> &FluentBundle<FluentResource, IntlLangMemoizer> {
+        &self.bundle
     }
 }
 

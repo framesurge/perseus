@@ -62,7 +62,7 @@ impl States {
 }
 /// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
 /// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
-pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 /// A generic error type that can be adapted for any errors the user may want to return from a render function, as with `RenderFnResult<T>`.
 /// However, this also includes a mandatory statement of causation for any errors, which assigns blame for them to either the client
 /// or the server. In cases where this is ambiguous, this allows returning accurate HTTP status codes.
@@ -73,7 +73,7 @@ pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
 /// A generic return type for asynchronous functions that we need to store in a struct.
-type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T>>>;
+type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
 
 /// Creates traits that prevent users from having to pin their functions' return types. We can't make a generic one until desugared function
 /// types are stabilized (https://github.com/rust-lang/rust/issues/29625).
@@ -97,7 +97,7 @@ macro_rules! make_async_trait {
                     $arg,
                 )*
             ) -> F,
-            F: Future<Output = $return_ty> + 'static,
+            F: Future<Output = $return_ty> + Send + Sync + 'static,
         {
             fn call(
                 &self,

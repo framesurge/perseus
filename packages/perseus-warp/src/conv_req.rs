@@ -1,9 +1,8 @@
 use perseus::http;
-use warp::hyper::body::Bytes;
 use warp::{path::FullPath, Filter, Rejection};
 
 /// A Warp filter for extracting an HTTP request directly, which is slightly different to how the Actix Web integration handles this. Modified from [here](https://github.com/seanmonstar/warp/issues/139#issuecomment-853153712).
-pub fn get_http_req() -> impl Filter<Extract = (http::Request<Bytes>,), Error = Rejection> + Copy {
+pub fn get_http_req() -> impl Filter<Extract = (http::Request<()>,), Error = Rejection> + Copy {
     warp::any()
         .and(warp::method())
         .and(warp::filters::path::full())
@@ -19,11 +18,11 @@ pub fn get_http_req() -> impl Filter<Extract = (http::Request<Bytes>,), Error = 
             let mut request = http::Request::builder()
                 .method(method)
                 .uri(uri)
-                .body(bytes)
+                .body(()) // We don't do anything with the body in Perseus, so this is irrelevant
                 .unwrap();
 
             *request.headers_mut() = headers;
 
-            Ok::<http::Request<Bytes>, Rejection>(request)
+            Ok::<http::Request<()>, Rejection>(request)
         })
 }

@@ -1,6 +1,6 @@
 use fmterr::fmt_err;
 use perseus::internal::{i18n::TranslationsManager, serve::ServerOptions};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use warp::http::Response;
 
 pub async fn translations_handler<T: TranslationsManager>(

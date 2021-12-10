@@ -14,7 +14,7 @@ use perseus::{
     ErrorPages, SsrNode,
 };
 use std::{collections::HashMap, rc::Rc, sync::Arc};
-use warp::http::Response;
+use warp::{http::Response, path::FullPath};
 
 /// Builds on the internal Perseus primitives to provide a utility function that returns a `Response` automatically.
 fn return_error_page(
@@ -33,8 +33,8 @@ fn return_error_page(
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
 /// the app shell.
-pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
-    path: String,
+pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
+    path: FullPath,
     req: perseus::http::Request<()>,
     opts: Arc<ServerOptions>,
     html_shell: Arc<String>,
@@ -43,6 +43,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
 ) -> Response<String> {
+    let path = path.as_str();
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
     let path_slice = get_path_slice(&path);

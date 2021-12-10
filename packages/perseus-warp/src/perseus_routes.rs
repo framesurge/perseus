@@ -1,4 +1,6 @@
+use crate::initial_load::initial_load_handler;
 use crate::page_data::page_handler;
+use crate::static_content::static_dirs_handler;
 use crate::{
     conv_req::get_http_req,
     page_data::PageDataReq,
@@ -10,23 +12,17 @@ use perseus::{
     internal::{get_path_prefix_server, i18n::TranslationsManager, serve::prep_html_shell},
     stores::{ImmutableStore, MutableStore},
 };
-use std::{
-    fs,
-    sync::{Arc, Mutex, RwLock},
-};
-use warp::{
-    path::{FullPath, Tail},
-    Filter,
-};
+use std::{fs, sync::Arc};
+use warp::Filter;
 
 /// The routes for Perseus. These will configure an existing Warp instance to run Perseus, and should be provided after any other routes, as they include a wildcard
 /// route.
-pub async fn perseus_routes<M: MutableStore, T: TranslationsManager>(
+pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     opts: ServerOptions,
     immutable_store: ImmutableStore,
     mutable_store: M,
     translations_manager: T,
-) {
+) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let render_cfg = get_render_cfg(&immutable_store)
         .await
         .expect("Couldn't get render configuration!");
@@ -34,37 +30,73 @@ pub async fn perseus_routes<M: MutableStore, T: TranslationsManager>(
     let index_with_render_cfg = prep_html_shell(index_file, &render_cfg, &get_path_prefix_server());
 
     // Handle static files
-    let js_bundle = warp::path(".perseus/bundle.js").and(warp::fs::file(opts.js_bundle.clone()));
-    let wasm_bundle =
-        warp::path(".perseus/bundle.wasm").and(warp::fs::file(opts.wasm_bundle.clone()));
+    let js_bundle = warp::path(".perseus/bundle.js")
+        .and(warp::path::end())
+        .and(warp::fs::file(opts.js_bundle.clone()));
+    let wasm_bundle = warp::path(".perseus/bundle.wasm")
+        .and(warp::path::end())
+        .and(warp::fs::file(opts.wasm_bundle.clone()));
     // Handle JS interop snippets (which need to be served as separate files)
     let snippets = warp::path(".perseus/snippets").and(warp::fs::dir(opts.snippets.clone()));
     // Handle static content in the user-set directories (this will all be under `/.perseus/static`)
-    let static_dirs = warp::path(".perseus/static")
-        .and(static_dirs_filter(opts.static_dirs.clone()))
-        .map(|dir_to_serve| warp::fs::dir(dir_to_serve));
+    let static_dirs =
+        warp::path(".perseus/static").and(static_dirs_filter(opts.static_dirs.clone()));
+    // .and(static_dirs_handler);
     // Handle static aliases
     let static_aliases = warp::any()
         .and(static_aliases_filter(opts.static_aliases.clone()))
         .map(|file_to_serve| warp::fs::file(file_to_serve));
 
     // Define some filters to handle all the data we want to pass through
-    let opts = Arc::new(Mutex::new(opts));
-    // let opts = warp::any().map(|| opts.clone());
+    let opts = Arc::new(opts);
+    let opts = warp::any().map(move || opts.clone());
     let immutable_store = Arc::new(immutable_store);
-    let immutable_store = warp::any().map(|| immutable_store.clone());
+    let immutable_store = warp::any().map(move || immutable_store.clone());
     let mutable_store = Arc::new(mutable_store);
-    let mutable_store = warp::any().map(|| mutable_store.clone());
+    let mutable_store = warp::any().map(move || mutable_store.clone());
     let translations_manager = Arc::new(translations_manager);
-    let translations_manager = warp::any().map(|| translations_manager.clone());
+    let translations_manager = warp::any().map(move || translations_manager.clone());
+    let html_shell = Arc::new(index_with_render_cfg);
+    let html_shell = warp::any().map(move || html_shell.clone());
+    let render_cfg = Arc::new(render_cfg);
+    let render_cfg = warp::any().map(move || render_cfg.clone());
 
-    // TODO Handle getting translations (needs the locale, the server options, and the translations manager)
-    // let translations = warp::path!(".perseus/translations" / String).then({
-    //     |locale| async move {
-    //         let opts = opts.lock().unwrap();
-    //         format!("{}", opts.index)
-    //     }
-    // });
-    // TODO Handle getting the static HTML/JSON of a page (used for subsequent loads)
-    // TODO Handle initial loads (we use a wildcard for this)
+    // Handle getting translations
+    let translations = warp::path!(".perseus/translations" / String)
+        .and(opts.clone())
+        .and(translations_manager.clone())
+        .then(translations_handler);
+    // Handle getting the static HTML/JSON of a page (used for subsequent loads)
+    let page_data = warp::path!(".perseus/page" / String / ..)
+        .and(warp::path::tail())
+        .and(warp::query::<PageDataReq>())
+        .and(get_http_req())
+        .and(opts.clone())
+        .and(immutable_store.clone())
+        .and(mutable_store.clone())
+        .and(translations_manager.clone());
+    // .then(page_handler);
+    // Handle initial loads (we use a wildcard for this)
+    let initial_loads = warp::any()
+        .and(warp::path::full())
+        .and(get_http_req())
+        .and(opts.clone())
+        .and(html_shell.clone())
+        .and(render_cfg.clone())
+        .and(immutable_store.clone())
+        .and(mutable_store.clone())
+        .and(translations_manager.clone());
+    // .then(initial_load_handler);
+
+    // Now put all those routes together in the final thing (the user will add this to an existing Warp server)
+    let routes = js_bundle
+        .or(wasm_bundle)
+        .or(snippets)
+        // .or(static_dirs)
+        // .or(static_aliases)
+        .or(translations);
+    // .or(page_data);
+    // .or(initial_loads);
+
+    routes
 }

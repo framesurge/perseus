@@ -1,6 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::Infallible};
 
 use warp::{
+    http::Response,
     path::{FullPath, Tail},
     Filter, Rejection,
 };
@@ -55,4 +56,16 @@ pub fn static_aliases_filter(
                 }
             },
         )
+}
+
+/// A handler for the static aliases.
+pub fn static_aliases_handler(file_to_serve: String) -> Result<Response<String>, Infallible> {
+    // Ok(warp::fs::file(file_to_serve));
+    todo!()
+}
+
+/// A handler for static content directories.
+pub fn static_dirs_handler(dir_to_serve: String) -> Result<Response<String>, Infallible> {
+    // Ok(warp::fs::dir(dir_to_serve));
+    todo!()
 }
