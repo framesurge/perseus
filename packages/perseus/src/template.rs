@@ -10,6 +10,7 @@ use http::header::HeaderMap;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
+use std::sync::Arc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
 
@@ -135,29 +136,29 @@ make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
 /// given `Option`. If you're using i18n, an `Rc<Translator>` will also be made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
-pub type TemplateFn<G> = Rc<dyn Fn(Option<String>) -> SycamoreTemplate<G>>;
+pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> SycamoreTemplate<G> + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just a template function that will always be server-side
 /// rendered in function (it may be rendered on the client, but it will always be used to create an HTML string, rather than a reactive
 /// template).
 pub type HeadFn = TemplateFn<SsrNode>;
 /// The type of functions that modify HTTP response headers.
-pub type SetHeadersFn = Rc<dyn Fn(Option<String>) -> HeaderMap>;
+pub type SetHeadersFn = Box<dyn Fn(Option<String>) -> HeaderMap + Send + Sync>;
 /// The type of functions that get build paths.
-pub type GetBuildPathsFn = Rc<dyn GetBuildPathsFnType>;
+pub type GetBuildPathsFn = Box<dyn GetBuildPathsFnType + Send + Sync>;
 /// The type of functions that get build state.
-pub type GetBuildStateFn = Rc<dyn GetBuildStateFnType>;
+pub type GetBuildStateFn = Box<dyn GetBuildStateFnType + Send + Sync>;
 /// The type of functions that get request state.
-pub type GetRequestStateFn = Rc<dyn GetRequestStateFnType>;
+pub type GetRequestStateFn = Box<dyn GetRequestStateFnType + Send + Sync>;
 /// The type of functions that check if a template sghould revalidate.
-pub type ShouldRevalidateFn = Rc<dyn ShouldRevalidateFnType>;
+pub type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType + Send + Sync>;
 /// The type of functions that amalgamate build and request states.
-pub type AmalgamateStatesFn = Rc<dyn Fn(States) -> RenderFnResultWithCause<Option<String>>>;
+pub type AmalgamateStatesFn =
+    Box<dyn Fn(States) -> RenderFnResultWithCause<Option<String>> + Send + Sync>;
 
 /// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
 /// All properties for templates are passed around as strings to avoid type maps and other horrible things, this only adds one extra
 /// deserialization call at build time. This only actually owns a two `String`s and a `bool`.
-#[derive(Clone)]
 pub struct Template<G: GenericNode> {
     /// The path to the root of the template. Any build paths will be inserted under this.
     path: String,
@@ -207,11 +208,11 @@ impl<G: GenericNode> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Rc::new(|_: Option<String>| sycamore::template! {}),
+            template: Box::new(|_: Option<String>| sycamore::template! {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
-            head: Rc::new(|_: Option<String>| sycamore::template! {}),
+            head: Box::new(|_: Option<String>| sycamore::template! {}),
             // We create sensible header defaults here
-            set_headers: Rc::new(|_: Option<String>| default_headers()),
+            set_headers: Box::new(|_: Option<String>| default_headers()),
             get_build_paths: None,
             incremental_generation: false,
             get_build_state: None,
@@ -445,9 +446,9 @@ impl<G: GenericNode> Template<G> {
     /// Sets the template rendering function to use.
     pub fn template(
         mut self,
-        val: impl Fn(Option<String>) -> SycamoreTemplate<G> + 'static,
+        val: impl Fn(Option<String>) -> SycamoreTemplate<G> + Send + Sync + 'static,
     ) -> Template<G> {
-        self.template = Rc::new(val);
+        self.template = Box::new(val);
         self
     }
     /// Sets the document head rendering function to use.
@@ -455,12 +456,12 @@ impl<G: GenericNode> Template<G> {
     #[allow(unused_variables)]
     pub fn head(
         mut self,
-        val: impl Fn(Option<String>) -> SycamoreTemplate<SsrNode> + 'static,
+        val: impl Fn(Option<String>) -> SycamoreTemplate<SsrNode> + Send + Sync + 'static,
     ) -> Template<G> {
         // Headers are always prerendered on the server-side
         #[cfg(feature = "server-side")]
         {
-            self.head = Rc::new(val);
+            self.head = Box::new(val);
         }
         self
     }
@@ -469,21 +470,24 @@ impl<G: GenericNode> Template<G> {
     #[allow(unused_variables)]
     pub fn set_headers_fn(
         mut self,
-        val: impl Fn(Option<String>) -> HeaderMap + 'static,
+        val: impl Fn(Option<String>) -> HeaderMap + Send + Sync + 'static,
     ) -> Template<G> {
         #[cfg(feature = "server-side")]
         {
-            self.set_headers = Rc::new(val);
+            self.set_headers = Box::new(val);
         }
         self
     }
     /// Enables the *build paths* strategy with the given function.
     #[allow(unused_mut)]
     #[allow(unused_variables)]
-    pub fn build_paths_fn(mut self, val: impl GetBuildPathsFnType + 'static) -> Template<G> {
+    pub fn build_paths_fn(
+        mut self,
+        val: impl GetBuildPathsFnType + Send + Sync + 'static,
+    ) -> Template<G> {
         #[cfg(feature = "server-side")]
         {
-            self.get_build_paths = Some(Rc::new(val));
+            self.get_build_paths = Some(Box::new(val));
         }
         self
     }
@@ -500,20 +504,26 @@ impl<G: GenericNode> Template<G> {
     /// Enables the *build state* strategy with the given function.
     #[allow(unused_mut)]
     #[allow(unused_variables)]
-    pub fn build_state_fn(mut self, val: impl GetBuildStateFnType + 'static) -> Template<G> {
+    pub fn build_state_fn(
+        mut self,
+        val: impl GetBuildStateFnType + Send + Sync + 'static,
+    ) -> Template<G> {
         #[cfg(feature = "server-side")]
         {
-            self.get_build_state = Some(Rc::new(val));
+            self.get_build_state = Some(Box::new(val));
         }
         self
     }
     /// Enables the *request state* strategy with the given function.
     #[allow(unused_mut)]
     #[allow(unused_variables)]
-    pub fn request_state_fn(mut self, val: impl GetRequestStateFnType + 'static) -> Template<G> {
+    pub fn request_state_fn(
+        mut self,
+        val: impl GetRequestStateFnType + Send + Sync + 'static,
+    ) -> Template<G> {
         #[cfg(feature = "server-side")]
         {
-            self.get_request_state = Some(Rc::new(val));
+            self.get_request_state = Some(Box::new(val));
         }
         self
     }
@@ -522,11 +532,11 @@ impl<G: GenericNode> Template<G> {
     #[allow(unused_variables)]
     pub fn should_revalidate_fn(
         mut self,
-        val: impl ShouldRevalidateFnType + 'static,
+        val: impl ShouldRevalidateFnType + Send + Sync + 'static,
     ) -> Template<G> {
         #[cfg(feature = "server-side")]
         {
-            self.should_revalidate = Some(Rc::new(val));
+            self.should_revalidate = Some(Box::new(val));
         }
         self
     }
@@ -546,11 +556,11 @@ impl<G: GenericNode> Template<G> {
     #[allow(unused_variables)]
     pub fn amalgamate_states_fn(
         mut self,
-        val: impl Fn(States) -> RenderFnResultWithCause<Option<String>> + 'static,
+        val: impl Fn(States) -> RenderFnResultWithCause<Option<String>> + Send + Sync + 'static,
     ) -> Template<G> {
         #[cfg(feature = "server-side")]
         {
-            self.amalgamate_states = Some(Rc::new(val));
+            self.amalgamate_states = Some(Box::new(val));
         }
         self
     }
@@ -568,7 +578,7 @@ macro_rules! get_templates_map {
             $(
                 map.insert(
                     $template.get_path(),
-                    $template
+                    ::std::rc::Rc::new($template)
                 );
             )+
 
@@ -577,8 +587,33 @@ macro_rules! get_templates_map {
     };
 }
 
-/// A type alias for a `HashMap` of `Template`s.
-pub type TemplateMap<G> = HashMap<String, Template<G>>;
+/// Gets a `HashMap` of the given templates by their paths for serving. This should be manually wrapped for the pages your app provides
+/// for convenience.
+///
+/// This is the thread-safe version, which should only be used on the server.
+#[macro_export]
+macro_rules! get_templates_map_atomic {
+    [
+        $($template:expr),+
+    ] => {
+        {
+            let mut map = ::std::collections::HashMap::new();
+            $(
+                map.insert(
+                    $template.get_path(),
+                    ::std::sync::Arc::new($template)
+                );
+            )+
+
+            map
+        }
+    };
+}
+
+/// A type alias for a `HashMap` of `Template`s. This uses `Rc`s to make the `Template`s cloneable. In server-side multithreading, `ArcTemplateMap` should be used instead.
+pub type TemplateMap<G> = HashMap<String, Rc<Template<G>>>;
+/// A type alias for a `HashMap` of `Template`s that uses `Arc`s for thread-safety. If you don't need to share templates between threads, use `TemplateMap` instead.
+pub type ArcTemplateMap<G> = HashMap<String, Arc<Template<G>>>;
 
 /// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
 /// because it uses Sycamore context.

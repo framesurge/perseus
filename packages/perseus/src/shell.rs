@@ -214,7 +214,7 @@ pub enum InitialState {
 // TODO handle exceptions higher up
 pub async fn app_shell(
     path: String,
-    (template, was_incremental_match): (Template<DomNode>, bool),
+    (template, was_incremental_match): (Rc<Template<DomNode>>, bool),
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,

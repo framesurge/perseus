@@ -1,6 +1,6 @@
 use crate::error_pages::ErrorPages;
 use crate::locales::Locales;
-use crate::template::TemplateMap;
+use crate::template::ArcTemplateMap;
 use crate::SsrNode;
 use std::collections::HashMap;
 
@@ -15,7 +15,7 @@ pub struct ServerOptions {
     // TODO Should this actually be a raw string of HTML so plugins can inject efficiently?
     pub index: String,
     /// A `HashMap` of your app's templates by their paths.
-    pub templates_map: TemplateMap<SsrNode>,
+    pub templates_map: ArcTemplateMap<SsrNode>,
     /// The locales information for the app.
     pub locales: Locales,
     /// The HTML `id` of the element at which to render Perseus. On the server-side, interpolation will be done here in a highly

@@ -5,7 +5,7 @@ use perseus::SsrNode;
 use perseus_actix_web::{configurer, ServerOptions};
 use perseus_engine::app::{
     get_app_root, get_error_pages_contained, get_immutable_store, get_locales, get_mutable_store,
-    get_plugins, get_static_aliases, get_templates_map_contained, get_translations_manager,
+    get_plugins, get_static_aliases, get_templates_map_atomic_contained, get_translations_manager,
 };
 use std::collections::HashMap;
 use std::env;
@@ -68,7 +68,7 @@ async fn main() -> std::io::Result<()> {
                     wasm_bundle: "dist/pkg/perseus_engine_bg.wasm".to_string(),
                     // It's a nightmare to get the templates map to take plugins, so we use a self-contained version
                     // TODO reduce allocations here
-                    templates_map: get_templates_map_contained(),
+                    templates_map: get_templates_map_atomic_contained(),
                     locales: locales.clone(),
                     root_id: app_root.to_string(),
                     snippets: "dist/pkg/snippets".to_string(),

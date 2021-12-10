@@ -331,6 +331,15 @@ macro_rules! define_app {
             ]
         }
 
+        /// Gets a map of all the templates in the app by their root paths. This returns a `HashMap` that is plugin-extensible.
+        ///
+        /// This is the thread-safe version, which should only be called on the server.
+        pub fn get_templates_map_atomic<G: $crate::GenericNode>() -> $crate::templates::ArcTemplateMap<G> {
+            $crate::get_templates_map_atomic![
+                $($template),+
+            ]
+        }
+
         /// Gets the error pages (done here so the user doesn't have to worry about naming). This is plugin-extensible.
         pub fn get_error_pages<G: $crate::GenericNode>() -> $crate::ErrorPages<G> {
             $error_pages

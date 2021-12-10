@@ -1,0 +1,26 @@
+[package]
+name = "perseus-warp"
+version = "0.3.0-beta.18"
+edition = "2018"
+description = "An integration that makes the Perseus framework easy to use with Warp."
+authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
+license = "MIT"
+repository = "https://github.com/arctic-hen7/perseus"
+homepage = "https://arctic-hen7.github.io/perseus"
+readme = "./README.md"
+keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
+categories = ["wasm", "web-programming::http-server", "development-tools", "asynchronous", "gui"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+perseus = { path = "../perseus", version = "0.3.0-beta.18" }
+tokio = { version = "1", features = [ "full" ] } # TODO Select only some features on Tokio
+warp = "0.3"
+urlencoding = "2.1"
+serde = "1"
+serde_json = "1"
+thiserror = "1"
+fmterr = "0.1"
+futures = "0.3"
+sycamore = { version = "0.6", features = ["ssr"] }

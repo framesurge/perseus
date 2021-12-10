@@ -3,10 +3,12 @@
 
 pub use app::get_plugins;
 use perseus::{
-    internal::i18n::Locales, stores::ImmutableStore, templates::TemplateMap, ErrorPages,
-    GenericNode, PluginAction, Plugins,
+    internal::i18n::Locales,
+    stores::ImmutableStore,
+    templates::{ArcTemplateMap, TemplateMap},
+    ErrorPages, GenericNode, PluginAction, Plugins,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc, sync::Arc};
 
 pub use app::{get_mutable_store, get_translations_manager};
 
@@ -109,7 +111,24 @@ pub fn get_templates_map<G: GenericNode>(plugins: &Plugins<G>) -> TemplateMap<G>
     for (_plugin_name, plugin_templates) in extra_templates {
         // Turn that vector into a template map by extracting the template root paths as keys
         for template in plugin_templates {
-            templates.insert(template.get_path(), template);
+            templates.insert(template.get_path(), Rc::new(template));
+        }
+    }
+
+    templates
+}
+pub fn get_templates_map_atomic<G: GenericNode>(plugins: &Plugins<G>) -> ArcTemplateMap<G> {
+    let mut templates = app::get_templates_map_atomic::<G>();
+    // This will return a map of plugin name to a vector of templates to add
+    let extra_templates = plugins
+        .functional_actions
+        .settings_actions
+        .add_templates
+        .run((), plugins.get_plugin_data());
+    for (_plugin_name, plugin_templates) in extra_templates {
+        // Turn that vector into a template map by extracting the template root paths as keys
+        for template in plugin_templates {
+            templates.insert(template.get_path(), Arc::new(template));
         }
     }
 
@@ -137,6 +156,10 @@ pub fn get_error_pages<G: GenericNode>(plugins: &Plugins<G>) -> ErrorPages<G> {
 pub fn get_templates_map_contained<G: GenericNode>() -> TemplateMap<G> {
     let plugins = get_plugins::<G>();
     get_templates_map(&plugins)
+}
+pub fn get_templates_map_atomic_contained<G: GenericNode>() -> ArcTemplateMap<G> {
+    let plugins = get_plugins::<G>();
+    get_templates_map_atomic(&plugins)
 }
 pub fn get_error_pages_contained<G: GenericNode>() -> ErrorPages<G> {
     let plugins = get_plugins::<G>();
