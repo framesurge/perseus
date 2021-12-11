@@ -1,7 +1,9 @@
 use crate::initial_load::initial_load_handler;
 use crate::page_data::page_handler;
 use crate::{
-    conv_req::get_http_req, page_data::PageDataReq, static_content::static_aliases_filter,
+    conv_req::get_http_req,
+    page_data::PageDataReq,
+    static_content::{serve_file, static_aliases_filter},
     translations::translations_handler,
 };
 use perseus::internal::serve::{get_render_cfg, ServerOptions};
@@ -51,7 +53,9 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .untuple_one() // We need this to avoid a ((), File) (which makes the return type fail)
         .and(warp::fs::dir(opts.static_dir.clone().unwrap()));
     // Handle static aliases
-    let static_aliases = warp::any().and(static_aliases_filter(opts.static_aliases.clone()));
+    let static_aliases = warp::any()
+        .and(static_aliases_filter(opts.static_aliases.clone()))
+        .and_then(serve_file);
 
     // Define some filters to handle all the data we want to pass through
     let opts = Arc::new(opts);
