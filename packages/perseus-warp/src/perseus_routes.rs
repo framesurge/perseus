@@ -1,10 +1,7 @@
 use crate::initial_load::initial_load_handler;
 use crate::page_data::page_handler;
-use crate::static_content::static_dirs_handler;
 use crate::{
-    conv_req::get_http_req,
-    page_data::PageDataReq,
-    static_content::{static_aliases_filter, static_dirs_filter},
+    conv_req::get_http_req, page_data::PageDataReq, static_content::static_aliases_filter,
     translations::translations_handler,
 };
 use perseus::internal::serve::{get_render_cfg, ServerOptions};
@@ -39,13 +36,22 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     // Handle JS interop snippets (which need to be served as separate files)
     let snippets = warp::path(".perseus/snippets").and(warp::fs::dir(opts.snippets.clone()));
     // Handle static content in the user-set directories (this will all be under `/.perseus/static`)
-    let static_dirs =
-        warp::path(".perseus/static").and(static_dirs_filter(opts.static_dirs.clone()));
-    // .and(static_dirs_handler);
+    // We only set this if the user is using a static content directory
+    let static_dir_path = Arc::new(opts.static_dir.clone());
+    let static_dir_path_filter = warp::any().map(move || static_dir_path.clone());
+    let static_dir = warp::path(".perseus/static")
+        .and(static_dir_path_filter)
+        .and_then(|static_dir_path: Arc<Option<String>>| async move {
+            if static_dir_path.is_some() {
+                Ok(())
+            } else {
+                Err(warp::reject::not_found())
+            }
+        })
+        .untuple_one() // We need this to avoid a ((), File) (which makes the return type fail)
+        .and(warp::fs::dir(opts.static_dir.clone().unwrap()));
     // Handle static aliases
-    let static_aliases = warp::any()
-        .and(static_aliases_filter(opts.static_aliases.clone()))
-        .map(|file_to_serve| warp::fs::file(file_to_serve));
+    let static_aliases = warp::any().and(static_aliases_filter(opts.static_aliases.clone()));
 
     // Define some filters to handle all the data we want to pass through
     let opts = Arc::new(opts);
@@ -74,29 +80,27 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(opts.clone())
         .and(immutable_store.clone())
         .and(mutable_store.clone())
-        .and(translations_manager.clone());
-    // .then(page_handler);
+        .and(translations_manager.clone())
+        .then(page_handler);
     // Handle initial loads (we use a wildcard for this)
     let initial_loads = warp::any()
         .and(warp::path::full())
         .and(get_http_req())
-        .and(opts.clone())
-        .and(html_shell.clone())
-        .and(render_cfg.clone())
-        .and(immutable_store.clone())
-        .and(mutable_store.clone())
-        .and(translations_manager.clone());
-    // .then(initial_load_handler);
+        .and(opts)
+        .and(html_shell)
+        .and(render_cfg)
+        .and(immutable_store)
+        .and(mutable_store)
+        .and(translations_manager)
+        .then(initial_load_handler);
 
     // Now put all those routes together in the final thing (the user will add this to an existing Warp server)
-    let routes = js_bundle
+    js_bundle
         .or(wasm_bundle)
         .or(snippets)
-        // .or(static_dirs)
-        // .or(static_aliases)
-        .or(translations);
-    // .or(page_data);
-    // .or(initial_loads);
-
-    routes
+        .or(static_dir)
+        .or(static_aliases)
+        .or(translations)
+        .or(page_data)
+        .or(initial_loads)
 }

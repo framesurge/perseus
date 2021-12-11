@@ -87,7 +87,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             let page_data = get_page_for_template(
                 &path,
                 &locale,
-                &template,
+                template,
                 was_incremental_match,
                 http_req,
                 (immutable_store.get_ref(), mutable_store.get_ref()),

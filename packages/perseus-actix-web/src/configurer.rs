@@ -80,8 +80,8 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
             // These won't change, so they can be set as a filesystem dependency safely
             .service(Files::new("/.perseus/snippets", &opts.snippets));
         // Now we add support for any static content the user wants to provide
-        for (url, static_dir) in opts.static_dirs.iter() {
-            cfg.service(Files::new(&format!("/.perseus/static{}", url), static_dir));
+        if let Some(static_dir) = &opts.static_dir {
+            cfg.service(Files::new("/.perseus/static", static_dir));
         }
         // And finally add in aliases for static content as necessary
         for (url, _static_path) in opts.static_aliases.iter() {

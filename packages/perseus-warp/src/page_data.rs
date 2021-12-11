@@ -19,6 +19,7 @@ pub struct PageDataReq {
     pub was_incremental_match: bool,
 }
 
+#[allow(clippy::too_many_arguments)] // Because of how Warp filters work, we don't exactly have a choice
 pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     locale: String,
     path: Tail, // This is the path after the locale that was sent

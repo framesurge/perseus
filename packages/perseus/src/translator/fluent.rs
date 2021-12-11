@@ -1,6 +1,7 @@
 use crate::translator::errors::*;
 use fluent_bundle::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
+use std::sync::Arc;
 use sycamore::context::use_context;
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
@@ -15,9 +16,11 @@ pub const FLUENT_TRANSLATOR_FILE_EXT: &str = "ftl";
 /// as a `.` is not valid in an ID anyway, and so can be used as a delimiter. More than one dot will result in an error.
 ///
 /// Note that this uses the concurrent version of `FluentBundle` to support server-side usage.
+#[derive(Clone)]
 pub struct FluentTranslator {
-    /// Stores the internal Fluent data for translating. This bundle directly owns its attached resources (translations).
-    bundle: FluentBundle<FluentResource, IntlLangMemoizer>,
+    /// Stores the internal Fluent data for translating. This bundle directly owns its attached resources (translations). This uses an `Arc<T>` to allow cloning, and so
+    /// the broader translator should be cloned as sparingly as possible to minimize overhead.
+    bundle: Arc<FluentBundle<FluentResource, IntlLangMemoizer>>,
     /// The locale for which translations are being managed by this instance.
     locale: String,
 }
@@ -53,6 +56,7 @@ impl FluentTranslator {
                     .into(),
             }
         })?;
+        let bundle = Arc::new(bundle);
 
         Ok(Self { bundle, locale })
     }

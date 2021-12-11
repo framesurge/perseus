@@ -33,6 +33,7 @@ fn return_error_page(
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
 /// the app shell.
+#[allow(clippy::too_many_arguments)] // As for `page_data_handler`, we don't have a choice
 pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     path: FullPath,
     req: perseus::http::Request<()>,
@@ -46,11 +47,11 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     let path = path.as_str();
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
-    let path_slice = get_path_slice(&path);
+    let path_slice = get_path_slice(path);
     // Create a closure to make returning error pages easier (most have the same data)
     let html_err = |status: u16, err: &str| {
         return return_error_page(
-            &path,
+            path,
             &status,
             err,
             None,
@@ -75,7 +76,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             let page_data = get_page_for_template(
                 &path,
                 &locale,
-                &template,
+                template,
                 was_incremental_match,
                 req,
                 (immutable_store.as_ref(), mutable_store.as_ref()),

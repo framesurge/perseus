@@ -271,7 +271,7 @@ pub async fn app_shell(
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                || template.render_for_template(state, Rc::clone(&translator), false),
+                || template.render_for_template(state, translator, false),
                 &container_rx_elem,
             );
             checkpoint("page_interactive");
@@ -351,10 +351,10 @@ pub async fn app_shell(
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
-                                    || {
+                                    move || {
                                         template.render_for_template(
                                             page_data.state,
-                                            Rc::clone(&translator),
+                                            translator,
                                             false,
                                         )
                                     },

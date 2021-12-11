@@ -8,8 +8,7 @@ pub fn get_http_req() -> impl Filter<Extract = (http::Request<()>,), Error = Rej
         .and(warp::filters::path::full())
         .and(warp::filters::query::raw())
         .and(warp::header::headers_cloned())
-        .and(warp::body::bytes())
-        .and_then(|method, path: FullPath, query, headers, bytes| async move {
+        .and_then(|method, path: FullPath, query, headers| async move {
             let uri = http::uri::Builder::new()
                 .path_and_query(format!("{}?{}", path.as_str(), query))
                 .build()

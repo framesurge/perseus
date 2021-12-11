@@ -12,7 +12,6 @@ use crate::{
 };
 use futures::future::try_join_all;
 use std::collections::HashMap;
-use std::rc::Rc;
 use sycamore::prelude::SsrNode;
 
 /// Builds a template, writing static data as appropriate. This should be used as part of a larger build process. This returns both a list
@@ -21,7 +20,7 @@ use sycamore::prelude::SsrNode;
 /// generation).
 pub async fn build_template(
     template: &Template<SsrNode>,
-    translator: Rc<Translator>,
+    translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
 ) -> Result<(Vec<String>, bool), ServerError> {
@@ -101,11 +100,7 @@ pub async fn build_template(
                 .await?;
             // Prerender the template using that state
             let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(
-                    Some(initial_state.clone()),
-                    Rc::clone(&translator),
-                    true,
-                )
+                template.render_for_template(Some(initial_state.clone()), translator, true)
             });
             // Write that prerendered HTML to a static file
             mutable_store
@@ -113,7 +108,7 @@ pub async fn build_template(
                 .await?;
             // Prerender the document `<head>` with that state
             // If the page also uses request state, amalgamation will be applied as for the normal content
-            let head_str = template.render_head_str(Some(initial_state), Rc::clone(&translator));
+            let head_str = template.render_head_str(Some(initial_state), translator);
             mutable_store
                 .write(
                     &format!("static/{}.head.html", full_path_encoded),
@@ -134,11 +129,7 @@ pub async fn build_template(
                 .await?;
             // Prerender the template using that state
             let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(
-                    Some(initial_state.clone()),
-                    Rc::clone(&translator),
-                    true,
-                )
+                template.render_for_template(Some(initial_state.clone()), translator, true)
             });
             // Write that prerendered HTML to a static file
             immutable_store
@@ -146,7 +137,7 @@ pub async fn build_template(
                 .await?;
             // Prerender the document `<head>` with that state
             // If the page also uses request state, amalgamation will be applied as for the normal content
-            let head_str = template.render_head_str(Some(initial_state), Rc::clone(&translator));
+            let head_str = template.render_head_str(Some(initial_state), translator);
             immutable_store
                 .write(
                     &format!("static/{}.head.html", full_path_encoded),
@@ -177,10 +168,9 @@ pub async fn build_template(
         // If the template is very basic, prerender without any state
         // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
         if template.is_basic() {
-            let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(None, Rc::clone(&translator), true)
-            });
-            let head_str = template.render_head_str(None, Rc::clone(&translator));
+            let prerendered =
+                sycamore::render_to_string(|| template.render_for_template(None, translator, true));
+            let head_str = template.render_head_str(None, translator);
             // Write that prerendered HTML to a static file
             immutable_store
                 .write(&format!("static/{}.html", full_path_encoded), &prerendered)
@@ -199,7 +189,7 @@ pub async fn build_template(
 
 async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
-    translator: Rc<Translator>,
+    translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
 ) -> Result<HashMap<String, String>, ServerError> {
@@ -245,11 +235,10 @@ async fn build_template_and_get_cfg(
 /// for this. You should only build the most commonly used locales here (the rest should be built on demand).
 pub async fn build_templates_for_locale(
     templates: &TemplateMap<SsrNode>,
-    translator_raw: Translator,
+    translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
 ) -> Result<(), ServerError> {
-    let translator = Rc::new(translator_raw);
     // The render configuration stores a list of pages to the root paths of their templates
     let mut render_cfg: HashMap<String, String> = HashMap::new();
     // Create each of the templates
@@ -257,7 +246,7 @@ pub async fn build_templates_for_locale(
     for template in templates.values() {
         futs.push(build_template_and_get_cfg(
             template,
-            Rc::clone(&translator),
+            translator,
             (immutable_store, mutable_store),
             exporting,
         ));
@@ -290,7 +279,7 @@ async fn build_templates_and_translator_for_locale(
         .await?;
     build_templates_for_locale(
         templates,
-        translator,
+        &translator,
         (immutable_store, mutable_store),
         exporting,
     )

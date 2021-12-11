@@ -35,4 +35,5 @@ mod perseus_routes;
 mod static_content;
 mod translations;
 
-// pub use crate::configurer::{configurer, Options};
+pub use crate::perseus_routes::perseus_routes;
+pub use perseus::internal::serve::ServerOptions;

@@ -120,7 +120,7 @@ pub fn match_route<G: GenericNode>(
                     locale: locale.to_string(),
                     // This will be used in asset fetching from the server
                     path: path_without_locale,
-                    template: template.clone(),
+                    template,
                     was_incremental_match,
                 }),
                 None => RouteVerdict::NotFound,
@@ -143,7 +143,7 @@ pub fn match_route<G: GenericNode>(
                 locale: locales.default.to_string(),
                 // This will be used in asset fetching from the server
                 path: path_joined,
-                template: template.clone(),
+                template,
                 was_incremental_match,
             }),
             None => RouteVerdict::NotFound,

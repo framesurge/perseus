@@ -26,10 +26,8 @@ pub struct ServerOptions {
     pub snippets: String,
     /// The error pages for the app. These will be server-rendered if an initial load fails.
     pub error_pages: ErrorPages<SsrNode>,
-    /// Directories to serve static content from, mapping URL to folder path. Note that the URL provided will be gated behind
-    /// `.perseus/static/`, and must have a leading `/`. If you're using a CMS instead, you should set these up outside the Perseus
-    /// server (but they might still be on the same machine, you can still add more routes after Perseus is configured).
-    pub static_dirs: HashMap<String, String>,
+    /// The directory to serve static content from, which will be mapped to `/.perseus/static`in the browser.
+    pub static_dir: Option<String>,
     /// A map of URLs to act as aliases for certain static resources. These are particularly designed for things like a site manifest or
     /// favicons, which should be stored in a static directory, but need to be aliased at a path like `/favicon.ico`.
     pub static_aliases: HashMap<String, String>,

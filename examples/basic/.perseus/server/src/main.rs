@@ -7,7 +7,6 @@ use perseus_engine::app::{
     get_app_root, get_error_pages_contained, get_immutable_store, get_locales, get_mutable_store,
     get_plugins, get_static_aliases, get_templates_map_atomic_contained, get_translations_manager,
 };
-use std::collections::HashMap;
 use std::env;
 use std::fs;
 
@@ -75,12 +74,10 @@ async fn main() -> std::io::Result<()> {
                     error_pages: get_error_pages_contained(),
                     // The CLI supports static content in `../static` by default if it exists
                     // This will be available directly at `/.perseus/static`
-                    static_dirs: if fs::metadata(&static_dir_path).is_ok() {
-                        let mut static_dirs = HashMap::new();
-                        static_dirs.insert("".to_string(), static_dir_path.to_string());
-                        static_dirs
+                    static_dir: if fs::metadata(&static_dir_path).is_ok() {
+                        Some(static_dir_path.to_string())
                     } else {
-                        HashMap::new()
+                        None
                     },
                     static_aliases: static_aliases.clone(),
                 },

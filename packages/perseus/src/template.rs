@@ -22,8 +22,8 @@ pub struct RenderCtx {
     /// to be run in the browser.
     pub is_server: bool,
     /// A translator for templates to use. This will still be present in non-i18n apps, but it will have no message IDs and support for
-    /// the non-existent locale `xx-XX`.
-    pub translator: Rc<Translator>,
+    /// the non-existent locale `xx-XX`. This uses an `Arc<T>` for thread-safety.
+    pub translator: Translator,
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -228,7 +228,7 @@ impl<G: GenericNode> Template<G> {
     pub fn render_for_template(
         &self,
         props: Option<String>,
-        translator: Rc<Translator>,
+        translator: &Translator,
         is_server: bool,
     ) -> SycamoreTemplate<G> {
         template! {
@@ -236,7 +236,7 @@ impl<G: GenericNode> Template<G> {
             ContextProvider(ContextProviderProps {
                 value: RenderCtx {
                     is_server,
-                    translator: Rc::clone(&translator)
+                    translator: translator.clone()
                 },
                 children: || (self.template)(props)
             })
@@ -244,7 +244,7 @@ impl<G: GenericNode> Template<G> {
     }
     /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually. Reactivity
     /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
-    pub fn render_head_str(&self, props: Option<String>, translator: Rc<Translator>) -> String {
+    pub fn render_head_str(&self, props: Option<String>, translator: &Translator) -> String {
         sycamore::render_to_string(|| {
             template! {
                 // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
@@ -253,7 +253,7 @@ impl<G: GenericNode> Template<G> {
                         // This function renders to a string, so we're effectively always on the server
                         // It's also only ever run on the server
                         is_server: true,
-                        translator: Rc::clone(&translator)
+                        translator: translator.clone()
                     },
                     children: || (self.head)(props)
                 })
