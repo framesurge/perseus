@@ -1,43 +1,15 @@
-// This file contains the universal logic for a serving process, regardless of framework
-
 use crate::decode_time_str::decode_time_str;
 use crate::errors::*;
+use crate::page_data::PageData;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{States, Template, TemplateMap};
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
 use crate::Request;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::rc::Rc;
 use sycamore::prelude::SsrNode;
 
-/// Represents the data necessary to render a page, including document metadata.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PageData {
-    /// Prerendered HTML content.
-    pub content: String,
-    /// The state for hydration. This is kept as a string for ease of typing. Some pages may not need state or generate it in another way,
-    /// so this might be `None`.
-    pub state: Option<String>,
-    /// The string to interpolate into the document's `<head>`.
-    pub head: String,
-}
-
-/// Gets the configuration of how to render each page using an immutable store.
-pub async fn get_render_cfg(
-    immutable_store: &ImmutableStore,
-) -> Result<HashMap<String, String>, ServerError> {
-    let content = immutable_store.read("render_conf.json").await?;
-    let cfg = serde_json::from_str::<HashMap<String, String>>(&content).map_err(|e| {
-        // We have to convert it into a build error and then into a server error
-        let build_err: BuildError = e.into();
-        build_err
-    })?;
-
-    Ok(cfg)
-}
+// Note: the reason there are a ton of seemingly useless named lifetimes here is because of [this](https://github.com/rust-lang/rust/issues/63033)
 
 /// Renders a template that uses state generated at build-time. This can't be used for pages that revalidate because their data are
 /// stored in a mutable store.
@@ -91,7 +63,7 @@ async fn render_build_state_for_mutable(
 /// SSR-rendered pages. This does everything at request-time, and so doesn't need a mutable or immutable store.
 async fn render_request_state(
     template: &Template<SsrNode>,
-    translator: Rc<Translator>,
+    translator: &Translator,
     path: &str,
     req: Request,
 ) -> Result<(String, String, Option<String>), ServerError> {
@@ -103,9 +75,9 @@ async fn render_request_state(
     );
     // Use that to render the static HTML
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(state.clone(), Rc::clone(&translator), true)
+        template.render_for_template(state.clone(), translator, true)
     });
-    let head = template.render_head_str(state.clone(), Rc::clone(&translator));
+    let head = template.render_head_str(state.clone(), translator);
 
     Ok((html, head, state))
 }
@@ -169,11 +141,11 @@ async fn should_revalidate(
     }
     Ok(should_revalidate)
 }
-/// Revalidates a template. All information about templates that revalidate (timestamp, content. head, and state) is stored in a
+/// Revalidates a template. All information about templates that revalidate (timestamp, content, head, and state) is stored in a
 /// mutable store, so that's what this function uses.
 async fn revalidate(
     template: &Template<SsrNode>,
-    translator: Rc<Translator>,
+    translator: &Translator,
     path: &str,
     path_encoded: &str,
     mutable_store: &impl MutableStore,
@@ -188,9 +160,9 @@ async fn revalidate(
             .await?,
     );
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(state.clone(), Rc::clone(&translator), true)
+        template.render_for_template(state.clone(), translator, true)
     });
-    let head = template.render_head_str(state.clone(), Rc::clone(&translator));
+    let head = template.render_head_str(state.clone(), translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's request-time only
     if template.revalidates_with_time() {
@@ -236,11 +208,9 @@ pub async fn get_page_for_template(
     translations_manager: &impl TranslationsManager,
 ) -> Result<PageData, ServerError> {
     // Get a translator for this locale (for sanity we hope the manager is caching)
-    let translator = Rc::new(
-        translations_manager
-            .get_translator_for_locale(locale.to_string())
-            .await?,
-    );
+    let translator = translations_manager
+        .get_translator_for_locale(locale.to_string())
+        .await?;
 
     let mut path = raw_path;
     // If the path is empty, we're looking for the special `index` page
@@ -269,14 +239,9 @@ pub async fn get_page_for_template(
                 Some((html_val, head_val)) => {
                     // Check if we need to revalidate
                     if should_revalidate(template, &path_encoded, mutable_store).await? {
-                        let (html_val, head_val, state) = revalidate(
-                            template,
-                            Rc::clone(&translator),
-                            path,
-                            &path_encoded,
-                            mutable_store,
-                        )
-                        .await?;
+                        let (html_val, head_val, state) =
+                            revalidate(template, &translator, path, &path_encoded, mutable_store)
+                                .await?;
                         // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                         if html.is_empty() {
                             html = html_val;
@@ -309,9 +274,9 @@ pub async fn get_page_for_template(
                             .await?,
                     );
                     let html_val = sycamore::render_to_string(|| {
-                        template.render_for_template(state.clone(), Rc::clone(&translator), true)
+                        template.render_for_template(state.clone(), &translator, true)
                     });
-                    let head_val = template.render_head_str(state.clone(), Rc::clone(&translator));
+                    let head_val = template.render_head_str(state.clone(), &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes
                     // We don't need to worry about revalidation that operates by logic, that's request-time only
                     // Obviously we don't need to revalidate now, we just created it
@@ -356,14 +321,8 @@ pub async fn get_page_for_template(
             // Handle if we need to revalidate
             // It'll be in the mutable store if we do
             if should_revalidate(template, &path_encoded, mutable_store).await? {
-                let (html_val, head_val, state) = revalidate(
-                    template,
-                    Rc::clone(&translator),
-                    path,
-                    &path_encoded,
-                    mutable_store,
-                )
-                .await?;
+                let (html_val, head_val, state) =
+                    revalidate(template, &translator, path, &path_encoded, mutable_store).await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                 if html.is_empty() {
                     html = html_val;
@@ -397,7 +356,7 @@ pub async fn get_page_for_template(
     // Handle request state
     if template.uses_request_state() {
         let (html_val, head_val, state) =
-            render_request_state(template, Rc::clone(&translator), path, req).await?;
+            render_request_state(template, &translator, path, req).await?;
         // Request-time HTML always overrides anything generated at build-time or incrementally (this has more information)
         html = html_val;
         head = head_val;

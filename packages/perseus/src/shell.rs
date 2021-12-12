@@ -1,8 +1,8 @@
 use crate::client_translations_manager::ClientTranslationsManager;
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
+use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
-use crate::serve::PageData;
 use crate::template::Template;
 use crate::ErrorPages;
 use fmterr::fmt_err;
@@ -214,7 +214,7 @@ pub enum InitialState {
 // TODO handle exceptions higher up
 pub async fn app_shell(
     path: String,
-    (template, was_incremental_match): (Template<DomNode>, bool),
+    (template, was_incremental_match): (Rc<Template<DomNode>>, bool),
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
@@ -271,7 +271,7 @@ pub async fn app_shell(
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                || template.render_for_template(state, Rc::clone(&translator), false),
+                || template.render_for_template(state, translator, false),
                 &container_rx_elem,
             );
             checkpoint("page_interactive");
@@ -351,10 +351,10 @@ pub async fn app_shell(
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
-                                    || {
+                                    move || {
                                         template.render_for_template(
                                             page_data.state,
-                                            Rc::clone(&translator),
+                                            translator,
                                             false,
                                         )
                                     },

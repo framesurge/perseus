@@ -3,14 +3,26 @@
 
 [package]
 name = "perseus-engine-server"
-version = "0.3.0-beta.17"
+version = "0.3.0-beta.18"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 perseus = { path = "../../../../packages/perseus", features = [ "server-side" ] }
-perseus-actix-web = { path = "../../../../packages/perseus-actix-web" }
+perseus-actix-web = { path = "../../../../packages/perseus-actix-web", optional = true }
+perseus-warp = { path = "../../../../packages/perseus-warp", optional = true }
 perseus-engine = { path = "../" }
-actix-web = "3.3"
+actix-web = { version = "3.3", optional = true }
 futures = "0.3"
+warp = { version = "0.3", git = "https://github.com/arctic-hen7/warp", branch = "master", optional = true }
+# TODO Choose features here
+tokio = { version = "1", optional = true, features = [ "macros", "rt-multi-thread" ] } # We don't need this for Actix Web
+
+# This binary can use any of the server integrations
+# Note: because of the way the CLI works, each feature must be an integration
+[features]
+integration-actix-web = [ "perseus-actix-web", "actix-web" ]
+integration-warp = [ "perseus-warp", "warp", "tokio" ]
+
+default = [ "integration-warp" ]

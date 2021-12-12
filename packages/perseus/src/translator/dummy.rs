@@ -8,6 +8,7 @@ pub const DUMMY_TRANSLATOR_FILE_EXT: &str = "";
 ///
 /// If you're using i18n, enable the `translator-fluent` feature flag to replace this with `FluentTranslator`, which will actually translate
 /// things.
+#[derive(Clone)]
 pub struct DummyTranslator;
 impl DummyTranslator {
     /// Creates a new dummy translator, accepting the usual parameters for translators.

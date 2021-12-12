@@ -11,20 +11,20 @@ pub enum TranslatorError {
     TranslationsStrSerFailed {
         locale: String,
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     #[error("locale '{locale}' is of invalid form")]
     InvalidLocale {
         locale: String,
         // We have a source here to support different i18n systems' definitions of a locale
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     #[error("translating message '{id}' into '{locale}' failed")]
     TranslationFailed {
         id: String,
         locale: String,
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     /// This could be caused by an invalid variant for a compound message.
     #[error("no translation could be derived for message '{id}' in locale '{locale}'")]

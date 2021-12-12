@@ -10,10 +10,9 @@ use web_sys::Element;
 /// problematic asset, and a translator if one is available . Many error pages are generated when a translator is not available or
 /// couldn't be instantiated, so you'll need to rely on symbols or the like in these cases.
 pub type ErrorPageTemplate<G> =
-    Rc<dyn Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G>>;
+    Box<dyn Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G> + Send + Sync>;
 
 /// A type alias for the `HashMap` the user should provide for error pages.
-#[derive(Clone)]
 pub struct ErrorPages<G: GenericNode> {
     status_pages: HashMap<u16, ErrorPageTemplate<G>>,
     fallback: ErrorPageTemplate<G>,
@@ -21,11 +20,14 @@ pub struct ErrorPages<G: GenericNode> {
 impl<G: GenericNode> ErrorPages<G> {
     /// Creates a new definition of error pages with just a fallback.
     pub fn new(
-        fallback: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G> + 'static,
+        fallback: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G>
+            + Send
+            + Sync
+            + 'static,
     ) -> Self {
         Self {
             status_pages: HashMap::default(),
-            fallback: Rc::new(fallback),
+            fallback: Box::new(fallback),
         }
     }
     /// Adds a new page for the given status code. If a page was already defined for the given code, it will be updated by the mechanics of
@@ -33,9 +35,12 @@ impl<G: GenericNode> ErrorPages<G> {
     pub fn add_page(
         &mut self,
         status: u16,
-        page: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G> + 'static,
+        page: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G>
+            + Send
+            + Sync
+            + 'static,
     ) {
-        self.status_pages.insert(status, Rc::new(page));
+        self.status_pages.insert(status, Box::new(page));
     }
     /// Adds a new page for the given status code. If a page was already defined for the given code, it will be updated by the mechanics of
     /// the internal `HashMap`. This differs from `.add_page()` in that it takes an `Rc`, which is useful for plugins.

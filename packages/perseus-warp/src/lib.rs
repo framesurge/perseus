@@ -10,13 +10,13 @@
  * - ✨ Open build matrix (use any rendering strategy with anything else, mostly)
  * - ✨ CLI harness that lets you build apps with ease and confidence
  *
- * This is the documentation for the Perseus Actix Web integration, but there's also [a CLI](https://arctic-hen7.github.io/perseus/cli.html),
+ * This is the documentation for the Perseus Warp integration, but there's also [a CLI](https://arctic-hen7.github.io/perseus/cli.html),
  * [the core package](https://crates.io/crates/perseus), and other [integrations](https://arctic-hen7.github.io/perseus/serving.html)
  * to make serving apps on other platforms easier!
  *
  * # Resources
  *
- * These docs will help you as a reference, but [the book](https://arctic-hen7.github.io/perseus/integrations/actix-web.html) should
+ * These docs will help you as a reference, but [the book](https://arctic-hen7.github.io/perseus) should
  * be your first port of call for learning about how to use Perseus and how it works.
  *
  * - [The Book](https://arctic-hen7.github.io/perseus)
@@ -28,12 +28,12 @@
 
 #![deny(missing_docs)]
 
-mod configurer;
 mod conv_req;
-pub mod errors;
 mod initial_load;
 mod page_data;
+mod perseus_routes;
+mod static_content;
 mod translations;
 
-pub use crate::configurer::configurer;
+pub use crate::perseus_routes::perseus_routes;
 pub use perseus::internal::serve::ServerOptions;

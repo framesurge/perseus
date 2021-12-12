@@ -52,9 +52,10 @@ mod locale_detector;
 mod locales;
 mod log;
 mod macros;
+mod page_data;
 mod path_prefix;
 mod router;
-mod serve;
+mod server;
 mod shell;
 mod template;
 mod test;
@@ -97,7 +98,8 @@ pub mod internal {
     /// on different platforms.
     pub mod serve {
         pub use crate::html_shell::*;
-        pub use crate::serve::*;
+        pub use crate::page_data::*;
+        pub use crate::server::*;
     }
     /// Internal utilities for working with the Perseus router.
     pub mod router {

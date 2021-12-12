@@ -14,13 +14,13 @@ pub enum TranslationsManagerError {
     ReadFailed {
         locale: String,
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
     #[error("translations for locale '{locale}' couldn't be serialized into translator")]
     SerializationFailed {
         locale: String,
         #[source]
-        source: Box<dyn std::error::Error>,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
 }
 
@@ -32,7 +32,7 @@ use std::fs;
 /// A trait for systems that manage where to put translations. At simplest, we'll just write them to static files, but they might also
 /// be stored in a CMS. It is **strongly** advised that any implementations use some form of caching, guided by `FsTranslationsManager`.
 #[async_trait::async_trait]
-pub trait TranslationsManager: Clone {
+pub trait TranslationsManager: Clone + Send + Sync {
     /// Gets a translator for the given locale.
     async fn get_translator_for_locale(
         &self,

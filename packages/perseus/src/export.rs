@@ -3,8 +3,8 @@ use crate::html_shell::{
     interpolate_locale_redirection_fallback, interpolate_page_data, prep_html_shell,
 };
 use crate::locales::Locales;
-use crate::serve::get_render_cfg;
-use crate::serve::PageData;
+use crate::page_data::PageData;
+use crate::server::get_render_cfg;
 use crate::stores::ImmutableStore;
 use crate::template::TemplateMap;
 use crate::translations_manager::TranslationsManager;

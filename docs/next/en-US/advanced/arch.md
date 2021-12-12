@@ -1,9 +1,10 @@
 # Architecture
 
-Perseus has five main components:
+Perseus has several main components:
 
 -   `perseus` -- the core module that defines everything necessary to build a Perseus app if you try hard enough
 -   `perseus-actix-web` -- an integration that makes it easy to run Perseus on the [Actix Web](https://actix.rs) framework
+-   `perseus-warp` -- an integration that makes it easy to run Perseus on the [Warp](https://github.com/seanmonstar/warp) framework
 -   `perseus-cli` -- the command-line interface used to run Perseus apps conveniently
 -   `perseus-engine` -- an internal crate created by the CLI responsible for building an app
 -   `perseus-engine-server` -- an internal crate created by the CLI responsible for serving an app and performing runtime logic

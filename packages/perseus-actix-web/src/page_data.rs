@@ -1,13 +1,16 @@
 use crate::conv_req::convert_req;
-use crate::Options;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
 use perseus::{
     errors::err_to_status_code,
-    internal::{i18n::TranslationsManager, serve::get_page_for_template},
+    internal::{
+        i18n::TranslationsManager,
+        serve::{render::get_page_for_template, ServerOptions},
+    },
     stores::{ImmutableStore, MutableStore},
 };
 use serde::Deserialize;
+use std::rc::Rc;
 
 #[derive(Deserialize)]
 pub struct PageDataReq {
@@ -18,7 +21,7 @@ pub struct PageDataReq {
 /// The handler for calls to `.perseus/page/*`. This will manage returning errors and the like.
 pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
-    opts: web::Data<Options>,
+    opts: web::Data<Rc<ServerOptions>>,
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,

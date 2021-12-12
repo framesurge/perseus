@@ -4,7 +4,7 @@ use std::fs;
 /// A trait for mutable stores. This is abstracted away so that users can implement a non-filesystem mutable store, which is useful
 /// for read-only filesystem environments, as on many modern hosting providers. See the book for further details on this subject.
 #[async_trait::async_trait]
-pub trait MutableStore: Clone {
+pub trait MutableStore: Clone + Send + Sync {
     /// Reads data from the named asset.
     async fn read(&self, name: &str) -> Result<String, StoreError>;
     /// Writes data to the named asset. This will create a new asset if one doesn't exist already.
