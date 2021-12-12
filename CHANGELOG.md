@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.21](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.20...v0.3.0-beta.21) (2021-12-12)
+
+
+### Bug Fixes
+
+* switched to using `warp-fix-171` ([f3f0a43](https://github.com/arctic-hen7/perseus/commit/f3f0a43d3dc5e757e3e476218e588d6c1ad70ded))
+
 ## [0.3.0-beta.20](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.19...v0.3.0-beta.20) (2021-12-12)
 
 
