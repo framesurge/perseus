@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.20](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.19...v0.3.0-beta.20) (2021-12-12)
+
+
+### Bug Fixes
+
+* made cli update local dependencies properly ([3067071](https://github.com/arctic-hen7/perseus/commit/30670715ed3f8e53c6527d96b54e92fe5b6c8173))
+
 ## [0.3.0-beta.19](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.18...v0.3.0-beta.19) (2021-12-12)
 
 
