@@ -207,6 +207,8 @@ publish.cmd = [
     "cargo publish --allow-dirty %%", # Without this flag, `.perseus` will be a problem because it's not in Git
     # We delay this so that `crates.io` can have time to host the core
     "cd ../perseus-actix-web",
+    "cargo publish %%",
+    "cd ../perseus-warp",
     "cargo publish %%"
 ]
 publish.desc = "publishes all packages to crates.io (needs branch 'stable')"
