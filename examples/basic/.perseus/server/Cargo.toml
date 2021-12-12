@@ -15,7 +15,7 @@ perseus-warp = { path = "../../../../packages/perseus-warp", optional = true }
 perseus-engine = { path = "../" }
 actix-web = { version = "3.3", optional = true }
 futures = "0.3"
-warp = { version = "0.3", git = "https://github.com/arctic-hen7/warp", branch = "master", optional = true }
+warp = { package = "warp-fix-171", version = "0.3", optional = true }
 # TODO Choose features here
 tokio = { version = "1", optional = true, features = [ "macros", "rt-multi-thread" ] } # We don't need this for Actix Web
 
