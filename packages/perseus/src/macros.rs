@@ -47,6 +47,14 @@ macro_rules! define_app_root {
         pub static APP_ROOT: &str = $root_id;
     };
 }
+#[cfg(feature = "standalone")]
+#[doc(hidden)]
+/// The default translations directory when we're running as a standalone binary.
+pub static DFLT_TRANSLATIONS_DIR: &str = "./translations";
+#[cfg(not(feature = "standalone"))]
+#[doc(hidden)]
+/// The default translations directory when we're running with the `.perseus/` support structure.
+pub static DFLT_TRANSLATIONS_DIR: &str = "../translations";
 /// An internal macro used for defining a function to get the user's preferred translations manager (which requires multiple branches).
 /// This is not plugin-extensible, but a control action can reset it later.
 #[doc(hidden)]
@@ -65,14 +73,8 @@ macro_rules! define_get_translations_manager {
                 .cloned()
                 .cloned()
                 .collect();
-            // If we're running on a server, we should be using a flattened directory structure
-            let translations_dir = if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
-                "./translations"
-            } else {
-                "../translations"
-            };
             $crate::internal::i18n::FsTranslationsManager::new(
-                translations_dir.to_string(),
+                $crate::internal::i18n::DFLT_TRANSLATIONS_DIR.to_string(),
                 all_locales,
                 $crate::internal::i18n::TRANSLATOR_FILE_EXT.to_string(),
                 $crate::internal::get_path_prefix_server(),

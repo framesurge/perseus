@@ -2,7 +2,7 @@
 
 If your app uses rendering strategies that need a server, you won't be able to export your app to purely static files, and so you'll need to host the Perseus server itself.
 
-You can prepare your production server by running `perseus deploy`, which will create a new directory called `pkg/`, which will contain the standalone binary and everything needed to run it. You should then upload this file to your server and set the `PERSEUS_STANDALONE` environment variable to `true` so that Perseus expects a standalone binary configuration. Note that this process will vary depending on your hosting provider.
+You can prepare your production server by running `perseus deploy`, which will create a new directory called `pkg/`, which will contain the standalone binary and everything needed to run it.
 
 ## Hosting Providers
 

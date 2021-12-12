@@ -79,7 +79,7 @@ pub fn get_static_aliases<G: GenericNode>(plugins: &Plugins<G>) -> HashMap<Strin
         } else if path.starts_with("./") {
             // `./` -> `../` (moving to execution from `.perseus/`)
             // But if we're operating standalone, it stays the same
-            if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
+            if cfg!(feature = "standalone") {
                 path.to_string()
             } else {
                 format!(".{}", path)
@@ -87,7 +87,7 @@ pub fn get_static_aliases<G: GenericNode>(plugins: &Plugins<G>) -> HashMap<Strin
         } else {
             // Anything else gets a `../` prepended
             // But if we're operating standalone, it stays the same
-            if ::std::env::var("PERSEUS_STANDALONE").is_ok() {
+            if cfg!(feature = "standalone") {
                 path.to_string()
             } else {
                 format!("../{}", path)

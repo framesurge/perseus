@@ -20,9 +20,11 @@ warp = { package = "warp-fix-171", version = "0.3", optional = true }
 tokio = { version = "1", optional = true, features = [ "macros", "rt-multi-thread" ] } # We don't need this for Actix Web
 
 # This binary can use any of the server integrations
-# Note: because of the way the CLI works, each feature must be an integration
 [features]
 integration-actix-web = [ "perseus-actix-web", "actix-web" ]
 integration-warp = [ "perseus-warp", "warp", "tokio" ]
 
 default = [ "integration-warp" ]
+
+# This makes the binary work on its own, and is enabled by `perseus deploy` (do NOT invoke this manually!)
+standalone = [ "perseus/standalone", "perseus-engine/standalone" ]

@@ -14,7 +14,6 @@ use std::fs;
 // This server executable can be run in two modes:
 //      dev: inside `.perseus/server/src/main.rs`, works with that file structure
 //      prod: as a standalone executable with a `dist/` directory as a sibling
-// The prod mode can be enabled by setting the `PERSEUS_STANDALONE` environment variable
 
 // Integration: Actix Web
 #[cfg(feature = "integration-actix-web")]
@@ -53,7 +52,7 @@ fn get_standalone_and_act() -> bool {
     // So we don't have to define a different `FsConfigManager` just for the server, we shift the execution context to the same level as everything else
     // The server has to be a separate crate because otherwise the dependencies don't work with Wasm bundling
     // If we're not running as a standalone binary, assume we're running in dev mode under `.perseus/`
-    if env::var("PERSEUS_STANDALONE").is_err() {
+    if !cfg!(feature = "standalone") {
         env::set_current_dir("../").unwrap();
         false
     } else {

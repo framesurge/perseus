@@ -36,6 +36,7 @@ fn build_server(
     did_build: bool,
     exec: Arc<Mutex<String>>,
     is_release: bool,
+    is_standalone: bool,
 ) -> Result<
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     ExecutionError,
@@ -65,9 +66,14 @@ fn build_server(
             let (stdout, _stderr) = handle_exit_code!(run_stage(
                 vec![&format!(
                     // This sets Cargo to tell us everything, including the executable path to the server
-                    "{} build --message-format json {}",
+                    "{} build --message-format json {} {}",
                     env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-                    if is_release { "--release" } else { "" }
+                    if is_release { "--release" } else { "" },
+                    if is_standalone {
+                        "--features standalone"
+                    } else {
+                        ""
+                    }
                 )],
                 &sb_target,
                 &sb_spinner,
@@ -191,6 +197,7 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         did_build,
         Arc::clone(&exec),
         opts.release,
+        opts.standalone,
     )?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {

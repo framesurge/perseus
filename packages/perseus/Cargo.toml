@@ -43,3 +43,5 @@ tinker-plugins = []
 # This feature enables server-side-only features, which should be used on both the server and in the builder
 # This prevents leakage of server-side code
 server-side = []
+# This feature changes a few defaults so that Perseus works seemlessly when deployed with the `.perseus/` structure (this is activated automatically by `perseus deploy`, and should not be invoked manually!)
+standalone = []

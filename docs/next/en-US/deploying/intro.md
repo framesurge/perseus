@@ -22,4 +22,4 @@ If you use `perseus deploy -e`, the contents of `pkg/` can be served by any file
 
 ### Fully-Fledged Server
 
-If you just use `perseus deploy`, the `pkg/` directory will contain a binary called `server` for you to run, which will serve your app on its own. However, it's important to note that this binary is structured to support either the development configuration of running inside `.perseus/` or the production configuration of running inside `pkg/`, and you have to provide the `PERSEUS_STANDALONE` environment variable to tell it to do the latter. This binary can then be run on any server with a writable filesystem. For more details on this, see the next subsection.
+If you just use `perseus deploy`, the `pkg/` directory will contain a binary called `server` for you to run, which will serve your app on its own, without the need for any of the development infrastructure (e.g. the `.perseus/` directory). Running this used to require setting the `PERSEUS_STANDALONE` environment variable, though after [this](https://github.com/arctic-hen7/perseus/issues/87) that's no longer required.

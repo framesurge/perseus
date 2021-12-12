@@ -58,6 +58,9 @@ pub struct ServeOpts {
     /// Build and serve for production
     #[clap(long)]
     pub release: bool,
+    /// Make the final binary standalone (this is used in `perseus deploy` only, don't manually invoke it unless you have a good reason!)
+    #[clap(long)]
+    pub standalone: bool,
 }
 /// Removes `.perseus/` entirely for updates or to fix corruptions
 #[derive(Parser)]

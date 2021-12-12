@@ -91,6 +91,8 @@ pub mod internal {
         pub use crate::client_translations_manager::*;
         pub use crate::locale_detector::*;
         pub use crate::locales::*;
+        #[doc(hidden)]
+        pub use crate::macros::DFLT_TRANSLATIONS_DIR;
         pub use crate::translations_manager::*;
         pub use crate::translator::*;
     }

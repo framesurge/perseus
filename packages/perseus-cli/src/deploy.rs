@@ -31,6 +31,7 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
             no_run: true,
             no_build: false,
             release: true,
+            standalone: true,
         },
     )?;
     if serve_exit_code != 0 {
@@ -112,7 +113,7 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
         }
 
         println!();
-        println!("Deployment complete 🚀! Your app is now available for serving in the standalone folder '{}'! You can run it by executing the `server` binary in that folder with the `PERSEUS_STANDALONE` environment variable set to `true`.", &output_path.to_str().map(|s| s.to_string()).unwrap());
+        println!("Deployment complete 🚀! Your app is now available for serving in the standalone folder '{}'! You can run it by executing the `server` binary in that folder.", &output_path.to_str().map(|s| s.to_string()).unwrap());
 
         Ok(0)
     } else {

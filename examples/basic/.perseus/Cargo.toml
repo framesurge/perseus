@@ -23,3 +23,7 @@ console_error_panic_hook = "0.1.6"
 # This section is needed for Wasm Pack (which we use instead of Trunk for flexibility)
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[features]
+# This changes a few things to support running as a standalone server binary (this is set by `perseus deploy`, do NOT invoke this manually!)
+standalone = []
