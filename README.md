@@ -64,6 +64,7 @@ These tasks still need to be done before Perseus can be pushed to v1.0.0.
 *   [ ] Support custom template hierarchies
 *   [ ] Pre-built integrations
     -   [x] Actix Web
+    -   [x] Warp
     -   [ ] AWS Lambda
 
 ### Beyond
