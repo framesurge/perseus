@@ -9,7 +9,7 @@ pub mod render;
 
 pub use build_error_page::build_error_page;
 pub use get_render_cfg::get_render_cfg;
-pub use options::ServerOptions;
+pub use options::{ServerOptions, ServerProps};
 
 /// Removes empty elements from a path, which is important due to double slashes. This returns a vector of the path's components;
 pub fn get_path_slice(path: &str) -> Vec<&str> {

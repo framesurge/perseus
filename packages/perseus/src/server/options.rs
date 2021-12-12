@@ -1,6 +1,8 @@
 use crate::error_pages::ErrorPages;
 use crate::locales::Locales;
+use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::ArcTemplateMap;
+use crate::translations_manager::TranslationsManager;
 use crate::SsrNode;
 use std::collections::HashMap;
 
@@ -31,4 +33,16 @@ pub struct ServerOptions {
     /// A map of URLs to act as aliases for certain static resources. These are particularly designed for things like a site manifest or
     /// favicons, which should be stored in a static directory, but need to be aliased at a path like `/favicon.ico`.
     pub static_aliases: HashMap<String, String>,
+}
+
+/// The full set of properties that all server integrations take.
+pub struct ServerProps<M: MutableStore, T: TranslationsManager> {
+    /// The options for setting up the server.
+    pub opts: ServerOptions,
+    /// An immutable store to use.
+    pub immutable_store: ImmutableStore,
+    /// A mutable store to use.
+    pub mutable_store: M,
+    /// A translations manager to use.
+    pub translations_manager: T,
 }

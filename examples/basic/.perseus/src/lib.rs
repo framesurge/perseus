@@ -109,6 +109,7 @@ pub fn run() -> Result<(), JsValue> {
                                 RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
                                 // To get a translator here, we'd have to go async and dangerously check the URL
                                 // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
+                                // BUG If we have an error in a subsequent load, the error message appears below the current page...
                                 RouteVerdict::NotFound => {
                                     checkpoint("not_found");
                                     if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {

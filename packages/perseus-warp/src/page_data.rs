@@ -36,7 +36,8 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     let templates = &opts.templates_map;
     // Check if the locale is supported
     if opts.locales.is_supported(&locale) {
-        let path = path.as_str();
+        // Warp doesn't let us specify that all paths should end in `.json`, so we'll manually strip that
+        let path = path.as_str().strip_suffix(".json").unwrap();
         // Get the template to use
         let template = templates.get(&template_name);
         let template = match template {

@@ -6,10 +6,10 @@ use crate::{
     static_content::{serve_file, static_aliases_filter},
     translations::translations_handler,
 };
-use perseus::internal::serve::{get_render_cfg, ServerOptions};
+use perseus::internal::serve::{get_render_cfg, ServerProps};
 use perseus::{
     internal::{get_path_prefix_server, i18n::TranslationsManager, serve::prep_html_shell},
-    stores::{ImmutableStore, MutableStore},
+    stores::MutableStore,
 };
 use std::{fs, sync::Arc};
 use warp::Filter;
@@ -17,10 +17,12 @@ use warp::Filter;
 /// The routes for Perseus. These will configure an existing Warp instance to run Perseus, and should be provided after any other routes, as they include a wildcard
 /// route.
 pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 'static>(
-    opts: ServerOptions,
-    immutable_store: ImmutableStore,
-    mutable_store: M,
-    translations_manager: T,
+    ServerProps {
+        opts,
+        immutable_store,
+        mutable_store,
+        translations_manager,
+    }: ServerProps<M, T>,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let render_cfg = get_render_cfg(&immutable_store)
         .await
@@ -29,19 +31,19 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let index_with_render_cfg = prep_html_shell(index_file, &render_cfg, &get_path_prefix_server());
 
     // Handle static files
-    let js_bundle = warp::path(".perseus/bundle.js")
+    let js_bundle = warp::path!(".perseus" / "bundle.js")
         .and(warp::path::end())
         .and(warp::fs::file(opts.js_bundle.clone()));
-    let wasm_bundle = warp::path(".perseus/bundle.wasm")
+    let wasm_bundle = warp::path!(".perseus" / "bundle.wasm")
         .and(warp::path::end())
         .and(warp::fs::file(opts.wasm_bundle.clone()));
     // Handle JS interop snippets (which need to be served as separate files)
-    let snippets = warp::path(".perseus/snippets").and(warp::fs::dir(opts.snippets.clone()));
+    let snippets = warp::path!(".perseus" / "snippets").and(warp::fs::dir(opts.snippets.clone()));
     // Handle static content in the user-set directories (this will all be under `/.perseus/static`)
     // We only set this if the user is using a static content directory
     let static_dir_path = Arc::new(opts.static_dir.clone());
     let static_dir_path_filter = warp::any().map(move || static_dir_path.clone());
-    let static_dir = warp::path(".perseus/static")
+    let static_dir = warp::path!(".perseus" / "static" / ..)
         .and(static_dir_path_filter)
         .and_then(|static_dir_path: Arc<Option<String>>| async move {
             if static_dir_path.is_some() {
@@ -51,7 +53,10 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
             }
         })
         .untuple_one() // We need this to avoid a ((), File) (which makes the return type fail)
-        .and(warp::fs::dir(opts.static_dir.clone().unwrap()));
+        // This alternative will never be served, but if we don't have it we'll get a runtime panic
+        .and(warp::fs::dir(
+            opts.static_dir.clone().unwrap_or_else(|| "".to_string()),
+        ));
     // Handle static aliases
     let static_aliases = warp::any()
         .and(static_aliases_filter(opts.static_aliases.clone()))
@@ -72,12 +77,12 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let render_cfg = warp::any().map(move || render_cfg.clone());
 
     // Handle getting translations
-    let translations = warp::path!(".perseus/translations" / String)
+    let translations = warp::path!(".perseus" / "translations" / String)
         .and(opts.clone())
         .and(translations_manager.clone())
         .then(translations_handler);
     // Handle getting the static HTML/JSON of a page (used for subsequent loads)
-    let page_data = warp::path!(".perseus/page" / String / ..)
+    let page_data = warp::path!(".perseus" / "page" / String / ..)
         .and(warp::path::tail())
         .and(warp::query::<PageDataReq>())
         .and(get_http_req())

@@ -6,7 +6,11 @@ pub fn get_http_req() -> impl Filter<Extract = (http::Request<()>,), Error = Rej
     warp::any()
         .and(warp::method())
         .and(warp::filters::path::full())
-        .and(warp::filters::query::raw())
+        // Warp doesn't permit empty query strings without this extra config (see https://github.com/seanmonstar/warp/issues/905)
+        .and(
+            warp::filters::query::raw()
+                .or_else(|_| async move { Ok::<_, Rejection>((String::new(),)) }),
+        )
         .and(warp::header::headers_cloned())
         .and_then(|method, path: FullPath, query, headers| async move {
             let uri = http::uri::Builder::new()

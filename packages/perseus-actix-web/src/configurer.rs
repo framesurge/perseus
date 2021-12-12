@@ -7,9 +7,9 @@ use perseus::{
     internal::{
         get_path_prefix_server,
         i18n::TranslationsManager,
-        serve::{get_render_cfg, prep_html_shell, ServerOptions},
+        serve::{get_render_cfg, prep_html_shell, ServerOptions, ServerProps},
     },
-    stores::{ImmutableStore, MutableStore},
+    stores::MutableStore,
 };
 use std::fs;
 use std::rc::Rc;
@@ -36,10 +36,12 @@ async fn static_alias(
 /// Configures an existing Actix Web app for Perseus. This returns a function that does the configuring so it can take arguments. This
 /// includes a complete wildcard handler (`*`), and so it should be configured after any other routes on your server.
 pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'static>(
-    opts: ServerOptions,
-    immutable_store: ImmutableStore,
-    mutable_store: M,
-    translations_manager: T,
+    ServerProps {
+        opts,
+        immutable_store,
+        mutable_store,
+        translations_manager,
+    }: ServerProps<M, T>,
 ) -> impl Fn(&mut web::ServiceConfig) {
     let opts = Rc::new(opts); // TODO Find a more efficient way of doing this
     let render_cfg = get_render_cfg(&immutable_store)
