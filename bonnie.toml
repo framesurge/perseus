@@ -191,7 +191,7 @@ release.cmd = [
     "git checkout stable"
 ]
 release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped, needs branch 'stable')"
-replace-versions.cmd = "find . \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/basic/.perseus/*\" -not -path \"./examples/basic/.perseus/dist/*\" \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
+replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/basic/.perseus/*\" -not -path \"./examples/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
 replace-versions.args = [ "old_version", "new_version" ]
 
 # Publishes each package
