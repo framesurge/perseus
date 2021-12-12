@@ -102,8 +102,12 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
                 &format!("version = \"{}\"", PERSEUS_VERSION),
             )
             .replace(
-                "{ path = \"../../../../packages/perseus-actix-web\" }",
-                &format!("\"{}\"", PERSEUS_VERSION),
+                "path = \"../../../../packages/perseus-actix-web\"",
+                &format!("version = \"{}\"", PERSEUS_VERSION),
+            )
+            .replace(
+                "path = \"../../../../packages/perseus-warp\"",
+                &format!("version = \"{}\"", PERSEUS_VERSION),
             );
         #[cfg(not(debug_assertions))]
         let updated_builder_manifest = updated_builder_manifest.replace(
