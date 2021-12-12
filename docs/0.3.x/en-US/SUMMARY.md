@@ -31,6 +31,7 @@
     -   [State Amalgamation](/docs/strategies/amalgamation)
 -   [CLI](/docs/cli)
     -   [Ejecting](/docs/ejecting)
+    -   [Snooping](/docs/snooping)
 -   [Testing](/docs/testing/intro)
     -   [Checkpoints](/docs/testing/checkpoints)
     -   [Fantoccini Basics](/docs/testing/fantoccini-basics)
@@ -52,6 +53,7 @@
     -   [Optimizing Code Size](/docs/deploying/size)
     -   [Relative Paths](/docs/deploying/relative-paths)
 -   [Migrating from v0.2.x](/docs/updating)
+-   [Common Pitfalls and Known Bugs](/docs/pitfalls-and-bugs)
 
 ---
 

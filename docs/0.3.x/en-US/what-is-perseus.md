@@ -2,7 +2,7 @@
 
 If you're familiar with [NextJS](https://nextjs.org), Perseus is that for Wasm. If you're familiar with [SvelteKit](https://kit.svelte.dev), it's that for [Sycamore](https://github.com/sycamore-rs/sycamore).
 
-If none of that makes any sense, this is the section for you! If you're not in the mood for a lecture, [here's a TL;DR](#summary)!
+If none of that makes any sense, this is the section for you! If you're not in the mood for a lecture, there's a TL;DR at the bottom of this page!
 
 ### Rust web development
 
@@ -60,7 +60,7 @@ To our knowledge, the only other framework in the world right now that supports 
 
 ## How fast is it?
 
-[Benchmarks show](https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html) that [Sycamore](https://sycamore-rs.netlify.app) is slightly faster than [Svelte](https://svelte.dev) in places, one of the fastest JS frameworks ever. Perseus uses it and [Actix Web](https://actix.rs), one of the fastest web servers in the world. Essentially, Perseus is built on the fastest tech and is itself made to be fast.
+[Benchmarks show](https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html) that [Sycamore](https://sycamore-rs.netlify.app) is slightly faster than [Svelte](https://svelte.dev) in places, one of the fastest JS frameworks ever. Perseus uses it and [Actix Web](https://actix.rs) or [Warp](https://github.com/seanmonstar/warp) (either is supported), some of the fastest web servers in the world. Essentially, Perseus is built on the fastest tech and is itself made to be fast.
 
 The speed of web frameworks is often measured by [Lighthouse](https://developers.google.com/web/tools/lighthouse) scores, which are scores out of 100 (higher is better) that measure a whole host of things, like *total blocking time*, *first contentful paint*, and *time to interactive*. These are then aggregated into a final score and grouped into three brackets: 0-49 (slow), 50-89 (medium), and 90-100 (fast). This website, which is built with Perseus, using [static exporting](:exporting) and [size optimizations](:deploying/size), consistently scores a 100 on desktop and above 90 for mobile. You can see this for yourself [here](https://developers.google.com/speed/pagespeed/insights/?url=https%3A%2F%2Farctic-hen7.github.io%2Fperseus%2Fen-US%2F&tab=desktop) on Google's PageSpeed Insights tool.
 

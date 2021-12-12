@@ -17,7 +17,7 @@ Note that, just like _build state_, this strategy generates stringified properti
 <details>
 <summary>How do you get the user's request information?</summary>
 
-[Actix Web](https://actix.rs) (and any other framework worth its salt) automatically passes this information to handlers like Perseus. The slightly difficult thing is then converting this from Actix's custom format to Perseus' (which is just an alias for the [`http`](https://docs.rs/http) module's). This is done in the [`perseus-actix-web`](https://docs.rs/perseus-actix-web) crate.
+The web frameworks Perseus supports automatically pass this information to handlers like Perseus. The slightly difficult thing is then converting this from their custom format to Perseus' (which is just an alias for the [`http`](https://docs.rs/http) module's). This is done in the appropriate integration crate.
 
 </details>
 
