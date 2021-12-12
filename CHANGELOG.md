@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.19](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.18...v0.3.0-beta.19) (2021-12-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* `Options` renamed to `ServerOptions` for all integrations
+
+* feat: made templates and error pages thread-safe
+
+This involved adding an atomic types system.
+Also added basics for a Warp integration (which needs this thread-safety).
+
+* feat: made more things thread-safe and made warp integration nearly work
+
+The problem is `Rc<Translator>`s, so some refactoring needs to be done.
+
+* feat: added nearly all handlers to warp integration
+
+BREAKING_CHANGE: `ServerOptions` now only accepts one static content directory
+
+* fix: made `DummyTranslator` `Clone`able
+
+* feat: added support for static aliases in the warp integration
+
+None of this has been tested yet, so there will likely be bugs.
+We now depend on my fork of Warp until [this](https://github.com/seanmonstar/warp/pull/924) is merged.
+
+* fix: pinned `clap` version
+
+### Features
+
+* add warp integration ([#86](https://github.com/arctic-hen7/perseus/issues/86)) ([6adf264](https://github.com/arctic-hen7/perseus/commit/6adf264c7474ec1f8bc71fe37e08c2bf132986dd)), closes [#85](https://github.com/arctic-hen7/perseus/issues/85)
+
 ## [0.3.0-beta.18](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.17...v0.3.0-beta.18) (2021-11-28)
 
 
