@@ -270,6 +270,7 @@ pub async fn app_shell(
 
             // Hydrate that static code using the acquired state
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+            #[cfg(not(feature = "hydrate"))]
             {
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
