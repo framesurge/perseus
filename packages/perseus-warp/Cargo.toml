@@ -1,6 +1,6 @@
 [package]
 name = "perseus-warp"
-version = "0.3.0-beta.21"
+version = "0.3.0-beta.22"
 edition = "2018"
 description = "An integration that makes the Perseus framework easy to use with Warp."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.3.0-beta.21" }
+perseus = { path = "../perseus", version = "0.3.0-beta.22" }
 tokio = { version = "1", features = [ "rt-multi-thread" ] }
 warp = { package = "warp-fix-171", version = "0.3" } # Temporary until Warp #171 is resolved
 urlencoding = "2.1"

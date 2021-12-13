@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.22](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.21...v0.3.0-beta.22) (2021-12-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* upgraded to Sycamore v0.7.0 (see [their changelog](https://github.com/sycamore-rs/sycamore/blob/master/CHANGELOG.md))
+
+### Features
+
+* **cli:** added flag to set server integration to use ([b71fa41](https://github.com/arctic-hen7/perseus/commit/b71fa4134564277973effb77cc4a05bf1a4d6d46))
+* removed `PERSEUS_STANDALONE` ([d178f5a](https://github.com/arctic-hen7/perseus/commit/d178f5aaaa80f8c89962b5b41693d696863aa922)), closes [#87](https://github.com/arctic-hen7/perseus/issues/87)
+* upgraded to sycamore v0.7.0 ([3989241](https://github.com/arctic-hen7/perseus/commit/3989241bb94a62005819ed652b4a15764867b8f8))
+
+
+### Bug Fixes
+
+* added missing `cfg` macro line ([006523a](https://github.com/arctic-hen7/perseus/commit/006523a26922a86aba830a4dba895829bb71dc3d))
+* fixed error page duplication without hydration ([7b3e62f](https://github.com/arctic-hen7/perseus/commit/7b3e62f335f908d72c0de62f4d82592e38ca67ec))
+* **deps:** upgraded to `actix-web` v4.0.0-beta.14 ([139d309](https://github.com/arctic-hen7/perseus/commit/139d309997e15146e9277c6f617c88c67d065049))
+
+
+### Documentation Changes
+
+* added a few more known bugs ([6bae07c](https://github.com/arctic-hen7/perseus/commit/6bae07cf56a5e9d4427a9a4331b32d5c6d23a6cc))
+* cleaned up and added page on publishing plugins ([37acece](https://github.com/arctic-hen7/perseus/commit/37acece139f6da9a59e8e3aea0cf039aeafe6b1c))
+* merged `next` and `0.3.x` ([dbb47fb](https://github.com/arctic-hen7/perseus/commit/dbb47fb8677e8fb297102a7ed49de59de206194f))
+* updated docs for sycamore v0.7.0 ([e840734](https://github.com/arctic-hen7/perseus/commit/e840734c3907ee510f02b611cab15999870336bd))
+
 ## [0.3.0-beta.21](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.20...v0.3.0-beta.21) (2021-12-12)
 
 
