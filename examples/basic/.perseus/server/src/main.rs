@@ -19,6 +19,8 @@ use std::fs;
 #[cfg(feature = "integration-actix-web")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("WARNING: The Actix Web integration uses a beta version of Actix Web, and is considered unstable. It is not recommended for production usage.");
+
     use actix_web::{App, HttpServer};
     use perseus_actix_web::configurer;
 

@@ -1,7 +1,7 @@
 use crate::build::{build_internal, finalize};
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::errors::*;
-use crate::parse::ServeOpts;
+use crate::parse::{Integration, ServeOpts};
 use crate::thread::{spawn_thread, ThreadHandle};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
@@ -37,10 +37,18 @@ fn build_server(
     exec: Arc<Mutex<String>>,
     is_release: bool,
     is_standalone: bool,
+    integration: Integration,
 ) -> Result<
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     ExecutionError,
 > {
+    // If we're using the Actix Web integration, warn that it's unstable
+    // A similar warning is emitted for snooping on it
+    // TODO Remove this once Actix Web v4.0.0 goes stable
+    if integration == Integration::ActixWeb {
+        println!("WARNING: The Actix Web integration uses a beta version of Actix Web, and is considered unstable. It is not recommended for production usage.")
+    }
+
     let num_steps = match did_build {
         true => 4,
         false => 2,
@@ -69,11 +77,13 @@ fn build_server(
                     "{} build --message-format json {} {}",
                     env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
                     if is_release { "--release" } else { "" },
-                    if is_standalone {
-                        "--features standalone"
-                    } else {
-                        ""
-                    }
+                    // Enable the appropriate integration
+                    format!(
+                        "--features integration-{} {} --no-default-features",
+                        integration.to_string(),
+                        // We'll also handle whether or not it's standalone because that goes under the `--features` flag
+                        if is_standalone { "standalone" } else { "" }
+                    )
                 )],
                 &sb_target,
                 &sb_spinner,
@@ -198,6 +208,7 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         Arc::clone(&exec),
         opts.release,
         opts.standalone,
+        opts.integration,
     )?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {

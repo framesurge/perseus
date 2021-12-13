@@ -14,6 +14,32 @@ pub struct Opts {
     pub subcmd: Subcommand,
 }
 
+#[derive(Parser, PartialEq, Eq)]
+pub enum Integration {
+    ActixWeb,
+    Warp,
+}
+// We use an `enum` for this so we don't get errors from Cargo about non-existent feature flags, overly verbose but fails quickly
+impl std::str::FromStr for Integration {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "actix-web" => Ok(Self::ActixWeb),
+            "warp" => Ok(Self::Warp),
+            _ => Err("invalid integration name".into()),
+        }
+    }
+}
+impl ToString for Integration {
+    fn to_string(&self) -> String {
+        match self {
+            Self::ActixWeb => "actix-web".to_string(),
+            Self::Warp => "warp".to_string(),
+        }
+    }
+}
+
 #[derive(Parser)]
 pub enum Subcommand {
     Build(BuildOpts),
@@ -61,6 +87,9 @@ pub struct ServeOpts {
     /// Make the final binary standalone (this is used in `perseus deploy` only, don't manually invoke it unless you have a good reason!)
     #[clap(long)]
     pub standalone: bool,
+    /// The server integration to use
+    #[clap(short, long, default_value = "warp")]
+    pub integration: Integration,
 }
 /// Removes `.perseus/` entirely for updates or to fix corruptions
 #[derive(Parser)]
@@ -81,6 +110,9 @@ pub struct DeployOpts {
     /// Export you app to purely static files (see `export`)
     #[clap(short, long)]
     pub export_static: bool,
+    /// The server integration to use (only affects non-exported deployments)
+    #[clap(short, long, default_value = "warp")]
+    pub integration: Integration,
 }
 /// Runs the `tinker` action of plugins, which lets them modify the Perseus engine
 #[derive(Parser)]
@@ -100,5 +132,12 @@ pub enum SnoopSubcommand {
     /// Snoops on the Wasm building process (mostly for debugging errors)
     WasmBuild,
     /// Snoops on the server process (run `perseus build` before this)
-    Serve,
+    Serve(SnoopServeOpts),
+}
+
+#[derive(Parser)]
+pub struct SnoopServeOpts {
+    /// The server integration to use
+    #[clap(short, long, default_value = "warp")]
+    pub integration: Integration,
 }

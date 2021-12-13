@@ -1,5 +1,6 @@
 use crate::errors::*;
 use crate::export;
+use crate::parse::Integration;
 use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
 use fs_extra::copy_items;
@@ -15,7 +16,7 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
     let exit_code = if opts.export_static {
         deploy_export(dir, opts.output)?
     } else {
-        deploy_full(dir, opts.output)?
+        deploy_full(dir, opts.output, opts.integration)?
     };
 
     Ok(exit_code)
@@ -23,7 +24,7 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
 
 /// Deploys the user's app in its entirety, with a bundled server. This can return any kind of error because deploying involves working
 /// with other subcommands.
-fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
+fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result<i32, Error> {
     // Build everything for production, not running the server
     let (serve_exit_code, server_path) = serve(
         dir.clone(),
@@ -32,6 +33,7 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
             no_build: false,
             release: true,
             standalone: true,
+            integration,
         },
     )?;
     if serve_exit_code != 0 {

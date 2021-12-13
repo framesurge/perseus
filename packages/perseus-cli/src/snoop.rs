@@ -1,4 +1,5 @@
 use crate::errors::*;
+use crate::parse::SnoopServeOpts;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -59,12 +60,17 @@ pub fn snoop_wasm_build(dir: PathBuf) -> Result<i32, ExecutionError> {
 }
 
 /// Runs the commands to run the server directly so the user can see detailed logs.
-pub fn snoop_server(dir: PathBuf) -> Result<i32, ExecutionError> {
+pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, ExecutionError> {
     let target = dir.join(".perseus/server");
     run_cmd_directly(
         format!(
-            "{} run",
-            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+            "{} run {}",
+            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+            // Enable the appropriate feature for a non-default server integration
+            format!(
+                "--features integration-{} --no-default-features",
+                opts.integration.to_string()
+            )
         ),
         &target,
     )

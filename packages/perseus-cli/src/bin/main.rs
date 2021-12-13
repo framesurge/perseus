@@ -154,7 +154,7 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
         Subcommand::Snoop(snoop_subcmd) => match snoop_subcmd {
             SnoopSubcommand::Build => snoop_build(dir)?,
             SnoopSubcommand::WasmBuild => snoop_wasm_build(dir)?,
-            SnoopSubcommand::Serve => snoop_server(dir)?,
+            SnoopSubcommand::Serve(snoop_serve_opts) => snoop_server(dir, snoop_serve_opts)?,
         },
         Subcommand::Prep => {
             // The `.perseus/` directory has already been set up in the preliminaries, so we don't need to do anything here
