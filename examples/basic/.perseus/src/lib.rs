@@ -116,8 +116,12 @@ pub fn run() -> Result<(), JsValue> {
                                     if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
                                         let initial_container = initial_container.unwrap();
                                         // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
-                                        let initial_html = initial_container.inner_html();
-                                        container_rx_elem.set_inner_html(&initial_html);
+                                        // If we're not hydrating, there's no point in moving anything over, we'll just fully re-render
+                                        #[cfg(feature = "hydrate")]
+                                        {
+                                            let initial_html = initial_container.inner_html();
+                                            container_rx_elem.set_inner_html(&initial_html);
+                                        }
                                         initial_container.set_inner_html("");
                                         // Make the initial container invisible
                                         initial_container.set_attribute("style", "display: none;").unwrap();
@@ -125,6 +129,8 @@ pub fn run() -> Result<(), JsValue> {
                                         // Right now, we don't provide translators to any error pages that have come from the server
                                         error_pages.render_page(&url, &status, &err, None, &container_rx_elem);
                                     } else {
+                                        // This is an error from navigating within the app (probably the dev mistyped a link...), so we'll clear the page
+                                        container_rx_elem.set_inner_html("");
                                         error_pages.render_page("", &404, "not found", None, &container_rx_elem);
                                     }
                                 },

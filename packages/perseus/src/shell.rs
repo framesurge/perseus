@@ -414,8 +414,12 @@ pub async fn app_shell(
         InitialState::Error(ErrorPageData { url, status, err }) => {
             checkpoint("initial_state_error");
             // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
-            let initial_html = initial_container.inner_html();
-            container_rx_elem.set_inner_html(&initial_html);
+            // If we're not hydrating, there's no point in moving anything over, we'll just fully re-render
+            #[cfg(feature = "hydrate")]
+            {
+                let initial_html = initial_container.inner_html();
+                container_rx_elem.set_inner_html(&initial_html);
+            }
             initial_container.set_inner_html("");
             // Make the initial container invisible
             initial_container
@@ -424,6 +428,8 @@ pub async fn app_shell(
             // Hydrate the currently static error page
             // Right now, we don't provide translators to any error pages that have come from the server
             // We render this rather than hydrating because otherwise we'd need a `HydrateNode` at the plugins level, which is way too inefficient
+            #[cfg(not(feature = "hydrate"))]
+            container_rx_elem.set_inner_html("");
             error_pages.render_page(&url, &status, &err, None, &container_rx_elem);
         }
     };
