@@ -14,8 +14,8 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sycamore = { version = "0.6", features = ["ssr"] }
-sycamore-router = "0.6"
+sycamore = { version = "0.7", features = ["ssr"] }
+sycamore-router = "0.7"
 perseus-macro = { path = "../perseus-macro", version = "0.3.0-beta.21" }
 # TODO review feature flags here
 web-sys = { version = "0.3", features = ["Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
@@ -45,3 +45,5 @@ tinker-plugins = []
 server-side = []
 # This feature changes a few defaults so that Perseus works seemlessly when deployed with the `.perseus/` structure (this is activated automatically by `perseus deploy`, and should not be invoked manually!)
 standalone = []
+# This feature enables Sycamore hydration by default (Sycamore hydration feature is always activated though)
+hydrate = []

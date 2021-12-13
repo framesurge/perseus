@@ -7,4 +7,4 @@ edition = "2018"
 
 [dependencies]
 perseus = { path = "../../packages/perseus" }
-sycamore = "0.6"
+sycamore = "0.7"

@@ -1,5 +1,5 @@
 use crate::plugins::{PluginAction, Runner};
-use crate::GenericNode;
+use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
 
@@ -45,7 +45,7 @@ impl<A, R> Default for FunctionalPluginAction<A, R> {
 }
 
 /// Actions designed to be compatible with other plugins such that two plugins can execute the same action.
-pub struct FunctionalPluginActions<G: GenericNode> {
+pub struct FunctionalPluginActions<G: Html> {
     /// The all-powerful action that can modify the Perseus engine itself. Because modifying the code you're running doesn't work with
     /// compiled languages like Rust, this has its own command in the CLI, `perseus tinker`. This is best used for modifying
     /// `.perseus/Cargo.toml` or other files. Ensure that you add signal comments so you don't apply the same modifications twice!
@@ -65,7 +65,7 @@ pub struct FunctionalPluginActions<G: GenericNode> {
     /// Actions pertaining to the client-side code.
     pub client_actions: FunctionalPluginClientActions,
 }
-impl<G: GenericNode> Default for FunctionalPluginActions<G> {
+impl<G: Html> Default for FunctionalPluginActions<G> {
     fn default() -> Self {
         Self {
             tinker: FunctionalPluginAction::default(),
@@ -79,7 +79,7 @@ impl<G: GenericNode> Default for FunctionalPluginActions<G> {
 }
 
 /// Functional actions that pertain to altering the settings exported from the `define_app!` macro.
-pub struct FunctionalPluginSettingsActions<G: GenericNode> {
+pub struct FunctionalPluginSettingsActions<G: Html> {
     /// Adds additional static aliases. Note that a static alias is a mapping of a URL path to a filesystem path (relative to the
     /// project root). These will be vetted to ensure they don't access anything outside the project root for security reasons. If they
     /// do, the user's app will not run. Note that these have the power to override the user's static aliases.
@@ -92,7 +92,7 @@ pub struct FunctionalPluginSettingsActions<G: GenericNode> {
     pub add_error_pages:
         FunctionalPluginAction<(), HashMap<u16, crate::error_pages::ErrorPageTemplate<G>>>,
 }
-impl<G: GenericNode> Default for FunctionalPluginSettingsActions<G> {
+impl<G: Html> Default for FunctionalPluginSettingsActions<G> {
     fn default() -> Self {
         Self {
             add_static_aliases: FunctionalPluginAction::default(),

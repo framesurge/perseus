@@ -4,6 +4,7 @@ use crate::errors::*;
 use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
 use crate::template::Template;
+use crate::templates::TemplateNodeType;
 use crate::ErrorPages;
 use fmterr::fmt_err;
 use std::cell::RefCell;
@@ -214,7 +215,7 @@ pub enum InitialState {
 // TODO handle exceptions higher up
 pub async fn app_shell(
     path: String,
-    (template, was_incremental_match): (Rc<Template<DomNode>>, bool),
+    (template, was_incremental_match): (Rc<Template<TemplateNodeType>>, bool),
     locale: String,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
@@ -269,6 +270,15 @@ pub async fn app_shell(
 
             // Hydrate that static code using the acquired state
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+            {
+                // If we aren't hydrating, we'll have to delete everything and re-render
+                container_rx_elem.set_inner_html("");
+                sycamore::render_to(
+                    move || template.render_for_template(state, translator, false),
+                    &container_rx_elem,
+                );
+            }
+            #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
                 || template.render_for_template(state, translator, false),
@@ -349,6 +359,22 @@ pub async fn app_shell(
 
                                 // Hydrate that static code using the acquired state
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+                                #[cfg(not(feature = "hydrate"))]
+                                {
+                                    // If we aren't hydrating, we'll have to delete everything and re-render
+                                    container_rx_elem.set_inner_html("");
+                                    sycamore::render_to(
+                                        move || {
+                                            template.render_for_template(
+                                                page_data.state,
+                                                translator,
+                                                false,
+                                            )
+                                        },
+                                        &container_rx_elem,
+                                    );
+                                }
+                                #[cfg(feature = "hydrate")]
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
                                     move || {
@@ -397,7 +423,8 @@ pub async fn app_shell(
                 .unwrap();
             // Hydrate the currently static error page
             // Right now, we don't provide translators to any error pages that have come from the server
-            error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
+            // We render this rather than hydrating because otherwise we'd need a `HydrateNode` at the plugins level, which is way too inefficient
+            error_pages.render_page(&url, &status, &err, None, &container_rx_elem);
         }
     };
 }

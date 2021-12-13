@@ -69,7 +69,7 @@ pub use http::Request as HttpRequest;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
 pub use perseus_macro::{autoserde, head, template, test};
-pub use sycamore::{generic_node::GenericNode, DomNode, SsrNode};
+pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, Route};
 
 // Items that should be available at the root (this should be nearly everything used in a typical Perseus app)
@@ -82,6 +82,13 @@ pub use crate::template::{HeadFn, RenderFnResult, RenderFnResultWithCause, State
 pub mod templates {
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};
     pub use crate::template::*;
+    // The engine needs to know whether or not to use hydration, this is how we pass those feature settings through
+    #[cfg(not(feature = "hydrate"))]
+    #[doc(hidden)]
+    pub type TemplateNodeType = sycamore::DomNode;
+    #[cfg(feature = "hydrate")]
+    #[doc(hidden)]
+    pub type TemplateNodeType = sycamore::HydrateNode;
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.

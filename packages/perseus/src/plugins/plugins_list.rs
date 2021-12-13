@@ -1,5 +1,5 @@
 use crate::plugins::*;
-use crate::GenericNode;
+use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
 
@@ -7,7 +7,7 @@ type PluginDataMap = HashMap<String, Box<dyn Any>>;
 
 /// A representation of all the plugins used by an app. Due to the sheer number and compexity of nested fields, this is best transferred
 /// in an `Rc`, which unfortunately results in double indirection for runner functions.
-pub struct Plugins<G: GenericNode> {
+pub struct Plugins<G: Html> {
     /// The functional actions that this plugin takes. This is defined by default such that all actions are assigned to a default, and
     /// so they can all be run without long chains of matching `Option<T>`s.
     pub functional_actions: FunctionalPluginActions<G>,
@@ -16,7 +16,7 @@ pub struct Plugins<G: GenericNode> {
     pub control_actions: ControlPluginActions,
     plugin_data: PluginDataMap,
 }
-impl<G: GenericNode> Default for Plugins<G> {
+impl<G: Html> Default for Plugins<G> {
     fn default() -> Self {
         Self {
             functional_actions: FunctionalPluginActions::<G>::default(),
@@ -25,7 +25,7 @@ impl<G: GenericNode> Default for Plugins<G> {
         }
     }
 }
-impl<G: GenericNode> Plugins<G> {
+impl<G: Html> Plugins<G> {
     /// Creates a new instance of `Plugins`, with no actions taken by any plugins, and the data map empty.
     pub fn new() -> Self {
         Self::default()

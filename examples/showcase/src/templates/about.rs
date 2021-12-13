@@ -1,14 +1,14 @@
 use perseus::Template;
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+use sycamore::prelude::{component, view, Html, View};
 
 #[perseus::template(AboutPage)]
 #[component(AboutPage<G>)]
-pub fn about_page() -> SycamoreTemplate<G> {
-    template! {
+pub fn about_page() -> View<G> {
+    view! {
         p { "About." }
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("about").template(about_page)
 }

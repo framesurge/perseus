@@ -1,10 +1,10 @@
 use crate::locales::Locales;
 use crate::template::TemplateMap;
 use crate::templates::ArcTemplateMap;
+use crate::Html;
 use crate::Template;
 use std::collections::HashMap;
 use std::rc::Rc;
-use sycamore::prelude::GenericNode;
 
 /// The backend for `get_template_for_path` to avoid code duplication for the `Arc` and `Rc` versions.
 macro_rules! get_template_for_path {
@@ -58,7 +58,7 @@ macro_rules! get_template_for_path {
 /// This houses the central routing algorithm of Perseus, which is based fully on the fact that we know about every single page except
 /// those rendered with ISR, and we can infer about them based on template root path domains. If that domain system is violated, this
 /// routing algorithm will not behave as expected whatsoever (as far as routing goes, it's undefined behaviour)!
-pub fn get_template_for_path<G: GenericNode>(
+pub fn get_template_for_path<G: Html>(
     raw_path: &str,
     render_cfg: &HashMap<String, String>,
     templates: &TemplateMap<G>,
@@ -76,7 +76,7 @@ pub fn get_template_for_path<G: GenericNode>(
 /// template map needs to be passed betgween threads.
 ///
 /// Warning: this returns a `&Template<G>` rather than a `Rc<Template<G>>`, and thus should only be used independently of the rest of Perseus (through `match_route_atomic`).
-pub fn get_template_for_path_atomic<'a, G: GenericNode>(
+pub fn get_template_for_path_atomic<'a, G: Html>(
     raw_path: &str,
     render_cfg: &HashMap<String, String>,
     templates: &'a ArcTemplateMap<G>,
@@ -95,7 +95,7 @@ pub fn get_template_for_path_atomic<'a, G: GenericNode>(
 /// Matches the given path to a `RouteVerdict`. This takes a `TemplateMap` to match against, the render configuration to index, and it
 /// needs to know if i18n is being used. The path this takes should be raw, it may or may not have a locale, but should be split into
 /// segments by `/`, with empty ones having been removed.
-pub fn match_route<G: GenericNode>(
+pub fn match_route<G: Html>(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
     templates: &TemplateMap<G>,
@@ -154,7 +154,7 @@ pub fn match_route<G: GenericNode>(
 }
 
 /// A version of `match_route` that accepts an `ArcTemplateMap<G>`. This should be used in multithreaded situations, like on the server.
-pub fn match_route_atomic<'a, G: GenericNode>(
+pub fn match_route_atomic<'a, G: Html>(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
     templates: &'a ArcTemplateMap<G>,
@@ -214,7 +214,7 @@ pub fn match_route_atomic<'a, G: GenericNode>(
 
 /// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
 /// the app shell and the rendering of a page.
-pub struct RouteInfo<G: GenericNode> {
+pub struct RouteInfo<G: Html> {
     /// The actual path of the route.
     pub path: String,
     /// The template that will be used. The app shell will derive props and a translator to pass to the template function.
@@ -229,7 +229,7 @@ pub struct RouteInfo<G: GenericNode> {
 /// The possible outcomes of matching a route. This is an alternative implementation of Sycamore's `Route` trait to enable greater
 /// control and tighter integration of routing with templates. This can only be used if `Routes` has been defined in context (done
 /// automatically by the CLI).
-pub enum RouteVerdict<G: GenericNode> {
+pub enum RouteVerdict<G: Html> {
     /// The given route was found, and route information is attached.
     Found(RouteInfo<G>),
     /// The given route was not found, and a `404 Not Found` page should be shown.
@@ -243,7 +243,7 @@ pub enum RouteVerdict<G: GenericNode> {
 ///
 /// This version is designed for multithreaded scenarios, and stores a reference to a template rather than an `Rc<Template<G>>`. That means this is not compatible
 /// with Perseus on the client-side, only on the server-side.
-pub struct RouteInfoAtomic<'a, G: GenericNode> {
+pub struct RouteInfoAtomic<'a, G: Html> {
     /// The actual path of the route.
     pub path: String,
     /// The template that will be used. The app shell will derive props and a translator to pass to the template function.
@@ -260,7 +260,7 @@ pub struct RouteInfoAtomic<'a, G: GenericNode> {
 /// automatically by the CLI).
 ///
 /// This version uses `RouteInfoAtomic`, and is designed for multithreaded scenarios (i.e. on the server).
-pub enum RouteVerdictAtomic<'a, G: GenericNode> {
+pub enum RouteVerdictAtomic<'a, G: Html> {
     /// The given route was found, and route information is attached.
     Found(RouteInfoAtomic<'a, G>),
     /// The given route was not found, and a `404 Not Found` page should be shown.
@@ -281,8 +281,8 @@ macro_rules! create_app_route {
         locales => $locales:expr
     } => {
         /// The route type for the app, with all routing logic inbuilt through the generation macro.
-        struct $name<G: $crate::GenericNode>($crate::internal::router::RouteVerdict<G>);
-        impl<G: $crate::GenericNode> ::sycamore_router::Route for $name<G> {
+        struct $name<G: $crate::Html>($crate::internal::router::RouteVerdict<G>);
+        impl<G: $crate::Html> ::sycamore_router::Route for $name<G> {
             fn match_route(path: &[&str]) -> Self {
                 let verdict = $crate::internal::router::match_route(path, $render_cfg, $templates, $locales);
                 Self(verdict)

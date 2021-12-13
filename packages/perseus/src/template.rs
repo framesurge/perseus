@@ -3,6 +3,7 @@
 use crate::default_headers::default_headers;
 use crate::errors::*;
 use crate::translator::Translator;
+use crate::Html;
 use crate::Request;
 use crate::SsrNode;
 use futures::Future;
@@ -12,7 +13,7 @@ use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
-use sycamore::prelude::{template, GenericNode, Template as SycamoreTemplate};
+use sycamore::prelude::{view, View};
 
 /// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
 /// to make this easier for each thing in here.
@@ -136,7 +137,7 @@ make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
 /// given `Option`. If you're using i18n, an `Rc<Translator>` will also be made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
-pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> SycamoreTemplate<G> + Send + Sync>;
+pub type TemplateFn<G> = Box<dyn Fn(Option<String>) -> View<G> + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just a template function that will always be server-side
 /// rendered in function (it may be rendered on the client, but it will always be used to create an HTML string, rather than a reactive
 /// template).
@@ -159,7 +160,7 @@ pub type AmalgamateStatesFn =
 /// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
 /// All properties for templates are passed around as strings to avoid type maps and other horrible things, this only adds one extra
 /// deserialization call at build time. This only actually owns a two `String`s and a `bool`.
-pub struct Template<G: GenericNode> {
+pub struct Template<G: Html> {
     /// The path to the root of the template. Any build paths will be inserted under this.
     path: String,
     /// A function that will render your template. This will be provided the rendered properties, and will be used whenever your template needs
@@ -203,14 +204,14 @@ pub struct Template<G: GenericNode> {
     /// uses both `build_state` and `request_state`. If not specified and both are generated, request state will be prioritized.
     amalgamate_states: Option<AmalgamateStatesFn>,
 }
-impl<G: GenericNode> Template<G> {
+impl<G: Html> Template<G> {
     /// Creates a new template definition.
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_: Option<String>| sycamore::template! {}),
+            template: Box::new(|_: Option<String>| sycamore::view! {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
-            head: Box::new(|_: Option<String>| sycamore::template! {}),
+            head: Box::new(|_: Option<String>| sycamore::view! {}),
             // We create sensible header defaults here
             set_headers: Box::new(|_: Option<String>| default_headers()),
             get_build_paths: None,
@@ -230,8 +231,8 @@ impl<G: GenericNode> Template<G> {
         props: Option<String>,
         translator: &Translator,
         is_server: bool,
-    ) -> SycamoreTemplate<G> {
-        template! {
+    ) -> View<G> {
+        view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
             ContextProvider(ContextProviderProps {
                 value: RenderCtx {
@@ -246,7 +247,7 @@ impl<G: GenericNode> Template<G> {
     /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
     pub fn render_head_str(&self, props: Option<String>, translator: &Translator) -> String {
         sycamore::render_to_string(|| {
-            template! {
+            view! {
                 // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
                 ContextProvider(ContextProviderProps {
                     value: RenderCtx {
@@ -446,7 +447,7 @@ impl<G: GenericNode> Template<G> {
     /// Sets the template rendering function to use.
     pub fn template(
         mut self,
-        val: impl Fn(Option<String>) -> SycamoreTemplate<G> + Send + Sync + 'static,
+        val: impl Fn(Option<String>) -> View<G> + Send + Sync + 'static,
     ) -> Template<G> {
         self.template = Box::new(val);
         self
@@ -456,7 +457,7 @@ impl<G: GenericNode> Template<G> {
     #[allow(unused_variables)]
     pub fn head(
         mut self,
-        val: impl Fn(Option<String>) -> SycamoreTemplate<SsrNode> + Send + Sync + 'static,
+        val: impl Fn(Option<String>) -> View<SsrNode> + Send + Sync + 'static,
     ) -> Template<G> {
         // Headers are always prerendered on the server-side
         #[cfg(feature = "server-side")]
@@ -617,7 +618,7 @@ pub type ArcTemplateMap<G> = HashMap<String, Arc<Template<G>>>;
 
 /// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
 /// because it uses Sycamore context.
-// TODO use `GenericNode` downcasting here
+// TODO use `Html` downcasting here
 #[macro_export]
 macro_rules! is_server {
     () => {{

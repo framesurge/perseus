@@ -1,11 +1,11 @@
 use perseus::{link, t, Template};
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+use sycamore::prelude::{component, view, Html, View};
 
 #[perseus::template(IndexPage)]
 #[component(IndexPage<G>)]
-pub fn index_page() -> SycamoreTemplate<G> {
+pub fn index_page() -> View<G> {
     let username = "User";
-    template! {
+    view! {
         p { (t!("hello", {
             "user": username
         })) }
@@ -13,6 +13,6 @@ pub fn index_page() -> SycamoreTemplate<G> {
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index").template(index_page)
 }

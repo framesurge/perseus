@@ -2,7 +2,7 @@ use perseus::{
     ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
 };
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+use sycamore::prelude::{component, view, Html, View};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TimePageProps {
@@ -11,13 +11,13 @@ pub struct TimePageProps {
 
 #[perseus::template(TimePage)]
 #[component(TimePage<G>)]
-pub fn time_page(props: TimePageProps) -> SycamoreTemplate<G> {
-    template! {
+pub fn time_page(props: TimePageProps) -> View<G> {
+    view! {
         p { (format!("The time when this page was last rendered was '{}'.", props.time)) }
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("timeisr")
         .template(time_page)
         // This page will revalidate every five seconds (to illustrate revalidation)

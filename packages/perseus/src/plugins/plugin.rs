@@ -1,5 +1,5 @@
 use crate::plugins::*;
-use crate::GenericNode;
+use crate::Html;
 use std::any::Any;
 use std::marker::PhantomData;
 
@@ -21,7 +21,7 @@ pub enum PluginEnv {
 }
 
 /// A Perseus plugin. This must be exported by all plugin crates so the user can register the plugin easily.
-pub struct Plugin<G: GenericNode, D: Any> {
+pub struct Plugin<G: Html, D: Any> {
     /// The machine name of the plugin, which will be used as a key in a HashMap with many other plugins. This should be the public
     /// crate name in all cases.
     pub name: String,
@@ -36,7 +36,7 @@ pub struct Plugin<G: GenericNode, D: Any> {
 
     plugin_data_type: PhantomData<D>,
 }
-impl<G: GenericNode, D: Any> Plugin<G, D> {
+impl<G: Html, D: Any> Plugin<G, D> {
     /// Creates a new plugin with a name, functional actions, control actions, and whether or not the plugin is tinker-only.
     pub fn new(
         name: &str,

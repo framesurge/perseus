@@ -10,11 +10,12 @@ use perseus::{
         shell::{app_shell, get_initial_state, get_render_cfg, InitialState},
     },
     plugins::PluginAction,
+    templates::TemplateNodeType,
     DomNode,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::prelude::{cloned, create_effect, template, NodeRef, StateHandle};
+use sycamore::prelude::{cloned, create_effect, view, NodeRef, ReadSignal};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -77,8 +78,8 @@ pub fn run() -> Result<(), JsValue> {
 
     sycamore::render_to(
         move || {
-            template! {
-                Router(RouterProps::new(HistoryIntegration::new(), move |route: StateHandle<AppRoute<DomNode>>| {
+            view! {
+                Router(RouterProps::new(HistoryIntegration::new(), move |route: ReadSignal<AppRoute<TemplateNodeType>>| {
                     create_effect(cloned!((container_rx) => move || {
                         // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                         // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
@@ -122,9 +123,9 @@ pub fn run() -> Result<(), JsValue> {
                                         initial_container.set_attribute("style", "display: none;").unwrap();
                                         // Hydrate the error pages
                                         // Right now, we don't provide translators to any error pages that have come from the server
-                                        error_pages.hydrate_page(&url, &status, &err, None, &container_rx_elem);
+                                        error_pages.render_page(&url, &status, &err, None, &container_rx_elem);
                                     } else {
-                                        error_pages.hydrate_page("", &404, "not found", None, &container_rx_elem);
+                                        error_pages.render_page("", &404, "not found", None, &container_rx_elem);
                                     }
                                 },
                             };
@@ -133,7 +134,7 @@ pub fn run() -> Result<(), JsValue> {
                     // This template is reactive, and will be updated as necessary
                     // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
                     // The main reason for this is that the router only intercepts click events from its children
-                    template! {
+                    view! {
                         div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
                     }
                 }))

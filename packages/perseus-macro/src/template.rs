@@ -117,14 +117,14 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
     if arg.is_some() {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::GenericNode>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::Template<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<G> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
                 fn #name#generics(#arg) -> #return_type {
                     #block
                 }
-                ::sycamore::prelude::template! {
+                ::sycamore::prelude::view! {
                     #component_name(
                         // If there are props, they will always be provided, the compiler just doesn't know that
                         ::serde_json::from_str(&props.unwrap()).unwrap()
@@ -135,14 +135,14 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
     } else {
         // There are no arguments
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::GenericNode>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::Template<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<G> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
                 fn #name#generics(#arg) -> #return_type {
                     #block
                 }
-                ::sycamore::prelude::template! {
+                ::sycamore::prelude::view! {
                     #component_name()
                 }
             }

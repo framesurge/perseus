@@ -6,7 +6,7 @@ pub struct TestPluginData {
     pub about_page_greeting: String,
 }
 
-pub fn get_test_plugin<G: perseus::GenericNode>() -> Plugin<G, TestPluginData> {
+pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
     Plugin::new(
         "test-plugin",
         |mut actions| {
@@ -24,9 +24,9 @@ pub fn get_test_plugin<G: perseus::GenericNode>() -> Plugin<G, TestPluginData> {
                     if let Some(plugin_data) = plugin_data.downcast_ref::<TestPluginData>() {
                         let about_page_greeting = plugin_data.about_page_greeting.to_string();
                         vec![Template::new("about")
-                        .template(move |_| sycamore::template! { p { (about_page_greeting) } })
+                        .template(move |_| sycamore::view! { p { (about_page_greeting) } })
                         .head(|_| {
-                            sycamore::template! {
+                            sycamore::view! {
                                 title { "About Page (Plugin Modified) | Perseus Example – Plugins" }
                             }
                         })]

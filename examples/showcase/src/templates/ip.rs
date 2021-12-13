@@ -1,6 +1,6 @@
 use perseus::{RenderFnResultWithCause, Request, Template};
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+use sycamore::prelude::{component, view, Html, View};
 
 #[derive(Serialize, Deserialize)]
 pub struct IpPageProps {
@@ -9,8 +9,8 @@ pub struct IpPageProps {
 
 #[perseus::template(IpPage)]
 #[component(IpPage<G>)]
-pub fn ip_page(props: IpPageProps) -> SycamoreTemplate<G> {
-    template! {
+pub fn ip_page(props: IpPageProps) -> View<G> {
+    view! {
         p {
             (
                 format!("Your IP address is {}.", props.ip)
@@ -19,7 +19,7 @@ pub fn ip_page(props: IpPageProps) -> SycamoreTemplate<G> {
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("ip")
         .request_state_fn(get_request_state)
         .template(ip_page)

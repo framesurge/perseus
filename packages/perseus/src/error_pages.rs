@@ -1,26 +1,26 @@
 use crate::translator::Translator;
-use crate::{DomNode, GenericNode, SsrNode};
+use crate::{DomNode, Html, HydrateNode, SsrNode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
-use sycamore::template::Template as SycamoreTemplate;
+use sycamore::view::View;
 use web_sys::Element;
 
 /// The callback to a template the user must provide for error pages. This is passed the status code, the error message, the URL of the
 /// problematic asset, and a translator if one is available . Many error pages are generated when a translator is not available or
 /// couldn't be instantiated, so you'll need to rely on symbols or the like in these cases.
 pub type ErrorPageTemplate<G> =
-    Box<dyn Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G> + Send + Sync>;
+    Box<dyn Fn(String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
 
 /// A type alias for the `HashMap` the user should provide for error pages.
-pub struct ErrorPages<G: GenericNode> {
+pub struct ErrorPages<G: Html> {
     status_pages: HashMap<u16, ErrorPageTemplate<G>>,
     fallback: ErrorPageTemplate<G>,
 }
-impl<G: GenericNode> ErrorPages<G> {
+impl<G: Html> ErrorPages<G> {
     /// Creates a new definition of error pages with just a fallback.
     pub fn new(
-        fallback: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G>
+        fallback: impl Fn(String, u16, String, Option<Rc<Translator>>) -> View<G>
             + Send
             + Sync
             + 'static,
@@ -35,10 +35,7 @@ impl<G: GenericNode> ErrorPages<G> {
     pub fn add_page(
         &mut self,
         status: u16,
-        page: impl Fn(String, u16, String, Option<Rc<Translator>>) -> SycamoreTemplate<G>
-            + Send
-            + Sync
-            + 'static,
+        page: impl Fn(String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync + 'static,
     ) {
         self.status_pages.insert(status, Box::new(page));
     }
@@ -63,7 +60,7 @@ impl<G: GenericNode> ErrorPages<G> {
         status: &u16,
         err: &str,
         translator: Option<Rc<Translator>>,
-    ) -> SycamoreTemplate<G> {
+    ) -> View<G> {
         let template_fn = self.get_template_fn(status);
 
         template_fn(url.to_string(), *status, err.to_string(), translator)
@@ -86,6 +83,8 @@ impl ErrorPages<DomNode> {
             container,
         );
     }
+}
+impl ErrorPages<HydrateNode> {
     /// Hydrates the appropriate error page to the given DOM container. This is used for when an error page is rendered by the server
     /// and then needs interactivity.
     pub fn hydrate_page(

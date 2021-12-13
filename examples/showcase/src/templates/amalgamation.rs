@@ -1,6 +1,6 @@
 use perseus::{RenderFnResultWithCause, Request, States, Template};
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::{component, template, GenericNode, Template as SycamoreTemplate};
+use sycamore::prelude::{component, view, Html, View};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AmalagamationPageProps {
@@ -9,13 +9,13 @@ pub struct AmalagamationPageProps {
 
 #[perseus::template(AmalgamationPage)]
 #[component(AmalgamationPage<G>)]
-pub fn amalgamation_page(props: AmalagamationPageProps) -> SycamoreTemplate<G> {
-    template! {
+pub fn amalgamation_page(props: AmalagamationPageProps) -> View<G> {
+    view! {
         p { (format!("The message is: '{}'", props.message)) }
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("amalgamation")
         .build_state_fn(get_build_state)
         .request_state_fn(get_request_state)
