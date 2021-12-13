@@ -17,25 +17,23 @@ What is intended to be used directly is the `Template<G>` `struct`, which is int
 
 The other commonly used system from this crate is the `Translator` system, explained in detail in [the i18n section](:i18n/intro). `Translator`s are passed around in `Rc`s, and `TranslationsManager` on the server caches all translations by default in memory on the server.
 
-## Actix Web Integration
+## Server Integrations
 
-The core of Perseus provides very few systems to set up a functional Perseus server though, which requires a significant amount of additional work. To this end, [`perseus-actix-web`](https://docs.rs/perseus-actix-web) is used to make this process easy. If you've ejected, you'll be working with this directly, which should be relatively simple, as it just accepts configuration options and then should simply work.
-
-Note that this module provides a `configurer` function, which allows it to be modularly added to any existing Actix Web server, which is particularly useful if you want to run other endpoint on your server, or a system like [Diana](https://github.com/arctic-hen7/diana).
+The core of Perseus provides very few systems to set up a functional Perseus server though, which requires a significant amount of additional work. To this end, server integration crates are used to make this process easy. If you've ejected, you'll be working with these directly, which should be relatively simple, as they just accept configuration options and then should simply work.
 
 ## CLI
 
-As documented in [this section](:cli), the CLI simply runs commands to execute the last two components of the Perseus system, acting as a convenience. It also contains these two components inside its binary (using [`include_dir!`](https://github.com/Michael-F-Bryan/include_dir))
+As documented in [this section](:cli), the CLI simply runs commands to execute the last two components of the Perseus system, acting as a convenience. It also contains these two components inside its binary (using [`include_dir!`](https://github.com/Michael-F-Bryan/include_dir)).
 
-## CLI Builder
+### CLI Builder
 
 This system can be further broken down into two parts.
 
-### Static Generator
+#### Static Generator
 
-This is a single binary that just imports the user's templates and some other information (like locales) and then calls `build_app`. This will result in generating a number of files to `.perseus/dist`, which will be served by the server to any clients, which will then hydrate those static pages into fully-fledged Sycamore templates.
+This is a single binary that just imports the user's templates and some other information (like locales) and then calls `build_app`. This will result in generating a number of files to `.perseus/dist/`, which will be served by the server to any clients, which will then hydrate those static pages into fully-fledged Sycamore templates.
 
-### App Shell
+#### App Shell
 
 This is encapsulated in `.perseus/src/lib.rs`, and it performs a number of integral functions:
 
@@ -46,6 +44,6 @@ This is encapsulated in `.perseus/src/lib.rs`, and it performs a number of integ
 -   Invokes the core app shell to manage initial/subsequent loads and translations
 -   Handles error page displaying
 
-## CLI Server
+### CLI Server
 
-This is just an invocation of the `perseus-actix-web` module's systems with the data provided by the user through the `define_app!` macro. This also sets the default location for static content and the `index.html` file.
+This is just an invocation of the the appropriate server integration's systems with the data provided by the user through the `define_app!` macro. This also sets the default location for static content and the `index.html` file.

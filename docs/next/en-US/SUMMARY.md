@@ -47,6 +47,7 @@
     -   [The `tinker` Action](/docs/plugins/tinker)
     -   [Writing Plugins](/docs/plugins/writing)
     -   [Security Considerations](/docs/plugins/security)
+    -   [Publishing Plugins](/docs/plugins/publishing)
 -   [Deploying](/docs/deploying/intro)
     -   [Server Deployment](/docs/deploying/serverful)
     -   [Serverless Deployment](/docs/deploying/serverless)
