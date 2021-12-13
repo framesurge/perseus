@@ -60,4 +60,4 @@ It's often necessary to make sure you're only running some logic on the client-s
 
 This is a very contrived example, but what you should note if you try this is the flash from `server` to `client` (when you go to the page from the URL bar, not when you go in from the link on the index page), because the page is pre-rendered on the server and then hydrated on the client. This is an important principle of Perseus, and you should be aware of this potential flashing (easily solved by a less contrived example) when your users [initially load](:advanced/initial-loads) a page.
 
-One important thing to note with this macro is that it will only work in a _reactive scope_ because it uses Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/contexts). In other words, you can only use it inside a `template!`, `create_effect`, or the like.
+One important thing to note with this macro is that it will only work in a _reactive scope_ because it uses Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/contexts). In other words, you can only use it inside a `view!`, `create_effect`, or the like.

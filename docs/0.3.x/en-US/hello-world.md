@@ -52,12 +52,11 @@ Now, create a new directory called `src` and add a new file inside called `lib.r
 First, we import some things that'll be useful:
 
 -   `perseus::{define_app, ErrorPages, Template}` -- the -`define_app!` macro, which tells Perseus how your app works; the `ErrorPages` `struct`, which lets you tell Perseus how to handle errors (like _404 Not Found_ if the user goes to a nonexistent page); and the `Template` `struct`, which is how Perseus manages pages in your app
--   `std::rc::Rc` -- a [reference-counted smart pointer](https://doc.rust-lang.org/std/rc/struct.Rc.html) (you don't _have_ to understand these to use Perseus, but reading that link would be helpful)
--   `sycamore::template` -- Sycamore's [`template!` macro], which lets you write HTML-like code in Rust
+-   `sycamore::view` -- Sycamore's `view!` macro, which lets you write HTML-like code in Rust
 
-Then, we use the `define_app!` macro to declare the different aspects of the app, starting with the _templates_. We only have one template, which we've called `index` (a special name that makes it render at the root of your app), and then we define how that should look, creating a paragraph (`p`) containing the text `Hello World!`. Perseus does all kinds of clever stuff with this under the hood, and we put it in an `Rc` to enable that.
+Then, we use the `define_app!` macro to declare the different aspects of the app, starting with the _templates_. We only have one template, which we've called `index` (a special name that makes it render at the root of your app), and then we define how that should look, creating a paragraph (`p`) containing the text `Hello World!`.
 
-Finally, we tell Perseus what to do if something in your app fails, like if the user goes to a page that doesn't exist. This requires creating a new instance of `ErrorPages`, which is a `struct` that lets you define a separate error page for every [HTTP status code](https://httpstatuses.com), as well as a fallback. Here, we've just defined the fallback. That page is given the URL that caused the error, the HTTP status code, and the actual error message, all of which we display with a Sycamore `template!`, with seamless interpolation.
+Finally, we tell Perseus what to do if something in your app fails, like if the user goes to a page that doesn't exist. This requires creating a new instance of `ErrorPages`, which is a `struct` that lets you define a separate error page for every [HTTP status code](https://httpstatuses.com), as well as a fallback. Here, we've just defined the fallback. That page is given the URL that caused the error, the HTTP status code, and the actual error message, all of which we display with a Sycamore `view!`, with seamless interpolation.
 
 </details>
 

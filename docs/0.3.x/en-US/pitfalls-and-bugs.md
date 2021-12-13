@@ -20,3 +20,7 @@ wasm-opt = false
 ```
 
 This will disable optimizations for your Wasm bundle, which prevents this issue from occurring. Note however that you'll end up with very large bundles if you compile on your M1 Mac. Again though, this issue is set to be fixed very soon.
+
+## I want to apply X to my `Cargo.toml`, but it doesn't work
+
+Perseus has a rather unique code structure that will foil most attempts at modifying your own `Cargo.toml`. For example, if you wanted to change the `codegen_units` in the release profile of your app, you couldn't do this in your own `Cargo.toml`, it would have no effect. The reason for this is that the code your write is actually a library that's imported by the CLI's engines, so any custom configuration has to be made directly on the engines. In other words, you'll need to apply your changes on `.perseus/Cargo.toml` instead. You can also apply customizations on the server and the builder, which are separate crates under `.perseus/`. Note that modifying `.perseus/` and retaining your changes requires [ejecting](:ejecting), or you could [write a plugin](:plugins/writing) if it's a change you make a lot.
