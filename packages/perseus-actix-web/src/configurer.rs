@@ -42,7 +42,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         mutable_store,
         translations_manager,
     }: ServerProps<M, T>,
-) -> impl Fn(&mut web::ServiceConfig) {
+) -> impl FnOnce(&mut actix_web::web::ServiceConfig) {
     let opts = Rc::new(opts); // TODO Find a more efficient way of doing this
     let render_cfg = get_render_cfg(&immutable_store)
         .await
@@ -55,12 +55,12 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
     move |cfg: &mut web::ServiceConfig| {
         cfg
             // We implant the render config in the app data for better performance, it's needed on every request
-            .data(render_cfg.clone())
-            .data(immutable_store.clone())
-            .data(mutable_store.clone())
-            .data(translations_manager.clone())
-            .data(opts.clone())
-            .data(index_with_render_cfg.clone())
+            .app_data(web::Data::new(render_cfg.clone()))
+            .app_data(web::Data::new(immutable_store.clone()))
+            .app_data(web::Data::new(mutable_store.clone()))
+            .app_data(web::Data::new(translations_manager.clone()))
+            .app_data(web::Data::new(opts.clone()))
+            .app_data(web::Data::new(index_with_render_cfg.clone()))
             // TODO chunk JS and Wasm bundles
             // These allow getting the basic app code (not including the static data)
             // This contains everything in the spirit of a pseudo-SPA
@@ -92,6 +92,6 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         }
         // For everything else, we'll serve the app shell directly
         // This has to be done AFTER everything else, because it will match anything that's left
-        cfg.route("*", web::get().to(initial_load::<M, T>));
+        cfg.route("{route:.*}", web::get().to(initial_load::<M, T>));
     }
 }

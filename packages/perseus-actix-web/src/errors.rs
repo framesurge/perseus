@@ -6,6 +6,6 @@ pub enum Error {
     #[error("couldn't convert request from actix-web format to perseus format")]
     RequestConversionFailed {
         #[source]
-        source: actix_web::client::HttpError,
+        source: actix_web::error::HttpError,
     },
 }

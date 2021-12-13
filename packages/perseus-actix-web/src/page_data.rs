@@ -70,7 +70,7 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
                 http_res.content_type("text/html");
                 // Generate and add HTTP headers
                 for (key, val) in template.get_headers(page_data.state.clone()) {
-                    http_res.set_header(key.unwrap(), val);
+                    http_res.insert_header((key.unwrap(), val));
                 }
 
                 http_res.body(serde_json::to_string(&page_data).unwrap())

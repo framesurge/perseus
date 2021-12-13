@@ -108,7 +108,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             http_res.content_type("text/html");
             // Generate and add HTTP headers
             for (key, val) in template.get_headers(page_data.state) {
-                http_res.set_header(key.unwrap(), val);
+                http_res.insert_header((key.unwrap(), val));
             }
 
             http_res.body(final_html)
