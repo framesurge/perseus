@@ -6,7 +6,6 @@ use crate::components::trusted_svg::TRUSTED_SVG;
 use perseus::{t, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
@@ -38,7 +37,7 @@ struct PluginDetails {
 
 #[perseus::template(PluginsPage)]
 #[component(PluginsPage<G>)]
-fn plugins_page(props: PluginsPageProps) -> SycamoreTemplate<G> {
+fn plugins_page(props: PluginsPageProps) -> View<G> {
     let plugins = Signal::new(props.plugins);
     // This will store the plugins relevant to the user's search (all of them by
     // This stores the search that the user provides
@@ -61,7 +60,7 @@ fn plugins_page(props: PluginsPageProps) -> SycamoreTemplate<G> {
             trusted,
             url,
         } = plugin;
-        template! {
+        view! {
             li(class = "inline-block align-top m-2") {
                 a(
                     class = "block text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm dark:text-white",
@@ -70,11 +69,11 @@ fn plugins_page(props: PluginsPageProps) -> SycamoreTemplate<G> {
                     p(class = "text-xl xs:text-2xl inline-flex") {
                         (name)
                         (if trusted {
-                            template! {
+                            view! {
                                 div(class = "ml-1 self-center", dangerously_set_inner_html = TRUSTED_SVG)
                             }
                         } else {
-                            SycamoreTemplate::empty()
+                            View::empty()
                         })
                     }
                     p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!("plugin-card-author", { "author": author.clone() })) }
@@ -84,22 +83,23 @@ fn plugins_page(props: PluginsPageProps) -> SycamoreTemplate<G> {
         }
     };
 
-    template! {
+    view! {
         Container(ContainerProps {
             title: t!("perseus"),
-            children: template! {
+            children: view! {
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
                         h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold mb-5") { (t!("plugins-title")) }
                         br()
-                        p(class = "mx-1") { (t!("plugins-desc")) }
-                        // TODO Remove `hidden` class once next Sycamore version is released and search bar works again
-                        input(class = "mx-2 sm:mx-4 md:mx-8 p-3 rounded-lg border-2 border-indigo-600 mb-3 dark:bg-navy hidden", on:input = cloned!((filter) => move |ev| {
-                            // This longwinded code gets the actual value that the user typed in
-                            let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
-                            let new_input = target.value();
-                            filter.set(new_input);
-                        }), placeholder = t!("plugin-search.placeholder"))
+                        p(class = "mx-1 mb-2") { (t!("plugins-desc")) }
+                        div(class = "w-full flex justify-center text-center mb-3") {
+                            input(class = "mx-2 max-w-7xl p-3 rounded-lg border-2 border-indigo-600 dark:bg-navy", on:input = cloned!((filter) => move |ev: web_sys::Event| {
+                                // This longwinded code gets the actual value that the user typed in
+                                let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
+                                let new_input = target.value();
+                                filter.set(new_input);
+                            }), placeholder = t!("plugin-search.placeholder"))
+                        }
                     }
                     div(class = "w-full flex justify-center") {
                         ul(class = "text-center w-full max-w-7xl mx-2 mb-16") {
@@ -116,14 +116,14 @@ fn plugins_page(props: PluginsPageProps) -> SycamoreTemplate<G> {
 }
 
 #[perseus::head]
-fn head() -> SycamoreTemplate<SsrNode> {
-    template! {
+fn head() -> View<SsrNode> {
+    view! {
         title { (format!("{} | {}", t!("plugins-title"), t!("perseus"))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("plugins")
         .template(plugins_page)
         .head(head)

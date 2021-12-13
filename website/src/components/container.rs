@@ -1,13 +1,12 @@
 use perseus::{link, t};
-use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
 // This is imported by all alternative containers as well
 pub static COPYRIGHT_YEARS: &str = "2021";
 
 #[component(NavLinks<G>)]
-pub fn nav_links() -> SycamoreTemplate<G> {
-    template! {
+pub fn nav_links() -> View<G> {
+    view! {
         li(class = "m-3 p-1") {
             a(href = link!("/docs"), class = "px-2") { (t!("navlinks.docs")) }
         }
@@ -20,20 +19,20 @@ pub fn nav_links() -> SycamoreTemplate<G> {
     }
 }
 
-pub struct ContainerProps<G: GenericNode> {
+pub struct ContainerProps<G: Html> {
     pub title: String,
-    pub children: SycamoreTemplate<G>,
+    pub children: View<G>,
 }
 
 #[component(Container<G>)]
-pub fn container(props: ContainerProps<G>) -> SycamoreTemplate<G> {
+pub fn container(props: ContainerProps<G>) -> View<G> {
     let title = props.title.clone();
     let menu_open = Signal::new(false);
     // We need to verbatim copy the value because of how it's used in Sycamore's reactivity system
     let menu_open_2 = create_memo(cloned!((menu_open) => move || *menu_open.get()));
     let toggle_menu = cloned!((menu_open) => move |_| menu_open.set(!*menu_open.get()));
 
-    template! {
+    view! {
         // TODO click-away events
         header(class = "shadow-md sm:p-2 w-full bg-white dark:text-white dark:bg-navy mb-20") {
             div(class = "flex justify-between") {

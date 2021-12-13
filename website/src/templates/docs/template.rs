@@ -2,9 +2,8 @@ use crate::templates::docs::container::{DocsContainer, DocsContainerProps};
 use crate::templates::docs::generation::{
     get_build_paths, get_build_state, DocsManifest, DocsVersionStatus,
 };
-use perseus::{t, GenericNode, Template};
+use perseus::{t, Template};
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 
 #[derive(Serialize, Deserialize)]
@@ -20,7 +19,7 @@ pub struct DocsPageProps {
 
 #[perseus::template(DocsPage)]
 #[component(DocsPage<G>)]
-pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
+pub fn docs_page(props: DocsPageProps) -> View<G> {
     // These come pre-translated for the current locale
     // Note that all the docs files have a title emblazoned at the top already, so we only need the title in the `<head>`
     let DocsPageProps {
@@ -31,10 +30,10 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
         current_version,
         ..
     } = props;
-    template! {
+    view! {
         DocsContainer(DocsContainerProps {
             docs_links: sidebar_content,
-            children: template! {
+            children: view! {
                 div(class = "markdown", dangerously_set_inner_html = &content)
             },
             status,
@@ -52,8 +51,8 @@ pub fn docs_page(props: DocsPageProps) -> SycamoreTemplate<G> {
 }
 
 #[perseus::head]
-pub fn head(props: DocsPageProps) -> SycamoreTemplate<SsrNode> {
-    template! {
+pub fn head(props: DocsPageProps) -> View<SsrNode> {
+    view! {
         title { (format!("{} | {}", props.title, t!("docs-title-base"))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
@@ -61,7 +60,7 @@ pub fn head(props: DocsPageProps) -> SycamoreTemplate<SsrNode> {
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("docs")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)

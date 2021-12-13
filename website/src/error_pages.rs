@@ -1,15 +1,15 @@
-use perseus::{ErrorPages, GenericNode};
-use sycamore::template;
+use perseus::{ErrorPages, Html};
+use sycamore::view;
 
 // This site will be exported statically, so we only have control over 404 pages for broken links in the site itself
-pub fn get_error_pages<G: GenericNode>() -> ErrorPages<G> {
+pub fn get_error_pages<G: Html>() -> ErrorPages<G> {
     let mut error_pages = ErrorPages::new(|url, status, err, _| {
-        template! {
+        view! {
             p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
         }
     });
     error_pages.add_page(404, |_, _, _, _| {
-        template! {
+        view! {
             p { "Page not found." }
         }
     });

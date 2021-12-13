@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use walkdir::WalkDir;
 
@@ -46,12 +45,12 @@ pub enum DocsVersionStatus {
 }
 impl DocsVersionStatus {
     /// Renders the docs status to a Sycamore template for display.
-    pub fn render<G: GenericNode>(&self) -> SycamoreTemplate<G> {
+    pub fn render<G: GenericNode>(&self) -> View<G> {
         match &self {
             // No message should be displayed if it's the correct version
-            Self::Stable => template! {},
+            Self::Stable => view! {},
             Self::Outdated => {
-                template! {
+                view! {
                     div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -65,7 +64,7 @@ impl DocsVersionStatus {
                 }
             }
             Self::Beta => {
-                template! {
+                view! {
                     div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -79,7 +78,7 @@ impl DocsVersionStatus {
                 }
             }
             Self::Next => {
-                template! {
+                view! {
                     div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(

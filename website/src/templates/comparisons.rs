@@ -1,25 +1,22 @@
 use crate::components::comparisons::{render_lighthouse_score, Comparison};
 use crate::components::container::{Container, ContainerProps};
 use crate::components::info_svg::INFO_SVG;
-use perseus::{
-    t, ErrorCause, GenericErrorWithCause, GenericNode, RenderFnResultWithCause, Template,
-};
+use perseus::{t, ErrorCause, GenericErrorWithCause, Html, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
 
 struct ComparisonRowProps {
     perseus_val: String,
-    comparison_val: StateHandle<String>,
+    comparison_val: ReadSignal<String>,
     name: String,
 }
 #[component(ComparisonRow<G>)]
-fn comparison_row(props: ComparisonRowProps) -> SycamoreTemplate<G> {
+fn comparison_row(props: ComparisonRowProps) -> View<G> {
     let ComparisonRowProps {
         perseus_val,
         comparison_val,
@@ -28,7 +25,7 @@ fn comparison_row(props: ComparisonRowProps) -> SycamoreTemplate<G> {
     let name_2 = name.clone();
     let show_details = Signal::new(false);
 
-    template! {
+    view! {
         tr {
             th(class = "text-left p-1 py-2 text-xs xs:text-base") {
                 div(class = "flex items-center") {
@@ -67,11 +64,11 @@ fn comparison_row(props: ComparisonRowProps) -> SycamoreTemplate<G> {
 }
 
 struct ComparisonTableProps {
-    comparison: StateHandle<Comparison>,
+    comparison: ReadSignal<Comparison>,
     perseus_comparison: Comparison,
 }
 #[component(ComparisonTable<G>)]
-fn comparison_table(props: ComparisonTableProps) -> SycamoreTemplate<G> {
+fn comparison_table(props: ComparisonTableProps) -> View<G> {
     let comparison = props.comparison.clone();
     let Comparison {
         name: _perseus_name, // We'll use the translation ID
@@ -135,7 +132,7 @@ fn comparison_table(props: ComparisonTableProps) -> SycamoreTemplate<G> {
     let show_details_homepage_lighthouse_desktop = Signal::new(false);
     let show_details_homepage_lighthouse_mobile = Signal::new(false);
 
-    template! {
+    view! {
         table(class = "w-full overflow-x-scroll table-fixed border-collapse") {
             thead(class = "mt-4 text-white bg-indigo-500 rounded-xl") {
                 th(class = "p-1 py-2 text-xs xs:text-base") {
@@ -154,62 +151,62 @@ fn comparison_table(props: ComparisonTableProps) -> SycamoreTemplate<G> {
                 // Then two cells, one Perseus, and the for the comparison
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_language,
-                    comparison_val: comparison_language.clone(),
+                    comparison_val: comparison_language,
                     name: "language".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_ssg.render(),
-                    comparison_val: comparison_supports_ssg.clone(),
+                    comparison_val: comparison_supports_ssg,
                     name: "supports_ssg".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_ssr.render(),
-                    comparison_val: comparison_supports_ssr.clone(),
+                    comparison_val: comparison_supports_ssr,
                     name: "supports_ssr".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_ssr_ssg_same_page.render(),
-                    comparison_val: comparison_supports_ssr_ssg_same_page.clone(),
+                    comparison_val: comparison_supports_ssr_ssg_same_page,
                     name: "supports_ssr_ssg_same_page".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_i18n.render(),
-                    comparison_val: comparison_supports_i18n.clone(),
+                    comparison_val: comparison_supports_i18n,
                     name: "supports_i18n".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_incremental.render(),
-                    comparison_val: comparison_supports_incremental.clone(),
+                    comparison_val: comparison_supports_incremental,
                     name: "supports_incremental".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_revalidation.render(),
-                    comparison_val: comparison_supports_revalidation.clone(),
+                    comparison_val: comparison_supports_revalidation,
                     name: "supports_revalidation".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_inbuilt_cli.render(),
-                    comparison_val: comparison_inbuilt_cli.clone(),
+                    comparison_val: comparison_inbuilt_cli,
                     name: "inbuilt_cli".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_inbuilt_routing.render(),
-                    comparison_val: comparison_inbuilt_routing.clone(),
+                    comparison_val: comparison_inbuilt_routing,
                     name: "inbuilt_routing".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_shell.render(),
-                    comparison_val: comparison_supports_shell.clone(),
+                    comparison_val: comparison_supports_shell,
                     name: "supports_shell".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_deployment.render(),
-                    comparison_val: comparison_supports_deployment.clone(),
+                    comparison_val: comparison_supports_deployment,
                     name: "supports_deployment".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_exporting.render(),
-                    comparison_val: comparison_supports_exporting.clone(),
+                    comparison_val: comparison_supports_exporting,
                     name: "supports_exporting".to_string()
                 })
                 // These last two get special rendering for text colors and possible emoji
@@ -291,7 +288,7 @@ pub struct ComparisonsPageProps {
 
 #[perseus::template(ComparisonsPage)]
 #[component(ComparisonsPage<G>)]
-pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
+pub fn comparisons_page(props: ComparisonsPageProps) -> View<G> {
     let comparisons = props.comparisons.clone();
     let perseus_comparison = props.perseus_comparison;
     let mut comparison_names: Vec<String> = comparisons.keys().cloned().collect();
@@ -299,13 +296,13 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
     // The current comparison should be the first element in the list alphabetically
     let curr_comparison_name = Signal::new(comparison_names[0].clone());
 
-    let select_options = SycamoreTemplate::new_fragment(
+    let select_options = View::new_fragment(
         comparison_names
             .iter()
             .map(|name| {
                 let name = name.clone();
                 let name_2 = name.clone();
-                template! {
+                view! {
                     option(value = name) {
                         (name_2)
                     }
@@ -318,10 +315,10 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
         comparisons.get(&*curr_comparison_name.get()).unwrap().clone()
     }));
 
-    template! {
+    view! {
         Container(ContainerProps {
             title: t!("perseus"),
-            children: template! {
+            children: view! {
                 div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
                     div {
                         h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold") {
@@ -340,7 +337,7 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
                     div(class = "p-1") {
                         select(
                             class = "p-1 rounded-sm dark:bg-navy mb-4",
-                            on:input = cloned!((curr_comparison_name) => move |event| {
+                            on:input = cloned!((curr_comparison_name) => move |event: web_sys::Event| {
                                 let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
                                 let new_comparison_name = target.value();
                                 curr_comparison_name.set(new_comparison_name);
@@ -352,7 +349,7 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
                         div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
                             div(class = "flex justify-center") {
                                 ComparisonTable(ComparisonTableProps {
-                                    comparison: curr_comparison.clone(),
+                                    comparison: curr_comparison,
                                     perseus_comparison
                                 })
                             }
@@ -365,13 +362,13 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> SycamoreTemplate<G> {
 }
 
 #[perseus::head]
-pub fn head() -> SycamoreTemplate<SsrNode> {
-    template! {
+pub fn head() -> View<SsrNode> {
+    view! {
         title { (format!("{} | {}", t!("comparisons-title"), t!("perseus"))) }
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("comparisons")
         .template(comparisons_page)
         .head(head)

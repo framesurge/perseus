@@ -1,17 +1,16 @@
 use crate::components::container::{Container, ContainerProps};
 use crate::components::features_list::get_features_list;
 use crate::components::github_svg::GITHUB_SVG;
-use perseus::{link, t, GenericNode, Template};
-use sycamore::prelude::Template as SycamoreTemplate;
+use perseus::{link, t, Html, Template};
 use sycamore::prelude::*;
 
 #[perseus::template(IndexPage)]
 #[component(IndexPage<G>)]
-pub fn index_page() -> SycamoreTemplate<G> {
-    template! {
+pub fn index_page() -> View<G> {
+    view! {
         Container(ContainerProps {
             title: t!("perseus"),
-            children: template! {
+            children: view! {
                 // Splash page
                 div(
                     class = "bg-cover h-full flex justify-center items-center text-center dark:text-white",
@@ -130,12 +129,12 @@ pub fn index_page() -> SycamoreTemplate<G> {
 }
 
 #[perseus::head]
-pub fn head() -> SycamoreTemplate<SsrNode> {
-    template! {
+pub fn head() -> View<SsrNode> {
+    view! {
         title { (t!("perseus")) }
     }
 }
 
-pub fn get_template<G: GenericNode>() -> Template<G> {
+pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index").template(index_page).head(head)
 }

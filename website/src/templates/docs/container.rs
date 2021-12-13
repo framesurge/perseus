@@ -3,7 +3,6 @@ use crate::components::container::COPYRIGHT_YEARS;
 use crate::templates::docs::generation::{DocsManifest, DocsVersionStatus};
 use perseus::{link, t};
 use sycamore::context::use_context;
-use sycamore::prelude::Template as SycamoreTemplate;
 use sycamore::prelude::*;
 use sycamore_router::navigate;
 use wasm_bindgen::JsCast;
@@ -14,7 +13,7 @@ struct DocsVersionSwitcherProps {
     current_version: String,
 }
 #[component(DocsVersionSwitcher<G>)]
-fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G> {
+fn docs_version_switcher(props: DocsVersionSwitcherProps) -> View<G> {
     let manifest = props.manifest.clone();
     let manifest_2 = manifest.clone();
     let current_version = props.current_version;
@@ -29,16 +28,16 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
     let locale = Signal::new(String::new());
     let locale_2 = locale.clone();
 
-    template! {
+    view! {
         ({
             locale.set(use_context::<perseus::templates::RenderCtx>().translator.get_locale());
-            SycamoreTemplate::empty()
+            View::empty()
         })
 
         // This doesn't navigate to the same page in the new version, because it may well not exist
         select(
             class = "p-2 rounded-md text-white bg-indigo-500",
-            on:input = move |event| {
+            on:input = move |event: web_sys::Event| {
                 let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
                 let new_version = target.value();
                 // This isn't a reactive scope, so we can't use `link!` here
@@ -50,13 +49,13 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
             option(value = "next", selected = current_version == "next") {
                 (t!("docs-version-switcher.next"))
             }
-            (SycamoreTemplate::new_fragment(
+            (View::new_fragment(
                 manifest.beta.iter().map(cloned!((current_version_2) => move |version| {
                     let version = version.clone();
                     let version_2 = version.clone();
                     let version_3 = version.clone();
                     let current_version = current_version_2.to_string();
-                    template! {
+                    view! {
                         option(value = version, selected = current_version == version_2) { (t!("docs-version-switcher.beta", {
                             "version": version_3.as_str()
                         })) }
@@ -68,13 +67,13 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
                     "version": stable_version_3.as_str()
                 }))
             }
-            (SycamoreTemplate::new_fragment(
+            (View::new_fragment(
                 manifest_2.outdated.iter().map(cloned!((current_version_4) => move |version| {
                     let version = version.clone();
                     let version_2 = version.clone();
                     let version_3 = version.clone();
                     let current_version = current_version_4.to_string();
-                    template! {
+                    view! {
                         option(value = version, selected = current_version == version_2) { (t!("docs-version-switcher.outdated", {
                             "version": version_3.as_str()
                         })) }
@@ -87,7 +86,7 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> SycamoreTemplate<G>
 
 #[derive(Clone)]
 pub struct DocsContainerProps<G: GenericNode> {
-    pub children: SycamoreTemplate<G>,
+    pub children: View<G>,
     pub docs_links: String,
     pub status: DocsVersionStatus,
     pub manifest: DocsManifest,
@@ -95,7 +94,7 @@ pub struct DocsContainerProps<G: GenericNode> {
 }
 
 #[component(DocsContainer<G>)]
-pub fn docs_container(props: DocsContainerProps<G>) -> SycamoreTemplate<G> {
+pub fn docs_container(props: DocsContainerProps<G>) -> View<G> {
     let docs_links = props.docs_links.clone();
     let docs_links_2 = docs_links.clone();
     let status = props.status.clone();
@@ -111,7 +110,7 @@ pub fn docs_container(props: DocsContainerProps<G>) -> SycamoreTemplate<G> {
     let menu_open_3 = create_memo(cloned!((menu_open) => move || *menu_open.get()));
     let toggle_menu = cloned!((menu_open) => move |_| menu_open.set(!*menu_open.get()));
 
-    template! {
+    view! {
         // TODO click-away events
         header(class = "shadow-md sm:p-2 w-full bg-white dark:text-white dark:bg-navy mb-20") {
             div(class = "flex justify-between") {

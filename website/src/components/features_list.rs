@@ -2,18 +2,17 @@ use perseus::link;
 use perseus::templates::RenderCtx;
 use sycamore::context::use_context;
 use sycamore::prelude::*;
-use sycamore::template::Template as SycamoreTemplate;
 use sycamore_router::navigate;
 
 /// Turns the features of Perseus into an actual list.
-pub fn get_features_list<G: GenericNode>() -> SycamoreTemplate<G> {
+pub fn get_features_list<G: GenericNode>() -> View<G> {
     let features = get_features();
-    SycamoreTemplate::new_fragment(
+    View::new_fragment(
         features.iter().map(move |feat| {
             let Feature { id_base, link } = feat.clone();
             let name_id = format!("feature-{}.name", &id_base);
             let desc_id = format!("feature-{}.desc", &id_base);
-            template! {
+            view! {
                 li(class = "inline-block align-top") {
                     div(
                         class = "text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm",
