@@ -76,14 +76,18 @@ fn build_server(
                     // This sets Cargo to tell us everything, including the executable path to the server
                     "{} build --message-format json {} {}",
                     env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-                    if is_release { "--release" } else { "" },
                     // Enable the appropriate integration
                     format!(
                         "--features integration-{} {} --no-default-features",
                         integration.to_string(),
                         // We'll also handle whether or not it's standalone because that goes under the `--features` flag
-                        if is_standalone { "standalone" } else { "" }
-                    )
+                        if is_standalone {
+                            "--features standalone"
+                        } else {
+                            ""
+                        }
+                    ),
+                    if is_release { "--release" } else { "" },
                 )],
                 &sb_target,
                 &sb_spinner,
