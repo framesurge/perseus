@@ -31,5 +31,5 @@ Right now, the Perseus CLI doesn't support watching files for changes and rebuil
 Here's an example of watching files with `entr`:
 
 ```
-find . -not -path "./.perseus/*" -not -path "./target/*" | entr -s "perseus serve"
+find . -not -path "./.perseus/*" -not -path "./target/*" | entr -rs "perseus serve"
 ```

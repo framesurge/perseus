@@ -94,7 +94,7 @@ If you want to serve pre-built files (which you'll have to generate with `perseu
 All these commands act statically, they don't watch your code for any changes. This feature will be added _very_ soon to the CLI, but until it is, we advise you to use a tool like [`entr`](https://github.com/eradman/entr), which you can make work with Perseus like so (on Linux):
 
 ```
-find . -not -path "./.perseus/*" -not -path "./target/*" | entr -s "perseus serve"
+find . -not -path "./.perseus/*" -not -path "./target/*" | entr -rs "perseus serve"
 ```
 
 This just lists all files except those in `.perseus/` and `target/` and runs `perseus serve` on any changes. You should exclude anything else as necessary.
