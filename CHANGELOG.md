@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.23](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.22...v0.3.0-beta.23) (2021-12-14)
+
+
+### Bug Fixes
+
+* fixed placement of `standalone` feature in deployment command ([7609ee1](https://github.com/arctic-hen7/perseus/commit/7609ee1ca5c36ec02d195e384e102e3163e7ecc4)), closes [#92](https://github.com/arctic-hen7/perseus/issues/92)
+
+
+### Documentation Changes
+
+* add `-r` flag to `entr` commands ([#93](https://github.com/arctic-hen7/perseus/issues/93)) ([d0b863e](https://github.com/arctic-hen7/perseus/commit/d0b863e07ddf00166e5002807dcfe76bf96f9a72))
+
 ## [0.3.0-beta.22](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.21...v0.3.0-beta.22) (2021-12-13)
 
 
