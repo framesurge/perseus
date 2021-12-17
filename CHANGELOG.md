@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.24](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.23...v0.3.0-beta.24) (2021-12-17)
+
+
+### Features
+
+* made hydration the default ([00258dd](https://github.com/arctic-hen7/perseus/commit/00258dd814f9d9b84b7725f39611600d7c6bd796))
+
 ## [0.3.0-beta.23](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.22...v0.3.0-beta.23) (2021-12-14)
 
 
