@@ -14,8 +14,8 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sycamore = { version = "0.7", features = ["ssr"] }
-sycamore-router = "0.7"
+sycamore = { version = "^0.7.1", features = ["ssr"] }
+sycamore-router = "^0.7.1"
 perseus-macro = { path = "../perseus-macro", version = "0.3.0-beta.23" }
 # TODO review feature flags here
 web-sys = { version = "0.3", features = ["Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
@@ -36,7 +36,7 @@ unic-langid = { version = "0.9", optional = true }
 intl-memoizer = { version = "0.5", optional = true }
 
 [features]
-default = []
+default = [ "hydrate" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 # This feature makes tinker-only plugins be registered (this flag is enabled internally in the engine)
 tinker-plugins = []
