@@ -3,10 +3,8 @@ const colors = require("tailwindcss/colors");
 
 module.exports = {
     content: [
-        "./src/**/*.rs",
+        "./src/**/*.{rs,html,css}",
         "./index.html",
-        "./src/**/*.html",
-        "./src/**/*.css",
         "./static/**/*.css",
     ],
     darkMode: process.env.NODE_ENV == "production" ? "media" : "class",
