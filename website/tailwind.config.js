@@ -2,16 +2,13 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 const colors = require("tailwindcss/colors");
 
 module.exports = {
-    purge: {
-        mode: "all",
-        content: [
-            "./src/**/*.rs",
-            "./index.html",
-            "./src/**/*.html",
-            "./src/**/*.css",
-            "./static/**/*.css",
-        ],
-    },
+    content: [
+        "./src/**/*.rs",
+        "./index.html",
+        "./src/**/*.html",
+        "./src/**/*.css",
+        "./static/**/*.css",
+    ],
     darkMode: process.env.NODE_ENV == "production" ? "media" : "class",
     theme: {
         fontFamily: {
