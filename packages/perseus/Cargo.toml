@@ -36,7 +36,7 @@ unic-langid = { version = "0.9", optional = true }
 intl-memoizer = { version = "0.5", optional = true }
 
 [features]
-default = [ "hydrate" ]
+default = []
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 # This feature makes tinker-only plugins be registered (this flag is enabled internally in the engine)
 tinker-plugins = []
@@ -46,4 +46,5 @@ server-side = []
 # This feature changes a few defaults so that Perseus works seemlessly when deployed with the `.perseus/` structure (this is activated automatically by `perseus deploy`, and should not be invoked manually!)
 standalone = []
 # This feature enables Sycamore hydration by default (Sycamore hydration feature is always activated though)
+# This is not enabled by default due to some remaining bugs (also, default features in Perseus can't be disabled without altering `.perseus/`)
 hydrate = []
