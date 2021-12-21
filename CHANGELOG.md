@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.25](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.24...v0.3.0-beta.25) (2021-12-21)
+
+
+### Features
+
+* **i18n:** made locale redirection much faster ([61aa406](https://github.com/arctic-hen7/perseus/commit/61aa406eef38136a9067e5e5667b7057aa5a25aa)), closes [#61](https://github.com/arctic-hen7/perseus/issues/61)
+
+
+### Bug Fixes
+
+* **website:** fixed version issues ([85d8236](https://github.com/arctic-hen7/perseus/commit/85d82362e8aa0a9c259c7e8df97119b5216ba715))
+* made hydration opt-in ([4fd38a6](https://github.com/arctic-hen7/perseus/commit/4fd38a6e0426406fe29881f949451a6dddc24331))
+* **website:** fixed tailwind not purging ([bd58daa](https://github.com/arctic-hen7/perseus/commit/bd58daa22596858794430ad0b2262082c8678a72))
+* disabled hydration on website ([3f2d110](https://github.com/arctic-hen7/perseus/commit/3f2d1101b3f55e14f6d871ed6f603a7614b32d38))
+* pinned website version to beta 22 ([5141cec](https://github.com/arctic-hen7/perseus/commit/5141cecc668166fe6c85706d8d343330cb66e837))
+* properly disabled hydration on website ([65009fa](https://github.com/arctic-hen7/perseus/commit/65009fad04e54051e923f8d1d5cc1d1cc8751368))
+
+
+### Documentation Changes
+
+* documented hydration ([c22a5f5](https://github.com/arctic-hen7/perseus/commit/c22a5f534e0d82bf76f9b4b9de635278159989c5))
+
+
+### Code Refactorings
+
+* removed `path_prefix` from `FsTranslationsManager` ([ed48f3d](https://github.com/arctic-hen7/perseus/commit/ed48f3d31396f716c0f977ddb20c352b099aca17))
+
 ## [0.3.0-beta.24](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.23...v0.3.0-beta.24) (2021-12-17)
 
 
