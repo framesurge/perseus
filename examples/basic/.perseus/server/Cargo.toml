@@ -24,7 +24,7 @@ tokio = { version = "1", optional = true, features = [ "macros", "rt-multi-threa
 integration-actix-web = [ "perseus-actix-web", "actix-web" ]
 integration-warp = [ "perseus-warp", "warp", "tokio" ]
 
-default = [ "integration-actix-web" ]
+default = [ "integration-warp" ]
 
 # This makes the binary work on its own, and is enabled by `perseus deploy` (do NOT invoke this manually!)
 standalone = [ "perseus/standalone", "perseus-engine/standalone" ]
