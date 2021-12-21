@@ -16,10 +16,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     assert_eq!(greeting, "Hello World!");
     // For some reason, retrieving the inner HTML or text of a `<title>` doens't work
     let title = c.find(Locator::Css("title")).await?.html(false).await?;
-    assert_eq!(
-        title,
-        "<title>Index Page | Perseus Example – Plugins</title>"
-    );
+    assert!(title.contains("Index Page"));
 
     // Go to `/about`, which should've been modified by a plugin
     c.find(Locator::Id("about-link")).await?.click().await?;
@@ -31,10 +28,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(text, "Hey from a plugin!");
     let title = c.find(Locator::Css("title")).await?.html(false).await?;
-    assert_eq!(
-        title,
-        "<title>About Page (Plugin Modified) | Perseus Example – Plugins</title>"
-    );
+    assert!(title.contains("About Page (Plugin Modified)"));
     // Make sure we get initial state if we refresh
     c.refresh().await?;
     wait_for_checkpoint!("initial_state_present", 0, c);
