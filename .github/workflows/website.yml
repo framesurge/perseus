@@ -19,7 +19,7 @@ jobs:
               with:
                   fetch-depth: 0
             - run: cargo install bonnie wasm-pack
-            - run: cargo install perseus-cli --version 0.3.0-beta.23
+            - run: cargo install perseus-cli --version 0.3.0-beta.26
             - run: npm install -g tailwindcss
             - run: npm install
               working-directory: website
