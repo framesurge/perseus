@@ -71,6 +71,15 @@ The only issue that prevents Perseus from achieving a consistent perfect score o
 
 </details>
 
+<details>
+<summary>I'm seeing really low scores on mobile...</summary>
+
+Right now, it's possible that you may see scores of around 50 on mobile for this website, though do not be alarmed! This is caused by a bug in Sycamore's [hydration systems](:hydration) which makes the Perseus website unusable, so we have to disable hydration. This means Perseus has to render a page and then re-render the whole thing (which you may have noticed if you try to scroll really soon after opening this site).
+
+For the vast majority of sites, you'll be able to use hydration without a problem, and you should see _much_ higher scores (well into the 90s), though there are still some pain points for this website in particular that are being worked through (these should be sorted quite soon)!
+
+</details>
+
 If you're interested in seeing how Perseus compares on speed and a number of other features to other frameworks, check out the [comparisons page](comparisons).
 
 ## How convenient is it?

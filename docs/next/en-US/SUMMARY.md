@@ -29,6 +29,7 @@
     -   [Revalidation](/docs/strategies/revalidation)
     -   [Incremental Generation](/docs/strategies/incremental)
     -   [State Amalgamation](/docs/strategies/amalgamation)
+-   [Hydration](/docs/hydration)
 -   [CLI](/docs/cli)
     -   [Ejecting](/docs/ejecting)
     -   [Snooping](/docs/snooping)
