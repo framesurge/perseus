@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/arctic-hen7/perseus/compare/v0.3.0-rc.1...v0.3.0) (2021-12-21)
+
+
+### Documentation Changes
+
+* removed beta warning ([4e4cc18](https://github.com/arctic-hen7/perseus/commit/4e4cc18b1876c49e6235c0fbc09890fe57b285bf))
+
 ## [0.3.0-rc.1](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.26...v0.3.0-rc.1) (2021-12-21)
 
 
