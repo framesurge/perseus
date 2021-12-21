@@ -14,7 +14,7 @@ readme = "./README.md"
 [dependencies]
 # We use the current version of Perseus, not the local one
 # Hydration is temporarily disabled pending some fixes in Sycamore
-perseus = { version = "=0.3.0-beta.22", features = [ "translator-fluent" ] }
+perseus = { version = "=0.3.0-beta.23", features = [ "translator-fluent" ] }
 sycamore = "0.7"
 sycamore-router = "0.7"
 serde = "1"
@@ -25,4 +25,4 @@ pulldown-cmark = "0.8"
 lazy_static = "1"
 web-sys = { version = "0.3", features = [ "Event", "EventTarget" ] }
 wasm-bindgen = "0.2"
-perseus-size-opt = ">=0.1.5"
+perseus-size-opt = "=0.1.5"
