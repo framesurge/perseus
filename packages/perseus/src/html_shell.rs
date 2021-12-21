@@ -104,7 +104,13 @@ pub fn interpolate_page_data(html_shell: &str, page_data: &PageData, root_id: &s
 /// From there, Perseus' inbuilt progressive enhancement can occur, but without this a user directed to an unlocalized page with JS disabled would see a
 /// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enabled but Wasm is disabled. Note that the redirect URL
 /// is expected to be generated with a path prefix inbuilt.
-pub fn interpolate_locale_redirection_fallback(html_shell: &str, redirect_url: &str) -> String {
+///
+/// This also adds a `__perseus_initial_state` `<div>` in case it's needed (for Wasm redirections).
+pub fn interpolate_locale_redirection_fallback(
+    html_shell: &str,
+    redirect_url: &str,
+    root_id: &str,
+) -> String {
     // This will be used if JavaScript is completely disabled (it's then the site's responsibility to show a further message)
     let dumb_redirector = format!(
         r#"<noscript>
@@ -141,5 +147,16 @@ pub fn interpolate_locale_redirection_fallback(html_shell: &str, redirect_url: &
         &format!("{}\n{}\n</head>", js_redirector, dumb_redirector),
     );
 
-    html
+    // The user MUST place have a `<div>` of this exact form (documented explicitly)
+    // We permit either double or single quotes
+    let html_to_replace_double = format!("<div id=\"{}\">", root_id);
+    let html_to_replace_single = format!("<div id='{}'>", root_id);
+    let html_replacement = format!(
+        // We give the content a specific ID so that it can be deleted if an error page needs to be rendered on the client-side
+        "{}<div id=\"__perseus_content_initial\" class=\"__perseus_content\"></div>",
+        &html_to_replace_double,
+    );
+    // Now interpolate that HTML into the HTML shell
+    html.replace(&html_to_replace_double, &html_replacement)
+        .replace(&html_to_replace_single, &html_replacement)
 }

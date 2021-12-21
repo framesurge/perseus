@@ -127,6 +127,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                         opts.locales.default,
                         path
                     ),
+                    &opts.root_id,
                 ),
             )
         }

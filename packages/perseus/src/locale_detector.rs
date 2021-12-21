@@ -1,5 +1,7 @@
 use crate::locales::Locales;
 use crate::path_prefix::get_path_prefix_client;
+use sycamore::rt::Reflect;
+use wasm_bindgen::JsValue;
 
 /// Detects which locale the user should be served and redirects appropriately. This should only be used when the user navigates to a
 /// page like `/about`, without a locale. This will only work on the client-side (needs access to browser i18n settings). Any pages
@@ -50,13 +52,17 @@ pub fn detect_locale(url: String, locales: &Locales) {
     let new_loc = format!("{}/{}/{}", base_path, locale, loc);
     let new_loc = new_loc.strip_suffix('/').unwrap_or(&new_loc);
 
+    // Unset the initial state variable so we perform subsequent renders correctly
+    // This monstrosity is needed until `web-sys` adds a `.set()` method on `Window`
+    Reflect::set(
+        &JsValue::from(web_sys::window().unwrap()),
+        &JsValue::from("__PERSEUS_INITIAL_STATE"),
+        &JsValue::undefined(),
+    )
+    .unwrap();
     // Imperatively navigate to the localized route
     // This certainly shouldn't fail...
-    web_sys::window()
-        .unwrap()
-        .location()
-        .replace(new_loc)
-        .unwrap();
+    sycamore_router::navigate_replace(new_loc);
 }
 
 /// The possible outcomes of trying to match a locale.

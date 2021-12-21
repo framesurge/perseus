@@ -99,6 +99,7 @@ pub async fn export_app(
                         &html_shell,
                         // If we don't include  the path prefix, fallback redirection will fail for relative paths
                         &format!("{}/{}/{}", path_prefix, locales.default, &path),
+                        root_id,
                     ),
                 )
                 .await?;
