@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.26](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.25...v0.3.0-beta.26) (2021-12-21)
+
+
+### Code Refactorings
+
+* switched default server integration ([eed2cc0](https://github.com/arctic-hen7/perseus/commit/eed2cc08519fe73a5482e8c7482e20ab0e27df45))
+
 ## [0.3.0-beta.25](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.24...v0.3.0-beta.25) (2021-12-21)
 
 

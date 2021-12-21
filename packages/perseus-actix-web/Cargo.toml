@@ -1,6 +1,6 @@
 [package]
 name = "perseus-actix-web"
-version = "0.3.0-beta.25"
+version = "0.3.0-beta.26"
 edition = "2018"
 description = "An integration that makes the Perseus frontend framework easy to use with Actix Web."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.3.0-beta.25" }
+perseus = { path = "../perseus", version = "0.3.0-beta.26" }
 actix-web = "=4.0.0-beta.15"
 actix-files = "=0.6.0-beta.10"
 urlencoding = "2.1"
