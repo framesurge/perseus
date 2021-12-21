@@ -1,6 +1,6 @@
 [package]
 name = "perseus"
-version = "0.3.0-beta.26"
+version = "0.3.0-rc.1"
 edition = "2018"
 description = "A lightning-fast frontend web dev platform with full support for SSR and SSG."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -16,7 +16,7 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 [dependencies]
 sycamore = { version = "^0.7.1", features = ["ssr"] }
 sycamore-router = "^0.7.1"
-perseus-macro = { path = "../perseus-macro", version = "0.3.0-beta.26" }
+perseus-macro = { path = "../perseus-macro", version = "0.3.0-rc.1" }
 # TODO review feature flags here
 web-sys = { version = "0.3", features = ["Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window"] }
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }

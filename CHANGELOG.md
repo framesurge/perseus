@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-rc.1](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.26...v0.3.0-rc.1) (2021-12-21)
+
+
+### Documentation Changes
+
+* updated to reflect that no hydration doesn't change Lighthouse scores ([aabc247](https://github.com/arctic-hen7/perseus/commit/aabc2477436a5fff2062eda31ae7c6662c43b95a))
+
 ## [0.3.0-beta.26](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.25...v0.3.0-beta.26) (2021-12-21)
 
 
