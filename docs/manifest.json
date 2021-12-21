@@ -1,7 +1,7 @@
 {
-    "stable": "0.2.x",
-    "outdated": ["0.1.x"],
-    "beta": ["0.3.x"],
+    "stable": "0.3.x",
+    "outdated": ["0.2.x", "0.1.x"],
+    "beta": [],
     "history_map": {
         "0.1.x": "v0.1.4",
         "0.2.x": "v0.2.3",
