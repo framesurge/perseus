@@ -12,6 +12,6 @@ But with hydration, the app shell can intelligently melt the iron that it's been
 
 ## Performance Costs of Disabling Hydration
 
-Not using hydration will impact your site's performance when the user first loads a page (moving around within the app is no problem), because the browser has to do a little more work, but it also has to completely re-display your site. The difference probably won't be noticeable to users, but tools like Lighthouse will notice this and will penalise your site for it.
+Not using hydration will impact your site's performance when the user first loads a page (moving around within the app is no problem), because the browser has to do a little more work, but it also has to completely re-display your site. The difference shouldn't be visible to users at all unless they try to scroll as soon as your site loads (as in within less than half a second on modern machines), in which case they'll be thrown back to the top of the site. However, Lighthouse doesn't seem to notice any differences, so your scores there won't change!
 
 Notably, to make hydration better for the community, you should file any bugs about hydration on [the Sycamore repository](https://github.com/sycamore-rs/sycamore).
