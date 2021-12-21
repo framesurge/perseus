@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file. See [standa
 
 * removed beta warning ([4e4cc18](https://github.com/arctic-hen7/perseus/commit/4e4cc18b1876c49e6235c0fbc09890fe57b285bf))
 
+<details>
+<summary>v0.3.0 Beta Versions</summary>
+
 ## [0.3.0-rc.1](https://github.com/arctic-hen7/perseus/compare/v0.3.0-beta.26...v0.3.0-rc.1) (2021-12-21)
 
 
@@ -505,6 +508,8 @@ We're now using JS raw strings, escaping as necessary, and then escaping control
 * **book:** 📝 added docs for v0.3.x and deprecated v0.2.x ([b2e3c57](https://github.com/arctic-hen7/perseus/commit/b2e3c57cb0da5a58141500a876e32542be49adb6))
 * **book:** 📝 added migration page for upgrading from v0.2.x ([df00cf3](https://github.com/arctic-hen7/perseus/commit/df00cf388b95c9705c487b97c0e6e14fa3e445b7))
 * **book:** 📝 updated latest stable version of docs ([ab19e78](https://github.com/arctic-hen7/perseus/commit/ab19e7883e9c57b55e9b780ea292aa10c6bd2763))
+
+</details>
 
 ### [0.2.3](https://github.com/arctic-hen7/perseus/compare/v0.2.2...v0.2.3) (2021-09-26)
 
