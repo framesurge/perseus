@@ -77,7 +77,6 @@ macro_rules! define_get_translations_manager {
                 $crate::internal::i18n::DFLT_TRANSLATIONS_DIR.to_string(),
                 all_locales,
                 $crate::internal::i18n::TRANSLATOR_FILE_EXT.to_string(),
-                $crate::internal::get_path_prefix_server(),
             )
             .await
         }

@@ -76,8 +76,6 @@ pub struct FsTranslationsManager {
     cached_locales: Vec<String>,
     /// The file extension expected (e.g. JSON, FTL, etc). This allows for greater flexibility of translation engines (future).
     file_ext: String,
-    /// The path prefix for the app.
-    path_prefix: String,
 }
 impl FsTranslationsManager {
     /// Creates a new filesystem translations manager. You should provide a path like `/translations` here. You should also provide
@@ -85,19 +83,13 @@ impl FsTranslationsManager {
     /// will not be cached, and must have their translations read from disk on every request. If fetching translations for any of the
     /// given locales fails, this will panic (locales to be cached should always be hardcoded).
     // TODO performance analysis of manual caching strategy
-    pub async fn new(
-        root_path: String,
-        locales_to_cache: Vec<String>,
-        file_ext: String,
-        path_prefix: String,
-    ) -> Self {
+    pub async fn new(root_path: String, locales_to_cache: Vec<String>, file_ext: String) -> Self {
         // Initialize a new instance without any caching first
         let mut manager = Self {
             root_path,
             cached_translations: HashMap::new(),
             cached_locales: Vec::new(),
             file_ext,
-            path_prefix,
         };
         // Now use that to get the translations for the locales we want to cache (all done in parallel)
         let mut futs = Vec::new();
