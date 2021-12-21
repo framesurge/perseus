@@ -1,5 +1,5 @@
 # This will need to be updated for warning links
--latest-stable-version = 0.2.x
+-latest-stable-version = 0.3.x
 
 perseus = Perseus
 sycamore = Sycamore
