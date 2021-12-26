@@ -52,7 +52,7 @@ pub fn snoop_wasm_build(dir: PathBuf) -> Result<i32, ExecutionError> {
     let target = dir.join(".perseus");
     run_cmd_directly(
         format!(
-            "{} build --target web",
+            "{} build --target web --dev",
             env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string())
         ),
         &target,

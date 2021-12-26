@@ -97,7 +97,7 @@ pub fn build_internal(
             vec![&format!(
                 "{} build --target web {}",
                 env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
-                if is_release { "--release" } else { "" }
+                if is_release { "--release" } else { "--dev" } // If we don't supply `--dev`, another profile will be used
             )],
             &wb_target,
             &wb_spinner,
