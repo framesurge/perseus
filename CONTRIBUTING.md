@@ -48,7 +48,7 @@ All code examples in the docs must come from real-world files, which can be done
 
 Note that if you're updating the docs to fix a typo, you may need to change the typo in multiple versions. If you're adding new documentation, you should add it to both `next` and the latest applicable version (which could be a beta version).
 
-Finally, you can see the documentation you've written by running `bonnie site run` (assuming you've already run `bonnie setup`), which requires no prerequisites other than [Bonnie](https://github.com/arctic-hen7/bonnie) and [TailwindCSS](https://tailwindcss.com) (`npm i -g tailwindcss`). Note that this will use the local, bleeding-edge, unreleased version of the Perseus CLI, not the one on `crates.io`, so you don't have to install the CLI. You'll be able to see the website at <http://localhost:8080>.
+Finally, you can see the documentation you've written by running `bonnie site` (assuming you've already run `bonnie setup`), which requires [Bonnie](https://github.com/arctic-hen7/bonnie), [TailwindCSS](https://tailwindcss.com) (`npm i -g tailwindcss`), and `concurrently` (`npm i -g concurrently`). Note that this will use the local, bleeding-edge, unreleased version of the Perseus CLI, not the one on `crates.io`, so you don't have to install the CLI. You'll be able to see the website at <http://localhost:8080>.
 
 ## Branches
 
