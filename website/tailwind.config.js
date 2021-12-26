@@ -5,9 +5,8 @@ module.exports = {
     content: [
         "./src/**/*.{rs,html,css}",
         "./index.html",
-        "./static/**/*.css",
+        "./static/styles/**/*.css",
     ],
-    darkMode: process.env.NODE_ENV == "production" ? "media" : "class",
     theme: {
         fontFamily: {
             heading: ["Comfortaa", "sans"],

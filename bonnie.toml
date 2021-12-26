@@ -9,7 +9,7 @@ setup.cmd = [
     "mkdir -p examples/basic/.perseus/dist/exported",
     "bonnie copy-subcrates",
     "cargo build",
-    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `serve` and 'browser-sync' ('npm i -g tailwindcss serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
+    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.desc = "sets everything up for local development"
 
@@ -40,6 +40,8 @@ dev.subcommands.example.cmd = [
 dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
+site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\" \"bonnie site serve\""
+site.desc = "builds and serves the site for local development (requires `concurrently`)"
 site.subcommands.export.cmd = [
     "cd website",
     "find . -not -path \".perseus/*\" -not -path \"target/*\" | entr -s \"perseus export\""
@@ -57,14 +59,14 @@ site.subcommands.tinker.cmd = [
 site.subcommands.tinker.desc = "runs tinkers on the website"
 site.subcommands.build-tailwind.cmd = [
     "cd website",
-    "tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css"
+    "tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css -w"
 ]
-site.subcommands.build-tailwind.desc = "builds a tailwind stylesheet for development (no purging)"
+site.subcommands.build-tailwind.desc = "builds a tailwind stylesheet for development, watching for changes"
 site.subcommands.build-tailwind.subcommands.prod.cmd = [
     "cd website",
     "NODE_ENV=production tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css --minify"
 ]
-site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind stylesheet for production (purging and minifying)"
+site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind stylesheet for production (minifying)"
 site.subcommands.deploy.cmd = [
     "bonnie site build-tailwind prod",
     "cd website",
