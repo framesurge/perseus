@@ -1,14 +1,13 @@
 # Docker Deployment
 
-For situations where [serverful deployment](:deploying/serverful) is required, or in case there is a need to deploy one of the examples found on GitHub without prior setup of all necessary dependencies, bellow are `Dockerfile` examples meant to serve for different deployment scenarios. Steps contained in following `Dockerfile` examples can also serve as guidelines for production deployments.
+For situations where [serverful deployment](:deploying/serverful) is required, or in case there is a need to deploy one of the examples found on GitHub without prior setup of all necessary dependencies, below are `Dockerfile` examples meant to serve for different deployment scenarios. These steps can also serve as guidelines for production deployments.
 
-None of the provided examples should be used as such, but are rather meant to be modified to fit specific requirements. Bellow `Dockerfile` examples are standalone for the reason that they leverage `curl` to download examples from the Perseus repository while specifying a release tag or a branch name.
+Note that the following examples should be modified for your particular use-case rather than being used as-is. Also, these `Dockerfile`s are standalone because they use `curl` to download examples directly from the Perseus repository (of course, you'll probably want to use your own code in production).
 
-Before modifying any of the `Dockerfile` examples it's recommended to get familiar with the [docker multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/) documentation, and in case of a production example also with [code optimizations](:deploying/size).
+Before proceeding with this section, you should be familiar with Docker's [multi-stage builds system](https://docs.docker.com/develop/develop-images/multistage-build) and Perseus' [code size optimizations](:deploying/size).
 
-## Production Example Leveraging Perseus Size Optimization Plugin
-
-```Dockerfile
+<details>
+<summary>Production example using the size optimizations plugin</summary>
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -95,11 +94,10 @@ COPY --from=build /app/simple/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
-```
+</details>
 
-## Production Example Leveraging WEE Allocator Directly
-
-```Dockerfile
+<details>
+<summary>Production examples using `wee_alloc` manually</summary>
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -193,11 +191,10 @@ COPY --from=build /app/tiny/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
-```
+</details>
 
-## Test Example Deployment of Specific Branch
-
-```Dockerfile
+<details>
+<summary>Test example for deploying a specific branch from the Perseus repository</summary>
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -255,4 +252,4 @@ COPY --from=build /app/perseus-branch/examples/tiny/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
-```
+</details>
