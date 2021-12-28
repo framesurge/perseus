@@ -111,7 +111,9 @@ fn real_main() -> i32 {
         if from.is_dir() {
             if let Err(err) = copy_dir(&from, &to, &CopyOptions::new()) {
                 let err_msg = format!(
-                    "Static exporting failed: 'couldn't copy static alias directory: '{}''",
+                    "Static exporting failed: 'couldn't copy static alias directory from '{}' to '{}': '{}''",
+                    from.to_str().map(|s| s.to_string()).unwrap(),
+                    to,
                     err.to_string()
                 );
                 plugins
@@ -124,7 +126,9 @@ fn real_main() -> i32 {
             }
         } else if let Err(err) = fs::copy(&from, &to) {
             let err_msg = format!(
-                "Static exporting failed: 'couldn't copy static alias file: '{}''",
+                "Static exporting failed: 'couldn't copy static alias file from '{}' to '{}': '{}''",
+                from.to_str().map(|s| s.to_string()).unwrap(),
+                to,
                 err.to_string()
             );
             plugins
