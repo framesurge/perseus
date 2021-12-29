@@ -6,9 +6,10 @@ use crate::locales::Locales;
 use crate::page_data::PageData;
 use crate::server::get_render_cfg;
 use crate::stores::ImmutableStore;
-use crate::template::TemplateMap;
+use crate::template::ArcTemplateMap;
 use crate::translations_manager::TranslationsManager;
 use crate::SsrNode;
+use futures::future::{try_join, try_join_all};
 use std::fs;
 
 /// Gets the static page data.
@@ -44,7 +45,7 @@ async fn get_static_page_data(
 /// been built, and that no templates are using non-static features (which can be ensured by passing `true` as the last parameter to
 /// `build_app`).
 pub async fn export_app(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     html_shell_path: &str,
     locales: &Locales,
     root_id: &str,
@@ -62,120 +63,160 @@ pub async fn export_app(
         })?;
     let html_shell = prep_html_shell(raw_html_shell, &render_cfg, &path_prefix);
 
+    // We can do literally everything concurrently here
+    let mut export_futs = Vec::new();
     // Loop over every partial
     for (path, template_path) in render_cfg {
-        // We need the encoded path to reference flattened build artifacts
-        // But we don't create a flattened system with exporting, everything is properly created in a directory structure
-        let path_encoded = urlencoding::encode(&path).to_string();
-        // All initial load pages should be written into their own folders, which prevents a situation of a template root page outside the directory for the rest of that template's pages (see #73)
-        // The `.html` file extension is added when this variable is used (for contrast to the `.json`s)
-        let initial_load_path = if path.ends_with("index") {
-            // However, if it's already an index page, we dont want `index/index.html`
-            path.to_string()
-        } else {
-            format!("{}/index", &path)
-        };
-
-        // Get the template itself
-        let template = templates.get(&template_path);
-        let template = match template {
-            Some(template) => template,
-            None => {
-                return Err(ServeError::PageNotFound {
-                    path: template_path,
-                }
-                .into())
-            }
-        };
-        // Create a locale detection file for it if we're using i18n
-        // These just send the app shell, which will perform a redirect as necessary
-        // Notably, these also include fallback redirectors if either Wasm or JS is disabled (or both)
-        // TODO put everything inside its own folder for initial loads?
-        if locales.using_i18n {
-            immutable_store
-                .write(
-                    &format!("exported/{}.html", &initial_load_path),
-                    &interpolate_locale_redirection_fallback(
-                        &html_shell,
-                        // If we don't include  the path prefix, fallback redirection will fail for relative paths
-                        &format!("{}/{}/{}", path_prefix, locales.default, &path),
-                        root_id,
-                    ),
-                )
-                .await?;
+        let fut = export_path(
+            (path.to_string(), template_path.to_string()),
+            templates,
+            locales,
+            &html_shell,
+            root_id,
+            immutable_store,
+            path_prefix.to_string(),
+        );
+        export_futs.push(fut);
+    }
+    // If we're using i18n, loop through the locales to create translations files
+    let mut translations_futs = Vec::new();
+    if locales.using_i18n {
+        for locale in locales.get_all() {
+            let fut = create_translation_file(locale, immutable_store, translations_manager);
+            translations_futs.push(fut);
         }
-        // Check if that template uses build state (in which case it should have a JSON file)
-        let has_state = template.uses_build_state();
-        if locales.using_i18n {
-            // Loop through all the app's locales
-            for locale in locales.get_all() {
-                let page_data = get_static_page_data(
-                    &format!("{}-{}", locale, &path_encoded),
-                    has_state,
-                    immutable_store,
-                )
-                .await?;
-                // Create a full HTML file from those that can be served for initial loads
-                // The build process writes these with a dummy default locale even though we're not using i18n
-                let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
-                immutable_store
-                    .write(
-                        &format!("exported/{}/{}.html", locale, initial_load_path),
-                        &full_html,
-                    )
-                    .await?;
+    }
 
-                // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
-                let partial = serde_json::to_string(&page_data).unwrap();
-                immutable_store
-                    .write(
-                        &format!("exported/.perseus/page/{}/{}.json", locale, &path),
-                        &partial,
-                    )
-                    .await?;
+    try_join(try_join_all(export_futs), try_join_all(translations_futs)).await?;
+
+    // Copying in bundles from the filesystem is left to the CLI command for exporting, so we're done!
+
+    Ok(())
+}
+
+/// Creates a translation file for exporting. This is broken out for concurrency.
+async fn create_translation_file(
+    locale: &str,
+    immutable_store: &ImmutableStore,
+    translations_manager: &impl TranslationsManager,
+) -> Result<(), ServerError> {
+    // Get the translations string for that
+    let translations_str = translations_manager
+        .get_translations_str_for_locale(locale.to_string())
+        .await?;
+    // Write it to an asset so that it can be served directly
+    immutable_store
+        .write(
+            &format!("exported/.perseus/translations/{}", locale),
+            &translations_str,
+        )
+        .await?;
+
+    Ok(())
+}
+
+async fn export_path(
+    (path, template_path): (String, String),
+    templates: &ArcTemplateMap<SsrNode>,
+    locales: &Locales,
+    html_shell: &str,
+    root_id: &str,
+    immutable_store: &ImmutableStore,
+    path_prefix: String,
+) -> Result<(), ServerError> {
+    // We need the encoded path to reference flattened build artifacts
+    // But we don't create a flattened system with exporting, everything is properly created in a directory structure
+    let path_encoded = urlencoding::encode(&path).to_string();
+    // All initial load pages should be written into their own folders, which prevents a situation of a template root page outside the directory for the rest of that template's pages (see #73)
+    // The `.html` file extension is added when this variable is used (for contrast to the `.json`s)
+    let initial_load_path = if path.ends_with("index") {
+        // However, if it's already an index page, we dont want `index/index.html`
+        path.to_string()
+    } else {
+        format!("{}/index", &path)
+    };
+
+    // Get the template itself
+    let template = templates.get(&template_path);
+    let template = match template {
+        Some(template) => template,
+        None => {
+            return Err(ServeError::PageNotFound {
+                path: template_path.to_string(),
             }
-        } else {
+            .into())
+        }
+    };
+    // Create a locale detection file for it if we're using i18n
+    // These just send the app shell, which will perform a redirect as necessary
+    // Notably, these also include fallback redirectors if either Wasm or JS is disabled (or both)
+    if locales.using_i18n {
+        immutable_store
+            .write(
+                &format!("exported/{}.html", &initial_load_path),
+                &interpolate_locale_redirection_fallback(
+                    html_shell,
+                    // If we don't include  the path prefix, fallback redirection will fail for relative paths
+                    &format!("{}/{}/{}", path_prefix, locales.default, &path),
+                    root_id,
+                ),
+            )
+            .await?;
+    }
+    // Check if that template uses build state (in which case it should have a JSON file)
+    let has_state = template.uses_build_state();
+    if locales.using_i18n {
+        // Loop through all the app's locales
+        for locale in locales.get_all() {
             let page_data = get_static_page_data(
-                &format!("{}-{}", locales.default, &path_encoded),
+                &format!("{}-{}", locale, &path_encoded),
                 has_state,
                 immutable_store,
             )
             .await?;
             // Create a full HTML file from those that can be served for initial loads
             // The build process writes these with a dummy default locale even though we're not using i18n
-            let full_html = interpolate_page_data(&html_shell, &page_data, root_id);
-            // We don't add an extension because this will be queried directly by the browser
+            let full_html = interpolate_page_data(html_shell, &page_data, root_id);
             immutable_store
-                .write(&format!("exported/{}.html", initial_load_path), &full_html)
+                .write(
+                    &format!("exported/{}/{}.html", locale, initial_load_path),
+                    &full_html,
+                )
                 .await?;
 
             // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
             let partial = serde_json::to_string(&page_data).unwrap();
             immutable_store
                 .write(
-                    &format!("exported/.perseus/page/{}/{}.json", locales.default, &path),
+                    &format!("exported/.perseus/page/{}/{}.json", locale, &path),
                     &partial,
                 )
                 .await?;
         }
+    } else {
+        let page_data = get_static_page_data(
+            &format!("{}-{}", locales.default, &path_encoded),
+            has_state,
+            immutable_store,
+        )
+        .await?;
+        // Create a full HTML file from those that can be served for initial loads
+        // The build process writes these with a dummy default locale even though we're not using i18n
+        let full_html = interpolate_page_data(html_shell, &page_data, root_id);
+        // We don't add an extension because this will be queried directly by the browser
+        immutable_store
+            .write(&format!("exported/{}.html", initial_load_path), &full_html)
+            .await?;
+
+        // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
+        let partial = serde_json::to_string(&page_data).unwrap();
+        immutable_store
+            .write(
+                &format!("exported/.perseus/page/{}/{}.json", locales.default, &path),
+                &partial,
+            )
+            .await?;
     }
-    // If we're using i18n, loop through the locales to create translations files
-    if locales.using_i18n {
-        for locale in locales.get_all() {
-            // Get the translations string for that
-            let translations_str = translations_manager
-                .get_translations_str_for_locale(locale.to_string())
-                .await?;
-            // Write it to an asset so that it can be served directly
-            immutable_store
-                .write(
-                    &format!("exported/.perseus/translations/{}", locale),
-                    &translations_str,
-                )
-                .await?;
-        }
-    }
-    // Copying in bundles from the filesystem is left to the CLI command for exporting, so we're done!
 
     Ok(())
 }
