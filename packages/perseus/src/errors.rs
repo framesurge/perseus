@@ -62,7 +62,7 @@ pub fn err_to_status_code(err: &ServerError) -> u16 {
     }
 }
 
-/// Errors that can occur while reading from or writing to an immutable store.
+/// Errors that can occur while reading from or writing to a mutable or immutable store.
 #[derive(Error, Debug)]
 pub enum StoreError {
     #[error("asset '{name}' not found in store")]
