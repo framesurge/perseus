@@ -2,12 +2,12 @@
 
 use crate::errors::*;
 use crate::locales::Locales;
+use crate::templates::ArcTemplateMap;
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
 use crate::{
     decode_time_str::decode_time_str,
     stores::{ImmutableStore, MutableStore},
-    template::TemplateMap,
     Template,
 };
 use futures::future::try_join_all;
@@ -63,128 +63,143 @@ pub async fn build_template(
 
     // Iterate through the paths to generate initial states if needed
     // Note that build paths pages on incrementally generable pages will use the immutable store
+    let mut futs = Vec::new();
     for path in paths.iter() {
-        // If needed, we'll contruct a full path that's URL encoded so we can easily save it as a file
-        let full_path_without_locale = match template.uses_build_paths() {
-            true => format!("{}/{}", &template_path, path),
-            // We don't want to concatenate the name twice if we don't have to
-            false => template_path.clone(),
-        };
-        // Strip trailing `/`s for the reasons described above
-        let full_path_without_locale = match full_path_without_locale.strip_suffix('/') {
-            Some(stripped) => stripped.to_string(),
-            None => full_path_without_locale,
-        };
-        // Add the current locale to the front of that na dencode it as a URL so we can store a flat series of files
-        // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
-        let full_path_encoded = format!(
-            "{}-{}",
-            translator.get_locale(),
-            urlencoding::encode(&full_path_without_locale)
-        );
-
-        // Handle static initial state generation
-        // We'll only write a static state if one is explicitly generated
-        // If the template revalidates, use a mutable store, otherwise use an immutable one
-        if template.uses_build_state() && template.revalidates() {
-            // We pass in the path to get a state (including the template path for consistency with the incremental logic)
-            let initial_state = template
-                .get_build_state(full_path_without_locale.clone(), translator.get_locale())
-                .await?;
-            // Write that intial state to a static JSON file
-            mutable_store
-                .write(
-                    &format!("static/{}.json", full_path_encoded),
-                    &initial_state,
-                )
-                .await?;
-            // Prerender the template using that state
-            let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(Some(initial_state.clone()), translator, true)
-            });
-            // Write that prerendered HTML to a static file
-            mutable_store
-                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
-                .await?;
-            // Prerender the document `<head>` with that state
-            // If the page also uses request state, amalgamation will be applied as for the normal content
-            let head_str = template.render_head_str(Some(initial_state), translator);
-            mutable_store
-                .write(
-                    &format!("static/{}.head.html", full_path_encoded),
-                    &head_str,
-                )
-                .await?;
-        } else if template.uses_build_state() {
-            // We pass in the path to get a state (including the template path for consistency with the incremental logic)
-            let initial_state = template
-                .get_build_state(full_path_without_locale.clone(), translator.get_locale())
-                .await?;
-            // Write that intial state to a static JSON file
-            immutable_store
-                .write(
-                    &format!("static/{}.json", full_path_encoded),
-                    &initial_state,
-                )
-                .await?;
-            // Prerender the template using that state
-            let prerendered = sycamore::render_to_string(|| {
-                template.render_for_template(Some(initial_state.clone()), translator, true)
-            });
-            // Write that prerendered HTML to a static file
-            immutable_store
-                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
-                .await?;
-            // Prerender the document `<head>` with that state
-            // If the page also uses request state, amalgamation will be applied as for the normal content
-            let head_str = template.render_head_str(Some(initial_state), translator);
-            immutable_store
-                .write(
-                    &format!("static/{}.head.html", full_path_encoded),
-                    &head_str,
-                )
-                .await?;
-        }
-
-        // Handle revalidation, we need to parse any given time strings into datetimes
-        // We don't need to worry about revalidation that operates by logic, that's request-time only
-        if template.revalidates_with_time() {
-            let datetime_to_revalidate =
-                decode_time_str(&template.get_revalidate_interval().unwrap())?;
-            // Write that to a static file, we'll update it every time we revalidate
-            // Note that this runs for every path generated, so it's fully usable with ISR
-            // Yes, there's a different revalidation schedule for each locale, but that means we don't have to rebuild every locale simultaneously
-            mutable_store
-                .write(
-                    &format!("static/{}.revld.txt", full_path_encoded),
-                    &datetime_to_revalidate.to_string(),
-                )
-                .await?;
-        }
-
-        // Note that SSR has already been handled by checking for `.uses_request_state()` above, we don't need to do any rendering here
-        // If a template only uses SSR, it won't get prerendered at build time whatsoever
-
-        // If the template is very basic, prerender without any state
-        // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
-        if template.is_basic() {
-            let prerendered =
-                sycamore::render_to_string(|| template.render_for_template(None, translator, true));
-            let head_str = template.render_head_str(None, translator);
-            // Write that prerendered HTML to a static file
-            immutable_store
-                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
-                .await?;
-            immutable_store
-                .write(
-                    &format!("static/{}.head.html", full_path_encoded),
-                    &head_str,
-                )
-                .await?;
-        }
+        let fut = gen_state_for_path(path, template, translator, (immutable_store, mutable_store));
+        futs.push(fut);
     }
+    try_join_all(futs).await?;
 
     Ok((paths, single_page))
+}
+
+/// Generates state for a single page within a template. This is broken out into a separate function for concurrency.
+async fn gen_state_for_path(
+    path: &str,
+    template: &Template<SsrNode>,
+    translator: &Translator,
+    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
+) -> Result<(), ServerError> {
+    let template_path = template.get_path();
+    // If needed, we'll contruct a full path that's URL encoded so we can easily save it as a file
+    let full_path_without_locale = match template.uses_build_paths() {
+        true => format!("{}/{}", &template_path, path),
+        // We don't want to concatenate the name twice if we don't have to
+        false => template_path.clone(),
+    };
+    // Strip trailing `/`s for the reasons described above
+    let full_path_without_locale = match full_path_without_locale.strip_suffix('/') {
+        Some(stripped) => stripped.to_string(),
+        None => full_path_without_locale,
+    };
+    // Add the current locale to the front of that na dencode it as a URL so we can store a flat series of files
+    // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
+    let full_path_encoded = format!(
+        "{}-{}",
+        translator.get_locale(),
+        urlencoding::encode(&full_path_without_locale)
+    );
+
+    // Handle static initial state generation
+    // We'll only write a static state if one is explicitly generated
+    // If the template revalidates, use a mutable store, otherwise use an immutable one
+    if template.uses_build_state() && template.revalidates() {
+        // We pass in the path to get a state (including the template path for consistency with the incremental logic)
+        let initial_state = template
+            .get_build_state(full_path_without_locale.clone(), translator.get_locale())
+            .await?;
+        // Write that intial state to a static JSON file
+        mutable_store
+            .write(
+                &format!("static/{}.json", full_path_encoded),
+                &initial_state,
+            )
+            .await?;
+        // Prerender the template using that state
+        let prerendered = sycamore::render_to_string(|| {
+            template.render_for_template(Some(initial_state.clone()), translator, true)
+        });
+        // Write that prerendered HTML to a static file
+        mutable_store
+            .write(&format!("static/{}.html", full_path_encoded), &prerendered)
+            .await?;
+        // Prerender the document `<head>` with that state
+        // If the page also uses request state, amalgamation will be applied as for the normal content
+        let head_str = template.render_head_str(Some(initial_state), translator);
+        mutable_store
+            .write(
+                &format!("static/{}.head.html", full_path_encoded),
+                &head_str,
+            )
+            .await?;
+    } else if template.uses_build_state() {
+        // We pass in the path to get a state (including the template path for consistency with the incremental logic)
+        let initial_state = template
+            .get_build_state(full_path_without_locale.clone(), translator.get_locale())
+            .await?;
+        // Write that intial state to a static JSON file
+        immutable_store
+            .write(
+                &format!("static/{}.json", full_path_encoded),
+                &initial_state,
+            )
+            .await?;
+        // Prerender the template using that state
+        let prerendered = sycamore::render_to_string(|| {
+            template.render_for_template(Some(initial_state.clone()), translator, true)
+        });
+        // Write that prerendered HTML to a static file
+        immutable_store
+            .write(&format!("static/{}.html", full_path_encoded), &prerendered)
+            .await?;
+        // Prerender the document `<head>` with that state
+        // If the page also uses request state, amalgamation will be applied as for the normal content
+        let head_str = template.render_head_str(Some(initial_state), translator);
+        immutable_store
+            .write(
+                &format!("static/{}.head.html", full_path_encoded),
+                &head_str,
+            )
+            .await?;
+    }
+
+    // Handle revalidation, we need to parse any given time strings into datetimes
+    // We don't need to worry about revalidation that operates by logic, that's request-time only
+    if template.revalidates_with_time() {
+        let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
+        // Write that to a static file, we'll update it every time we revalidate
+        // Note that this runs for every path generated, so it's fully usable with ISR
+        // Yes, there's a different revalidation schedule for each locale, but that means we don't have to rebuild every locale simultaneously
+        mutable_store
+            .write(
+                &format!("static/{}.revld.txt", full_path_encoded),
+                &datetime_to_revalidate.to_string(),
+            )
+            .await?;
+    }
+
+    // Note that SSR has already been handled by checking for `.uses_request_state()` above, we don't need to do any rendering here
+    // If a template only uses SSR, it won't get prerendered at build time whatsoever
+
+    // If the template is very basic, prerender without any state
+    // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
+    if template.is_basic() {
+        let prerendered =
+            sycamore::render_to_string(|| template.render_for_template(None, translator, true));
+        let head_str = template.render_head_str(None, translator);
+        // Write that prerendered HTML to a static file
+        immutable_store
+            .write(&format!("static/{}.html", full_path_encoded), &prerendered)
+            .await?;
+        immutable_store
+            .write(
+                &format!("static/{}.head.html", full_path_encoded),
+                &head_str,
+            )
+            .await?;
+    }
+
+    Ok(())
 }
 
 async fn build_template_and_get_cfg(
@@ -234,7 +249,7 @@ async fn build_template_and_get_cfg(
 /// Runs the build process of building many different templates for a single locale. If you're not using i18n, provide a `Translator::empty()`
 /// for this. You should only build the most commonly used locales here (the rest should be built on demand).
 pub async fn build_templates_for_locale(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
@@ -268,7 +283,7 @@ pub async fn build_templates_for_locale(
 
 /// Gets a translator and builds templates for a single locale.
 async fn build_templates_and_translator_for_locale(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
@@ -291,7 +306,7 @@ async fn build_templates_and_translator_for_locale(
 /// Runs the build process of building many templates for the given locales data, building directly for all supported locales. This is
 /// fine because of how ridiculously fast builds are.
 pub async fn build_app(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     locales: &Locales,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
