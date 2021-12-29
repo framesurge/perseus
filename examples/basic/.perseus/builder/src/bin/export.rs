@@ -5,7 +5,7 @@ use perseus::{
 };
 use perseus_engine::app::{
     get_app_root, get_immutable_store, get_locales, get_mutable_store, get_plugins,
-    get_static_aliases, get_templates_map_atomic, get_translations_manager,
+    get_static_aliases, get_templates_map, get_translations_manager,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -60,7 +60,7 @@ async fn build_and_export() -> i32 {
 
     // Build the site for all the common locales (done in parallel), denying any non-exportable features
     // We need to build and generate those artifacts before we can proceed on to exporting
-    let templates_map = get_templates_map_atomic::<SsrNode>(&plugins);
+    let templates_map = get_templates_map::<SsrNode>(&plugins);
     let build_res = build_app(
         &templates_map,
         &locales,

@@ -2,7 +2,7 @@
 
 use crate::errors::*;
 use crate::locales::Locales;
-use crate::templates::ArcTemplateMap;
+use crate::templates::TemplateMap;
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
 use crate::{
@@ -249,7 +249,7 @@ async fn build_template_and_get_cfg(
 /// Runs the build process of building many different templates for a single locale. If you're not using i18n, provide a `Translator::empty()`
 /// for this. You should only build the most commonly used locales here (the rest should be built on demand).
 pub async fn build_templates_for_locale(
-    templates: &ArcTemplateMap<SsrNode>,
+    templates: &TemplateMap<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     exporting: bool,
@@ -283,7 +283,7 @@ pub async fn build_templates_for_locale(
 
 /// Gets a translator and builds templates for a single locale.
 async fn build_templates_and_translator_for_locale(
-    templates: &ArcTemplateMap<SsrNode>,
+    templates: &TemplateMap<SsrNode>,
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
@@ -306,7 +306,7 @@ async fn build_templates_and_translator_for_locale(
 /// Runs the build process of building many templates for the given locales data, building directly for all supported locales. This is
 /// fine because of how ridiculously fast builds are.
 pub async fn build_app(
-    templates: &ArcTemplateMap<SsrNode>,
+    templates: &TemplateMap<SsrNode>,
     locales: &Locales,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,

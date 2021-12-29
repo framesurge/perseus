@@ -6,7 +6,7 @@ use crate::locales::Locales;
 use crate::page_data::PageData;
 use crate::server::get_render_cfg;
 use crate::stores::ImmutableStore;
-use crate::template::ArcTemplateMap;
+use crate::template::TemplateMap;
 use crate::translations_manager::TranslationsManager;
 use crate::SsrNode;
 use futures::future::{try_join, try_join_all};
@@ -45,7 +45,7 @@ async fn get_static_page_data(
 /// been built, and that no templates are using non-static features (which can be ensured by passing `true` as the last parameter to
 /// `build_app`).
 pub async fn export_app(
-    templates: &ArcTemplateMap<SsrNode>,
+    templates: &TemplateMap<SsrNode>,
     html_shell_path: &str,
     locales: &Locales,
     root_id: &str,
@@ -117,7 +117,7 @@ async fn create_translation_file(
 
 async fn export_path(
     (path, template_path): (String, String),
-    templates: &ArcTemplateMap<SsrNode>,
+    templates: &TemplateMap<SsrNode>,
     locales: &Locales,
     html_shell: &str,
     root_id: &str,

@@ -1,6 +1,6 @@
 use perseus::{internal::build::build_app, PluginAction, SsrNode};
 use perseus_engine::app::{
-    get_immutable_store, get_locales, get_mutable_store, get_plugins, get_templates_map_atomic,
+    get_immutable_store, get_locales, get_mutable_store, get_plugins, get_templates_map,
     get_translations_manager,
 };
 
@@ -29,7 +29,7 @@ async fn real_main() -> i32 {
 
     // Build the site for all the common locales (done in parallel)
     // All these parameters can be modified by `define_app!` and plugins, so there's no point in having a plugin opportunity here
-    let templates_map = get_templates_map_atomic::<SsrNode>(&plugins);
+    let templates_map = get_templates_map::<SsrNode>(&plugins);
     let res = build_app(
         &templates_map,
         &locales,
