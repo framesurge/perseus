@@ -1,4 +1,4 @@
-use crate::plugins::{PluginAction, Runner};
+use crate::plugins::*;
 use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
     fn run(
         &self,
         action_data: A,
-        plugin_data: &HashMap<String, Box<dyn Any>>,
+        plugin_data: &HashMap<String, Box<dyn Any + Send>>,
     ) -> HashMap<String, R> {
         let mut returns: HashMap<String, R> = HashMap::new();
         for (plugin_name, runner) in &self.runners {
@@ -28,7 +28,11 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
 
         returns
     }
-    fn register_plugin(&mut self, name: &str, runner: impl Fn(&A, &dyn Any) -> R + 'static) {
+    fn register_plugin(
+        &mut self,
+        name: &str,
+        runner: impl Fn(&A, &(dyn Any + Send)) -> R + Send + 'static,
+    ) {
         self.register_plugin_box(name, Box::new(runner))
     }
     fn register_plugin_box(&mut self, name: &str, runner: Runner<A, R>) {

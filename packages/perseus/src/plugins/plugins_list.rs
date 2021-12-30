@@ -3,7 +3,7 @@ use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
 
-type PluginDataMap = HashMap<String, Box<dyn Any>>;
+type PluginDataMap = HashMap<String, Box<dyn Any + Send>>;
 
 /// A representation of all the plugins used by an app. Due to the sheer number and compexity of nested fields, this is best transferred
 /// in an `Rc`, which unfortunately results in double indirection for runner functions.
@@ -33,10 +33,10 @@ impl<G: Html> Plugins<G> {
     /// Registers a new plugin, consuming `self`. For control actions, this will check if a plugin has already registered on an action,
     /// and throw an error if one has, noting the conflict explicitly in the error message. This can only register plugins that run
     /// exclusively on the server-side (including tinker-time and the build process).
-    pub fn plugin<D: Any>(
+    pub fn plugin<D: Any + Send>(
         mut self,
         // This is a function so that it never gets called if we're compiling for Wasm, which means Rust eliminates it as dead code!
-        plugin: impl Fn() -> Plugin<G, D>,
+        plugin: impl Fn() -> Plugin<G, D> + Send,
         plugin_data: D,
     ) -> Self {
         // If we're compiling for Wasm, plugins that don't run on the client side shouldn't be added (they'll then be eliminated as dead code)
@@ -49,7 +49,7 @@ impl<G: Html> Plugins<G> {
                 panic!("attempted to register plugin that can run on the client with `.plugin()`, this plugin should be registered with `.plugin_with_client_privilege()` (this will increase your final bundle size)")
             }
             // Insert the plugin data
-            let plugin_data: Box<dyn Any> = Box::new(plugin_data);
+            let plugin_data: Box<dyn Any + Send> = Box::new(plugin_data);
             let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
             // If there was an old value, there are two plugins with the same name, which is very bad (arbitrarily inconsistent behavior overriding)
             if res.is_some() {
@@ -66,10 +66,10 @@ impl<G: Html> Plugins<G> {
     /// The same as `.plugin()`, but registers a plugin that can run on the client-side. This is deliberately separated out to make
     /// conditional compilation feasible and to emphasize to users what's incrasing their bundle sizes. Note that this should also
     /// be used for plugins that run on both the client and server.
-    pub fn plugin_with_client_privilege<D: Any>(
+    pub fn plugin_with_client_privilege<D: Any + Send>(
         mut self,
         // This is a function to preserve a similar API interface with `.plugin()`
-        plugin: impl Fn() -> Plugin<G, D>,
+        plugin: impl Fn() -> Plugin<G, D> + Send,
         plugin_data: D,
     ) -> Self {
         let plugin = plugin();
@@ -78,7 +78,7 @@ impl<G: Html> Plugins<G> {
             panic!("attempted to register plugin that doesn't ever run on the client with `.plugin_with_client_privilege()`, you should use `.plugin()` instead")
         }
         // Insert the plugin data
-        let plugin_data: Box<dyn Any> = Box::new(plugin_data);
+        let plugin_data: Box<dyn Any + Send> = Box::new(plugin_data);
         let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
         // If there was an old value, there are two plugins with the same name, which is very bad (arbitrarily inconsistent behavior overriding)
         if res.is_some() {

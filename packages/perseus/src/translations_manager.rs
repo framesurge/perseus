@@ -27,7 +27,8 @@ pub enum TranslationsManagerError {
 use crate::translator::Translator;
 use futures::future::join_all;
 use std::collections::HashMap;
-use std::fs;
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
 
 /// A trait for systems that manage where to put translations. At simplest, we'll just write them to static files, but they might also
 /// be stored in a CMS. It is **strongly** advised that any implementations use some form of caching, guided by `FsTranslationsManager`.
@@ -117,24 +118,33 @@ impl TranslationsManager for FsTranslationsManager {
         } else {
             // The file must be named as the locale it describes
             let asset_path = format!("{}/{}.{}", self.root_path, locale, self.file_ext);
-            let translations_str = match fs::metadata(&asset_path) {
-                Ok(_) => fs::read_to_string(&asset_path).map_err(|err| {
-                    TranslationsManagerError::ReadFailed {
-                        locale: locale.clone(),
-                        source: err.into(),
-                    }
-                })?,
+            let mut file = File::open(&asset_path).await.map_err(|err| {
+                TranslationsManagerError::ReadFailed {
+                    locale: locale.clone(),
+                    source: err.into(),
+                }
+            })?;
+            let metadata = file.metadata().await;
+
+            match metadata {
+                Ok(_) => {
+                    let mut contents = String::new();
+                    file.read_to_string(&mut contents).await.map_err(|err| {
+                        TranslationsManagerError::ReadFailed {
+                            locale: locale.clone(),
+                            source: err.into(),
+                        }
+                    })?;
+                    Ok(contents)
+                }
                 Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                    return Err(TranslationsManagerError::NotFound { locale })
+                    Err(TranslationsManagerError::NotFound { locale })
                 }
-                Err(err) => {
-                    return Err(TranslationsManagerError::ReadFailed {
-                        locale,
-                        source: err.into(),
-                    })
-                }
-            };
-            Ok(translations_str)
+                Err(err) => Err(TranslationsManagerError::ReadFailed {
+                    locale,
+                    source: err.into(),
+                }),
+            }
         }
     }
     async fn get_translator_for_locale(
