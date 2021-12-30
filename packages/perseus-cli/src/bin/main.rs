@@ -4,7 +4,7 @@ use perseus_cli::parse::SnoopSubcommand;
 use perseus_cli::{
     build, check_env, delete_artifacts, delete_bad_dir, deploy, eject, export, has_ejected,
     parse::{Opts, Subcommand},
-    prepare, serve, tinker,
+    prepare, serve, serve_exported, tinker,
 };
 use perseus_cli::{errors::*, snoop_build, snoop_server, snoop_wasm_build};
 use std::env;
@@ -12,19 +12,20 @@ use std::io::Write;
 use std::path::PathBuf;
 
 // All this does is run the program and terminate with the acquired exit code
-fn main() {
+#[tokio::main]
+async fn main() {
     // In development, we'll test in the `basic` example
     if cfg!(debug_assertions) {
         let example_to_test =
             env::var("TEST_EXAMPLE").unwrap_or_else(|_| "../../examples/basic".to_string());
         env::set_current_dir(example_to_test).unwrap();
     }
-    let exit_code = real_main();
+    let exit_code = real_main().await;
     std::process::exit(exit_code)
 }
 
 // This manages error handling and returns a definite exit code to terminate with
-fn real_main() -> i32 {
+async fn real_main() -> i32 {
     // Get the working directory
     let dir = env::current_dir();
     let dir = match dir {
@@ -37,7 +38,7 @@ fn real_main() -> i32 {
             return 1;
         }
     };
-    let res = core(dir.clone());
+    let res = core(dir.clone()).await;
     match res {
         // If it worked, we pass the executed command's exit code through
         Ok(exit_code) => exit_code,
@@ -60,7 +61,7 @@ fn real_main() -> i32 {
 // This returns the exit code of the executed command, which we should return from the process itself
 // This prints warnings using the `writeln!` macro, which allows the parsing of `stdout` in production or a vector in testing
 // If at any point a warning can't be printed, the program will panic
-fn core(dir: PathBuf) -> Result<i32, Error> {
+async fn core(dir: PathBuf) -> Result<i32, Error> {
     // Get `stdout` so we can write warnings appropriately
     let stdout = &mut std::io::stdout();
 
@@ -88,7 +89,16 @@ fn core(dir: PathBuf) -> Result<i32, Error> {
             // Delete old build/exportation artifacts
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
-            export(dir, export_opts)?
+            let exit_code = export(dir.clone(), export_opts.clone())?;
+            if exit_code != 0 {
+                return Ok(exit_code);
+            }
+            // Start a server for those files if requested
+            if export_opts.serve {
+                serve_exported(dir, export_opts.host, export_opts.port).await;
+            }
+
+            0
         }
         Subcommand::Serve(serve_opts) => {
             // Delete old build artifacts if `--no-build` wasn't specified

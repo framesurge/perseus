@@ -66,11 +66,18 @@ pub struct BuildOpts {
     pub release: bool,
 }
 /// Exports your app to purely static files
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct ExportOpts {
     /// Export for production
     #[clap(long)]
     pub release: bool,
+    /// Serve the generated static files locally
+    #[clap(short, long)]
+    pub serve: bool,
+    #[clap(long, default_value = "127.0.0.1")]
+    pub host: String,
+    #[clap(long, default_value = "8080")]
+    pub port: u16,
 }
 /// Serves your app (set the `$HOST` and `$PORT` environment variables to change the location it's served at)
 #[derive(Parser)]

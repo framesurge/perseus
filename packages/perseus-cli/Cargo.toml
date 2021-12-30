@@ -29,6 +29,8 @@ serde = "1"
 serde_json = "1"
 clap = { version = "=3.0.0-beta.5", features = ["color"] }
 fs_extra = "1"
+tokio = { version = "1", features = [ "macros", "rt-multi-thread" ] }
+warp = "0.3"
 
 [lib]
 name = "perseus_cli"

@@ -36,6 +36,7 @@ mod export;
 pub mod parse;
 mod prepare;
 mod serve;
+mod serve_exported;
 mod snoop;
 mod thread;
 mod tinker;
@@ -55,6 +56,7 @@ pub use eject::{eject, has_ejected};
 pub use export::export;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
+pub use serve_exported::serve_exported;
 pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};
 pub use tinker::tinker;
 

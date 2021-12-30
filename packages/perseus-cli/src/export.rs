@@ -181,7 +181,7 @@ pub fn export_internal(
             vec![&format!(
                 "{} build --target web {}",
                 env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
-                if is_release { "--release" } else { "" }
+                if is_release { "--release" } else { "--dev" }
             )],
             &wb_target,
             &wb_spinner,
@@ -197,8 +197,11 @@ pub fn export_internal(
 /// Builds the subcrates to get a directory that we can serve. Returns an exit code.
 pub fn export(dir: PathBuf, opts: ExportOpts) -> Result<i32, ExportError> {
     let spinners = MultiProgress::new();
+    // We'll add another not-quite-spinner if we're serving
+    let num_spinners = if opts.serve { 3 } else { 2 };
 
-    let (ep_thread, wb_thread) = export_internal(dir.clone(), &spinners, 2, opts.release)?;
+    let (ep_thread, wb_thread) =
+        export_internal(dir.clone(), &spinners, num_spinners, opts.release)?;
     let ep_res = ep_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;

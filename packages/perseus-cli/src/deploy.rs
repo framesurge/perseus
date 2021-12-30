@@ -128,7 +128,15 @@ fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result
 /// subcommands.
 fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
     // Export the app to `.perseus/exported`, using release mode
-    let export_exit_code = export(dir.clone(), ExportOpts { release: true })?;
+    let export_exit_code = export(
+        dir.clone(),
+        ExportOpts {
+            release: true,
+            serve: false,
+            host: String::new(),
+            port: 0,
+        },
+    )?;
     if export_exit_code != 0 {
         return Ok(export_exit_code);
     }
