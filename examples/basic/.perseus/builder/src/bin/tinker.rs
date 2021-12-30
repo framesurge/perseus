@@ -12,6 +12,8 @@ fn real_main() -> i32 {
 
     let plugins = get_plugins::<SsrNode>();
     // Run all the tinker actions
+    // Note: this is deliberately synchronous, tinker actions that need a multithreaded async runtime should probably
+    // be making their own engines!
     plugins
         .functional_actions
         .tinker
