@@ -74,8 +74,10 @@ pub struct ExportOpts {
     /// Serve the generated static files locally
     #[clap(short, long)]
     pub serve: bool,
+    /// Where to host your exported app
     #[clap(long, default_value = "127.0.0.1")]
     pub host: String,
+    /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
 }
