@@ -1,3 +1,4 @@
+use fmterr::fmt_err;
 use perseus::{internal::build::build_app, PluginAction, SsrNode};
 use perseus_engine::app::{
     get_immutable_store, get_locales, get_mutable_store, get_plugins, get_templates_map,
@@ -40,7 +41,7 @@ async fn real_main() -> i32 {
     )
     .await;
     if let Err(err) = res {
-        let err_msg = format!("Static generation failed: '{}'.", &err);
+        let err_msg = fmt_err(&err);
         plugins
             .functional_actions
             .build_actions

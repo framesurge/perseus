@@ -1,3 +1,4 @@
+use fmterr::fmt_err;
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use perseus::{
     internal::{build::build_app, export::export_app, get_path_prefix_server},
@@ -71,7 +72,7 @@ async fn build_and_export() -> i32 {
     )
     .await;
     if let Err(err) = build_res {
-        let err_msg = format!("Static exporting failed: '{}'.", &err);
+        let err_msg = fmt_err(&err);
         plugins
             .functional_actions
             .export_actions
@@ -99,7 +100,7 @@ async fn build_and_export() -> i32 {
     )
     .await;
     if let Err(err) = export_res {
-        let err_msg = format!("Static exporting failed: '{}'.", &err);
+        let err_msg = fmt_err(&err);
         plugins
             .functional_actions
             .export_actions
@@ -125,10 +126,10 @@ fn copy_static_dir() -> i32 {
         if from.is_dir() {
             if let Err(err) = copy_dir(&from, &to, &CopyOptions::new()) {
                 let err_msg = format!(
-                    "Static exporting failed: 'couldn't copy static alias directory from '{}' to '{}': '{}''",
+                    "couldn't copy static alias directory from '{}' to '{}': '{}'",
                     from.to_str().map(|s| s.to_string()).unwrap(),
                     to,
-                    err.to_string()
+                    fmt_err(&err)
                 );
                 plugins
                     .functional_actions
@@ -140,10 +141,10 @@ fn copy_static_dir() -> i32 {
             }
         } else if let Err(err) = fs::copy(&from, &to) {
             let err_msg = format!(
-                "Static exporting failed: 'couldn't copy static alias file from '{}' to '{}': '{}''",
+                "couldn't copy static alias file from '{}' to '{}': '{}'",
                 from.to_str().map(|s| s.to_string()).unwrap(),
                 to,
-                err.to_string()
+                fmt_err(&err)
             );
             plugins
                 .functional_actions
@@ -165,10 +166,7 @@ fn copy_static_aliases() -> i32 {
     let static_dir = PathBuf::from("../static");
     if static_dir.exists() {
         if let Err(err) = copy_dir(&static_dir, "dist/exported/.perseus/", &CopyOptions::new()) {
-            let err_msg = format!(
-                "Static exporting failed: 'couldn't copy static directory: '{}''",
-                &err
-            );
+            let err_msg = format!("couldn't copy static directory: '{}'", fmt_err(&err));
             plugins
                 .functional_actions
                 .export_actions

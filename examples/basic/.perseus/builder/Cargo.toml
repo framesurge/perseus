@@ -16,6 +16,7 @@ perseus = { path = "../../../../packages/perseus", features = [ "tinker-plugins"
 futures = "0.3"
 fs_extra = "1"
 tokio = { version = "1", features = [ "macros", "rt-multi-thread" ] }
+fmterr = "0.1"
 
 # We define a binary for building, serving, and doing both
 [[bin]]
