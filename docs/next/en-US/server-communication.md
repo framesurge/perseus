@@ -25,4 +25,16 @@ In the last few years, a new technology has sprung up that allows you to run ind
 
 ## Querying a Server
 
-You have a few options if you want to query a server from client-side code. You can use an high-level module, like [reqwest](https://docs.rs/reqwest) (which supports Wasm), or you can use the underlying browser Fetch API directly (which entails turning JavaScript types into Rust types). We recommend the first approach, but an example of the second can be found in the Perseus code [here](https://github.com/arctic-hen7/perseus/blob/61dac01b838df23cc0f33b0d65fcb7bf5f252770/packages/perseus/src/shell.rs#L19-L65).
+### At Build-Time
+
+It's fairly trivial to communicate with a server at build-time in Perseus, which allows you to fetch data when you build your app, and then your users don't have to do as much work. You can also use other strategies to fetch data [at request-time](:strategies/request-state) if needed. Right now, it's best to use a blocking API to make requests on the server, which you can do with libraries like [`ureq`](https://docs.rs/ureq).
+
+### In the Browser
+
+In some cases, it's just not possible to fetch the data you need on the server, and the client needs to fetch it themselves. This is often the case in [exported](:exporting) apps. This is typically done with the browser's inbuilt Fetch API, which is conveniently wrapped by [`reqwasm`](https://docs.rs/reqwasm).
+
+However, if you try to request from a public API in this way, you may run into problems with [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS), which can be very confusing, especially if you're not used to web development! The simple explanation of this is that CORS is a *thing* that browsers use to make sure your code can't send requests to servers that haven't allowed it (as in your code specifically). If you're querying your own server and getting this problem, make sure to set the `Access-Control-Allow-Origin` header to allow your site to make requests (see [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for more details). However, if a public API hasn't set this, you're up the creek! In these cases, it's best to query through your own server or through one of Perseus' rendering strategies (if possible).
+
+## Example
+
+This can be confusing stuff, especially because it's different on the client and the server, so you may want to take a look at [this example](https://github.com/arctic-hen7/perseus/tree/main/examples/fetching) in the Perseus repo, which gets the IP address of the machine that built it, and then shows the user a message hosted with a [static alias](:static-content).

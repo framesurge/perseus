@@ -10,3 +10,4 @@ These examples are all fully self-contained, and do not serve as examples in the
 -   i18n -- a simple app that showcases internationalization in particular
 -   Tiny -- the smallest Perseus can get, the _Hello World!_ example
 -   Plugins -- an example of creating and integrating plugins into Perseus
+-   Fetching -- an example of fetching data at build time and in the browser with `reqwasm`
