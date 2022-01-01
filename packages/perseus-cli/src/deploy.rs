@@ -34,6 +34,7 @@ fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result
             release: true,
             standalone: true,
             integration,
+            watch: false,
         },
     )?;
     if serve_exit_code != 0 {
@@ -135,6 +136,7 @@ fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
             serve: false,
             host: String::new(),
             port: 0,
+            watch: false,
         },
     )?;
     if export_exit_code != 0 {

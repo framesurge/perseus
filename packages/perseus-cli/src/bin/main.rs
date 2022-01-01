@@ -1,5 +1,6 @@
 use clap::Parser;
 use fmterr::fmt_err;
+use notify::{watcher, RecursiveMode, Watcher};
 use perseus_cli::parse::SnoopSubcommand;
 use perseus_cli::{
     build, check_env, delete_artifacts, delete_bad_dir, deploy, eject, export, has_ejected,
@@ -10,6 +11,8 @@ use perseus_cli::{errors::*, snoop_build, snoop_server, snoop_wasm_build};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
+use std::sync::mpsc::channel;
+use std::time::Duration;
 
 // All this does is run the program and terminate with the acquired exit code
 #[tokio::main]
@@ -23,6 +26,8 @@ async fn main() {
     let exit_code = real_main().await;
     std::process::exit(exit_code)
 }
+
+// IDEA Watch files at the `core()` level and then panic, catching the unwind in the watcher loop
 
 // This manages error handling and returns a definite exit code to terminate with
 async fn real_main() -> i32 {
@@ -86,27 +91,148 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             build(dir, build_opts)?
         }
         Subcommand::Export(export_opts) => {
-            // Delete old build/exportation artifacts
+            // Delete old build/export artifacts
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
             let exit_code = export(dir.clone(), export_opts.clone())?;
             if exit_code != 0 {
                 return Ok(exit_code);
             }
-            // Start a server for those files if requested
-            if export_opts.serve {
-                serve_exported(dir, export_opts.host, export_opts.port).await;
-            }
 
-            0
+            if export_opts.watch {
+                let dir_2 = dir.clone();
+                let export_opts_2 = export_opts.clone();
+                if export_opts.serve {
+                    tokio::spawn(async move {
+                        serve_exported(dir_2, export_opts_2.host, export_opts_2.port).await
+                    });
+                }
+                // Now watch for changes
+                let (tx, rx) = channel();
+                let mut watcher = watcher(tx, Duration::from_secs(2))
+                    .map_err(|err| WatchError::WatcherSetupFailed { source: err })?;
+                // Watch the current directory
+                for entry in std::fs::read_dir(".")
+                    .map_err(|err| WatchError::ReadCurrentDirFailed { source: err })?
+                {
+                    // We want to exclude `target/` and `.perseus/`, otherwise we should watch everything
+                    let entry =
+                        entry.map_err(|err| WatchError::ReadDirEntryFailed { source: err })?;
+                    let name = entry.file_name();
+                    if name != "target" && name != ".perseus" {
+                        watcher
+                            .watch(entry.path(), RecursiveMode::Recursive)
+                            .map_err(|err| WatchError::WatchFileFailed {
+                                filename: entry.path().to_str().unwrap().to_string(),
+                                source: err,
+                            })?;
+                    }
+                }
+
+                let res: Result<i32, Error> = loop {
+                    match rx.recv() {
+                        Ok(_) => {
+                            // Delete old build/exportation artifacts
+                            delete_artifacts(dir.clone(), "static")?;
+                            delete_artifacts(dir.clone(), "exported")?;
+                            let dir_2 = dir.clone();
+                            let opts = export_opts.clone();
+                            match export(dir_2.clone(), opts.clone()) {
+                                // We'l let the user know if there's a non-zero exit code
+                                Ok(exit_code) => {
+                                    if exit_code != 0 {
+                                        eprintln!("Non-zero exit code returned from exporting process: {}.", exit_code)
+                                    }
+                                }
+                                // Because we're watching for changes, we can manage errors here
+                                // We won't actually terminate unless the user tells us to
+                                Err(err) => eprintln!("{}", fmt_err(&err)),
+                            }
+                            // TODO Reload the browser automatically
+                        }
+                        Err(err) => break Err(WatchError::WatcherError { source: err }.into()),
+                    }
+                };
+                return res;
+            } else {
+                if export_opts.serve {
+                    serve_exported(dir, export_opts.host, export_opts.port).await;
+                }
+                0
+            }
         }
         Subcommand::Serve(serve_opts) => {
-            // Delete old build artifacts if `--no-build` wasn't specified
             if !serve_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
-            let (exit_code, _server_path) = serve(dir, serve_opts)?;
-            exit_code
+            if serve_opts.watch {
+                match serve(dir.clone(), serve_opts.clone()) {
+                    // We'll let the user know if there's a non-zero exit code
+                    Ok((exit_code, _server_path)) => {
+                        if exit_code != 0 {
+                            eprintln!(
+                                "Non-zero exit code returned from serving process: {}.",
+                                exit_code
+                            )
+                        }
+                    }
+                    // Because we're watching for changes, we can manage errors here
+                    // We won't actually terminate unless the user tells us to
+                    Err(err) => eprintln!("{}", fmt_err(&err)),
+                };
+                // Now watch for changes
+                let (tx, rx) = channel();
+                let mut watcher = watcher(tx, Duration::from_secs(2))
+                    .map_err(|err| WatchError::WatcherSetupFailed { source: err })?;
+                // Watch the current directory
+                for entry in std::fs::read_dir(".")
+                    .map_err(|err| WatchError::ReadCurrentDirFailed { source: err })?
+                {
+                    // We want to exclude `target/` and `.perseus/`, otherwise we should watch everything
+                    let entry =
+                        entry.map_err(|err| WatchError::ReadDirEntryFailed { source: err })?;
+                    let name = entry.file_name();
+                    if name != "target" && name != ".perseus" {
+                        watcher
+                            .watch(entry.path(), RecursiveMode::Recursive)
+                            .map_err(|err| WatchError::WatchFileFailed {
+                                filename: entry.path().to_str().unwrap().to_string(),
+                                source: err,
+                            })?;
+                    }
+                }
+
+                let res: Result<i32, Error> = loop {
+                    match rx.recv() {
+                        Ok(_) => {
+                            // Delete old build artifacts if `--no-build` wasn't specified
+                            if !serve_opts.no_build {
+                                delete_artifacts(dir.clone(), "static")?;
+                            }
+                            match serve(dir.clone(), serve_opts.clone()) {
+                                // We'll let the user know if there's a non-zero exit code
+                                Ok((exit_code, _server_path)) => {
+                                    if exit_code != 0 {
+                                        eprintln!(
+                                            "Non-zero exit code returned from serving process: {}.",
+                                            exit_code
+                                        )
+                                    }
+                                }
+                                // Because we're watching for changes, we can manage errors here
+                                // We won't actually terminate unless the user tells us to
+                                Err(err) => eprintln!("{}", fmt_err(&err)),
+                            };
+                            // TODO Reload the browser automatically
+                        }
+                        Err(err) => break Err(WatchError::WatcherError { source: err }.into()),
+                    }
+                };
+                return res;
+            } else {
+                let (exit_code, _server_path) = serve(dir, serve_opts)?;
+                exit_code
+            }
         }
         Subcommand::Test(test_opts) => {
             // This will be used by the subcrates

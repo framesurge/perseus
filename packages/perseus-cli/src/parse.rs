@@ -14,7 +14,7 @@ pub struct Opts {
     pub subcmd: Subcommand,
 }
 
-#[derive(Parser, PartialEq, Eq)]
+#[derive(Parser, PartialEq, Eq, Clone)]
 pub enum Integration {
     ActixWeb,
     Warp,
@@ -80,9 +80,12 @@ pub struct ExportOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
+    /// Whether or not to watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
+    #[clap(short, long)]
+    pub watch: bool,
 }
 /// Serves your app (set the `$HOST` and `$PORT` environment variables to change the location it's served at)
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct ServeOpts {
     /// Don't run the final binary, but print its location instead as the last line of output
     #[clap(long)]
@@ -99,6 +102,9 @@ pub struct ServeOpts {
     /// The server integration to use
     #[clap(short, long, default_value = "warp")]
     pub integration: Integration,
+    /// Whether or not to watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
+    #[clap(short, long)]
+    pub watch: bool,
 }
 /// Removes `.perseus/` entirely for updates or to fix corruptions
 #[derive(Parser)]

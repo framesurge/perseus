@@ -15,6 +15,8 @@ pub enum Error {
     ExportError(#[from] ExportError),
     #[error(transparent)]
     DeployError(#[from] DeployError),
+    #[error(transparent)]
+    WatchError(#[from] WatchError),
 }
 
 /// Errors that can occur while preparing.
@@ -195,5 +197,35 @@ pub enum DeployError {
         path: String,
         #[source]
         source: std::io::Error,
+    },
+}
+
+#[derive(Error, Debug)]
+pub enum WatchError {
+    #[error("couldn't set up a file watcher, try re-running this command")]
+    WatcherSetupFailed {
+        #[source]
+        source: notify::Error,
+    },
+    #[error("couldn't read your current directory to watch files, do you have the necessary permissions?")]
+    ReadCurrentDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't read entry in your current directory, try re-running this command")]
+    ReadDirEntryFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't watch file at '{filename}', try re-running the command")]
+    WatchFileFailed {
+        filename: String,
+        #[source]
+        source: notify::Error,
+    },
+    #[error("an error occurred while watching files")]
+    WatcherError {
+        #[source]
+        source: std::sync::mpsc::RecvError,
     },
 }
