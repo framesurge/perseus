@@ -27,7 +27,7 @@ pub fn index_page() -> View<G> {
                             ) { (t!("index-get-started")) }
                             a(
                                 // The difference in y-axis padding is deliberate, it looks better with the ring
-                                class = "inline-flex items-center py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl dark:text-white ring-4 ring-indigo-500 hover:ring-indigo-400 transition-colors duration-200",
+                                class = "inline-flex items-center py-2 px-4 m-2 font-semibold rounded-lg shadow-2xl dark:text-white ring-4 ring-indigo-500 hover:ring-indigo-400 transition-all duration-200",
                                 href = "https://github.com/arctic-hen7/perseus"
                             ) {
                                 span(
