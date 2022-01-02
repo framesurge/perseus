@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::parse::SnoopServeOpts;
+use crate::parse::{SnoopServeOpts, SnoopWasmOpts};
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -48,12 +48,17 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
 }
 
 /// Runs the commands to build the user's app to Wasm directly so they can see detailed logs.
-pub fn snoop_wasm_build(dir: PathBuf) -> Result<i32, ExecutionError> {
+pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, ExecutionError> {
     let target = dir.join(".perseus");
     run_cmd_directly(
         format!(
-            "{} build --target web --dev",
-            env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string())
+            "{} build --target web {}",
+            env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
+            if opts.profiling {
+                "--profiling"
+            } else {
+                "--dev"
+            }
         ),
         &target,
     )

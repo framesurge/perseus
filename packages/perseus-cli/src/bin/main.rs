@@ -277,7 +277,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
         }
         Subcommand::Snoop(snoop_subcmd) => match snoop_subcmd {
             SnoopSubcommand::Build => snoop_build(dir)?,
-            SnoopSubcommand::WasmBuild => snoop_wasm_build(dir)?,
+            SnoopSubcommand::WasmBuild(snoop_wasm_opts) => snoop_wasm_build(dir, snoop_wasm_opts)?,
             SnoopSubcommand::Serve(snoop_serve_opts) => snoop_server(dir, snoop_serve_opts)?,
         },
         Subcommand::Prep => {

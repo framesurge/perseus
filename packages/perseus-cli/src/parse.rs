@@ -80,7 +80,7 @@ pub struct ExportOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
-    /// Whether or not to watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
+    /// Watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
     #[clap(short, long)]
     pub watch: bool,
 }
@@ -102,7 +102,7 @@ pub struct ServeOpts {
     /// The server integration to use
     #[clap(short, long, default_value = "warp")]
     pub integration: Integration,
-    /// Whether or not to watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
+    /// Watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
     #[clap(short, long)]
     pub watch: bool,
 }
@@ -145,9 +145,16 @@ pub enum SnoopSubcommand {
     /// Snoops on the static generation process (this will let you see `dbg!` calls and the like)
     Build,
     /// Snoops on the Wasm building process (mostly for debugging errors)
-    WasmBuild,
+    WasmBuild(SnoopWasmOpts),
     /// Snoops on the server process (run `perseus build` before this)
     Serve(SnoopServeOpts),
+}
+
+#[derive(Parser)]
+pub struct SnoopWasmOpts {
+    /// Produce a profiling build (for use with `twiggy` and the like)
+    #[clap(short, long)]
+    pub profiling: bool,
 }
 
 #[derive(Parser)]
