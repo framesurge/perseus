@@ -9,6 +9,8 @@ Before proceeding with this section, you should be familiar with Docker's [multi
 <details>
 <summary>Production example using the size optimizations plugin</summary>
 
+<pre class="language-shell" tabindex="0">
+<code class="language-shell">
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -20,7 +22,7 @@ RUN apt update \
 # vars
 ENV PERSEUS_VERSION=0.3.0 \
   PERSEUS_SIZE_OPT_VERSION=0.1.7 \
-  ESBUILD_VERSION=0.14.7 \
+  ESBUILD_VERSION=0.14.10 \
   BINARYEN_VERSION=104
 
 # prepare root project dir
@@ -95,12 +97,16 @@ COPY --from=build /app/simple/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
+</code>
+</pre>
 
 </details>
 
 <details>
 <summary>Production examples using `wee_alloc` manually</summary>
 
+<pre class="language-shell" tabindex="0">
+<code class="language-shell">
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -112,7 +118,7 @@ RUN apt update \
 # vars
 ENV PERSEUS_VERSION=0.3.0 \
   WEE_ALLOC_VERSION=0.4 \
-  ESBUILD_VERSION=0.14.7 \
+  ESBUILD_VERSION=0.14.10 \
   BINARYEN_VERSION=104
 
 # prepare root project dir
@@ -194,12 +200,16 @@ COPY --from=build /app/tiny/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
+</code>
+</pre>
 
 </details>
 
 <details>
 <summary>Test example for deploying a specific branch from the Perseus repository</summary>
 
+<pre class="language-shell" tabindex="0">
+<code class="language-shell">
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -257,5 +267,7 @@ COPY --from=build /app/perseus-branch/examples/tiny/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
+</code>
+</pre>
 
 </details>
