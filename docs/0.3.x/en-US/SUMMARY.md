@@ -54,6 +54,7 @@
     -   [Serverless Deployment](/docs/deploying/serverless)
     -   [Optimizing Code Size](/docs/deploying/size)
     -   [Relative Paths](/docs/deploying/relative-paths)
+    -   [Docker Deployment](/docs/deploying/docker)
 -   [Migrating from v0.2.x](/docs/updating)
 -   [Common Pitfalls and Known Bugs](/docs/pitfalls-and-bugs)
 
