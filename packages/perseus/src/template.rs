@@ -618,8 +618,9 @@ pub type ArcTemplateMap<G> = HashMap<String, Arc<Template<G>>>;
 
 /// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
 /// because it uses Sycamore context.
-// TODO use `Html` downcasting here
+// TODO (0.4.0) Remove this altogether
 #[macro_export]
+#[deprecated(since = "0.3.1", note = "use `G::IS_BROWSER` instead")]
 macro_rules! is_server {
     () => {{
         let render_ctx = ::sycamore::context::use_context::<::perseus::templates::RenderCtx>();

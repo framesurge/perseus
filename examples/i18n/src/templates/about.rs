@@ -1,4 +1,4 @@
-use perseus::{is_server, t, Template};
+use perseus::{t, Template};
 use sycamore::prelude::{component, view, Html, View};
 
 #[perseus::template(AboutPage)]
@@ -8,7 +8,7 @@ pub fn about_page() -> View<G> {
         p { (t!("about")) }
         p {
             (
-                if is_server!() {
+                if !G::IS_BROWSER {
                     "This is running on the server."
                 } else {
                     "This is running on the client."
