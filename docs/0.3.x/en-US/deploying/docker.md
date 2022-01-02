@@ -9,6 +9,7 @@ Before proceeding with this section, you should be familiar with Docker's [multi
 <details>
 <summary>Production example using the size optimizations plugin</summary>
 
+```dockerfile
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -95,12 +96,14 @@ COPY --from=build /app/simple/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
+```
 
 </details>
 
 <details>
 <summary>Production examples using `wee_alloc` manually</summary>
 
+```dockerfile
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -194,12 +197,14 @@ COPY --from=build /app/tiny/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
+```
 
 </details>
 
 <details>
 <summary>Test example for deploying a specific branch from the Perseus repository</summary>
 
+```dockerfile
 # get the base image
 FROM rust:1.57-slim AS build
 
@@ -257,5 +262,6 @@ COPY --from=build /app/perseus-branch/examples/tiny/pkg /app/
 ENV HOST=0.0.0.0
 
 CMD ["./server"]
+```
 
 </details>
