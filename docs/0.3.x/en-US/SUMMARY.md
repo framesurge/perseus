@@ -67,3 +67,4 @@
     -   [Initial Loads](/docs/advanced/initial-loads)
     -   [Subsequent Loads](/docs/advanced/subsequent-loads)
     -   [Routing](/docs/advanced/routing)
+-   [`define_app` in Detail](/docs/advanced/define_app)
