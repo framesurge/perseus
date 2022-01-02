@@ -31,7 +31,9 @@ clap = { version = "=3.0.0-beta.5", features = ["color"] }
 fs_extra = "1"
 tokio = { version = "1", features = [ "macros", "rt-multi-thread", "sync" ] }
 warp = "0.3"
-notify = "4"
+command-group = "1"
+ctrlc = { version = "3.0", features = ["termination"] }
+notify = "=5.0.0-pre.13"
 
 [lib]
 name = "perseus_cli"

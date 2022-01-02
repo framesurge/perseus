@@ -228,4 +228,14 @@ pub enum WatchError {
         #[source]
         source: std::sync::mpsc::RecvError,
     },
+    #[error("couldn't spawn a child process to build your app in watcher mode")]
+    SpawnSelfFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't get the path to the cli's executable, try re-running the command")]
+    GetSelfPathFailed {
+        #[source]
+        source: std::io::Error,
+    },
 }
