@@ -38,9 +38,13 @@ See the next section for the details of this command.
 
 ## Watching
 
-Right now, the Perseus CLI doesn't support watching files for changes and rebuilding, but it soon will. Until then, you can replicate this behavior with a tool like [`entr`](https://github.com/eradman/entr) or the equivalent. Anything that watches file and reruns commands when they change will work for this.
+The Perseus CLI supports watching your local directory for changes when running `perseus serve` or `perseus export` through the `-w/--watch` flag. Adding this will make the CLI spawn another version of itself responsible for running the actual builds, and the original process acts as a supervisor. This approach was chosen due to the complexity of the CLI's multithreaded build system, which makes terminating unfinished builds *extremely* difficult.
 
-Here's an example of watching files with `entr`:
+Notably, the CLI spawns another version of itself as a process group (or `JobObject` on Windows) using the [`command-group`](https://github.com/watchexec/command-group) crate, which allows terminations signals to go to all builder child processes. However, this means that the CLI needs to manually handle termination signals to it to terminate the processes in thr group. This means that, if the CLI terminates improperly (e.g. if you `kill` it), you will very likely end up with build jobs running in the background. Those shouldn't be too problematic, and you probably won't even notice them, but a server process could also be orphaned, which would leave a port occupied. If this happens, use `ps aux | grep perseus` to find the process ID, and then `kill` it by that (e.g. `kill 60850`) on Linux. If possible though, avoiding force-terminating the Perseus CLI.
+
+Right now, the CLI's watching systems will ignore `.perseus/` and `target/`. If you have any other directories that you'd like to ignore, you should use an alternative watching system, like [`entr`](https://github.com/eradman/entr). However, we're willing to add support for this if it's a widely-requested feature, so please feel free to [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) if this affects you!
+
+Here's an example of watching files with `entr` on Linux:
 
 ```
 find . -not -path "./.perseus/*" -not -path "./target/*" | entr -rs "perseus serve"
