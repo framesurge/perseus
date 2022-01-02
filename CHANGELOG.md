@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.1](https://github.com/arctic-hen7/perseus/compare/v0.3.0...v0.3.1) (2022-01-02)
+
+
+### Features
+
+* **website:** added highlighting for dockerfiles ([81e2066](https://github.com/arctic-hen7/perseus/commit/81e206605ea72d1c3c24071ee5105963939475cd))
+* re-exported `spawn_local` for convenience ([184381f](https://github.com/arctic-hen7/perseus/commit/184381fbfb27baeb2c7399d5ce94c2d60643b07e))
+* **cli:** added basic hot reloading ([b4c93f0](https://github.com/arctic-hen7/perseus/commit/b4c93f0a8202422c2f64779d87e7bcc6bcfb217a))
+* **cli:** added hot reloading ([61696b3](https://github.com/arctic-hen7/perseus/commit/61696b32becdb925c5e43dcc60c3d4f9dfa51fc8))
+* **cli:** added support for wasm profiling builds ([c2de025](https://github.com/arctic-hen7/perseus/commit/c2de025eb858c50339631781ea810b54651c2242))
+* add tokio ([#102](https://github.com/arctic-hen7/perseus/issues/102)) ([150fda8](https://github.com/arctic-hen7/perseus/commit/150fda8062e3bd5c97bb57d759b383b64e43d84b))
+* made static generation errors display causes ([ab7742a](https://github.com/arctic-hen7/perseus/commit/ab7742a6733dae977bddde86ceaea3e13301cd86)), closes [#101](https://github.com/arctic-hen7/perseus/issues/101)
+* **cli:** added inbuilt server for exported apps ([8274678](https://github.com/arctic-hen7/perseus/commit/82746784c2a803b3e41a56f740840767b0d0de10))
+
+
+### Bug Fixes
+
+* **cli:** made watcher ignore `.git/` as well ([1a7f6ed](https://github.com/arctic-hen7/perseus/commit/1a7f6edccc988dbf4e791853426d434a5066002a))
+* **website:** made github button transition work ([efcf16f](https://github.com/arctic-hen7/perseus/commit/efcf16f3532f99958b7126234e0541b48a310ff6))
+* added missing cli argument docs ([7c9fb4a](https://github.com/arctic-hen7/perseus/commit/7c9fb4ad050a71675cdee038675689239764cc31))
+* **cli:** used `--dev` by default with `wasm-pack` ([55cc681](https://github.com/arctic-hen7/perseus/commit/55cc681650892fe87a07974378d795ee5b7d090b))
+* **deps:** locked `indicatif` to `v0.17.0-beta.1` ([5b979bb](https://github.com/arctic-hen7/perseus/commit/5b979bb4589f3f7d758788fb43d906a460b70567))
+* **engine:** fixed incomplete error messages ([e445e56](https://github.com/arctic-hen7/perseus/commit/e445e5682ca96aa44918e3a527a5940207ea3731))
+
+
+### Documentation Changes
+
+* added cargo corruption to common pitfalls ([9fe2b27](https://github.com/arctic-hen7/perseus/commit/9fe2b273be0a7010721620d450c7be42eda194d5))
+* added docker deployment docs ([#98](https://github.com/arctic-hen7/perseus/issues/98)) ([93f2c4b](https://github.com/arctic-hen7/perseus/commit/93f2c4b3fd270e353f6387085aed8e82ed0b7958))
+* added docs for cli watching ([4a250e9](https://github.com/arctic-hen7/perseus/commit/4a250e9585f34d7cd13b3d92d2c002b692460227))
+* added new example for fetching data ([6b08ffe](https://github.com/arctic-hen7/perseus/commit/6b08ffe8e784818653ad5e4f3556da26f49a5b08)), closes [#96](https://github.com/arctic-hen7/perseus/issues/96)
+* added preliminary `define_app!` advanced docs ([69721a6](https://github.com/arctic-hen7/perseus/commit/69721a6e625b8d99461519e310a33eecfe3b501d))
+* fixed code in docker docs ([ac5aaf9](https://github.com/arctic-hen7/perseus/commit/ac5aaf9ae0a036167876e467e6324f270e1fda72))
+* made changelog more readable ([12ecc92](https://github.com/arctic-hen7/perseus/commit/12ecc92c7dc6361c0837169cdff464ac04d26fa5))
+* merged `0.3.0` and `next` ([9f17624](https://github.com/arctic-hen7/perseus/commit/9f176243247e525715a6952c848ea50830f80e1e))
+* merged last changes into `next` ([5ab9903](https://github.com/arctic-hen7/perseus/commit/5ab99033fa1d186e394219bce8146d933a2eb88d))
+* updated contrib docs for new site command ([9246c12](https://github.com/arctic-hen7/perseus/commit/9246c129f8358f3596e3df99b2d7f6ebe054ea0a))
+
 ## [0.3.0](https://github.com/arctic-hen7/perseus/compare/v0.3.0-rc.1...v0.3.0) (2021-12-21)
 
 
