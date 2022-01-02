@@ -25,6 +25,21 @@ This will disable optimizations for your Wasm bundle, which prevents this issue 
 
 Perseus has a rather unique code structure that will foil most attempts at modifying your own `Cargo.toml`. For example, if you wanted to change the `codegen_units` in the release profile of your app, you couldn't do this in your own `Cargo.toml`, it would have no effect. The reason for this is that the code your write is actually a library that's imported by the CLI's engines, so any custom configuration has to be made directly on the engines. In other words, you'll need to apply your changes on `.perseus/Cargo.toml` instead. You can also apply customizations on the server and the builder, which are separate crates under `.perseus/`. Note that modifying `.perseus/` and retaining your changes requires [ejecting](:ejecting), or you could [write a plugin](:plugins/writing) if it's a change you make a lot.
 
+## Cargo is putting out strange errors...
+
+If you're getting errors along the lines of not being able to find the latest Perseus version, or you have Perseus version mismatches even though you only installed it once, you've probably got some kind of Cargo corruption. Usually, this can be fixed by running `perseus clean && cargo clean`, which will delete `.perseus/` and `target/` and start again from scratch.
+
+However, sometimes you'll need to purge your system's Cargo cache, which can be done safely by running the following commands:
+
+```
+cd ~/.cargo
+mkdir old
+mv git old
+mv registry old
+```
+
+That will archive the `git/` and `registry/` folders in `~/.cargo/`, which should resolve any corruptions. Then, just run `cargo build` in your project (after `perseus clean && cargo clean`) and everything should work! If not and you have no idea what's going on, feel free to ask on our [Discord server](https://discord.com/invite/GNqWYWNTdp)!
+
 ## I want to disable a Perseus default feature, but it's not doing anything
 
 If you add `default-features = false` to your `Cargo.toml` and expect Perseus to adapt accordingly, you're in for a bit of a shock unfortunately! The reason for this is that the Perseus CLI isn't (yet) smart enough to know you've done this, so it will completely ignore you and press on with default features in the engine, and those settings will override your own. To disable default features, you'll need to also make these changes in `.perseus/Cargo.toml`, `.perseus/builder/Cargo.toml`, and `.perseus/server/Cargo.toml` (and you'll need to [eject](:ejecting) to save your changes). In future versions, the CLI will be able to detect your preferences for this and update accordingly.
