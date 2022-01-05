@@ -71,8 +71,6 @@ The only issue that prevents Perseus from achieving a consistent perfect score o
 
 </details>
 
-<details>
-
 If you're interested in seeing how Perseus compares on speed and a number of other features to other frameworks, check out the [comparisons page](comparisons).
 
 ## How convenient is it?
