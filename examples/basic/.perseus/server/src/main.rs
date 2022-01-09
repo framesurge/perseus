@@ -68,9 +68,16 @@ fn get_standalone_and_act() -> bool {
 
 /// Gets the host and port to serve on.
 fn get_host_and_port() -> (String, u16) {
-    let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let port = env::var("PORT")
-        .unwrap_or_else(|_| "8080".to_string())
+    // We have to use two sets of environment variables until v0.4.0
+    // TODO Remove the old environment variables in v0.4.0
+    let host_old = env::var("HOST");
+    let port_old = env::var("PORT");
+    let host = env::var("PERSEUS_HOST");
+    let port = env::var("PERSEUS_PORT");
+
+    let host = host.unwrap_or_else(|_| host_old.unwrap_or_else(|_| "127.0.0.1".to_string()));
+    let port = port
+        .unwrap_or_else(|_| port_old.unwrap_or_else(|_| "8080".to_string()))
         .parse::<u16>()
         .expect("Port must be a number.");
 

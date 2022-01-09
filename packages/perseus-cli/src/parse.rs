@@ -105,6 +105,12 @@ pub struct ServeOpts {
     /// Watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
     #[clap(short, long)]
     pub watch: bool,
+    /// Where to host your exported app
+    #[clap(long, default_value = "127.0.0.1")]
+    pub host: String,
+    /// The port to host your exported app on
+    #[clap(long, default_value = "8080")]
+    pub port: u16,
 }
 /// Removes `.perseus/` entirely for updates or to fix corruptions
 #[derive(Parser)]
@@ -162,4 +168,10 @@ pub struct SnoopServeOpts {
     /// The server integration to use
     #[clap(short, long, default_value = "warp")]
     pub integration: Integration,
+    /// Where to host your exported app
+    #[clap(long, default_value = "127.0.0.1")]
+    pub host: String,
+    /// The port to host your exported app on
+    #[clap(long, default_value = "8080")]
+    pub port: u16,
 }

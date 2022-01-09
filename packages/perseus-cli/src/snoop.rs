@@ -66,6 +66,10 @@ pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, Execut
 
 /// Runs the commands to run the server directly so the user can see detailed logs.
 pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, ExecutionError> {
+    // Set the environment variables for the host and port
+    env::set_var("PERSEUS_HOST", opts.host);
+    env::set_var("PERSEUS_PORT", opts.port.to_string());
+
     let target = dir.join(".perseus/server");
     run_cmd_directly(
         format!(

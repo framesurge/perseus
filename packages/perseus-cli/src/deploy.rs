@@ -35,6 +35,9 @@ fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result
             standalone: true,
             integration,
             watch: false,
+            // These have no impact if `no_run` is `true` (which it is), so we can use the defaults here
+            host: "127.0.0.1".to_string(),
+            port: 8080,
         },
     )?;
     if serve_exit_code != 0 {

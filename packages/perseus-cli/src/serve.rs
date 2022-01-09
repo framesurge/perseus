@@ -163,15 +163,15 @@ fn run_server(
             cmd: server_exec_path,
             source: err,
         })?;
-    // Figure out what host/port the app will be live on
-    let host = env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("PORT")
+    // Figure out what host/port the app will be live on (these have been set by the system)
+    let host = env::var("PERSEUS_HOST").unwrap_or_else(|_| "localhost".to_string());
+    let port = env::var("PERSEUS_PORT")
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>()
         .map_err(|err| ExecutionError::PortNotNumber { source: err })?;
     // Give the user a nice informational message
     println!(
-        "  {} {} Your app is now live on <http://{host}:{port}>! To change this, re-run this command with different settings of the HOST/PORT environment variables.",
+        "  {} {} Your app is now live on <http://{host}:{port}>! To change this, re-run this command with different settings for `--host` and `--port`.",
         style(format!("[{}/{}]", num_steps, num_steps)).bold().dim(),
         SERVING,
         host=host,
@@ -199,6 +199,10 @@ fn run_server(
 /// Builds the subcrates to get a directory that we can serve and then serves it. If possible, this will return the path to the server
 /// executable so that it can be used in deployment.
 pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), ExecutionError> {
+    // Set the environment variables for the host and port
+    env::set_var("PERSEUS_HOST", opts.host);
+    env::set_var("PERSEUS_PORT", opts.port.to_string());
+
     let spinners = MultiProgress::new();
     let did_build = !opts.no_build;
     let should_run = !opts.no_run;
