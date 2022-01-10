@@ -42,6 +42,7 @@ pub mod plugins;
 pub mod stores;
 
 mod build;
+mod cache_res;
 mod client_translations_manager;
 mod decode_time_str;
 mod default_headers;
@@ -74,6 +75,7 @@ pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, Route};
 
 // Items that should be available at the root (this should be nearly everything used in a typical Perseus app)
+pub use crate::cache_res::{cache_fallible_res, cache_res};
 pub use crate::error_pages::ErrorPages;
 pub use crate::errors::{ErrorCause, GenericErrorWithCause};
 pub use crate::plugins::{Plugin, PluginAction, Plugins};

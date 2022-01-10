@@ -52,7 +52,16 @@ pub async fn get_build_state(
     _path: String,
     _locale: String,
 ) -> RenderFnResultWithCause<IndexProps> {
-    // This just gets the IP address of the machine that built the app
-    let body: String = ureq::get("https://api.ipify.org").call()?.into_string()?;
+    // We'll cache the result with `try_cache_res`, which means we only make the request once, and future builds will use the cached result (speeds up development)
+    let body: String = perseus::cache_fallible_res(
+        "ipify",
+        || async {
+            // This just gets the IP address of the machine that built the app
+            let res = ureq::get("https://api.ipify.org").call()?.into_string()?;
+            Ok::<String, ureq::Error>(res)
+        },
+        false,
+    )
+    .await?;
     Ok(IndexProps { ip: body })
 }
