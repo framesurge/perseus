@@ -29,9 +29,12 @@
 
 mod build;
 mod cmd;
+mod deploy;
 mod eject;
 pub mod errors;
 mod export;
+mod export_error_page;
+mod extraction;
 /// Parsing utilities for arguments.
 pub mod parse;
 mod prepare;
@@ -40,9 +43,6 @@ mod serve_exported;
 mod snoop;
 mod thread;
 mod tinker;
-
-mod deploy;
-mod extraction;
 
 use errors::*;
 use std::fs;
@@ -54,6 +54,7 @@ pub use build::build;
 pub use deploy::deploy;
 pub use eject::{eject, has_ejected};
 pub use export::export;
+pub use export_error_page::export_error_page;
 pub use prepare::{check_env, prepare};
 pub use serve::serve;
 pub use serve_exported::serve_exported;

@@ -43,6 +43,7 @@ impl ToString for Integration {
 #[derive(Parser)]
 pub enum Subcommand {
     Build(BuildOpts),
+    ExportErrorPage(ExportErrorPageOpts),
     Export(ExportOpts),
     Serve(ServeOpts),
     /// Serves your app as `perseus serve` does, but puts it in testing mode
@@ -83,6 +84,14 @@ pub struct ExportOpts {
     /// Watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
     #[clap(short, long)]
     pub watch: bool,
+}
+/// Exports an error page for the given HTTP status code
+#[derive(Parser, Clone)]
+pub struct ExportErrorPageOpts {
+    #[clap(short, long)]
+    pub code: String,
+    #[clap(short, long)]
+    pub output: String,
 }
 /// Serves your app (set the `$HOST` and `$PORT` environment variables to change the location it's served at)
 #[derive(Parser, Clone)]

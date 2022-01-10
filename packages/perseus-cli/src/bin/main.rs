@@ -8,7 +8,7 @@ use perseus_cli::{
     parse::{Opts, Subcommand},
     prepare, serve, serve_exported, tinker,
 };
-use perseus_cli::{errors::*, snoop_build, snoop_server, snoop_wasm_build};
+use perseus_cli::{errors::*, export_error_page, snoop_build, snoop_server, snoop_wasm_build};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -280,6 +280,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             SnoopSubcommand::WasmBuild(snoop_wasm_opts) => snoop_wasm_build(dir, snoop_wasm_opts)?,
             SnoopSubcommand::Serve(snoop_serve_opts) => snoop_server(dir, snoop_serve_opts)?,
         },
+        Subcommand::ExportErrorPage(opts) => export_error_page(dir, opts)?,
         Subcommand::Prep => {
             // The `.perseus/` directory has already been set up in the preliminaries, so we don't need to do anything here
             0

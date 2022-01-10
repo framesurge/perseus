@@ -30,3 +30,7 @@ path = "src/bin/export.rs"
 [[bin]]
 name = "perseus-tinker" # Yes, the noun is 'tinker', not 'tinkerer'
 path = "src/bin/tinker.rs"
+
+[[bin]]
+name = "perseus-error-page-exporter"
+path = "src/bin/export_error_page.rs"

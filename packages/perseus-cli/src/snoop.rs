@@ -1,38 +1,8 @@
+use crate::cmd::run_cmd_directly;
 use crate::errors::*;
 use crate::parse::{SnoopServeOpts, SnoopWasmOpts};
 use std::env;
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-
-/// Runs a command directly, piping its output and errors to the streams of this program. This allows the user to investigate the innards of
-/// Perseus, or just see their own `dbg!` calls. This will return the exit code of the command, which should be passed through to this program.
-fn run_cmd_directly(cmd: String, dir: &Path) -> Result<i32, ExecutionError> {
-    // The shell configurations for Windows and Unix
-    #[cfg(unix)]
-    let shell_exec = "sh";
-    #[cfg(windows)]
-    let shell_exec = "powershell";
-    #[cfg(unix)]
-    let shell_param = "-c";
-    #[cfg(windows)]
-    let shell_param = "-command";
-
-    let output = Command::new(shell_exec)
-        .args([shell_param, &cmd])
-        .current_dir(dir)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .output()
-        .map_err(|err| ExecutionError::CmdExecFailed { cmd, source: err })?;
-
-    let exit_code = match output.status.code() {
-        Some(exit_code) => exit_code,         // If we have an exit code, use it
-        None if output.status.success() => 0, // If we don't, but we know the command succeeded, return 0 (success code)
-        None => 1, // If we don't know an exit code but we know that the command failed, return 1 (general error code)
-    };
-
-    Ok(exit_code)
-}
+use std::path::PathBuf;
 
 /// Runs static generation processes directly so the user can see detailed logs. This is commonly used for allowing users to see `dbg!` and
 /// the like in their builder functions.
