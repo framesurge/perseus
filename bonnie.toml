@@ -186,14 +186,15 @@ docs.subcommands.build.desc = "builds the book for deployment to GitHub pages or
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
 release.cmd = [
-    "bonnie check-branch stable",
-    "standard-version --sign --commit-all && git push --follow-tags %% origin stable",
+    "git checkout stable",
+    "git merge main",
+    "standard-version --sign --commit-all %%",
+    "git push --follow-tags origin stable",
     "git checkout main",
     "git merge stable",
-    "git push %% origin main",
-    "git checkout stable"
+    "git push origin main"
 ]
-release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped, needs branch 'stable')"
+release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped)"
 replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/basic/.perseus/*\" -not -path \"./examples/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
 replace-versions.args = [ "old_version", "new_version" ]
 
