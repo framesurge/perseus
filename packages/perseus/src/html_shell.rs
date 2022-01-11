@@ -1,9 +1,20 @@
+use crate::internal::error_pages::ErrorPageData;
 use crate::page_data::PageData;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::{env, fmt};
 
-/// Initializes the HTML shell by interpolating necessary scripts into it, as well as by adding the render configuration.
+fn escape_page_data(data: &str) -> String {
+    data.to_string()
+        // We escape any backslashes to prevent their interfering with JSON delimiters
+        .replace(r#"\"#, r#"\\"#)
+        // We escape any backticks, which would interfere with JS's raw strings system
+        .replace(r#"`"#, r#"\`"#)
+        // We escape any interpolations into JS's raw string system
+        .replace(r#"${"#, r#"\${"#)
+}
+
+/// Represents a shell of an HTML file. It may have content that gets interpolated into the file.
 #[derive(Clone)]
 pub struct HtmlShell<'a> {
     shell: String,
@@ -13,16 +24,14 @@ pub struct HtmlShell<'a> {
     interpolated_scripts: Vec<Cow<'a, str>>,
 }
 
-/// Interpolates content, metadata, and state into the HTML shell, ready to be sent to the user for initial loads. This should be passed
-/// an HTMl shell prepared with `prep_html_shell`. This also takes the HTML `id` of the element in the shell to interpolate content
-/// into.
+/// Represents an HTML shell with interpolated content, metadata, and state, ready to be sent to the user for initial loads.
 pub struct HtmlShellWithPageData<'a> {
     shell: HtmlShell<'a>,
     content: &'a str,
     root_id: &'a str,
 }
 
-/// Intepolates a fallback for locale redirection pages such that, even if JavaScript is disabled, the user will still be redirected to the default locale.
+/// Represents an HTML shell containing a fallback for locale redirection pages such that, even if JavaScript is disabled, the user will still be redirected to the default locale.
 /// From there, Perseus' inbuilt progressive enhancement can occur, but without this a user directed to an unlocalized page with JS disabled would see a
 /// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enabled but Wasm is disabled. Note that the redirect URL
 /// is expected to be generated with a path prefix inbuilt.
@@ -30,6 +39,13 @@ pub struct HtmlShellWithPageData<'a> {
 /// This also adds a `__perseus_initial_state` `<div>` in case it's needed (for Wasm redirections).
 pub struct HtmlShellWithRedirect<'a> {
     shell: HtmlShell<'a>,
+    root_id: &'a str,
+}
+
+/// Represents an HTML shell with interpolated error state.
+pub struct HtmlShellWithError<'a> {
+    shell: HtmlShell<'a>,
+    error: &'a str,
     root_id: &'a str,
 }
 
@@ -96,6 +112,16 @@ impl<'a> HtmlShell<'a> {
     ) -> HtmlShellWithRedirect<'a> {
         HtmlShellWithRedirect::new(self, redirect_url, root_id)
     }
+
+    /// Interpolates page error data into the shell.
+    pub fn error_page(
+        self,
+        error_page_data: &'a ErrorPageData,
+        error_html: &'a str,
+        root_id: &'a str,
+    ) -> HtmlShellWithError<'a> {
+        HtmlShellWithError::new(self, error_page_data, error_html, root_id)
+    }
 }
 
 trait ShellWithContent {
@@ -136,13 +162,7 @@ impl<'a> HtmlShellWithPageData<'a> {
         // The app shell will unset this after usage so it doesn't contaminate later non-initial loads
         // Error pages (above) will set this to `error`
         let initial_state = if let Some(state) = &page_data.state {
-            state
-                // We escape any backslashes to prevent their interfering with JSON delimiters
-                .replace(r#"\"#, r#"\\"#)
-                // We escape any backticks, which would interfere with JS's raw strings system
-                .replace(r#"`"#, r#"\`"#)
-                // We escape any interpolations into JS's raw string system
-                .replace(r#"${"#, r#"\${"#)
+            escape_page_data(state)
         } else {
             "None".to_string()
         };
@@ -231,6 +251,42 @@ impl ShellWithContent for HtmlShellWithRedirect<'_> {
     }
 }
 
+impl<'a> HtmlShellWithError<'a> {
+    fn new(
+        mut shell: HtmlShell<'a>,
+        error_page_data: &'a ErrorPageData,
+        error_html: &'a str,
+        root_id: &'a str,
+    ) -> Self {
+        let error = serde_json::to_string(error_page_data).unwrap();
+        let state_var = format!(
+            "window.__PERSEUS_INITIAL_STATE = `error-{}`;",
+            escape_page_data(&error),
+        );
+        shell.interpolated_scripts.push(state_var.into());
+
+        Self {
+            shell,
+            error: error_html,
+            root_id,
+        }
+    }
+}
+
+impl ShellWithContent for HtmlShellWithError<'_> {
+    fn shell(&self) -> &HtmlShell {
+        &self.shell
+    }
+
+    fn root_id(&self) -> &str {
+        self.root_id
+    }
+
+    fn content(&self) -> Option<&str> {
+        Some(self.error)
+    }
+}
+
 macro_rules! impl_display_for_shell_with_content {
     ($t:ident) => {
         impl std::fmt::Display for $t<'_> {
@@ -264,10 +320,11 @@ macro_rules! impl_display_for_shell_with_content {
 
 impl_display_for_shell_with_content!(HtmlShellWithPageData);
 impl_display_for_shell_with_content!(HtmlShellWithRedirect);
+impl_display_for_shell_with_content!(HtmlShellWithError);
 
 #[cfg(test)]
 mod tests {
-    use crate::page_data::PageData;
+    use crate::{internal::error_pages::ErrorPageData, page_data::PageData};
     use std::{collections::HashMap, iter::FromIterator};
 
     use super::HtmlShell;
@@ -312,6 +369,23 @@ mod tests {
     fn redirect_fallback_shell() {
         let shell = HtmlShell::new(SHELL.into(), &get_render_config(), "prefix")
             .locale_redirection_fallback("redirect_url", "root_id");
+
+        println!("{}", shell);
+    }
+
+    #[test]
+    fn error_page_shell() {
+        let error_page_data = ErrorPageData {
+            url: "error_page_data.url".to_string(),
+            status: 404,
+            err: "error_page_data.err".to_string(),
+        };
+
+        let shell = HtmlShell::new(SHELL.into(), &get_render_config(), "prefix").error_page(
+            &error_page_data,
+            "error_html",
+            "root_id",
+        );
 
         println!("{}", shell);
     }

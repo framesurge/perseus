@@ -26,10 +26,18 @@ fn return_error_page(
     err: &str,
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
-    html: &str,
+    html_shell: &HtmlShell,
     root_id: &str,
 ) -> HttpResponse {
-    let html = build_error_page(url, status, err, translator, error_pages, html, root_id);
+    let html = build_error_page(
+        url,
+        status,
+        err,
+        translator,
+        error_pages,
+        html_shell,
+        root_id,
+    );
     HttpResponse::build(StatusCode::from_u16(*status).unwrap())
         .content_type("text/html")
         .body(html)
@@ -58,7 +66,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             err,
             None,
             error_pages,
-            &html_shell.get_ref().to_string(),
+            html_shell.get_ref(),
             &opts.root_id,
         );
     };
