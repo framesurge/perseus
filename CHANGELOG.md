@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.2](https://github.com/arctic-hen7/perseus/compare/v0.3.1...v0.3.2) (2022-01-11)
+
+
+### Features
+
+* added ability to export error pages ([624034b](https://github.com/arctic-hen7/perseus/commit/624034bd0788d175aaf60776968cff86d89fb5f4)), closes [#94](https://github.com/arctic-hen7/perseus/issues/94)
+* added external request caching ([3ecad15](https://github.com/arctic-hen7/perseus/commit/3ecad150a20f4326a981563d43517bef53874a09))
+* modernized host/port setting for `perseus serve` ([19bd87e](https://github.com/arctic-hen7/perseus/commit/19bd87e6c0f9780af572c79a88025ae0b741c4f2)), closes [#107](https://github.com/arctic-hen7/perseus/issues/107)
+
+
+### Bug Fixes
+
+* **website:** fixed formatting errors ([4139df9](https://github.com/arctic-hen7/perseus/commit/4139df9d055be41c55b8b92abb831ee20ac60af5))
+
+
+### Documentation Changes
+
+* updated docs to reflect host/port setting changes ([a930ae2](https://github.com/arctic-hen7/perseus/commit/a930ae2002f6ba2df1f4b93b73d64c8fb20a3f2a))
+
 ### [0.3.1](https://github.com/arctic-hen7/perseus/compare/v0.3.0...v0.3.1) (2022-01-02)
 
 
