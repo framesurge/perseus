@@ -6,8 +6,8 @@ use perseus::{
         i18n::{TranslationsManager, Translator},
         router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
         serve::{
-            build_error_page, get_path_slice, interpolate_locale_redirection_fallback,
-            interpolate_page_data, render::get_page_for_template, ServerOptions,
+            build_error_page, get_path_slice, render::get_page_for_template, HtmlShell,
+            ServerOptions,
         },
     },
     stores::{ImmutableStore, MutableStore},
@@ -38,7 +38,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     path: FullPath,
     req: perseus::http::Request<()>,
     opts: Arc<ServerOptions>,
-    html_shell: Arc<String>,
+    html_shell: Arc<HtmlShell<'_>>,
     render_cfg: Arc<HashMap<String, String>>,
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
@@ -56,7 +56,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             err,
             None,
             error_pages,
-            html_shell.as_ref(),
+            &html_shell.as_ref().to_string(),
             &opts.root_id,
         );
     };
@@ -91,7 +91,11 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                 }
             };
 
-            let final_html = interpolate_page_data(&html_shell, &page_data, &opts.root_id);
+            let final_html = html_shell
+                .as_ref()
+                .clone()
+                .page_data(&page_data, &opts.root_id)
+                .to_string();
 
             let mut http_res = Response::builder().status(200);
             // http_res.content_type("text/html");
@@ -108,17 +112,22 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             // We 'should' generate a `Location` field for the redirect, but it's not RFC-mandated, so we can use the app shell
             Response::builder()
                 .status(200)
-                .body(interpolate_locale_redirection_fallback(
-                    html_shell.as_ref(),
-                    // We'll redirect the user to the default locale
-                    &format!(
-                        "{}/{}/{}",
-                        get_path_prefix_server(),
-                        opts.locales.default,
-                        path
-                    ),
-                    &opts.root_id,
-                ))
+                .body(
+                    html_shell
+                        .as_ref()
+                        .clone()
+                        .locale_redirection_fallback(
+                            // We'll redirect the user to the default locale
+                            &format!(
+                                "{}/{}/{}",
+                                get_path_prefix_server(),
+                                opts.locales.default,
+                                path
+                            ),
+                            &opts.root_id,
+                        )
+                        .to_string(),
+                )
                 .unwrap()
         }
         RouteVerdictAtomic::NotFound => html_err(404, "page not found"),

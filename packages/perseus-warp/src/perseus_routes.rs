@@ -8,7 +8,7 @@ use crate::{
 };
 use perseus::internal::serve::{get_render_cfg, ServerProps};
 use perseus::{
-    internal::{get_path_prefix_server, i18n::TranslationsManager, serve::prep_html_shell},
+    internal::{get_path_prefix_server, i18n::TranslationsManager, serve::HtmlShell},
     stores::MutableStore,
 };
 use std::{fs, sync::Arc};
@@ -28,7 +28,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .await
         .expect("Couldn't get render configuration!");
     let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
-    let index_with_render_cfg = prep_html_shell(index_file, &render_cfg, &get_path_prefix_server());
+    let index_with_render_cfg = HtmlShell::new(index_file, &render_cfg, &get_path_prefix_server());
 
     // Handle static files
     let js_bundle = warp::path!(".perseus" / "bundle.js")
