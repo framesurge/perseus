@@ -68,7 +68,7 @@ impl Parse for TemplateFn {
                 };
                 // Can either accept a single argument for properties or no arguments
                 let mut inputs = sig.inputs.into_iter();
-                let arg: Option<FnArg> = inputs.next();
+                let arg = inputs.next();
                 // We don't care what the type is, as long as it's not `self`
                 if let Some(FnArg::Receiver(arg)) = arg {
                     return Err(syn::Error::new_spanned(arg, "templates can't take `self`"));
