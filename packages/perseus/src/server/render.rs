@@ -368,14 +368,13 @@ pub async fn get_page_for_template(
     // Otherwise we go as with HTML, request trumps build
     // Of course, if only one state was defined, we'll just use that regardless (so `None` prioritization is impossible)
     // If this is the case, the build content will still be served, and then it's up to the client to hydrate it with the new amalgamated state
-    let state: Option<String>;
-    if !states.both_defined() {
-        state = states.get_defined()?;
+    let state = if !states.both_defined() {
+        states.get_defined()?
     } else if template.can_amalgamate_states() {
-        state = template.amalgamate_states(states)?;
+        template.amalgamate_states(states)?
     } else {
-        state = states.request_state;
-    }
+        states.request_state
+    };
 
     // Combine everything into one JSON object
     let res = PageData {

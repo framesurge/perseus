@@ -115,34 +115,39 @@ pub async fn get_build_state(
     // We'll do that differently if it doesn't have a version in front of it, which would be the second part containing two dots
     // Or it could be `next`
     // If the path is just `/docs` though, we'll render the introduction page for the stable version
-    let version: &str;
-    let fs_path = if path == "docs" {
-        version = &DOCS_MANIFEST.stable;
-        format!(
-            "{}/{}/{}/{}",
-            path_vec[0], // `docs`
+    let (version, fs_path): (&str, String) = if path == "docs" {
+        (
             &DOCS_MANIFEST.stable,
-            &locale,
-            "intro"
+            format!(
+                "{}/{}/{}/{}",
+                path_vec[0], // `docs`
+                &DOCS_MANIFEST.stable,
+                &locale,
+                "intro"
+            ),
         )
     } else if path_vec[1].split('.').count() == 3 || path_vec[1] == "next" {
-        version = path_vec[1];
-        format!(
-            "{}/{}/{}/{}",
-            path_vec[0], // `docs`
-            path_vec[1], // The version
-            &locale,
-            path_vec[2..].join("/") // The rest of the path
+        (
+            path_vec[1],
+            format!(
+                "{}/{}/{}/{}",
+                path_vec[0], // `docs`
+                path_vec[1], // The version
+                &locale,
+                path_vec[2..].join("/") // The rest of the path
+            ),
         )
     } else {
-        version = &DOCS_MANIFEST.stable;
-        // If it doesn't have a version, we'll inject the latest stable one
-        format!(
-            "{}/{}/{}/{}",
-            path_vec[0], // `docs`
+        (
             &DOCS_MANIFEST.stable,
-            &locale,
-            path_vec[1..].join("/") // The rest of the path
+            // If it doesn't have a version, we'll inject the latest stable one
+            format!(
+                "{}/{}/{}/{}",
+                path_vec[0], // `docs`
+                &DOCS_MANIFEST.stable,
+                &locale,
+                path_vec[1..].join("/") // The rest of the path
+            ),
         )
     };
     let fs_path = format!("../../{}.md", fs_path);

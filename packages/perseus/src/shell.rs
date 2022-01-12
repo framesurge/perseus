@@ -168,20 +168,21 @@ pub fn checkpoint(name: &str) {
     // This will be removed by the next checkpoint
     let document = web_sys::window().unwrap().document().unwrap();
     let container_opt = document.query_selector("#__perseus_checkpoints").unwrap();
-    let container: Element;
-    if let Some(container_i) = container_opt {
-        container = container_i;
-    } else {
-        // If the container doesn't exist yet, create it
-        container = document.create_element("div").unwrap();
-        container.set_id("__perseus_checkpoints");
-        document
-            .query_selector("body")
-            .unwrap()
-            .unwrap()
-            .append_with_node_1(&container)
-            .unwrap();
-    }
+    let container = match container_opt {
+        Some(container_i) => container_i,
+        None => {
+            // If the container doesn't exist yet, create it
+            let container = document.create_element("div").unwrap();
+            container.set_id("__perseus_checkpoints");
+            document
+                .query_selector("body")
+                .unwrap()
+                .unwrap()
+                .append_with_node_1(&container)
+                .unwrap();
+            container
+        }
+    };
 
     // Get the number of checkpoints that already exist with the same ID
     // We prevent having to worry about checkpoints whose names are subsets of others by using the hyphen as a delimiter
