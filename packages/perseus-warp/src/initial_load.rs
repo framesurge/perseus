@@ -19,7 +19,7 @@ use warp::{http::Response, path::FullPath};
 /// Builds on the internal Perseus primitives to provide a utility function that returns a `Response` automatically.
 fn return_error_page(
     url: &str,
-    status: &u16,
+    status: u16,
     // This should already have been transformed into a string (with a source chain etc.)
     err: &str,
     translator: Option<Rc<Translator>>,
@@ -28,7 +28,7 @@ fn return_error_page(
     root_id: &str,
 ) -> Response<String> {
     let html = build_error_page(url, status, err, translator, error_pages, html, root_id);
-    Response::builder().status(*status).body(html).unwrap()
+    Response::builder().status(status).body(html).unwrap()
 }
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
@@ -52,7 +52,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     let html_err = |status: u16, err: &str| {
         return return_error_page(
             path,
-            &status,
+            status,
             err,
             None,
             error_pages,

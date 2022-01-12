@@ -65,7 +65,7 @@ async fn real_main() -> i32 {
     // Build that error page as the server does
     let err_page_str = build_error_page(
         "",
-        &err_code_to_build_for,
+        err_code_to_build_for,
         "",
         None,
         &error_pages,
