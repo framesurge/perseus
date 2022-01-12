@@ -14,7 +14,7 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
         action_data: A,
         plugin_data: &HashMap<String, Box<dyn Any + Send>>,
     ) -> HashMap<String, R> {
-        let mut returns: HashMap<String, R> = HashMap::new();
+        let mut returns = HashMap::new();
         for (plugin_name, runner) in &self.runners {
             let ret = runner(
                 &action_data,

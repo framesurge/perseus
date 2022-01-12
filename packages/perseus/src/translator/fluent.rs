@@ -44,8 +44,7 @@ impl FluentTranslator {
                     source: Box::new(err),
                 }
             })?;
-        let mut bundle: FluentBundle<FluentResource, _> =
-            FluentBundle::new_concurrent(vec![lang_id]);
+        let mut bundle = FluentBundle::new_concurrent(vec![lang_id]);
         bundle.add_resource(resource).map_err(|errs| {
             TranslatorError::TranslationsStrSerFailed {
                 locale: locale.clone(),

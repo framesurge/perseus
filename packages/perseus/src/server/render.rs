@@ -225,7 +225,7 @@ pub async fn get_page_for_template(
     // The same applies for the document metadata
     let mut head = String::new();
     // Multiple rendering strategies may need to amalgamate different states
-    let mut states: States = States::new();
+    let mut states = States::new();
 
     // Handle build state (which might use revalidation or incremental)
     if template.uses_build_state() || template.is_basic() {

@@ -255,7 +255,7 @@ pub async fn build_templates_for_locale(
     exporting: bool,
 ) -> Result<(), ServerError> {
     // The render configuration stores a list of pages to the root paths of their templates
-    let mut render_cfg: HashMap<String, String> = HashMap::new();
+    let mut render_cfg = HashMap::new();
     // Create each of the templates
     let mut futs = Vec::new();
     for template in templates.values() {

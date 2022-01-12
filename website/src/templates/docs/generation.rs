@@ -294,7 +294,7 @@ pub async fn get_build_state(
 
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     // We start off by rendering the `/docs` page itself as an alias
-    let mut paths: Vec<String> = vec!["".to_string()];
+    let mut paths = vec!["".to_string()];
     // Get the `docs/` directory (relative to `.perseus/`)
     let docs_dir = PathBuf::from("../../docs");
     // Loop through it
