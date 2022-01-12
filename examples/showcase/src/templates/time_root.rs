@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use perseus::{RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::{component, view, Html, View};
@@ -20,7 +22,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template(time_page)
         // This page will revalidate every five seconds (to illustrate revalidation)
         // Try changing this to a week, even though the below custom logic says to always revalidate, we'll only do it weekly
-        .revalidate_after("5s".to_string())
+        .revalidate_after(Duration::new(5, 0))
         .should_revalidate_fn(|| async { Ok(true) })
         .build_state_fn(get_build_state)
 }

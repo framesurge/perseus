@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use perseus::{
     ErrorCause, GenericErrorWithCause, RenderFnResult, RenderFnResultWithCause, Template,
 };
@@ -21,7 +23,7 @@ pub fn get_template<G: Html>() -> Template<G> {
     Template::new("timeisr")
         .template(time_page)
         // This page will revalidate every five seconds (to illustrate revalidation)
-        .revalidate_after("5s".to_string())
+        .revalidate_after(Duration::new(5, 0))
         .incremental_generation()
         .build_state_fn(get_build_state)
         .build_paths_fn(get_build_paths)

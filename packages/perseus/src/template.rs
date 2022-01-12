@@ -1,5 +1,6 @@
 // This file contains logic to define how templates are rendered
 
+use crate::decode_time_str::ComputedDuration;
 use crate::default_headers::default_headers;
 use crate::errors::*;
 use crate::translator::Translator;
@@ -12,6 +13,7 @@ use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
+use std::time::Duration;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{view, View};
 
@@ -194,12 +196,12 @@ pub struct Template<G: Html> {
     /// to revalidation after a time in NextJS, with the improvement of custom logic. If used with `revalidate_after`, this function will
     /// only be run after that time period. This function will not be parsed anything specific to the request that invoked it.
     should_revalidate: Option<ShouldRevalidateFn>,
-    /// A length of time after which to prerender the template again. This is equivalent to revalidating in NextJS. This should specify a
-    /// string interval to revalidate after. That will be converted into a datetime to wait for, which will be updated after every revalidation.
+    /// A length of time after which to prerender the template again. This is equivalent to revalidating in NextJS.
+    /// This will be converted into a datetime to wait for, which will be updated after every revalidation.
     /// Note that, if this is used with incremental generation, the counter will only start after the first render (meaning if you expect
     /// a weekly re-rendering cycle for all pages, they'd likely all be out of sync, you'd need to manually implement that with
     /// `should_revalidate`).
-    revalidate_after: Option<String>,
+    revalidate_after: Option<ComputedDuration>,
     /// Custom logic to amalgamate potentially different states generated at build and request time. This is only necessary if your template
     /// uses both `build_state` and `request_state`. If not specified and both are generated, request state will be prioritized.
     amalgamate_states: Option<AmalgamateStatesFn>,
@@ -395,7 +397,7 @@ impl<G: Html> Template<G> {
         self.path.clone()
     }
     /// Gets the interval after which the template will next revalidate.
-    pub fn get_revalidate_interval(&self) -> Option<String> {
+    pub fn get_revalidate_interval(&self) -> Option<ComputedDuration> {
         self.revalidate_after.clone()
     }
 
@@ -541,14 +543,13 @@ impl<G: Html> Template<G> {
         }
         self
     }
-    /// Enables the *revalidation* strategy (time variant). This takes a time string of a form like `1w` for one week. More details are available
-    /// [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
+    /// Enables the *revalidation* strategy (time variant).
     #[allow(unused_mut)]
     #[allow(unused_variables)]
-    pub fn revalidate_after(mut self, val: String) -> Template<G> {
+    pub fn revalidate_after<I: Into<Duration>>(mut self, val: I) -> Template<G> {
         #[cfg(feature = "server-side")]
         {
-            self.revalidate_after = Some(val);
+            self.revalidate_after = Some(ComputedDuration::new(val));
         }
         self
     }
