@@ -7,7 +7,7 @@ use perseus::{
     internal::{
         get_path_prefix_server,
         i18n::TranslationsManager,
-        serve::{get_render_cfg, prep_html_shell, ServerOptions, ServerProps},
+        serve::{get_render_cfg, HtmlShell, ServerOptions, ServerProps},
     },
     stores::MutableStore,
 };
@@ -50,7 +50,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
     // Get the index file and inject the render configuration into ahead of time
     // Anything done here will affect any status code and all loads
     let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
-    let index_with_render_cfg = prep_html_shell(index_file, &render_cfg, &get_path_prefix_server());
+    let index_with_render_cfg = HtmlShell::new(index_file, &render_cfg, &get_path_prefix_server());
 
     move |cfg: &mut web::ServiceConfig| {
         cfg
