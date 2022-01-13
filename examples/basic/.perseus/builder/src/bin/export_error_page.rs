@@ -2,7 +2,7 @@ use fmterr::fmt_err;
 use perseus::{
     internal::{
         get_path_prefix_server,
-        serve::{build_error_page, get_render_cfg, prep_html_shell},
+        serve::{build_error_page, get_render_cfg, HtmlShell},
     },
     PluginAction, SsrNode,
 };
@@ -38,7 +38,7 @@ async fn real_main() -> i32 {
             return 1;
         }
     };
-    let html = prep_html_shell(html, &render_cfg, &get_path_prefix_server());
+    let html_shell = HtmlShell::new(html, &render_cfg, &get_path_prefix_server());
     // Get the error code to build from the arguments to this executable
     let args = env::args().collect::<Vec<String>>();
     let err_code_to_build_for = match args.get(1) {
@@ -69,7 +69,7 @@ async fn real_main() -> i32 {
         "",
         None,
         &error_pages,
-        &html,
+        &html_shell,
         &root_id,
     );
 

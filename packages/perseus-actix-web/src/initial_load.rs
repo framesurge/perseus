@@ -8,8 +8,8 @@ use perseus::{
         i18n::{TranslationsManager, Translator},
         router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
         serve::{
-            build_error_page, get_path_slice, interpolate_locale_redirection_fallback,
-            interpolate_page_data, render::get_page_for_template, ServerOptions,
+            build_error_page, get_path_slice, render::get_page_for_template, HtmlShell,
+            ServerOptions,
         },
     },
     stores::{ImmutableStore, MutableStore},
@@ -26,10 +26,18 @@ fn return_error_page(
     err: &str,
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
-    html: &str,
+    html_shell: &HtmlShell,
     root_id: &str,
 ) -> HttpResponse {
-    let html = build_error_page(url, status, err, translator, error_pages, html, root_id);
+    let html = build_error_page(
+        url,
+        status,
+        err,
+        translator,
+        error_pages,
+        html_shell,
+        root_id,
+    );
     HttpResponse::build(StatusCode::from_u16(status).unwrap())
         .content_type("text/html")
         .body(html)
@@ -40,7 +48,7 @@ fn return_error_page(
 pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Rc<ServerOptions>>,
-    html_shell: web::Data<String>,
+    html_shell: web::Data<HtmlShell<'_>>,
     render_cfg: web::Data<HashMap<String, String>>,
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
@@ -102,7 +110,11 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                 }
             };
 
-            let final_html = interpolate_page_data(&html_shell, &page_data, &opts.root_id);
+            let final_html = html_shell
+                .get_ref()
+                .clone()
+                .page_data(&page_data, &opts.root_id)
+                .to_string();
 
             let mut http_res = HttpResponse::Ok();
             http_res.content_type("text/html");
@@ -118,17 +130,20 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             // We use a `302 Found` status code to indicate a redirect
             // We 'should' generate a `Location` field for the redirect, but it's not RFC-mandated, so we can use the app shell
             HttpResponse::Found().content_type("text/html").body(
-                interpolate_locale_redirection_fallback(
-                    html_shell.get_ref(),
-                    // We'll redirect the user to the default locale
-                    &format!(
-                        "{}/{}/{}",
-                        get_path_prefix_server(),
-                        opts.locales.default,
-                        path
-                    ),
-                    &opts.root_id,
-                ),
+                html_shell
+                    .get_ref()
+                    .clone()
+                    .locale_redirection_fallback(
+                        // We'll redirect the user to the default locale
+                        &format!(
+                            "{}/{}/{}",
+                            get_path_prefix_server(),
+                            opts.locales.default,
+                            path
+                        ),
+                        &opts.root_id,
+                    )
+                    .to_string(),
             )
         }
         RouteVerdictAtomic::NotFound => html_err(404, "page not found"),
