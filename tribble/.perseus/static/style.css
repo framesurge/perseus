@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    min-height: 100%;
+    height: 100vh;
+    @apply bg-bg;
+}
+.__perseus_content {
+    min-height: 100%;
+    min-width: 100%;
+    height: 100vh;
+    position: absolute;
+}
+
+/* This stores the content of a section */
+.section-container {
+    /* The right and bottom should have normal padding */
+    @apply pr-2 pb-2 xs:pr-8 xs:pb-8 sm:pr-12 sm:pb-12;
+    /* But the left and top should have much smaller padding so we can fit the breadcrumbs in */
+    @apply pl-2 pt-2;
+}
+/* The container for the actual section content */
+.section-content {
+    /* This should compensate for the above on the left margin */
+    @apply pl-2 xs:pl-8 sm:pl-12;
+    /* The top margine should be smaller, as if the breadcrumbs were basically just nestled in */
+    @apply pt-1 xs:pt-4 sm:pt-6;
+}
+
+/* Styling for inputs */
+.custom-input {
+    @apply relative flex flex-col text-left cursor-text;
+    min-width: 15ch;
+}
+.custom-input input:not([type="checkbox"]),
+.custom-input textarea,
+.custom-input select {
+    /* We want some top padding for the label to float up into */
+    @apply appearance-none pt-5;
+}
+/* This is for the placeholder `span` */
+.custom-input span:nth-child(2) {
+    @apply absolute pl-2 top-0 left-0 w-full flex items-center bg-transparent text-neutral-500 max-w-max;
+    /* The transition for moving the placeholder up */
+    @apply transition-all duration-200 ease-in-out;
+}
+/* This prevents text in `textarea`s from riding underneath the placeholder (inspired by https://stackoverflow.com/a/67334114/11571888) */
+.custom-input:before {
+    content: '';
+    /* We use different padding units so that we can match exactly what we need (right is for the scrollbar) */
+    @apply absolute bg-white h-6 w-full pl-1 pr-[14px] pt-[1px] rounded-lg bg-clip-content top-[1px] left-[1px];
+}
+/* The heights are different for the `input` and `select` from the `textarea` */
+.custom-input input + span:nth-child(2),
+.custom-input div.select-wrapper + span:nth-child(2) { @apply h-full }
+.custom-input textarea + span:nth-child(2),
+.custom-input div.select-multiple + span:nth-child(2) { height: 3.25rem }
+/* The placeholder `span` when the input is focused or has stuff in it generally */
+.custom-input input:focus + span:nth-child(2),
+.custom-input input:not(:placeholder-shown) + span:nth-child(2),
+.custom-input textarea:focus + span:nth-child(2),
+.custom-input textarea:not(:placeholder-shown) + span:nth-child(2),
+/* If a normal `select` element's wrapper has a focus within it */
+.custom-input div.select-wrapper:focus-within + span:nth-child(2),
+.custom-input div.select-wrapper.no-placeholder + span:nth-child(2),
+/* All multiple select elements should have this all the time */
+.custom-input div.select-multiple + span:nth-child(2) {
+    @apply pb-6 text-sm;
+}
+/* This is for the error `label` */
+.custom-input + label,
+.switch + label {
+    @apply text-red-600 text-sm;
+}
+/* General styling for inputs */
+input:not([type="checkbox"]), textarea {
+    @apply rounded-lg focus:outline-none border focus:border-2 border-primary p-1 xs:p-2;
+}
+/* Styling for `select` elements */
+select {
+    @apply appearance-none bg-transparent border-0 p-2 m-0 w-full outline-none;
+    line-height: inherit;
+    cursor: inherit;
+    grid-area: select;
+}
+div.select-wrapper {
+    @apply border border-primary p-0 leading-none cursor-pointer grid items-center rounded-md z-10;
+    min-width: 15ch;
+    grid-template-areas: "select"; /* This makes the arrow appear at the end of the select element */
+}
+/* Add a custom arrow (but not if it's a multiple select) */
+div.select-wrapper:not(div.select-multiple)::after {
+    @apply bg-primary w-3 h-2 justify-self-end mr-1;
+    content: "";
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    grid-area: select;
+}
+/* Styling for switches */
+.switch input {
+    @apply appearance-none;
+}
+.switch {
+    @apply flex items-center p-2;
+}
+/* The toggle box itself in a switch */
+.switch span:nth-child(3) {
+    @apply w-10 h-6 flex items-center flex-shrink-0 ml-4 p-1 bg-neutral-300 rounded-full;
+    @apply transition-all duration-200 ease-in-out;
+    /* Now we use `::after` to create a slider */
+    @apply after:w-4 after:h-4 after:bg-bg after:rounded-full after:shadow-md;
+    @apply after:transition-all after:duration-200 after:ease-in-out;
+}
+/* Styling for the toggle slider when the input is checked */
+.switch input:checked + span:nth-child(3) {
+    @apply bg-primary;
+    @apply after:translate-x-4;
+}
+
+/* Markdown styling to combat Tailwind's removal of all default classes */
+.markdown > * + *,
+.markdown li + li,
+.markdown li > p + p {
+    @apply mt-2;
+}
+.markdown stong,
+.markdown bold {
+    @apply font-black;
+}
+.markdown a {
+    @apply text-primary hover:text-dark transition-colors duration-200 underline;
+}
+.markdown h1 {
+    @apply text-4xl mt-2;
+}
+.markdown h2 {
+    @apply text-3xl;
+}
+.markdown h3 {
+    @apply text-2xl;
+}
+.markdown h4 {
+    @apply text-xl
+}
+.markdown h5 {
+    @apply text-lg;
+}
+.markdown h6 {
+    @apply leading-tight;
+}
+.markdown :not(pre) code {
+    @apply rounded-lg p-1 bg-neutral-200;
+}
+.markdown pre {
+    @apply rounded-lg overflow-x-auto;
+}
+.markdown blockquote {
+    @apply pl-4 italic border-l-4;
+}
+.markdown ul {
+    @apply list-disc pl-5 sm:pl-10;
+}
+.markdown ol {
+    @apply list-decimal pl-5 sm:pl-10;
+}
+.markdown details :not(summary) {
+    @apply ml-6;
+}
