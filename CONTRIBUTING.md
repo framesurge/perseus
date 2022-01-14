@@ -15,6 +15,8 @@ Before you can make the changes you want to Perseus, you'll need to grab a local
 
 You should now have a local copy of Perseus to work with! Before you start making changes though, you should install [Rust](https://rust-lang.org/tools/install) and [Bonnie](https://github.com/arctic-hen7/bonnie) (`cargo install bonnie`), and then you should run `bonnie setup` in the project directory. This will prepare Perseus for development, and you'll need to do this for any changes that involve compiling the code. If you're just making some simple changes to the documentation, you can skip these steps.
 
+We also ask you to sign your commits with GPG, it makes things more secure for everyone.
+
 ## Contributing your changes
 
 Once you've made your changes to your local copy and committed them with Git, you can commit them back to Perseus through a *pull request*.
@@ -24,6 +26,10 @@ Once you've made your changes to your local copy and committed them with Git, yo
 3. Describe your PR in the GitHub interface and submit it! If it's not quite ready yet, you can mark it as a draft.
 
 Once you've submitted your PR, we'll try to get to reviewing it as quickly as possible! Unfortunately, not every pull request can be merged, but we'll do our best to request changes so that yours can be best integrated into the project.
+
+# Old Details
+
+This section pre-dates the usage of Tribble, but it will very soon be made obsolete. During the transition, this information will still be available.
 
 ## Building
 
