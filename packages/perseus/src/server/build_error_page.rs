@@ -1,4 +1,5 @@
 use crate::error_pages::{ErrorPageData, ErrorPages};
+use crate::html_shell::HtmlShell;
 use crate::translator::Translator;
 use crate::SsrNode;
 use std::rc::Rc;
@@ -13,41 +14,20 @@ pub fn build_error_page(
     err: &str,
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
-    html: &str,
+    html_shell: &HtmlShell,
     root_id: &str,
 ) -> String {
     let error_html = error_pages.render_to_string(url, status, err, translator);
     // We create a JSON representation of the data necessary to hydrate the error page on the client-side
     // Right now, translators are never included in transmitted error pages
-    let error_page_data = serde_json::to_string(&ErrorPageData {
+    let error_page_data = ErrorPageData {
         url: url.to_string(),
         status: *status,
         err: err.to_string(),
-    })
-    .unwrap();
-    // Add a global variable that defines this as an error
-    let state_var = format!(
-        "<script>window.__PERSEUS_INITIAL_STATE = `error-{}`;</script>",
-        error_page_data
-            // We escape any backslashes to prevent their interfering with JSON delimiters
-            .replace(r#"\"#, r#"\\"#)
-            // We escape any backticks, which would interfere with JS's raw strings system
-            .replace(r#"`"#, r#"\`"#)
-            // We escape any interpolations into JS's raw string system
-            .replace(r#"${"#, r#"\${"#)
-    );
-    let html_with_declaration = html.replace("</head>", &format!("{}\n</head>", state_var));
-    // Interpolate the error page itself
-    let html_to_replace_double = format!("<div id=\"{}\">", root_id);
-    let html_to_replace_single = format!("<div id='{}'>", root_id);
-    let html_replacement = format!(
-        // We give the content a specific ID so that it can be hydrated properly
-        "{}<div id=\"__perseus_content_initial\" class=\"__perseus_content\">{}</div>",
-        &html_to_replace_double,
-        &error_html
-    );
-    // Now interpolate that HTML into the HTML shell
-    html_with_declaration
-        .replace(&html_to_replace_double, &html_replacement)
-        .replace(&html_to_replace_single, &html_replacement)
+    };
+
+    html_shell
+        .clone()
+        .error_page(&error_page_data, &error_html, root_id)
+        .to_string()
 }
