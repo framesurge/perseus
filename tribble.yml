@@ -1,5 +1,6 @@
 workflows:
   perseus:
+    title: "Perseus Contributing Documentation"
     sections:
       Start:
         - "Welcome to the contributing website for Perseus! This tool will guide you through helping to contribute to Perseus by walking you through an interactive flowchart. To start off, please select one of the following."
@@ -122,6 +123,7 @@ workflows:
 
         > ${repro_steps}
 
+
         A minimum reproducible example is available at <${mre_url}>.
 
         - Hydration-related: ${hydration_related}
@@ -138,6 +140,7 @@ workflows:
           The user described the problem related to this request as follows:
 
           > ${problem_desc}
+
 
           The user described the issue as follows:
 
@@ -161,7 +164,7 @@ workflows:
           {
               \"name\": \"${name}\",
               \"description\": \"${desc}\",
-              \"author\": \"arctic-hen7\",
+              \"author\": \"${author}\",
               \"url\": \"${url}\",
               \"trusted\": ${applying_for_trust}
           }
