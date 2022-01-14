@@ -82,7 +82,11 @@ site.subcommands.deploy-prod.cmd = [
     "cd website",
     "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus tinker",
     # Point this live version of the CLI at the given example
-    "PERSEUS_BASE_PATH=https://arctic-hen7.github.io/perseus perseus deploy -e"
+    "PERSEUS_BASE_PATH=https://arctic-hen7.github.io/perseus perseus deploy -e",
+    # Build the Tribble contributing docs
+    "cd ..",
+    "tribble deploy --path https://arctic-hen7.github.io/perseus/tribble -o tribble",
+    "mv tribble website/pkg/"
 ]
 site.subcommands.deploy-prod.desc = "builds the website for production on GitHub Pages and finalizes it at `website/pkg`"
 site.subcommands.deploy.subcommands.serve.cmd = [
