@@ -2,21 +2,28 @@
 
 First off, thanks so much for taking the time to contribute to Perseus, it's greatly appreciated!
 
-## I just want to propose something
+Perseus uses [Tribble](https://github.com/arctic-hen7/tribble) for managing contributions, see [here](https://arctic-hen7.github.io/perseus/tribble/workflow/perseus) for an interactive system that will guide you through making contributions to this repository. Please note that this system is still in beta, so please just open a GitHub issue as usual if something's not working properly there. Otherwise, issues should be created through Tribble.
 
-If you just want to let us know about a bug, or propose a new feature, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) on this repository. We'll take a look as soon as possible!
+The rest of this document is dedicated to explaining how to get a local copy of Perseus and open a pull request, and is primarily targeted toward those contributing to an open-source project for the first time.
 
-## I want to help
+## Getting a copy of Perseus
 
-That's fantastic! You can check out the [roadmap](./README.md#Roadmap) or the [issues](https://github.com/arctic-hen7/perseus/issues) to see what's currently needing to be done. If you want to work on something that's not on there, please [file an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) and we'll take a look it as soon as possible!
+Before you can make the changes you want to Perseus, you'll need to grab a local copy of the repository to work on. You can do this by *forking* the repository to your GitHub account and then by *cloning* your fork.
 
-## How do I contribute?
+1. Press the *Fork* button at the top-right of this page (next to the star counter). If necessary, choose to fork Perseus to your own personal account (or somewhere else if you'd like).
+2. Clone the created repository in your preferred way. You can do this with the GitHub CLI by running `gh clone <your-username>/perseus` in the directory in which you want Perseus to be (it will be created as a `perseus/` directory). You can also use regular `git` with `git clone git@github.com:<your-username>/perseus.git`.
 
-Contributing to a project on Github is pretty straight forward. If this is your first time contributing to a project, all you need to do is fork this repository to your own GitHub account and then change the code you want to (usually on your local machine, you'd pull your fork down). Commit your changes as necessary, and when you're done, submit a pull request on this repository and we'll review it as soon as possible!
+You should now have a local copy of Perseus to work with! Before you start making changes though, you should install [Rust](https://rust-lang.org/tools/install) and [Bonnie](https://github.com/arctic-hen7/bonnie) (`cargo install bonnie`), and then you should run `bonnie setup` in the project directory. This will prepare Perseus for development, and you'll need to do this for any changes that involve compiling the code. If you're just making some simple changes to the documentation, you can skip these steps.
 
-Make sure your code doesn't break anything existing, that all tests pass, and, if necessary, add tests so your code can be confirmed to work automatically.
+## Contributing your changes
 
-After you've submitted a pull request, a maintainer will review your changes. Unfortunately, not every pull request will be merged, but we'll try to request changes so that your pull request can best be integrated into the project.
+Once you've made your changes to your local copy and committed them with Git, you can commit them back to Perseus through a *pull request*.
+
+1. Push your changes to your fork on GitHub with `git push origin main` (if you're working on a different branch, change `main` to the name of that branch).
+2. Go to your fork's GitHub page, press *Contribute*, and then press *Open pull request*.
+3. Describe your PR in the GitHub interface and submit it! If it's not quite ready yet, you can mark it as a draft.
+
+Once you've submitted your PR, we'll try to get to reviewing it as quickly as possible! Unfortunately, not every pull request can be merged, but we'll do our best to request changes so that yours can be best integrated into the project.
 
 ## Building
 
@@ -62,3 +69,5 @@ A separate branch is created for new features/fixes, which are then merged into 
 ## Committing
 
 We use the Conventional Commits system, but you can commit however you want. Your pull request will be squashed and merged into a single compliant commit, so don't worry about this!
+
+We do request though that you make sure your commits are signed with GPG, it helps verify the integrity of your code, and is good practice generally.
