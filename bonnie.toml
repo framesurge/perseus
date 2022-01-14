@@ -147,42 +147,6 @@ test.subcommands.example.cmd = "bash ./test.sh %example %%" # A script can do ba
 test.subcommands.example.args = [ "example" ]
 test.subcommands.example.desc = "tests a single example (assumes geckodriver running in background), use `--headless` to run headlessly"
 
-# Hosts the book locally
-docs.cmd = [
-	"cd docs/next",
-	"mdbook serve"
-]
-docs.desc = "hosts the latest version of the book locally at http://localhost:3000"
-docs.subcommands.version.cmd = [
-    "cd docs/%version",
-    "mdbook serve"
-]
-docs.subcommands.version.args = [ "version" ]
-docs.subcommands.version.desc = "hosts the given version of the book locally at http://localhost:3000"
-docs.subcommands.deprecate.cmd = [
-    "cd docs/%version",
-    "mkdir theme",
-    "ln -s ../../common/index.hbs theme/index.hbs",
-    "ln -s ../../common/header_old.hbs theme/header.hbs"
-]
-docs.subcommands.deprecate.args = [ "version" ]
-docs.subcommands.deprecate.desc = "marks the given version of the docs as old and links to the latest"
-docs.subcommands.create.cmd = [
-    "mkdir docs/%version",
-    "cd docs/%version",
-    "ln -s ../common/book.toml book.toml",
-    "cp -r ../next/src src",
-    "cd ../",
-    "sed -i -E 's/perseus\\/(.+)\"/perseus\\/0.2.x\"/' stable.html"
-]
-docs.subcommands.create.args = [ "version" ]
-docs.subcommands.create.desc = "creates documentation for a new version from `next` and marks it as stable (doesn't deprecate old versions though)"
-docs.subcommands.build.cmd = [
-    "cd docs",
-    "bash ./build.sh"
-]
-docs.subcommands.build.desc = "builds the book for deployment to GitHub pages or the like"
-
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
 release.cmd = [
