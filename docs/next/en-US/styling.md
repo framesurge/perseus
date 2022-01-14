@@ -10,6 +10,16 @@ If you've tried to create something like a stick footer, you've probably become 
 
 Notably, there are actually two of these `<div>`s at the moment: one for the content that the server pre-renders in [initial loads](:advanced/initial-loads) and another for when that content is hydrated by Perseus' client-side logic. That means that, if you only style one of these, you'll get a horrible flash of unstyled content, which nobody wants. To make this as easy as possible, Perseus provides a class `__perseus_content` that applies to both of these `<div>`s. Also, note that the `<div>` for the initial content will become `display: none;` as soon as the page is ready, which means you won't get it interfering with your layouts.
 
-Knowing this, the main changes you'll need to make to any full-page layout code is to apply the styles to `.__perseus_content` instead of `body` or `#root`. As with CSS generally, if you expect `.__perseus_content` to take up the whole page, you'll need to make all its parents (`#root`, `body`, `html`) also take up the whole page (you can do this by setting `height: 100vh;` on `body`).
+Knowing this, the main changes you'll need to make to any full-page layout code is to apply the styles to `.__perseus_content` as well as `body` or `#root`. As with CSS generally, if you expect `.__perseus_content` to take up the whole page, you'll need to make all its parents (`#root`, `body`, `html`) also take up the whole page (you can do this by setting `height: 100vh;` on `body`). A good starting point (that supports scrolling as well) is this CSS:
+
+```css
+body, #root, .__perseus_content {
+    min-height: 100%;
+    min-width: 100%;
+    height: 100vh;
+}
+```
+
+By using `min-height` and `min-width`, we can ensure that the containers expand to fill the page, even if content goes offscreen (with a scrollable overflow).
 
 Any other issues should be solvable by inspecting the DOM with your browser's DevTools, but you're more than welcome to ask for help on the [Sycamore Discord server](https://discord.gg/PgwPn7dKEk), where Perseus has its own channel!
