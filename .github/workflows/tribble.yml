@@ -1,0 +1,13 @@
+name: Tribble
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: arctic-hen7/tribble-bot@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
