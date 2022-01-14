@@ -18,8 +18,8 @@ jobs:
             - uses: actions/checkout@v2
               with:
                   fetch-depth: 0
-            - run: cargo install bonnie wasm-pack
-            - run: cargo install perseus-cli
+            - run: cargo install bonnie wasm-pack perseus-cli
+            - run: cargo install tribble --version 0.1.0-rc.2
             - run: npm install -g tailwindcss
             - run: npm install
               working-directory: website
