@@ -33,11 +33,13 @@ impl<G: Html> Plugins<G> {
     /// Registers a new plugin, consuming `self`. For control actions, this will check if a plugin has already registered on an action,
     /// and throw an error if one has, noting the conflict explicitly in the error message. This can only register plugins that run
     /// exclusively on the server-side (including tinker-time and the build process).
+    // We allow unusued variables and the like for linting because otherwise any errors in Wasm compilation will show these up, which is annoying
     pub fn plugin<D: Any + Send>(
-        mut self,
+        #[cfg_attr(target_arch = "wasm32", allow(unused_mut))] mut self,
         // This is a function so that it never gets called if we're compiling for Wasm, which means Rust eliminates it as dead code!
-        plugin: impl Fn() -> Plugin<G, D> + Send,
-        plugin_data: D,
+        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin: impl Fn() -> Plugin<G, D>
+            + Send,
+        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin_data: D,
     ) -> Self {
         // If we're compiling for Wasm, plugins that don't run on the client side shouldn't be added (they'll then be eliminated as dead code)
         #[cfg(not(target_arch = "wasm32"))]
