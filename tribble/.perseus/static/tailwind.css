@@ -473,6 +473,10 @@ Ensure the default browser behavior of the `hidden` attribute.
   right: 0px;
 }
 
+.m-auto {
+  margin: auto;
+}
+
 .my-2 {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
@@ -485,6 +489,10 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 .mb-2 {
   margin-bottom: 0.5rem;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem;
 }
 
 .mt-1 {
@@ -515,10 +523,6 @@ Ensure the default browser behavior of the `hidden` attribute.
   display: contents;
 }
 
-.h-full {
-  height: 100%;
-}
-
 .h-5 {
   height: 1.25rem;
 }
@@ -529,6 +533,10 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 .h-4 {
   height: 1rem;
+}
+
+.min-h-full {
+  min-height: 100%;
 }
 
 .w-full {
@@ -547,10 +555,8 @@ Ensure the default browser behavior of the `hidden` attribute.
   width: 1rem;
 }
 
-.max-w-max {
-  max-width: -webkit-max-content;
-  max-width: -moz-max-content;
-  max-width: max-content;
+.max-w-full {
+  max-width: 100%;
 }
 
 .resize-y {
@@ -597,6 +603,15 @@ Ensure the default browser behavior of the `hidden` attribute.
   border-radius: 0.375rem;
 }
 
+.border {
+  border-width: 1px;
+}
+
+.border-neutral-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(245 245 245 / var(--tw-border-opacity));
+}
+
 .bg-neutral-200 {
   --tw-bg-opacity: 1;
   background-color: rgb(229 229 229 / var(--tw-bg-opacity));
@@ -604,6 +619,10 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 .p-5 {
   padding: 1.25rem;
+}
+
+.p-2 {
+  padding: 0.5rem;
 }
 
 .p-1 {
@@ -616,6 +635,11 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 .p-0 {
   padding: 0px;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .text-left {
@@ -697,18 +721,24 @@ Ensure the default browser behavior of the `hidden` attribute.
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body {
+body, #root, .__perseus_content {
   min-height: 100%;
+  min-width: 100%;
   height: 100vh;
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
 
-.__perseus_content {
-  min-height: 100%;
-  min-width: 100%;
-  height: 100vh;
-  position: absolute;
+@media (prefers-color-scheme: dark) {
+  body, #root, .__perseus_content {
+    --tw-bg-opacity: 1;
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+  }
+
+  body, #root, .__perseus_content {
+    --tw-text-opacity: 1;
+    color: rgb(255 255 255 / var(--tw-text-opacity));
+  }
 }
 
 /* This stores the content of a section */
@@ -818,6 +848,16 @@ body {
   padding-left: 0.5rem;
   --tw-text-opacity: 1;
   color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
+@media (prefers-color-scheme: dark) {
+  .custom-input span:nth-child(2) {
+    --tw-text-opacity: 1;
+    color: rgb(163 163 163 / var(--tw-text-opacity));
+  }
+}
+
+.custom-input span:nth-child(2) {
   /* The transition for moving the placeholder up */
   transition-property: all;
   transition-duration: 200ms;
@@ -841,6 +881,13 @@ body {
   padding-left: 0.25rem;
   padding-right: 14px;
   padding-top: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .custom-input:before {
+    --tw-bg-opacity: 1;
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+  }
 }
 
 /* The heights are different for the `input` and `select` from the `textarea` */
@@ -883,6 +930,13 @@ body {
   color: rgb(220 38 38 / var(--tw-text-opacity));
 }
 
+@media (prefers-color-scheme: dark) {
+  .custom-input + label, .switch + label {
+    --tw-text-opacity: 1;
+    color: rgb(248 113 113 / var(--tw-text-opacity));
+  }
+}
+
 /* General styling for inputs */
 
 input:not([type="checkbox"]), textarea {
@@ -890,6 +944,8 @@ input:not([type="checkbox"]), textarea {
   border-width: 1px;
   --tw-border-opacity: 1;
   border-color: rgb(80 88 124 / var(--tw-border-opacity));
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
   padding: 0.25rem;
 }
 
@@ -897,6 +953,13 @@ input:not([type="checkbox"]):focus, textarea:focus {
   border-width: 2px;
   outline: 2px solid transparent;
   outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  input:not([type="checkbox"]), textarea {
+    --tw-bg-opacity: 1;
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+  }
 }
 
 @media (min-width: 475px) {
@@ -948,6 +1011,16 @@ div.select-wrapper:not(div.select-multiple)::after {
   justify-self: end;
   --tw-bg-opacity: 1;
   background-color: rgb(80 88 124 / var(--tw-bg-opacity));
+}
+
+@media (prefers-color-scheme: dark) {
+  div.select-wrapper:not(div.select-multiple)::after {
+    --tw-bg-opacity: 1;
+    background-color: rgb(106 116 160 / var(--tw-bg-opacity));
+  }
+}
+
+div.select-wrapper:not(div.select-multiple)::after {
   content: "";
   -webkit-clip-path: polygon(50% 100%, 0 0, 100% 0);
           clip-path: polygon(50% 100%, 0 0, 100% 0);
@@ -981,6 +1054,16 @@ div.select-wrapper:not(div.select-multiple)::after {
   --tw-bg-opacity: 1;
   background-color: rgb(212 212 212 / var(--tw-bg-opacity));
   padding: 0.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .switch span:nth-child(3) {
+    --tw-bg-opacity: 1;
+    background-color: rgb(115 115 115 / var(--tw-bg-opacity));
+  }
+}
+
+.switch span:nth-child(3) {
   transition-property: all;
   transition-duration: 200ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -993,9 +1076,21 @@ div.select-wrapper:not(div.select-multiple)::after {
   border-radius: 9999px;
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+  content: var(--tw-content);
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+  .switch span:nth-child(3)::after {
+    content: var(--tw-content);
+    --tw-bg-opacity: 1;
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+  }
+}
+
+.switch span:nth-child(3)::after {
   transition-property: all;
   transition-duration: 200ms;
   content: var(--tw-content);
@@ -1007,6 +1102,13 @@ div.select-wrapper:not(div.select-multiple)::after {
 .switch input:checked + span:nth-child(3) {
   --tw-bg-opacity: 1;
   background-color: rgb(80 88 124 / var(--tw-bg-opacity));
+}
+
+@media (prefers-color-scheme: dark) {
+  .switch input:checked + span:nth-child(3) {
+    --tw-bg-opacity: 1;
+    background-color: rgb(106 116 160 / var(--tw-bg-opacity));
+  }
 }
 
 .switch input:checked + span:nth-child(3)::after {
@@ -1040,6 +1142,18 @@ div.select-wrapper:not(div.select-multiple)::after {
 .markdown a:hover {
   --tw-text-opacity: 1;
   color: rgb(40 44 62 / var(--tw-text-opacity));
+}
+
+@media (prefers-color-scheme: dark) {
+  .markdown a {
+    --tw-text-opacity: 1;
+    color: rgb(155 162 191 / var(--tw-text-opacity));
+  }
+
+  .markdown a:hover {
+    --tw-text-opacity: 1;
+    color: rgb(180 185 207 / var(--tw-text-opacity));
+  }
 }
 
 .markdown h1 {
@@ -1079,6 +1193,13 @@ div.select-wrapper:not(div.select-multiple)::after {
   padding: 0.25rem;
 }
 
+@media (prefers-color-scheme: dark) {
+  .markdown :not(pre) code {
+    --tw-bg-opacity: 1;
+    background-color: rgb(64 64 64 / var(--tw-bg-opacity));
+  }
+}
+
 .markdown pre {
   overflow-x: auto;
   border-radius: 0.5rem;
@@ -1114,6 +1235,11 @@ div.select-wrapper:not(div.select-multiple)::after {
 
 .markdown details :not(summary) {
   margin-left: 1.5rem;
+}
+
+.hover\:border-neutral-200:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 229 229 / var(--tw-border-opacity));
 }
 
 .hover\:bg-neutral-300:hover {
@@ -1160,17 +1286,60 @@ div.select-wrapper:not(div.select-multiple)::after {
   opacity: 1;
 }
 
-@media (min-width: 475px) {
-  .xs\:items-center {
-    align-items: center;
+@media (prefers-color-scheme: dark) {
+  .dark\:border-neutral-600 {
+    --tw-border-opacity: 1;
+    border-color: rgb(82 82 82 / var(--tw-border-opacity));
   }
 
+  .dark\:bg-neutral-700 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(64 64 64 / var(--tw-bg-opacity));
+  }
+
+  .dark\:text-neutral-100 {
+    --tw-text-opacity: 1;
+    color: rgb(245 245 245 / var(--tw-text-opacity));
+  }
+
+  .dark\:text-neutral-400 {
+    --tw-text-opacity: 1;
+    color: rgb(163 163 163 / var(--tw-text-opacity));
+  }
+
+  .dark\:text-light {
+    --tw-text-opacity: 1;
+    color: rgb(106 116 160 / var(--tw-text-opacity));
+  }
+
+  .dark\:hover\:border-neutral-600:hover {
+    --tw-border-opacity: 1;
+    border-color: rgb(82 82 82 / var(--tw-border-opacity));
+  }
+
+  .dark\:hover\:bg-neutral-600:hover {
+    --tw-bg-opacity: 1;
+    background-color: rgb(82 82 82 / var(--tw-bg-opacity));
+  }
+
+  .dark\:hover\:text-white:hover {
+    --tw-text-opacity: 1;
+    color: rgb(255 255 255 / var(--tw-text-opacity));
+  }
+}
+
+@media (min-width: 475px) {
   .xs\:rounded-lg {
     border-radius: 0.5rem;
   }
 
   .xs\:p-1 {
     padding: 0.25rem;
+  }
+
+  .xs\:py-6 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
   }
 
   .xs\:shadow-md {
@@ -1180,8 +1349,20 @@ div.select-wrapper:not(div.select-multiple)::after {
   }
 }
 
+@media (min-width: 640px) {
+  .sm\:py-8 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
 @media (min-width: 768px) {
   .md\:w-\[48rem\] {
     width: 48rem;
+  }
+
+  .md\:py-16 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
   }
 }
