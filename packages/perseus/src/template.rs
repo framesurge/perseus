@@ -2,6 +2,7 @@
 
 use crate::default_headers::default_headers;
 use crate::errors::*;
+use crate::router::RouterState;
 use crate::translator::Translator;
 use crate::Html;
 use crate::Request;
@@ -25,6 +26,8 @@ pub struct RenderCtx {
     /// A translator for templates to use. This will still be present in non-i18n apps, but it will have no message IDs and support for
     /// the non-existent locale `xx-XX`. This uses an `Arc<T>` for thread-safety.
     pub translator: Translator,
+    /// The router's state.
+    pub router: RouterState,
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -231,13 +234,15 @@ impl<G: Html> Template<G> {
         props: Option<String>,
         translator: &Translator,
         is_server: bool,
+        router_state: RouterState,
     ) -> View<G> {
         view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
             ContextProvider(ContextProviderProps {
                 value: RenderCtx {
                     is_server,
-                    translator: translator.clone()
+                    translator: translator.clone(),
+                    router: router_state
                 },
                 children: || (self.template)(props)
             })
@@ -254,7 +259,9 @@ impl<G: Html> Template<G> {
                         // This function renders to a string, so we're effectively always on the server
                         // It's also only ever run on the server
                         is_server: true,
-                        translator: translator.clone()
+                        translator: translator.clone(),
+                        // The head string is rendered to a string, and so never has information about router state
+                        router: RouterState::default()
                     },
                     children: || (self.head)(props)
                 })

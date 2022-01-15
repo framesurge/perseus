@@ -84,6 +84,7 @@ pub use crate::template::{HeadFn, RenderFnResult, RenderFnResultWithCause, State
 /// Utilities for developing templates, particularly including return types for various rendering strategies.
 pub mod templates {
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};
+    pub use crate::router::{RouterLoadState, RouterState};
     pub use crate::template::*;
     // The engine needs to know whether or not to use hydration, this is how we pass those feature settings through
     #[cfg(not(feature = "hydrate"))]
