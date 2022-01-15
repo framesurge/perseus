@@ -273,22 +273,21 @@ pub async fn app_shell(
 
             let path = template.get_path();
             // Hydrate that static code using the acquired state
+            let router_state_2 = router_state.clone();
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
             #[cfg(not(feature = "hydrate"))]
             {
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
-                    move || {
-                        template.render_for_template(state, translator, false, router_state.clone())
-                    },
+                    move || template.render_for_template(state, translator, false, router_state_2),
                     &container_rx_elem,
                 );
             }
             #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                || template.render_for_template(state, translator, false, router_state.clone()),
+                || template.render_for_template(state, translator, false, router_state_2),
                 &container_rx_elem,
             );
             checkpoint("page_interactive");
