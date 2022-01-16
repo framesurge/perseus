@@ -7,13 +7,13 @@ workflows:
         - "If you go through this system and you can't find what you're looking for, please come back to this page and select *Other*."
         - "*Please note that this system is still in development, and will likely be incomplete. If things are unclear here, please feel free to open an issue directly through GitHub.*"
         - { text: "I want to report a bug in Perseus", link: "Bug", tags: [ "tribble-reported", "C-bug" ] }
-        - { text: "I want to request a feature for Perseus", link: "Enhancement", tags: [ "tribble-reported", "C-enhancement" ] } # TODO
+        - { text: "I want to request a feature for Perseus", link: "Enhancement", tags: [ "tribble-reported", "C-enhancement" ] }
         - "<br/>"
         - { text: "I want to contribute to the code", link: "Contribute to the Code", tags: [ "tribble-reported" ] }
         - { text: "I want to contribute to the website", link: "Website", tags: [ "tribble-reported" ] }
         - { text: "I want to contribute to the documentation", link: "Docs", tags: [ "tribble-reported", "C-docs" ] }
         - "<br/>"
-        - "If you'd like to report a bug in this system, please use [this](TODO) GitHub issue template."
+        - "If you'd like to report a bug in this system, please use the section for contributing to the documentation, and then report an issue in the docs."
       Enhancement:
         - "Great, thanks for helping us improve Perseus! Please fill in the following details about your feature request, and we'll look into it!"
         - "If your feature is related to a problem, please describe it here."
