@@ -1,7 +1,7 @@
 version="0.3.2"
 
 [scripts]
-setup.cmd = [
+setup.cmd.generic = [
     # Create the dist directories for the CLI in the `basic` example
     # These are gitignored, and so not placed into Git unfortunately
     "mkdir -p examples/basic/.perseus/dist",
@@ -10,6 +10,15 @@ setup.cmd = [
     "bonnie copy-subcrates",
     "cargo build",
     "npm i --prefix ./website",
+    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
+]
+setup.cmd.windows = [
+    "md -Force examples/basic/.perseus/dist",
+    "md -Force examples/basic/.perseus/dist",
+    "md -Force examples/basic/.perseus/dist",
+    "bonnie copy-subcrates",
+    "cargo build",
+    "npm i --prefix website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.desc = "sets everything up for local development"
@@ -41,18 +50,13 @@ dev.subcommands.example.cmd = [
 dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "serves the given example using a live version of the cli"
 
-site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\" \"bonnie site serve\""
+site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\""
 site.desc = "builds and serves the site for local development (requires `concurrently`)"
 site.subcommands.export.cmd = [
     "cd website",
-    "find . -not -path \".perseus/*\" -not -path \"target/*\" | entr -s \"perseus export\""
+    "perseus export -sw"
 ]
-site.subcommands.export.desc = "exports the site, watching for changes"
-site.subcommands.serve.cmd = [
-    "cd website",
-    "browser-sync start --server \".perseus/dist/exported\" --files .perseus/dist --no-open --port 8080 --extensions html"
-]
-site.subcommands.serve.desc = "serves the site's exported content"
+site.subcommands.export.desc = "exports and serves the site, watching for changes"
 site.subcommands.tinker.cmd = [
     "cd website",
     "perseus tinker"
