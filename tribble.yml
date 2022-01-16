@@ -135,7 +135,7 @@ workflows:
       Request an Enhancement:
         preamble: "Thanks for the idea, we'll take a look! Please press the button below to report the following issue to us. If anything looks incorrect, you can go back and change it now (but please don't edit the final issue body, it's auto-generated)."
         text:
-          "This issue is requesting an enhancement to the website.
+          "This issue is requesting an enhancement to the code of Perseus.
 
           The user described the problem related to this request as follows:
 
