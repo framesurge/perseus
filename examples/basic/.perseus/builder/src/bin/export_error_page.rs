@@ -20,6 +20,7 @@ async fn real_main() -> i32 {
     env::set_current_dir("../").unwrap();
 
     let plugins = get_plugins::<SsrNode>();
+
     let error_pages = get_error_pages(&plugins);
     let root_id = get_app_root(&plugins);
     let immutable_store = get_immutable_store(&plugins);
@@ -62,6 +63,14 @@ async fn real_main() -> i32 {
             return 1;
         }
     };
+    plugins
+        .functional_actions
+        .export_error_page_actions
+        .before_export_error_page
+        .run(
+            (err_code_to_build_for, output.to_string()),
+            plugins.get_plugin_data(),
+        );
     // Build that error page as the server does
     let err_page_str = build_error_page(
         "",
@@ -76,18 +85,23 @@ async fn real_main() -> i32 {
     // Write that to the mandatory second argument (the output location)
     // We'll move out of `.perseus/` first though
     env::set_current_dir("../").unwrap();
-    match fs::write(output, err_page_str) {
+    match fs::write(&output, err_page_str) {
         Ok(_) => (),
         Err(err) => {
             eprintln!("{}", fmt_err(&err));
+            plugins
+                .functional_actions
+                .export_error_page_actions
+                .after_failed_write
+                .run((err, output.to_string()), plugins.get_plugin_data());
             return 1;
         }
     };
 
     plugins
         .functional_actions
-        .export_actions
-        .after_successful_export
+        .export_error_page_actions
+        .after_successful_export_error_page
         .run((), plugins.get_plugin_data());
     println!("Static exporting successfully completed!");
     0

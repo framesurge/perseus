@@ -64,6 +64,8 @@ pub struct FunctionalPluginActions<G: Html> {
     pub build_actions: FunctionalPluginBuildActions,
     /// Actions pertaining to the export process.
     pub export_actions: FunctionalPluginExportActions,
+    /// Actions pertaining to the process of exporting an error page.
+    pub export_error_page_actions: FunctionalPluginExportErrorPageActions,
     /// Actions pertaining to the server.
     pub server_actions: FunctionalPluginServerActions,
     /// Actions pertaining to the client-side code.
@@ -76,6 +78,7 @@ impl<G: Html> Default for FunctionalPluginActions<G> {
             settings_actions: FunctionalPluginSettingsActions::<G>::default(),
             build_actions: FunctionalPluginBuildActions::default(),
             export_actions: FunctionalPluginExportActions::default(),
+            export_error_page_actions: FunctionalPluginExportErrorPageActions::default(),
             server_actions: FunctionalPluginServerActions::default(),
             client_actions: FunctionalPluginClientActions::default(),
         }
@@ -138,6 +141,16 @@ pub struct FunctionalPluginExportActions {
     pub after_failed_static_alias_file_copy: FunctionalPluginAction<std::io::Error, ()>,
     /// Runs after the export process if it completes successfully.
     pub after_successful_export: FunctionalPluginAction<(), ()>,
+}
+/// Functional actions that pertain to the process of exporting an error page.
+#[derive(Default)]
+pub struct FunctionalPluginExportErrorPageActions {
+    /// Runs before the process of exporting an error page, providing the HTTP status code to be exported and the output filename (relative to the root of the project, not to `.perseus/`).
+    pub before_export_error_page: FunctionalPluginAction<(u16, String), ()>,
+    /// Runs after a error page was exported successfully.
+    pub after_successful_export_error_page: FunctionalPluginAction<(), ()>,
+    /// Runs if writing to the output file failed. Error and filename are given.
+    pub after_failed_write: FunctionalPluginAction<(std::io::Error, String), ()>,
 }
 /// Functional actions that pertain to the server.
 #[derive(Default)]

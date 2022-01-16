@@ -26,6 +26,10 @@ If you'd like to request that a new action, functional or control, be added, ple
 	- `after_failed_static_alias_dir_copy` -- runs arbitrary code if the export process fails to copy a static alias that was a directory (e.g. to report the failed export to a server crash management system)
 	- `after_failed_static_alias_file_copy` -- runs arbitrary code if the export process fails to copy a static alias that was a file (e.g. to report the failed export to a server crash management system)
 	- `after_successful_export` -- runs arbitrary code after the export process has completed, if it was successful (e.g. copying custom files into `.perseus/dist/`)
+- `export_error_page_actions` --- actions that'll be run when exporting an error page
+  	- `before_export_error_page` --- runs arbitrary code before this process has started (providing the error code to be exported for and the output file)
+	- `after_successful_export_error_page` -- runs arbitrary code after this process has completed, if it was successful
+	- `after_failed_write` -- runs arbitrary code after this process has completed, if it couldn't write to the target output file
 - `server_actions` -- actions that'll be run as part of the Perseus server when the user runs `perseus serve` (or when a [serverful production deployment](:deploying/serverful) runs)
 	- `before_serve` -- runs arbitrary code before the server starts (e.g. to spawn an API server)
 - `client_actions` -- actions that'll run in the browser when the user's app is accessed
