@@ -2,7 +2,7 @@
 
 First off, thanks so much for taking the time to contribute to Perseus, it's greatly appreciated!
 
-Perseus uses [Tribble](https://github.com/arctic-hen7/tribble) for managing contributions, see [here](https://arctic-hen7.github.io/perseus/tribble/workflow/perseus) for an interactive system that will guide you through making contributions to this repository. Please note that this system is still in beta, so please just open a GitHub issue as usual if something's not working properly there. Otherwise, issues should be created through Tribble.
+Perseus uses [Tribble](https://github.com/arctic-hen7/tribble) for managing contributions, see [here](https://arctic-hen7.github.io/perseus/tribble/workflow/perseus) for an interactive system that will guide you through making contributions to this repository. Please note that this system is still in beta, so please just open a GitHub issue as usual if something's not working properly there. Otherwise, issues should be created through Tribble (this allows you to basically triage your issue yourself, making things move more quickly).
 
 The rest of this document is dedicated to explaining how to get a local copy of Perseus and open a pull request, and is primarily targeted toward those contributing to an open-source project for the first time.
 
@@ -27,9 +27,12 @@ Once you've made your changes to your local copy and committed them with Git, yo
 
 Once you've submitted your PR, we'll try to get to reviewing it as quickly as possible! Unfortunately, not every pull request can be merged, but we'll do our best to request changes so that yours can be best integrated into the project.
 
-# Old Details
+## Old Details
 
 This section pre-dates the usage of Tribble, but it will very soon be made obsolete. During the transition, this information will still be available.
+
+<details>
+<summary>Click here to see the old details.</summary>
 
 ## Building
 
@@ -77,3 +80,5 @@ A separate branch is created for new features/fixes, which are then merged into 
 We use the Conventional Commits system, but you can commit however you want. Your pull request will be squashed and merged into a single compliant commit, so don't worry about this!
 
 We do request though that you make sure your commits are signed with GPG, it helps verify the integrity of your code, and is good practice generally.
+
+</details>
