@@ -2,6 +2,7 @@
 
 use crate::errors::*;
 use crate::locales::Locales;
+use crate::router::RouterState;
 use crate::templates::TemplateMap;
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
@@ -117,7 +118,12 @@ async fn gen_state_for_path(
             .await?;
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template(Some(initial_state.clone()), translator, true)
+            template.render_for_template(
+                Some(initial_state.clone()),
+                translator,
+                true,
+                RouterState::default(),
+            )
         });
         // Write that prerendered HTML to a static file
         mutable_store
@@ -146,7 +152,12 @@ async fn gen_state_for_path(
             .await?;
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template(Some(initial_state.clone()), translator, true)
+            template.render_for_template(
+                Some(initial_state.clone()),
+                translator,
+                true,
+                RouterState::default(),
+            )
         });
         // Write that prerendered HTML to a static file
         immutable_store
@@ -184,8 +195,9 @@ async fn gen_state_for_path(
     // If the template is very basic, prerender without any state
     // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
     if template.is_basic() {
-        let prerendered =
-            sycamore::render_to_string(|| template.render_for_template(None, translator, true));
+        let prerendered = sycamore::render_to_string(|| {
+            template.render_for_template(None, translator, true, RouterState::default())
+        });
         let head_str = template.render_head_str(None, translator);
         // Write that prerendered HTML to a static file
         immutable_store

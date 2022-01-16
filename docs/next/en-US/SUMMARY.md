@@ -15,6 +15,7 @@
 -   [Templates and Routing](/docs/templates/intro)
     -   [Modifying the `<head>`](/docs/templates/metadata-modification)
     -   [Modifying HTTP Headers](/docs/templates/setting-headers)
+    -   [Listening to the Router](/docs/templates/router-state)
 -   [Error Pages](/docs/error-pages)
 -   [Static Content](/docs/static-content)
 -   [Internationalization](/docs/i18n/intro)

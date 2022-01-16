@@ -10,11 +10,12 @@ use perseus::{
         shell::{app_shell, get_initial_state, get_render_cfg, InitialState},
     },
     plugins::PluginAction,
-    templates::TemplateNodeType,
+    templates::{RouterState, TemplateNodeType},
     DomNode,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
+use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{cloned, create_effect, view, NodeRef, ReadSignal};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -62,6 +63,10 @@ pub fn run() -> Result<(), JsValue> {
     // Get the error pages in an `Rc` so we aren't creating hundreds of them
     let error_pages = Rc::new(get_error_pages(&plugins));
 
+    // Create the router state we'll need
+    // TODO
+    let router_state = RouterState::default();
+
     // Create the router we'll use for this app, based on the user's app definition
     create_app_route! {
         name => AppRoute,
@@ -84,7 +89,7 @@ pub fn run() -> Result<(), JsValue> {
                         // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                         // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                         let _ = route.get();
-                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, translations_manager, error_pages, initial_container) => async move {
+                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, translations_manager, error_pages, initial_container) => async move {
                             let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
                             checkpoint("router_entry");
                             match &route.get().as_ref().0 {
@@ -99,6 +104,7 @@ pub fn run() -> Result<(), JsValue> {
                                     path.clone(),
                                     (template.clone(), *was_incremental_match),
                                     locale.clone(),
+                                    router_state.clone(),
                                     // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
                                     Rc::clone(&translations_manager),
                                     Rc::clone(&error_pages),
@@ -141,7 +147,12 @@ pub fn run() -> Result<(), JsValue> {
                     // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
                     // The main reason for this is that the router only intercepts click events from its children
                     view! {
-                        div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
+                        ContextProvider(ContextProviderProps {
+                            value: "test".to_string(),
+                            children: || view! {
+                                div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
+                            }
+                        })
                     }
                 }))
             }

@@ -1,6 +1,7 @@
 use crate::decode_time_str::decode_time_str;
 use crate::errors::*;
 use crate::page_data::PageData;
+use crate::router::RouterState;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{States, Template, TemplateMap};
 use crate::translations_manager::TranslationsManager;
@@ -75,7 +76,7 @@ async fn render_request_state(
     );
     // Use that to render the static HTML
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(state.clone(), translator, true)
+        template.render_for_template(state.clone(), translator, true, RouterState::default())
     });
     let head = template.render_head_str(state.clone(), translator);
 
@@ -160,7 +161,7 @@ async fn revalidate(
             .await?,
     );
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(state.clone(), translator, true)
+        template.render_for_template(state.clone(), translator, true, RouterState::default())
     });
     let head = template.render_head_str(state.clone(), translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
@@ -274,7 +275,12 @@ pub async fn get_page_for_template(
                             .await?,
                     );
                     let html_val = sycamore::render_to_string(|| {
-                        template.render_for_template(state.clone(), &translator, true)
+                        template.render_for_template(
+                            state.clone(),
+                            &translator,
+                            true,
+                            RouterState::default(),
+                        )
                     });
                     let head_val = template.render_head_str(state.clone(), &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes

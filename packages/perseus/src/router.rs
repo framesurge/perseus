@@ -5,6 +5,8 @@ use crate::Html;
 use crate::Template;
 use std::collections::HashMap;
 use std::rc::Rc;
+use sycamore::prelude::ReadSignal;
+use sycamore::prelude::Signal;
 
 /// The backend for `get_template_for_path` to avoid code duplication for the `Arc` and `Rc` versions.
 macro_rules! get_template_for_path {
@@ -289,4 +291,40 @@ macro_rules! create_app_route {
             }
         }
     };
+}
+
+/// The state for the router.
+#[derive(Clone)]
+pub struct RouterState {
+    /// The router's current load state.
+    load_state: Signal<RouterLoadState>,
+}
+impl Default for RouterState {
+    /// Creates a default instance of the router state intended for server-side usage.
+    fn default() -> Self {
+        Self {
+            load_state: Signal::new(RouterLoadState::Server),
+        }
+    }
+}
+impl RouterState {
+    /// Gets the load state of the router.
+    pub fn get_load_state(&self) -> ReadSignal<RouterLoadState> {
+        self.load_state.handle()
+    }
+    /// Sets the load state of the router.
+    pub fn set_load_state(&self, new: RouterLoadState) {
+        self.load_state.set(new);
+    }
+}
+
+/// The current load state of the router. You can use this to be warned of when a new page is about to be loaded (and display a loading bar or the like, perhaps).
+#[derive(Clone)]
+pub enum RouterLoadState {
+    /// The page has been loaded. The name of the template is attached.
+    Loaded(String),
+    /// A new page is being loaded, and will soon replace whatever is currently loaded. The name of the new template is attached.
+    Loading(String),
+    /// We're on the server, and there is no router. Whatever you render based on this state will appear when the user first loads the page, before it's made interactive.
+    Server,
 }

@@ -4,7 +4,7 @@ use crate::errors::*;
 use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
 use crate::template::Template;
-use crate::templates::TemplateNodeType;
+use crate::templates::{RouterLoadState, RouterState, TemplateNodeType};
 use crate::ErrorPages;
 use fmterr::fmt_err;
 use std::cell::RefCell;
@@ -217,11 +217,14 @@ pub async fn app_shell(
     path: String,
     (template, was_incremental_match): (Rc<Template<TemplateNodeType>>, bool),
     locale: String,
+    router_state: RouterState,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
     (initial_container, container_rx_elem): (Element, Element), // The container that the server put initial load content into and the reactive container tht we'll actually use
 ) {
     checkpoint("app_shell_entry");
+    // Update the router state
+    router_state.set_load_state(RouterLoadState::Loading(template.get_path()));
     // Check if this was an initial load and we already have the state
     let initial_state = get_initial_state();
     match initial_state {
@@ -268,24 +271,28 @@ pub async fn app_shell(
                 }
             };
 
+            let path = template.get_path();
             // Hydrate that static code using the acquired state
+            let router_state_2 = router_state.clone();
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
             #[cfg(not(feature = "hydrate"))]
             {
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
-                    move || template.render_for_template(state, translator, false),
+                    move || template.render_for_template(state, translator, false, router_state_2),
                     &container_rx_elem,
                 );
             }
             #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                || template.render_for_template(state, translator, false),
+                || template.render_for_template(state, translator, false, router_state_2),
                 &container_rx_elem,
             );
             checkpoint("page_interactive");
+            // Update the router state
+            router_state.set_load_state(RouterLoadState::Loaded(path));
         }
         // If we have no initial state, we should proceed as usual, fetching the content and state from the server
         InitialState::NotPresent => {
@@ -359,6 +366,7 @@ pub async fn app_shell(
                                 };
 
                                 // Hydrate that static code using the acquired state
+                                let router_state_2 = router_state.clone();
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                                 #[cfg(not(feature = "hydrate"))]
                                 {
@@ -370,6 +378,7 @@ pub async fn app_shell(
                                                 page_data.state,
                                                 translator,
                                                 false,
+                                                router_state_2.clone(),
                                             )
                                         },
                                         &container_rx_elem,
@@ -383,11 +392,14 @@ pub async fn app_shell(
                                             page_data.state,
                                             translator,
                                             false,
+                                            router_state_2,
                                         )
                                     },
                                     &container_rx_elem,
                                 );
                                 checkpoint("page_interactive");
+                                // Update the router state
+                                router_state.set_load_state(RouterLoadState::Loaded(path));
                             }
                             // If the page failed to serialize, an exception has occurred
                             Err(err) => panic!("page data couldn't be serialized: '{}'", err),
