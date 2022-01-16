@@ -9,7 +9,7 @@ use std::rc::Rc;
 /// exists then so the server doesn't have to do nearly as much work).
 pub fn build_error_page(
     url: &str,
-    status: &u16,
+    status: u16,
     // This should already have been transformed into a string (with a source chain etc.)
     err: &str,
     translator: Option<Rc<Translator>>,
@@ -22,7 +22,7 @@ pub fn build_error_page(
     // Right now, translators are never included in transmitted error pages
     let error_page_data = ErrorPageData {
         url: url.to_string(),
-        status: *status,
+        status,
         err: err.to_string(),
     };
 

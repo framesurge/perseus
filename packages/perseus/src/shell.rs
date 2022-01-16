@@ -168,20 +168,21 @@ pub fn checkpoint(name: &str) {
     // This will be removed by the next checkpoint
     let document = web_sys::window().unwrap().document().unwrap();
     let container_opt = document.query_selector("#__perseus_checkpoints").unwrap();
-    let container: Element;
-    if let Some(container_i) = container_opt {
-        container = container_i;
-    } else {
-        // If the container doesn't exist yet, create it
-        container = document.create_element("div").unwrap();
-        container.set_id("__perseus_checkpoints");
-        document
-            .query_selector("body")
-            .unwrap()
-            .unwrap()
-            .append_with_node_1(&container)
-            .unwrap();
-    }
+    let container = match container_opt {
+        Some(container_i) => container_i,
+        None => {
+            // If the container doesn't exist yet, create it
+            let container = document.create_element("div").unwrap();
+            container.set_id("__perseus_checkpoints");
+            document
+                .query_selector("body")
+                .unwrap()
+                .unwrap()
+                .append_with_node_1(&container)
+                .unwrap();
+            container
+        }
+    };
 
     // Get the number of checkpoints that already exist with the same ID
     // We prevent having to worry about checkpoints whose names are subsets of others by using the hyphen as a delimiter
@@ -262,9 +263,9 @@ pub async fn app_shell(
                     container_rx_elem.set_inner_html("");
                     match &err {
                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, status, &fmt_err(&err), None, &container_rx_elem),
-                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, &500, &fmt_err(&err), None, &container_rx_elem),
-                        ClientError::LocaleNotSupported { .. } => return error_pages.render_page(&format!("/{}/...", locale), &404, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, 500, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::LocaleNotSupported { .. } => return error_pages.render_page(&format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
                         // No other errors should be returned
                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                     }
@@ -357,9 +358,9 @@ pub async fn app_shell(
                                     Ok(translator) => translator,
                                     Err(err) => match &err {
                                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, status, &fmt_err(&err), None, &container_rx_elem),
-                                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, &500, &fmt_err(&err), None, &container_rx_elem),
-                                        ClientError::LocaleNotSupported { locale } => return error_pages.render_page(&format!("/{}/...", locale), &404, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, 500, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::LocaleNotSupported { locale } => return error_pages.render_page(&format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
                                         // No other errors should be returned
                                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                                     }
@@ -408,7 +409,7 @@ pub async fn app_shell(
                     // No translators ready yet
                     None => error_pages.render_page(
                         &asset_url,
-                        &404,
+                        404,
                         "page not found",
                         None,
                         &container_rx_elem,
@@ -417,7 +418,7 @@ pub async fn app_shell(
                 Err(err) => match &err {
                     // No translators ready yet
                     ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages
-                        .render_page(url, status, &fmt_err(&err), None, &container_rx_elem),
+                        .render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
                     // No other errors should be returned
                     _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
                 },
@@ -443,7 +444,7 @@ pub async fn app_shell(
             // We render this rather than hydrating because otherwise we'd need a `HydrateNode` at the plugins level, which is way too inefficient
             #[cfg(not(feature = "hydrate"))]
             container_rx_elem.set_inner_html("");
-            error_pages.render_page(&url, &status, &err, None, &container_rx_elem);
+            error_pages.render_page(&url, status, &err, None, &container_rx_elem);
         }
     };
 }

@@ -82,7 +82,7 @@ where
                                 &filename, err
                             )
                         });
-                    let res: D = match serde_json::from_str(&contents) {
+                    let res = match serde_json::from_str(&contents) {
                         Ok(cached_res) => cached_res,
                         // If the stuff in the cache can't be deserialized, we'll force a recreation (we don't recurse because that requires boxing the future)
                         Err(_) => {

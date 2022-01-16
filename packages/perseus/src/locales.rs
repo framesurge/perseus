@@ -11,7 +11,7 @@ pub struct Locales {
 impl Locales {
     /// Gets all the supported locales by combining the default, and other.
     pub fn get_all(&self) -> Vec<&String> {
-        let mut vec: Vec<&String> = vec![&self.default];
+        let mut vec = vec![&self.default];
         vec.extend(&self.other);
 
         vec

@@ -252,7 +252,7 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         Ok((exit_code, None))
     } else {
         // The user doesn't want to run the server, so we'll give them the executable path instead
-        let exec_str: String = (*exec.lock().unwrap()).to_string();
+        let exec_str = (*exec.lock().unwrap()).to_string();
         println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable in `.perseus/server/`.\n{}", &exec_str);
         Ok((0, Some(exec_str)))
     }

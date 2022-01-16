@@ -103,7 +103,7 @@ pub fn match_route<G: Html>(
     templates: &TemplateMap<G>,
     locales: &Locales,
 ) -> RouteVerdict<G> {
-    let path_vec: Vec<&str> = path_slice.to_vec();
+    let path_vec = path_slice.to_vec();
     let path_joined = path_vec.join("/"); // This should not have a leading forward slash, it's used for asset fetching by the app shell
 
     let verdict;

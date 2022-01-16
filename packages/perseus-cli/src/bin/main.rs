@@ -85,7 +85,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
     }
 
     // Parse the CLI options with `clap`
-    let opts: Opts = Opts::parse();
+    let opts = Opts::parse();
     // Check the user's environment to make sure they have prerequisites
     // We do this after any help pages or version numbers have been parsed for snappiness
     check_env()?;

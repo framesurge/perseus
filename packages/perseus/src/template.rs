@@ -212,11 +212,11 @@ impl<G: Html> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_: Option<String>| sycamore::view! {}),
+            template: Box::new(|_| sycamore::view! {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
-            head: Box::new(|_: Option<String>| sycamore::view! {}),
+            head: Box::new(|_| sycamore::view! {}),
             // We create sensible header defaults here
-            set_headers: Box::new(|_: Option<String>| default_headers()),
+            set_headers: Box::new(|_| default_headers()),
             get_build_paths: None,
             incremental_generation: false,
             get_build_state: None,

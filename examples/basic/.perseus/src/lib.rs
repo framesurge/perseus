@@ -133,11 +133,11 @@ pub fn run() -> Result<(), JsValue> {
                                         initial_container.set_attribute("style", "display: none;").unwrap();
                                         // Hydrate the error pages
                                         // Right now, we don't provide translators to any error pages that have come from the server
-                                        error_pages.render_page(&url, &status, &err, None, &container_rx_elem);
+                                        error_pages.render_page(&url, status, &err, None, &container_rx_elem);
                                     } else {
                                         // This is an error from navigating within the app (probably the dev mistyped a link...), so we'll clear the page
                                         container_rx_elem.set_inner_html("");
-                                        error_pages.render_page("", &404, "not found", None, &container_rx_elem);
+                                        error_pages.render_page("", 404, "not found", None, &container_rx_elem);
                                     }
                                 },
                             };

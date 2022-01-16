@@ -77,7 +77,7 @@ impl Parse for TestFn {
                 };
                 // Must accept a single argument for the Fantoccini client
                 let mut inputs = sig.inputs.into_iter();
-                let arg: FnArg = inputs.next().unwrap_or_else(|| syn::parse_quote! { _: () });
+                let arg = inputs.next().unwrap_or_else(|| syn::parse_quote! { _: () });
                 match &arg {
                     FnArg::Typed(_) => (),
                     // Can't accept `self`

@@ -45,11 +45,11 @@ impl<G: Html> ErrorPages<G> {
         self.status_pages.insert(status, page);
     }
     /// Gets the internal template function to render.
-    fn get_template_fn(&self, status: &u16) -> &ErrorPageTemplate<G> {
+    fn get_template_fn(&self, status: u16) -> &ErrorPageTemplate<G> {
         // Check if we have an explicitly defined page for this status code
         // If not, we'll render the fallback page
-        match self.status_pages.contains_key(status) {
-            true => self.status_pages.get(status).unwrap(),
+        match self.status_pages.contains_key(&status) {
+            true => self.status_pages.get(&status).unwrap(),
             false => &self.fallback,
         }
     }
@@ -57,13 +57,13 @@ impl<G: Html> ErrorPages<G> {
     pub fn get_template_for_page(
         &self,
         url: &str,
-        status: &u16,
+        status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
     ) -> View<G> {
         let template_fn = self.get_template_fn(status);
 
-        template_fn(url.to_string(), *status, err.to_string(), translator)
+        template_fn(url.to_string(), status, err.to_string(), translator)
     }
 }
 impl ErrorPages<DomNode> {
@@ -71,7 +71,7 @@ impl ErrorPages<DomNode> {
     pub fn render_page(
         &self,
         url: &str,
-        status: &u16,
+        status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
         container: &Element,
@@ -79,7 +79,7 @@ impl ErrorPages<DomNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::render_to(
-            || template_fn(url.to_string(), *status, err.to_string(), translator),
+            || template_fn(url.to_string(), status, err.to_string(), translator),
             container,
         );
     }
@@ -90,7 +90,7 @@ impl ErrorPages<HydrateNode> {
     pub fn hydrate_page(
         &self,
         url: &str,
-        status: &u16,
+        status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
         container: &Element,
@@ -98,7 +98,7 @@ impl ErrorPages<HydrateNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::hydrate_to(
-            || template_fn(url.to_string(), *status, err.to_string(), translator),
+            || template_fn(url.to_string(), status, err.to_string(), translator),
             container,
         );
     }
@@ -108,14 +108,14 @@ impl ErrorPages<SsrNode> {
     pub fn render_to_string(
         &self,
         url: &str,
-        status: &u16,
+        status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
     ) -> String {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::render_to_string(|| {
-            template_fn(url.to_string(), *status, err.to_string(), translator)
+            template_fn(url.to_string(), status, err.to_string(), translator)
         })
     }
 }
