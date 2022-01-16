@@ -135,4 +135,9 @@ pub mod internal {
         pub use crate::export::*;
     }
     pub use crate::path_prefix::{get_path_prefix_client, get_path_prefix_server};
+    /// Internal utilities for logging. These are just re-exports so that users don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
+    pub mod log {
+        pub use wasm_bindgen::JsValue;
+        pub use web_sys::console::log_1 as log_js_value;
+    }
 }

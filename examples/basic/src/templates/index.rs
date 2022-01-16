@@ -13,6 +13,7 @@ pub struct IndexPageProps {
 #[perseus::template(IndexPage)]
 #[component(IndexPage<G>)]
 pub fn index_page(props: IndexPageProps) -> View<G> {
+    perseus::web_log!("Cross-platform logging!");
     view! {
         p {(props.greeting)}
         a(href = "about", id = "about-link") { "About!" }
