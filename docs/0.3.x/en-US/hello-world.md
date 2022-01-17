@@ -70,7 +70,7 @@ Perseus is a _very_ complex system, and, if you had to write all that complexity
 When you run `perseus serve`, the `.perseus/` directory is created and added to your `.gitignore`, and then three stages occur in parallel (they're shown in your terminal):
 
 -   _🔨 Generating your app_ -- here, your app is built to a series of static files in `.perseus/dist/static`, which makes your app lightning-fast (your app's pages are ready before it's even been deployed, which is called _static site generation_, or SSG)
--   _🏗️ Building your app to Wasm_ -- here, your app is built to [WebAssembly](), which is what lets a low-level programming language like Rust run in the browser
+-   _🏗️ Building your app to Wasm_ -- here, your app is built to [WebAssembly](https://webassembly.org), which is what lets a low-level programming language like Rust run in the browser
 -   _📡 Building server_ -- here, Perseus builds its internal server based on your code, and prepares to serve your app
 
 The first time you run this command, it can take quite a while to get everything ready, but after that it'll be really fast. And, if you haven't changed any code (_at all_) since you last ran it, you can run `perseus serve --no-build` to run the server basically instantaneously.
