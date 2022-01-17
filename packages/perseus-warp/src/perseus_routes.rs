@@ -28,7 +28,12 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .await
         .expect("Couldn't get render configuration!");
     let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
-    let index_with_render_cfg = HtmlShell::new(index_file, &render_cfg, &get_path_prefix_server());
+    let index_with_render_cfg = HtmlShell::new(
+        index_file,
+        &opts.root_id,
+        &render_cfg,
+        &get_path_prefix_server(),
+    );
 
     // Handle static files
     let js_bundle = warp::path!(".perseus" / "bundle.js")

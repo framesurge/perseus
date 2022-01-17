@@ -15,7 +15,6 @@ pub fn build_error_page(
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
     html_shell: &HtmlShell,
-    root_id: &str,
 ) -> String {
     let error_html = error_pages.render_to_string(url, status, err, translator);
     // We create a JSON representation of the data necessary to hydrate the error page on the client-side
@@ -28,6 +27,6 @@ pub fn build_error_page(
 
     html_shell
         .clone()
-        .error_page(&error_page_data, &error_html, root_id)
+        .error_page(&error_page_data, &error_html)
         .to_string()
 }

@@ -39,7 +39,7 @@ async fn real_main() -> i32 {
             return 1;
         }
     };
-    let html_shell = HtmlShell::new(html, &render_cfg, &get_path_prefix_server());
+    let html_shell = HtmlShell::new(html, &root_id, &render_cfg, &get_path_prefix_server());
     // Get the error code to build from the arguments to this executable
     let args = env::args().collect::<Vec<String>>();
     let err_code_to_build_for = match args.get(1) {
@@ -79,7 +79,6 @@ async fn real_main() -> i32 {
         None,
         &error_pages,
         &html_shell,
-        &root_id,
     );
 
     // Write that to the mandatory second argument (the output location)

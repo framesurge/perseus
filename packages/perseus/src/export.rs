@@ -59,7 +59,7 @@ pub async fn export_app(
             path: html_shell_path.to_string(),
             source: err,
         })?;
-    let html_shell = HtmlShell::new(raw_html_shell, &render_cfg, &path_prefix);
+    let html_shell = HtmlShell::new(raw_html_shell, root_id, &render_cfg, &path_prefix);
 
     // We can do literally everything concurrently here
     let mut export_futs = Vec::new();
@@ -70,7 +70,6 @@ pub async fn export_app(
             templates,
             locales,
             &html_shell,
-            root_id,
             immutable_store,
             path_prefix.to_string(),
         );
@@ -118,7 +117,6 @@ async fn export_path(
     templates: &TemplateMap<SsrNode>,
     locales: &Locales,
     html_shell: &HtmlShell<'_>,
-    root_id: &str,
     immutable_store: &ImmutableStore,
     path_prefix: String,
 ) -> Result<(), ServerError> {
@@ -154,10 +152,10 @@ async fn export_path(
                 &format!("exported/{}.html", &initial_load_path),
                 &html_shell
                     .clone()
-                    .locale_redirection_fallback(
-                        &format!("{}/{}/{}", path_prefix, locales.default, &path),
-                        root_id,
-                    )
+                    .locale_redirection_fallback(&format!(
+                        "{}/{}/{}",
+                        path_prefix, locales.default, &path
+                    ))
                     .to_string(),
             )
             .await?;
@@ -175,10 +173,7 @@ async fn export_path(
             .await?;
             // Create a full HTML file from those that can be served for initial loads
             // The build process writes these with a dummy default locale even though we're not using i18n
-            let full_html = html_shell
-                .clone()
-                .page_data(&page_data, root_id)
-                .to_string();
+            let full_html = html_shell.clone().page_data(&page_data).to_string();
             immutable_store
                 .write(
                     &format!("exported/{}/{}.html", locale, initial_load_path),
@@ -204,10 +199,7 @@ async fn export_path(
         .await?;
         // Create a full HTML file from those that can be served for initial loads
         // The build process writes these with a dummy default locale even though we're not using i18n
-        let full_html = html_shell
-            .clone()
-            .page_data(&page_data, root_id)
-            .to_string();
+        let full_html = html_shell.clone().page_data(&page_data).to_string();
         // We don't add an extension because this will be queried directly by the browser
         immutable_store
             .write(&format!("exported/{}.html", initial_load_path), &full_html)

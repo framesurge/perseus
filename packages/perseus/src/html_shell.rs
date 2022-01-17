@@ -4,6 +4,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::{env, fmt};
 
+/// Escapes special characters in page data that might interfere with JavaScript processing.
 fn escape_page_data(data: &str) -> String {
     data.to_string()
         // We escape any backslashes to prevent their interfering with JSON delimiters
@@ -17,43 +18,31 @@ fn escape_page_data(data: &str) -> String {
 /// Represents a shell of an HTML file. It may have content that gets interpolated into the file.
 #[derive(Clone)]
 pub struct HtmlShell<'a> {
+    /// The actual shell content, on whcih interpolations will be performed.
     shell: String,
-    prepend_elements: Vec<Cow<'a, str>>,
-    scripts: Vec<Cow<'a, str>>,
-    interpolated_content: Vec<Cow<'a, str>>,
-    interpolated_scripts: Vec<Cow<'a, str>>,
+    /// Additional contents of the head before the interpolation boundary.
+    head_before_boundary: Vec<Cow<'a, str>>,
+    /// Scripts to be inserted before the interpolation boundary.
+    scripts_before_boundary: Vec<Cow<'a, str>>,
+    /// Additional contents of the head after the interpolation boundary. These will be wiped out after a page transition.
+    head_after_boundary: Vec<Cow<'a, str>>,
+    /// Scripts to be interpolated after the interpolation bounary. These will be wiped out after a page transition.
+    scripts_after_boundary: Vec<Cow<'a, str>>,
+    /// Content to be interpolated into the body of the shell.
+    content: Cow<'a, str>,
+    /// The ID of the element into which we'll interpolate content.
+    root_id: String,
 }
-
-/// Represents an HTML shell with interpolated content, metadata, and state, ready to be sent to the user for initial loads.
-pub struct HtmlShellWithPageData<'a> {
-    shell: HtmlShell<'a>,
-    content: &'a str,
-    root_id: &'a str,
-}
-
-/// Represents an HTML shell containing a fallback for locale redirection pages such that, even if JavaScript is disabled, the user will still be redirected to the default locale.
-/// From there, Perseus' inbuilt progressive enhancement can occur, but without this a user directed to an unlocalized page with JS disabled would see a
-/// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enabled but Wasm is disabled. Note that the redirect URL
-/// is expected to be generated with a path prefix inbuilt.
-///
-/// This also adds a `__perseus_initial_state` `<div>` in case it's needed (for Wasm redirections).
-pub struct HtmlShellWithRedirect<'a> {
-    shell: HtmlShell<'a>,
-    root_id: &'a str,
-}
-
-/// Represents an HTML shell with interpolated error state.
-pub struct HtmlShellWithError<'a> {
-    shell: HtmlShell<'a>,
-    error: &'a str,
-    root_id: &'a str,
-}
-
 impl<'a> HtmlShell<'a> {
-    /// Initializes the HTML shell by interpolating necessary scripts into it, as well as by adding the render configuration.
-    pub fn new(shell: String, render_cfg: &HashMap<String, String>, path_prefix: &str) -> Self {
-        let mut prepend_elements = Vec::new();
-        let mut scripts = Vec::new();
+    /// Initializes the HTML shell by interpolating necessary scripts into it and adding the render configuration.
+    pub fn new(
+        shell: String,
+        root_id: &str,
+        render_cfg: &HashMap<String, String>,
+        path_prefix: &str,
+    ) -> Self {
+        let mut head_before_boundary = Vec::new();
+        let mut scripts_before_boundary = Vec::new();
 
         // Define the render config as a global variable
         let render_cfg = format!(
@@ -61,11 +50,11 @@ impl<'a> HtmlShell<'a> {
             // It's safe to assume that something we just deserialized will serialize again in this case
             render_cfg = serde_json::to_string(render_cfg).unwrap()
         );
-        scripts.push(render_cfg.into());
+        scripts_before_boundary.push(render_cfg.into());
 
         // Inject a global variable to identify whether we are testing (picked up by app shell to trigger helper DOM events)
         if env::var("PERSEUS_TESTING").is_ok() {
-            scripts.push("window.__PERSEUS_TESTING = true;".into());
+            scripts_before_boundary.push("window.__PERSEUS_TESTING = true;".into());
         }
 
         // Define the script that will load the Wasm bundle (inlined to avoid unnecessary extra requests)
@@ -80,7 +69,7 @@ impl<'a> HtmlShell<'a> {
         "#,
             path_prefix = path_prefix
         );
-        scripts.push(load_wasm_bundle.into());
+        scripts_before_boundary.push(load_wasm_bundle.into());
 
         // Add in the `<base>` element at the very top so that it applies to everything in the HTML shell
         // Otherwise any stylesheets loaded before it won't work properly
@@ -88,76 +77,21 @@ impl<'a> HtmlShell<'a> {
         // We add a trailing `/` to the base URL (https://stackoverflow.com/a/26043021)
         // Note that it's already had any pre-existing ones stripped away
         let base = format!(r#"<base href="{}/" />"#, path_prefix);
-        prepend_elements.push(base.into());
+        head_before_boundary.push(base.into());
 
         Self {
             shell,
-            prepend_elements,
-            scripts,
-            interpolated_content: Vec::new(),
-            interpolated_scripts: Vec::new(),
+            head_before_boundary,
+            scripts_before_boundary,
+            head_after_boundary: Vec::new(),
+            scripts_after_boundary: Vec::new(),
+            content: "".into(),
+            root_id: root_id.into(),
         }
     }
 
     /// Interpolates page data into the shell.
-    pub fn page_data(self, page_data: &'a PageData, root_id: &'a str) -> HtmlShellWithPageData<'a> {
-        HtmlShellWithPageData::new(self, page_data, root_id)
-    }
-
-    /// Interpolates redirection fallbacks into the shell.
-    pub fn locale_redirection_fallback(
-        self,
-        redirect_url: &'a str,
-        root_id: &'a str,
-    ) -> HtmlShellWithRedirect<'a> {
-        HtmlShellWithRedirect::new(self, redirect_url, root_id)
-    }
-
-    /// Interpolates page error data into the shell.
-    pub fn error_page(
-        self,
-        error_page_data: &'a ErrorPageData,
-        error_html: &'a str,
-        root_id: &'a str,
-    ) -> HtmlShellWithError<'a> {
-        HtmlShellWithError::new(self, error_page_data, error_html, root_id)
-    }
-}
-
-trait ShellWithContent {
-    fn shell(&self) -> &HtmlShell;
-    fn root_id(&self) -> &str;
-    fn content(&self) -> Option<&str>;
-}
-
-impl fmt::Display for HtmlShell<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // We also inject a delimiter comment that will be used to wall off the constant document head from the interpolated document head
-
-        let head_start = self.prepend_elements.join("\n");
-        let head_end = format!(
-            r#"
-            <script type="module">{scripts}</script>
-            <!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->
-            {interpolated_content}
-            <script>{interpolated_scripts}</script>
-            "#,
-            scripts = self.scripts.join("\n"),
-            interpolated_content = self.interpolated_content.join("\n"),
-            interpolated_scripts = self.interpolated_scripts.join("\n"),
-        );
-
-        let new_shell = self
-            .shell
-            .replace("<head>", &format!("<head>{}", head_start))
-            .replace("</head>", &format!("{}</head>", head_end));
-
-        f.write_str(&new_shell)
-    }
-}
-
-impl<'a> HtmlShellWithPageData<'a> {
-    fn new(mut shell: HtmlShell<'a>, page_data: &'a PageData, root_id: &'a str) -> Self {
+    pub fn page_data(mut self, page_data: &'a PageData) -> Self {
         // Interpolate a global variable of the state so the app shell doesn't have to make any more trips
         // The app shell will unset this after usage so it doesn't contaminate later non-initial loads
         // Error pages (above) will set this to `error`
@@ -169,35 +103,24 @@ impl<'a> HtmlShellWithPageData<'a> {
 
         // We put this at the very end of the head (after the delimiter comment) because it doesn't matter if it's expunged on subsequent loads
         let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`", initial_state);
-        shell.interpolated_scripts.push(initial_state.into());
+        self.scripts_after_boundary.push(initial_state.into());
+        // Interpolate the document `<head>` (this should of course be removed between page loads)
+        self.head_after_boundary.push((&page_data.head).into());
+        // And set the content
+        self.content = (&page_data.content).into();
 
-        // Interpolate the document `<head>`
-        shell.interpolated_content.push((&page_data.head).into());
-
-        Self {
-            shell,
-            content: &page_data.content,
-            root_id,
-        }
-    }
-}
-
-impl ShellWithContent for HtmlShellWithPageData<'_> {
-    fn shell(&self) -> &HtmlShell {
-        &self.shell
+        self
     }
 
-    fn root_id(&self) -> &str {
-        self.root_id
-    }
-
-    fn content(&self) -> Option<&str> {
-        Some(self.content)
-    }
-}
-
-impl<'a> HtmlShellWithRedirect<'a> {
-    fn new(mut shell: HtmlShell<'a>, redirect_url: &'a str, root_id: &'a str) -> Self {
+    /// Interpolates a fallback for locale redirection pages such that, even if JavaScript is disabled, the user will still be redirected to the default locale.
+    /// From there, Perseus' inbuilt progressive enhancement can occur, but without this a user directed to an unlocalized page with JS disabled would see a
+    /// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enabled but Wasm is disabled. Note that the redirect URL
+    /// is expected to be generated with a path prefix inbuilt.
+    ///
+    /// This also adds a `__perseus_initial_state` `<div>` in case it's needed (for Wasm redirections).
+    ///
+    /// Further, this will preload the Wasm binary, making redirection snappier (but initial load slower), a tradeoff that generally improves UX.
+    pub fn locale_redirection_fallback(mut self, redirect_url: &'a str) -> Self {
         // This will be used if JavaScript is completely disabled (it's then the site's responsibility to show a further message)
         let dumb_redirect = format!(
             r#"<noscript>
@@ -222,7 +145,7 @@ impl<'a> HtmlShellWithRedirect<'a> {
             }} catch (e) {{}}
             return false;
         }}
-    
+
         if (!wasmSupported()) {{
             window.location.replace("{}");
         }}
@@ -230,97 +153,66 @@ impl<'a> HtmlShellWithRedirect<'a> {
             redirect_url
         );
 
-        shell.interpolated_content.push(dumb_redirect.into());
-        shell.interpolated_scripts.push(js_redirect.into());
+        self.head_after_boundary.push(dumb_redirect.into());
+        self.scripts_after_boundary.push(js_redirect.into());
+        // TODO Interpolate a preload of the Wasm bundle after the interpolation boundary
+        // TODO Do we need any content in here?
 
-        Self { shell, root_id }
-    }
-}
-
-impl ShellWithContent for HtmlShellWithRedirect<'_> {
-    fn shell(&self) -> &HtmlShell {
-        &self.shell
+        self
     }
 
-    fn root_id(&self) -> &str {
-        self.root_id
-    }
-
-    fn content(&self) -> Option<&str> {
-        None
-    }
-}
-
-impl<'a> HtmlShellWithError<'a> {
-    fn new(
-        mut shell: HtmlShell<'a>,
-        error_page_data: &'a ErrorPageData,
-        error_html: &'a str,
-        root_id: &'a str,
-    ) -> Self {
+    /// Interpolates page error data into the shell in the event of a failure.
+    pub fn error_page(mut self, error_page_data: &'a ErrorPageData, error_html: &'a str) -> Self {
         let error = serde_json::to_string(error_page_data).unwrap();
         let state_var = format!(
             "window.__PERSEUS_INITIAL_STATE = `error-{}`;",
             escape_page_data(&error),
         );
-        shell.interpolated_scripts.push(state_var.into());
+        self.scripts_after_boundary.push(state_var.into());
+        self.content = error_html.into();
 
-        Self {
-            shell,
-            error: error_html,
-            root_id,
-        }
+        self
     }
 }
+// This code actually interpolates everything in the correct places.
+impl fmt::Display for HtmlShell<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let head_start = self.head_before_boundary.join("\n");
+        // We also inject a delimiter comment that will be used to wall off the constant document head from the interpolated document head
+        let head_end = format!(
+            r#"
+            <script type="module">{scripts_before_boundary}</script>
+            <!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->
+            {head_after_boundary}
+            <script>{scripts_after_boundary}</script>
+            "#,
+            scripts_before_boundary = self.scripts_before_boundary.join("\n"),
+            head_after_boundary = self.head_after_boundary.join("\n"),
+            scripts_after_boundary = self.scripts_after_boundary.join("\n"),
+        );
 
-impl ShellWithContent for HtmlShellWithError<'_> {
-    fn shell(&self) -> &HtmlShell {
-        &self.shell
-    }
+        let shell_with_head = self
+            .shell
+            .replace("<head>", &format!("<head>{}", head_start))
+            .replace("</head>", &format!("{}</head>", head_end));
 
-    fn root_id(&self) -> &str {
-        self.root_id
-    }
+        // The user MUST place have a `<div>` of this exact form (documented explicitly)
+        // We permit either double or single quotes
+        let html_to_replace_double = format!("<div id=\"{}\">", self.root_id);
+        let html_to_replace_single = format!("<div id='{}'>", self.root_id);
+        let html_replacement = format!(
+            // We give the content a specific ID so that it can be deleted if an error page needs to be rendered on the client-side
+            r#"{}<div id="__perseus_content_initial" class="__perseus_content">{}</div>"#,
+            &html_to_replace_double, self.content,
+        );
+        // Now interpolate that HTML into the HTML shell
+        let new_shell = shell_with_head
+            .replace(&html_to_replace_double, &html_replacement)
+            .replace(&html_to_replace_single, &html_replacement);
 
-    fn content(&self) -> Option<&str> {
-        Some(self.error)
+        f.write_str(&new_shell)
     }
 }
-
-macro_rules! impl_display_for_shell_with_content {
-    ($t:ident) => {
-        impl std::fmt::Display for $t<'_> {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                let shell = ShellWithContent::shell(self).to_string();
-                let root_id = ShellWithContent::root_id(self);
-                let content = match ShellWithContent::content(self) {
-                    Some(content) => content,
-                    None => "",
-                };
-
-                // The user MUST place have a `<div>` of this exact form (documented explicitly)
-                // We permit either double or single quotes
-                let html_to_replace_double = format!("<div id=\"{}\">", root_id);
-                let html_to_replace_single = format!("<div id='{}'>", root_id);
-                let html_replacement = format!(
-                    // We give the content a specific ID so that it can be deleted if an error page needs to be rendered on the client-side
-                    r#"{}<div id="__perseus_content_initial" class="__perseus_content">{}</div>"#,
-                    &html_to_replace_double, content,
-                );
-                // Now interpolate that HTML into the HTML shell
-                let new_shell = shell
-                    .replace(&html_to_replace_double, &html_replacement)
-                    .replace(&html_to_replace_single, &html_replacement);
-
-                f.write_str(&new_shell)
-            }
-        }
-    };
-}
-
-impl_display_for_shell_with_content!(HtmlShellWithPageData);
-impl_display_for_shell_with_content!(HtmlShellWithRedirect);
-impl_display_for_shell_with_content!(HtmlShellWithError);
 
 #[cfg(test)]
 mod tests {
@@ -347,7 +239,7 @@ mod tests {
 
     #[test]
     fn basic_shell() {
-        let shell = HtmlShell::new(SHELL.into(), &get_render_config(), "prefix");
+        let shell = HtmlShell::new(SHELL.into(), "root_id", &get_render_config(), "prefix");
         println!("{}", shell);
     }
 
@@ -359,16 +251,16 @@ mod tests {
             head: "page_data.head".to_string(),
         };
 
-        let shell = HtmlShell::new(SHELL.into(), &get_render_config(), "prefix")
-            .page_data(&page_data, "root_id");
+        let shell = HtmlShell::new(SHELL.into(), "root_id", &get_render_config(), "prefix")
+            .page_data(&page_data);
 
         println!("{}", shell);
     }
 
     #[test]
     fn redirect_fallback_shell() {
-        let shell = HtmlShell::new(SHELL.into(), &get_render_config(), "prefix")
-            .locale_redirection_fallback("redirect_url", "root_id");
+        let shell = HtmlShell::new(SHELL.into(), "root_id", &get_render_config(), "prefix")
+            .locale_redirection_fallback("redirect_url");
 
         println!("{}", shell);
     }
@@ -376,16 +268,13 @@ mod tests {
     #[test]
     fn error_page_shell() {
         let error_page_data = ErrorPageData {
-            url: "error_page_data.url".to_string(),
+            url: "Made up URL".to_string(),
             status: 404,
-            err: "error_page_data.err".to_string(),
+            err: "page not found",
         };
 
-        let shell = HtmlShell::new(SHELL.into(), &get_render_config(), "prefix").error_page(
-            &error_page_data,
-            "error_html",
-            "root_id",
-        );
+        let shell = HtmlShell::new(SHELL.into(), "root_id", &get_render_config(), "prefix")
+            .error_page(&error_page_data, "Page not found.");
 
         println!("{}", shell);
     }

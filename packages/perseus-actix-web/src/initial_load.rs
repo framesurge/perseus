@@ -27,17 +27,8 @@ fn return_error_page(
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
     html_shell: &HtmlShell,
-    root_id: &str,
 ) -> HttpResponse {
-    let html = build_error_page(
-        url,
-        status,
-        err,
-        translator,
-        error_pages,
-        html_shell,
-        root_id,
-    );
+    let html = build_error_page(url, status, err, translator, error_pages, html_shell);
     HttpResponse::build(StatusCode::from_u16(status).unwrap())
         .content_type("text/html")
         .body(html)
@@ -60,15 +51,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     let path_slice = get_path_slice(path);
     // Create a closure to make returning error pages easier (most have the same data)
     let html_err = |status: u16, err: &str| {
-        return return_error_page(
-            path,
-            status,
-            err,
-            None,
-            error_pages,
-            html_shell.get_ref(),
-            &opts.root_id,
-        );
+        return return_error_page(path, status, err, None, error_pages, html_shell.get_ref());
     };
 
     // Run the routing algorithms on the path to figure out which template we need
@@ -113,7 +96,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             let final_html = html_shell
                 .get_ref()
                 .clone()
-                .page_data(&page_data, &opts.root_id)
+                .page_data(&page_data)
                 .to_string();
 
             let mut http_res = HttpResponse::Ok();
@@ -141,7 +124,6 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                             opts.locales.default,
                             path
                         ),
-                        &opts.root_id,
                     )
                     .to_string(),
             )
