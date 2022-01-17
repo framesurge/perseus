@@ -49,3 +49,6 @@ standalone = []
 # This feature enables Sycamore hydration by default (Sycamore hydration feature is always activated though)
 # This is not enabled by default due to some remaining bugs (also, default features in Perseus can't be disabled without altering `.perseus/`)
 hydrate = []
+# This feature enables the preloading of the Wasm bundle for locale redirections, which in theory improves UX
+# For now, this is experimental until it can be tested in the wild (local testing of this is extremely difficult for UX, we need real world metrics)
+preload-wasm-on-redirect = []

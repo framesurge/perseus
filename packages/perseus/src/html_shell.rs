@@ -32,6 +32,9 @@ pub struct HtmlShell<'a> {
     content: Cow<'a, str>,
     /// The ID of the element into which we'll interpolate content.
     root_id: String,
+    /// The path prefix to use.
+    #[cfg_attr(not(feature = "preload-wasm-on-redirect"), allow(dead_code))]
+    path_prefix: String,
 }
 impl<'a> HtmlShell<'a> {
     /// Initializes the HTML shell by interpolating necessary scripts into it and adding the render configuration.
@@ -87,6 +90,7 @@ impl<'a> HtmlShell<'a> {
             scripts_after_boundary: Vec::new(),
             content: "".into(),
             root_id: root_id.into(),
+            path_prefix: path_prefix.into(),
         }
     }
 
@@ -155,8 +159,19 @@ impl<'a> HtmlShell<'a> {
 
         self.head_after_boundary.push(dumb_redirect.into());
         self.scripts_after_boundary.push(js_redirect.into());
-        // TODO Interpolate a preload of the Wasm bundle after the interpolation boundary
-        // TODO Do we need any content in here?
+        #[cfg(feature = "preload-wasm-on-redirect")]
+        {
+            // Interpolate a preload of the Wasm bundle
+            // This forces the browser to get the bundle before loading the page, which makes the time users spend on a blank screen much shorter
+            // We have no leading `/` here because of the `<base>` interpolation
+            // Note that this has to come before the code that actually loads the Wasm bundle
+            // The aim of this is to make the time loading increase so that the time blanking decreases
+            let wasm_preload = format!(
+                r#"<link rel="preload" href="{path_prefix}/.perseus/bundle.wasm" as="fetch" />"#,
+                path_prefix = self.path_prefix
+            );
+            self.head_before_boundary.push(wasm_preload.into());
+        }
 
         self
     }
