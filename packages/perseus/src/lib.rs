@@ -48,6 +48,7 @@ mod decode_time_str;
 mod default_headers;
 mod error_pages;
 mod export;
+mod global_state;
 mod html_shell;
 mod locale_detector;
 mod locales;
@@ -70,7 +71,7 @@ pub use http::Request as HttpRequest;
 pub use wasm_bindgen_futures::spawn_local;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
-pub use perseus_macro::{autoserde, head, template, test};
+pub use perseus_macro::{autoserde, head, make_rx, template, test};
 pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, Route};
 
