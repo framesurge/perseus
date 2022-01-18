@@ -41,6 +41,12 @@ body, #root, .__perseus_content {
     /* The transition for moving the placeholder up */
     @apply transition-all duration-200 ease-in-out;
 }
+/* This is for the asterisk that indicates a required field */
+.custom-input span.input-required:nth-child(2)::after,
+.switch span.input-required:nth-child(1)::after {
+    content: '*';
+    @apply ml-[0.1rem] text-red-500 dark:text-red-400;
+}
 /* This prevents text in `textarea`s from riding underneath the placeholder (inspired by https://stackoverflow.com/a/67334114/11571888) */
 .custom-input:before {
     content: '';
@@ -112,7 +118,6 @@ div.select-wrapper:not(div.select-multiple)::after {
     @apply bg-primary dark:bg-light;
     @apply after:translate-x-4;
 }
-
 /* Markdown styling to combat Tailwind's removal of all default classes */
 .markdown > * + *,
 .markdown li + li,
@@ -125,6 +130,8 @@ div.select-wrapper:not(div.select-multiple)::after {
 }
 .markdown a {
     @apply text-primary dark:text-lighter hover:text-dark dark:hover:text-lightest transition-colors duration-200 underline;
+
+    @apply hover:drop-shadow-lg dark:hover:drop-shadow-xl;
 }
 .markdown h1 {
     @apply text-4xl mt-2;
