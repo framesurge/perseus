@@ -67,8 +67,7 @@ mod tests {
     #[test]
     fn nested() {
         #[perseus_macro::make_rx(TestRx)]
-        // The Serde derivations will be stripped from the reactive version, but others will remain
-        #[derive(Clone)]
+        // `Serialize`, `Deserialize`, and `Clone` are automatically derived
         #[rx::nested("nested", NestedRx)]
         struct Test {
             #[serde(rename = "foo_test")]
@@ -85,7 +84,6 @@ mod tests {
             test: String,
         }
         #[perseus_macro::make_rx(NestedRx)]
-        #[derive(Clone)]
         struct Nested {
             test: String,
         }
@@ -108,6 +106,6 @@ mod tests {
             test: "updated".to_string(),
         });
         new.nested.test.set("updated".to_string());
-        let new_2 = new.clone();
+        let _ = new.clone();
     }
 }

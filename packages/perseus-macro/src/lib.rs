@@ -127,8 +127,11 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 /// # Examples
 ///
 /// ```rust
+/// use serde::{Serialize, Deserialize};
+/// # use perseus_macro::make_rx; // You might import this from `perseus`
+///
 /// #[make_rx(TestRx)]
-/// #[derive(Clone)] // Notice that we don't need to derive `Serialize` and `Deserialize`, the macro does it for us
+/// // Notice that we don't need to derive `Serialize`,`Deserialize`, or `Clone`, the macro does it for us
 /// #[rx::nested("nested", NestedRx)]
 /// struct Test {
 ///     #[serde(rename = "foo_test")]
@@ -146,7 +149,6 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     test: String
 /// }
 /// #[perseus_macro::make_rx(NestedRx)]
-/// #[derive(Clone)]
 /// struct Nested {
 ///     test: String
 /// }
@@ -172,7 +174,7 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 /// // Nested reactivity on a `struct`
 /// new.nested.test.set("updated".to_string());
 /// // Our own derivations still remain
-/// let new_2 = new.clone();
+/// let _new_2 = new.clone();
 /// ```
 #[proc_macro_attribute]
 pub fn make_rx(args: TokenStream, input: TokenStream) -> TokenStream {
