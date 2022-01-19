@@ -156,8 +156,9 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
 
     quote! {
         // We add a Serde derivation because it will always be necessary for Perseus on the original `struct`, and it's really difficult and brittle to filter it out
-        #[derive(::serde::Serialize, ::serde::Deserialize)]
+        #[derive(::serde::Serialize, ::serde::Deserialize, ::std::clone::Clone)]
         #orig_struct
+        #[derive(::std::clone::Clone)]
         #new_struct
         impl#generics #ident#generics {
             /// Converts an instance of `#ident` into an instance of `#name`, making it reactive. This consumes `self`.

@@ -3,6 +3,7 @@
 use crate::errors::*;
 use crate::locales::Locales;
 use crate::router::RouterState;
+use crate::state::GlobalState;
 use crate::templates::TemplateMap;
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
@@ -123,6 +124,7 @@ async fn gen_state_for_path(
                 translator,
                 true,
                 RouterState::default(),
+                GlobalState::default(),
             )
         });
         // Write that prerendered HTML to a static file
@@ -157,6 +159,7 @@ async fn gen_state_for_path(
                 translator,
                 true,
                 RouterState::default(),
+                GlobalState::default(),
             )
         });
         // Write that prerendered HTML to a static file
@@ -196,7 +199,13 @@ async fn gen_state_for_path(
     // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
     if template.is_basic() {
         let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template(None, translator, true, RouterState::default())
+            template.render_for_template(
+                None,
+                translator,
+                true,
+                RouterState::default(),
+                GlobalState::default(),
+            )
         });
         let head_str = template.render_head_str(None, translator);
         // Write that prerendered HTML to a static file

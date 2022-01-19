@@ -71,6 +71,20 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
     template::template_impl(parsed, arg).into()
 }
 
+/// Exactly the same as `#[template]`, but this expects your state to be reactive (use `#[make_rx]` to make it thus). This will automatically deserialize state and make it reactive,
+/// allowing you to use an MVC pattern easily in Perseus. As the second argument, you'll need to provide the name of your unreactive state `struct` (this is unergonomic,
+/// but the compiler isn't smart enough to infer it yet).
+///
+/// Additionally, this macro will add the reactive state to the global state store, and will fetch it from there, allowing template state to persists between page changes. Additionally,
+/// that state can be accessed by other templates if necessary.
+#[proc_macro_attribute]
+pub fn template_with_rx_state(args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as template::TemplateFn);
+    let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
+
+    template::template_with_rx_state_impl(parsed, attr_args).into()
+}
+
 /// Labels a function as a Perseus head function, which is very similar to a template, but
 /// for the HTML metadata in the document `<head>`.
 #[proc_macro_attribute]
@@ -101,7 +115,7 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 /// method on the original that allows turning an instance of the unreactive `struct` into an instance of the reactive one.
 ///
 /// This macro automatically derives `serde::Serialize` and `serde::Deserialize` on the original `struct`, so do NOT add these yourself, or errors will occur. Note that you can still
-/// use Serde helper macros (e.g. `#[serde(rename = "testField")]`) as usual.
+/// use Serde helper macros (e.g. `#[serde(rename = "testField")]`) as usual. `Clone` will also be derived on both the original and the new `struct`, so do NOT try to derive it yourself.
 ///
 /// If one of your fields is itself a `struct`, by default it will just be wrapped in a `Signal`, but you can also enable nested fine-grained reactivity by adding the
 /// `#[rx::nested("field_name", FieldTypeRx)]` helper attribute to the `struct` (not the field, that isn't supported by Rust yet), where `field_name` is the name of the field you want

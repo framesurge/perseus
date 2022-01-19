@@ -3,6 +3,7 @@ use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
+use crate::state::GlobalState;
 use crate::template::Template;
 use crate::templates::{RouterLoadState, RouterState, TemplateNodeType};
 use crate::ErrorPages;
@@ -211,17 +212,46 @@ pub enum InitialState {
     NotPresent,
 }
 
+/// Properties for the app shell. These should be constructed literally when working with the app shell.
+pub struct ShellProps {
+    /// The path we're rendering for (not the template path, the full path, though parsed a little).
+    pub path: String,
+    /// The template to render for.
+    pub template: Rc<Template<TemplateNodeType>>,
+    /// Whether or not the router returned an incremental match (if this page exists on a template using incremental generation and it wasn't defined at build time).
+    pub was_incremental_match: bool,
+    /// The locale we're rendering in.
+    pub locale: String,
+    /// The router state.
+    pub router_state: RouterState,
+    /// The global state.
+    pub global_state: GlobalState,
+    /// A *client-side* translations manager to use (this manages caching translations).
+    pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
+    /// The error pages, for use if something fails.
+    pub error_pages: Rc<ErrorPages<DomNode>>,
+    /// The container responsible for the initial render from the server (non-interactive, this may need to be wiped).
+    pub initial_container: Element,
+    /// The container for reactive content.
+    pub container_rx_elem: Element,
+}
+
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
 /// broader template). Asynchronous Wasm is handled here, because only a few cases need it.
 // TODO handle exceptions higher up
 pub async fn app_shell(
-    path: String,
-    (template, was_incremental_match): (Rc<Template<TemplateNodeType>>, bool),
-    locale: String,
-    router_state: RouterState,
-    translations_manager: Rc<RefCell<ClientTranslationsManager>>,
-    error_pages: Rc<ErrorPages<DomNode>>,
-    (initial_container, container_rx_elem): (Element, Element), // The container that the server put initial load content into and the reactive container tht we'll actually use
+    ShellProps {
+        path,
+        template,
+        was_incremental_match,
+        locale,
+        router_state,
+        global_state,
+        translations_manager,
+        error_pages,
+        initial_container,
+        container_rx_elem,
+    }: ShellProps,
 ) {
     checkpoint("app_shell_entry");
     // Update the router state
@@ -281,14 +311,30 @@ pub async fn app_shell(
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
-                    move || template.render_for_template(state, translator, false, router_state_2),
+                    move || {
+                        template.render_for_template(
+                            state,
+                            translator,
+                            false,
+                            router_state_2,
+                            global_state,
+                        )
+                    },
                     &container_rx_elem,
                 );
             }
             #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                || template.render_for_template(state, translator, false, router_state_2),
+                || {
+                    template.render_for_template(
+                        state,
+                        translator,
+                        false,
+                        router_state_2,
+                        global_state,
+                    )
+                },
                 &container_rx_elem,
             );
             checkpoint("page_interactive");
@@ -380,6 +426,7 @@ pub async fn app_shell(
                                                 translator,
                                                 false,
                                                 router_state_2.clone(),
+                                                global_state,
                                             )
                                         },
                                         &container_rx_elem,
@@ -394,6 +441,7 @@ pub async fn app_shell(
                                             translator,
                                             false,
                                             router_state_2,
+                                            global_state,
                                         )
                                     },
                                     &container_rx_elem,

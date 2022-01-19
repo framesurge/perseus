@@ -7,15 +7,15 @@ use perseus::{
         error_pages::ErrorPageData,
         i18n::{detect_locale, ClientTranslationsManager},
         router::{RouteInfo, RouteVerdict},
-        shell::{app_shell, get_initial_state, get_render_cfg, InitialState},
+        shell::{app_shell, get_initial_state, get_render_cfg, InitialState, ShellProps},
     },
     plugins::PluginAction,
+    state::GlobalState,
     templates::{RouterState, TemplateNodeType},
     DomNode,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{cloned, create_effect, view, NodeRef, ReadSignal};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -64,8 +64,9 @@ pub fn run() -> Result<(), JsValue> {
     let error_pages = Rc::new(get_error_pages(&plugins));
 
     // Create the router state we'll need
-    // TODO
     let router_state = RouterState::default();
+    // Create a global state to use
+    let global_state = GlobalState::default();
 
     // Create the router we'll use for this app, based on the user's app definition
     create_app_route! {
@@ -89,7 +90,7 @@ pub fn run() -> Result<(), JsValue> {
                         // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                         // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                         let _ = route.get();
-                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, translations_manager, error_pages, initial_container) => async move {
+                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, global_state, translations_manager, error_pages, initial_container) => async move {
                             let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
                             checkpoint("router_entry");
                             match &route.get().as_ref().0 {
@@ -101,14 +102,19 @@ pub fn run() -> Result<(), JsValue> {
                                     locale,
                                     was_incremental_match
                                 }) => app_shell(
-                                    path.clone(),
-                                    (template.clone(), *was_incremental_match),
-                                    locale.clone(),
-                                    router_state.clone(),
-                                    // We give the app shell a translations manager and let it get the `Rc<Translator>` itself (because it can do async safely)
-                                    Rc::clone(&translations_manager),
-                                    Rc::clone(&error_pages),
-                                    (initial_container.unwrap().clone(), container_rx_elem.clone())
+                                    // TODO Make this not allocate so much...
+                                    ShellProps {
+                                        path: path.clone(),
+                                        template: template.clone(),
+                                        was_incremental_match: *was_incremental_match,
+                                        locale: locale.clone(),
+                                        router_state: router_state.clone(),
+                                        translations_manager: translations_manager.clone(),
+                                        error_pages: error_pages.clone(),
+                                        initial_container: initial_container.unwrap().clone(),
+                                        container_rx_elem: container_rx_elem.clone(),
+                                        global_state: global_state.clone()
+                                    }
                                 ).await,
                                 // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
                                 // Those all go to the same system that redirects to the appropriate locale
@@ -147,12 +153,7 @@ pub fn run() -> Result<(), JsValue> {
                     // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
                     // The main reason for this is that the router only intercepts click events from its children
                     view! {
-                        ContextProvider(ContextProviderProps {
-                            value: "test".to_string(),
-                            children: || view! {
-                                div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
-                            }
-                        })
+                        div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
                     }
                 }))
             }

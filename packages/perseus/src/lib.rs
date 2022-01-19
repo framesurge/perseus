@@ -71,7 +71,7 @@ pub use http::Request as HttpRequest;
 pub use wasm_bindgen_futures::spawn_local;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
-pub use perseus_macro::{autoserde, head, make_rx, template, test};
+pub use perseus_macro::{autoserde, head, make_rx, template, template_with_rx_state, test};
 pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, Route};
 
@@ -94,6 +94,11 @@ pub mod templates {
     #[cfg(feature = "hydrate")]
     #[doc(hidden)]
     pub type TemplateNodeType = sycamore::HydrateNode;
+}
+// TODO (v0.4.0) Refactor to put several more things inside here (everything to do with generation functions)
+/// Utilities for working with state.
+pub mod state {
+    pub use crate::global_state::GlobalState;
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.

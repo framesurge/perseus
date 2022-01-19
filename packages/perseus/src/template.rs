@@ -2,6 +2,7 @@
 
 use crate::default_headers::default_headers;
 use crate::errors::*;
+use crate::global_state::GlobalState;
 use crate::router::RouterState;
 use crate::translator::Translator;
 use crate::Html;
@@ -28,6 +29,9 @@ pub struct RenderCtx {
     pub translator: Translator,
     /// The router's state.
     pub router: RouterState,
+    /// The global state for the app. This is a type map to which templates can add state that they need to access at a later time. Typically, interfacing with this will be done
+    /// through the automation of the `#[perseus::template_with_rx_state(...)]` macro, but it can be used manually as well.
+    pub global_state: GlobalState,
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -235,6 +239,7 @@ impl<G: Html> Template<G> {
         translator: &Translator,
         is_server: bool,
         router_state: RouterState,
+        global_state: GlobalState,
     ) -> View<G> {
         view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
@@ -242,7 +247,8 @@ impl<G: Html> Template<G> {
                 value: RenderCtx {
                     is_server,
                     translator: translator.clone(),
-                    router: router_state
+                    router: router_state,
+                    global_state
                 },
                 children: || (self.template)(props)
             })
@@ -260,8 +266,9 @@ impl<G: Html> Template<G> {
                         // It's also only ever run on the server
                         is_server: true,
                         translator: translator.clone(),
-                        // The head string is rendered to a string, and so never has information about router state
-                        router: RouterState::default()
+                        // The head string is rendered to a string, and so never has information about router or global state
+                        router: RouterState::default(),
+                        global_state: GlobalState::default()
                     },
                     children: || (self.head)(props)
                 })
@@ -633,4 +640,12 @@ macro_rules! is_server {
         let render_ctx = ::sycamore::context::use_context::<::perseus::templates::RenderCtx>();
         render_ctx.is_server
     }};
+}
+
+/// Gets the `RenderCtx` efficiently.
+#[macro_export]
+macro_rules! get_render_ctx {
+    () => {
+        ::sycamore::context::use_context::<::perseus::templates::RenderCtx>()
+    };
 }
