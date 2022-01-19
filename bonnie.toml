@@ -9,7 +9,7 @@ setup.cmd.generic = [
     "mkdir -p tests/basic/.perseus/dist/exported",
     "bonnie copy-subcrates",
     "cargo build",
-    "npm i --prefix ./website",
+    "npm i --prefix .\\website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.cmd.targets.windows = [
@@ -18,7 +18,12 @@ setup.cmd.targets.windows = [
     # "Write-Host \"Setup Subcrates\"",
     "bonnie copy-subcrates",
     "cargo build",
-    "npm i --prefix website",
+    # --prefix is bugged on windows, even though devs claims otherwise
+    # https://github.com/npm/cli/issues/1290
+    # https://github.com/langium/langium/pull/95
+    "cd website",
+    "npm i",
+    "cd ..",
     "Write-Host \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.desc = "sets everything up for local development"
