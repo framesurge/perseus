@@ -2,7 +2,7 @@ use crate::decode_time_str::decode_time_str;
 use crate::errors::*;
 use crate::page_data::PageData;
 use crate::router::RouterState;
-use crate::state::GlobalState;
+use crate::state::PageStateStore;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{States, Template, TemplateMap};
 use crate::translations_manager::TranslationsManager;
@@ -82,7 +82,7 @@ async fn render_request_state(
             translator,
             true,
             RouterState::default(),
-            GlobalState::default(),
+            PageStateStore::default(),
         )
     });
     let head = template.render_head_str(state.clone(), translator);
@@ -173,7 +173,7 @@ async fn revalidate(
             translator,
             true,
             RouterState::default(),
-            GlobalState::default(),
+            PageStateStore::default(),
         )
     });
     let head = template.render_head_str(state.clone(), translator);
@@ -293,7 +293,7 @@ pub async fn get_page_for_template(
                             &translator,
                             true,
                             RouterState::default(),
-                            GlobalState::default(),
+                            PageStateStore::default(),
                         )
                     });
                     let head_val = template.render_head_str(state.clone(), &translator);

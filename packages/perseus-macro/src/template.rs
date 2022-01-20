@@ -210,17 +210,18 @@ pub fn template_with_rx_state_impl(input: TemplateFn, attr_args: AttributeArgs) 
                 ::sycamore::prelude::view! {
                     #component_name(
                         {
-                            // Check if properties of the reactive type are already in the global state
+                            // Check if properties of the reactive type are already in the page state store
                             // If they are, we'll use them (so state persists for templates across the whole app)
-                            let mut global_state = ::perseus::get_render_ctx!().global_state;
-                            match global_state.get() {
+                            // TODO Isolate this for pages
+                            let mut pss = ::perseus::get_render_ctx!().page_state_store;
+                            match pss.get() {
                                 Some(old_state) => old_state,
                                 None => {
                                     // If there are props, they will always be provided, the compiler just doesn't know that
                                     // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
                                     let rx_props = ::serde_json::from_str::<#unrx_ty>(&props.unwrap()).unwrap().make_rx();
                                     // They aren't in there, so insert them
-                                    global_state.add(rx_props.clone());
+                                    pss.add(rx_props.clone());
                                     rx_props
                                 }
                             }

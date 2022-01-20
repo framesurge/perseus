@@ -3,7 +3,7 @@ use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
-use crate::state::GlobalState;
+use crate::state::PageStateStore;
 use crate::template::Template;
 use crate::templates::{RouterLoadState, RouterState, TemplateNodeType};
 use crate::ErrorPages;
@@ -224,8 +224,8 @@ pub struct ShellProps {
     pub locale: String,
     /// The router state.
     pub router_state: RouterState,
-    /// The global state.
-    pub global_state: GlobalState,
+    /// The template state store.
+    pub page_state_store: PageStateStore,
     /// A *client-side* translations manager to use (this manages caching translations).
     pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     /// The error pages, for use if something fails.
@@ -246,7 +246,7 @@ pub async fn app_shell(
         was_incremental_match,
         locale,
         router_state,
-        global_state,
+        page_state_store,
         translations_manager,
         error_pages,
         initial_container,
@@ -317,7 +317,7 @@ pub async fn app_shell(
                             translator,
                             false,
                             router_state_2,
-                            global_state,
+                            page_state_store,
                         )
                     },
                     &container_rx_elem,
@@ -332,7 +332,7 @@ pub async fn app_shell(
                         translator,
                         false,
                         router_state_2,
-                        global_state,
+                        page_state_store,
                     )
                 },
                 &container_rx_elem,
@@ -426,7 +426,7 @@ pub async fn app_shell(
                                                 translator,
                                                 false,
                                                 router_state_2.clone(),
-                                                global_state,
+                                                page_state_store,
                                             )
                                         },
                                         &container_rx_elem,
@@ -441,7 +441,7 @@ pub async fn app_shell(
                                             translator,
                                             false,
                                             router_state_2,
-                                            global_state,
+                                            page_state_store,
                                         )
                                     },
                                     &container_rx_elem,

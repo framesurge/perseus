@@ -48,13 +48,13 @@ mod decode_time_str;
 mod default_headers;
 mod error_pages;
 mod export;
-mod global_state;
 mod html_shell;
 mod locale_detector;
 mod locales;
 mod log;
 mod macros;
 mod page_data;
+mod page_state_store;
 mod path_prefix;
 mod router;
 mod server;
@@ -98,7 +98,7 @@ pub mod templates {
 // TODO (v0.4.0) Refactor to put several more things inside here (everything to do with generation functions)
 /// Utilities for working with state.
 pub mod state {
-    pub use crate::global_state::GlobalState;
+    pub use crate::page_state_store::PageStateStore;
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.

@@ -3,20 +3,18 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-/// A container for global state in Perseus. This is designed as a context store, in which one of each type can be stored. Therefore, it acts very similarly to Sycamore's context system,
-/// though it's specifically designed for each template to store one reactive properties object. In theory, you could interact with this entirely independently of Perseus' state interface,
+/// A container for page state in Perseus. This is designed as a context store, in which one of each type can be stored. Therefore, it acts very similarly to Sycamore's context system,
+/// though it's specifically designed for each page to store one reactive properties object. In theory, you could interact with this entirely independently of Perseus' state interface,
 /// though this isn't recommended.
-///
-/// For now, `struct`s stored in global state should have their reactivity managed by the inserter (usually the Perseus interface). However, this will change radically when Sycamore's
-/// proposals for fine-grained reactivity are stabilized.
+// TODO Make this work with multiple pages for a single template
 #[derive(Default, Clone)]
-pub struct GlobalState {
+pub struct PageStateStore {
     /// A map of type IDs to anything, allowing one storage of each type (each type is intended to a properties `struct` for a template). Entries must be `Clone`able becasue we assume them
     /// to be `Signal`s or `struct`s composed of `Signal`s.
     // Technically, this should be `Any + Clone`, but that's not possible without something like `dyn_clone`, and we don't need it because we can restrict on the methods instead!
     map: Rc<RefCell<HashMap<TypeId, Box<dyn Any>>>>,
 }
-impl GlobalState {
+impl PageStateStore {
     /// Gets an element out of the state by its type.
     pub fn get<T: Any + Clone>(&self) -> Option<T> {
         let type_id = TypeId::of::<T>();

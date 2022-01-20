@@ -3,7 +3,7 @@
 use crate::errors::*;
 use crate::locales::Locales;
 use crate::router::RouterState;
-use crate::state::GlobalState;
+use crate::state::PageStateStore;
 use crate::templates::TemplateMap;
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
@@ -124,7 +124,7 @@ async fn gen_state_for_path(
                 translator,
                 true,
                 RouterState::default(),
-                GlobalState::default(),
+                PageStateStore::default(),
             )
         });
         // Write that prerendered HTML to a static file
@@ -159,7 +159,7 @@ async fn gen_state_for_path(
                 translator,
                 true,
                 RouterState::default(),
-                GlobalState::default(),
+                PageStateStore::default(),
             )
         });
         // Write that prerendered HTML to a static file
@@ -204,7 +204,7 @@ async fn gen_state_for_path(
                 translator,
                 true,
                 RouterState::default(),
-                GlobalState::default(),
+                PageStateStore::default(),
             )
         });
         let head_str = template.render_head_str(None, translator);

@@ -2,8 +2,8 @@
 
 use crate::default_headers::default_headers;
 use crate::errors::*;
-use crate::global_state::GlobalState;
 use crate::router::RouterState;
+use crate::state::PageStateStore;
 use crate::translator::Translator;
 use crate::Html;
 use crate::Request;
@@ -29,9 +29,10 @@ pub struct RenderCtx {
     pub translator: Translator,
     /// The router's state.
     pub router: RouterState,
-    /// The global state for the app. This is a type map to which templates can add state that they need to access at a later time. Typically, interfacing with this will be done
-    /// through the automation of the `#[perseus::template_with_rx_state(...)]` macro, but it can be used manually as well.
-    pub global_state: GlobalState,
+    /// The page state store for the app. This is a type map to which pages can add state that they need to access later. Usually, this will be interfaced with through
+    /// the `#[perseus::template_with_rx_state(...)]` macro, but it can be used manually as well to get the state of one page from another (provided that the target page has already
+    /// been visited).
+    pub page_state_store: PageStateStore,
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -239,7 +240,7 @@ impl<G: Html> Template<G> {
         translator: &Translator,
         is_server: bool,
         router_state: RouterState,
-        global_state: GlobalState,
+        page_state_store: PageStateStore,
     ) -> View<G> {
         view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
@@ -248,7 +249,7 @@ impl<G: Html> Template<G> {
                     is_server,
                     translator: translator.clone(),
                     router: router_state,
-                    global_state
+                    page_state_store
                 },
                 children: || (self.template)(props)
             })
@@ -266,9 +267,9 @@ impl<G: Html> Template<G> {
                         // It's also only ever run on the server
                         is_server: true,
                         translator: translator.clone(),
-                        // The head string is rendered to a string, and so never has information about router or global state
+                        // The head string is rendered to a string, and so never has information about router or page state
                         router: RouterState::default(),
-                        global_state: GlobalState::default()
+                        page_state_store: PageStateStore::default()
                     },
                     children: || (self.head)(props)
                 })
