@@ -5,7 +5,7 @@ use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
 use crate::state::PageStateStore;
 use crate::template::Template;
-use crate::templates::{RouterLoadState, RouterState, TemplateNodeType};
+use crate::templates::{PageProps, RouterLoadState, RouterState, TemplateNodeType};
 use crate::ErrorPages;
 use fmterr::fmt_err;
 use std::cell::RefCell;
@@ -254,6 +254,10 @@ pub async fn app_shell(
     }: ShellProps,
 ) {
     checkpoint("app_shell_entry");
+    let path_with_locale = match locale.as_str() {
+        "xx-XX" => path.clone(),
+        locale => format!("{}/{}", locale, &path),
+    };
     // Update the router state
     router_state.set_load_state(RouterLoadState::Loading(template.get_path()));
     // Check if this was an initial load and we already have the state
@@ -306,6 +310,10 @@ pub async fn app_shell(
             // Hydrate that static code using the acquired state
             let router_state_2 = router_state.clone();
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+            let page_props = PageProps {
+                path: path_with_locale,
+                state,
+            };
             #[cfg(not(feature = "hydrate"))]
             {
                 // If we aren't hydrating, we'll have to delete everything and re-render
@@ -313,7 +321,7 @@ pub async fn app_shell(
                 sycamore::render_to(
                     move || {
                         template.render_for_template(
-                            state,
+                            page_props,
                             translator,
                             false,
                             router_state_2,
@@ -328,7 +336,7 @@ pub async fn app_shell(
                 // This function provides translator context as needed
                 || {
                     template.render_for_template(
-                        state,
+                        page_props,
                         translator,
                         false,
                         router_state_2,
@@ -415,6 +423,10 @@ pub async fn app_shell(
                                 // Hydrate that static code using the acquired state
                                 let router_state_2 = router_state.clone();
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+                                let page_props = PageProps {
+                                    path: path_with_locale,
+                                    state: page_data.state,
+                                };
                                 #[cfg(not(feature = "hydrate"))]
                                 {
                                     // If we aren't hydrating, we'll have to delete everything and re-render
@@ -422,7 +434,7 @@ pub async fn app_shell(
                                     sycamore::render_to(
                                         move || {
                                             template.render_for_template(
-                                                page_data.state,
+                                                page_props,
                                                 translator,
                                                 false,
                                                 router_state_2.clone(),
@@ -437,7 +449,7 @@ pub async fn app_shell(
                                     // This function provides translator context as needed
                                     move || {
                                         template.render_for_template(
-                                            page_data.state,
+                                            page_props,
                                             translator,
                                             false,
                                             router_state_2,

@@ -11,7 +11,8 @@ pub fn about_page() -> View<G> {
     let pss = get_render_ctx!().page_state_store;
     // Get the state from the index page
     // If the user hasn't visited there yet, this won't exist
-    let username = match pss.get::<IndexPropsRx>() {
+    // The index page is just an empty string
+    let username = match pss.get::<IndexPropsRx>("") {
         Some(IndexPropsRx { username }) => username,
         None => Signal::new("".to_string()),
     };

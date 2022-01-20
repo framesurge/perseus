@@ -4,7 +4,7 @@ use crate::errors::*;
 use crate::locales::Locales;
 use crate::router::RouterState;
 use crate::state::PageStateStore;
-use crate::templates::TemplateMap;
+use crate::templates::{PageProps, TemplateMap};
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
 use crate::{
@@ -94,13 +94,20 @@ async fn gen_state_for_path(
         Some(stripped) => stripped.to_string(),
         None => full_path_without_locale,
     };
-    // Add the current locale to the front of that na dencode it as a URL so we can store a flat series of files
+    // Add the current locale to the front of that and dencode it as a URL so we can store a flat series of files
     // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
     let full_path_encoded = format!(
         "{}-{}",
         translator.get_locale(),
         urlencoding::encode(&full_path_without_locale)
     );
+    // And we'll need the full path with the locale for the `PageProps`
+    // If it's `xx-XX`, we should just have it without the locale (this may be interacted with by users)
+    let locale = translator.get_locale();
+    let full_path_with_locale = match locale.as_str() {
+        "xx-XX" => full_path_without_locale.clone(),
+        locale => format!("{}/{}", locale, &full_path_without_locale),
+    };
 
     // Handle static initial state generation
     // We'll only write a static state if one is explicitly generated
@@ -120,7 +127,10 @@ async fn gen_state_for_path(
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|| {
             template.render_for_template(
-                Some(initial_state.clone()),
+                PageProps {
+                    path: full_path_with_locale.clone(),
+                    state: Some(initial_state.clone()),
+                },
                 translator,
                 true,
                 RouterState::default(),
@@ -133,7 +143,13 @@ async fn gen_state_for_path(
             .await?;
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the normal content
-        let head_str = template.render_head_str(Some(initial_state), translator);
+        let head_str = template.render_head_str(
+            PageProps {
+                path: full_path_with_locale.clone(),
+                state: Some(initial_state.clone()),
+            },
+            translator,
+        );
         mutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -155,7 +171,10 @@ async fn gen_state_for_path(
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|| {
             template.render_for_template(
-                Some(initial_state.clone()),
+                PageProps {
+                    path: full_path_with_locale.clone(),
+                    state: Some(initial_state.clone()),
+                },
                 translator,
                 true,
                 RouterState::default(),
@@ -168,7 +187,13 @@ async fn gen_state_for_path(
             .await?;
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the normal content
-        let head_str = template.render_head_str(Some(initial_state), translator);
+        let head_str = template.render_head_str(
+            PageProps {
+                path: full_path_with_locale.clone(),
+                state: Some(initial_state),
+            },
+            translator,
+        );
         immutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -200,14 +225,23 @@ async fn gen_state_for_path(
     if template.is_basic() {
         let prerendered = sycamore::render_to_string(|| {
             template.render_for_template(
-                None,
+                PageProps {
+                    path: full_path_with_locale.clone(),
+                    state: None,
+                },
                 translator,
                 true,
                 RouterState::default(),
                 PageStateStore::default(),
             )
         });
-        let head_str = template.render_head_str(None, translator);
+        let head_str = template.render_head_str(
+            PageProps {
+                path: full_path_with_locale,
+                state: None,
+            },
+            translator,
+        );
         // Write that prerendered HTML to a static file
         immutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)

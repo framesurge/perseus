@@ -5,13 +5,21 @@ use crate::router::RouterState;
 use crate::state::PageStateStore;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{States, Template, TemplateMap};
+use crate::templates::PageProps;
 use crate::translations_manager::TranslationsManager;
 use crate::translator::Translator;
 use crate::Request;
 use chrono::{DateTime, Utc};
 use sycamore::prelude::SsrNode;
 
-// Note: the reason there are a ton of seemingly useless named lifetimes here is because of [this](https://github.com/rust-lang/rust/issues/63033)
+/// Gets the path with the locale, returning it without if i18n isn't being used.
+fn get_path_with_locale(path_without_locale: &str, translator: &Translator) -> String {
+    let locale = translator.get_locale();
+    match locale.as_str() {
+        "xx-XX" => path_without_locale.to_string(),
+        locale => format!("{}/{}", locale, path_without_locale),
+    }
+}
 
 /// Renders a template that uses state generated at build-time. This can't be used for pages that revalidate because their data are
 /// stored in a mutable store.
@@ -69,6 +77,7 @@ async fn render_request_state(
     path: &str,
     req: Request,
 ) -> Result<(String, String, Option<String>), ServerError> {
+    let path_with_locale = get_path_with_locale(path, translator);
     // Generate the initial state (this may generate an error, but there's no file that can't exist)
     let state = Some(
         template
@@ -78,14 +87,23 @@ async fn render_request_state(
     // Use that to render the static HTML
     let html = sycamore::render_to_string(|| {
         template.render_for_template(
-            state.clone(),
+            PageProps {
+                path: path_with_locale.clone(),
+                state: state.clone(),
+            },
             translator,
             true,
             RouterState::default(),
             PageStateStore::default(),
         )
     });
-    let head = template.render_head_str(state.clone(), translator);
+    let head = template.render_head_str(
+        PageProps {
+            path: path_with_locale,
+            state: state.clone(),
+        },
+        translator,
+    );
 
     Ok((html, head, state))
 }
@@ -158,6 +176,7 @@ async fn revalidate(
     path_encoded: &str,
     mutable_store: &impl MutableStore,
 ) -> Result<(String, String, Option<String>), ServerError> {
+    let path_with_locale = get_path_with_locale(path, translator);
     // We need to regenerate and cache this page for future usage (until the next revalidation)
     let state = Some(
         template
@@ -169,14 +188,23 @@ async fn revalidate(
     );
     let html = sycamore::render_to_string(|| {
         template.render_for_template(
-            state.clone(),
+            PageProps {
+                path: path_with_locale.clone(),
+                state: state.clone(),
+            },
             translator,
             true,
             RouterState::default(),
             PageStateStore::default(),
         )
     });
-    let head = template.render_head_str(state.clone(), translator);
+    let head = template.render_head_str(
+        PageProps {
+            path: path_with_locale,
+            state: state.clone(),
+        },
+        translator,
+    );
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's request-time only
     if template.revalidates_with_time() {
@@ -233,6 +261,7 @@ pub async fn get_page_for_template(
     }
     // Remove `/` from the path by encoding it as a URL (that's what we store) and add the locale
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path).to_string());
+    let path_with_locale = get_path_with_locale(path, &translator);
 
     // Only a single string of HTML is needed, and it will be overridden if necessary (priorities system)
     let mut html = String::new();
@@ -289,14 +318,23 @@ pub async fn get_page_for_template(
                     );
                     let html_val = sycamore::render_to_string(|| {
                         template.render_for_template(
-                            state.clone(),
+                            PageProps {
+                                path: path_with_locale.clone(),
+                                state: state.clone(),
+                            },
                             &translator,
                             true,
                             RouterState::default(),
                             PageStateStore::default(),
                         )
                     });
-                    let head_val = template.render_head_str(state.clone(), &translator);
+                    let head_val = template.render_head_str(
+                        PageProps {
+                            path: path_with_locale.clone(),
+                            state: state.clone(),
+                        },
+                        &translator,
+                    );
                     // Handle revalidation, we need to parse any given time strings into datetimes
                     // We don't need to worry about revalidation that operates by logic, that's request-time only
                     // Obviously we don't need to revalidate now, we just created it

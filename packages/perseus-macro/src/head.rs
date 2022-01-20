@@ -120,7 +120,7 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
     if arg.is_some() {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         quote! {
-            #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
+            #vis fn #name(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -129,14 +129,14 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
                 }
                 #name(
                     // If there are props, they will always be provided, the compiler just doesn't know that
-                    ::serde_json::from_str(&props.unwrap()).unwrap()
+                    ::serde_json::from_str(&props.state.unwrap()).unwrap()
                 )
             }
         }
     } else {
         // There are no arguments
         quote! {
-            #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
+            #vis fn #name(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*

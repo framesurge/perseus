@@ -120,7 +120,7 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
     if arg.is_some() {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -130,7 +130,7 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
                 ::sycamore::prelude::view! {
                     #component_name(
                         // If there are props, they will always be provided, the compiler just doesn't know that
-                        ::serde_json::from_str(&props.unwrap()).unwrap()
+                        ::serde_json::from_str(&props.state.unwrap()).unwrap()
                     )
                 }
             }
@@ -138,7 +138,7 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
     } else {
         // There are no arguments
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -200,7 +200,7 @@ pub fn template_with_rx_state_impl(input: TemplateFn, attr_args: AttributeArgs) 
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         // We'll also make it reactive and potentially add it to the global store
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -214,14 +214,14 @@ pub fn template_with_rx_state_impl(input: TemplateFn, attr_args: AttributeArgs) 
                             // If they are, we'll use them (so state persists for templates across the whole app)
                             // TODO Isolate this for pages
                             let mut pss = ::perseus::get_render_ctx!().page_state_store;
-                            match pss.get() {
+                            match pss.get(&props.path) {
                                 Some(old_state) => old_state,
                                 None => {
                                     // If there are props, they will always be provided, the compiler just doesn't know that
                                     // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                                    let rx_props = ::serde_json::from_str::<#unrx_ty>(&props.unwrap()).unwrap().make_rx();
+                                    let rx_props = ::serde_json::from_str::<#unrx_ty>(&props.state.unwrap()).unwrap().make_rx();
                                     // They aren't in there, so insert them
-                                    pss.add(rx_props.clone());
+                                    pss.add(&props.path, rx_props.clone());
                                     rx_props
                                 }
                             }
@@ -233,7 +233,7 @@ pub fn template_with_rx_state_impl(input: TemplateFn, attr_args: AttributeArgs) 
     } else {
         // There are no arguments
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::std::option::Option<::std::string::String>) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
