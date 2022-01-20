@@ -63,9 +63,9 @@ dev.subcommands.example.cmd.generic = [
 ]
 dev.subcommands.example.cmd.targets.windows = [
     "bonnie copy-subcrates",
-    "cd packages/perseus-cli",
+    "cd packages\\perseus-cli",
     # Point this live version of the CLI at the given example
-    "powershell -Command { $env:TEST_EXAMPLE=\"../../examples/%example\"; cargo run -- %% }"
+    "powershell -Command { $env:TEST_EXAMPLE=\"..\\..\\examples\\%example\"; cargo run -- %% }"
 ]
 dev.subcommands.example.args = [ "example" ]
 dev.subcommands.example.desc = "runs the given example using a live version of the cli"
