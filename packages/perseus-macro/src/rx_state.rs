@@ -150,6 +150,33 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         // We filtered out the other types before
         _ => unreachable!(),
     };
+    let make_unrx_fields = match orig_struct.fields {
+        syn::Fields::Named(ref mut fields) => {
+            let mut field_assignments = quote!();
+            for field in fields.named.iter_mut() {
+                // We know it has an identifier because it's a named field
+                let field_name = field.ident.as_ref().unwrap();
+                // Check if this field was registered as one to use nested reactivity
+                if nested_fields_map.contains_key(field.ident.as_ref().unwrap()) {
+                    field_assignments.extend(quote! {
+                        #field_name: self.#field_name.make_unrx(),
+                    })
+                } else {
+                    // We can `.clone()` the field because we implement `Clone` on both the new and the original `struct`s, meaning all fields must also be `Clone`
+                    field_assignments.extend(quote! {
+                        #field_name: (*self.#field_name.get_untracked()).clone(),
+                    });
+                }
+            }
+            quote! {
+                #ident {
+                    #field_assignments
+                }
+            }
+        }
+        // We filtered out the other types before
+        _ => unreachable!(),
+    };
 
     quote! {
         // We add a Serde derivation because it will always be necessary for Perseus on the original `struct`, and it's really difficult and brittle to filter it out
@@ -166,8 +193,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         impl#generics ::perseus::state::MakeUnrx for #name#generics {
             type Unrx = #ident#generics;
             fn make_unrx(self) -> #ident#generics {
-                todo!()
-                // #make_rx_fields
+                #make_unrx_fields
             }
         }
     }
