@@ -13,7 +13,7 @@ pub struct IndexProps {
 // This special macro (normally we'd use `template(IndexProps)`) converts the state we generate elsewhere to a reactive version
 // We need to tell it the name of the unreactive properties we created to start with (unfortunately the compiler isn't smart enough to figure that out yet)
 // This will also add our reactive properties to the global state store, and, if they're already there, it'll use the existing one
-#[perseus::template_with_rx_state(
+#[perseus::template2(
     component = "IndexPage",
     unrx_props = "IndexProps",
     global_state = "AppState"

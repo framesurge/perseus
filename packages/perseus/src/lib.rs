@@ -72,7 +72,7 @@ pub use http::Request as HttpRequest;
 pub use wasm_bindgen_futures::spawn_local;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
-pub use perseus_macro::{autoserde, head, make_rx, template, template_with_rx_state, test};
+pub use perseus_macro::{autoserde, head, make_rx, template, template2, test};
 pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, Route};
 

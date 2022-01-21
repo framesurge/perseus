@@ -79,8 +79,20 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
 /// Additionally, this macro will add the reactive state to the global state store, and will fetch it from there, allowing template state to persists between page changes. Additionally,
 /// that state can be accessed by other templates if necessary.
 // TODO Rename this to `template2` and rewrite docs on it with examples
+/// The new version of `#[template]` designed for reactive state. This can interface automatically with global state, and will automatically provide Sycamore `#[component]` annotations. To
+/// use this, you'll need to provide your component's name (e.g. `IndexPage`) as `#[template2(component_name = )`.
+///
+/// The first argument your template function can take is state generated for it (e.g. by the *build state* strategy). If you use this, you'll need to provide the key `unrx_props` as well to this
+/// macro. The argument your template function takes should be the reactive version of your state `struct` (generated with `#[make_rx]` usually), and then you can tell us the name of unreactive
+/// version with `unrx_props = `.
+///
+/// The second argument your template function can take is a global state generated with the `GlobalStateCreator`. If you provide this, with its type being the reactive version, you'll need to
+/// provide the key `global_state = ` being the unreactive version.
+///
+/// **Warning:** this macro is currently exempt from semantic versioning, and breaking changes may be introduced here at any time! If you want stability, use the `#[template]` macro (but you won't
+/// get access to Perseus' reactive state platform).
 #[proc_macro_attribute]
-pub fn template_with_rx_state(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn template2(args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template2::TemplateFn);
     let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
     // Parse macro arguments with `darling`

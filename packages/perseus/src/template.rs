@@ -19,8 +19,7 @@ use std::sync::Arc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{view, View};
 
-/// The properties that every page will be initialized with. You shouldn't ever need to interact with this unless you decide not to use `#[perseus::template(...)]` or
-/// `#[perseus::template_with_rx_state(...)]`.
+/// The properties that every page will be initialized with. You shouldn't ever need to interact with this unless you decide not to use the template macros.
 #[derive(Clone)]
 pub struct PageProps {
     /// The path it's rendering at.
