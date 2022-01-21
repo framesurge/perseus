@@ -42,7 +42,7 @@ async fn main() {
     use std::net::SocketAddr;
 
     let is_standalone = get_standalone_and_act();
-    let props = get_props(is_standalone).await;
+    let props = get_props(is_standalone);
     let (host, port) = get_host_and_port();
     let addr: SocketAddr = format!("{}:{}", host, port)
         .parse()
