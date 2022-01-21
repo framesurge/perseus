@@ -169,15 +169,16 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                 // This means that we can pass an `Option<String>` around safely and then deal with it at the template site
                 let global_state_refcell = ::perseus::get_render_ctx!().global_state;
                 let global_state = global_state_refcell.borrow();
-                if (&global_state).downcast_ref::<::std::option::Option::<()>>().is_some() {
+                // This will work if the global state hasn't been initialized yet, because it's the default value that Perseus sets
+                if global_state.as_any().downcast_ref::<::std::option::Option::<()>>().is_some() {
                     // We can downcast it as the type set by the core render system, so we're the first page to be loaded
                     // In that case, we'll set the global state properly
                     drop(global_state);
-                    let mut global_state = global_state_refcell.borrow_mut();
+                    let mut global_state_mut = global_state_refcell.borrow_mut();
                     // This will be defined if we're the first page
                     let global_state_props = &props.global_state.unwrap();
                     let new_global_state = ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(global_state_props).unwrap().make_rx();
-                    *global_state = ::std::boxed::Box::new(new_global_state);
+                    *global_state_mut = ::std::boxed::Box::new(new_global_state);
                     // The component function can now access this in `RenderCtx`
                 }
                 // The user's function
@@ -189,7 +190,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                         let global_state = ::perseus::get_render_ctx!().global_state;
                         let global_state = global_state.borrow();
                         // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
-                        let global_state_ref = (&global_state).downcast_ref::<#global_state_rx>().unwrap();
+                        let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
                         (*global_state_ref).clone()
                     };
                     #block

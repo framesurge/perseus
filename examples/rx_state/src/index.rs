@@ -1,3 +1,4 @@
+use perseus::state::Freeze;
 use perseus::{Html, RenderFnResultWithCause, Template};
 use sycamore::prelude::*;
 
@@ -16,6 +17,9 @@ pub struct IndexProps {
 #[perseus::template2(IndexPage)]
 pub fn index_page(IndexPropsRx { username }: IndexPropsRx, global_state: AppStateRx) -> View<G> {
     let username_2 = username.clone(); // This is necessary until Sycamore's new reactive primitives are released
+    let frozen_app = Signal::new(String::new()); // This is not part of our data model, so it's not part of the state properties (everything else should be though)
+    let render_ctx = perseus::get_render_ctx!();
+
     view! {
         p { (format!("Greetings, {}!", username.get())) }
         input(bind:value = username_2, placeholder = "Username")
@@ -23,6 +27,12 @@ pub fn index_page(IndexPropsRx { username }: IndexPropsRx, global_state: AppStat
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
         a(href = "about") { "About" }
+        br()
+
+        button(on:click = cloned!(frozen_app, render_ctx => move |_| {
+            frozen_app.set(render_ctx.freeze());
+        })) { "Freeze!" }
+        p { (frozen_app.get()) }
     }
 }
 

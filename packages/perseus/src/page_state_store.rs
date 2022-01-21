@@ -1,14 +1,8 @@
-use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-/// A key type for the `PageStateStore` that denotes both a page's state type and its URL.
-#[derive(Hash, PartialEq, Eq)]
-pub struct PageStateKey {
-    state_type: TypeId,
-    url: String,
-}
+use crate::{rx_state::Freeze, state::AnyFreeze};
 
 /// A container for page state in Perseus. This is designed as a context store, in which one of each type can be stored. Therefore, it acts very similarly to Sycamore's context system,
 /// though it's specifically designed for each page to store one reactive properties object. In theory, you could interact with this entirely independently of Perseus' state interface,
@@ -19,47 +13,41 @@ pub struct PageStateKey {
 // TODO Make this work with multiple pages for a single template
 #[derive(Default, Clone)]
 pub struct PageStateStore {
-    /// A map of type IDs to anything, allowing one storage of each type (each type is intended to a properties `struct` for a template). Entries must be `Clone`able becasue we assume them
+    /// A map of type IDs to anything, allowing one storage of each type (each type is intended to a properties `struct` for a template). Entries must be `Clone`able because we assume them
     /// to be `Signal`s or `struct`s composed of `Signal`s.
     // Technically, this should be `Any + Clone`, but that's not possible without something like `dyn_clone`, and we don't need it because we can restrict on the methods instead!
-    map: Rc<RefCell<HashMap<PageStateKey, Box<dyn Any>>>>,
+    map: Rc<RefCell<HashMap<String, Box<dyn AnyFreeze>>>>,
 }
 impl PageStateStore {
-    /// Gets an element out of the state by its type and URL.
-    pub fn get<T: Any + Clone>(&self, url: &str) -> Option<T> {
-        let type_id = TypeId::of::<T>();
-        let key = PageStateKey {
-            state_type: type_id,
-            url: url.to_string(),
-        };
+    /// Gets an element out of the state by its type and URL. If the element stored for the given URL doesn't match the provided type, `None` will be returned.
+    pub fn get<T: AnyFreeze + Clone>(&self, url: &str) -> Option<T> {
         let map = self.map.borrow();
-        map.get(&key).map(|val| {
-            if let Some(val) = val.downcast_ref::<T>() {
-                (*val).clone()
-            } else {
-                // We extracted it by its type ID, it certainly should be able to downcast to that same type ID!
-                unreachable!()
-            }
-        })
+        map.get(url)
+            .map(|val| val.as_any().downcast_ref::<T>().map(|val| (*val).clone()))
+            .flatten()
     }
-    /// Adds a new element to the state by its type and URL. Any existing element with the same type and URL will be silently overriden (use `.contains()` to check first if needed).
-    pub fn add<T: Any + Clone>(&mut self, url: &str, val: T) {
-        let type_id = TypeId::of::<T>();
-        let key = PageStateKey {
-            state_type: type_id,
-            url: url.to_string(),
-        };
+    /// Adds a new element to the state by its URL. Any existing element with the same URL will be silently overriden (use `.contains()` to check first if needed).
+    pub fn add<T: AnyFreeze + Clone>(&mut self, url: &str, val: T) {
         let mut map = self.map.borrow_mut();
-        map.insert(key, Box::new(val));
+        map.insert(url.to_string(), Box::new(val));
     }
-    /// Checks if the state contains the element of the given type for the given page.
-    pub fn contains<T: Any + Clone>(&self, url: &str) -> bool {
-        let type_id = TypeId::of::<T>();
-        let key = PageStateKey {
-            state_type: type_id,
-            url: url.to_string(),
-        };
-        self.map.borrow().contains_key(&key)
+    /// Checks if the state contains an entry for the given URL.
+    pub fn contains(&self, url: &str) -> bool {
+        self.map.borrow().contains_key(url)
+    }
+}
+// Good for convenience, and there's no reason we can't do this
+impl Freeze for PageStateStore {
+    // TODO Avoid literally cloning all the page states here if possible
+    fn freeze(&self) -> String {
+        let map = self.map.borrow();
+        let mut str_map = HashMap::new();
+        for (k, v) in map.iter() {
+            let v_str = v.freeze();
+            str_map.insert(k, v_str);
+        }
+
+        serde_json::to_string(&str_map).unwrap()
     }
 }
 

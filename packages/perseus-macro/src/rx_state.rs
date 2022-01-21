@@ -196,5 +196,12 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                 #make_unrx_fields
             }
         }
+        impl#generics ::perseus::state::Freeze for #name#generics {
+            fn freeze(&self) -> ::std::string::String {
+                let unrx = #make_unrx_fields;
+                // TODO Is this `.unwrap()` safe?
+                ::serde_json::to_string(&unrx).unwrap()
+            }
+        }
     }
 }

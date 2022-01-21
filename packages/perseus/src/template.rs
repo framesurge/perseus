@@ -2,7 +2,10 @@
 
 use crate::default_headers::default_headers;
 use crate::errors::*;
+use crate::router::RouterLoadState;
 use crate::router::RouterState;
+use crate::rx_state::Freeze;
+use crate::state::AnyFreeze;
 use crate::state::PageStateStore;
 use crate::translator::Translator;
 use crate::Html;
@@ -10,7 +13,8 @@ use crate::Request;
 use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
-use std::any::Any;
+use serde::Deserialize;
+use serde::Serialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::pin::Pin;
@@ -28,6 +32,17 @@ pub struct PageProps {
     pub state: Option<String>,
     /// The global state, stringified. This will be `Some(_)` if state was generated, we just can't prove that to the compiler.
     pub global_state: Option<String>,
+}
+
+/// A representation of a frozen app.
+#[derive(Serialize, Deserialize)]
+pub struct FrozenApp {
+    /// The frozen global state. If it was never initialized, this will be `None`.
+    pub global_state: String,
+    /// The frozen route.
+    pub route: String,
+    /// The frozen page state store.
+    pub page_state_store: String,
 }
 
 /// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
@@ -51,7 +66,24 @@ pub struct RenderCtx {
     ///
     /// Because we store `dyn Any` in here, we initialize it as `Option::None`, and then the template macro (which does the heavy lifting for global state) will find that it can't downcast
     /// to the user's global state type, which will prompt it to deserialize whatever global state it was given and then write that here.
-    pub global_state: Rc<RefCell<Box<dyn Any>>>,
+    pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
+}
+impl Freeze for RenderCtx {
+    /// 'Freezes' the relevant parts of the render configuration to a serialized `String` that can later be used to re-initialize the app to the same state at the time of freezing.
+    fn freeze(&self) -> String {
+        let frozen_app = FrozenApp {
+            global_state: self.global_state.borrow().freeze(),
+            route: match &*self.router.get_load_state().get_untracked() {
+                RouterLoadState::Loaded { path, .. } => path,
+                RouterLoadState::Loading { path, .. } => path,
+                // If we encounter this during re-hydration, we won't try to set the URL in the browser
+                RouterLoadState::Server => "SERVER",
+            }
+            .to_string(),
+            page_state_store: self.page_state_store.freeze(),
+        };
+        serde_json::to_string(&frozen_app).unwrap()
+    }
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -263,7 +295,7 @@ impl<G: Html> Template<G> {
         is_server: bool,
         router_state: RouterState,
         page_state_store: PageStateStore,
-        global_state: Rc<RefCell<Box<dyn Any>>>,
+        global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
     ) -> View<G> {
         view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures

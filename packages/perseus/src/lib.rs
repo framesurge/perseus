@@ -102,7 +102,7 @@ pub mod templates {
 pub mod state {
     pub use crate::global_state::GlobalStateCreator;
     pub use crate::page_state_store::PageStateStore;
-    pub use crate::rx_state::{MakeRx, MakeUnrx};
+    pub use crate::rx_state::*;
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.

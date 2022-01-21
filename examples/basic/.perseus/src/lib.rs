@@ -10,12 +10,12 @@ use perseus::{
         shell::{app_shell, get_initial_state, get_render_cfg, InitialState, ShellProps},
     },
     plugins::PluginAction,
-    state::PageStateStore,
+    state::{AnyFreeze, PageStateStore},
     templates::{RouterState, TemplateNodeType},
     DomNode,
 };
+use std::cell::RefCell;
 use std::rc::Rc;
-use std::{any::Any, cell::RefCell};
 use sycamore::prelude::{cloned, create_effect, view, NodeRef, ReadSignal};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -68,7 +68,7 @@ pub fn run() -> Result<(), JsValue> {
     // Create a page state store to use
     let pss = PageStateStore::default();
     // Create a new global state set to `None`, which will be updated and handled entirely by the template macro from here on
-    let global_state: Rc<RefCell<Box<dyn Any>>> =
+    let global_state: Rc<RefCell<Box<dyn AnyFreeze>>> =
         Rc::new(RefCell::new(Box::new(Option::<()>::None)));
 
     // Create the router we'll use for this app, based on the user's app definition

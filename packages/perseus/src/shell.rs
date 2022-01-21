@@ -3,12 +3,11 @@ use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
-use crate::state::PageStateStore;
+use crate::state::{AnyFreeze, PageStateStore};
 use crate::template::Template;
 use crate::templates::{PageProps, RouterLoadState, RouterState, TemplateNodeType};
 use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -255,7 +254,7 @@ pub struct ShellProps {
     /// The container for reactive content.
     pub container_rx_elem: Element,
     /// The global state store. Brekaing it out here prevents it being overriden every time a new template loads.
-    pub global_state: Rc<RefCell<Box<dyn Any>>>,
+    pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -282,7 +281,10 @@ pub async fn app_shell(
         locale => format!("{}/{}", locale, &path),
     };
     // Update the router state
-    router_state.set_load_state(RouterLoadState::Loading(template.get_path()));
+    router_state.set_load_state(RouterLoadState::Loading {
+        template_name: template.get_path(),
+        path: path_with_locale.clone(),
+    });
     // Get the global state if possible (we'll want this in all cases except errors)
     // If this is a subsequent load, the template macro will have already set up the global state, and it will ignore whatever we naively give it (so we'll give it `None`)
     let global_state = get_global_state();
@@ -345,7 +347,7 @@ pub async fn app_shell(
             let router_state_2 = router_state.clone();
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
             let page_props = PageProps {
-                path: path_with_locale,
+                path: path_with_locale.clone(),
                 state,
                 global_state,
             };
@@ -384,7 +386,10 @@ pub async fn app_shell(
             );
             checkpoint("page_interactive");
             // Update the router state
-            router_state.set_load_state(RouterLoadState::Loaded(path));
+            router_state.set_load_state(RouterLoadState::Loaded {
+                template_name: path,
+                path: path_with_locale,
+            });
         }
         // If we have no initial state, we should proceed as usual, fetching the content and state from the server
         InitialState::NotPresent => {
@@ -461,10 +466,11 @@ pub async fn app_shell(
                                 let router_state_2 = router_state.clone();
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                                 let page_props = PageProps {
-                                    path: path_with_locale,
+                                    path: path_with_locale.clone(),
                                     state: page_data.state,
                                     global_state,
                                 };
+                                let template_name = template.get_path();
                                 #[cfg(not(feature = "hydrate"))]
                                 {
                                     // If we aren't hydrating, we'll have to delete everything and re-render
@@ -500,7 +506,10 @@ pub async fn app_shell(
                                 );
                                 checkpoint("page_interactive");
                                 // Update the router state
-                                router_state.set_load_state(RouterLoadState::Loaded(path));
+                                router_state.set_load_state(RouterLoadState::Loaded {
+                                    template_name,
+                                    path: path_with_locale,
+                                });
                             }
                             // If the page failed to serialize, an exception has occurred
                             Err(err) => panic!("page data couldn't be serialized: '{}'", err),

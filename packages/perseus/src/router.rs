@@ -321,10 +321,20 @@ impl RouterState {
 /// The current load state of the router. You can use this to be warned of when a new page is about to be loaded (and display a loading bar or the like, perhaps).
 #[derive(Clone)]
 pub enum RouterLoadState {
-    /// The page has been loaded. The name of the template is attached.
-    Loaded(String),
+    /// The page has been loaded.
+    Loaded {
+        /// The name of the template being loaded (mostly for convenience).
+        template_name: String,
+        /// The full path to the new page being loaded (including the locale, if we're using i18n).
+        path: String,
+    },
     /// A new page is being loaded, and will soon replace whatever is currently loaded. The name of the new template is attached.
-    Loading(String),
+    Loading {
+        /// The name of the template being loaded (mostly for convenience).
+        template_name: String,
+        /// The full path to the new page being loaded (including the locale, if we're using i18n).
+        path: String,
+    },
     /// We're on the server, and there is no router. Whatever you render based on this state will appear when the user first loads the page, before it's made interactive.
     Server,
 }
