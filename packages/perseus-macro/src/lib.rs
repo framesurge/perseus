@@ -30,6 +30,7 @@ mod autoserde;
 mod head;
 mod rx_state;
 mod template;
+mod template2;
 mod test;
 
 use darling::FromMeta;
@@ -77,12 +78,20 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
 ///
 /// Additionally, this macro will add the reactive state to the global state store, and will fetch it from there, allowing template state to persists between page changes. Additionally,
 /// that state can be accessed by other templates if necessary.
+// TODO Rename this to `template2` and rewrite docs on it with examples
 #[proc_macro_attribute]
 pub fn template_with_rx_state(args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as template::TemplateFn);
+    let parsed = syn::parse_macro_input!(input as template2::TemplateFn);
     let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
+    // Parse macro arguments with `darling`
+    let args = match template2::TemplateArgs::from_list(&attr_args) {
+        Ok(v) => v,
+        Err(e) => {
+            return TokenStream::from(e.write_errors());
+        }
+    };
 
-    template::template_with_rx_state_impl(parsed, attr_args).into()
+    template2::template_impl(parsed, args).into()
 }
 
 /// Labels a function as a Perseus head function, which is very similar to a template, but

@@ -10,6 +10,8 @@ use crate::Request;
 use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
+use std::any::Any;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
@@ -19,11 +21,14 @@ use sycamore::prelude::{view, View};
 
 /// The properties that every page will be initialized with. You shouldn't ever need to interact with this unless you decide not to use `#[perseus::template(...)]` or
 /// `#[perseus::template_with_rx_state(...)]`.
+#[derive(Clone)]
 pub struct PageProps {
     /// The path it's rendering at.
     pub path: String,
     /// The state provided to the page. This will be `Some(_)` if state was generated, we just can't prove that to the compiler.
     pub state: Option<String>,
+    /// The global state, stringified. This will be `Some(_)` if state was generated, we just can't prove that to the compiler.
+    pub global_state: Option<String>,
 }
 
 /// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
@@ -42,6 +47,12 @@ pub struct RenderCtx {
     /// the `#[perseus::template_with_rx_state(...)]` macro, but it can be used manually as well to get the state of one page from another (provided that the target page has already
     /// been visited).
     pub page_state_store: PageStateStore,
+    /// The user-provided global state. This is stored on the heap to avoid a type parameter that would be needed every time we had to access the render context (which would be very difficult
+    /// to pass around inside Perseus).
+    ///
+    /// Because we store `dyn Any` in here, we initialize it as `Option::None`, and then the template macro (which does the heavy lifting for global state) will find that it can't downcast
+    /// to the user's global state type, which will prompt it to deserialize whatever global state it was given and then write that here.
+    pub global_state: Rc<RefCell<Box<dyn Any>>>,
 }
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
@@ -91,10 +102,12 @@ pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + 
 pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
 /// A generic return type for asynchronous functions that we need to store in a struct.
-type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
+pub type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
 
 /// Creates traits that prevent users from having to pin their functions' return types. We can't make a generic one until desugared function
 /// types are stabilized (https://github.com/rust-lang/rust/issues/29625).
+#[macro_export]
+#[doc(hidden)]
 macro_rules! make_async_trait {
     ($name:ident, $return_ty:ty$(, $arg_name:ident: $arg:ty)*) => {
         // These traits should be purely internal, the user is likely to shoot themselves in the foot
@@ -243,8 +256,32 @@ impl<G: Html> Template<G> {
     }
 
     // Render executors
-    /// Executes the user-given function that renders the template on the server-side (build or request time).
-    pub fn render_for_template(
+    /// Executes the user-given function that renders the template on the client-side ONLY. This takes in an extsing global state.
+    pub fn render_for_template_client(
+        &self,
+        props: PageProps,
+        translator: &Translator,
+        is_server: bool,
+        router_state: RouterState,
+        page_state_store: PageStateStore,
+        global_state: Rc<RefCell<Box<dyn Any>>>,
+    ) -> View<G> {
+        view! {
+            // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
+            ContextProvider(ContextProviderProps {
+                value: RenderCtx {
+                    is_server,
+                    translator: translator.clone(),
+                    router: router_state,
+                    page_state_store,
+                    global_state
+                },
+                children: || (self.template)(props)
+            })
+        }
+    }
+    /// Executes the user-given function that renders the template on the server-side ONLY. This automatically initializes an isolated global state.
+    pub fn render_for_template_server(
         &self,
         props: PageProps,
         translator: &Translator,
@@ -259,7 +296,8 @@ impl<G: Html> Template<G> {
                     is_server,
                     translator: translator.clone(),
                     router: router_state,
-                    page_state_store
+                    page_state_store,
+                    global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None)))
                 },
                 children: || (self.template)(props)
             })
@@ -279,7 +317,8 @@ impl<G: Html> Template<G> {
                         translator: translator.clone(),
                         // The head string is rendered to a string, and so never has information about router or page state
                         router: RouterState::default(),
-                        page_state_store: PageStateStore::default()
+                        page_state_store: PageStateStore::default(),
+                        global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None)))
                     },
                     children: || (self.head)(props)
                 })

@@ -1,11 +1,8 @@
-use darling::util::PathList;
-use darling::FromMeta;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, AttributeArgs, Block, FnArg, Generics, Ident, Item, ItemFn, NestedMeta, Result,
-    ReturnType, Type, Visibility,
+    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
 };
 
 /// A function that can be wrapped in the Perseus test sub-harness.
@@ -131,101 +128,6 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
                     #component_name(
                         // If there are props, they will always be provided, the compiler just doesn't know that
                         ::serde_json::from_str(&props.state.unwrap()).unwrap()
-                    )
-                }
-            }
-        }
-    } else {
-        // There are no arguments
-        quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
-                // The user's function, with Sycamore component annotations and the like preserved
-                // We know this won't be async because Sycamore doesn't allow that
-                #(#attrs)*
-                fn #name#generics(#arg) -> #return_type {
-                    #block
-                }
-                ::sycamore::prelude::view! {
-                    #component_name()
-                }
-            }
-        }
-    }
-}
-
-#[derive(FromMeta)]
-pub struct TemplateWithRxStateArgs(pub PathList);
-
-pub fn template_with_rx_state_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream {
-    let TemplateFn {
-        block,
-        arg,
-        generics,
-        vis,
-        attrs,
-        name,
-        return_type,
-    } = input;
-
-    // We want two arguments only
-    if attr_args.len() != 2 {
-        return quote!(compile_error!("this macro always takes two arguments"));
-    }
-    // This must always be provided
-    let component_name = match &attr_args[0] {
-        NestedMeta::Meta(meta) => meta.path().get_ident(),
-        nested_meta => {
-            return syn::Error::new_spanned(
-                nested_meta,
-                "first argument must be a component identifier",
-            )
-            .to_compile_error()
-        }
-    };
-    // As must this
-    let unrx_ty = match &attr_args[1] {
-        NestedMeta::Meta(meta) => meta.path().get_ident(),
-        nested_meta => {
-            return syn::Error::new_spanned(
-                nested_meta,
-                "second argument must be the identifier for your unreactive `struct`",
-            )
-            .to_compile_error()
-        }
-    };
-
-    // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
-    // This is dependent on what arguments the template takes
-    if arg.is_some() {
-        // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
-        // We'll also make it reactive and potentially add it to the global store
-        quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
-                // The user's function, with Sycamore component annotations and the like preserved
-                // We know this won't be async because Sycamore doesn't allow that
-                #(#attrs)*
-                fn #name#generics(#arg) -> #return_type {
-                    #block
-                }
-                ::sycamore::prelude::view! {
-                    #component_name(
-                        {
-                            // Check if properties of the reactive type are already in the page state store
-                            // If they are, we'll use them (so state persists for templates across the whole app)
-                            // TODO Isolate this for pages
-                            let mut pss = ::perseus::get_render_ctx!().page_state_store;
-                            match pss.get(&props.path) {
-                                Some(old_state) => old_state,
-                                None => {
-                                    // If there are props, they will always be provided, the compiler just doesn't know that
-                                    // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                                    let rx_props = ::serde_json::from_str::<#unrx_ty>(&props.state.unwrap()).unwrap().make_rx();
-                                    // They aren't in there, so insert them
-                                    pss.add(&props.path, rx_props.clone());
-                                    rx_props
-                                }
-                            }
-                        }
                     )
                 }
             }

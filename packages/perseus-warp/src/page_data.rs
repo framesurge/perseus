@@ -32,6 +32,7 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
+    global_state: Arc<Option<String>>,
 ) -> Response<String> {
     let templates = &opts.templates_map;
     // Check if the locale is supported
@@ -56,6 +57,7 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
             template,
             was_incremental_match,
             http_req,
+            &global_state,
             (immutable_store.as_ref(), mutable_store.as_ref()),
             translations_manager.as_ref(),
         )

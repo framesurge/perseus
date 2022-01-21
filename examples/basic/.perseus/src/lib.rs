@@ -14,8 +14,8 @@ use perseus::{
     templates::{RouterState, TemplateNodeType},
     DomNode,
 };
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::{any::Any, cell::RefCell};
 use sycamore::prelude::{cloned, create_effect, view, NodeRef, ReadSignal};
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -67,6 +67,9 @@ pub fn run() -> Result<(), JsValue> {
     let router_state = RouterState::default();
     // Create a page state store to use
     let pss = PageStateStore::default();
+    // Create a new global state set to `None`, which will be updated and handled entirely by the template macro from here on
+    let global_state: Rc<RefCell<Box<dyn Any>>> =
+        Rc::new(RefCell::new(Box::new(Option::<()>::None)));
 
     // Create the router we'll use for this app, based on the user's app definition
     create_app_route! {
@@ -90,7 +93,7 @@ pub fn run() -> Result<(), JsValue> {
                         // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                         // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                         let _ = route.get();
-                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, pss, translations_manager, error_pages, initial_container) => async move {
+                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, pss, global_state, translations_manager, error_pages, initial_container) => async move {
                             let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
                             checkpoint("router_entry");
                             match &route.get().as_ref().0 {
@@ -113,7 +116,8 @@ pub fn run() -> Result<(), JsValue> {
                                         error_pages: error_pages.clone(),
                                         initial_container: initial_container.unwrap().clone(),
                                         container_rx_elem: container_rx_elem.clone(),
-                                        page_state_store: pss.clone()
+                                        page_state_store: pss.clone(),
+                                        global_state: global_state.clone()
                                     }
                                 ).await,
                                 // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale

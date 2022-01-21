@@ -19,12 +19,14 @@ pub struct PageDataReq {
 }
 
 /// The handler for calls to `.perseus/page/*`. This will manage returning errors and the like.
+#[allow(clippy::too_many_arguments)]
 pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Rc<ServerOptions>>,
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
+    global_state: web::Data<Option<String>>,
     web::Query(query_params): web::Query<PageDataReq>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
@@ -60,6 +62,7 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
             template,
             was_incremental_match,
             http_req,
+            &global_state,
             (immutable_store.get_ref(), mutable_store.get_ref()),
             translations_manager.get_ref(),
         )

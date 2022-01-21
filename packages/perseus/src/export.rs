@@ -42,6 +42,7 @@ async fn get_static_page_data(
 /// Exports your app to static files, which can be served from anywhere, without needing a server. This assumes that the app has already
 /// been built, and that no templates are using non-static features (which can be ensured by passing `true` as the last parameter to
 /// `build_app`).
+#[allow(clippy::too_many_arguments)]
 pub async fn export_app(
     templates: &TemplateMap<SsrNode>,
     html_shell_path: &str,
@@ -50,6 +51,7 @@ pub async fn export_app(
     immutable_store: &ImmutableStore,
     translations_manager: &impl TranslationsManager,
     path_prefix: String,
+    global_state: &Option<String>,
 ) -> Result<(), ServerError> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(immutable_store).await?;
@@ -72,6 +74,7 @@ pub async fn export_app(
             &html_shell,
             immutable_store,
             path_prefix.to_string(),
+            global_state,
         );
         export_futs.push(fut);
     }
@@ -119,6 +122,7 @@ async fn export_path(
     html_shell: &HtmlShell<'_>,
     immutable_store: &ImmutableStore,
     path_prefix: String,
+    global_state: &Option<String>,
 ) -> Result<(), ServerError> {
     // We need the encoded path to reference flattened build artifacts
     // But we don't create a flattened system with exporting, everything is properly created in a directory structure
@@ -173,7 +177,10 @@ async fn export_path(
             .await?;
             // Create a full HTML file from those that can be served for initial loads
             // The build process writes these with a dummy default locale even though we're not using i18n
-            let full_html = html_shell.clone().page_data(&page_data).to_string();
+            let full_html = html_shell
+                .clone()
+                .page_data(&page_data, global_state)
+                .to_string();
             immutable_store
                 .write(
                     &format!("exported/{}/{}.html", locale, initial_load_path),
@@ -199,7 +206,10 @@ async fn export_path(
         .await?;
         // Create a full HTML file from those that can be served for initial loads
         // The build process writes these with a dummy default locale even though we're not using i18n
-        let full_html = html_shell.clone().page_data(&page_data).to_string();
+        let full_html = html_shell
+            .clone()
+            .page_data(&page_data, global_state)
+            .to_string();
         // We don't add an extension because this will be queried directly by the browser
         immutable_store
             .write(&format!("exported/{}.html", initial_load_path), &full_html)

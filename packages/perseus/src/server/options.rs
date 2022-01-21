@@ -1,5 +1,6 @@
 use crate::error_pages::ErrorPages;
 use crate::locales::Locales;
+use crate::state::GlobalStateCreator;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::ArcTemplateMap;
 use crate::translations_manager::TranslationsManager;
@@ -45,4 +46,6 @@ pub struct ServerProps<M: MutableStore, T: TranslationsManager> {
     pub mutable_store: M,
     /// A translations manager to use.
     pub translations_manager: T,
+    /// The global state creator. This is used to avoid issues with `async` and cloning in Actix Web.
+    pub global_state_creator: GlobalStateCreator,
 }

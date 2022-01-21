@@ -5,8 +5,9 @@ use perseus::plugins::PluginAction;
 use perseus::stores::MutableStore;
 use perseus::SsrNode;
 use perseus_engine::app::{
-    get_app_root, get_error_pages_contained, get_immutable_store, get_locales, get_mutable_store,
-    get_plugins, get_static_aliases, get_templates_map_atomic_contained, get_translations_manager,
+    get_app_root, get_error_pages_contained, get_global_state_creator, get_immutable_store,
+    get_locales, get_mutable_store, get_plugins, get_static_aliases,
+    get_templates_map_atomic_contained, get_translations_manager,
 };
 use std::env;
 use std::fs;
@@ -26,6 +27,7 @@ async fn main() -> std::io::Result<()> {
 
     let is_standalone = get_standalone_and_act();
     let (host, port) = get_host_and_port();
+
     HttpServer::new(move || App::new().configure(block_on(configurer(get_props(is_standalone)))))
         .bind((host, port))?
         .run()
@@ -40,7 +42,7 @@ async fn main() {
     use std::net::SocketAddr;
 
     let is_standalone = get_standalone_and_act();
-    let props = get_props(is_standalone);
+    let props = get_props(is_standalone).await;
     let (host, port) = get_host_and_port();
     let addr: SocketAddr = format!("{}:{}", host, port)
         .parse()
@@ -105,6 +107,8 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
     let locales = get_locales(&plugins);
     let app_root = get_app_root(&plugins);
     let static_aliases = get_static_aliases(&plugins);
+    // Generate the global state
+    let global_state_creator = get_global_state_creator(&plugins);
 
     let opts = ServerOptions {
         // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)
@@ -134,5 +138,6 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
         immutable_store,
         mutable_store: get_mutable_store(),
         translations_manager: block_on(get_translations_manager()),
+        global_state_creator,
     }
 }

@@ -24,6 +24,7 @@ pub async fn build_template(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
+    global_state: &Option<String>,
     exporting: bool,
 ) -> Result<(Vec<String>, bool), ServerError> {
     let mut single_page = false;
@@ -67,7 +68,13 @@ pub async fn build_template(
     // Note that build paths pages on incrementally generable pages will use the immutable store
     let mut futs = Vec::new();
     for path in paths.iter() {
-        let fut = gen_state_for_path(path, template, translator, (immutable_store, mutable_store));
+        let fut = gen_state_for_path(
+            path,
+            template,
+            translator,
+            (immutable_store, mutable_store),
+            global_state,
+        );
         futs.push(fut);
     }
     try_join_all(futs).await?;
@@ -81,6 +88,7 @@ async fn gen_state_for_path(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
+    global_state: &Option<String>,
 ) -> Result<(), ServerError> {
     let template_path = template.get_path();
     // If needed, we'll contruct a full path that's URL encoded so we can easily save it as a file
@@ -124,13 +132,16 @@ async fn gen_state_for_path(
                 &initial_state,
             )
             .await?;
+        // Assemble the page properties
+        let page_props = PageProps {
+            path: full_path_with_locale.clone(),
+            state: Some(initial_state),
+            global_state: global_state.clone(),
+        };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template(
-                PageProps {
-                    path: full_path_with_locale.clone(),
-                    state: Some(initial_state.clone()),
-                },
+            template.render_for_template_server(
+                page_props.clone(),
                 translator,
                 true,
                 RouterState::default(),
@@ -143,13 +154,7 @@ async fn gen_state_for_path(
             .await?;
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the normal content
-        let head_str = template.render_head_str(
-            PageProps {
-                path: full_path_with_locale.clone(),
-                state: Some(initial_state.clone()),
-            },
-            translator,
-        );
+        let head_str = template.render_head_str(page_props, translator);
         mutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -168,13 +173,16 @@ async fn gen_state_for_path(
                 &initial_state,
             )
             .await?;
+        // Assemble the page properties
+        let page_props = PageProps {
+            path: full_path_with_locale.clone(),
+            state: Some(initial_state),
+            global_state: global_state.clone(),
+        };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template(
-                PageProps {
-                    path: full_path_with_locale.clone(),
-                    state: Some(initial_state.clone()),
-                },
+            template.render_for_template_server(
+                page_props.clone(),
                 translator,
                 true,
                 RouterState::default(),
@@ -187,13 +195,7 @@ async fn gen_state_for_path(
             .await?;
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the normal content
-        let head_str = template.render_head_str(
-            PageProps {
-                path: full_path_with_locale.clone(),
-                state: Some(initial_state),
-            },
-            translator,
-        );
+        let head_str = template.render_head_str(page_props, translator);
         immutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -223,25 +225,22 @@ async fn gen_state_for_path(
     // If the template is very basic, prerender without any state
     // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
     if template.is_basic() {
+        // Assemble the page properties
+        let page_props = PageProps {
+            path: full_path_with_locale,
+            state: None,
+            global_state: global_state.clone(),
+        };
         let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template(
-                PageProps {
-                    path: full_path_with_locale.clone(),
-                    state: None,
-                },
+            template.render_for_template_server(
+                page_props.clone(),
                 translator,
                 true,
                 RouterState::default(),
                 PageStateStore::default(),
             )
         });
-        let head_str = template.render_head_str(
-            PageProps {
-                path: full_path_with_locale,
-                state: None,
-            },
-            translator,
-        );
+        let head_str = template.render_head_str(page_props, translator);
         // Write that prerendered HTML to a static file
         immutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)
@@ -261,6 +260,7 @@ async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
+    global_state: &Option<String>,
     exporting: bool,
 ) -> Result<HashMap<String, String>, ServerError> {
     let mut render_cfg = HashMap::new();
@@ -271,6 +271,7 @@ async fn build_template_and_get_cfg(
         template,
         translator,
         (immutable_store, mutable_store),
+        global_state,
         exporting,
     )
     .await?;
@@ -307,6 +308,7 @@ pub async fn build_templates_for_locale(
     templates: &TemplateMap<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
+    global_state: &Option<String>,
     exporting: bool,
 ) -> Result<(), ServerError> {
     // The render configuration stores a list of pages to the root paths of their templates
@@ -318,6 +320,7 @@ pub async fn build_templates_for_locale(
             template,
             translator,
             (immutable_store, mutable_store),
+            global_state,
             exporting,
         ));
     }
@@ -342,6 +345,7 @@ async fn build_templates_and_translator_for_locale(
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
+    global_state: &Option<String>,
     exporting: bool,
 ) -> Result<(), ServerError> {
     let translator = translations_manager
@@ -351,6 +355,7 @@ async fn build_templates_and_translator_for_locale(
         templates,
         &translator,
         (immutable_store, mutable_store),
+        global_state,
         exporting,
     )
     .await?;
@@ -365,6 +370,7 @@ pub async fn build_app(
     locales: &Locales,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
+    global_state: &Option<String>,
     exporting: bool,
 ) -> Result<(), ServerError> {
     let locales = locales.get_all();
@@ -376,6 +382,7 @@ pub async fn build_app(
             locale.to_string(),
             (immutable_store, mutable_store),
             translations_manager,
+            global_state,
             exporting,
         ));
     }

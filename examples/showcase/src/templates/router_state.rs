@@ -4,9 +4,7 @@ use sycamore::prelude::{cloned, component, create_memo, view, View};
 #[perseus::template(RouterStatePage)]
 #[component(RouterStatePage<G>)]
 pub fn router_state_page() -> View<G> {
-    let load_state = sycamore::context::use_context::<perseus::templates::RenderCtx>()
-        .router
-        .get_load_state();
+    let load_state = perseus::get_render_ctx!().router.get_load_state();
     let load_state_str = create_memo(
         cloned!(load_state => move || match (*load_state.get()).clone() {
             RouterLoadState::Loaded(name) => format!("Loaded {}.", name),

@@ -41,6 +41,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         immutable_store,
         mutable_store,
         translations_manager,
+        global_state_creator,
     }: ServerProps<M, T>,
 ) -> impl FnOnce(&mut actix_web::web::ServiceConfig) {
     let opts = Rc::new(opts); // TODO Find a more efficient way of doing this
@@ -56,6 +57,12 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         &render_cfg,
         &get_path_prefix_server(),
     );
+    // Generate the global state
+    // The user will get a more detailed error message in the build process
+    let global_state = global_state_creator
+        .get_build_state()
+        .await
+        .expect("Couldn't generate global state.");
 
     move |cfg: &mut web::ServiceConfig| {
         cfg
@@ -66,6 +73,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
             .app_data(web::Data::new(translations_manager.clone()))
             .app_data(web::Data::new(opts.clone()))
             .app_data(web::Data::new(index_with_render_cfg.clone()))
+            .app_data(web::Data::new(global_state.clone()))
             // TODO chunk JS and Wasm bundles
             // These allow getting the basic app code (not including the static data)
             // This contains everything in the spirit of a pseudo-SPA

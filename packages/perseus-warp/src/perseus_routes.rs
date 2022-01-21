@@ -22,6 +22,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         immutable_store,
         mutable_store,
         translations_manager,
+        global_state_creator,
     }: ServerProps<M, T>,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let render_cfg = get_render_cfg(&immutable_store)
@@ -34,6 +35,11 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         &render_cfg,
         &get_path_prefix_server(),
     );
+    // Generate the global state
+    let global_state = global_state_creator
+        .get_build_state()
+        .await
+        .expect("Couldn't generate global state.");
 
     // Handle static files
     let js_bundle = warp::path!(".perseus" / "bundle.js")
@@ -80,6 +86,8 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let html_shell = warp::any().map(move || html_shell.clone());
     let render_cfg = Arc::new(render_cfg);
     let render_cfg = warp::any().map(move || render_cfg.clone());
+    let global_state = Arc::new(global_state);
+    let global_state = warp::any().map(move || global_state.clone());
 
     // Handle getting translations
     let translations = warp::path!(".perseus" / "translations" / String)
@@ -95,6 +103,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(immutable_store.clone())
         .and(mutable_store.clone())
         .and(translations_manager.clone())
+        .and(global_state.clone())
         .then(page_handler);
     // Handle initial loads (we use a wildcard for this)
     let initial_loads = warp::any()
@@ -106,6 +115,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(immutable_store)
         .and(mutable_store)
         .and(translations_manager)
+        .and(global_state)
         .then(initial_load_handler);
 
     // Now put all those routes together in the final thing (the user will add this to an existing Warp server)

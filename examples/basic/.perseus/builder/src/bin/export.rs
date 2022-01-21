@@ -5,8 +5,8 @@ use perseus::{
     PluginAction, SsrNode,
 };
 use perseus_engine::app::{
-    get_app_root, get_immutable_store, get_locales, get_mutable_store, get_plugins,
-    get_static_aliases, get_templates_map, get_translations_manager,
+    get_app_root, get_global_state_creator, get_immutable_store, get_locales, get_mutable_store,
+    get_plugins, get_static_aliases, get_templates_map, get_translations_manager,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -58,6 +58,17 @@ async fn build_and_export() -> i32 {
     let mutable_store = get_mutable_store();
     let translations_manager = get_translations_manager().await;
     let locales = get_locales(&plugins);
+    // Generate the global state
+    let gsc = get_global_state_creator(&plugins);
+    let global_state = match gsc.get_build_state().await {
+        Ok(global_state) => global_state,
+        Err(err) => {
+            let err_msg = fmt_err(&err);
+            // TODO Functional action here
+            eprintln!("{}", err_msg);
+            return 1;
+        }
+    };
 
     // Build the site for all the common locales (done in parallel), denying any non-exportable features
     // We need to build and generate those artifacts before we can proceed on to exporting
@@ -67,6 +78,7 @@ async fn build_and_export() -> i32 {
         &locales,
         (&immutable_store, &mutable_store),
         &translations_manager,
+        &global_state,
         // We use another binary to handle normal building
         true,
     )
@@ -97,6 +109,7 @@ async fn build_and_export() -> i32 {
         &immutable_store,
         &translations_manager,
         get_path_prefix_server(),
+        &global_state,
     )
     .await;
     if let Err(err) = export_res {

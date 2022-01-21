@@ -4,6 +4,7 @@
 pub use app::get_plugins;
 use perseus::{
     internal::i18n::Locales,
+    state::GlobalStateCreator,
     stores::ImmutableStore,
     templates::{ArcTemplateMap, TemplateMap},
     ErrorPages, Html, PluginAction, Plugins,
@@ -164,4 +165,9 @@ pub fn get_templates_map_atomic_contained<G: Html>() -> ArcTemplateMap<G> {
 pub fn get_error_pages_contained<G: Html>() -> ErrorPages<G> {
     let plugins = get_plugins::<G>();
     get_error_pages(&plugins)
+}
+
+pub fn get_global_state_creator<G: Html>(plugins: &Plugins<G>) -> GlobalStateCreator {
+    // TODO Control action to override
+    app::get_global_state_creator()
 }

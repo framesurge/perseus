@@ -36,6 +36,7 @@ fn return_error_page(
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
 /// the app shell.
+#[allow(clippy::too_many_arguments)]
 pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Rc<ServerOptions>>,
@@ -44,6 +45,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
+    global_state: web::Data<Option<String>>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
@@ -81,6 +83,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                 template,
                 was_incremental_match,
                 http_req,
+                &global_state,
                 (immutable_store.get_ref(), mutable_store.get_ref()),
                 translations_manager.get_ref(),
             )
@@ -96,7 +99,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             let final_html = html_shell
                 .get_ref()
                 .clone()
-                .page_data(&page_data)
+                .page_data(&page_data, &global_state)
                 .to_string();
 
             let mut http_res = HttpResponse::Ok();

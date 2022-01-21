@@ -1,18 +1,18 @@
+use crate::global_state::AppState;
 use crate::index::IndexPropsRx;
 use perseus::{get_render_ctx, Html, Template};
-use sycamore::prelude::{component, view, Signal};
+use sycamore::prelude::{view, Signal};
 use sycamore::view::View;
 
 // This template doesn't have any properties, so there's no point in using the special `template_with_rx_state` macro (but we could)
-#[perseus::template(AboutPage)]
-#[component(AboutPage<G>)]
+#[perseus::template_with_rx_state(component = "AboutPage", global_state = "AppState")]
 pub fn about_page() -> View<G> {
     // Get the page state store manually
-    let pss = get_render_ctx!().page_state_store;
+    // The index page is just an empty string
+    let index_props_rx = get_render_ctx!().page_state_store.get::<IndexPropsRx>("");
     // Get the state from the index page
     // If the user hasn't visited there yet, this won't exist
-    // The index page is just an empty string
-    let username = match pss.get::<IndexPropsRx>("") {
+    let username = match index_props_rx {
         Some(IndexPropsRx { username }) => username,
         None => Signal::new("".to_string()),
     };

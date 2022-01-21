@@ -35,6 +35,22 @@ macro_rules! define_get_mutable_store {
         }
     };
 }
+/// An internal macro used for defining the global state creator.
+// TODO Plugin extensibility?
+#[doc(hidden)]
+#[macro_export]
+macro_rules! define_get_global_state_creator {
+    () => {
+        pub fn get_global_state_creator() -> $crate::state::GlobalStateCreator {
+            $crate::state::GlobalStateCreator::default()
+        }
+    };
+    ($global_state_creator:expr) => {
+        pub fn get_global_state_creator() -> $crate::state::GlobalStateCreator {
+            $global_state_creator
+        }
+    };
+}
 /// An internal macro used for defining the HTML `id` at which to render the Perseus app (which requires multiple branches). The default
 /// is `root`. This can be reset by a control action.
 #[doc(hidden)]
@@ -180,7 +196,7 @@ macro_rules! define_plugins {
 /// get all the dependencies without driving the user's `Cargo.toml` nuts). This also defines the template map. This is intended to make
 /// compatibility with the Perseus CLI significantly easier.
 ///
-/// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `locales`, `static_aliases`,
+/// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `global_state_creator`, `locales`, `static_aliases`,
 /// `plugins`, `dist_path`, `mutable_store`, `translations_manager`).
 #[macro_export]
 macro_rules! define_app {
@@ -191,6 +207,7 @@ macro_rules! define_app {
             $($template:expr),+
         ],
         error_pages: $error_pages:expr,
+        $(global_state_creator: $global_state_creator:expr,)?
         // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
         locales: {
             default: $default_locale:literal,
@@ -213,6 +230,7 @@ macro_rules! define_app {
                     $($template),+
                 ],
                 error_pages: $error_pages,
+                $(global_state_creator: $global_state_creator,)?
                 locales: {
                     default: $default_locale,
                     // The user doesn't have to define any other locales (but they'll still get locale detection and the like)
@@ -235,6 +253,7 @@ macro_rules! define_app {
             $($template:expr),+
         ],
         error_pages: $error_pages:expr
+        $(,global_state_creator: $global_state_creator:expr)?
         $(,static_aliases: {
             $($url:literal => $resource:literal),*
         })?
@@ -250,6 +269,7 @@ macro_rules! define_app {
                     $($template),+
                 ],
                 error_pages: $error_pages,
+                $(global_state_creator: $global_state_creator,)?
                 // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
                 locales: {
                     default: "xx-XX",
@@ -274,6 +294,7 @@ macro_rules! define_app {
                 $($template:expr),+
             ],
             error_pages: $error_pages:expr,
+            $(global_state_creator: $global_state_creator:expr,)?
             // This deliberately enforces verbose i18n definition, and forces developers to consider i18n as integral
             locales: {
                 default: $default_locale:literal,
@@ -324,6 +345,9 @@ macro_rules! define_app {
                 $($url => $resource),*
             })?
         );
+
+        /// Gets the global state creator for the app.
+        $crate::define_get_global_state_creator!($($global_state_creator)?);
 
         /// Gets a map of all the templates in the app by their root paths. This returns a `HashMap` that is plugin-extensible.
         pub fn get_templates_map<G: $crate::Html>() -> $crate::templates::TemplateMap<G> {

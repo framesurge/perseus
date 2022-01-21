@@ -19,6 +19,8 @@ pub struct AutoserdeArgs {
     set_headers: bool,
     #[darling(default)]
     amalgamate_states: bool,
+    #[darling(default)]
+    global_build_state: bool,
 }
 
 /// A function that can be wrapped in the Perseus test sub-harness.
@@ -175,7 +177,26 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 amalgamated_state_with_str
             }
         }
+    } else if fn_type.global_build_state {
+        quote! {
+            #vis async fn #name() -> ::perseus::RenderFnResult<::std::string::String> {
+                // The user's function
+                // We can assume the return type to be `RenderFnResultWithCause<CustomGlobalStateType>`
+                #(#attrs)*
+                async fn #name#generics(#args) -> #return_type {
+                    #block
+                }
+                // Call the user's function and then serialize the result to a string
+                // We only serialize the `Ok` outcome, errors are left as-is
+                // We also assume that this will serialize correctly
+                let build_state = #name().await;
+                let build_state_with_str = build_state.map(|val| ::serde_json::to_string(&val).unwrap());
+                build_state_with_str
+            }
+        }
     } else {
-        todo!()
+        quote! {
+            compile_error!("function type not supported, must be one of: `build_state`, `request_state`, `set_headers`, `amalgamate_states`, or `global_build_state`")
+        }
     }
 }

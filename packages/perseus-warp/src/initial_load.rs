@@ -42,6 +42,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
+    global_state: Arc<Option<String>>,
 ) -> Response<String> {
     let path = path.as_str();
     let templates = &opts.templates_map;
@@ -70,6 +71,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                 template,
                 was_incremental_match,
                 req,
+                &global_state,
                 (immutable_store.as_ref(), mutable_store.as_ref()),
                 translations_manager.as_ref(),
             )
@@ -85,7 +87,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             let final_html = html_shell
                 .as_ref()
                 .clone()
-                .page_data(&page_data)
+                .page_data(&page_data, &global_state)
                 .to_string();
 
             let mut http_res = Response::builder().status(200);

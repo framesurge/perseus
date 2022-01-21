@@ -1,8 +1,8 @@
 use fmterr::fmt_err;
 use perseus::{internal::build::build_app, PluginAction, SsrNode};
 use perseus_engine::app::{
-    get_immutable_store, get_locales, get_mutable_store, get_plugins, get_templates_map,
-    get_translations_manager,
+    get_global_state_creator, get_immutable_store, get_locales, get_mutable_store, get_plugins,
+    get_templates_map, get_translations_manager,
 };
 
 #[tokio::main]
@@ -27,6 +27,17 @@ async fn real_main() -> i32 {
     // We can't proceed without a translations manager
     let translations_manager = get_translations_manager().await;
     let locales = get_locales(&plugins);
+    // Generate the global state
+    let gsc = get_global_state_creator(&plugins);
+    let global_state = match gsc.get_build_state().await {
+        Ok(global_state) => global_state,
+        Err(err) => {
+            let err_msg = fmt_err(&err);
+            // TODO Functional action here
+            eprintln!("{}", err_msg);
+            return 1;
+        }
+    };
 
     // Build the site for all the common locales (done in parallel)
     // All these parameters can be modified by `define_app!` and plugins, so there's no point in having a plugin opportunity here
@@ -36,6 +47,7 @@ async fn real_main() -> i32 {
         &locales,
         (&immutable_store, &mutable_store),
         &translations_manager,
+        &global_state,
         // We use another binary to handle exporting
         false,
     )

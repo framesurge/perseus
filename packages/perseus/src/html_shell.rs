@@ -94,8 +94,8 @@ impl<'a> HtmlShell<'a> {
         }
     }
 
-    /// Interpolates page data into the shell.
-    pub fn page_data(mut self, page_data: &'a PageData) -> Self {
+    /// Interpolates page data and global state into the shell.
+    pub fn page_data(mut self, page_data: &'a PageData, global_state: &Option<String>) -> Self {
         // Interpolate a global variable of the state so the app shell doesn't have to make any more trips
         // The app shell will unset this after usage so it doesn't contaminate later non-initial loads
         // Error pages (above) will set this to `error`
@@ -104,10 +104,17 @@ impl<'a> HtmlShell<'a> {
         } else {
             "None".to_string()
         };
+        let global_state = if let Some(state) = global_state {
+            escape_page_data(state)
+        } else {
+            "None".to_string()
+        };
 
-        // We put this at the very end of the head (after the delimiter comment) because it doesn't matter if it's expunged on subsequent loads
-        let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`", initial_state);
+        // We put these at the very end of the head (after the delimiter comment) because it doesn't matter if they're expunged on subsequent loads
+        let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`;", initial_state);
         self.scripts_after_boundary.push(initial_state.into());
+        let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
+        self.scripts_after_boundary.push(global_state.into());
         // Interpolate the document `<head>` (this should of course be removed between page loads)
         self.head_after_boundary.push((&page_data.head).into());
         // And set the content

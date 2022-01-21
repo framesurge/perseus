@@ -8,6 +8,7 @@ use crate::template::Template;
 use crate::templates::{PageProps, RouterLoadState, RouterState, TemplateNodeType};
 use crate::ErrorPages;
 use fmterr::fmt_err;
+use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -129,6 +130,25 @@ pub fn get_initial_state() -> InitialState {
     }
 }
 
+/// Gets the global state injected by the server, if there was any. If there are errors in this, we can return `None` and not worry about it, they'll be handled by the initial state.
+pub fn get_global_state() -> Option<String> {
+    let val_opt = web_sys::window().unwrap().get("__PERSEUS_GLOBAL_STATE");
+    let js_obj = match val_opt {
+        Some(js_obj) => js_obj,
+        None => return None,
+    };
+    // The object should only actually contain the string value that was injected
+    let state_str = match js_obj.as_string() {
+        Some(state_str) => state_str,
+        None => return None,
+    };
+    // On the server-side, we encode a `None` value directly (otherwise it will be some convoluted stringified JSON)
+    match state_str.as_str() {
+        "None" => None,
+        state_str => Some(state_str.to_string()),
+    }
+}
+
 /// Marks a checkpoint in the code and alerts any tests that it's been reached by creating an element that represents it. The preferred
 /// solution would be emitting a DOM event, but the WebDriver specification currently doesn't support waiting on those (go figure). This
 /// will only create a custom element if the `__PERSEUS_TESTING` JS global variable is set to `true`.
@@ -234,6 +254,8 @@ pub struct ShellProps {
     pub initial_container: Element,
     /// The container for reactive content.
     pub container_rx_elem: Element,
+    /// The global state store. Brekaing it out here prevents it being overriden every time a new template loads.
+    pub global_state: Rc<RefCell<Box<dyn Any>>>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -251,6 +273,7 @@ pub async fn app_shell(
         error_pages,
         initial_container,
         container_rx_elem,
+        global_state: curr_global_state,
     }: ShellProps,
 ) {
     checkpoint("app_shell_entry");
@@ -260,6 +283,9 @@ pub async fn app_shell(
     };
     // Update the router state
     router_state.set_load_state(RouterLoadState::Loading(template.get_path()));
+    // Get the global state if possible (we'll want this in all cases except errors)
+    // If this is a subsequent load, the template macro will have already set up the global state, and it will ignore whatever we naively give it (so we'll give it `None`)
+    let global_state = get_global_state();
     // Check if this was an initial load and we already have the state
     let initial_state = get_initial_state();
     match initial_state {
@@ -272,6 +298,13 @@ pub async fn app_shell(
             Reflect::set(
                 &JsValue::from(web_sys::window().unwrap()),
                 &JsValue::from("__PERSEUS_INITIAL_STATE"),
+                &JsValue::undefined(),
+            )
+            .unwrap();
+            // Also do this for the global state
+            Reflect::set(
+                &JsValue::from(web_sys::window().unwrap()),
+                &JsValue::from("__PERSEUS_GLOBAL_STATE"),
                 &JsValue::undefined(),
             )
             .unwrap();
@@ -313,6 +346,7 @@ pub async fn app_shell(
             let page_props = PageProps {
                 path: path_with_locale,
                 state,
+                global_state,
             };
             #[cfg(not(feature = "hydrate"))]
             {
@@ -320,12 +354,13 @@ pub async fn app_shell(
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
                     move || {
-                        template.render_for_template(
+                        template.render_for_template_client(
                             page_props,
                             translator,
                             false,
                             router_state_2,
                             page_state_store,
+                            curr_global_state,
                         )
                     },
                     &container_rx_elem,
@@ -335,12 +370,13 @@ pub async fn app_shell(
             sycamore::hydrate_to(
                 // This function provides translator context as needed
                 || {
-                    template.render_for_template(
+                    template.render_for_template_client(
                         page_props,
                         translator,
                         false,
                         router_state_2,
                         page_state_store,
+                        curr_global_state,
                     )
                 },
                 &container_rx_elem,
@@ -426,6 +462,7 @@ pub async fn app_shell(
                                 let page_props = PageProps {
                                     path: path_with_locale,
                                     state: page_data.state,
+                                    global_state,
                                 };
                                 #[cfg(not(feature = "hydrate"))]
                                 {
@@ -433,12 +470,13 @@ pub async fn app_shell(
                                     container_rx_elem.set_inner_html("");
                                     sycamore::render_to(
                                         move || {
-                                            template.render_for_template(
+                                            template.render_for_template_client(
                                                 page_props,
                                                 translator,
                                                 false,
                                                 router_state_2.clone(),
                                                 page_state_store,
+                                                curr_global_state,
                                             )
                                         },
                                         &container_rx_elem,
@@ -448,12 +486,13 @@ pub async fn app_shell(
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
                                     move || {
-                                        template.render_for_template(
+                                        template.render_for_template_client(
                                             page_props,
                                             translator,
                                             false,
                                             router_state_2,
                                             page_state_store,
+                                            curr_global_state,
                                         )
                                     },
                                     &container_rx_elem,

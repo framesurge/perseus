@@ -75,6 +75,7 @@ async fn render_request_state(
     template: &Template<SsrNode>,
     translator: &Translator,
     path: &str,
+    global_state: &Option<String>,
     req: Request,
 ) -> Result<(String, String, Option<String>), ServerError> {
     let path_with_locale = get_path_with_locale(path, translator);
@@ -84,26 +85,23 @@ async fn render_request_state(
             .get_request_state(path.to_string(), translator.get_locale(), req)
             .await?,
     );
+    // Assemble the page properties
+    let page_props = PageProps {
+        path: path_with_locale,
+        state: state.clone(),
+        global_state: global_state.clone(),
+    };
     // Use that to render the static HTML
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(
-            PageProps {
-                path: path_with_locale.clone(),
-                state: state.clone(),
-            },
+        template.render_for_template_server(
+            page_props.clone(),
             translator,
             true,
             RouterState::default(),
             PageStateStore::default(),
         )
     });
-    let head = template.render_head_str(
-        PageProps {
-            path: path_with_locale,
-            state: state.clone(),
-        },
-        translator,
-    );
+    let head = template.render_head_str(page_props, translator);
 
     Ok((html, head, state))
 }
@@ -174,6 +172,7 @@ async fn revalidate(
     translator: &Translator,
     path: &str,
     path_encoded: &str,
+    global_state: &Option<String>,
     mutable_store: &impl MutableStore,
 ) -> Result<(String, String, Option<String>), ServerError> {
     let path_with_locale = get_path_with_locale(path, translator);
@@ -186,25 +185,22 @@ async fn revalidate(
             )
             .await?,
     );
+    // Assemble the page properties
+    let page_props = PageProps {
+        path: path_with_locale,
+        state: state.clone(),
+        global_state: global_state.clone(),
+    };
     let html = sycamore::render_to_string(|| {
-        template.render_for_template(
-            PageProps {
-                path: path_with_locale.clone(),
-                state: state.clone(),
-            },
+        template.render_for_template_server(
+            page_props.clone(),
             translator,
             true,
             RouterState::default(),
             PageStateStore::default(),
         )
     });
-    let head = template.render_head_str(
-        PageProps {
-            path: path_with_locale,
-            state: state.clone(),
-        },
-        translator,
-    );
+    let head = template.render_head_str(page_props, translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's request-time only
     if template.revalidates_with_time() {
@@ -238,6 +234,7 @@ async fn revalidate(
 /// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing). Because this
 /// handles templates with potentially revalidation and incremental generation, it uses both mutable and immutable stores.
 // TODO possible further optimizations on this for futures?
+#[allow(clippy::too_many_arguments)]
 pub async fn get_page_for_template(
     // This must not contain the locale
     raw_path: &str,
@@ -246,6 +243,7 @@ pub async fn get_page_for_template(
     // This allows us to differentiate pages for incrementally generated templates that were pre-rendered with build paths (and are in the immutable store) from those generated and cached at runtime (in the mutable store)
     was_incremental_match: bool,
     req: Request,
+    global_state: &Option<String>,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
 ) -> Result<PageData, ServerError> {
@@ -282,9 +280,15 @@ pub async fn get_page_for_template(
                 Some((html_val, head_val)) => {
                     // Check if we need to revalidate
                     if should_revalidate(template, &path_encoded, mutable_store).await? {
-                        let (html_val, head_val, state) =
-                            revalidate(template, &translator, path, &path_encoded, mutable_store)
-                                .await?;
+                        let (html_val, head_val, state) = revalidate(
+                            template,
+                            &translator,
+                            path,
+                            &path_encoded,
+                            global_state,
+                            mutable_store,
+                        )
+                        .await?;
                         // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                         if html.is_empty() {
                             html = html_val;
@@ -316,25 +320,22 @@ pub async fn get_page_for_template(
                             .get_build_state(path.to_string(), locale.to_string())
                             .await?,
                     );
+                    // Assemble the page properties
+                    let page_props = PageProps {
+                        path: path_with_locale,
+                        state: state.clone(),
+                        global_state: global_state.clone(),
+                    };
                     let html_val = sycamore::render_to_string(|| {
-                        template.render_for_template(
-                            PageProps {
-                                path: path_with_locale.clone(),
-                                state: state.clone(),
-                            },
+                        template.render_for_template_server(
+                            page_props.clone(),
                             &translator,
                             true,
                             RouterState::default(),
                             PageStateStore::default(),
                         )
                     });
-                    let head_val = template.render_head_str(
-                        PageProps {
-                            path: path_with_locale.clone(),
-                            state: state.clone(),
-                        },
-                        &translator,
-                    );
+                    let head_val = template.render_head_str(page_props, &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes
                     // We don't need to worry about revalidation that operates by logic, that's request-time only
                     // Obviously we don't need to revalidate now, we just created it
@@ -379,8 +380,15 @@ pub async fn get_page_for_template(
             // Handle if we need to revalidate
             // It'll be in the mutable store if we do
             if should_revalidate(template, &path_encoded, mutable_store).await? {
-                let (html_val, head_val, state) =
-                    revalidate(template, &translator, path, &path_encoded, mutable_store).await?;
+                let (html_val, head_val, state) = revalidate(
+                    template,
+                    &translator,
+                    path,
+                    &path_encoded,
+                    global_state,
+                    mutable_store,
+                )
+                .await?;
                 // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
                 if html.is_empty() {
                     html = html_val;
@@ -414,7 +422,7 @@ pub async fn get_page_for_template(
     // Handle request state
     if template.uses_request_state() {
         let (html_val, head_val, state) =
-            render_request_state(template, &translator, path, req).await?;
+            render_request_state(template, &translator, path, global_state, req).await?;
         // Request-time HTML always overrides anything generated at build-time or incrementally (this has more information)
         html = html_val;
         head = head_val;
@@ -446,6 +454,7 @@ pub async fn get_page_for_template(
 
 /// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML
 /// generated at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
+#[allow(clippy::too_many_arguments)]
 pub async fn get_page(
     // This must not contain the locale
     raw_path: &str,
@@ -453,6 +462,7 @@ pub async fn get_page(
     (template_name, was_incremental_match): (&str, bool),
     req: Request,
     templates: &TemplateMap<SsrNode>,
+    global_state: &Option<String>,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
 ) -> Result<PageData, ServerError> {
@@ -480,6 +490,7 @@ pub async fn get_page(
         template,
         was_incremental_match,
         req,
+        global_state,
         (immutable_store, mutable_store),
         translations_manager,
     )
