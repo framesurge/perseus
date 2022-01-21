@@ -108,7 +108,7 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
     let app_root = get_app_root(&plugins);
     let static_aliases = get_static_aliases(&plugins);
     // Generate the global state
-    let global_state_creator = get_global_state_creator(&plugins);
+    let global_state_creator = get_global_state_creator();
 
     let opts = ServerOptions {
         // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)

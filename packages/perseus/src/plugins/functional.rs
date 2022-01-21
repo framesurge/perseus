@@ -119,6 +119,9 @@ pub struct FunctionalPluginBuildActions {
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build process if it fails.
     pub after_failed_build: FunctionalPluginAction<crate::errors::ServerError, ()>,
+    /// Runs after the build process if it failed to generate global state.
+    pub after_failed_global_state_creation:
+        FunctionalPluginAction<crate::errors::GlobalStateError, ()>,
 }
 /// Functional actions that pertain to the export process.
 #[derive(Default)]
@@ -141,6 +144,9 @@ pub struct FunctionalPluginExportActions {
     pub after_failed_static_alias_file_copy: FunctionalPluginAction<std::io::Error, ()>,
     /// Runs after the export process if it completes successfully.
     pub after_successful_export: FunctionalPluginAction<(), ()>,
+    /// Runs after the export process if it failed to generate global state.
+    pub after_failed_global_state_creation:
+        FunctionalPluginAction<crate::errors::GlobalStateError, ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
 #[derive(Default)]

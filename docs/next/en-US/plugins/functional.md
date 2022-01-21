@@ -17,6 +17,7 @@ If you'd like to request that a new action, functional or control, be added, ple
 	- `before_build` -- runs arbitrary code just before the build process starts (e.g. to run a CSS preprocessor)
 	- `after_successful_build` -- runs arbitrary code after the build process has completed, if it was successful (e.g. copying custom files into `.perseus/dist/`)
 	- `after_failed_build` -- runs arbitrary code after the build process has completed, if it failed (e.g. to report the failed build to a server crash management system)
+	- `after_failed_global_state_creation` -- runs arbitrary code after if the build process failed to generate global state
 - `export_actions` -- actions that'll be run when the user runs `perseus export`
 	- `before_export` -- runs arbitrary code just before the export process starts (e.g. to run a CSS preprocessor)
 	- `after_successful_build` -- runs arbitrary code after the build process has completed (inside the export process), if it was successful (e.g. copying custom files into `.perseus/dist/`)
@@ -26,6 +27,7 @@ If you'd like to request that a new action, functional or control, be added, ple
 	- `after_failed_static_alias_dir_copy` -- runs arbitrary code if the export process fails to copy a static alias that was a directory (e.g. to report the failed export to a server crash management system)
 	- `after_failed_static_alias_file_copy` -- runs arbitrary code if the export process fails to copy a static alias that was a file (e.g. to report the failed export to a server crash management system)
 	- `after_successful_export` -- runs arbitrary code after the export process has completed, if it was successful (e.g. copying custom files into `.perseus/dist/`)
+	- `after_failed_global_state_creation` -- runs arbitrary code if the export process failed to generate global state
 - `export_error_page_actions` --- actions that'll be run when exporting an error page
   	- `before_export_error_page` --- runs arbitrary code before this process has started (providing the error code to be exported for and the output file)
 	- `after_successful_export_error_page` -- runs arbitrary code after this process has completed, if it was successful

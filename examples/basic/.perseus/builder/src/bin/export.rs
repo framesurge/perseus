@@ -59,12 +59,16 @@ async fn build_and_export() -> i32 {
     let translations_manager = get_translations_manager().await;
     let locales = get_locales(&plugins);
     // Generate the global state
-    let gsc = get_global_state_creator(&plugins);
+    let gsc = get_global_state_creator();
     let global_state = match gsc.get_build_state().await {
         Ok(global_state) => global_state,
         Err(err) => {
             let err_msg = fmt_err(&err);
-            // TODO Functional action here
+            plugins
+                .functional_actions
+                .export_actions
+                .after_failed_global_state_creation
+                .run(err, plugins.get_plugin_data());
             eprintln!("{}", err_msg);
             return 1;
         }

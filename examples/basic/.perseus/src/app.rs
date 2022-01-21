@@ -4,14 +4,13 @@
 pub use app::get_plugins;
 use perseus::{
     internal::i18n::Locales,
-    state::GlobalStateCreator,
     stores::ImmutableStore,
     templates::{ArcTemplateMap, TemplateMap},
     ErrorPages, Html, PluginAction, Plugins,
 };
 use std::{collections::HashMap, rc::Rc, sync::Arc};
 
-pub use app::{get_mutable_store, get_translations_manager};
+pub use app::{get_global_state_creator, get_mutable_store, get_translations_manager};
 
 // These functions all take plugins so we don't have to perform possibly very costly allocation more than once in an environment (e.g. browser, build process, export process, server)
 
@@ -165,9 +164,4 @@ pub fn get_templates_map_atomic_contained<G: Html>() -> ArcTemplateMap<G> {
 pub fn get_error_pages_contained<G: Html>() -> ErrorPages<G> {
     let plugins = get_plugins::<G>();
     get_error_pages(&plugins)
-}
-
-pub fn get_global_state_creator<G: Html>(plugins: &Plugins<G>) -> GlobalStateCreator {
-    // TODO Control action to override
-    app::get_global_state_creator()
 }

@@ -35,8 +35,8 @@ macro_rules! define_get_mutable_store {
         }
     };
 }
-/// An internal macro used for defining the global state creator.
-// TODO Plugin extensibility?
+/// An internal macro used for defining the global state creator. This cannot be altered in any way by plugins, except through
+/// hooking into it through a generated template and modifying it.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! define_get_global_state_creator {
