@@ -106,11 +106,9 @@ pub struct TemplateArgs {
     /// The name of the type parameter to use (default to `G`).
     #[darling(default)]
     type_param: Option<Ident>,
-    // /// The identifier of the global state type, if there is one.
-    // #[darling(default)]
-    // global_state: Option<Ident>,
-    /// The identifier of the global state.
-    global_state: Ident,
+    /// The identifier of the global state type, if this template needs it.
+    #[darling(default)]
+    global_state: Option<Ident>,
     /// The name of the unreactive properties, if there are any.
     #[darling(default)]
     unrx_props: Option<Ident>,
@@ -129,23 +127,22 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
     } = input;
 
     let component_name = &args.component;
-    let global_state = &args.global_state;
     let type_param = match &args.type_param {
         Some(type_param) => type_param.clone(),
         None => Ident::new("G", Span::call_site()),
     };
     // This is only optional if the second argument wasn't provided
-    // let global_state = if fn_args.len() == 2 {
-    //     match &args.global_state {
-    //         Some(global_state) => global_state.clone(),
-    //         None => return syn::Error::new_spanned(&fn_args[0], "template functions with two arguments must declare their global state type (`global_state = `)").to_compile_error()
-    //     }
-    // } else {
-    //     match &args.global_state {
-    //         Some(global_state) => global_state.clone(),
-    //         None => Ident::new("Dummy", Span::call_site()),
-    //     }
-    // };
+    let global_state = if fn_args.len() == 2 {
+        match &args.global_state {
+            Some(global_state) => global_state.clone(),
+            None => return syn::Error::new_spanned(&fn_args[0], "template functions with two arguments must declare their global state type (`global_state = `)").to_compile_error()
+        }
+    } else {
+        match &args.global_state {
+            Some(global_state) => global_state.clone(),
+            None => Ident::new("Dummy", Span::call_site()),
+        }
+    };
     // This is only optional if the first argument wasn't provided
     let unrx_props = if !fn_args.is_empty() {
         match &args.unrx_props {
@@ -156,25 +153,6 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         match &args.unrx_props {
             Some(unrx_props) => unrx_props.clone(),
             None => Ident::new("Dummy", Span::call_site()),
-        }
-    };
-
-    let manage_global_state = quote! {
-        // Deserialize the global state, make it reactive, and register it with the `RenderCtx`
-        // If it's already there, we'll leave it
-        // This means that we can pass an `Option<String>` around safely and then deal with it at the template site
-        let global_state_refcell = ::perseus::get_render_ctx!().global_state;
-        let global_state = global_state_refcell.borrow();
-        if (&global_state).downcast_ref::<::std::option::Option::<()>>().is_some() {
-            // We can downcast it as the type set by the core render system, so we're the first page to be loaded
-            // In that case, we'll set the global state properly
-            drop(global_state);
-            let mut global_state = global_state_refcell.borrow_mut();
-            // This will be defined if we're the first page
-            let global_state_props = &props.global_state.unwrap();
-            let new_global_state = ::serde_json::from_str::<#global_state>(global_state_props).unwrap().make_rx();
-            *global_state = ::std::boxed::Box::new(new_global_state);
-            // The component function can now access this in `RenderCtx`
         }
     };
 
@@ -193,7 +171,22 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         };
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
-                #manage_global_state
+                // Deserialize the global state, make it reactive, and register it with the `RenderCtx`
+                // If it's already there, we'll leave it
+                // This means that we can pass an `Option<String>` around safely and then deal with it at the template site
+                let global_state_refcell = ::perseus::get_render_ctx!().global_state;
+                let global_state = global_state_refcell.borrow();
+                if (&global_state).downcast_ref::<::std::option::Option::<()>>().is_some() {
+                    // We can downcast it as the type set by the core render system, so we're the first page to be loaded
+                    // In that case, we'll set the global state properly
+                    drop(global_state);
+                    let mut global_state = global_state_refcell.borrow_mut();
+                    // This will be defined if we're the first page
+                    let global_state_props = &props.global_state.unwrap();
+                    let new_global_state = ::serde_json::from_str::<#global_state>(global_state_props).unwrap().make_rx();
+                    *global_state = ::std::boxed::Box::new(new_global_state);
+                    // The component function can now access this in `RenderCtx`
+                }
                 // The user's function
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -236,7 +229,6 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         let arg = &fn_args[0];
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
-                #manage_global_state
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -270,7 +262,6 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         // There are no arguments
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
-                #manage_global_state
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*

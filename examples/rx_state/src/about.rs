@@ -1,11 +1,10 @@
-use crate::global_state::AppState;
 use crate::index::IndexPropsRx;
 use perseus::{get_render_ctx, Html, Template};
 use sycamore::prelude::{view, Signal};
 use sycamore::view::View;
 
 // This template doesn't have any properties, so there's no point in using the special `template_with_rx_state` macro (but we could)
-#[perseus::template_with_rx_state(component = "AboutPage", global_state = "AppState")]
+#[perseus::template_with_rx_state(component = "AboutPage")]
 pub fn about_page() -> View<G> {
     // Get the page state store manually
     // The index page is just an empty string

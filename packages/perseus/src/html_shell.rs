@@ -110,11 +110,12 @@ impl<'a> HtmlShell<'a> {
             "None".to_string()
         };
 
-        // We put these at the very end of the head (after the delimiter comment) because it doesn't matter if they're expunged on subsequent loads
+        // We put this at the very end of the head (after the delimiter comment) because it doesn't matter if it's expunged on subsequent loads
         let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`;", initial_state);
         self.scripts_after_boundary.push(initial_state.into());
+        // But we'll need the global state as a variable until a template accesses it, so we'll keep it around (even though it should actually instantiate validly and not need this after the initial load)
         let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
-        self.scripts_after_boundary.push(global_state.into());
+        self.scripts_before_boundary.push(global_state.into());
         // Interpolate the document `<head>` (this should of course be removed between page loads)
         self.head_after_boundary.push((&page_data.head).into());
         // And set the content

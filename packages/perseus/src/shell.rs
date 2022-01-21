@@ -295,19 +295,20 @@ pub async fn app_shell(
             checkpoint("initial_state_present");
             // Unset the initial state variable so we perform subsequent renders correctly
             // This monstrosity is needed until `web-sys` adds a `.set()` method on `Window`
+            // We don't do this for the global state because it should hang around uninitialized until a template wants it (if we remove it before then, we're stuffed)
             Reflect::set(
                 &JsValue::from(web_sys::window().unwrap()),
                 &JsValue::from("__PERSEUS_INITIAL_STATE"),
                 &JsValue::undefined(),
             )
             .unwrap();
-            // Also do this for the global state
-            Reflect::set(
-                &JsValue::from(web_sys::window().unwrap()),
-                &JsValue::from("__PERSEUS_GLOBAL_STATE"),
-                &JsValue::undefined(),
-            )
-            .unwrap();
+            // // Also do this for the global state
+            // Reflect::set(
+            //     &JsValue::from(web_sys::window().unwrap()),
+            //     &JsValue::from("__PERSEUS_GLOBAL_STATE"),
+            //     &JsValue::undefined(),
+            // )
+            // .unwrap();
             // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);
