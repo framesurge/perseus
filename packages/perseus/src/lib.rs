@@ -58,6 +58,7 @@ mod page_data;
 mod page_state_store;
 mod path_prefix;
 mod router;
+mod rx_state;
 mod server;
 mod shell;
 mod template;
@@ -101,6 +102,7 @@ pub mod templates {
 pub mod state {
     pub use crate::global_state::GlobalStateCreator;
     pub use crate::page_state_store::PageStateStore;
+    pub use crate::rx_state::{MakeRx, MakeUnrx};
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.

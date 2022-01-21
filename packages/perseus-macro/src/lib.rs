@@ -72,22 +72,15 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
     template::template_impl(parsed, arg).into()
 }
 
-/// Exactly the same as `#[template]`, but this expects your state to be reactive (use `#[make_rx]` to make it thus). This will automatically deserialize state and make it reactive,
-/// allowing you to use an MVC pattern easily in Perseus. As the second argument, you'll need to provide the name of your unreactive state `struct` (this is unergonomic,
-/// but the compiler isn't smart enough to infer it yet).
-///
-/// Additionally, this macro will add the reactive state to the global state store, and will fetch it from there, allowing template state to persists between page changes. Additionally,
-/// that state can be accessed by other templates if necessary.
-// TODO Rename this to `template2` and rewrite docs on it with examples
 /// The new version of `#[template]` designed for reactive state. This can interface automatically with global state, and will automatically provide Sycamore `#[component]` annotations. To
-/// use this, you'll need to provide your component's name (e.g. `IndexPage`) as `#[template2(component_name = )`.
+/// use this, you'll need to provide your component's name (e.g. `IndexPage`) as `#[template2(IndexPage)]` (just like with the old macro). You can also provide a custom type parameter
+/// name to use for your component (defaults to `G`) as the second argument.
 ///
-/// The first argument your template function can take is state generated for it (e.g. by the *build state* strategy). If you use this, you'll need to provide the key `unrx_props` as well to this
-/// macro. The argument your template function takes should be the reactive version of your state `struct` (generated with `#[make_rx]` usually), and then you can tell us the name of unreactive
-/// version with `unrx_props = `.
+/// The first argument your template function can take is state generated for it (e.g. by the *build state* strategy), but the reactive version (created with `#[make_rx]` usually). From this,
+/// Perseus can infer the other required types and automatically make your state reactive for you.
 ///
-/// The second argument your template function can take is a global state generated with the `GlobalStateCreator`. If you provide this, with its type being the reactive version, you'll need to
-/// provide the key `global_state = ` being the unreactive version.
+/// The second argument your template function can take is a global state generated with the `GlobalStateCreator`. You should also provide the reactive type here, and Perseus will do all the
+/// rest in the background.
 ///
 /// **Warning:** this macro is currently exempt from semantic versioning, and breaking changes may be introduced here at any time! If you want stability, use the `#[template]` macro (but you won't
 /// get access to Perseus' reactive state platform).
@@ -95,15 +88,7 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
 pub fn template2(args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template2::TemplateFn);
     let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
-    // Parse macro arguments with `darling`
-    let args = match template2::TemplateArgs::from_list(&attr_args) {
-        Ok(v) => v,
-        Err(e) => {
-            return TokenStream::from(e.write_errors());
-        }
-    };
-
-    template2::template_impl(parsed, args).into()
+    template2::template_impl(parsed, attr_args).into()
 }
 
 /// Labels a function as a Perseus head function, which is very similar to a template, but

@@ -63,69 +63,71 @@ impl PageStateStore {
     }
 }
 
-// These are tests for the `#[make_rx]` proc macro (here temporarily)
-#[cfg(test)]
-mod tests {
-    use serde::{Deserialize, Serialize};
+// TODO Use `trybuild` properly with all this
+////  These are tests for the `#[make_rx]` proc macro (here temporarily)
+// #[cfg(test)]
+// mod tests {
+//     use serde::{Deserialize, Serialize};
+//     use crate::state::MakeRx; // We need this to manually use `.make_rx()`
 
-    #[test]
-    fn named_fields() {
-        #[perseus_macro::make_rx(TestRx)]
-        struct Test {
-            foo: String,
-            bar: u16,
-        }
+//     #[test]
+//     fn named_fields() {
+//         #[perseus_macro::make_rx(TestRx)]
+//         struct Test {
+//             foo: String,
+//             bar: u16,
+//         }
 
-        let new = Test {
-            foo: "foo".to_string(),
-            bar: 5,
-        }
-        .make_rx();
-        new.bar.set(6);
-    }
+//         let new = Test {
+//             foo: "foo".to_string(),
+//             bar: 5,
+//         }
+//         .make_rx();
+//         new.bar.set(6);
+//     }
 
-    #[test]
-    fn nested() {
-        #[perseus_macro::make_rx(TestRx)]
-        // `Serialize`, `Deserialize`, and `Clone` are automatically derived
-        #[rx::nested("nested", NestedRx)]
-        struct Test {
-            #[serde(rename = "foo_test")]
-            foo: String,
-            bar: u16,
-            // This will get simple reactivity
-            // This annotation is unnecessary though
-            baz: Baz,
-            // This will get fine-grained reactivity
-            nested: Nested,
-        }
-        #[derive(Serialize, Deserialize, Clone)]
-        struct Baz {
-            test: String,
-        }
-        #[perseus_macro::make_rx(NestedRx)]
-        struct Nested {
-            test: String,
-        }
+//     #[test]
+//     fn nested() {
+//         #[perseus_macro::make_rx(TestRx)]
+//         // `Serialize`, `Deserialize`, and `Clone` are automatically derived
+//         #[rx::nested("nested", NestedRx)]
+//         struct Test {
+//             #[serde(rename = "foo_test")]
+//             foo: String,
+//             bar: u16,
+//             // This will get simple reactivity
+//             // This annotation is unnecessary though
+//             baz: Baz,
+//             // This will get fine-grained reactivity
+//             nested: Nested,
+//         }
+//         #[derive(Serialize, Deserialize, Clone)]
+//         struct Baz {
+//             test: String,
+//         }
+//         #[perseus_macro::make_rx(NestedRx)]
+//         struct Nested {
+//             test: String,
+//         }
 
-        let new = Test {
-            foo: "foo".to_string(),
-            bar: 5,
-            baz: Baz {
-                // We won't be able to `.set()` this
-                test: "test".to_string(),
-            },
-            nested: Nested {
-                // We will be able to `.set()` this
-                test: "nested".to_string(),
-            },
-        }
-        .make_rx();
-        new.bar.set(6);
-        new.baz.set(Baz {
-            test: "updated".to_string(),
-        });
-        new.nested.test.set("updated".to_string());
-        let _ = new.clone();
-    }
-}
+//         let new = Test {
+//             foo: "foo".to_string(),
+//             bar: 5,
+//             baz: Baz {
+//                 // We won't be able to `.set()` this
+//                 test: "test".to_string(),
+//             },
+//             nested: Nested {
+//                 // We will be able to `.set()` this
+//                 test: "nested".to_string(),
+//             },
+//         }
+//         .make_rx();
+//         new.bar.set(6);
+//         new.baz.set(Baz {
+//             test: "updated".to_string(),
+//         });
+//         new.nested.test.set("updated".to_string());
+//         let _ = new.clone();
+//     }
+// }

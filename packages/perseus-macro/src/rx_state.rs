@@ -8,10 +8,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
     // So that we don't have to worry about unit structs or unnamed fields, we'll just copy the struct and change the parts we want to
     let mut new_struct = orig_struct.clone();
     let ItemStruct {
-        vis,
-        ident,
-        generics,
-        ..
+        ident, generics, ..
     } = orig_struct.clone();
 
     new_struct.ident = name.clone();
@@ -158,12 +155,19 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         // We add a Serde derivation because it will always be necessary for Perseus on the original `struct`, and it's really difficult and brittle to filter it out
         #[derive(::serde::Serialize, ::serde::Deserialize, ::std::clone::Clone)]
         #orig_struct
+        impl#generics ::perseus::state::MakeRx for #ident#generics {
+            type Rx = #name#generics;
+            fn make_rx(self) -> #name#generics {
+                #make_rx_fields
+            }
+        }
         #[derive(::std::clone::Clone)]
         #new_struct
-        impl#generics #ident#generics {
-            /// Converts an instance of `#ident` into an instance of `#name`, making it reactive. This consumes `self`.
-            #vis fn make_rx(self) -> #name {
-                #make_rx_fields
+        impl#generics ::perseus::state::MakeUnrx for #name#generics {
+            type Unrx = #ident#generics;
+            fn make_unrx(self) -> #ident#generics {
+                todo!()
+                // #make_rx_fields
             }
         }
     }

@@ -1,10 +1,9 @@
-use darling::FromMeta;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, PatType, Result, ReturnType, Type,
-    Visibility,
+    Attribute, AttributeArgs, Block, FnArg, Generics, Ident, Item, ItemFn, NestedMeta, PatType,
+    Result, ReturnType, Type, Visibility,
 };
 
 /// A function that can be wrapped in the Perseus test sub-harness.
@@ -99,22 +98,7 @@ impl Parse for TemplateFn {
     }
 }
 
-#[derive(FromMeta)]
-pub struct TemplateArgs {
-    /// The name of the component.
-    component: Ident,
-    /// The name of the type parameter to use (default to `G`).
-    #[darling(default)]
-    type_param: Option<Ident>,
-    /// The identifier of the global state type, if this template needs it.
-    #[darling(default)]
-    global_state: Option<Ident>,
-    /// The name of the unreactive properties, if there are any.
-    #[darling(default)]
-    unrx_props: Option<Ident>,
-}
-
-pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
+pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream {
     let TemplateFn {
         block,
         // We know that these are all typed (none are `self`)
@@ -126,34 +110,38 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         return_type,
     } = input;
 
-    let component_name = &args.component;
-    let type_param = match &args.type_param {
-        Some(type_param) => type_param.clone(),
+    // We want either one or two arguments
+    if attr_args.is_empty() || attr_args.len() > 2 {
+        return quote!(compile_error!(
+            "this macro takes either one or two arguments"
+        ));
+    }
+    // This must always be provided
+    let component_name = match &attr_args[0] {
+        NestedMeta::Meta(meta) if meta.path().get_ident().is_some() => {
+            meta.path().get_ident().unwrap()
+        }
+        nested_meta => {
+            return syn::Error::new_spanned(
+                nested_meta,
+                "first argument must be a component identifier",
+            )
+            .to_compile_error()
+        }
+    };
+    // But this is optional (we'll use `G` as the default if it's not provided)
+    let type_param = match &attr_args.get(1) {
+        Some(NestedMeta::Meta(meta)) if meta.path().get_ident().is_some() => {
+            meta.path().get_ident().unwrap().clone()
+        }
+        Some(nested_meta) => {
+            return syn::Error::new_spanned(
+                nested_meta,
+                "optional second argument must be a type parameter identifier if it's provided",
+            )
+            .to_compile_error()
+        }
         None => Ident::new("G", Span::call_site()),
-    };
-    // This is only optional if the second argument wasn't provided
-    let global_state = if fn_args.len() == 2 {
-        match &args.global_state {
-            Some(global_state) => global_state.clone(),
-            None => return syn::Error::new_spanned(&fn_args[0], "template functions with two arguments must declare their global state type (`global_state = `)").to_compile_error()
-        }
-    } else {
-        match &args.global_state {
-            Some(global_state) => global_state.clone(),
-            None => Ident::new("Dummy", Span::call_site()),
-        }
-    };
-    // This is only optional if the first argument wasn't provided
-    let unrx_props = if !fn_args.is_empty() {
-        match &args.unrx_props {
-            Some(unrx_props) => unrx_props.clone(),
-            None => return syn::Error::new_spanned(&fn_args[0], "template functions with one argument or more must declare their unreactive properties type (`unrx_props = `)").to_compile_error()
-        }
-    } else {
-        match &args.unrx_props {
-            Some(unrx_props) => unrx_props.clone(),
-            None => Ident::new("Dummy", Span::call_site()),
-        }
     };
 
     // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
@@ -162,6 +150,10 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         // There's an argument for page properties that needs to have state extracted, so the wrapper will deserialize it
         // We'll also make it reactive and add it to the page state store
         let state_arg = &fn_args[0];
+        let rx_props_ty = match state_arg {
+            FnArg::Typed(PatType { ty, .. }) => ty,
+            FnArg::Receiver(_) => unreachable!(),
+        };
         // There's also a second argument for the global state, which we'll deserialize and make global if it's not already (aka. if any other pages have loaded before this one)
         // Sycamore won't let us have more than one argument to a component though, so we sneakily extract it and literally construct it as a variable (this should be fine?)
         let global_state_arg = &fn_args[1];
@@ -171,6 +163,7 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         };
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                use ::perseus::state::MakeRx;
                 // Deserialize the global state, make it reactive, and register it with the `RenderCtx`
                 // If it's already there, we'll leave it
                 // This means that we can pass an `Option<String>` around safely and then deal with it at the template site
@@ -183,7 +176,7 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
                     let mut global_state = global_state_refcell.borrow_mut();
                     // This will be defined if we're the first page
                     let global_state_props = &props.global_state.unwrap();
-                    let new_global_state = ::serde_json::from_str::<#global_state>(global_state_props).unwrap().make_rx();
+                    let new_global_state = ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(global_state_props).unwrap().make_rx();
                     *global_state = ::std::boxed::Box::new(new_global_state);
                     // The component function can now access this in `RenderCtx`
                 }
@@ -212,7 +205,7 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
                                 ::std::option::Option::None => {
                                     // If there are props, they will always be provided, the compiler just doesn't know that
                                     // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                                    let rx_props = ::serde_json::from_str::<#unrx_props>(&props.state.unwrap()).unwrap().make_rx();
+                                    let rx_props: #rx_props_ty = ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap().make_rx();
                                     // They aren't in there, so insert them
                                     pss.add(&props.path, rx_props.clone());
                                     rx_props
@@ -227,8 +220,13 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         // There's an argument for page properties that needs to have state extracted, so the wrapper will deserialize it
         // We'll also make it reactive and add it to the page state store
         let arg = &fn_args[0];
+        let rx_props_ty = match arg {
+            FnArg::Typed(PatType { ty, .. }) => ty,
+            FnArg::Receiver(_) => unreachable!(),
+        };
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                use ::perseus::state::MakeRx;
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -247,7 +245,7 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
                                 ::std::option::Option::None => {
                                     // If there are props, they will always be provided, the compiler just doesn't know that
                                     // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                                    let rx_props = ::serde_json::from_str::<#unrx_props>(&props.state.unwrap()).unwrap().make_rx();
+                                    let rx_props: #rx_props_ty = ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap().make_rx();
                                     // They aren't in there, so insert them
                                     pss.add(&props.path, rx_props.clone());
                                     rx_props
@@ -262,6 +260,7 @@ pub fn template_impl(input: TemplateFn, args: TemplateArgs) -> TokenStream {
         // There are no arguments
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                use ::perseus::state::MakeRx;
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
