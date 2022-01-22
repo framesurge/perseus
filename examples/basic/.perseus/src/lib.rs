@@ -10,7 +10,7 @@ use perseus::{
         shell::{app_shell, get_initial_state, get_render_cfg, InitialState, ShellProps},
     },
     plugins::PluginAction,
-    state::{AnyFreeze, PageStateStore},
+    state::{AnyFreeze, FrozenApp, PageStateStore},
     templates::{RouterState, TemplateNodeType},
     DomNode,
 };
@@ -71,6 +71,17 @@ pub fn run() -> Result<(), JsValue> {
     let global_state: Rc<RefCell<Box<dyn AnyFreeze>>> =
         Rc::new(RefCell::new(Box::new(Option::<()>::None)));
 
+    // TODO Try to fetch a previous frozen app
+    let frozen_app: Option<Rc<FrozenApp>> = Some(Rc::new(FrozenApp {
+        global_state: r#"{"test":"Hello from the frozen app!"}"#.to_string(),
+        route: "".to_string(),
+        page_state_store: {
+            let mut map = std::collections::HashMap::new();
+            map.insert("".to_string(), r#"{"username":"Sam"}"#.to_string());
+            map
+        },
+    }));
+
     // Create the router we'll use for this app, based on the user's app definition
     create_app_route! {
         name => AppRoute,
@@ -93,7 +104,7 @@ pub fn run() -> Result<(), JsValue> {
                         // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                         // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                         let _ = route.get();
-                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, pss, global_state, translations_manager, error_pages, initial_container) => async move {
+                        wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, pss, global_state, frozen_app, translations_manager, error_pages, initial_container) => async move {
                             let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
                             checkpoint("router_entry");
                             match &route.get().as_ref().0 {
@@ -117,7 +128,8 @@ pub fn run() -> Result<(), JsValue> {
                                         initial_container: initial_container.unwrap().clone(),
                                         container_rx_elem: container_rx_elem.clone(),
                                         page_state_store: pss.clone(),
-                                        global_state: global_state.clone()
+                                        global_state: global_state.clone(),
+                                        frozen_app
                                     }
                                 ).await,
                                 // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale

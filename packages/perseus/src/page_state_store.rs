@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::{rx_state::Freeze, state::AnyFreeze};
+use crate::state::AnyFreeze;
 
 /// A container for page state in Perseus. This is designed as a context store, in which one of each type can be stored. Therefore, it acts very similarly to Sycamore's context system,
 /// though it's specifically designed for each page to store one reactive properties object. In theory, you could interact with this entirely independently of Perseus' state interface,
@@ -36,18 +36,18 @@ impl PageStateStore {
         self.map.borrow().contains_key(url)
     }
 }
-// Good for convenience, and there's no reason we can't do this
-impl Freeze for PageStateStore {
+impl PageStateStore {
+    /// Freezes the component entries into a new `HashMap` of `String`s to avoid extra layers of deserialization.
     // TODO Avoid literally cloning all the page states here if possible
-    fn freeze(&self) -> String {
+    pub fn freeze_to_hash_map(&self) -> HashMap<String, String> {
         let map = self.map.borrow();
         let mut str_map = HashMap::new();
         for (k, v) in map.iter() {
             let v_str = v.freeze();
-            str_map.insert(k, v_str);
+            str_map.insert(k.to_string(), v_str);
         }
 
-        serde_json::to_string(&str_map).unwrap()
+        str_map
     }
 }
 

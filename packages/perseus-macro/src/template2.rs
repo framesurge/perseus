@@ -167,7 +167,9 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                 // Deserialize the global state, make it reactive, and register it with the `RenderCtx`
                 // If it's already there, we'll leave it
                 // This means that we can pass an `Option<String>` around safely and then deal with it at the template site
-                let global_state_refcell = ::perseus::get_render_ctx!().global_state;
+                let render_ctx = ::perseus::get_render_ctx!();
+                let frozen_app = render_ctx.frozen_app;
+                let global_state_refcell = render_ctx.global_state;
                 let global_state = global_state_refcell.borrow();
                 // This will work if the global state hasn't been initialized yet, because it's the default value that Perseus sets
                 if global_state.as_any().downcast_ref::<::std::option::Option::<()>>().is_some() {
@@ -175,10 +177,32 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                     // In that case, we'll set the global state properly
                     drop(global_state);
                     let mut global_state_mut = global_state_refcell.borrow_mut();
-                    // This will be defined if we're the first page
-                    let global_state_props = &props.global_state.unwrap();
-                    let new_global_state = ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(global_state_props).unwrap().make_rx();
-                    *global_state_mut = ::std::boxed::Box::new(new_global_state);
+                    // If there's a frozen app, we'll try to use that
+                    let new_global_state = match frozen_app {
+                        // If it hadn't been initialized yet when we froze, it would've been set to `None` here, and we'll use the one from the server
+                        ::std::option::Option::Some(frozen_app) if frozen_app.global_state != "None" => {
+                            let global_state_str = frozen_app.global_state.clone();
+                            let global_state = ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(&global_state_str);
+                            // We don't control the source of the frozen app, so we have to assume that it could well be invalid, in whcih case we'll turn to the server
+                            match global_state {
+                                ::std::result::Result::Ok(global_state) => global_state,
+                                ::std::result::Result::Err(_) => {
+                                    // This will be defined if we're the first page
+                                    let global_state_str = props.global_state.unwrap();
+                                    // That's from the server, so it's unrecoverable if it doesn't deserialize
+                                    ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(&global_state_str).unwrap()
+                                }
+                            }
+                        },
+                        _ => {
+                            // This will be defined if we're the first page
+                            let global_state_str = props.global_state.unwrap();
+                            // That's from the server, so it's unrecoverable if it doesn't deserialize
+                            ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(&global_state_str).unwrap()
+                        }
+                    };
+                    let new_global_state_rx = new_global_state.make_rx();
+                    *global_state_mut = ::std::boxed::Box::new(new_global_state_rx);
                     // The component function can now access this in `RenderCtx`
                 }
                 // The user's function

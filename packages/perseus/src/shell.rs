@@ -5,7 +5,7 @@ use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
 use crate::state::{AnyFreeze, PageStateStore};
 use crate::template::Template;
-use crate::templates::{PageProps, RouterLoadState, RouterState, TemplateNodeType};
+use crate::templates::{FrozenApp, PageProps, RouterLoadState, RouterState, TemplateNodeType};
 use crate::ErrorPages;
 use fmterr::fmt_err;
 use std::cell::RefCell;
@@ -255,6 +255,8 @@ pub struct ShellProps {
     pub container_rx_elem: Element,
     /// The global state store. Brekaing it out here prevents it being overriden every time a new template loads.
     pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
+    /// A previous frozen state to be gradully rehydrated.
+    pub frozen_app: Option<Rc<FrozenApp>>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -273,6 +275,7 @@ pub async fn app_shell(
         initial_container,
         container_rx_elem,
         global_state: curr_global_state,
+        frozen_app,
     }: ShellProps,
 ) {
     checkpoint("app_shell_entry");
@@ -304,13 +307,6 @@ pub async fn app_shell(
                 &JsValue::undefined(),
             )
             .unwrap();
-            // // Also do this for the global state
-            // Reflect::set(
-            //     &JsValue::from(web_sys::window().unwrap()),
-            //     &JsValue::from("__PERSEUS_GLOBAL_STATE"),
-            //     &JsValue::undefined(),
-            // )
-            // .unwrap();
             // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);
@@ -364,6 +360,7 @@ pub async fn app_shell(
                             router_state_2,
                             page_state_store,
                             curr_global_state,
+                            frozen_app,
                         )
                     },
                     &container_rx_elem,
@@ -380,6 +377,7 @@ pub async fn app_shell(
                         router_state_2,
                         page_state_store,
                         curr_global_state,
+                        frozen_app,
                     )
                 },
                 &container_rx_elem,
@@ -484,6 +482,7 @@ pub async fn app_shell(
                                                 router_state_2.clone(),
                                                 page_state_store,
                                                 curr_global_state,
+                                                frozen_app,
                                             )
                                         },
                                         &container_rx_elem,
@@ -500,6 +499,7 @@ pub async fn app_shell(
                                             router_state_2,
                                             page_state_store,
                                             curr_global_state,
+                                            frozen_app,
                                         )
                                     },
                                     &container_rx_elem,

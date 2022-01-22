@@ -41,8 +41,8 @@ pub struct FrozenApp {
     pub global_state: String,
     /// The frozen route.
     pub route: String,
-    /// The frozen page state store.
-    pub page_state_store: String,
+    /// The frozen page state store. We store this as a `HashMap` as this level so that we can avoid another deserialization.
+    pub page_state_store: HashMap<String, String>,
 }
 
 /// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
@@ -67,6 +67,8 @@ pub struct RenderCtx {
     /// Because we store `dyn Any` in here, we initialize it as `Option::None`, and then the template macro (which does the heavy lifting for global state) will find that it can't downcast
     /// to the user's global state type, which will prompt it to deserialize whatever global state it was given and then write that here.
     pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
+    /// A previous state the app was once in, still serialized. This will be rehydrated graudally by the template macro.
+    pub frozen_app: Option<Rc<FrozenApp>>,
 }
 impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized `String` that can later be used to re-initialize the app to the same state at the time of freezing.
@@ -80,7 +82,7 @@ impl Freeze for RenderCtx {
                 RouterLoadState::Server => "SERVER",
             }
             .to_string(),
-            page_state_store: self.page_state_store.freeze(),
+            page_state_store: self.page_state_store.freeze_to_hash_map(),
         };
         serde_json::to_string(&frozen_app).unwrap()
     }
@@ -288,6 +290,7 @@ impl<G: Html> Template<G> {
 
     // Render executors
     /// Executes the user-given function that renders the template on the client-side ONLY. This takes in an extsing global state.
+    #[allow(clippy::too_many_arguments)]
     pub fn render_for_template_client(
         &self,
         props: PageProps,
@@ -296,6 +299,7 @@ impl<G: Html> Template<G> {
         router_state: RouterState,
         page_state_store: PageStateStore,
         global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
+        frozen_app: Option<Rc<FrozenApp>>,
     ) -> View<G> {
         view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
@@ -305,7 +309,8 @@ impl<G: Html> Template<G> {
                     translator: translator.clone(),
                     router: router_state,
                     page_state_store,
-                    global_state
+                    global_state,
+                    frozen_app
                 },
                 children: || (self.template)(props)
             })
@@ -328,7 +333,9 @@ impl<G: Html> Template<G> {
                     translator: translator.clone(),
                     router: router_state,
                     page_state_store,
-                    global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None)))
+                    global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None))),
+                    // Hydrating state on the server-side is pointless
+                    frozen_app: None
                 },
                 children: || (self.template)(props)
             })
@@ -349,7 +356,9 @@ impl<G: Html> Template<G> {
                         // The head string is rendered to a string, and so never has information about router or page state
                         router: RouterState::default(),
                         page_state_store: PageStateStore::default(),
-                        global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None)))
+                        global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None))),
+                        // Hydrating state on the server-side is pointless
+                        frozen_app: None,
                     },
                     children: || (self.head)(props)
                 })
