@@ -4,6 +4,15 @@ As you've seen, Perseus has full support for reactive state in templates, but wh
 
 The essence of global state is that you can generate it at build-time (though with something like setting dark mode, you'll probably want to ignore whatever was set at build time until you know the browser's preferences) and access it seamlessly from any template. Just like usual [reactive state](:reference/state/rx), you can make it reactive with `#[make_rx(...)]`, and you essentially get app-wide MVC with just a few lines of code (and no extra dependencies, all this is completely built into Perseus).
 
+<details>
+<summary>How would I actually implement dark mode like this?</summary>
+
+Above is a contrived example. In reality, dark mode is set in two ways: the preference that the browser exposes and the user's own manual setting (usually through a toggle switch in the header or similar). You obviously don't want to start in light mode and then flicker to dark mode once you know the user's preference, that would be awful, so it's far better to rely on a class in the HTML (e.g. if `dark` is set on the `<body>`, certain things should be styled in different ways) that you set based on a cookie that you've stored, falling back to the `prefers-color-scheme` if there's no cookie yet. Perseus is designed to load content and then make it interactive, so if you do this cookie-checking in your Wasm ode, you'll be too late to avoid that flicker, which is why it's better to either do this with a separate Wasm bundle, or with a quick bit of JS written directly into your `index.html` file. There are plenty of guides on how to achieve this online.
+
+The role of dark mode comes in in styling that toggle switch mostly, and whenever it changes, you should toggle the `dark` class on the `<body>` or similar and update the global state. YOu could to the class toggling with a `create_effect` that listens for changes in the global state. So, in this case, global state actually isn't crucial, it just makes things cleaner and easier to set up. Unfortunately though, dark mode is irritating with any prerendering because you want to avoid that flicker. (That said, if you don't mind temporarily blinding your 3am users, do whatever you like!)
+
+</details>
+
 ## Example
 
 All the following examples are taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/rx_state).
