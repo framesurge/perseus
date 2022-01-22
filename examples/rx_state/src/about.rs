@@ -3,7 +3,7 @@ use perseus::{get_render_ctx, Html, Template};
 use sycamore::prelude::{view, Signal};
 use sycamore::view::View;
 
-#[perseus::template2(AboutPage)]
+#[perseus::template_rx(AboutPage)]
 pub fn about_page() -> View<G> {
     // Get the page state store manually
     // The index page is just an empty string

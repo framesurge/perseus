@@ -14,7 +14,7 @@ pub struct IndexProps {
 // This special macro (normally we'd use `template(IndexProps)`) converts the state we generate elsewhere to a reactive version
 // We need to tell it the name of the unreactive properties we created to start with (unfortunately the compiler isn't smart enough to figure that out yet)
 // This will also add our reactive properties to the global state store, and, if they're already there, it'll use the existing one
-#[perseus::template2(IndexPage)]
+#[perseus::template_rx(IndexPage)]
 pub fn index_page(IndexPropsRx { username }: IndexPropsRx, global_state: AppStateRx) -> View<G> {
     let username_2 = username.clone(); // This is necessary until Sycamore's new reactive primitives are released
     let frozen_app = Signal::new(String::new()); // This is not part of our data model, so it's not part of the state properties (everything else should be though)
