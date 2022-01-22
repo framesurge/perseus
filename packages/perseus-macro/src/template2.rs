@@ -224,16 +224,36 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                         {
                             // Check if properties of the reactive type are already in the page state store
                             // If they are, we'll use them (so state persists for templates across the whole app)
-                            let mut pss = ::perseus::get_render_ctx!().page_state_store;
+                            let render_ctx = ::perseus::get_render_ctx!();
+                            let frozen_app = render_ctx.frozen_app;
+                            let mut pss = render_ctx.page_state_store;
                             match pss.get(&props.path) {
                                 ::std::option::Option::Some(old_state) => old_state,
+                                // Check if there's anything in the previous frozen state
                                 ::std::option::Option::None => {
-                                    // If there are props, they will always be provided, the compiler just doesn't know that
-                                    // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                                    let rx_props: #rx_props_ty = ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap().make_rx();
-                                    // They aren't in there, so insert them
-                                    pss.add(&props.path, rx_props.clone());
-                                    rx_props
+                                    let state = match frozen_app {
+                                        ::std::option::Option::Some(frozen_app) if frozen_app.page_state_store.contains_key(&props.path) => {
+                                            let old_state = frozen_app.page_state_store.get(&props.path).unwrap();
+                                            // As with the global state, this may not deserialize correctly, in which case we'll fall back to the generated state
+                                            let state = ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&old_state);
+                                            match state {
+                                                ::std::result::Result::Ok(state) => state,
+                                                ::std::result::Result::Err(_) => {
+                                                    // If there are props, they will always be provided, the compiler just doesn't know that
+                                                    // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
+                                                    ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap()
+                                                }
+                                            }
+                                        },
+                                        _ => {
+                                            // If there are props, they will always be provided, the compiler just doesn't know that
+                                            // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
+                                            ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap()
+                                        }
+                                    };
+                                    let rx_state: #rx_props_ty = state.make_rx();
+                                    pss.add(&props.path, rx_state.clone());
+                                    rx_state
                                 }
                             }
                         }
@@ -264,16 +284,36 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                         {
                             // Check if properties of the reactive type are already in the page state store
                             // If they are, we'll use them (so state persists for templates across the whole app)
-                            let mut pss = ::perseus::get_render_ctx!().page_state_store;
+                            let render_ctx = ::perseus::get_render_ctx!();
+                            let frozen_app = render_ctx.frozen_app;
+                            let mut pss = render_ctx.page_state_store;
                             match pss.get(&props.path) {
                                 ::std::option::Option::Some(old_state) => old_state,
+                                // Check if there's anything in the previous frozen state
                                 ::std::option::Option::None => {
-                                    // If there are props, they will always be provided, the compiler just doesn't know that
-                                    // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                                    let rx_props: #rx_props_ty = ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap().make_rx();
-                                    // They aren't in there, so insert them
-                                    pss.add(&props.path, rx_props.clone());
-                                    rx_props
+                                    let state = match frozen_app {
+                                        ::std::option::Option::Some(frozen_app) if frozen_app.page_state_store.contains_key(&props.path) => {
+                                            let old_state = frozen_app.page_state_store.get(&props.path).unwrap();
+                                            // As with the global state, this may not deserialize correctly, in which case we'll fall back to the generated state
+                                            let state = ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&old_state);
+                                            match state {
+                                                ::std::result::Result::Ok(state) => state,
+                                                ::std::result::Result::Err(_) => {
+                                                    // If there are props, they will always be provided, the compiler just doesn't know that
+                                                    // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
+                                                    ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap()
+                                                }
+                                            }
+                                        },
+                                        _ => {
+                                            // If there are props, they will always be provided, the compiler just doesn't know that
+                                            // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
+                                            ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap()
+                                        }
+                                    };
+                                    let rx_state: #rx_props_ty = state.make_rx();
+                                    pss.add(&props.path, rx_state.clone());
+                                    rx_state
                                 }
                             }
                         }
