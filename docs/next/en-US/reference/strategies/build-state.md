@@ -4,7 +4,7 @@ The most commonly-used rendering strategy for Perseus is static generation, whic
 
 Note that, depending on other strategies used, Perseus may call this strategy at build-time or while the server is running, so you shouldn't depend on anything only present in a build environment (particularly if you're using the _incremental generation_ or _revalidation_ strategies).
 
-_Note: if you want to export your app to purely static files, see [this section](:exporting), which will help you use Perseus without any server._
+_Note: if you want to export your app to purely static files, see [this section](:reference/exporting), which will help you use Perseus without any server._
 
 ## Usage
 

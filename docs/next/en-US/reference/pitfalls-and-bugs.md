@@ -8,7 +8,7 @@ If you're running Arch Linux or a derivative (e.g. Manjaro), you're very likely 
 
 ## I'm getting JSON error messages...
 
-If an error occurs during `perseus serve`, it's very possible that you'll get error messages in JSON, which are utterly unreadable. This is because of the way the server is run, the Perseus CLI needs a JSON output so that it can figure out where the server binary is. You can access the human-readable logs by [snooping](:snooping) on the output though, which you can do by running `perseus snoop serve` (but make sure you've run `perseus build` first).
+If an error occurs during `perseus serve`, it's very possible that you'll get error messages in JSON, which are utterly unreadable. This is because of the way the server is run, the Perseus CLI needs a JSON output so that it can figure out where the server binary is. You can access the human-readable logs by [snooping](:reference/snooping) on the output though, which you can do by running `perseus snoop serve` (but make sure you've run `perseus build` first).
 
 ## Perseus doesn't work on an M1 Mac
 
@@ -23,7 +23,7 @@ This will disable optimizations for your Wasm bundle, which prevents this issue 
 
 ## I want to apply X to my `Cargo.toml`, but it doesn't work
 
-Perseus has a rather unique code structure that will foil most attempts at modifying your own `Cargo.toml`. For example, if you wanted to change the `codegen_units` in the release profile of your app, you couldn't do this in your own `Cargo.toml`, it would have no effect. The reason for this is that the code your write is actually a library that's imported by the CLI's engines, so any custom configuration has to be made directly on the engines. In other words, you'll need to apply your changes on `.perseus/Cargo.toml` instead. You can also apply customizations on the server and the builder, which are separate crates under `.perseus/`. Note that modifying `.perseus/` and retaining your changes requires [ejecting](:ejecting), or you could [write a plugin](:plugins/writing) if it's a change you make a lot.
+Perseus has a rather unique code structure that will foil most attempts at modifying your own `Cargo.toml`. For example, if you wanted to change the `codegen_units` in the release profile of your app, you couldn't do this in your own `Cargo.toml`, it would have no effect. The reason for this is that the code your write is actually a library that's imported by the CLI's engines, so any custom configuration has to be made directly on the engines. In other words, you'll need to apply your changes on `.perseus/Cargo.toml` instead. You can also apply customizations on the server and the builder, which are separate crates under `.perseus/`. Note that modifying `.perseus/` and retaining your changes requires [ejecting](:reference/ejecting), or you could [write a plugin](:reference/plugins/writing) if it's a change you make a lot.
 
 ## Cargo is putting out strange errors...
 
@@ -42,4 +42,4 @@ That will archive the `git/` and `registry/` folders in `~/.cargo/`, which shoul
 
 ## I want to disable a Perseus default feature, but it's not doing anything
 
-If you add `default-features = false` to your `Cargo.toml` and expect Perseus to adapt accordingly, you're in for a bit of a shock unfortunately! The reason for this is that the Perseus CLI isn't (yet) smart enough to know you've done this, so it will completely ignore you and press on with default features in the engine, and those settings will override your own. To disable default features, you'll need to also make these changes in `.perseus/Cargo.toml`, `.perseus/builder/Cargo.toml`, and `.perseus/server/Cargo.toml` (and you'll need to [eject](:ejecting) to save your changes). In future versions, the CLI will be able to detect your preferences for this and update accordingly.
+If you add `default-features = false` to your `Cargo.toml` and expect Perseus to adapt accordingly, you're in for a bit of a shock unfortunately! The reason for this is that the Perseus CLI isn't (yet) smart enough to know you've done this, so it will completely ignore you and press on with default features in the engine, and those settings will override your own. To disable default features, you'll need to also make these changes in `.perseus/Cargo.toml`, `.perseus/builder/Cargo.toml`, and `.perseus/server/Cargo.toml` (and you'll need to [eject](:reference/ejecting) to save your changes). In future versions, the CLI will be able to detect your preferences for this and update accordingly.

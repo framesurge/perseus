@@ -4,18 +4,18 @@ Writing Perseus plugins is a relatively seamless process once you get the hang o
 
 ## Structure
 
-A plugin will usually occupy its own crate, but it may also be part of a larger app that just uses plugins for convenience and to avoid [ejection](:ejecting). The only thing you'll need in a plugin is the `perseus` crate, though you'll probably want to bring other libraries in (like `sycamore` if you're adding templates or error pages).
+A plugin will usually occupy its own crate, but it may also be part of a larger app that just uses plugins for convenience and to avoid [ejection](:reference/ejecting). The only thing you'll need in a plugin is the `perseus` crate, though you'll probably want to bring other libraries in (like `sycamore` if you're adding templates or error pages).
 
 ## Defining a Plugin
 
 To define a plugin, you'll call `perseus::plugins::Plugin::new()`, which takes four parameters:
 
 -   The name of the plugin as a `&str`, which should be the name of the crate the plugin is in (or the name of a larger app with some extension) (**all plugins MUST have unique names**)
--   A [functional actions](:plugins/functional) registrar function, which is given some functional actions and then extends them
--   A [control actions](:plugins/control) registrar, which is given some control actions and then extends them
+-   A [functional actions](:reference/plugins/functional) registrar function, which is given some functional actions and then extends them
+-   A [control actions](:reference/plugins/control) registrar, which is given some control actions and then extends them
 -   The environment for the plugin to run in (see below)
 
-Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:plugins/tinker)-time (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/plugins/src/plugin.rs)):
+Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:reference/plugins/tinker)-time (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/plugins/src/plugin.rs)):
 
 ```rust
 {{#include ../../../../examples/plugins/src/plugin.rs}}
@@ -37,12 +37,12 @@ However, because Perseus is juggling all the data for all the plugins the user h
 
 Right now, there are few things that you can't do with Perseus plugins, which can be quite weird.
 
--   You can't extend the engine's server (due to a limitation of Actix Web types), you'll need to manually run a `tinker` on it (add your code into the file by writing it in using [the `tinker` action](:plugins/tinker))
--   You can't set the [mutable store](:stores) from a plugin due to a traits issue, so you'll need to provide something for the user to provide to the `mutable_store` parameter of the `define_app!` macro
+-   You can't extend the engine's server (due to a limitation of Actix Web types), you'll need to manually run a `tinker` on it (add your code into the file by writing it in using [the `tinker` action](:reference/plugins/tinker))
+-   You can't set the [mutable store](:reference/stores) from a plugin due to a traits issue, so you'll need to provide something for the user to provide to the `mutable_store` parameter of the `define_app!` macro
 -   Similarly, you can't set the translations manager from a plugin
 
 ## Plugin Environments
 
-As explained [here](:plugins/using), plugins can either run on the client (`PluginEnv::Client`), the server-side (`PluginEnv::Server`), or on both (`PluginEnv::Both`). Note that the server-side includes `tinker`-time and during the build process. If your plugin does not absolutely need to run on the client, use `PluginEnv::Server`! Your users will thank you for their much smaller bundles! If you don't do this, every single dependency of your plugin will end up in the user's final Wasm bundle, which has to be sent to browsers, and bundle sizes can end up doubling or more as a result! If this is the case though, make sure to tell your users to register your plugin using `.plugin_with_client_privilege()` rather than just `.plugin()` (but don't stress, they'll get an explanatory error if they use the wrong one accidentally).
+As explained [here](:reference/plugins/using), plugins can either run on the client (`PluginEnv::Client`), the server-side (`PluginEnv::Server`), or on both (`PluginEnv::Both`). Note that the server-side includes `tinker`-time and during the build process. If your plugin does not absolutely need to run on the client, use `PluginEnv::Server`! Your users will thank you for their much smaller bundles! If you don't do this, every single dependency of your plugin will end up in the user's final Wasm bundle, which has to be sent to browsers, and bundle sizes can end up doubling or more as a result! If this is the case though, make sure to tell your users to register your plugin using `.plugin_with_client_privilege()` rather than just `.plugin()` (but don't stress, they'll get an explanatory error if they use the wrong one accidentally).
 
 You can set the environment your plugin runs on by changing the fourth argument to a variant of `PluginEnv`.

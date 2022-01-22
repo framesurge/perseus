@@ -16,15 +16,15 @@ You can also provide `--no-build` to this command to make it skip building your 
 
 ### `test`
 
-Exactly the same as `serve`, but runs your app in testing mode, which you can read more about [here](:testing/intro).
+Exactly the same as `serve`, but runs your app in testing mode, which you can read more about [here](:reference/testing/intro).
 
 ### `export`
 
-Builds and exports your app to a series of purely static files at `.perseus/dist/exported/`. This will only work if your app doesn't use any strategies that can't be run at build time, but if that's the case, then you can easily use Perseus without a server after running this command! You can read more about static exporting [here](:exporting).
+Builds and exports your app to a series of purely static files at `.perseus/dist/exported/`. This will only work if your app doesn't use any strategies that can't be run at build time, but if that's the case, then you can easily use Perseus without a server after running this command! You can read more about static exporting [here](:reference/exporting).
 
 ### `deploy`
 
-Builds your app for production and places it in `pkg/`. You can then upload that folder to a server of your choosing to deploy your app live! You can (and really should) read more about deployment and the potential problems you may encounter [here](:deploying/intro).
+Builds your app for production and places it in `pkg/`. You can then upload that folder to a server of your choosing to deploy your app live! You can (and really should) read more about deployment and the potential problems you may encounter [here](:reference/deploying/intro).
 
 ### `clean`
 
@@ -38,7 +38,7 @@ See the next section for the details of this command.
 
 ## Watching
 
-The Perseus CLI supports watching your local directory for changes when running `perseus serve` or `perseus export` through the `-w/--watch` flag. Adding this will make the CLI spawn another version of itself responsible for running the actual builds, and the original process acts as a supervisor. This approach was chosen due to the complexity of the CLI's multithreaded build system, which makes terminating unfinished builds *extremely* difficult.
+The Perseus CLI supports watching your local directory for changes when running `perseus serve` or `perseus export` through the `-w/--watch` flag. Adding this will make the CLI spawn another version of itself responsible for running the actual builds, and the original process acts as a supervisor. This approach was chosen due to the complexity of the CLI's multithreaded build system, which makes terminating unfinished builds _extremely_ difficult.
 
 Notably, the CLI spawns another version of itself as a process group (or `JobObject` on Windows) using the [`command-group`](https://github.com/watchexec/command-group) crate, which allows terminations signals to go to all builder child processes. However, this means that the CLI needs to manually handle termination signals to it to terminate the processes in thr group. This means that, if the CLI terminates improperly (e.g. if you `kill` it), you will very likely end up with build jobs running in the background. Those shouldn't be too problematic, and you probably won't even notice them, but a server process could also be orphaned, which would leave a port occupied. If this happens, use `ps aux | grep perseus` to find the process ID, and then `kill` it by that (e.g. `kill 60850`) on Linux. If possible though, avoiding force-terminating the Perseus CLI.
 

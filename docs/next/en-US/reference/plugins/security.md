@@ -4,7 +4,7 @@ Perseus' plugins system makes it phenomenally versatile, and allows you to resha
 
 ## The Risks
 
-If you enable a plugin in your app, it will have the opportunity to run arbitrary code. The actions that plugins take are just functions that they provide, so a plugin could easily be saying that it's adding an extra [static alias](:static-content) while simultaneously installing malware on your computer.
+If you enable a plugin in your app, it will have the opportunity to run arbitrary code. The actions that plugins take are just functions that they provide, so a plugin could easily be saying that it's adding an extra [static alias](:reference/static-content) while simultaneously installing malware on your computer.
 
 ## Precautions
 
