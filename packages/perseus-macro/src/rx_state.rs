@@ -159,7 +159,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                 // Check if this field was registered as one to use nested reactivity
                 if nested_fields_map.contains_key(field.ident.as_ref().unwrap()) {
                     field_assignments.extend(quote! {
-                        #field_name: self.#field_name.make_unrx(),
+                        #field_name: self.#field_name.clone().make_unrx(),
                     })
                 } else {
                     // We can `.clone()` the field because we implement `Clone` on both the new and the original `struct`s, meaning all fields must also be `Clone`
@@ -185,6 +185,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         impl#generics ::perseus::state::MakeRx for #ident#generics {
             type Rx = #name#generics;
             fn make_rx(self) -> #name#generics {
+                use ::perseus::state::MakeRx;
                 #make_rx_fields
             }
         }
@@ -193,11 +194,13 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         impl#generics ::perseus::state::MakeUnrx for #name#generics {
             type Unrx = #ident#generics;
             fn make_unrx(self) -> #ident#generics {
+                use ::perseus::state::MakeUnrx;
                 #make_unrx_fields
             }
         }
         impl#generics ::perseus::state::Freeze for #name#generics {
             fn freeze(&self) -> ::std::string::String {
+                use ::perseus::state::MakeUnrx;
                 let unrx = #make_unrx_fields;
                 // TODO Is this `.unwrap()` safe?
                 ::serde_json::to_string(&unrx).unwrap()

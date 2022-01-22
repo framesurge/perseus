@@ -134,7 +134,9 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// use serde::{Serialize, Deserialize};
-/// # use perseus_macro::make_rx; // You might import this from `perseus`
+/// use perseus::make_rx;
+/// // We need this trait in scope to manually invoke `.make_rx()`
+/// use perseus::state::MakeRx;
 ///
 /// #[make_rx(TestRx)]
 /// // Notice that we don't need to derive `Serialize`,`Deserialize`, or `Clone`, the macro does it for us
