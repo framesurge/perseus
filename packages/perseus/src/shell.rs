@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::*;
 use sycamore::rt::Reflect; // We can piggyback off Sycamore to avoid bringing in `js_sys`
+use sycamore_router::navigate_replace;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Element, Request, RequestInit, RequestMode, Response};
@@ -316,6 +317,12 @@ pub async fn app_shell(
                 .set_attribute("style", "display: none;")
                 .unwrap();
             checkpoint("page_visible");
+            // Check if a frozen app was provided with a route to load (we'll abort the initial load for a subsequent load in that case)
+            if let Some(ref frozen_app) = frozen_app {
+                navigate_replace(&frozen_app.route);
+                return;
+            }
+
             // Now that the user can see something, we can get the translator
             let mut translations_manager_mut = translations_manager.borrow_mut();
             // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
