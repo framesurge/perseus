@@ -5,7 +5,9 @@ use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
 use crate::state::{AnyFreeze, PageStateStore};
 use crate::template::Template;
-use crate::templates::{FrozenApp, PageProps, RouterLoadState, RouterState, TemplateNodeType};
+use crate::templates::{
+    FrozenApp, PageProps, RouterLoadState, RouterState, TemplateNodeType, ThawPrefs,
+};
 use crate::ErrorPages;
 use fmterr::fmt_err;
 use std::cell::RefCell;
@@ -13,7 +15,6 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::*;
 use sycamore::rt::Reflect; // We can piggyback off Sycamore to avoid bringing in `js_sys`
-use sycamore_router::navigate_replace;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Element, Request, RequestInit, RequestMode, Response};
@@ -256,8 +257,8 @@ pub struct ShellProps {
     pub container_rx_elem: Element,
     /// The global state store. Brekaing it out here prevents it being overriden every time a new template loads.
     pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
-    /// A previous frozen state to be gradully rehydrated.
-    pub frozen_app: Option<Rc<FrozenApp>>,
+    /// A previous frozen state to be gradully rehydrated. This should always be `None`, it only serves to provide continuity across templates.
+    pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -317,11 +318,6 @@ pub async fn app_shell(
                 .set_attribute("style", "display: none;")
                 .unwrap();
             checkpoint("page_visible");
-            // Check if a frozen app was provided with a route to load (we'll abort the initial load for a subsequent load in that case)
-            if let Some(ref frozen_app) = frozen_app {
-                navigate_replace(&frozen_app.route);
-                return;
-            }
 
             // Now that the user can see something, we can get the translator
             let mut translations_manager_mut = translations_manager.borrow_mut();

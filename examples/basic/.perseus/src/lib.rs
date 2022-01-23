@@ -11,7 +11,7 @@ use perseus::{
     },
     plugins::PluginAction,
     state::{AnyFreeze, FrozenApp, PageStateStore},
-    templates::{RouterState, TemplateNodeType},
+    templates::{RouterState, TemplateNodeType, ThawPrefs},
     DomNode,
 };
 use std::cell::RefCell;
@@ -81,7 +81,7 @@ pub fn run() -> Result<(), JsValue> {
     //         map
     //     },
     // }));
-    let frozen_app: Option<Rc<FrozenApp>> = None;
+    let frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>> = Rc::new(RefCell::new(None));
 
     // Create the router we'll use for this app, based on the user's app definition
     create_app_route! {

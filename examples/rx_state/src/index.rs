@@ -18,6 +18,8 @@ pub struct IndexProps {
 pub fn index_page(IndexPropsRx { username }: IndexPropsRx, global_state: AppStateRx) -> View<G> {
     let username_2 = username.clone(); // This is necessary until Sycamore's new reactive primitives are released
     let frozen_app = Signal::new(String::new()); // This is not part of our data model, so it's not part of the state properties (everything else should be though)
+    let frozen_app_2 = frozen_app.clone();
+    let frozen_app_3 = frozen_app.clone();
     let render_ctx = perseus::get_render_ctx!();
 
     view! {
@@ -33,6 +35,14 @@ pub fn index_page(IndexPropsRx { username }: IndexPropsRx, global_state: AppStat
             frozen_app.set(render_ctx.freeze());
         })) { "Freeze!" }
         p { (frozen_app.get()) }
+
+        input(bind:value = frozen_app_2, placeholder = "Frozen state")
+        button(on:click = cloned!(frozen_app_3, render_ctx => move |_| {
+            render_ctx.thaw(&frozen_app_3.get(), perseus::state::ThawPrefs {
+                page: perseus::state::PageThawPrefs::IncludeAll,
+                global_prefer_frozen: true
+            }).unwrap();
+        })) { "Thaw..." }
     }
 }
 

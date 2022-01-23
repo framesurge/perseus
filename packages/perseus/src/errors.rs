@@ -22,6 +22,17 @@ pub enum ClientError {
     Js(String),
     #[error(transparent)]
     FetchError(#[from] FetchError),
+    #[error("invalid frozen state provided")]
+    ThawFailed {
+        #[source]
+        source: serde_json::Error,
+    },
+    // If the user is using the template macros, this should never be emitted because we can ensure that the generated state is valid
+    #[error("tried to deserialize invalid state")]
+    StateInvalid {
+        #[source]
+        source: serde_json::Error,
+    },
 }
 
 /// Errors that can occur in the build process or while the server is running.

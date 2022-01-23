@@ -103,7 +103,7 @@ pub mod state {
     pub use crate::global_state::GlobalStateCreator;
     pub use crate::page_state_store::PageStateStore;
     pub use crate::rx_state::*;
-    pub use crate::template::FrozenApp;
+    pub use crate::template::{FrozenApp, PageThawPrefs, ThawPrefs};
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.

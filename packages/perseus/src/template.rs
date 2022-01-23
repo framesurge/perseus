@@ -5,6 +5,8 @@ use crate::errors::*;
 use crate::router::RouterLoadState;
 use crate::router::RouterState;
 use crate::rx_state::Freeze;
+use crate::rx_state::MakeRx;
+use crate::rx_state::MakeUnrx;
 use crate::state::AnyFreeze;
 use crate::state::PageStateStore;
 use crate::translator::Translator;
@@ -22,6 +24,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{view, View};
+use sycamore_router::navigate;
 
 /// The properties that every page will be initialized with. You shouldn't ever need to interact with this unless you decide not to use the template macros.
 #[derive(Clone)]
@@ -35,7 +38,7 @@ pub struct PageProps {
 }
 
 /// A representation of a frozen app.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FrozenApp {
     /// The frozen global state. If it was never initialized, this will be `None`.
     pub global_state: String,
@@ -43,6 +46,42 @@ pub struct FrozenApp {
     pub route: String,
     /// The frozen page state store. We store this as a `HashMap` as this level so that we can avoid another deserialization.
     pub page_state_store: HashMap<String, String>,
+}
+
+/// The user's preferences on state thawing.
+#[derive(Debug)]
+pub struct ThawPrefs {
+    /// The preference for page thawing.
+    pub page: PageThawPrefs,
+    /// Whether or not active global state should be overriden by frozen state.
+    pub global_prefer_frozen: bool,
+}
+
+/// The user's preferences on page state thawing. Templates have three places they can fetch state from: the page state store (called *active* state), the frozen state, and the server. They're
+/// typically prioritized in that order, but if thawing occurs later in an app, it may be desirable to override active state in favor of frozen state. These preferences allow setting an
+/// inclusion or exclusion list.
+#[derive(Debug)]
+pub enum PageThawPrefs {
+    /// Include the attached pages by their URLs (with no leading `/`). Pages listed here will prioritize frozen state over active state, allowing thawing to override the current state of the app.
+    Include(Vec<String>),
+    /// Includes all pages in the app, making frozen state always override state that's already been initialized.
+    IncludeAll,
+    /// Exludes the attached pages by their URLs (with no leading `/`). Pages listed here will prioritize active state over frozen state as usual, and any pages not listed here will prioritize
+    /// frozen state. `Exclude(Vec::new())` is equivalent to `IncludeAll`.
+    Exclude(Vec<String>),
+}
+impl PageThawPrefs {
+    /// Checks whether or not the given URl should prioritize frozen state over active state.
+    pub fn should_use_frozen_state(&self, url: &str) -> bool {
+        match &self {
+            // If we're only including some pages, this page should be on the include list
+            Self::Include(pages) => pages.iter().any(|v| v == url),
+            // If we're including all pages in frozen state prioritization, then of course this should use frozen state
+            Self::IncludeAll => true,
+            // If we're excluding some pages, this page shouldn't be on the exclude list
+            Self::Exclude(pages) => !pages.iter().any(|v| v == url),
+        }
+    }
 }
 
 /// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
@@ -67,8 +106,8 @@ pub struct RenderCtx {
     /// Because we store `dyn Any` in here, we initialize it as `Option::None`, and then the template macro (which does the heavy lifting for global state) will find that it can't downcast
     /// to the user's global state type, which will prompt it to deserialize whatever global state it was given and then write that here.
     pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
-    /// A previous state the app was once in, still serialized. This will be rehydrated graudally by the template macro.
-    pub frozen_app: Option<Rc<FrozenApp>>,
+    /// A previous state the app was once in, still serialized. This will be rehydrated gradually by the template macro.
+    pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
 }
 impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized `String` that can later be used to re-initialize the app to the same state at the time of freezing.
@@ -85,6 +124,195 @@ impl Freeze for RenderCtx {
             page_state_store: self.page_state_store.freeze_to_hash_map(),
         };
         serde_json::to_string(&frozen_app).unwrap()
+    }
+}
+impl RenderCtx {
+    /// Commands Perseus to 'thaw' the app from the given frozen state. You'll also need to provide preferences for thawing, which allow you to control how different pages should prioritize
+    /// frozen state over existing (or *active*) state. Once you call this, assume that any following logic will not run, as this may navigate to a different route in your app. How you get
+    /// the frozen state to supply to this is up to you.
+    ///
+    /// If the app has already been thawed from a previous frozen state, any state used from that will be considered *active* for this thawing.
+    ///
+    /// This will return an error if the frozen state provided is invalid. However, if the frozen state for an individual page is invalid, it will be silently ignored in favor of either the
+    /// active state or the server-provided state.
+    pub fn thaw(&self, new_frozen_app: &str, thaw_prefs: ThawPrefs) -> Result<(), ClientError> {
+        let new_frozen_app: FrozenApp = serde_json::from_str(new_frozen_app)
+            .map_err(|err| ClientError::ThawFailed { source: err })?;
+        let route = new_frozen_app.route.clone();
+        // Set everything in the render context
+        let mut frozen_app = self.frozen_app.borrow_mut();
+        *frozen_app = Some((new_frozen_app, thaw_prefs));
+        // I'm not absolutely certain about destructor behavior with navigation or how that could change with the new primitives, so better to be safe than sorry
+        drop(frozen_app);
+        // Navigate to the frozen route
+        // TODO If we're on the same page, reload the page
+        navigate(&route);
+
+        Ok(())
+    }
+    /// Gets either the active state or the frozen state for the given page. If `.thaw()` has been called, thaw preferences will be registered, which this will use to decide whether to use
+    /// frozen or active state. If neither is available, the caller should use generated state instead.
+    ///
+    /// This takes a single type parameter for the reactive state type, from which the unreactive state type can be derived.
+    pub fn get_active_or_frozen_page_state<R>(
+        &mut self,
+        url: &str,
+    ) -> Option<<R::Unrx as MakeRx>::Rx>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        let frozen_app_full = self.frozen_app.borrow();
+        if let Some((frozen_app, thaw_prefs)) = &*frozen_app_full {
+            // Check against the thaw preferences if we should prefer frozen state over active state
+            if thaw_prefs.page.should_use_frozen_state(url) {
+                // Get the serialized and unreactive frozen state from the store
+                match frozen_app.page_state_store.get(url) {
+                    Some(state_str) => {
+                        // Deserialize into the unreactive version
+                        let unrx = match serde_json::from_str::<R::Unrx>(state_str) {
+                            Ok(unrx) => unrx,
+                            // The frozen state could easily be corrupted, so we'll fall back to the active state (which is already reactive)
+                            // We break out here to avoid double-storing this and trying to make a reactive thing reactive
+                            Err(_) => {
+                                return self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
+                            }
+                        };
+                        // This returns the reactive version of the unreactive version of `R`, which is why we have to make everything else do the same
+                        // Then we convince the compiler that that actually is `R` with the ludicrous trait bound at the beginning of this function
+                        let rx = unrx.make_rx();
+                        // And we do want to add this to the page state store
+                        self.page_state_store.add(url, rx.clone());
+                        // Now we should remove this from the frozen state so we don't fall back to it again
+                        drop(frozen_app_full);
+                        let mut frozen_app_val = self.frozen_app.take().unwrap(); // We're literally in a conditional that checked this
+                        frozen_app_val.0.page_state_store.remove(url);
+                        let mut frozen_app = self.frozen_app.borrow_mut();
+                        *frozen_app = Some(frozen_app_val);
+
+                        Some(rx)
+                    }
+                    // If there's nothing in the frozen state, we'll fall back to the active state
+                    None => self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url),
+                }
+            } else {
+                // The page state store stores the reactive state already, so we don't need to do anything more
+                self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
+            }
+        } else {
+            // No frozen state exists, so we of course shouldn't prioritize it
+            // The page state store stores the reactive state already, so we don't need to do anything more
+            self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
+        }
+    }
+    /// Gets either the active or the frozen global state, depending on thaw preferences. Otherwise, this is exactly the same as `.get_active_or_frozen_state()`.
+    pub fn get_active_or_frozen_global_state<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        let frozen_app_full = self.frozen_app.borrow();
+        if let Some((frozen_app, thaw_prefs)) = &*frozen_app_full {
+            // Check against the thaw preferences if we should prefer frozen state over active state
+            if thaw_prefs.global_prefer_frozen {
+                // Get the serialized and unreactive frozen state from the store
+                match frozen_app.global_state.as_str() {
+                    // If there's nothing in the frozen state, we'll fall back to the active state
+                    "None" => self
+                        .global_state
+                        .borrow()
+                        .as_any()
+                        .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
+                        .cloned(),
+                    state_str => {
+                        // Deserialize into the unreactive version
+                        let unrx = match serde_json::from_str::<R::Unrx>(state_str) {
+                            Ok(unrx) => unrx,
+                            // The frozen state could easily be corrupted, so we'll fall back to the active state (which is already reactive)
+                            // We break out here to avoid double-storing this and trying to make a reactive thing reactive
+                            Err(_) => {
+                                return self
+                                    .global_state
+                                    .borrow()
+                                    .as_any()
+                                    .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
+                                    .cloned()
+                            }
+                        };
+                        // This returns the reactive version of the unreactive version of `R`, which is why we have to make everything else do the same
+                        // Then we convince the compiler that that actually is `R` with the ludicrous trait bound at the beginning of this function
+                        let rx = unrx.make_rx();
+                        // And we'll register this as the new active global state
+                        let mut active_global_state = self.global_state.borrow_mut();
+                        *active_global_state = Box::new(rx.clone());
+                        // Now we should remove this from the frozen state so we don't fall back to it again
+                        drop(frozen_app_full);
+                        let mut frozen_app_val = self.frozen_app.take().unwrap(); // We're literally in a conditional that checked this
+                        frozen_app_val.0.global_state = "None".to_string();
+                        let mut frozen_app = self.frozen_app.borrow_mut();
+                        *frozen_app = Some(frozen_app_val);
+
+                        Some(rx)
+                    }
+                }
+            } else {
+                // The page state store stores the reactive state already, so we don't need to do anything more
+                self.global_state
+                    .borrow()
+                    .as_any()
+                    .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
+                    .cloned()
+            }
+        } else {
+            // No frozen state exists, so we of course shouldn't prioritize it
+            // This stores the reactive state already, so we don't need to do anything more
+            // If we can't downcast the stored state to the user's type, it's almost certainly `None` instead (the initial value)
+            self.global_state
+                .borrow()
+                .as_any()
+                .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
+                .cloned()
+        }
+    }
+    /// Registers a serialized and unreactive state string to the page state store, returning a fully reactive version.
+    pub fn register_page_state_str<R>(
+        &mut self,
+        url: &str,
+        state_str: &str,
+    ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        // Deserialize it (we know nothing about the calling situation, so we assume it could be invalid, hence the fallible return type)
+        let unrx = serde_json::from_str::<R::Unrx>(state_str)
+            .map_err(|err| ClientError::StateInvalid { source: err })?;
+        let rx = unrx.make_rx();
+        self.page_state_store.add(url, rx.clone());
+
+        Ok(rx)
+    }
+    /// Registers a serialized and unreactive state string as the new active global state, returning a fully reactive version.
+    pub fn register_global_state_str<R>(
+        &mut self,
+        state_str: &str,
+    ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        // Deserialize it (we know nothing about the calling situation, so we assume it could be invalid, hence the fallible return type)
+        let unrx = serde_json::from_str::<R::Unrx>(state_str)
+            .map_err(|err| ClientError::StateInvalid { source: err })?;
+        let rx = unrx.make_rx();
+        let mut active_global_state = self.global_state.borrow_mut();
+        *active_global_state = Box::new(rx.clone());
+
+        Ok(rx)
     }
 }
 
@@ -299,7 +527,8 @@ impl<G: Html> Template<G> {
         router_state: RouterState,
         page_state_store: PageStateStore,
         global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
-        frozen_app: Option<Rc<FrozenApp>>,
+        // This should always be empty, it just allows us to persist the value across template loads
+        frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
     ) -> View<G> {
         view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
@@ -335,7 +564,7 @@ impl<G: Html> Template<G> {
                     page_state_store,
                     global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None))),
                     // Hydrating state on the server-side is pointless
-                    frozen_app: None
+                    frozen_app: Rc::new(RefCell::new(None))
                 },
                 children: || (self.template)(props)
             })
@@ -358,7 +587,7 @@ impl<G: Html> Template<G> {
                         page_state_store: PageStateStore::default(),
                         global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None))),
                         // Hydrating state on the server-side is pointless
-                        frozen_app: None,
+                        frozen_app: Rc::new(RefCell::new(None)),
                     },
                     children: || (self.head)(props)
                 })
