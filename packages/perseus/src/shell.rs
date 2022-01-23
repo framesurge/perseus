@@ -1,13 +1,12 @@
-use crate::client_translations_manager::ClientTranslationsManager;
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
-use crate::page_data::PageData;
-use crate::path_prefix::get_path_prefix_client;
+use crate::i18n::ClientTranslationsManager;
+use crate::router::{RouterLoadState, RouterState};
+use crate::server::PageData;
 use crate::state::PageStateStore;
-use crate::template::Template;
-use crate::templates::{
-    FrozenApp, GlobalState, PageProps, RouterLoadState, RouterState, TemplateNodeType, ThawPrefs,
-};
+use crate::state::{FrozenApp, GlobalState, ThawPrefs};
+use crate::template::{PageProps, Template, TemplateNodeType};
+use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;
 use fmterr::fmt_err;
 use std::cell::RefCell;

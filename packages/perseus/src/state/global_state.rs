@@ -1,7 +1,11 @@
+use super::rx_state::AnyFreeze;
 use crate::errors::*;
 use crate::make_async_trait;
-use crate::template::{AsyncFnReturn, RenderFnResult};
+use crate::template::RenderFnResult;
+use crate::utils::AsyncFnReturn;
 use futures::Future;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 make_async_trait!(GlobalStateCreatorFnType, RenderFnResult<String>);
 /// The type of functions that generate global state. These will generate a `String` for their custom global state type.
@@ -56,5 +60,19 @@ impl GlobalStateCreator {
         } else {
             Ok(None)
         }
+    }
+}
+
+/// A representation of the global state in an app.
+#[derive(Clone)]
+pub struct GlobalState(pub Rc<RefCell<Box<dyn AnyFreeze>>>);
+impl Default for GlobalState {
+    fn default() -> Self {
+        Self(Rc::new(RefCell::new(Box::new(Option::<()>::None))))
+    }
+}
+impl std::fmt::Debug for GlobalState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GlobalState").finish()
     }
 }

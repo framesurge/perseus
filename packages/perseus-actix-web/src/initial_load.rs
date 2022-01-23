@@ -8,8 +8,7 @@ use perseus::{
         i18n::{TranslationsManager, Translator},
         router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
         serve::{
-            build_error_page, get_path_slice, render::get_page_for_template, HtmlShell,
-            ServerOptions,
+            build_error_page, get_page_for_template, get_path_slice, HtmlShell, ServerOptions,
         },
     },
     stores::{ImmutableStore, MutableStore},

@@ -1,8 +1,8 @@
+use super::Locales;
 use crate::errors::*;
-use crate::locales::Locales;
-use crate::path_prefix::get_path_prefix_client;
 use crate::shell::fetch;
 use crate::translator::Translator;
+use crate::utils::get_path_prefix_client;
 
 /// Manages translations in the app shell. This handles fetching translations from the server as well as caching for performance.
 /// This is distinct from `TranslationsManager` in that it operates on the client-side rather than on the server. This optimizes for

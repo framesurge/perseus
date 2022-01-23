@@ -1,5 +1,5 @@
-use crate::internal::error_pages::ErrorPageData;
-use crate::page_data::PageData;
+use crate::error_pages::ErrorPageData;
+use crate::server::PageData;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::{env, fmt};

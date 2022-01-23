@@ -179,21 +179,21 @@ pub type TranslationArgs<'args> = FluentArgs<'args>;
 /// The internal Fluent backend for the `t!` macro.
 #[doc(hidden)]
 pub fn t_macro_backend(id: &str) -> String {
-    let render_ctx = use_context::<crate::templates::RenderCtx>();
+    let render_ctx = use_context::<crate::template::RenderCtx>();
     let translator = render_ctx.translator;
     translator.translate(id, None)
 }
 /// The internal Fluent backend for the `t!` macro, when it's used with arguments.
 #[doc(hidden)]
 pub fn t_macro_backend_with_args(id: &str, args: FluentArgs) -> String {
-    let render_ctx = use_context::<crate::templates::RenderCtx>();
+    let render_ctx = use_context::<crate::template::RenderCtx>();
     let translator = render_ctx.translator;
     translator.translate(id, Some(args))
 }
 /// The internal Fluent backend for the `link!` macro.
 #[doc(hidden)]
 pub fn link_macro_backend(url: &str) -> String {
-    let render_ctx = use_context::<crate::templates::RenderCtx>();
+    let render_ctx = use_context::<crate::template::RenderCtx>();
     let translator = render_ctx.translator;
     translator.url(url)
 }

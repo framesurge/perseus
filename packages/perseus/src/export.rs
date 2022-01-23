@@ -1,17 +1,14 @@
 use crate::errors::*;
-use crate::html_shell::HtmlShell;
-use crate::locales::Locales;
-use crate::page_data::PageData;
-use crate::server::get_render_cfg;
+use crate::i18n::{Locales, TranslationsManager};
+use crate::server::{get_render_cfg, HtmlShell, PageData};
 use crate::stores::ImmutableStore;
 use crate::template::TemplateMap;
-use crate::translations_manager::TranslationsManager;
 use crate::SsrNode;
 use futures::future::{try_join, try_join_all};
 use std::fs;
 
 /// Gets the static page data.
-async fn get_static_page_data(
+pub async fn get_static_page_data(
     path: &str,
     has_state: bool,
     immutable_store: &ImmutableStore,
@@ -95,7 +92,7 @@ pub async fn export_app(
 }
 
 /// Creates a translation file for exporting. This is broken out for concurrency.
-async fn create_translation_file(
+pub async fn create_translation_file(
     locale: &str,
     immutable_store: &ImmutableStore,
     translations_manager: &impl TranslationsManager,
@@ -115,7 +112,8 @@ async fn create_translation_file(
     Ok(())
 }
 
-async fn export_path(
+/// Exports a single path within a template.
+pub async fn export_path(
     (path, template_path): (String, String),
     templates: &TemplateMap<SsrNode>,
     locales: &Locales,

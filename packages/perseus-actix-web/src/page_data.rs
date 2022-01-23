@@ -5,7 +5,7 @@ use perseus::{
     errors::err_to_status_code,
     internal::{
         i18n::TranslationsManager,
-        serve::{render::get_page_for_template, ServerOptions},
+        serve::{get_page_for_template, ServerOptions},
     },
     stores::{ImmutableStore, MutableStore},
 };

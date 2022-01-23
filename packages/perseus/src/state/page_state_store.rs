@@ -1,8 +1,7 @@
+use crate::state::AnyFreeze;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-
-use crate::state::AnyFreeze;
 
 /// A container for page state in Perseus. This is designed as a context store, in which one of each type can be stored. Therefore, it acts very similarly to Sycamore's context system,
 /// though it's specifically designed for each page to store one reactive properties object. In theory, you could interact with this entirely independently of Perseus' state interface,

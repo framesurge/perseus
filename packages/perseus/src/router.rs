@@ -1,8 +1,6 @@
-use crate::locales::Locales;
-use crate::template::TemplateMap;
-use crate::templates::ArcTemplateMap;
+use crate::i18n::Locales;
+use crate::template::{ArcTemplateMap, Template, TemplateMap};
 use crate::Html;
-use crate::Template;
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::ReadSignal;

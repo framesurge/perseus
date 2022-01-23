@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use crate::translations_manager::TranslationsManagerError;
+use crate::i18n::TranslationsManagerError;
 use thiserror::Error;
 
 /// All errors that can be returned from this crate.

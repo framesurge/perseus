@@ -1,9 +1,9 @@
 use crate::error_pages::ErrorPages;
-use crate::locales::Locales;
+use crate::i18n::Locales;
+use crate::i18n::TranslationsManager;
 use crate::state::GlobalStateCreator;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::ArcTemplateMap;
-use crate::translations_manager::TranslationsManager;
 use crate::SsrNode;
 use std::collections::HashMap;
 

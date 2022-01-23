@@ -10,8 +10,8 @@ use perseus::{
         shell::{app_shell, get_initial_state, get_render_cfg, InitialState, ShellProps},
     },
     plugins::PluginAction,
-    state::{FrozenApp, GlobalState, PageStateStore},
-    templates::{RouterState, TemplateNodeType, ThawPrefs},
+    state::{FrozenApp, GlobalState, PageStateStore, ThawPrefs},
+    templates::{RouterState, TemplateNodeType},
     DomNode,
 };
 use std::cell::RefCell;

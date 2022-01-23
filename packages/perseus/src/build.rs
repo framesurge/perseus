@@ -1,17 +1,14 @@
 // This binary builds all the templates with SSG
 
 use crate::errors::*;
-use crate::locales::Locales;
+use crate::i18n::{Locales, TranslationsManager};
 use crate::router::RouterState;
 use crate::state::PageStateStore;
-use crate::templates::{PageProps, TemplateMap};
-use crate::translations_manager::TranslationsManager;
+use crate::stores::{ImmutableStore, MutableStore};
+use crate::template::Template;
+use crate::template::{PageProps, TemplateMap};
 use crate::translator::Translator;
-use crate::{
-    decode_time_str::decode_time_str,
-    stores::{ImmutableStore, MutableStore},
-    Template,
-};
+use crate::utils::decode_time_str;
 use futures::future::try_join_all;
 use std::collections::HashMap;
 use sycamore::prelude::SsrNode;
@@ -256,7 +253,8 @@ async fn gen_state_for_path(
     Ok(())
 }
 
-async fn build_template_and_get_cfg(
+/// Builds all pages within a template and compiles its component of the render configuration.
+pub async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
@@ -340,7 +338,7 @@ pub async fn build_templates_for_locale(
 }
 
 /// Gets a translator and builds templates for a single locale.
-async fn build_templates_and_translator_for_locale(
+pub async fn build_templates_and_translator_for_locale(
     templates: &TemplateMap<SsrNode>,
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),

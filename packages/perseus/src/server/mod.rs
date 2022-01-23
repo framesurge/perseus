@@ -3,13 +3,17 @@
 
 mod build_error_page;
 mod get_render_cfg;
+mod html_shell;
 mod options;
-/// Utilities for server-side rendering a page to static HTML and JSON for serving to a client.
-pub mod render;
+mod page_data;
+mod render;
 
 pub use build_error_page::build_error_page;
 pub use get_render_cfg::get_render_cfg;
+pub use html_shell::HtmlShell;
 pub use options::{ServerOptions, ServerProps};
+pub use page_data::PageData;
+pub use render::{get_page, get_page_for_template};
 
 /// Removes empty elements from a path, which is important due to double slashes. This returns a vector of the path's components;
 pub fn get_path_slice(path: &str) -> Vec<&str> {

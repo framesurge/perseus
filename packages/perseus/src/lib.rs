@@ -35,38 +35,27 @@
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![forbid(unsafe_code)]
-#![recursion_limit = "256"]
+#![recursion_limit = "256"] // TODO Do we need this anymore?
 
 pub mod errors;
 /// Utilities for working with plugins.
 pub mod plugins;
+/// Utilities for working with Perseus' state platform.
+pub mod state;
 /// Utilities for working with immutable and mutable stores. You can learn more about these in the book.
 pub mod stores;
 
 mod build;
-mod cache_res;
-mod client_translations_manager;
-mod decode_time_str;
-mod default_headers;
 mod error_pages;
 mod export;
-mod global_state;
-mod html_shell;
-mod locale_detector;
-mod locales;
-mod log;
+mod i18n;
 mod macros;
-mod page_data;
-mod page_state_store;
-mod path_prefix;
 mod router;
-mod rx_state;
 mod server;
 mod shell;
 mod template;
-mod test;
-mod translations_manager;
 mod translator;
+mod utils;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
@@ -77,54 +66,36 @@ pub use wasm_bindgen_futures::spawn_local;
 pub type Request = HttpRequest<()>;
 pub use perseus_macro::{autoserde, head, make_rx, template, template_rx, test};
 pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
-pub use sycamore_router::{navigate, Route};
+pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?
+
+// TODO Restructure everything here (needs to stay the same until v0.4.0 though)
 
 // Items that should be available at the root (this should be nearly everything used in a typical Perseus app)
-pub use crate::cache_res::{cache_fallible_res, cache_res};
 pub use crate::error_pages::ErrorPages;
 pub use crate::errors::{ErrorCause, GenericErrorWithCause};
 pub use crate::plugins::{Plugin, PluginAction, Plugins};
 pub use crate::shell::checkpoint;
 pub use crate::template::{HeadFn, RenderFnResult, RenderFnResultWithCause, States, Template};
+pub use crate::utils::{cache_fallible_res, cache_res};
 /// Utilities for developing templates, particularly including return types for various rendering strategies.
 pub mod templates {
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};
     pub use crate::router::{RouterLoadState, RouterState};
     pub use crate::template::*;
-    // The engine needs to know whether or not to use hydration, this is how we pass those feature settings through
-    #[cfg(not(feature = "hydrate"))]
-    #[doc(hidden)]
-    pub type TemplateNodeType = sycamore::DomNode;
-    #[cfg(feature = "hydrate")]
-    #[doc(hidden)]
-    pub type TemplateNodeType = sycamore::HydrateNode;
-}
-// TODO (v0.4.0) Refactor to put several more things inside here (everything to do with generation functions)
-/// Utilities for working with state.
-pub mod state {
-    pub use crate::global_state::GlobalStateCreator;
-    pub use crate::page_state_store::PageStateStore;
-    pub use crate::rx_state::*;
-    pub use crate::template::{FrozenApp, GlobalState, PageThawPrefs, ThawPrefs};
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.
 pub mod internal {
     /// Internal utilities for working with internationalization.
     pub mod i18n {
-        pub use crate::client_translations_manager::*;
-        pub use crate::locale_detector::*;
-        pub use crate::locales::*;
+        pub use crate::i18n::*;
         #[doc(hidden)]
         pub use crate::macros::DFLT_TRANSLATIONS_DIR;
-        pub use crate::translations_manager::*;
         pub use crate::translator::*;
     }
     /// Internal utilities for working with the serving process. These will be useful for building integrations for hosting Perseus
     /// on different platforms.
     pub mod serve {
-        pub use crate::html_shell::*;
-        pub use crate::page_data::*;
         pub use crate::server::*;
     }
     /// Internal utilities for working with the Perseus router.
@@ -147,7 +118,7 @@ pub mod internal {
     pub mod export {
         pub use crate::export::*;
     }
-    pub use crate::path_prefix::{get_path_prefix_client, get_path_prefix_server};
+    pub use crate::utils::{get_path_prefix_client, get_path_prefix_server};
     /// Internal utilities for logging. These are just re-exports so that users don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
     pub mod log {
         pub use wasm_bindgen::JsValue;

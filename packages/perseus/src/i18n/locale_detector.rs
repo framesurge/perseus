@@ -1,5 +1,5 @@
-use crate::locales::Locales;
-use crate::path_prefix::get_path_prefix_client;
+use super::Locales;
+use crate::utils::get_path_prefix_client;
 use sycamore::rt::Reflect;
 use wasm_bindgen::JsValue;
 
