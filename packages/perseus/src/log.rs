@@ -16,6 +16,6 @@ macro_rules! web_log {
 #[cfg(not(target_arch = "wasm32"))]
 macro_rules! web_log {
     ($format_str:literal $(, $data:expr)*) => {
-        println!($format_str, $(, $data)*)
+        println!($format_str $(, $data)*)
     };
 }
