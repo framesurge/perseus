@@ -174,6 +174,7 @@ impl FluentTranslator {
 /// An alias for `FluentArgs`. This is a workaround until conditional compilation of expressions is supported, which will simplify this
 /// system significantly.
 #[doc(hidden)]
+#[allow(missing_debug_implementations)]
 pub type TranslationArgs<'args> = FluentArgs<'args>;
 
 /// The internal Fluent backend for the `t!` macro.

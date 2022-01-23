@@ -39,6 +39,7 @@ impl DummyTranslator {
 /// A useless pseudo-map. This is a workaround until conditional compilation of expressions is supported, which will simplify this
 /// system significantly.
 #[doc(hidden)]
+#[derive(Debug)]
 pub struct TranslationArgs;
 impl TranslationArgs {
     /// Creates a new instance of this `struct`.
