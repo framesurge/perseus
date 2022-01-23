@@ -175,53 +175,13 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                     render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap()).unwrap();
                 }
 
-                // // Deserialize the global state, make it reactive, and register it with the `RenderCtx`
-                // // If it's already there, we'll leave it
-                // // This means that we can pass an `Option<String>` around safely and then deal with it at the template site (here)
-                // let frozen_app = render_ctx.frozen_app;
-                // let global_state_refcell = render_ctx.global_state;
-                // let global_state = global_state_refcell.borrow();
-                // // This will work if the global state hasn't been initialized yet, because it's the default value that Perseus sets
-                // if global_state.as_any().downcast_ref::<::std::option::Option::<()>>().is_some() {
-                //     // We can downcast it as the type set by the core render system, so we're the first page to be loaded
-                //     // In that case, we'll set the global state properly
-                //     drop(global_state);
-                //     let mut global_state_mut = global_state_refcell.borrow_mut();
-                //     // If there's a frozen app, we'll try to use that
-                //     let new_global_state = match frozen_app {
-                //         // If it hadn't been initialized yet when we froze, it would've been set to `None` here, and we'll use the one from the server
-                //         ::std::option::Option::Some(frozen_app) if frozen_app.global_state != "None" => {
-                //             let global_state_str = frozen_app.global_state.clone();
-                //             let global_state = ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(&global_state_str);
-                //             // We don't control the source of the frozen app, so we have to assume that it could well be invalid, in whcih case we'll turn to the server
-                //             match global_state {
-                //                 ::std::result::Result::Ok(global_state) => global_state,
-                //                 ::std::result::Result::Err(_) => {
-                //                     // This will be defined if we're the first page
-                //                     let global_state_str = props.global_state.unwrap();
-                //                     // That's from the server, so it's unrecoverable if it doesn't deserialize
-                //                     ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(&global_state_str).unwrap()
-                //                 }
-                //             }
-                //         },
-                //         _ => {
-                //             // This will be defined if we're the first page
-                //             let global_state_str = props.global_state.unwrap();
-                //             // That's from the server, so it's unrecoverable if it doesn't deserialize
-                //             ::serde_json::from_str::<<#global_state_rx as ::perseus::state::MakeUnrx>::Unrx>(&global_state_str).unwrap()
-                //         }
-                //     };
-                //     let new_global_state_rx = new_global_state.make_rx();
-                //     *global_state_mut = ::std::boxed::Box::new(new_global_state_rx);
-                //     // The component function can now access this in `RenderCtx`
-                // }
                 // The user's function
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
                 #[::sycamore::component(#component_name<#type_param>)]
                 fn #name#generics(#state_arg) -> #return_type {
                     let #global_state_arg_pat: #global_state_rx = {
-                        let global_state = ::perseus::get_render_ctx!().global_state;
+                        let global_state = ::perseus::get_render_ctx!().global_state.0;
                         let global_state = global_state.borrow();
                         // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
                         let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
@@ -286,40 +246,6 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                                     render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap()).unwrap()
                                 }
                             }
-                            // // Check if properties of the reactive type are already in the page state store
-                            // // If they are, we'll use them (so state persists for templates across the whole app)
-                            // let render_ctx = ::perseus::get_render_ctx!();
-                            // let frozen_app = render_ctx.frozen_app;
-                            // let mut pss = render_ctx.page_state_store;
-                            // match pss.get(&props.path) {
-                            //     ::std::option::Option::Some(old_state) => old_state,
-                            //     // Check if there's anything in the previous frozen state
-                            //     ::std::option::Option::None => {
-                            //         let state = match frozen_app {
-                            //             ::std::option::Option::Some(frozen_app) if frozen_app.page_state_store.contains_key(&props.path) => {
-                            //                 let old_state = frozen_app.page_state_store.get(&props.path).unwrap();
-                            //                 // As with the global state, this may not deserialize correctly, in which case we'll fall back to the generated state
-                            //                 let state = ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&old_state);
-                            //                 match state {
-                            //                     ::std::result::Result::Ok(state) => state,
-                            //                     ::std::result::Result::Err(_) => {
-                            //                         // If there are props, they will always be provided, the compiler just doesn't know that
-                            //                         // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                            //                         ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap()
-                            //                     }
-                            //                 }
-                            //             },
-                            //             _ => {
-                            //                 // If there are props, they will always be provided, the compiler just doesn't know that
-                            //                 // If the user is using this macro, they sure should be using `#[make_rx(...)]` or similar!
-                            //                 ::serde_json::from_str::<<#rx_props_ty as ::perseus::state::MakeUnrx>::Unrx>(&props.state.unwrap()).unwrap()
-                            //             }
-                            //         };
-                            //         let rx_state: #rx_props_ty = state.make_rx();
-                            //         pss.add(&props.path, rx_state.clone());
-                            //         rx_state
-                            //     }
-                            // }
                         }
                     )
                 }

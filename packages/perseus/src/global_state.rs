@@ -17,6 +17,16 @@ pub struct GlobalStateCreator {
     /// The function that creates state at build-time. This is roughly equivalent to the *build state* strategy for templates.
     build: Option<GlobalStateCreatorFn>,
 }
+impl std::fmt::Debug for GlobalStateCreator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GlobalStateCreator")
+            .field(
+                "build",
+                &self.build.as_ref().map(|_| "GlobalStateCreatorFn"),
+            )
+            .finish()
+    }
+}
 impl GlobalStateCreator {
     /// Creates a new instance of this `struct`.
     pub fn new() -> Self {

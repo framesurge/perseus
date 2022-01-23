@@ -7,6 +7,7 @@ use crate::translator::Translator;
 /// Manages translations in the app shell. This handles fetching translations from the server as well as caching for performance.
 /// This is distinct from `TranslationsManager` in that it operates on the client-side rather than on the server. This optimizes for
 /// users viewing many pages in the same locale, which is by far the most common use of most websites in terms of i18n.
+#[derive(Debug)]
 pub struct ClientTranslationsManager {
     /// The cached translator. If the same locale is requested again, this will simply be returned.
     cached_translator: Option<Translator>,

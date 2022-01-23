@@ -10,7 +10,7 @@ use perseus::{
         shell::{app_shell, get_initial_state, get_render_cfg, InitialState, ShellProps},
     },
     plugins::PluginAction,
-    state::{AnyFreeze, FrozenApp, PageStateStore},
+    state::{FrozenApp, GlobalState, PageStateStore},
     templates::{RouterState, TemplateNodeType, ThawPrefs},
     DomNode,
 };
@@ -68,19 +68,9 @@ pub fn run() -> Result<(), JsValue> {
     // Create a page state store to use
     let pss = PageStateStore::default();
     // Create a new global state set to `None`, which will be updated and handled entirely by the template macro from here on
-    let global_state: Rc<RefCell<Box<dyn AnyFreeze>>> =
-        Rc::new(RefCell::new(Box::new(Option::<()>::None)));
+    let global_state = GlobalState::default();
 
-    // TODO Try to fetch a previous frozen app
-    // let frozen_app: Option<Rc<FrozenApp>> = Some(Rc::new(FrozenApp {
-    //     global_state: r#"{"test":"Hello from the frozen app!"}"#.to_string(),
-    //     route: "".to_string(),
-    //     page_state_store: {
-    //         let mut map = std::collections::HashMap::new();
-    //         map.insert("".to_string(), r#"{"username":"Sam"}"#.to_string());
-    //         map
-    //     },
-    // }));
+    // Instantiate an empty frozen app that can persist across templates (with interior mutability for possible thawing)
     let frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>> = Rc::new(RefCell::new(None));
 
     // Create the router we'll use for this app, based on the user's app definition

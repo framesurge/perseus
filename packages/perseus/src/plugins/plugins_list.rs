@@ -25,6 +25,14 @@ impl<G: Html> Default for Plugins<G> {
         }
     }
 }
+impl<G: Html> std::fmt::Debug for Plugins<G> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Plugins")
+            .field("functional_actions", &self.functional_actions)
+            .field("control_actions", &self.control_actions)
+            .finish()
+    }
+}
 impl<G: Html> Plugins<G> {
     /// Creates a new instance of `Plugins`, with no actions taken by any plugins, and the data map empty.
     pub fn new() -> Self {

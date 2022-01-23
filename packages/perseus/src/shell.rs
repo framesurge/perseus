@@ -3,10 +3,10 @@ use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::page_data::PageData;
 use crate::path_prefix::get_path_prefix_client;
-use crate::state::{AnyFreeze, PageStateStore};
+use crate::state::PageStateStore;
 use crate::template::Template;
 use crate::templates::{
-    FrozenApp, PageProps, RouterLoadState, RouterState, TemplateNodeType, ThawPrefs,
+    FrozenApp, GlobalState, PageProps, RouterLoadState, RouterState, TemplateNodeType, ThawPrefs,
 };
 use crate::ErrorPages;
 use fmterr::fmt_err;
@@ -224,6 +224,7 @@ pub fn checkpoint(name: &str) {
 /// A representation of whether or not the initial state was present. If it was, it could be `None` (some templates take no state), and
 /// if not, then this isn't an initial load, and we need to request the page from the server. It could also be an error that the server
 /// has rendered.
+#[derive(Debug)]
 pub enum InitialState {
     /// A non-error initial state has been injected.
     Present(Option<String>),
@@ -234,6 +235,7 @@ pub enum InitialState {
 }
 
 /// Properties for the app shell. These should be constructed literally when working with the app shell.
+#[derive(Debug)]
 pub struct ShellProps {
     /// The path we're rendering for (not the template path, the full path, though parsed a little).
     pub path: String,
@@ -256,7 +258,7 @@ pub struct ShellProps {
     /// The container for reactive content.
     pub container_rx_elem: Element,
     /// The global state store. Brekaing it out here prevents it being overriden every time a new template loads.
-    pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
+    pub global_state: GlobalState,
     /// A previous frozen state to be gradully rehydrated. This should always be `None`, it only serves to provide continuity across templates.
     pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
 }

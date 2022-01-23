@@ -33,7 +33,7 @@ use tokio::io::AsyncReadExt;
 /// A trait for systems that manage where to put translations. At simplest, we'll just write them to static files, but they might also
 /// be stored in a CMS. It is **strongly** advised that any implementations use some form of caching, guided by `FsTranslationsManager`.
 #[async_trait::async_trait]
-pub trait TranslationsManager: Clone + Send + Sync {
+pub trait TranslationsManager: std::fmt::Debug + Clone + Send + Sync {
     /// Gets a translator for the given locale.
     async fn get_translator_for_locale(
         &self,
@@ -67,7 +67,7 @@ async fn get_translations_str_and_cache(
 /// The default translations manager. This will store static files in the specified location on disk. This should be suitable for
 /// nearly all development and serverful use-cases. Serverless is another matter though (more development needs to be done). This
 /// mandates that translations be stored as files named as the locale they describe (e.g. 'en-US.ftl', 'en-US.json', etc.).
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FsTranslationsManager {
     root_path: String,
     /// A map of locales to cached translations. This decreases the number of file reads significantly for the locales specified. This
@@ -174,7 +174,7 @@ impl TranslationsManager for FsTranslationsManager {
 /// A dummy translations manager for use if you don't want i18n. This avoids errors of not being able to find translations. If you set
 /// `no_i18n: true` in the `locales` section of `define_app!`, this will be used by default. If you intend to use i18n, do not use this!
 /// Using the `link!` macro with this will NOT prepend the path prefix, and it will result in a nonsensical URL that won't work.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct DummyTranslationsManager;
 impl DummyTranslationsManager {
     /// Creates a new dummy translations manager.

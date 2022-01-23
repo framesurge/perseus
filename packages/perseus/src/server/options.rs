@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 /// The options for setting up all server integrations. This should be literally constructed, as nothing is optional. If integrations need further properties,
 /// they should expose their own options in addition to these. These should be accessed through an `Arc`/`Rc` for integration developers.
+#[derive(Debug)]
 pub struct ServerOptions {
     /// The location on the filesystem of your JavaScript bundle.
     pub js_bundle: String,
@@ -37,6 +38,7 @@ pub struct ServerOptions {
 }
 
 /// The full set of properties that all server integrations take.
+#[derive(Debug)]
 pub struct ServerProps<M: MutableStore, T: TranslationsManager> {
     /// The options for setting up the server.
     pub opts: ServerOptions,

@@ -55,9 +55,17 @@ impl<A, R> Default for ControlPluginAction<A, R> {
         }
     }
 }
+impl<A, R> std::fmt::Debug for ControlPluginAction<A, R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ControlPluginAction")
+            .field("controller_name", &self.controller_name)
+            .field("runner", &self.runner.as_ref().map(|_| "Runner"))
+            .finish()
+    }
+}
 
 /// All the control actions that a plugin can take.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ControlPluginActions {
     /// Actions pertaining to the modification of settings created with the `define_app!` macro.
     pub settings_actions: ControlPluginSettingsActions,
@@ -72,7 +80,7 @@ pub struct ControlPluginActions {
 }
 
 /// Control actions that pertain to altering settings from `define_app!`.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ControlPluginSettingsActions {
     /// Sets an immutable store to be used everywhere. This will provided the current immutable store for reference.
     pub set_immutable_store:
@@ -83,14 +91,14 @@ pub struct ControlPluginSettingsActions {
     pub set_app_root: ControlPluginAction<(), String>,
 }
 /// Control actions that pertain to the build process.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ControlPluginBuildActions {}
 /// Control actions that pertain to the export process.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ControlPluginExportActions {}
 /// Control actions that pertain to the server.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ControlPluginServerActions {}
 /// Control actions that pertain to the client-side code. As yet, there are none of these.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ControlPluginClientActions {}

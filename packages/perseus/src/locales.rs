@@ -1,5 +1,5 @@
 /// Defines app information about i18n, specifically about which locales are supported.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Locales {
     /// The default locale, which will be used as a fallback if the user's locale can't be extracted. This will be built for at build-time.
     pub default: String,

@@ -47,8 +47,16 @@ impl<A, R> Default for FunctionalPluginAction<A, R> {
         }
     }
 }
+impl<A, R> std::fmt::Debug for FunctionalPluginAction<A, R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FunctionalPluginAction")
+            .field("runners", &"HashMap<String, Runner>")
+            .finish()
+    }
+}
 
 /// Actions designed to be compatible with other plugins such that two plugins can execute the same action.
+#[derive(Debug)]
 pub struct FunctionalPluginActions<G: Html> {
     /// The all-powerful action that can modify the Perseus engine itself. Because modifying the code you're running doesn't work with
     /// compiled languages like Rust, this has its own command in the CLI, `perseus tinker`. This is best used for modifying
@@ -86,6 +94,7 @@ impl<G: Html> Default for FunctionalPluginActions<G> {
 }
 
 /// Functional actions that pertain to altering the settings exported from the `define_app!` macro.
+#[derive(Debug)]
 pub struct FunctionalPluginSettingsActions<G: Html> {
     /// Adds additional static aliases. Note that a static alias is a mapping of a URL path to a filesystem path (relative to the
     /// project root). These will be vetted to ensure they don't access anything outside the project root for security reasons. If they
@@ -111,7 +120,7 @@ impl<G: Html> Default for FunctionalPluginSettingsActions<G> {
 
 /// Functional actions that pertain to the build process. Note that these actions are not available for the build
 /// stage of the export process, and those should be registered separately.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FunctionalPluginBuildActions {
     /// Runs before the build process.
     pub before_build: FunctionalPluginAction<(), ()>,
@@ -124,7 +133,7 @@ pub struct FunctionalPluginBuildActions {
         FunctionalPluginAction<crate::errors::GlobalStateError, ()>,
 }
 /// Functional actions that pertain to the export process.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FunctionalPluginExportActions {
     /// Runs before the export process.
     pub before_export: FunctionalPluginAction<(), ()>,
@@ -149,7 +158,7 @@ pub struct FunctionalPluginExportActions {
         FunctionalPluginAction<crate::errors::GlobalStateError, ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FunctionalPluginExportErrorPageActions {
     /// Runs before the process of exporting an error page, providing the HTTP status code to be exported and the output filename (relative to the root of the project, not to `.perseus/`).
     pub before_export_error_page: FunctionalPluginAction<(u16, String), ()>,
@@ -159,14 +168,14 @@ pub struct FunctionalPluginExportErrorPageActions {
     pub after_failed_write: FunctionalPluginAction<(std::io::Error, String), ()>,
 }
 /// Functional actions that pertain to the server.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FunctionalPluginServerActions {
     /// Runs before the server activates. This runs AFTER the current directory has been appropriately set for a standalone binary vs
     /// running in the development environment (inside `.perseus/`).
     pub before_serve: FunctionalPluginAction<(), ()>,
 }
 /// Functional actions that pertain to the client-side code. These in particular should be as fast as possible.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FunctionalPluginClientActions {
     /// Runs before anything else in the browser. Note that this runs after panics have been set to go to the console.
     pub start: FunctionalPluginAction<(), ()>,

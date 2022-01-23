@@ -10,7 +10,6 @@ use crate::state::AnyFreeze;
 ///
 /// Note that the same pages in different locales will have different entries here. If you need to store state for a page across locales, you should use the global state system instead. For apps
 /// not using i18n, the page URL will not include any locale.
-// TODO Make this work with multiple pages for a single template
 #[derive(Default, Clone)]
 pub struct PageStateStore {
     /// A map of type IDs to anything, allowing one storage of each type (each type is intended to a properties `struct` for a template). Entries must be `Clone`able because we assume them
@@ -48,6 +47,11 @@ impl PageStateStore {
         }
 
         str_map
+    }
+}
+impl std::fmt::Debug for PageStateStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PageStateStore").finish()
     }
 }
 

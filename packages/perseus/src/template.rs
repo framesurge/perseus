@@ -27,7 +27,7 @@ use sycamore::prelude::{view, View};
 use sycamore_router::navigate;
 
 /// The properties that every page will be initialized with. You shouldn't ever need to interact with this unless you decide not to use the template macros.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PageProps {
     /// The path it's rendering at.
     pub path: String,
@@ -84,9 +84,23 @@ impl PageThawPrefs {
     }
 }
 
+/// A representation of the global state in an app.
+#[derive(Clone)]
+pub struct GlobalState(pub Rc<RefCell<Box<dyn AnyFreeze>>>);
+impl Default for GlobalState {
+    fn default() -> Self {
+        Self(Rc::new(RefCell::new(Box::new(Option::<()>::None))))
+    }
+}
+impl std::fmt::Debug for GlobalState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GlobalState").finish()
+    }
+}
+
 /// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
 /// to make this easier for each thing in here.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RenderCtx {
     /// Whether or not we're being executed on the server-side. This can be used to gate `web_sys` functions and the like that expect
     /// to be run in the browser.
@@ -105,7 +119,7 @@ pub struct RenderCtx {
     ///
     /// Because we store `dyn Any` in here, we initialize it as `Option::None`, and then the template macro (which does the heavy lifting for global state) will find that it can't downcast
     /// to the user's global state type, which will prompt it to deserialize whatever global state it was given and then write that here.
-    pub global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
+    pub global_state: GlobalState,
     /// A previous state the app was once in, still serialized. This will be rehydrated gradually by the template macro.
     pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
 }
@@ -113,7 +127,7 @@ impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized `String` that can later be used to re-initialize the app to the same state at the time of freezing.
     fn freeze(&self) -> String {
         let frozen_app = FrozenApp {
-            global_state: self.global_state.borrow().freeze(),
+            global_state: self.global_state.0.borrow().freeze(),
             route: match &*self.router.get_load_state().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => path,
                 RouterLoadState::Loading { path, .. } => path,
@@ -222,6 +236,7 @@ impl RenderCtx {
                     // If there's nothing in the frozen state, we'll fall back to the active state
                     "None" => self
                         .global_state
+                        .0
                         .borrow()
                         .as_any()
                         .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
@@ -235,6 +250,7 @@ impl RenderCtx {
                             Err(_) => {
                                 return self
                                     .global_state
+                                    .0
                                     .borrow()
                                     .as_any()
                                     .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
@@ -245,7 +261,7 @@ impl RenderCtx {
                         // Then we convince the compiler that that actually is `R` with the ludicrous trait bound at the beginning of this function
                         let rx = unrx.make_rx();
                         // And we'll register this as the new active global state
-                        let mut active_global_state = self.global_state.borrow_mut();
+                        let mut active_global_state = self.global_state.0.borrow_mut();
                         *active_global_state = Box::new(rx.clone());
                         // Now we should remove this from the frozen state so we don't fall back to it again
                         drop(frozen_app_full);
@@ -260,6 +276,7 @@ impl RenderCtx {
             } else {
                 // The page state store stores the reactive state already, so we don't need to do anything more
                 self.global_state
+                    .0
                     .borrow()
                     .as_any()
                     .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
@@ -270,6 +287,7 @@ impl RenderCtx {
             // This stores the reactive state already, so we don't need to do anything more
             // If we can't downcast the stored state to the user's type, it's almost certainly `None` instead (the initial value)
             self.global_state
+                .0
                 .borrow()
                 .as_any()
                 .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
@@ -309,7 +327,7 @@ impl RenderCtx {
         let unrx = serde_json::from_str::<R::Unrx>(state_str)
             .map_err(|err| ClientError::StateInvalid { source: err })?;
         let rx = unrx.make_rx();
-        let mut active_global_state = self.global_state.borrow_mut();
+        let mut active_global_state = self.global_state.0.borrow_mut();
         *active_global_state = Box::new(rx.clone());
 
         Ok(rx)
@@ -318,7 +336,7 @@ impl RenderCtx {
 
 /// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct States {
     /// Any state generated by the *build state* strategy.
     pub build_state: Option<String>,
@@ -496,6 +514,44 @@ pub struct Template<G: Html> {
     /// uses both `build_state` and `request_state`. If not specified and both are generated, request state will be prioritized.
     amalgamate_states: Option<AmalgamateStatesFn>,
 }
+impl<G: Html> std::fmt::Debug for Template<G> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Template")
+            .field("path", &self.path)
+            .field("template", &"TemplateFn")
+            .field("head", &"HeadFn")
+            .field("set_headers", &"SetHeadersFn")
+            .field(
+                "get_build_paths",
+                &self.get_build_paths.as_ref().map(|_| "GetBuildPathsFn"),
+            )
+            .field(
+                "get_build_state",
+                &self.get_build_state.as_ref().map(|_| "GetBuildStateFn"),
+            )
+            .field(
+                "get_request_state",
+                &self.get_request_state.as_ref().map(|_| "GetRequestStateFn"),
+            )
+            .field(
+                "should_revalidate",
+                &self
+                    .should_revalidate
+                    .as_ref()
+                    .map(|_| "ShouldRevalidateFn"),
+            )
+            .field("revalidate_after", &self.revalidate_after)
+            .field(
+                "amalgamate_states",
+                &self
+                    .amalgamate_states
+                    .as_ref()
+                    .map(|_| "AmalgamateStatesFn"),
+            )
+            .field("incremental_generation", &self.incremental_generation)
+            .finish()
+    }
+}
 impl<G: Html> Template<G> {
     /// Creates a new template definition.
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
@@ -526,7 +582,7 @@ impl<G: Html> Template<G> {
         is_server: bool,
         router_state: RouterState,
         page_state_store: PageStateStore,
-        global_state: Rc<RefCell<Box<dyn AnyFreeze>>>,
+        global_state: GlobalState,
         // This should always be empty, it just allows us to persist the value across template loads
         frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
     ) -> View<G> {
@@ -562,7 +618,7 @@ impl<G: Html> Template<G> {
                     translator: translator.clone(),
                     router: router_state,
                     page_state_store,
-                    global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None))),
+                    global_state: GlobalState::default(),
                     // Hydrating state on the server-side is pointless
                     frozen_app: Rc::new(RefCell::new(None))
                 },
@@ -585,7 +641,7 @@ impl<G: Html> Template<G> {
                         // The head string is rendered to a string, and so never has information about router or page state
                         router: RouterState::default(),
                         page_state_store: PageStateStore::default(),
-                        global_state: Rc::new(RefCell::new(Box::new(Option::<()>::None))),
+                        global_state: GlobalState::default(),
                         // Hydrating state on the server-side is pointless
                         frozen_app: Rc::new(RefCell::new(None)),
                     },

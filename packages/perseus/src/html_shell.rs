@@ -16,7 +16,7 @@ fn escape_page_data(data: &str) -> String {
 }
 
 /// Represents a shell of an HTML file. It may have content that gets interpolated into the file.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct HtmlShell<'a> {
     /// The actual shell content, on whcih interpolations will be performed.
     shell: String,

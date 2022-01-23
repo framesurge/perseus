@@ -17,6 +17,11 @@ pub struct ErrorPages<G: Html> {
     status_pages: HashMap<u16, ErrorPageTemplate<G>>,
     fallback: ErrorPageTemplate<G>,
 }
+impl<G: Html> std::fmt::Debug for ErrorPages<G> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ErrorPages").finish()
+    }
+}
 impl<G: Html> ErrorPages<G> {
     /// Creates a new definition of error pages with just a fallback.
     pub fn new(
@@ -122,7 +127,7 @@ impl ErrorPages<SsrNode> {
 
 /// A representation of an error page, particularly for storage in transit so that server-side rendered error pages can be hydrated on
 /// the client-side.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ErrorPageData {
     /// The URL for the error.
     pub url: String,

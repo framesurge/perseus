@@ -216,6 +216,7 @@ pub fn match_route_atomic<'a, G: Html>(
 
 /// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
 /// the app shell and the rendering of a page.
+#[derive(Debug)]
 pub struct RouteInfo<G: Html> {
     /// The actual path of the route.
     pub path: String,
@@ -231,6 +232,7 @@ pub struct RouteInfo<G: Html> {
 /// The possible outcomes of matching a route. This is an alternative implementation of Sycamore's `Route` trait to enable greater
 /// control and tighter integration of routing with templates. This can only be used if `Routes` has been defined in context (done
 /// automatically by the CLI).
+#[derive(Debug)]
 pub enum RouteVerdict<G: Html> {
     /// The given route was found, and route information is attached.
     Found(RouteInfo<G>),
@@ -245,6 +247,7 @@ pub enum RouteVerdict<G: Html> {
 ///
 /// This version is designed for multithreaded scenarios, and stores a reference to a template rather than an `Rc<Template<G>>`. That means this is not compatible
 /// with Perseus on the client-side, only on the server-side.
+#[derive(Debug)]
 pub struct RouteInfoAtomic<'a, G: Html> {
     /// The actual path of the route.
     pub path: String,
@@ -262,6 +265,7 @@ pub struct RouteInfoAtomic<'a, G: Html> {
 /// automatically by the CLI).
 ///
 /// This version uses `RouteInfoAtomic`, and is designed for multithreaded scenarios (i.e. on the server).
+#[derive(Debug)]
 pub enum RouteVerdictAtomic<'a, G: Html> {
     /// The given route was found, and route information is attached.
     Found(RouteInfoAtomic<'a, G>),
@@ -294,7 +298,7 @@ macro_rules! create_app_route {
 }
 
 /// The state for the router.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RouterState {
     /// The router's current load state.
     load_state: Signal<RouterLoadState>,
@@ -319,7 +323,7 @@ impl RouterState {
 }
 
 /// The current load state of the router. You can use this to be warned of when a new page is about to be loaded (and display a loading bar or the like, perhaps).
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RouterLoadState {
     /// The page has been loaded.
     Loaded {

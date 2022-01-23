@@ -9,7 +9,7 @@ use tokio::{
 /// anything not involved in the *revalidation* or *incremental generation* strategies.
 ///
 /// Note: the `.write()` methods on this implementation will create any missing parent directories automatically.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ImmutableStore {
     root_path: String,
 }

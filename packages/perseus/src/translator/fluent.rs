@@ -24,6 +24,13 @@ pub struct FluentTranslator {
     /// The locale for which translations are being managed by this instance.
     locale: String,
 }
+impl std::fmt::Debug for FluentTranslator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FluentTranslator")
+            .field("locale", &self.locale)
+            .finish()
+    }
+}
 impl FluentTranslator {
     /// Creates a new translator for a given locale, passing in translations in FTL syntax form.
     pub fn new(locale: String, ftl_string: String) -> Result<Self, TranslatorError> {

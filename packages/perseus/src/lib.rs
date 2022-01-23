@@ -33,6 +33,8 @@
  */
 
 #![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
+#![forbid(unsafe_code)]
 #![recursion_limit = "256"]
 
 pub mod errors;
@@ -103,7 +105,7 @@ pub mod state {
     pub use crate::global_state::GlobalStateCreator;
     pub use crate::page_state_store::PageStateStore;
     pub use crate::rx_state::*;
-    pub use crate::template::{FrozenApp, PageThawPrefs, ThawPrefs};
+    pub use crate::template::{FrozenApp, GlobalState, PageThawPrefs, ThawPrefs};
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.
