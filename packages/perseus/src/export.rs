@@ -36,19 +36,41 @@ pub async fn get_static_page_data(
     })
 }
 
+/// The properties necessary to export an app.
+#[derive(Debug)]
+pub struct ExportProps<'a, T: TranslationsManager> {
+    /// All the templates in the app.
+    pub templates: &'a TemplateMap<SsrNode>,
+    /// The path to the HTML shell to use.
+    pub html_shell_path: &'a str,
+    /// The locales data for the app.
+    pub locales: &'a Locales,
+    /// The HTML ID of the `<div>` to inject into.
+    pub root_id: &'a str,
+    /// An immutable store.
+    pub immutable_store: &'a ImmutableStore,
+    /// A translations manager.
+    pub translations_manager: &'a T,
+    /// The server-side path prefix/
+    pub path_prefix: String,
+    /// A stringified global state.
+    pub global_state: &'a Option<String>,
+}
+
 /// Exports your app to static files, which can be served from anywhere, without needing a server. This assumes that the app has already
 /// been built, and that no templates are using non-static features (which can be ensured by passing `true` as the last parameter to
 /// `build_app`).
-#[allow(clippy::too_many_arguments)]
-pub async fn export_app(
-    templates: &TemplateMap<SsrNode>,
-    html_shell_path: &str,
-    locales: &Locales,
-    root_id: &str,
-    immutable_store: &ImmutableStore,
-    translations_manager: &impl TranslationsManager,
-    path_prefix: String,
-    global_state: &Option<String>,
+pub async fn export_app<T: TranslationsManager>(
+    ExportProps {
+        templates,
+        html_shell_path,
+        locales,
+        root_id,
+        immutable_store,
+        translations_manager,
+        path_prefix,
+        global_state,
+    }: ExportProps<'_, T>,
 ) -> Result<(), ServerError> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(immutable_store).await?;

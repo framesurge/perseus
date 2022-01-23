@@ -6,7 +6,7 @@ The time-based strategy adds very little server overhead, as it simply performs 
 
 ## Time-Based Variant
 
-The time based variant does have some slightly weird behaviour to watch out for though, which is best explained by explaining how it works.
+The time based variant does have some slightly weird behavior to watch out for though, which is best explained by explaining how it works.
 
 1. Evaluates your time string (e.g. `1w` for 1 week) to a number of seconds after January 1 1970 (how computers represent time). This provides a timestamp in the future, past which your page should be revalidated.
 2. On every request, Perseus checks if this timestamp has been passed yet. If it has, it re-renders your page. This means that **your page will only be revalidated after the time has elapsed _and_ a user has queried it**.

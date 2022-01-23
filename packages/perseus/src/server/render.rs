@@ -229,22 +229,43 @@ async fn revalidate(
     Ok((html, head, state))
 }
 
+/// The properties required to get data for a page.
+#[derive(Debug)]
+pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
+    /// The raw path (which must not contain the locale).
+    pub raw_path: &'a str,
+    /// The locale to render for.
+    pub locale: &'a str,
+    /// Whether or not the page was matched on a template using incremental generation that didn't prerender it with build paths (these use the mutable store).
+    pub was_incremental_match: bool,
+    /// The request data.
+    pub req: Request,
+    /// The stringified global state to use in the render process.
+    pub global_state: &'a Option<String>,
+    /// An immutable store.
+    pub immutable_store: &'a ImmutableStore,
+    /// A mutable store.
+    pub mutable_store: &'a M,
+    /// A translations manager.
+    pub translations_manager: &'a T,
+}
+
 /// Internal logic behind `get_page`. The only differences are that this takes a full template rather than just a template name, which
 /// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing). Because this
 /// handles templates with potentially revalidation and incremental generation, it uses both mutable and immutable stores.
 // TODO possible further optimizations on this for futures?
-#[allow(clippy::too_many_arguments)]
-pub async fn get_page_for_template(
-    // This must not contain the locale
-    raw_path: &str,
-    locale: &str,
+pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
+    GetPageProps {
+        raw_path,
+        locale,
+        was_incremental_match,
+        req,
+        global_state,
+        immutable_store,
+        mutable_store,
+        translations_manager,
+    }: GetPageProps<'_, M, T>,
     template: &Template<SsrNode>,
-    // This allows us to differentiate pages for incrementally generated templates that were pre-rendered with build paths (and are in the immutable store) from those generated and cached at runtime (in the mutable store)
-    was_incremental_match: bool,
-    req: Request,
-    global_state: &Option<String>,
-    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    translations_manager: &impl TranslationsManager,
 ) -> Result<PageData, ServerError> {
     // Get a translator for this locale (for sanity we hope the manager is caching)
     let translator = translations_manager
@@ -454,18 +475,12 @@ pub async fn get_page_for_template(
 /// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML
 /// generated at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
 #[allow(clippy::too_many_arguments)]
-pub async fn get_page(
-    // This must not contain the locale
-    raw_path: &str,
-    locale: &str,
-    (template_name, was_incremental_match): (&str, bool),
-    req: Request,
+pub async fn get_page<M: MutableStore, T: TranslationsManager>(
+    props: GetPageProps<'_, M, T>,
+    template_name: &str,
     templates: &TemplateMap<SsrNode>,
-    global_state: &Option<String>,
-    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    translations_manager: &impl TranslationsManager,
 ) -> Result<PageData, ServerError> {
-    let mut path = raw_path;
+    let mut path = props.raw_path;
     // If the path is empty, we're looking for the special `index` page
     if path.is_empty() {
         path = "index";
@@ -483,16 +498,6 @@ pub async fn get_page(
         }
     };
 
-    let res = get_page_for_template(
-        raw_path,
-        locale,
-        template,
-        was_incremental_match,
-        req,
-        global_state,
-        (immutable_store, mutable_store),
-        translations_manager,
-    )
-    .await?;
+    let res = get_page_for_template(props, template).await?;
     Ok(res)
 }

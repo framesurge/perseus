@@ -361,15 +361,37 @@ pub async fn build_templates_and_translator_for_locale(
     Ok(())
 }
 
+/// The properties needed to build an app.
+#[derive(Debug)]
+pub struct BuildProps<'a, M: MutableStore, T: TranslationsManager> {
+    /// All the templates in the app.
+    pub templates: &'a TemplateMap<SsrNode>,
+    /// The app's locales data.
+    pub locales: &'a Locales,
+    /// An immutable store.
+    pub immutable_store: &'a ImmutableStore,
+    /// A mutable store.
+    pub mutable_store: &'a M,
+    /// A translations manager.
+    pub translations_manager: &'a T,
+    /// A stringified global state.
+    pub global_state: &'a Option<String>,
+    /// Whether or not we're exporting after this build (changes behavior slightly).
+    pub exporting: bool,
+}
+
 /// Runs the build process of building many templates for the given locales data, building directly for all supported locales. This is
 /// fine because of how ridiculously fast builds are.
-pub async fn build_app(
-    templates: &TemplateMap<SsrNode>,
-    locales: &Locales,
-    (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    translations_manager: &impl TranslationsManager,
-    global_state: &Option<String>,
-    exporting: bool,
+pub async fn build_app<M: MutableStore, T: TranslationsManager>(
+    BuildProps {
+        templates,
+        locales,
+        immutable_store,
+        mutable_store,
+        translations_manager,
+        global_state,
+        exporting,
+    }: BuildProps<'_, M, T>,
 ) -> Result<(), ServerError> {
     let locales = locales.get_all();
     let mut futs = Vec::new();

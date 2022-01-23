@@ -57,7 +57,7 @@ macro_rules! get_template_for_path {
 ///
 /// This houses the central routing algorithm of Perseus, which is based fully on the fact that we know about every single page except
 /// those rendered with ISR, and we can infer about them based on template root path domains. If that domain system is violated, this
-/// routing algorithm will not behave as expected whatsoever (as far as routing goes, it's undefined behaviour)!
+/// routing algorithm will not behave as expected whatsoever (as far as routing goes, it's undefined behavior)!
 pub fn get_template_for_path<G: Html>(
     raw_path: &str,
     render_cfg: &HashMap<String, String>,

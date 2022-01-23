@@ -5,7 +5,7 @@ use perseus::{
     errors::err_to_status_code,
     internal::{
         i18n::TranslationsManager,
-        serve::{get_page_for_template, ServerOptions},
+        serve::{get_page_for_template, GetPageProps, ServerOptions},
     },
     stores::{ImmutableStore, MutableStore},
 };
@@ -57,14 +57,17 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
             }
         };
         let page_data = get_page_for_template(
-            path,
-            locale,
+            GetPageProps {
+                raw_path: path,
+                locale,
+                was_incremental_match,
+                req: http_req,
+                global_state: &global_state,
+                immutable_store: immutable_store.get_ref(),
+                mutable_store: mutable_store.get_ref(),
+                translations_manager: translations_manager.get_ref(),
+            },
             template,
-            was_incremental_match,
-            http_req,
-            &global_state,
-            (immutable_store.get_ref(), mutable_store.get_ref()),
-            translations_manager.get_ref(),
         )
         .await;
         match page_data {

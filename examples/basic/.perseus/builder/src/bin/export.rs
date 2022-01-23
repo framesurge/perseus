@@ -1,7 +1,11 @@
 use fmterr::fmt_err;
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use perseus::{
-    internal::{build::build_app, export::export_app, get_path_prefix_server},
+    internal::{
+        build::{build_app, BuildProps},
+        export::{export_app, ExportProps},
+        get_path_prefix_server,
+    },
     PluginAction, SsrNode,
 };
 use perseus_engine::app::{
@@ -77,15 +81,15 @@ async fn build_and_export() -> i32 {
     // Build the site for all the common locales (done in parallel), denying any non-exportable features
     // We need to build and generate those artifacts before we can proceed on to exporting
     let templates_map = get_templates_map::<SsrNode>(&plugins);
-    let build_res = build_app(
-        &templates_map,
-        &locales,
-        (&immutable_store, &mutable_store),
-        &translations_manager,
-        &global_state,
-        // We use another binary to handle normal building
-        true,
-    )
+    let build_res = build_app(BuildProps {
+        templates: &templates_map,
+        locales: &locales,
+        immutable_store: &immutable_store,
+        mutable_store: &mutable_store,
+        translations_manager: &translations_manager,
+        global_state: &global_state,
+        exporting: true,
+    })
     .await;
     if let Err(err) = build_res {
         let err_msg = fmt_err(&err);
@@ -104,17 +108,16 @@ async fn build_and_export() -> i32 {
         .run((), plugins.get_plugin_data());
     // Turn the build artifacts into self-contained static files
     let app_root = get_app_root(&plugins);
-    let export_res = export_app(
-        &templates_map,
-        // Perseus always uses one HTML file, and there's no point in letting a plugin change that
-        "../index.html",
-        &locales,
-        &app_root,
-        &immutable_store,
-        &translations_manager,
-        get_path_prefix_server(),
-        &global_state,
-    )
+    let export_res = export_app(ExportProps {
+        templates: &templates_map,
+        html_shell_path: "../index.html",
+        locales: &locales,
+        root_id: &app_root,
+        immutable_store: &immutable_store,
+        translations_manager: &translations_manager,
+        path_prefix: get_path_prefix_server(),
+        global_state: &global_state,
+    })
     .await;
     if let Err(err) = export_res {
         let err_msg = fmt_err(&err);

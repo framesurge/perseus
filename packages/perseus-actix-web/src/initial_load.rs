@@ -8,7 +8,8 @@ use perseus::{
         i18n::{TranslationsManager, Translator},
         router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
         serve::{
-            build_error_page, get_page_for_template, get_path_slice, HtmlShell, ServerOptions,
+            build_error_page, get_page_for_template, get_path_slice, GetPageProps, HtmlShell,
+            ServerOptions,
         },
     },
     stores::{ImmutableStore, MutableStore},
@@ -77,14 +78,17 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             };
             // Actually render the page as we would if this weren't an initial load
             let page_data = get_page_for_template(
-                &path,
-                &locale,
+                GetPageProps {
+                    raw_path: &path,
+                    locale: &locale,
+                    was_incremental_match,
+                    req: http_req,
+                    global_state: &global_state,
+                    immutable_store: immutable_store.get_ref(),
+                    mutable_store: mutable_store.get_ref(),
+                    translations_manager: translations_manager.get_ref(),
+                },
                 template,
-                was_incremental_match,
-                http_req,
-                &global_state,
-                (immutable_store.get_ref(), mutable_store.get_ref()),
-                translations_manager.get_ref(),
             )
             .await;
             let page_data = match page_data {

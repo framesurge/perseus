@@ -1,5 +1,8 @@
 use fmterr::fmt_err;
-use perseus::{internal::build::build_app, PluginAction, SsrNode};
+use perseus::{
+    internal::build::{build_app, BuildProps},
+    PluginAction, SsrNode,
+};
 use perseus_engine::app::{
     get_global_state_creator, get_immutable_store, get_locales, get_mutable_store, get_plugins,
     get_templates_map, get_translations_manager,
@@ -46,15 +49,15 @@ async fn real_main() -> i32 {
     // Build the site for all the common locales (done in parallel)
     // All these parameters can be modified by `define_app!` and plugins, so there's no point in having a plugin opportunity here
     let templates_map = get_templates_map::<SsrNode>(&plugins);
-    let res = build_app(
-        &templates_map,
-        &locales,
-        (&immutable_store, &mutable_store),
-        &translations_manager,
-        &global_state,
-        // We use another binary to handle exporting
-        false,
-    )
+    let res = build_app(BuildProps {
+        templates: &templates_map,
+        locales: &locales,
+        immutable_store: &immutable_store,
+        mutable_store: &mutable_store,
+        translations_manager: &translations_manager,
+        global_state: &global_state,
+        exporting: false,
+    })
     .await;
     if let Err(err) = res {
         let err_msg = fmt_err(&err);
