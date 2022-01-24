@@ -20,7 +20,7 @@ jobs:
               with:
                   fetch-depth: 0
             - run: cargo install bonnie wasm-pack perseus-cli
-            - run: RUSTFLAGS=--cfg=web_sys_unstable_apis cargo install tribble --version 0.1.0-rc.6
+            - run: RUSTFLAGS=--cfg=web_sys_unstable_apis cargo install tribble
             - run: npm install -g tailwindcss
             - run: npm install
               working-directory: website
