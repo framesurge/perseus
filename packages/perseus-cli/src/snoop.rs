@@ -43,13 +43,10 @@ pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, Execution
     let target = dir.join(".perseus/server");
     run_cmd_directly(
         format!(
-            "{} run {}",
+            "{} run --features integration-{} --no-default-features",
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
             // Enable the appropriate feature for a non-default server integration
-            format!(
-                "--features integration-{} --no-default-features",
-                opts.integration.to_string()
-            )
+            opts.integration.to_string()
         ),
         &target,
     )

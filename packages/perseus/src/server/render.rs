@@ -278,7 +278,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         path = "index";
     }
     // Remove `/` from the path by encoding it as a URL (that's what we store) and add the locale
-    let path_encoded = format!("{}-{}", locale, urlencoding::encode(path).to_string());
+    let path_encoded = format!("{}-{}", locale, urlencoding::encode(path));
     let path_with_locale = get_path_with_locale(path, &translator);
 
     // Only a single string of HTML is needed, and it will be overridden if necessary (priorities system)

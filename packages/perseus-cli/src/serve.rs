@@ -69,24 +69,20 @@ fn build_server(
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = target;
-    let sb_thread =
-        spawn_thread(move || {
-            let (stdout, _stderr) = handle_exit_code!(run_stage(
+    let sb_thread = spawn_thread(move || {
+        let (stdout, _stderr) = handle_exit_code!(run_stage(
                 vec![&format!(
                     // This sets Cargo to tell us everything, including the executable path to the server
-                    "{} build --message-format json {} {}",
+                    "{} build --message-format json --features integration-{} {} --no-default-features {}",
                     env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
                     // Enable the appropriate integration
-                    format!(
-                        "--features integration-{} {} --no-default-features",
-                        integration.to_string(),
-                        // We'll also handle whether or not it's standalone because that goes under the `--features` flag
-                        if is_standalone {
-                            "--features standalone"
-                        } else {
-                            ""
-                        }
-                    ),
+                    integration.to_string(),
+                    // We'll also handle whether or not it's standalone because that goes under the `--features` flag
+                    if is_standalone {
+                        "--features standalone"
+                    } else {
+                        ""
+                    },
                     if is_release { "--release" } else { "" },
                 )],
                 &sb_target,
@@ -94,37 +90,39 @@ fn build_server(
                 &sb_msg
             )?);
 
-            let msgs: Vec<&str> = stdout.trim().split('\n').collect();
-            // If we got to here, the exit code was 0 and everything should've worked
-            // The last message will just tell us that the build finished, the second-last one will tell us the executable path
-            let msg = msgs.get(msgs.len() - 2);
-            let msg = match msg {
-                // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
-                Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
-                    .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
-                None => return Err(ExecutionError::ServerExectutableMsgNotFound),
-            };
-            let server_exec_path = msg.get("executable");
-            let server_exec_path = match server_exec_path {
+        let msgs: Vec<&str> = stdout.trim().split('\n').collect();
+        // If we got to here, the exit code was 0 and everything should've worked
+        // The last message will just tell us that the build finished, the second-last one will tell us the executable path
+        let msg = msgs.get(msgs.len() - 2);
+        let msg = match msg {
+            // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
+            Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
+                .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
+            None => return Err(ExecutionError::ServerExectutableMsgNotFound),
+        };
+        let server_exec_path = msg.get("executable");
+        let server_exec_path = match server_exec_path {
             // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
             Some(server_exec_path) => match server_exec_path.as_str() {
                 Some(server_exec_path) => server_exec_path,
-                None => return Err(ExecutionError::ParseServerExecutableFailed {
-                    err: "expected 'executable' field to be string".to_string()
-                }),
+                None => {
+                    return Err(ExecutionError::ParseServerExecutableFailed {
+                        err: "expected 'executable' field to be string".to_string(),
+                    })
+                }
             },
             None => return Err(ExecutionError::ParseServerExecutableFailed {
                 err: "expected 'executable' field in JSON map in second-last message, not present"
-                    .to_string()
+                    .to_string(),
             }),
         };
 
-            // And now the main thread needs to know about this
-            let mut exec_val = exec.lock().unwrap();
-            *exec_val = server_exec_path.to_string();
+        // And now the main thread needs to know about this
+        let mut exec_val = exec.lock().unwrap();
+        *exec_val = server_exec_path.to_string();
 
-            Ok(0)
-        });
+        Ok(0)
+    });
 
     Ok(sb_thread)
 }

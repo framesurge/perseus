@@ -118,10 +118,7 @@ pub fn get_initial_state() -> InitialState {
             Err(err) => ErrorPageData {
                 url: "[current]".to_string(),
                 status: 500,
-                err: format!(
-                    "couldn't serialize error from server: '{}'",
-                    err.to_string()
-                ),
+                err: format!("couldn't serialize error from server: '{}'", err),
             },
         };
         InitialState::Error(err_page_data)
@@ -407,7 +404,7 @@ pub async fn app_shell(
                 "{}/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",
                 get_path_prefix_client(),
                 locale,
-                path.to_string(),
+                path,
                 template.get_path(),
                 was_incremental_match
             );
