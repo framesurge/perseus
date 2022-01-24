@@ -31,7 +31,7 @@ pub trait Freeze {
 // initialized, but that means it's unmodified from the server, so there would be no point in freezing it (just as there'd be no point in freezing the router state).
 impl Freeze for Option<()> {
     fn freeze(&self) -> String {
-        serde_json::to_string(&Option::<()>::None).unwrap()
+        "None".to_string()
     }
 }
 

@@ -64,7 +64,7 @@ impl IdbFrozenStateStore {
             .add_object_store(
                 // We'll store many versions of frozen state so that the user can revert to previous states
                 ObjectStore::new("frozen_state")
-                    .key_path("id")
+                    // We don't provide a key path because that would lock us in to storing only JS objects, and we want to store strings
                     .auto_increment(true), // IndexedDB doesn't need us to register value types, only things that should be indexed (gotta love JS type safety haven't you!)
             )
             .build()
