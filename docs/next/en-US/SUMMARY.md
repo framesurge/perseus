@@ -35,6 +35,7 @@
 -   [Reactive State](/docs/reference/state/rx)
     -   [Global State](/docs/reference/state/global)
     -   [State Freezing](/docs/reference/state/freezing)
+        -   [Freezing to IndexedDB](/docs/reference/state/idb-freezing)
 -   [CLI](/docs/reference/cli)
     -   [Ejecting](/docs/reference/ejecting)
     -   [Snooping](/docs/reference/snooping)
