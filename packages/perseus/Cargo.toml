@@ -35,6 +35,7 @@ fluent-bundle = { version = "0.15", optional = true }
 unic-langid = { version = "0.9", optional = true }
 intl-memoizer = { version = "0.5", optional = true }
 tokio = { version = "1", features = [ "fs", "io-util" ] }
+rexie = { version = "0.2", optional = true }
 
 [features]
 default = []
@@ -52,3 +53,8 @@ hydrate = []
 # This feature enables the preloading of the Wasm bundle for locale redirections, which in theory improves UX
 # For now, this is experimental until it can be tested in the wild (local testing of this is extremely difficult for UX, we need real world metrics)
 preload-wasm-on-redirect = []
+# This exposes an API for saving frozen state to IndexedDB simply, with options for making your storage persistent so the browser won't delete it
+idb-freezing = [ "rexie", "web-sys/StorageManager" ]
+# Switches to expecting the server to provide a JS bundle that's been created from Wasm
+# Note that this is highly experimental, and currently blocked by [rustwasm/wasm-bindgen#2735](https://github.com/rustwasm/wasm-bindgen/issues/2735)
+wasm2js = []
