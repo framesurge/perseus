@@ -116,6 +116,8 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
         js_bundle: "dist/pkg/perseus_engine.js".to_string(),
         // Our crate has the same name, so this will be predictable
         wasm_bundle: "dist/pkg/perseus_engine_bg.wasm".to_string(),
+        // This probably won't exist, but on the off chance that the user needs to support older browsers, we'll provide it anyway
+        wasm_js_bundle: "dist/pkg/perseus_engine_bg.wasm.js".to_string(),
         // It's a nightmare to get the templates map to take plugins, so we use a self-contained version
         // TODO reduce allocations here
         templates_map: get_templates_map_atomic_contained(),

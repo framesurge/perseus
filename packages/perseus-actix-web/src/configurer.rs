@@ -20,6 +20,9 @@ async fn js_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedF
 async fn wasm_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.wasm_bundle)
 }
+async fn wasm_js_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
+    NamedFile::open(&opts.wasm_js_bundle)
+}
 async fn static_alias(
     opts: web::Data<Rc<ServerOptions>>,
     req: HttpRequest,
@@ -79,6 +82,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
             // This contains everything in the spirit of a pseudo-SPA
             .route("/.perseus/bundle.js", web::get().to(js_bundle))
             .route("/.perseus/bundle.wasm", web::get().to(wasm_bundle))
+            .route("/.perseus/bundle.wasm.js", web::get().to(wasm_js_bundle))
             // This allows getting the static HTML/JSON of a page
             // We stream both together in a single JSON object so SSR works (otherwise we'd have request IDs and weird caching...)
             // A request to this should also provide the template name (routing should only be done once on the client) as a query parameter

@@ -48,6 +48,9 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let wasm_bundle = warp::path!(".perseus" / "bundle.wasm")
         .and(warp::path::end())
         .and(warp::fs::file(opts.wasm_bundle.clone()));
+    let wasm_js_bundle = warp::path!(".perseus" / "bundle.wasm.js")
+        .and(warp::path::end())
+        .and(warp::fs::file(opts.wasm_js_bundle.clone()));
     // Handle JS interop snippets (which need to be served as separate files)
     let snippets = warp::path!(".perseus" / "snippets").and(warp::fs::dir(opts.snippets.clone()));
     // Handle static content in the user-set directories (this will all be under `/.perseus/static`)
@@ -121,6 +124,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     // Now put all those routes together in the final thing (the user will add this to an existing Warp server)
     js_bundle
         .or(wasm_bundle)
+        .or(wasm_js_bundle)
         .or(snippets)
         .or(static_dir)
         .or(static_aliases)

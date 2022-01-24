@@ -15,6 +15,8 @@ pub struct ServerOptions {
     pub js_bundle: String,
     /// The location on the filesystem of your Wasm bundle.
     pub wasm_bundle: String,
+    /// The location on the filesystem of your JS bundle converted from your Wasm bundle. This isn't required, and if you haven't generated this, you should provide a fake path.
+    pub wasm_js_bundle: String,
     /// The location on the filesystem of your `index.html` file.
     // TODO Should this actually be a raw string of HTML so plugins can inject efficiently?
     pub index: String,
