@@ -7,7 +7,6 @@ pub struct TestProps {
     pub username: String,
 }
 
-// This special macro (normally we'd use `template(IndexProps)`) converts the state we generate elsewhere to a reactive version
 #[perseus::template_rx(IdbPage)]
 pub fn idb_page(TestPropsRx { username }: TestPropsRx) -> View<G> {
     let username_2 = username.clone(); // This is necessary until Sycamore's new reactive primitives are released
