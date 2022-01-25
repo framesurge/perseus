@@ -310,7 +310,7 @@ impl Default for RouterState {
     }
 }
 impl RouterState {
-    /// Gets the load state of the router.
+    /// Gets the load state of the router. You'll still need to call `.get()` after this (this just returns a `ReadSignal` to derive other state from in a `create_memo` or the like).
     pub fn get_load_state(&self) -> ReadSignal<RouterLoadState> {
         self.load_state.handle()
     }
