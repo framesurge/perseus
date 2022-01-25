@@ -74,11 +74,9 @@ impl RenderCtx {
 
         Ok(())
     }
-    /// Gets either the active state or the frozen state for the given page. If `.thaw()` has been called, thaw preferences will be registered, which this will use to decide whether to use
-    /// frozen or active state. If neither is available, the caller should use generated state instead.
-    ///
-    /// This takes a single type parameter for the reactive state type, from which the unreactive state type can be derived.
-    pub fn get_active_or_frozen_page_state<R>(
+    /// An internal getter for the frozen state for the given page. When this is called, it will also add any frozen state
+    /// it finds to the page state store, overriding what was already there.
+    fn get_frozen_page_state_and_register<R>(
         &mut self,
         url: &str,
     ) -> Option<<R::Unrx as MakeRx>::Rx>
@@ -99,9 +97,7 @@ impl RenderCtx {
                             Ok(unrx) => unrx,
                             // The frozen state could easily be corrupted, so we'll fall back to the active state (which is already reactive)
                             // We break out here to avoid double-storing this and trying to make a reactive thing reactive
-                            Err(_) => {
-                                return self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
-                            }
+                            Err(_) => return None,
                         };
                         // This returns the reactive version of the unreactive version of `R`, which is why we have to make everything else do the same
                         // Then we convince the compiler that that actually is `R` with the ludicrous trait bound at the beginning of this function
@@ -121,17 +117,60 @@ impl RenderCtx {
                     None => self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url),
                 }
             } else {
-                // The page state store stores the reactive state already, so we don't need to do anything more
-                self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
+                None
+            }
+        } else {
+            None
+        }
+    }
+    /// An internal getter for the active (already registered) state for the given page.
+    fn get_active_page_state<R>(&self, url: &str) -> Option<<R::Unrx as MakeRx>::Rx>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
+    }
+    /// Gets either the active state or the frozen state for the given page. If `.thaw()` has been called, thaw preferences will be registered, which this will use to decide whether to use
+    /// frozen or active state. If neither is available, the caller should use generated state instead.
+    ///
+    /// This takes a single type parameter for the reactive state type, from which the unreactive state type can be derived.
+    pub fn get_active_or_frozen_page_state<R>(
+        &mut self,
+        url: &str,
+    ) -> Option<<R::Unrx as MakeRx>::Rx>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        let frozen_app_full = self.frozen_app.borrow();
+        if let Some((_, thaw_prefs)) = &*frozen_app_full {
+            // Check against the thaw preferences if we should prefer frozen state over active state
+            if thaw_prefs.page.should_use_frozen_state(url) {
+                drop(frozen_app_full);
+                // We'll fall back to active state if no frozen state is available
+                match self.get_frozen_page_state_and_register::<R>(url) {
+                    Some(state) => Some(state),
+                    None => self.get_active_page_state::<R>(url),
+                }
+            } else {
+                drop(frozen_app_full);
+                // We're preferring active state, but we'll fall back to frozen state if none is available
+                match self.get_active_page_state::<R>(url) {
+                    Some(state) => Some(state),
+                    None => self.get_frozen_page_state_and_register::<R>(url),
+                }
             }
         } else {
             // No frozen state exists, so we of course shouldn't prioritize it
-            // The page state store stores the reactive state already, so we don't need to do anything more
-            self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
+            self.get_active_page_state::<R>(url)
         }
     }
-    /// Gets either the active or the frozen global state, depending on thaw preferences. Otherwise, this is exactly the same as `.get_active_or_frozen_state()`.
-    pub fn get_active_or_frozen_global_state<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    /// An internal getter for the frozen global state. When this is called, it will also add any frozen state to the registered
+    /// global state, removing whatever was there before.
+    fn get_frozen_global_state_and_register<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
@@ -143,29 +182,14 @@ impl RenderCtx {
             if thaw_prefs.global_prefer_frozen {
                 // Get the serialized and unreactive frozen state from the store
                 match frozen_app.global_state.as_str() {
-                    // If there's nothing in the frozen state, we'll fall back to the active state
-                    "None" => self
-                        .global_state
-                        .0
-                        .borrow()
-                        .as_any()
-                        .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
-                        .cloned(),
+                    // See `rx_state.rs` for why this would be the default value
+                    "None" => None,
                     state_str => {
                         // Deserialize into the unreactive version
                         let unrx = match serde_json::from_str::<R::Unrx>(state_str) {
                             Ok(unrx) => unrx,
-                            // The frozen state could easily be corrupted, so we'll fall back to the active state (which is already reactive)
-                            // We break out here to avoid double-storing this and trying to make a reactive thing reactive
-                            Err(_) => {
-                                return self
-                                    .global_state
-                                    .0
-                                    .borrow()
-                                    .as_any()
-                                    .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
-                                    .cloned()
-                            }
+                            // The frozen state could easily be corrupted
+                            Err(_) => return None,
                         };
                         // This returns the reactive version of the unreactive version of `R`, which is why we have to make everything else do the same
                         // Then we convince the compiler that that actually is `R` with the ludicrous trait bound at the beginning of this function
@@ -184,24 +208,54 @@ impl RenderCtx {
                     }
                 }
             } else {
-                // The page state store stores the reactive state already, so we don't need to do anything more
-                self.global_state
-                    .0
-                    .borrow()
-                    .as_any()
-                    .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
-                    .cloned()
+                None
+            }
+        } else {
+            None
+        }
+    }
+    /// An internal getter for the active (already registered) global state.
+    fn get_active_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        self.global_state
+            .0
+            .borrow()
+            .as_any()
+            .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
+            .cloned()
+    }
+    /// Gets either the active or the frozen global state, depending on thaw preferences. Otherwise, this is exactly the same as `.get_active_or_frozen_state()`.
+    pub fn get_active_or_frozen_global_state<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        let frozen_app_full = self.frozen_app.borrow();
+        if let Some((_, thaw_prefs)) = &*frozen_app_full {
+            // Check against the thaw preferences if we should prefer frozen state over active state
+            if thaw_prefs.global_prefer_frozen {
+                drop(frozen_app_full);
+                // We'll fall back to the active state if there's no frozen state
+                match self.get_frozen_global_state_and_register::<R>() {
+                    Some(state) => Some(state),
+                    None => self.get_active_global_state::<R>(),
+                }
+            } else {
+                drop(frozen_app_full);
+                // We'll fall back to the frozen state there's no active state available
+                match self.get_active_global_state::<R>() {
+                    Some(state) => Some(state),
+                    None => self.get_frozen_global_state_and_register::<R>(),
+                }
             }
         } else {
             // No frozen state exists, so we of course shouldn't prioritize it
-            // This stores the reactive state already, so we don't need to do anything more
-            // If we can't downcast the stored state to the user's type, it's almost certainly `None` instead (the initial value)
-            self.global_state
-                .0
-                .borrow()
-                .as_any()
-                .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
-                .cloned()
+            self.get_active_global_state::<R>()
         }
     }
     /// Registers a serialized and unreactive state string to the page state store, returning a fully reactive version.
