@@ -1,3 +1,4 @@
+use crate::cmd::run_cmd_directly;
 use crate::errors::*;
 use crate::extraction::extract_dir;
 #[allow(unused_imports)]
@@ -17,10 +18,9 @@ const SUBCRATES: Dir = include_dir!("./.perseus");
 
 /// Prepares the user's project by copying in the `.perseus/` subcrates. We use these subcrates to do all the building/serving, we just
 /// have to execute the right commands in the CLI. We can essentially treat the subcrates themselves as a blackbox of just a folder.
-pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
+pub fn prepare(dir: PathBuf, engine_url: &str) -> Result<(), PrepError> {
     // The location in the target directory at which we'll put the subcrates
-    let mut target = dir;
-    target.extend([".perseus"]);
+    let target = dir.join(".perseus");
 
     if target.exists() {
         // We don't care if it's corrupted etc., it just has to exist
@@ -28,22 +28,59 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
         // Besides, we want them to be able to customize stuff
         Ok(())
     } else {
-        // Write the stored directory to that location, creating the directory first
+        // Create the directory first
         if let Err(err) = fs::create_dir(&target) {
             return Err(PrepError::ExtractionFailed {
                 target_dir: target.to_str().map(|s| s.to_string()),
                 source: err,
             });
         }
-        // Notably, this function will not do anything or tell us if the directory already exists...
-        if let Err(err) = extract_dir(SUBCRATES, &target) {
-            return Err(PrepError::ExtractionFailed {
-                target_dir: target.to_str().map(|s| s.to_string()),
-                source: err,
-            });
+        // Check if we're using the bundled engine or a custom one
+        if engine_url == "default" {
+            // Write the stored directory to the target location
+            // Notably, this function will not do anything or tell us if the directory already exists...
+            if let Err(err) = extract_dir(SUBCRATES, &target) {
+                return Err(PrepError::ExtractionFailed {
+                    target_dir: target.to_str().map(|s| s.to_string()),
+                    source: err,
+                });
+            }
+        } else {
+            // We're using a non-standard engine, which we'll download using Git
+            // All other steps of integration with the user's package after this are the same
+            let url_parts = engine_url.split('@').collect::<Vec<&str>>();
+            let engine_url = url_parts[0];
+            // A custom branch can be specified after a `@`, or we'll use `stable`
+            let engine_branch = url_parts.get(1).unwrap_or(&"stable");
+            let cmd = format!(
+                // We'll only clone the production branch, and only the top level, we don't need the whole shebang
+                "{} clone --single-branch --branch {branch} --depth 1 {repo} {output}",
+                env::var("PERSEUS_GIT_PATH").unwrap_or_else(|_| "git".to_string()),
+                branch = engine_branch,
+                repo = engine_url,
+                output = target.to_string_lossy()
+            );
+            println!("Fetching custom engine with command: '{}'.", &cmd);
+            // Tell the user what command we're running so that they can debug it
+            let exit_code = run_cmd_directly(
+                cmd,
+                &dir, // We'll run this in the current directory and output into `.perseus/`
+            )
+            .map_err(|err| PrepError::GetEngineFailed { source: err })?;
+            if exit_code != 0 {
+                return Err(PrepError::GetEngineNonZeroExitCode { exit_code });
+            }
+            // Now delete the Git internals
+            let git_target = target.join(".git");
+            if let Err(err) = fs::remove_dir_all(&git_target) {
+                return Err(PrepError::RemoveEngineGitFailed {
+                    target_dir: git_target.to_str().map(|s| s.to_string()),
+                    source: err,
+                });
+            }
         }
-        // Use the current version of this crate (and thus all Perseus crates) to replace the relative imports
-        // That way everything works in dev and in prod on another system!
+
+        // Prepare for transformations on the manifest files
         // We have to store `Cargo.toml` as `Cargo.toml.old` for packaging
         let root_manifest_pkg = target.join("Cargo.toml.old");
         let root_manifest = target.join("Cargo.toml");
@@ -82,38 +119,59 @@ pub fn prepare(dir: PathBuf) -> Result<(), PrepError> {
         // Update the name of the user's crate (Cargo needs more than just a path and an alias)
         // We don't need to do that in the server manifest because it uses the root code (which does parsing after `define_app!`)
         // We used to add a workspace here, but that means size optimizations apply to both the client and the server, so that's not done anymore
-        // Now, we use an empty workspace to make sure we don't ninclude the engine in any user workspaces
-        let updated_root_manifest = root_manifest_contents
-            .replace("perseus-example-basic", &user_crate_name)
-            + "\n[workspace]";
+        // Now, we use an empty workspace to make sure we don't include the engine in any user workspaces
+        // We use a token here that's set by the Bonnie `copy-subcrates` script
+        let updated_root_manifest =
+            root_manifest_contents.replace("USER_PKG_NAME", &user_crate_name) + "\n[workspace]";
         let updated_server_manifest = server_manifest_contents + "\n[workspace]";
         let updated_builder_manifest = builder_manifest_contents + "\n[workspace]";
 
-        // If we're not in development, also update relative path references
+        // We also need to set the Perseus version
+        // In production, we'll use the full version, but in development we'll use relative path references from the examples
+        // The tokens here are set by Bonnie's `copy-subcrates` script once again
+        // Production
         #[cfg(not(debug_assertions))]
         let updated_root_manifest = updated_root_manifest.replace(
-            "path = \"../../../packages/perseus\"",
+            "PERSEUS_VERSION",
             &format!("version = \"{}\"", PERSEUS_VERSION),
         );
         #[cfg(not(debug_assertions))]
         let updated_server_manifest = updated_server_manifest
             .replace(
-                "path = \"../../../../packages/perseus\"",
+                "PERSEUS_VERSION",
                 &format!("version = \"{}\"", PERSEUS_VERSION),
             )
             .replace(
-                "path = \"../../../../packages/perseus-actix-web\"",
+                "PERSEUS_ACTIX_WEB_VERSION",
                 &format!("version = \"{}\"", PERSEUS_VERSION),
             )
             .replace(
-                "path = \"../../../../packages/perseus-warp\"",
+                "PERSEUS_WARP_VERSION",
                 &format!("version = \"{}\"", PERSEUS_VERSION),
             );
         #[cfg(not(debug_assertions))]
         let updated_builder_manifest = updated_builder_manifest.replace(
-            "path = \"../../../../packages/perseus\"",
+            "PERSEUS_VERSION",
             &format!("version = \"{}\"", PERSEUS_VERSION),
         );
+        // Development
+        #[cfg(debug_assertions)]
+        let updated_root_manifest = updated_root_manifest
+            .replace("PERSEUS_VERSION", "path = \"../../../packages/perseus\"");
+        #[cfg(debug_assertions)]
+        let updated_server_manifest = updated_server_manifest
+            .replace("PERSEUS_VERSION", "path = \"../../../../packages/perseus\"")
+            .replace(
+                "PERSEUS_ACTIX_WEB_VERSION",
+                "path = \"../../../../packages/perseus-actix-web\"",
+            )
+            .replace(
+                "PERSEUS_WARP_VERSION",
+                "path = \"../../../../packages/perseus-warp\"",
+            );
+        #[cfg(debug_assertions)]
+        let updated_builder_manifest = updated_builder_manifest
+            .replace("PERSEUS_VERSION", "path = \"../../../../packages/perseus\"");
 
         // Write the updated manifests back
         if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {

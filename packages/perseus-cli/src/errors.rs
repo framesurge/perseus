@@ -65,6 +65,19 @@ pub enum PrepError {
         #[source]
         source: std::io::Error,
     },
+    #[error("fetching the custom engine failed")]
+    GetEngineFailed {
+        #[source]
+        source: ExecutionError,
+    },
+    #[error("fetching the custom engine returned non-zero exit code ({exit_code})")]
+    GetEngineNonZeroExitCode { exit_code: i32 },
+    #[error("couldn't remove git internals at '{target_dir:?}' for custom engine")]
+    RemoveEngineGitFailed {
+        target_dir: Option<String>,
+        #[source]
+        source: std::io::Error,
+    },
 }
 /// Checks if the given error should cause the CLI to delete the '.perseus/' folder so the user doesn't have something incomplete.
 /// When deleting the directory, it should only be deleted if it exists, if not don't worry. If it does and deletion fails, fail like hell.

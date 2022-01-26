@@ -10,6 +10,10 @@ use clap::Parser;
 #[clap(version = PERSEUS_VERSION)]
 // #[clap(setting = AppSettings::ColoredHelp)]
 pub struct Opts {
+    /// The URL of a Git repository to clone to provide a custom engine. If this is set to `default`, the normal Perseus engine (packaged with the CLI) will be used. A branch name can be added at
+    /// the end of this after `@` to specify a custom branch/version
+    #[clap(short, long, default_value = "default")]
+    pub engine: String,
     #[clap(subcommand)]
     pub subcmd: Subcommand,
 }

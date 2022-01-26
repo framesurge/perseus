@@ -194,7 +194,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
     // If we're not cleaning up artifacts, create them if needed
     if !matches!(opts.subcmd, Subcommand::Clean(_)) {
-        prepare(dir.clone())?;
+        prepare(dir.clone(), &opts.engine)?;
     }
     let exit_code = match opts.subcmd {
         Subcommand::Build(build_opts) => {
@@ -225,8 +225,6 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
         Subcommand::Test(test_opts) => {
             // This will be used by the subcrates
             env::set_var("PERSEUS_TESTING", "true");
-            // Set up the '.perseus/' directory if needed
-            prepare(dir.clone())?;
             // Delete old build artifacts if `--no-build` wasn't specified
             if !test_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
@@ -271,7 +269,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             if !tinker_opts.no_clean {
                 delete_bad_dir(dir.clone())?;
                 // Recreate the '.perseus/' directory
-                prepare(dir.clone())?;
+                prepare(dir.clone(), &opts.engine)?;
             }
             tinker(dir)?
         }
