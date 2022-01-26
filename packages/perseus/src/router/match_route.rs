@@ -1,10 +1,9 @@
+use super::{RouteInfo, RouteInfoAtomic, RouteVerdict, RouteVerdictAtomic};
 use crate::i18n::Locales;
 use crate::template::{ArcTemplateMap, Template, TemplateMap};
 use crate::Html;
 use std::collections::HashMap;
 use std::rc::Rc;
-use sycamore::prelude::ReadSignal;
-use sycamore::prelude::Signal;
 
 /// The backend for `get_template_for_path` to avoid code duplication for the `Arc` and `Rc` versions.
 macro_rules! get_template_for_path {
@@ -210,133 +209,4 @@ pub fn match_route_atomic<'a, G: Html>(
     }
 
     verdict
-}
-
-/// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
-/// the app shell and the rendering of a page.
-#[derive(Debug)]
-pub struct RouteInfo<G: Html> {
-    /// The actual path of the route.
-    pub path: String,
-    /// The template that will be used. The app shell will derive props and a translator to pass to the template function.
-    pub template: Rc<Template<G>>,
-    /// Whether or not the matched page was incrementally-generated at runtime (if it has been yet). If this is `true`, the server will
-    /// use a mutable store rather than an immutable one. See the book for more details.
-    pub was_incremental_match: bool,
-    /// The locale for the template to be rendered in.
-    pub locale: String,
-}
-
-/// The possible outcomes of matching a route. This is an alternative implementation of Sycamore's `Route` trait to enable greater
-/// control and tighter integration of routing with templates. This can only be used if `Routes` has been defined in context (done
-/// automatically by the CLI).
-#[derive(Debug)]
-pub enum RouteVerdict<G: Html> {
-    /// The given route was found, and route information is attached.
-    Found(RouteInfo<G>),
-    /// The given route was not found, and a `404 Not Found` page should be shown.
-    NotFound,
-    /// The given route maps to the locale detector, which will redirect the user to the attached path (in the appropriate locale).
-    LocaleDetection(String),
-}
-
-/// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
-/// the app shell and the rendering of a page.
-///
-/// This version is designed for multithreaded scenarios, and stores a reference to a template rather than an `Rc<Template<G>>`. That means this is not compatible
-/// with Perseus on the client-side, only on the server-side.
-#[derive(Debug)]
-pub struct RouteInfoAtomic<'a, G: Html> {
-    /// The actual path of the route.
-    pub path: String,
-    /// The template that will be used. The app shell will derive props and a translator to pass to the template function.
-    pub template: &'a Template<G>,
-    /// Whether or not the matched page was incrementally-generated at runtime (if it has been yet). If this is `true`, the server will
-    /// use a mutable store rather than an immutable one. See the book for more details.
-    pub was_incremental_match: bool,
-    /// The locale for the template to be rendered in.
-    pub locale: String,
-}
-
-/// The possible outcomes of matching a route. This is an alternative implementation of Sycamore's `Route` trait to enable greater
-/// control and tighter integration of routing with templates. This can only be used if `Routes` has been defined in context (done
-/// automatically by the CLI).
-///
-/// This version uses `RouteInfoAtomic`, and is designed for multithreaded scenarios (i.e. on the server).
-#[derive(Debug)]
-pub enum RouteVerdictAtomic<'a, G: Html> {
-    /// The given route was found, and route information is attached.
-    Found(RouteInfoAtomic<'a, G>),
-    /// The given route was not found, and a `404 Not Found` page should be shown.
-    NotFound,
-    /// The given route maps to the locale detector, which will redirect the user to the attached path (in the appropriate locale).
-    LocaleDetection(String),
-}
-
-/// Creates an app-specific routing `struct`. Sycamore expects an `enum` to do this, so we create a `struct` that behaves similarly. If
-/// we don't do this, we can't get the information necessary for routing into the `enum` at all (context and global variables don't suit
-/// this particular case).
-#[macro_export]
-macro_rules! create_app_route {
-    {
-        name => $name:ident,
-        render_cfg => $render_cfg:expr,
-        templates => $templates:expr,
-        locales => $locales:expr
-    } => {
-        /// The route type for the app, with all routing logic inbuilt through the generation macro.
-        struct $name<G: $crate::Html>($crate::internal::router::RouteVerdict<G>);
-        impl<G: $crate::Html> ::sycamore_router::Route for $name<G> {
-            fn match_route(path: &[&str]) -> Self {
-                let verdict = $crate::internal::router::match_route(path, $render_cfg, $templates, $locales);
-                Self(verdict)
-            }
-        }
-    };
-}
-
-/// The state for the router.
-#[derive(Clone, Debug)]
-pub struct RouterState {
-    /// The router's current load state.
-    load_state: Signal<RouterLoadState>,
-}
-impl Default for RouterState {
-    /// Creates a default instance of the router state intended for server-side usage.
-    fn default() -> Self {
-        Self {
-            load_state: Signal::new(RouterLoadState::Server),
-        }
-    }
-}
-impl RouterState {
-    /// Gets the load state of the router. You'll still need to call `.get()` after this (this just returns a `ReadSignal` to derive other state from in a `create_memo` or the like).
-    pub fn get_load_state(&self) -> ReadSignal<RouterLoadState> {
-        self.load_state.handle()
-    }
-    /// Sets the load state of the router.
-    pub fn set_load_state(&self, new: RouterLoadState) {
-        self.load_state.set(new);
-    }
-}
-
-/// The current load state of the router. You can use this to be warned of when a new page is about to be loaded (and display a loading bar or the like, perhaps).
-#[derive(Clone, Debug)]
-pub enum RouterLoadState {
-    /// The page has been loaded.
-    Loaded {
-        /// The name of the template being loaded (mostly for convenience).
-        template_name: String,
-        /// The full path to the new page being loaded (including the locale, if we're using i18n).
-        path: String,
-    },
-    /// A new page is being loaded, and will soon replace whatever is currently loaded. The name of the new template is attached.
-    Loading {
-        /// The name of the template being loaded (mostly for convenience).
-        template_name: String,
-        /// The full path to the new page being loaded (including the locale, if we're using i18n).
-        path: String,
-    },
-    /// We're on the server, and there is no router. Whatever you render based on this state will appear when the user first loads the page, before it's made interactive.
-    Server,
 }

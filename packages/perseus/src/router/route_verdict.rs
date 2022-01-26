@@ -1,0 +1,64 @@
+use crate::template::Template;
+use crate::Html;
+use std::rc::Rc;
+
+/// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
+/// the app shell and the rendering of a page.
+#[derive(Debug)]
+pub struct RouteInfo<G: Html> {
+    /// The actual path of the route.
+    pub path: String,
+    /// The template that will be used. The app shell will derive props and a translator to pass to the template function.
+    pub template: Rc<Template<G>>,
+    /// Whether or not the matched page was incrementally-generated at runtime (if it has been yet). If this is `true`, the server will
+    /// use a mutable store rather than an immutable one. See the book for more details.
+    pub was_incremental_match: bool,
+    /// The locale for the template to be rendered in.
+    pub locale: String,
+}
+
+/// The possible outcomes of matching a route. This is an alternative implementation of Sycamore's `Route` trait to enable greater
+/// control and tighter integration of routing with templates. This can only be used if `Routes` has been defined in context (done
+/// automatically by the CLI).
+#[derive(Debug)]
+pub enum RouteVerdict<G: Html> {
+    /// The given route was found, and route information is attached.
+    Found(RouteInfo<G>),
+    /// The given route was not found, and a `404 Not Found` page should be shown.
+    NotFound,
+    /// The given route maps to the locale detector, which will redirect the user to the attached path (in the appropriate locale).
+    LocaleDetection(String),
+}
+
+/// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
+/// the app shell and the rendering of a page.
+///
+/// This version is designed for multithreaded scenarios, and stores a reference to a template rather than an `Rc<Template<G>>`. That means this is not compatible
+/// with Perseus on the client-side, only on the server-side.
+#[derive(Debug)]
+pub struct RouteInfoAtomic<'a, G: Html> {
+    /// The actual path of the route.
+    pub path: String,
+    /// The template that will be used. The app shell will derive props and a translator to pass to the template function.
+    pub template: &'a Template<G>,
+    /// Whether or not the matched page was incrementally-generated at runtime (if it has been yet). If this is `true`, the server will
+    /// use a mutable store rather than an immutable one. See the book for more details.
+    pub was_incremental_match: bool,
+    /// The locale for the template to be rendered in.
+    pub locale: String,
+}
+
+/// The possible outcomes of matching a route. This is an alternative implementation of Sycamore's `Route` trait to enable greater
+/// control and tighter integration of routing with templates. This can only be used if `Routes` has been defined in context (done
+/// automatically by the CLI).
+///
+/// This version uses `RouteInfoAtomic`, and is designed for multithreaded scenarios (i.e. on the server).
+#[derive(Debug)]
+pub enum RouteVerdictAtomic<'a, G: Html> {
+    /// The given route was found, and route information is attached.
+    Found(RouteInfoAtomic<'a, G>),
+    /// The given route was not found, and a `404 Not Found` page should be shown.
+    NotFound,
+    /// The given route maps to the locale detector, which will redirect the user to the attached path (in the appropriate locale).
+    LocaleDetection(String),
+}
