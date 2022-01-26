@@ -1,5 +1,5 @@
 [package]
-name = "perseus-example-rx-state"
+name = "perseus-test-rx-state"
 version = "0.3.2"
 edition = "2018"
 

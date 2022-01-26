@@ -4,18 +4,18 @@ version="0.3.2"
 setup.cmd.generic = [
     # Create the dist directories for the CLI in the `basic` example
     # These are gitignored, and so not placed into Git unfortunately
-    "mkdir -p examples/basic/.perseus/dist",
-    "mkdir -p examples/basic/.perseus/dist/static",
-    "mkdir -p examples/basic/.perseus/dist/exported",
+    "mkdir -p tests/basic/.perseus/dist",
+    "mkdir -p tests/basic/.perseus/dist/static",
+    "mkdir -p tests/basic/.perseus/dist/exported",
     "bonnie copy-subcrates",
     "cargo build",
     "npm i --prefix ./website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.cmd.windows = [
-    "md -Force examples/basic/.perseus/dist",
-    "md -Force examples/basic/.perseus/dist",
-    "md -Force examples/basic/.perseus/dist",
+    "md -Force tests/basic/.perseus/dist",
+    "md -Force tests/basic/.perseus/dist",
+    "md -Force tests/basic/.perseus/dist",
     "bonnie copy-subcrates",
     "cargo build",
     "npm i --prefix website",
@@ -48,7 +48,16 @@ dev.subcommands.example.cmd = [
     "TEST_EXAMPLE=../../examples/%example cargo run -- %%"
 ]
 dev.subcommands.example.args = [ "example" ]
-dev.subcommands.example.desc = "serves the given example using a live version of the cli"
+dev.subcommands.example.desc = "runs the given example using a live version of the cli"
+
+dev.subcommands.test.cmd = [
+    "bonnie copy-subcrates",
+    "cd packages/perseus-cli",
+    # Point this live version of the CLI at the given test
+    "TEST_EXAMPLE=../../tests/%test cargo run -- %%"
+]
+dev.subcommands.test.args = [ "test" ]
+dev.subcommands.test.desc = "runs the given test using a live version of the cli"
 
 site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\""
 site.desc = "builds and serves the site for local development (requires `concurrently`)"
@@ -115,7 +124,7 @@ copy-subcrates.cmd = [
     # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
     "cd packages/perseus-cli",
     "rm -rf ./.perseus",
-    "cp -r ../../examples/basic/.perseus/ .perseus/",
+    "cp -r ../../tests/basic/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
     "mv .perseus/builder/Cargo.toml .perseus/builder/Cargo.toml.old",
@@ -126,7 +135,7 @@ copy-subcrates.cmd = [
     "mkdir -p .perseus/dist/exported",
     # Replace the example's package name with a token the CLI can use (compatible with alternative engines as well)
     # We only need to do this in the root package, the others depend on it
-    "sed -i 's/perseus-example-basic/USER_PKG_NAME/' .perseus/Cargo.toml.old",
+    "sed -i 's/perseus-test-basic/USER_PKG_NAME/' .perseus/Cargo.toml.old",
     # Replace the relative path references with tokens too
     "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/Cargo.toml.old",
     "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/builder/Cargo.toml.old",
@@ -146,25 +155,25 @@ check.cmd = [
 check.desc = "checks code for formatting errors and the like"
 
 ci-prep.cmd = [
-    "mkdir -p examples/basic/.perseus/dist",
-    "mkdir -p examples/basic/.perseus/dist/static",
+    "mkdir -p tests/basic/.perseus/dist",
+    "mkdir -p tests/basic/.perseus/dist/static",
 ]
 ci-prep.desc = "creates empty directories to preserve the file structure that testing expects"
 
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
-    "bonnie test example basic --headless",
-    "bonnie test example i18n --headless",
-    "bonnie test example plugins --headless",
-    "bonnie test example showcase --headless"
+    "bonnie test single basic --headless",
+    "bonnie test single i18n --headless",
+    "bonnie test single plugins --headless",
+    "bonnie test single showcase --headless"
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
 test.subcommands.core.desc = "runs cargo tests only"
-test.subcommands.example.cmd = "bash ./test.sh %example %%" # A script can do backgrounding properly
-test.subcommands.example.args = [ "example" ]
-test.subcommands.example.desc = "tests a single example (assumes geckodriver running in background), use `--headless` to run headlessly"
+test.subcommands.single.cmd = "bash ./test.sh %test %%" # A script can do backgrounding properly
+test.subcommands.single.args = [ "test" ]
+test.subcommands.single.desc = "tests a single tests (assumes geckodriver running in background), use `--headless` to run headlessly"
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
@@ -178,7 +187,7 @@ release.cmd = [
     "git push origin main"
 ]
 release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped)"
-replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/basic/.perseus/*\" -not -path \"./examples/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
+replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./tests/basic/.perseus/*\" -not -path \"./tests/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
 replace-versions.args = [ "old_version", "new_version" ]
 
 # Publishes each package
