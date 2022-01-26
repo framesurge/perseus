@@ -1,5 +1,5 @@
 [package]
-name = "perseus-test-i18n"
+name = "perseus-example-i18n"
 version = "0.1.0"
 edition = "2018"
 

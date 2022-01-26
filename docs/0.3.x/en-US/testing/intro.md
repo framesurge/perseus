@@ -10,10 +10,10 @@ It's that last type that Perseus is particularly concerned with, because that's 
 
 In terms of unit tests, these can be done for normal logic (that doesn't render something) with Rust's own testing system. Any integration tests, as well as unit tests that do render things, should be done with [`wasm-bindgen-test`](https://rustwasm.github.io/wasm-bindgen/wasm-bindgen-test/index.html). This module provides a custom _test harness_ macro (alternative to `#[test]`) that spins up a _headless browser_ (browser without a GUI) that can be used to render your code. Note that this should be done for testing Sycamore components, and not for testing integrated Perseus systems.
 
-When you want to test logic flows in your app, like the possibilities of how a user will interact with a login form, the best way is to use end-to-end testing, which Perseus supports with a custom test harness macro that can be used like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/tests/main.rs)):
+When you want to test logic flows in your app, like the possibilities of how a user will interact with a login form, the best way is to use end-to-end testing, which Perseus supports with a custom test harness macro that can be used like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/tests/basic/tests/main.rs)):
 
 ```rust
-{{#include ../../../../examples/basic/tests/main.rs}}
+{{#include ../../../../tests/basic/tests/main.rs}}
 ```
 
 The first thing to note is the module that this test imports. It's called [Fantoccini](https://github.com/jonhoo/fantoccini), and it basically lets you control a web browser with code. We'll get to exactly how this works soon. This test goes to <http://localhost:8080> (where a Perseus app is hosted) and then clicks a link on it and makes sure that it's been taken to the correct new URL.
