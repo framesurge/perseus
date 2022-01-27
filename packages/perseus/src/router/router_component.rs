@@ -9,7 +9,7 @@ use crate::{
     },
     state::{FrozenApp, GlobalState, PageStateStore, ThawPrefs},
     templates::{RouterLoadState, RouterState, TemplateNodeType},
-    DomNode, ErrorPages,
+    DomNode, ErrorPages, Html,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -34,6 +34,106 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
     white-space: nowrap;
     word-wrap: normal;
 "#;
+
+/// The properties that `on_route_change` takes.
+#[derive(Debug, Clone)]
+struct OnRouteChangeProps<G: Html> {
+    locales: Rc<Locales>,
+    container_rx: NodeRef<G>,
+    router_state: RouterState,
+    pss: PageStateStore,
+    global_state: GlobalState,
+    frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
+    translations_manager: Rc<RefCell<ClientTranslationsManager>>,
+    error_pages: Rc<ErrorPages<DomNode>>,
+    initial_container: Option<Element>,
+}
+
+/// The function that runs when a route change takes place. This can also be run at any time to force the current page to reload.
+fn on_route_change<G: Html>(
+    verdict: RouteVerdict<TemplateNodeType>,
+    OnRouteChangeProps {
+        locales,
+        container_rx,
+        router_state,
+        pss,
+        global_state,
+        frozen_app,
+        translations_manager,
+        error_pages,
+        initial_container,
+    }: OnRouteChangeProps<G>,
+) {
+    wasm_bindgen_futures::spawn_local(async move {
+        let container_rx_elem = container_rx
+            .get::<DomNode>()
+            .unchecked_into::<web_sys::Element>();
+        checkpoint("router_entry");
+        match &verdict {
+            // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
+            // If a non-404 error occurred, it will be handled in the app shell
+            RouteVerdict::Found(RouteInfo {
+                path,
+                template,
+                locale,
+                was_incremental_match,
+            }) => {
+                app_shell(
+                    // TODO Make this not allocate so much
+                    ShellProps {
+                        path: path.clone(),
+                        template: template.clone(),
+                        was_incremental_match: *was_incremental_match,
+                        locale: locale.clone(),
+                        router_state,
+                        translations_manager,
+                        error_pages,
+                        initial_container: initial_container.unwrap(),
+                        container_rx_elem,
+                        page_state_store: pss,
+                        global_state,
+                        frozen_app,
+                        route_verdict: verdict,
+                    },
+                )
+                .await
+            }
+            // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
+            // Those all go to the same system that redirects to the appropriate locale
+            // Note that `container` doesn't exist for this scenario
+            RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
+            // To get a translator here, we'd have to go async and dangerously check the URL
+            // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
+            // BUG If we have an error in a subsequent load, the error message appears below the current page...
+            RouteVerdict::NotFound => {
+                checkpoint("not_found");
+                if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state()
+                {
+                    let initial_container = initial_container.unwrap();
+                    // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
+                    // If we're not hydrating, there's no point in moving anything over, we'll just fully re-render
+                    #[cfg(feature = "hydrate")]
+                    {
+                        let initial_html = initial_container.inner_html();
+                        container_rx_elem.set_inner_html(&initial_html);
+                    }
+                    initial_container.set_inner_html("");
+                    // Make the initial container invisible
+                    initial_container
+                        .set_attribute("style", "display: none;")
+                        .unwrap();
+                    // Hydrate the error pages
+                    // Right now, we don't provide translators to any error pages that have come from the server
+                    error_pages.render_page(&url, status, &err, None, &container_rx_elem);
+                } else {
+                    // This is an error from navigating within the app (probably the dev mistyped a link...), so we'll clear the page
+                    container_rx_elem.set_inner_html("");
+                    error_pages.render_page("", 404, "not found", None, &container_rx_elem);
+                }
+            }
+        };
+    });
+}
 
 /// The properties that the router takes.
 #[derive(Debug)]
@@ -133,73 +233,43 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
         }),
     );
 
+    // Set up the function we'll call on a route change
+    // Set up the properties for the function we'll call in a route change
+    let on_route_change_props = OnRouteChangeProps {
+        locales,
+        container_rx: container_rx.clone(),
+        router_state: router_state.clone(),
+        pss,
+        global_state,
+        frozen_app,
+        translations_manager,
+        error_pages,
+        initial_container,
+    };
+
+    // Listen for changes to the reload commander and reload as appropriate
+    let reload_commander = router_state.reload_commander.clone();
+    create_effect(
+        cloned!(router_state, reload_commander, on_route_change_props => move || {
+            // This is just a flip-flop, but we need to add it to the effect's dependencies
+            let _ = reload_commander.get();
+            // Get the route verdict and re-run the function we use on route changes
+            let verdict = match router_state.get_last_verdict() {
+                Some(verdict) => verdict,
+                // If the first page hasn't loaded yet, terminate now
+                None => return
+            };
+            on_route_change(verdict, on_route_change_props.clone());
+        }),
+    );
+
     view! {
-        Router(RouterProps::new(HistoryIntegration::new(), move |route: ReadSignal<AppRoute>| {
-            create_effect(cloned!((container_rx) => move || {
-                // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
-                // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
-                let _ = route.get();
-                wasm_bindgen_futures::spawn_local(cloned!((locales, route, container_rx, router_state, pss, global_state, frozen_app, translations_manager, error_pages, initial_container) => async move {
-                    let container_rx_elem = container_rx.get::<DomNode>().unchecked_into::<web_sys::Element>();
-                    checkpoint("router_entry");
-                    match &route.get().as_ref().get_verdict() {
-                        // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
-                        // If a non-404 error occurred, it will be handled in the app shell
-                        RouteVerdict::Found(RouteInfo {
-                            path,
-                            template,
-                            locale,
-                            was_incremental_match
-                        }) => app_shell(
-                            // TODO Make this not allocate so much...
-                            ShellProps {
-                                path: path.clone(),
-                                template: template.clone(),
-                                was_incremental_match: *was_incremental_match,
-                                locale: locale.clone(),
-                                router_state: router_state.clone(),
-                                translations_manager: translations_manager.clone(),
-                                error_pages: error_pages.clone(),
-                                initial_container: initial_container.unwrap().clone(),
-                                container_rx_elem: container_rx_elem.clone(),
-                                page_state_store: pss.clone(),
-                                global_state: global_state.clone(),
-                                frozen_app
-                            }
-                        ).await,
-                        // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
-                        // Those all go to the same system that redirects to the appropriate locale
-                        // Note that `container` doesn't exist for this scenario
-                        RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
-                        // To get a translator here, we'd have to go async and dangerously check the URL
-                        // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
-                        // BUG If we have an error in a subsequent load, the error message appears below the current page...
-                        RouteVerdict::NotFound => {
-                            checkpoint("not_found");
-                            if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
-                                let initial_container = initial_container.unwrap();
-                                // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
-                                // If we're not hydrating, there's no point in moving anything over, we'll just fully re-render
-                                #[cfg(feature = "hydrate")]
-                                {
-                                    let initial_html = initial_container.inner_html();
-                                    container_rx_elem.set_inner_html(&initial_html);
-                                }
-                                initial_container.set_inner_html("");
-                                // Make the initial container invisible
-                                initial_container.set_attribute("style", "display: none;").unwrap();
-                                // Hydrate the error pages
-                                // Right now, we don't provide translators to any error pages that have come from the server
-                                error_pages.render_page(&url, status, &err, None, &container_rx_elem);
-                            } else {
-                                // This is an error from navigating within the app (probably the dev mistyped a link...), so we'll clear the page
-                                container_rx_elem.set_inner_html("");
-                                error_pages.render_page("", 404, "not found", None, &container_rx_elem);
-                            }
-                        },
-                    };
-                }));
-            }));
+        Router(RouterProps::new(HistoryIntegration::new(), cloned!(on_route_change_props => move |route: ReadSignal<AppRoute>| {
+            // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
+            // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
+            let verdict = route.get().get_verdict().clone();
+            on_route_change(verdict, on_route_change_props);
+
             // This template is reactive, and will be updated as necessary
             // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
             // The main reason for this is that the router only intercepts click events from its children
@@ -209,6 +279,6 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
                     p(id = "__perseus_route_announcer", aria_live = "assertive", role = "alert", style = ROUTE_ANNOUNCER_STYLES) { (route_announcement.get()) }
                 }
             }
-        }))
+        })))
     }
 }

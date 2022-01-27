@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 /// Information about a route, which, combined with error pages and a client-side translations manager, allows the initialization of
 /// the app shell and the rendering of a page.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RouteInfo<G: Html> {
     /// The actual path of the route.
     pub path: String,
@@ -20,7 +20,7 @@ pub struct RouteInfo<G: Html> {
 /// The possible outcomes of matching a route. This is an alternative implementation of Sycamore's `Route` trait to enable greater
 /// control and tighter integration of routing with templates. This can only be used if `Routes` has been defined in context (done
 /// automatically by the CLI).
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RouteVerdict<G: Html> {
     /// The given route was found, and route information is attached.
     Found(RouteInfo<G>),

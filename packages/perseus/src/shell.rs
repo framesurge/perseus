@@ -1,7 +1,7 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::i18n::ClientTranslationsManager;
-use crate::router::{RouterLoadState, RouterState};
+use crate::router::{RouteVerdict, RouterLoadState, RouterState};
 use crate::server::PageData;
 use crate::state::PageStateStore;
 use crate::state::{FrozenApp, GlobalState, ThawPrefs};
@@ -257,6 +257,9 @@ pub struct ShellProps {
     pub global_state: GlobalState,
     /// A previous frozen state to be gradully rehydrated. This should always be `None`, it only serves to provide continuity across templates.
     pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
+    /// The current route verdict. This will be stored in context so that it can be used for possible reloads. Eventually,
+    /// this will be made obsolete when Sycamore supports this natively.
+    pub route_verdict: RouteVerdict<TemplateNodeType>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -268,7 +271,7 @@ pub async fn app_shell(
         template,
         was_incremental_match,
         locale,
-        router_state,
+        mut router_state,
         page_state_store,
         translations_manager,
         error_pages,
@@ -276,6 +279,7 @@ pub async fn app_shell(
         container_rx_elem,
         global_state: curr_global_state,
         frozen_app,
+        route_verdict,
     }: ShellProps,
 ) {
     checkpoint("app_shell_entry");
@@ -288,6 +292,7 @@ pub async fn app_shell(
         template_name: template.get_path(),
         path: path_with_locale.clone(),
     });
+    router_state.set_last_verdict(route_verdict);
     // Get the global state if possible (we'll want this in all cases except errors)
     // If this is a subsequent load, the template macro will have already set up the global state, and it will ignore whatever we naively give it (so we'll give it `None`)
     let global_state = get_global_state();

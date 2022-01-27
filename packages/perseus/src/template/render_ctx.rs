@@ -68,9 +68,22 @@ impl RenderCtx {
         *frozen_app = Some((new_frozen_app, thaw_prefs));
         // I'm not absolutely certain about destructor behavior with navigation or how that could change with the new primitives, so better to be safe than sorry
         drop(frozen_app);
-        // Navigate to the frozen route
-        // TODO If we're on the same page, reload the page
-        navigate(&route);
+
+        // Check if we're on the same page now as we were at freeze-time
+        let curr_route = match &*self.router.get_load_state().get_untracked() {
+                RouterLoadState::Loaded { path, .. } => path.to_string(),
+                RouterLoadState::Loading { path, .. } => path.to_string(),
+                // The user is trying to thaw on the server, which is an absolutely horrific idea (we should be generating state, and loops could happen)
+                RouterLoadState::Server => panic!("attempted to thaw frozen state on server-side (you can only do this in the browser)"),
+            };
+        if curr_route == route {
+            // We'll need to imperatively instruct the router to reload the current page (Sycamore can't do this yet)
+            // We know the last verdict will be available because the only way we can be here is if we have a page
+            self.router.reload();
+        } else {
+            // We aren't, navigate to the old route as usual
+            navigate(&route);
+        }
 
         Ok(())
     }

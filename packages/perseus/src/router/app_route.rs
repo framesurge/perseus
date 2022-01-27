@@ -15,6 +15,7 @@ macro_rules! create_app_route {
         locales => $locales:expr
     } => {
         /// The route type for the app, with all routing logic inbuilt through the generation macro.
+        #[derive(::std::clone::Clone)]
         struct $name<G: $crate::Html>($crate::internal::router::RouteVerdict<G>);
         impl<G: $crate::Html> $crate::internal::router::PerseusRoute<G> for $name<G> {
             fn get_verdict(&self) -> &$crate::internal::router::RouteVerdict<G> {
@@ -32,7 +33,7 @@ macro_rules! create_app_route {
 
 /// A trait for the routes in Perseus apps. This should be used almost exclusively internally, and you should never need to touch
 /// it unless you're building a custom engine.
-pub trait PerseusRoute<G: Html>: Route {
+pub trait PerseusRoute<G: Html>: Route + Clone {
     /// Gets the route verdict for the current route.
     fn get_verdict(&self) -> &RouteVerdict<G>;
 }
