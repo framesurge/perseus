@@ -38,6 +38,7 @@ mod extraction;
 /// Parsing utilities for arguments.
 pub mod parse;
 mod prepare;
+mod reload_server;
 mod serve;
 mod serve_exported;
 mod snoop;
@@ -56,6 +57,7 @@ pub use eject::{eject, has_ejected};
 pub use export::export;
 pub use export_error_page::export_error_page;
 pub use prepare::{check_env, prepare};
+pub use reload_server::{order_reload, run_reload_server};
 pub use serve::serve;
 pub use serve_exported::serve_exported;
 pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};

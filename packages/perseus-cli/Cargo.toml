@@ -34,6 +34,9 @@ warp = "0.3"
 command-group = "1"
 ctrlc = { version = "3.0", features = ["termination"] }
 notify = "=5.0.0-pre.13"
+futures = "0.3"
+tokio-stream = "0.1"
+ureq = "2"
 
 [lib]
 name = "perseus_cli"

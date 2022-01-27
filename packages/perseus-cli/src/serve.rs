@@ -1,8 +1,8 @@
 use crate::build::{build_internal, finalize};
 use crate::cmd::{cfg_spinner, run_stage};
-use crate::errors::*;
 use crate::parse::{Integration, ServeOpts};
 use crate::thread::{spawn_thread, ThreadHandle};
+use crate::{errors::*, order_reload};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
 use std::env;
@@ -243,6 +243,9 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
     if did_build {
         finalize(&dir.join(".perseus"))?;
     }
+
+    // Order any connected browsers to reload
+    order_reload();
 
     // Now actually run that executable path if we should
     if should_run {

@@ -8,7 +8,10 @@ use perseus_cli::{
     parse::{Opts, Subcommand},
     prepare, serve, serve_exported, tinker,
 };
-use perseus_cli::{errors::*, export_error_page, snoop_build, snoop_server, snoop_wasm_build};
+use perseus_cli::{
+    errors::*, export_error_page, order_reload, run_reload_server, snoop_build, snoop_server,
+    snoop_wasm_build,
+};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -27,8 +30,6 @@ async fn main() {
     let exit_code = real_main().await;
     std::process::exit(exit_code)
 }
-
-// IDEA Watch files at the `core()` level and then panic, catching the unwind in the watcher loop
 
 // This manages error handling and returns a definite exit code to terminate with
 async fn real_main() -> i32 {
@@ -113,6 +114,14 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             })
             .expect("couldn't set handlers to gracefully terminate process");
 
+            // Set up a browser reloading server
+            // We provide an option for the user to disable this
+            if env::var("PERSEUS_NO_BROWSER_RELOAD").is_err() {
+                tokio::task::spawn(async move {
+                    run_reload_server().await;
+                });
+            }
+
             // Find out where this binary is
             // SECURITY: If the CLI were installed with root privileges, it would be possible to create a hard link to the
             // binary, execute through that, and then replace it with a malicious binary before we got here which would
@@ -156,6 +165,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             let mut child = Command::new(&bin_name)
                 .args(&args)
                 .env("PERSEUS_WATCHING_PROHIBITED", "true")
+                .env("PERSEUS_USE_RELOAD_SERVER", "true") // This is for internal use ONLY
                 .group_spawn()
                 .map_err(|err| WatchError::SpawnSelfFailed { source: err })?;
 
@@ -170,6 +180,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                         child = Command::new(&bin_name)
                             .args(&args)
                             .env("PERSEUS_WATCHING_PROHIBITED", "true")
+                            .env("PERSEUS_USE_RELOAD_SERVER", "true") // This is for internal use ONLY
                             .group_spawn()
                             .map_err(|err| WatchError::SpawnSelfFailed { source: err })?;
                     }
@@ -211,6 +222,8 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
                 return Ok(exit_code);
             }
             if export_opts.serve {
+                // Tell any connected browsers to reload
+                order_reload();
                 serve_exported(dir, export_opts.host, export_opts.port).await;
             }
             0
@@ -219,6 +232,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             if !serve_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
+            // This orders reloads internally
             let (exit_code, _server_path) = serve(dir, serve_opts)?;
             exit_code
         }
