@@ -88,9 +88,23 @@ impl<'a> HtmlShell<'a> {
         );
         scripts_before_boundary.push(load_wasm_bundle.into());
 
+        // If we're in development, pass through the host/port of the reload server if we're using it
+        // We'll depend on the `PERSEUS_USE_RELOAD_SERVER` environment variable here, which is set by the CLI's controller process, not the user
+        // That way, we won't do this if the reload server doesn't exist
+        #[cfg(debug_assertions)]
+        if env::var("PERSEUS_USE_RELOAD_SERVER").is_ok() {
+            let host =
+                env::var("PERSEUS_RELOAD_SERVER_HOST").unwrap_or_else(|_| "localhost".to_string());
+            let port =
+                env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "8090".to_string());
+            scripts_before_boundary
+                .push(format!("window.__PERSEUS_RELOAD_SERVER_HOST = '{}'", host).into());
+            scripts_before_boundary
+                .push(format!("window.__PERSEUS_RELOAD_SERVER_PORT = '{}'", port).into());
+        }
+
         // Add in the `<base>` element at the very top so that it applies to everything in the HTML shell
         // Otherwise any stylesheets loaded before it won't work properly
-        //
         // We add a trailing `/` to the base URL (https://stackoverflow.com/a/26043021)
         // Note that it's already had any pre-existing ones stripped away
         let base = format!(r#"<base href="{}/" />"#, path_prefix);
