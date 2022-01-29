@@ -35,7 +35,7 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
     word-wrap: normal;
 "#;
 
-/// The properties that `on_route_change` takes.
+/// The properties that `on_route_change` takes. See the shell properties for the details for most of these.
 #[derive(Debug, Clone)]
 struct OnRouteChangeProps<G: Html> {
     locales: Rc<Locales>,
@@ -47,6 +47,9 @@ struct OnRouteChangeProps<G: Html> {
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
     initial_container: Option<Element>,
+    is_first: bool,
+    #[cfg(all(feature = "live-reload", debug_assertions))]
+    live_reload_indicator: ReadSignal<bool>,
 }
 
 /// The function that runs when a route change takes place. This can also be run at any time to force the current page to reload.
@@ -62,6 +65,9 @@ fn on_route_change<G: Html>(
         translations_manager,
         error_pages,
         initial_container,
+        is_first,
+        #[cfg(all(feature = "live-reload", debug_assertions))]
+        live_reload_indicator,
     }: OnRouteChangeProps<G>,
 ) {
     wasm_bindgen_futures::spawn_local(async move {
@@ -94,6 +100,9 @@ fn on_route_change<G: Html>(
                         global_state,
                         frozen_app,
                         route_verdict: verdict,
+                        is_first,
+                        #[cfg(all(feature = "live-reload", debug_assertions))]
+                        live_reload_indicator,
                     },
                 )
                 .await
@@ -183,6 +192,12 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
     // Instantiate an empty frozen app that can persist across templates (with interior mutability for possible thawing)
     let frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>> = Rc::new(RefCell::new(None));
 
+    // If we're using live reload, set up an indicator so that our listening to the WebSocket at the top-level (where we don't have the render context that we need for freezing/thawing)
+    // can signal the templates to perform freezing/thawing
+    // It doesn't matter what the initial value is, this is just a flip-flop
+    #[cfg(all(feature = "live-reload", debug_assertions))]
+    let live_reload_indicator = Signal::new(true);
+
     // Create a derived state for the route announcement
     // We do this with an effect because we only want to update in some cases (when the new page is actually loaded)
     // We also need to know if it's the first page (because we don't want to announce that, screen readers will get that one right)
@@ -245,6 +260,10 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
         translations_manager,
         error_pages,
         initial_container,
+        // We can piggyback off a different part of the code for an entirely different purpose!
+        is_first: is_first_page,
+        #[cfg(all(feature = "live-reload", debug_assertions))]
+        live_reload_indicator: live_reload_indicator.handle(),
     };
 
     // Listen for changes to the reload commander and reload as appropriate
@@ -265,8 +284,9 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
 
     // TODO State thawing in HSR
     // If live reloading is enabled, connect to the server now
+    // This doesn't actually perform any reloading or the like, it just signals places that have access to the render context to do so (because we need that for state freezing/thawing)
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    crate::state::connect_to_reload_server();
+    crate::state::connect_to_reload_server(live_reload_indicator);
 
     view! {
         Router(RouterProps::new(HistoryIntegration::new(), cloned!(on_route_change_props => move |route: ReadSignal<AppRoute>| {

@@ -62,6 +62,6 @@ idb-freezing = [ "rexie", "web-sys/StorageManager" ]
 # Note that this is highly experimental, and currently blocked by [rustwasm/wasm-bindgen#2735](https://github.com/rustwasm/wasm-bindgen/issues/2735)
 wasm2js = []
 # Enables automatic browser reloading whenever you make a change
-live-reload = [ "js-sys", "web-sys/WebSocket", "web-sys/MessageEvent", "web-sys/ErrorEvent", "web-sys/BinaryType", "web-sys/Location" ]
+live-reload = [ "perseus-macro/live-reload", "js-sys", "web-sys/WebSocket", "web-sys/MessageEvent", "web-sys/ErrorEvent", "web-sys/BinaryType", "web-sys/Location" ]
 # Enables hot state reloading, whereby your entire app's state can be frozen and thawed automatically every time you change code in your app
-hsr = [ "live-reload", "idb-freezing" ]
+hsr = [ "live-reload", "idb-freezing", "perseus-macro/hsr" ]

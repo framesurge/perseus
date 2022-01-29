@@ -17,4 +17,6 @@ pub use freeze_idb::*; // TODO Be specific here
 #[cfg(all(feature = "live-reload", debug_assertions))]
 mod live_reload;
 #[cfg(all(feature = "live-reload", debug_assertions))]
-pub use live_reload::connect_to_reload_server;
+pub(crate) use live_reload::connect_to_reload_server;
+#[cfg(all(feature = "live-reload", debug_assertions))]
+pub use live_reload::force_reload;

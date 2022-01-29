@@ -5,6 +5,8 @@ use syn::{
     Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
 };
 
+use crate::template_rx::get_live_reload_frag;
+
 /// A function that can be wrapped in the Perseus test sub-harness.
 pub struct TemplateFn {
     /// The body of the function.
@@ -112,12 +114,17 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
         return_type,
     } = input;
 
+    // Set up a code fragment for responding to live reload events
+    let live_reload_frag = get_live_reload_frag();
+
     // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
     // This is dependent on what arguments the template takes
     if arg.is_some() {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                #live_reload_frag
+
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -136,6 +143,8 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
         // There are no arguments
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                #live_reload_frag
+
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*

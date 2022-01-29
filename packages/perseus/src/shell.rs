@@ -260,6 +260,11 @@ pub struct ShellProps {
     /// The current route verdict. This will be stored in context so that it can be used for possible reloads. Eventually,
     /// this will be made obsolete when Sycamore supports this natively.
     pub route_verdict: RouteVerdict<TemplateNodeType>,
+    /// Whether or not this page is the very first to have been rendered since the browser loaded the app.
+    pub is_first: bool,
+    #[cfg(all(feature = "live-reload", debug_assertions))]
+    /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server.
+    pub live_reload_indicator: ReadSignal<bool>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -280,6 +285,9 @@ pub async fn app_shell(
         global_state: curr_global_state,
         frozen_app,
         route_verdict,
+        is_first,
+        #[cfg(all(feature = "live-reload", debug_assertions))]
+        live_reload_indicator,
     }: ShellProps,
 ) {
     checkpoint("app_shell_entry");
@@ -367,6 +375,9 @@ pub async fn app_shell(
                             page_state_store,
                             curr_global_state,
                             frozen_app,
+                            is_first,
+                            #[cfg(all(feature = "live-reload", debug_assertions))]
+                            live_reload_indicator,
                         )
                     },
                     &container_rx_elem,
@@ -384,6 +395,9 @@ pub async fn app_shell(
                         page_state_store,
                         curr_global_state,
                         frozen_app,
+                        is_first,
+                        #[cfg(all(feature = "live-reload", debug_assertions))]
+                        live_reload_indicator,
                     )
                 },
                 &container_rx_elem,
@@ -489,6 +503,12 @@ pub async fn app_shell(
                                                 page_state_store,
                                                 curr_global_state,
                                                 frozen_app,
+                                                is_first,
+                                                #[cfg(all(
+                                                    feature = "live-reload",
+                                                    debug_assertions
+                                                ))]
+                                                live_reload_indicator,
                                             )
                                         },
                                         &container_rx_elem,
@@ -506,6 +526,9 @@ pub async fn app_shell(
                                             page_state_store,
                                             curr_global_state,
                                             frozen_app,
+                                            is_first,
+                                            #[cfg(all(feature = "live-reload", debug_assertions))]
+                                            live_reload_indicator,
                                         )
                                     },
                                     &container_rx_elem,

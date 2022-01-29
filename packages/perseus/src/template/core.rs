@@ -189,6 +189,9 @@ impl<G: Html> Template<G> {
         global_state: GlobalState,
         // This should always be empty, it just allows us to persist the value across template loads
         frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
+        is_first: bool,
+        #[cfg(all(feature = "live-reload", debug_assertions))]
+        live_reload_indicator: sycamore::prelude::ReadSignal<bool>,
     ) -> View<G> {
         view! {
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
@@ -199,7 +202,10 @@ impl<G: Html> Template<G> {
                     router: router_state,
                     page_state_store,
                     global_state,
-                    frozen_app
+                    frozen_app,
+                    is_first,
+                    #[cfg(all(feature = "live-reload", debug_assertions))]
+                    live_reload_indicator
                 },
                 children: || (self.template)(props)
             })
@@ -224,7 +230,12 @@ impl<G: Html> Template<G> {
                     page_state_store,
                     global_state: GlobalState::default(),
                     // Hydrating state on the server-side is pointless
-                    frozen_app: Rc::new(RefCell::new(None))
+                    frozen_app: Rc::new(RefCell::new(None)),
+                    // On the server-side, every template is the first
+                    // We won't do anything with HSR on the server-side though
+                    is_first: true,
+                    #[cfg(all(feature = "live-reload", debug_assertions))]
+                    live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
                 },
                 children: || (self.template)(props)
             })
@@ -248,6 +259,11 @@ impl<G: Html> Template<G> {
                         global_state: GlobalState::default(),
                         // Hydrating state on the server-side is pointless
                         frozen_app: Rc::new(RefCell::new(None)),
+                        // On the server-side, every template is the first
+                        // We won't do anything with HSR on the server-side though
+                        is_first: true,
+                        #[cfg(all(feature = "live-reload", debug_assertions))]
+                        live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
                     },
                     children: || (self.head)(props)
                 })
