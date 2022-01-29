@@ -106,6 +106,7 @@ pub fn get_live_reload_frag() -> TokenStream {
         ::perseus::state::hsr_freeze(render_ctx).await;
     };
     #[cfg(not(all(feature = "hsr", debug_assertions)))]
+    #[allow(unused_variables)]
     let hsr_frag = quote!();
 
     #[cfg(all(feature = "live-reload", debug_assertions))]
@@ -137,7 +138,7 @@ pub fn get_live_reload_frag() -> TokenStream {
     live_reload_frag
 }
 
-/// Gets the code fragment used to support HSR thawing.
+/// Gets the code fragment used to support HSR thawing. This MUST be prefixed by a `#[cfg(target_arch = "wasm32")]`.
 pub fn get_hsr_thaw_frag() -> TokenStream {
     #[cfg(all(feature = "hsr", debug_assertions))]
     let hsr_thaw_frag = quote! {{
@@ -152,8 +153,9 @@ pub fn get_hsr_thaw_frag() -> TokenStream {
             }
         }));
     }};
+    // If HSR is disabled, there'll still be a Wasm-gate, which means we have to give it something to gate (or it'll gate the code after it, which is very bad!)
     #[cfg(not(all(feature = "hsr", debug_assertions)))]
-    let hsr_thaw_frag = quote!();
+    let hsr_thaw_frag = quote!({});
 
     hsr_thaw_frag
 }

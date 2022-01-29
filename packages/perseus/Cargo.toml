@@ -40,7 +40,7 @@ js-sys = { version = "0.3", optional = true }
 
 [features]
 # Live reloading will only take effect in development, and won't impact production
-# BUG This adds 400B to the production bundle (that's without size optimizations though)
+# BUG This adds 1.9kB to the production bundle (that's without size optimizations though)
 default = [ "live-reload", "hsr" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 # This feature makes tinker-only plugins be registered (this flag is enabled internally in the engine)
