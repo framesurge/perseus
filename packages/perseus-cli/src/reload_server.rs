@@ -100,7 +100,7 @@ pub fn order_reload() {
 /// Gets the host and port to run the reload server on.
 fn get_reload_server_host_and_port() -> (String, u16) {
     let host = env::var("PERSEUS_RELOAD_SERVER_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "8090".to_string());
+    let port = env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "3100".to_string());
     let port = port
         .parse::<u16>()
         .expect("reload server port must be a number");

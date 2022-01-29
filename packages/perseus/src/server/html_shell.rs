@@ -96,7 +96,7 @@ impl<'a> HtmlShell<'a> {
             let host =
                 env::var("PERSEUS_RELOAD_SERVER_HOST").unwrap_or_else(|_| "localhost".to_string());
             let port =
-                env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "8090".to_string());
+                env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "3100".to_string());
             scripts_before_boundary
                 .push(format!("window.__PERSEUS_RELOAD_SERVER_HOST = '{}'", host).into());
             scripts_before_boundary
