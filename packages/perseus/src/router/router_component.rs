@@ -263,13 +263,17 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
         }),
     );
 
+    // TODO State thawing in HSR
+    // If live reloading is enabled, connect to the server now
+    #[cfg(all(feature = "live-reload", debug_assertions))]
+    crate::state::connect_to_reload_server();
+
     view! {
         Router(RouterProps::new(HistoryIntegration::new(), cloned!(on_route_change_props => move |route: ReadSignal<AppRoute>| {
             // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
             // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
             create_effect(cloned!(route, on_route_change_props => move || {
                 let verdict = route.get().get_verdict().clone();
-                crate::web_log!("test");
                 on_route_change(verdict, on_route_change_props.clone());
             }));
 
