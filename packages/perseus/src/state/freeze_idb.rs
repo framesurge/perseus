@@ -134,6 +134,23 @@ impl IdbFrozenStateStore {
 
         Ok(())
     }
+    /// Clears the stored frozen state entirely and irrecoverably.
+    pub async fn clear(&self) -> Result<(), IdbError> {
+        let transaction = self
+            .db
+            .transaction(&["frozen_state"], TransactionMode::ReadWrite)
+            .map_err(|err| IdbError::TransactionError { source: err })?;
+        let store = transaction
+            .store("frozen_state")
+            .map_err(|err| IdbError::TransactionError { source: err })?;
+
+        store
+            .clear()
+            .await
+            .map_err(|err| IdbError::ClearError { source: err })?;
+
+        Ok(())
+    }
     /// Checks if the storage is persistently stored. If it is, the browser isn't allowed to clear it, the user would have to manually. This doesn't provide a guarantee that all users who've
     /// been to your site before will have previous state stored, you should assume that they could well have cleared it manually (or with very stringent privacy settings).
     ///

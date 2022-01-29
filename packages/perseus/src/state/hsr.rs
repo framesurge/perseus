@@ -57,6 +57,14 @@ pub async fn hsr_thaw(render_ctx: RenderCtx) {
         Ok(_) => log("State restored."),
         Err(_) => log("Stored state corrupted, waiting for next code change to override."),
     };
+
+    // We don't want this old state to persist if the user manually reloads (they'd be greeted with state that's probably out-of-date)
+    match idb_store.clear().await {
+        Ok(_) => (),
+        Err(_) => {
+            return;
+        }
+    }
 }
 
 /// Thaws a previous state frozen in development.
