@@ -1,24 +1,22 @@
 use perseus::{link, RenderFnResult, RenderFnResultWithCause, Template};
-use serde::{Deserialize, Serialize};
-use sycamore::prelude::{component, view, Html, View};
+use sycamore::prelude::{view, Html, View};
 
-#[derive(Serialize, Deserialize)]
-pub struct PostPageProps {
+#[perseus::make_rx(PostPageStateRx)]
+pub struct PostPageState {
     title: String,
     content: String,
 }
 
-#[perseus::template(PostPage)]
-#[component(PostPage<G>)]
-pub fn post_page(props: PostPageProps) -> View<G> {
+#[perseus::template_rx(PostPage)]
+pub fn post_page(props: PostPageStateRx) -> View<G> {
     let title = props.title;
     let content = props.content;
     view! {
         h1 {
-            (title)
+            (title.get())
         }
         p {
-            (content)
+            (content.get())
         }
         a(href = link!("/post")) { "Root post page" }
         br()
@@ -37,7 +35,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 pub async fn get_static_props(
     path: String,
     _locale: String,
-) -> RenderFnResultWithCause<PostPageProps> {
+) -> RenderFnResultWithCause<PostPageState> {
     // This is just an example
     let title = urlencoding::decode(&path).unwrap();
     let content = format!(
@@ -45,7 +43,7 @@ pub async fn get_static_props(
         title, path
     );
 
-    Ok(PostPageProps {
+    Ok(PostPageState {
         title: title.to_string(),
         content,
     }) // This `?` declares the default, that the server is the cause of the error

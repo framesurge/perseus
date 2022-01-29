@@ -1,8 +1,7 @@
 use perseus::{Html, Template};
-use sycamore::prelude::{component, view, SsrNode, View};
+use sycamore::prelude::{view, SsrNode, View};
 
-#[perseus::template(IndexPage)]
-#[component(IndexPage<G>)]
+#[perseus::template_rx(IndexPage)]
 pub fn index_page() -> View<G> {
     view! {
         p { "Hello World!" }
