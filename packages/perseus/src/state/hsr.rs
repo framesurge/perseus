@@ -3,44 +3,34 @@ use crate::templates::RenderCtx;
 use wasm_bindgen::JsValue;
 
 /// Freezes the app's state to IndexedDB to be accessed in future.
-// TODO Error handling
 pub async fn hsr_freeze(render_ctx: RenderCtx) {
     let frozen_state = render_ctx.freeze();
     // We use a custom name so we don't interfere with any state freezing the user's doing independently
     let idb_store = match IdbFrozenStateStore::new_with_name("perseus_hsr").await {
         Ok(idb_store) => idb_store,
-        Err(_) => {
-            return;
-        }
+        Err(err) => return log(&format!("IndexedDB setup error: {}.", err)),
     };
     match idb_store.set(&frozen_state).await {
         Ok(_) => log("State frozen."),
-        Err(_) => {
-            return;
-        }
+        Err(err) => log(&format!("State freezing error: {}.", err)),
     };
 }
 
 /// Thaws a previous state frozen in development.
 // This will be run at the beginning of every template function, which means it gets executed on the server as well, so we have to Wasm-gate this
 #[cfg(target_arch = "wasm32")]
-// TODO Error handling
 pub async fn hsr_thaw(render_ctx: RenderCtx) {
     use super::{PageThawPrefs, ThawPrefs};
 
     let idb_store = match IdbFrozenStateStore::new_with_name("perseus_hsr").await {
         Ok(idb_store) => idb_store,
-        Err(_) => {
-            return;
-        }
+        Err(err) => return log(&format!("IndexedDB setup error: {}.", err)),
     };
     let frozen_state = match idb_store.get().await {
         Ok(Some(frozen_state)) => frozen_state,
         // If there's no frozen state available, we'll proceed as usual
         Ok(None) => return,
-        Err(_) => {
-            return;
-        }
+        Err(err) => return log(&format!("Frozen state acquisition error: {}.", err)),
     };
 
     // This is designed to override everything to restore the app to its previous state, so we should override everything
@@ -61,9 +51,7 @@ pub async fn hsr_thaw(render_ctx: RenderCtx) {
     // We don't want this old state to persist if the user manually reloads (they'd be greeted with state that's probably out-of-date)
     match idb_store.clear().await {
         Ok(_) => (),
-        Err(_) => {
-            return;
-        }
+        Err(err) => log(&format!("Stale state clearing error: {}.", err)),
     }
 }
 
