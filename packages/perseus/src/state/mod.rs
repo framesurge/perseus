@@ -20,3 +20,8 @@ mod live_reload;
 pub(crate) use live_reload::connect_to_reload_server;
 #[cfg(all(feature = "live-reload", debug_assertions))]
 pub use live_reload::force_reload;
+
+#[cfg(all(feature = "hsr", debug_assertions))]
+mod hsr;
+#[cfg(all(feature = "hsr", debug_assertions))]
+pub use hsr::*; // TODO

@@ -72,6 +72,8 @@ fn log(msg: &str) {
 /// Force-reloads the page. Any code after this will NOT be called, as the browser will completely reload the page, dumping your code and restarting from the beginning. This will result in
 /// a total loss of all state unless it's frozen in some way.
 ///
+/// Note that the parameter that forces the browser to bypass its cache is non-standard, and only impacts Firefox. On all other browsers, this has no effect.
+///
 /// # Panics
 /// This will panic if it was impossible to reload (which would be caused by a *very* old browser).
 pub fn force_reload() {

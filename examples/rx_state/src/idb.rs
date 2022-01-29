@@ -72,18 +72,6 @@ pub fn idb_page(TestPropsRx { username }: TestPropsRx) -> View<G> {
             }))
         )) { "Thaw from IndexedDB" }
         p { (thaw_status.get()) }
-
-        // button(on:click = cloned!(frozen_app, render_ctx => move |_| {
-        //     frozen_app.set(render_ctx.freeze());
-        // })) { "Freeze!" }
-        // p { (frozen_app.get()) }
-
-        // button(on:click = cloned!(frozen_app_3, render_ctx => move |_| {
-        //     render_ctx.thaw(&frozen_app_3.get(), perseus::state::ThawPrefs {
-        //         page: perseus::state::PageThawPrefs::IncludeAll,
-        //         global_prefer_frozen: true
-        //     }).unwrap();
-        // })) { "Thaw..." }
     }
 }
 

@@ -9,7 +9,7 @@ use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::*;
@@ -261,7 +261,7 @@ pub struct ShellProps {
     /// this will be made obsolete when Sycamore supports this natively.
     pub route_verdict: RouteVerdict<TemplateNodeType>,
     /// Whether or not this page is the very first to have been rendered since the browser loaded the app.
-    pub is_first: bool,
+    pub is_first: Rc<Cell<bool>>,
     #[cfg(all(feature = "live-reload", debug_assertions))]
     /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server.
     pub live_reload_indicator: ReadSignal<bool>,

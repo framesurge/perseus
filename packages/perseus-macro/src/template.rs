@@ -5,7 +5,7 @@ use syn::{
     Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
 };
 
-use crate::template_rx::get_live_reload_frag;
+use crate::template_rx::{get_hsr_thaw_frag, get_live_reload_frag};
 
 /// A function that can be wrapped in the Perseus test sub-harness.
 pub struct TemplateFn {
@@ -116,6 +116,7 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
 
     // Set up a code fragment for responding to live reload events
     let live_reload_frag = get_live_reload_frag();
+    let hsr_thaw_frag = get_hsr_thaw_frag();
 
     // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
     // This is dependent on what arguments the template takes
@@ -123,6 +124,9 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                #[cfg(target_arch = "wasm32")]
+                #hsr_thaw_frag
+
                 #live_reload_frag
 
                 // The user's function, with Sycamore component annotations and the like preserved
@@ -143,6 +147,9 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
         // There are no arguments
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                #[cfg(target_arch = "wasm32")]
+                #hsr_thaw_frag
+
                 #live_reload_frag
 
                 // The user's function, with Sycamore component annotations and the like preserved

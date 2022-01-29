@@ -12,7 +12,7 @@ use crate::Request;
 use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
 use sycamore::prelude::{view, View};
@@ -189,7 +189,7 @@ impl<G: Html> Template<G> {
         global_state: GlobalState,
         // This should always be empty, it just allows us to persist the value across template loads
         frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
-        is_first: bool,
+        is_first: Rc<Cell<bool>>,
         #[cfg(all(feature = "live-reload", debug_assertions))]
         live_reload_indicator: sycamore::prelude::ReadSignal<bool>,
     ) -> View<G> {
@@ -233,7 +233,7 @@ impl<G: Html> Template<G> {
                     frozen_app: Rc::new(RefCell::new(None)),
                     // On the server-side, every template is the first
                     // We won't do anything with HSR on the server-side though
-                    is_first: true,
+                    is_first: Rc::new(Cell::new(true)),
                     #[cfg(all(feature = "live-reload", debug_assertions))]
                     live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
                 },
@@ -261,7 +261,7 @@ impl<G: Html> Template<G> {
                         frozen_app: Rc::new(RefCell::new(None)),
                         // On the server-side, every template is the first
                         // We won't do anything with HSR on the server-side though
-                        is_first: true,
+                        is_first: Rc::new(Cell::new(true)),
                         #[cfg(all(feature = "live-reload", debug_assertions))]
                         live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
                     },

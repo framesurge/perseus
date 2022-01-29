@@ -101,31 +101,61 @@ impl Parse for TemplateFn {
 /// Gets the code fragment used to support live reloading and HSR.
 // This is also used by the normal `#[template(...)]` macro
 pub fn get_live_reload_frag() -> TokenStream {
+    #[cfg(all(feature = "hsr", debug_assertions))]
+    let hsr_frag = quote! {
+        ::perseus::state::hsr_freeze(render_ctx).await;
+    };
+    #[cfg(not(all(feature = "hsr", debug_assertions)))]
+    let hsr_frag = quote!();
+
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    let live_reload_frag = quote! {
+    let live_reload_frag = quote! {{
         use ::sycamore::prelude::cloned; // Pending sycamore-rs/sycamore#339
         let render_ctx = ::perseus::get_render_ctx!();
         // Listen to the live reload indicator and reload when required
-        let indic = render_ctx.live_reload_indicator;
+        let indic = render_ctx.live_reload_indicator.clone();
         let mut is_first = true;
-        ::sycamore::prelude::create_effect(cloned!(indic => move || {
+        ::sycamore::prelude::create_effect(cloned!(indic, render_ctx => move || {
             let _ = indic.get(); // This is a flip-flop, we don't care about the value
             // This will be triggered on initialization as well, which would give us a reload loop
             if !is_first {
                 // Conveniently, Perseus re-exports `wasm_bindgen_futures::spawn_local`!
-                ::perseus::spawn_local(async move {
+                ::perseus::spawn_local(cloned!(render_ctx => async move {
+                    #hsr_frag
+
                     ::perseus::state::force_reload();
                     // We shouldn't ever get here unless there was an error, the entire page will be fully reloaded
-                })
+                }))
             } else {
                 is_first = false;
             }
         }));
-    };
+    }};
     #[cfg(not(all(feature = "live-reload", debug_assertions)))]
     let live_reload_frag = quote!();
 
     live_reload_frag
+}
+
+/// Gets the code fragment used to support HSR thawing.
+pub fn get_hsr_thaw_frag() -> TokenStream {
+    #[cfg(all(feature = "hsr", debug_assertions))]
+    let hsr_thaw_frag = quote! {{
+        use ::sycamore::prelude::cloned; // Pending sycamore-rs/sycamore#339
+        let mut render_ctx = ::perseus::get_render_ctx!();
+        ::perseus::spawn_local(cloned!(render_ctx => async move {
+            // We need to make sure we don't run this more than once, because that would lead to a loop
+            // It also shouldn't run on any pages after the initial load
+            if render_ctx.is_first.get() {
+                render_ctx.is_first.set(false);
+                ::perseus::state::hsr_thaw(render_ctx).await;
+            }
+        }));
+    }};
+    #[cfg(not(all(feature = "hsr", debug_assertions)))]
+    let hsr_thaw_frag = quote!();
+
+    hsr_thaw_frag
 }
 
 pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream {
@@ -176,6 +206,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
 
     // Set up a code fragment for responding to live reload events
     let live_reload_frag = get_live_reload_frag();
+    let hsr_thaw_frag = get_hsr_thaw_frag();
 
     // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
     // This is dependent on what arguments the template takes
@@ -209,6 +240,9 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                 }
 
                 #live_reload_frag
+
+                #[cfg(target_arch = "wasm32")]
+                #hsr_thaw_frag
 
                 // The user's function
                 // We know this won't be async because Sycamore doesn't allow that
@@ -258,6 +292,9 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 use ::perseus::state::MakeRx;
 
+                #[cfg(target_arch = "wasm32")]
+                #hsr_thaw_frag
+
                 #live_reload_frag
 
                 // The user's function, with Sycamore component annotations and the like preserved
@@ -294,6 +331,9 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 use ::perseus::state::MakeRx;
+
+                #[cfg(target_arch = "wasm32")]
+                #hsr_thaw_frag
 
                 #live_reload_frag
 

@@ -4,7 +4,7 @@ use crate::state::{
     AnyFreeze, Freeze, FrozenApp, GlobalState, MakeRx, MakeUnrx, PageStateStore, ThawPrefs,
 };
 use crate::translator::Translator;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use sycamore_router::navigate;
 
@@ -34,7 +34,7 @@ pub struct RenderCtx {
     pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
     /// Whether or not this page is the very first to have been rendered since the browser loaded the app. This will be reset on full reloads, and is used internally to determine whether or
     /// not we should look for stored HSR state.
-    pub is_first: bool,
+    pub is_first: Rc<Cell<bool>>,
     #[cfg(all(feature = "live-reload", debug_assertions))]
     /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server. Hooking into this to run code
     /// before live reloading takes place is NOT supported, as no guarantee can be made that your code will run before Perseus reloads the page fully (at which point no more code will run).

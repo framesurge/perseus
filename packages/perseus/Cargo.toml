@@ -41,7 +41,7 @@ js-sys = { version = "0.3", optional = true }
 [features]
 # Live reloading will only take effect in development, and won't impact production
 # BUG This adds 400B to the production bundle (that's without size optimizations though)
-default = [ "live-reload" ]
+default = [ "live-reload", "hsr" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 # This feature makes tinker-only plugins be registered (this flag is enabled internally in the engine)
 tinker-plugins = []
@@ -64,4 +64,5 @@ wasm2js = []
 # Enables automatic browser reloading whenever you make a change
 live-reload = [ "perseus-macro/live-reload", "js-sys", "web-sys/WebSocket", "web-sys/MessageEvent", "web-sys/ErrorEvent", "web-sys/BinaryType", "web-sys/Location" ]
 # Enables hot state reloading, whereby your entire app's state can be frozen and thawed automatically every time you change code in your app
+# Note that this has no effect within the Perseus code beyond enabling other features and telling the macros to perform HSR
 hsr = [ "live-reload", "idb-freezing", "perseus-macro/hsr" ]

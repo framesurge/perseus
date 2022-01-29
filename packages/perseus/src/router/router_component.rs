@@ -11,7 +11,7 @@ use crate::{
     templates::{RouterLoadState, RouterState, TemplateNodeType},
     DomNode, ErrorPages, Html,
 };
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use sycamore::prelude::{
     cloned, component, create_effect, view, NodeRef, ReadSignal, Signal, View,
@@ -47,7 +47,7 @@ struct OnRouteChangeProps<G: Html> {
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
     initial_container: Option<Element>,
-    is_first: bool,
+    is_first: Rc<Cell<bool>>,
     #[cfg(all(feature = "live-reload", debug_assertions))]
     live_reload_indicator: ReadSignal<bool>,
 }
@@ -191,6 +191,8 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
     let global_state = GlobalState::default();
     // Instantiate an empty frozen app that can persist across templates (with interior mutability for possible thawing)
     let frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>> = Rc::new(RefCell::new(None));
+    // Set up a mutable property for whether or not this is the first load of the first page
+    let is_first = Rc::new(Cell::new(true));
 
     // If we're using live reload, set up an indicator so that our listening to the WebSocket at the top-level (where we don't have the render context that we need for freezing/thawing)
     // can signal the templates to perform freezing/thawing
@@ -202,7 +204,7 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
     // We do this with an effect because we only want to update in some cases (when the new page is actually loaded)
     // We also need to know if it's the first page (because we don't want to announce that, screen readers will get that one right)
     let route_announcement = Signal::new(String::new());
-    let mut is_first_page = true;
+    let mut is_first_page = true; // This is different from the first page load (this is the first page as a whole)
     create_effect(
         cloned!(route_announcement, router_state => move || if let RouterLoadState::Loaded { path, .. } = &*router_state.get_load_state().get() {
             if is_first_page {
@@ -260,8 +262,7 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
         translations_manager,
         error_pages,
         initial_container,
-        // We can piggyback off a different part of the code for an entirely different purpose!
-        is_first: is_first_page,
+        is_first,
         #[cfg(all(feature = "live-reload", debug_assertions))]
         live_reload_indicator: live_reload_indicator.handle(),
     };

@@ -56,8 +56,12 @@ impl std::fmt::Debug for IdbFrozenStateStore {
 impl IdbFrozenStateStore {
     /// Creates a new store for this origin. If it already exists from a previous visit, the existing one will be interfaced with.
     pub async fn new() -> Result<Self, IdbError> {
+        Self::new_with_name("perseus").await
+    }
+    /// Creates a new store for this origin. If it already exists from a previous visit, the existing one will be interfaced with. This also allows the provision of a custom name for the DB.
+    pub(crate) async fn new_with_name(name: &str) -> Result<Self, IdbError> {
         // Build the database
-        let rexie = Rexie::builder("perseus")
+        let rexie = Rexie::builder(name)
             // IndexedDB uses versions to track database schema changes
             // If the structure of this DB ever changes, this MUST be changed, and this should be considered a non-API-breaking, but app-breaking change!
             .version(1)
