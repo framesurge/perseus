@@ -114,13 +114,9 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
             "tuple structs can't be made reactive with this macro (try using named fields instead)",
         )
         .to_compile_error(),
-        syn::Fields::Unit => {
-            return syn::Error::new_spanned(
-                new_struct,
-                "it's pointless to make a unit struct reactive since it has no fields",
-            )
-            .to_compile_error()
-        }
+        // We may well need a unit struct for templates that use global state but don't have proper state of their own
+        // We don't need to modify any fields
+        syn::Fields::Unit => (),
     };
 
     // Create a list of fields for the `.make_rx()` method
@@ -147,6 +143,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                 }
             }
         }
+        syn::Fields::Unit => quote!(#name),
         // We filtered out the other types before
         _ => unreachable!(),
     };
@@ -174,6 +171,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                 }
             }
         }
+        syn::Fields::Unit => quote!(#ident),
         // We filtered out the other types before
         _ => unreachable!(),
     };
