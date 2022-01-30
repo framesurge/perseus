@@ -1,12 +1,10 @@
 [package]
-name = "perseus-example-base"
+name = "perseus-example-tiny"
 version = "0.3.2"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../../../packages/perseus", features = [ "hydrate" ] }
+perseus = { path = "../../../packages/perseus" }
 sycamore = "0.7"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"

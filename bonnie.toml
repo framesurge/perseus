@@ -45,19 +45,10 @@ dev.subcommands.example.cmd = [
     "bonnie copy-subcrates",
     "cd packages/perseus-cli",
     # Point this live version of the CLI at the given example
-    "TEST_EXAMPLE=../../examples/%example cargo run -- %%"
+    "TEST_EXAMPLE=../../examples/%category/%example cargo run -- %%"
 ]
-dev.subcommands.example.args = [ "example" ]
+dev.subcommands.example.args = [ "category", "example" ]
 dev.subcommands.example.desc = "runs the given example using a live version of the cli"
-
-dev.subcommands.test.cmd = [
-    "bonnie copy-subcrates",
-    "cd packages/perseus-cli",
-    # Point this live version of the CLI at the given test
-    "TEST_EXAMPLE=../../tests/%test cargo run -- %%"
-]
-dev.subcommands.test.args = [ "test" ]
-dev.subcommands.test.desc = "runs the given test using a live version of the cli"
 
 site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\""
 site.desc = "builds and serves the site for local development (requires `concurrently`)"
@@ -124,7 +115,7 @@ copy-subcrates.cmd = [
     # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
     "cd packages/perseus-cli",
     "rm -rf ./.perseus",
-    "cp -r ../../tests/basic/.perseus/ .perseus/",
+    "cp -r ../../examples/core/basic/.perseus/ .perseus/",
     "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
     "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
     "mv .perseus/builder/Cargo.toml .perseus/builder/Cargo.toml.old",
@@ -135,14 +126,14 @@ copy-subcrates.cmd = [
     "mkdir -p .perseus/dist/exported",
     # Replace the example's package name with a token the CLI can use (compatible with alternative engines as well)
     # We only need to do this in the root package, the others depend on it
-    "sed -i 's/perseus-test-basic/USER_PKG_NAME/' .perseus/Cargo.toml.old",
+    "sed -i 's/perseus-example-basic/USER_PKG_NAME/' .perseus/Cargo.toml.old",
     # Replace the relative path references with tokens too
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/Cargo.toml.old",
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/builder/Cargo.toml.old",
+    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/Cargo.toml.old",
+    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/builder/Cargo.toml.old",
     # These will need to be updated as more integrations are added
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/server/Cargo.toml.old",
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus-actix-web\"/PERSEUS_ACTIX_WEB_VERSION/' .perseus/server/Cargo.toml.old",
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus-warp\"/PERSEUS_WARP_VERSION/' .perseus/server/Cargo.toml.old"
+    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/server/Cargo.toml.old",
+    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus-actix-web\"/PERSEUS_ACTIX_WEB_VERSION/' .perseus/server/Cargo.toml.old",
+    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus-warp\"/PERSEUS_WARP_VERSION/' .perseus/server/Cargo.toml.old"
 
 ]
 copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/usage"

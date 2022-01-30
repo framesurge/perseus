@@ -1,5 +1,5 @@
 [package]
-name = "perseus-example-base"
+name = "perseus-example-global-state"
 version = "0.3.2"
 edition = "2018"
 

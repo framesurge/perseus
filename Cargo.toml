@@ -1,12 +1,13 @@
 [workspace]
 members = [
 	"packages/*",
-    "examples/*",
-    "tests/*",
+    "examples/core/*",
+    "examples/demos/*",
+    "examples/comprehensive/*",
     "website",
     # We have the CLI subcrates as workspace members so we can actively develop on them
     # They also can't be a workspace until nested workspaces are supported
-    "tests/basic/.perseus",
-    "tests/basic/.perseus/server",
-    "tests/basic/.perseus/builder"
+    "examples/core/basic/.perseus",
+    "examples/core/basic/.perseus/server",
+    "examples/core/basic/.perseus/builder"
 ]

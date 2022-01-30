@@ -157,21 +157,26 @@ pub fn prepare(dir: PathBuf, engine_url: &str) -> Result<(), PrepError> {
         // Development
         #[cfg(debug_assertions)]
         let updated_root_manifest = updated_root_manifest
-            .replace("PERSEUS_VERSION", "path = \"../../../packages/perseus\"");
+            .replace("PERSEUS_VERSION", "path = \"../../../../packages/perseus\"");
         #[cfg(debug_assertions)]
         let updated_server_manifest = updated_server_manifest
-            .replace("PERSEUS_VERSION", "path = \"../../../../packages/perseus\"")
+            .replace(
+                "PERSEUS_VERSION",
+                "path = \"../../../../../packages/perseus\"",
+            )
             .replace(
                 "PERSEUS_ACTIX_WEB_VERSION",
-                "path = \"../../../../packages/perseus-actix-web\"",
+                "path = \"../../../../../packages/perseus-actix-web\"",
             )
             .replace(
                 "PERSEUS_WARP_VERSION",
-                "path = \"../../../../packages/perseus-warp\"",
+                "path = \"../../../../../packages/perseus-warp\"",
             );
         #[cfg(debug_assertions)]
-        let updated_builder_manifest = updated_builder_manifest
-            .replace("PERSEUS_VERSION", "path = \"../../../../packages/perseus\"");
+        let updated_builder_manifest = updated_builder_manifest.replace(
+            "PERSEUS_VERSION",
+            "path = \"../../../../../packages/perseus\"",
+        );
 
         // Write the updated manifests back
         if let Err(err) = fs::write(&root_manifest, updated_root_manifest) {
