@@ -22,9 +22,8 @@ use std::sync::mpsc::channel;
 #[tokio::main]
 async fn main() {
     // In development, we'll test in the `basic` example
-    if cfg!(debug_assertions) {
-        let example_to_test =
-            env::var("TEST_EXAMPLE").unwrap_or_else(|_| "../../examples/basic".to_string());
+    if cfg!(debug_assertions) && env::var("TEST_EXAMPLE").is_ok() {
+        let example_to_test = env::var("TEST_EXAMPLE").unwrap();
         env::set_current_dir(example_to_test).unwrap();
     }
     let exit_code = real_main().await;
@@ -162,10 +161,14 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             // This will be updated every time we re-create the process
             // We spawn it as a process group, whcih means signals go to grandchild processes as well, which means hot reloading
             // can actually work!
-            let mut child = Command::new(&bin_name)
+            let mut child = Command::new(&bin_name);
+            let child = child
                 .args(&args)
                 .env("PERSEUS_WATCHING_PROHIBITED", "true")
-                .env("PERSEUS_USE_RELOAD_SERVER", "true") // This is for internal use ONLY
+                .env("PERSEUS_USE_RELOAD_SERVER", "true"); // This is for internal use ONLY
+            #[cfg(debug_assertions)]
+            let child = child.env_remove("TEST_EXAMPLE"); // We want to use the current directory in development
+            let mut child = child
                 .group_spawn()
                 .map_err(|err| WatchError::SpawnSelfFailed { source: err })?;
 
@@ -177,10 +180,14 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                         // This gracefully kills the process in the sense that it kills it and all its children
                         let _ = child.kill();
                         // Restart it
-                        child = Command::new(&bin_name)
+                        let mut child_l = Command::new(&bin_name);
+                        let child_l = child_l
                             .args(&args)
                             .env("PERSEUS_WATCHING_PROHIBITED", "true")
-                            .env("PERSEUS_USE_RELOAD_SERVER", "true") // This is for internal use ONLY
+                            .env("PERSEUS_USE_RELOAD_SERVER", "true"); // This is for internal use ONLY
+                        #[cfg(debug_assertions)]
+                        let child_l = child_l.env_remove("TEST_EXAMPLE"); // We want to use the current directory in development
+                        child = child_l
                             .group_spawn()
                             .map_err(|err| WatchError::SpawnSelfFailed { source: err })?;
                     }
