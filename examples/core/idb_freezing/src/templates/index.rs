@@ -2,25 +2,35 @@ use perseus::state::{Freeze, IdbFrozenStateStore, PageThawPrefs, ThawPrefs};
 use perseus::{Html, RenderFnResultWithCause, Template};
 use sycamore::prelude::*;
 
-#[perseus::make_rx(TestPropsRx)]
-pub struct TestProps {
-    pub username: String,
+use crate::global_state::AppStateRx;
+
+#[perseus::make_rx(IndexPropsRx)]
+pub struct IndexProps {
+    username: String,
 }
 
-#[perseus::template_rx(IdbPage)]
-pub fn idb_page(TestPropsRx { username }: TestPropsRx) -> View<G> {
+#[perseus::template_rx(IndexPage)]
+pub fn index_page(state: IndexPropsRx, global_state: AppStateRx) -> View<G> {
+    let username = state.username;
     let username_2 = username.clone(); // This is necessary until Sycamore's new reactive primitives are released
-    let render_ctx = perseus::get_render_ctx!(); // We get the render context out here, it's not accessible in the future
-    let freeze_status = Signal::new(String::new()); // This isn't part of the template's data model, it's just here for demonstration
+    let test = global_state.test;
+    let test_2 = test.clone();
+
+    // This is not part of our data model
+    let freeze_status = Signal::new(String::new());
     let thaw_status = Signal::new(String::new());
+    let render_ctx = perseus::get_render_ctx!();
 
     view! {
+        // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
         p { (format!("Greetings, {}!", username.get())) }
         input(bind:value = username_2, placeholder = "Username")
+        p { (test.get()) }
+        input(bind:value = test_2, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
         a(href = "about") { "About" }
-        a(href = "") { "Index" }
+        br()
 
         button(on:click = cloned!(freeze_status, render_ctx => move |_|
             // The IndexedDB API is asynchronous, so we'll spawn a future
@@ -76,14 +86,17 @@ pub fn idb_page(TestPropsRx { username }: TestPropsRx) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("idb")
+    Template::new("index")
         .build_state_fn(get_build_state)
-        .template(idb_page)
+        .template(index_page)
 }
 
 #[perseus::autoserde(build_state)]
-pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<TestProps> {
-    Ok(TestProps {
+pub async fn get_build_state(
+    _path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<IndexProps> {
+    Ok(IndexProps {
         username: "".to_string(),
     })
 }

@@ -12,6 +12,6 @@ pub struct AppState {
 #[perseus::autoserde(global_build_state)]
 pub async fn get_build_state() -> RenderFnResult<AppState> {
     Ok(AppState {
-        test: "Hello from the global state build process!".to_string(),
+        test: "Hello World!".to_string(),
     })
 }
