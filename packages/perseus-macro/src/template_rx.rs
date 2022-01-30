@@ -3,7 +3,7 @@ use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
     Attribute, AttributeArgs, Block, FnArg, Generics, Ident, Item, ItemFn, NestedMeta, PatType,
-    Result, ReturnType, Type, Visibility,
+    Result, ReturnType, Type, TypeTuple, Visibility,
 };
 
 /// A function that can be wrapped in the Perseus test sub-harness.
@@ -227,60 +227,104 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
             FnArg::Typed(PatType { pat, ty, .. }) => (pat, ty),
             FnArg::Receiver(_) => unreachable!(),
         };
-        quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
-                use ::perseus::state::MakeRx;
+        // Handle the case in which the template is just using global state and the first argument is the unit type
+        // That's represented for Syn as a typle with no elements
+        match &**rx_props_ty {
+            // This template takes dummy state and global state
+            Type::Tuple(TypeTuple { elems, .. }) if elems.is_empty() => quote! {
+                #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                    use ::perseus::state::MakeRx;
 
-                let mut render_ctx = ::perseus::get_render_ctx!();
-                // Get the frozen or active global state (the render context manages thawing preferences)
-                // This isn't completely pointless, this method mutates as well to set up the global state as appropriate
-                // If there's no active or frozen global state, then we'll fall back to the generated one from the server (which we know will be there, since if this is `None` we must be
-                // the first page to access the global state).
-                if render_ctx.get_active_or_frozen_global_state::<#global_state_rx>().is_none() {
-                    // Because this came from the server, we assume it's valid
-                    render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap()).unwrap();
+                    let mut render_ctx = ::perseus::get_render_ctx!();
+                    // Get the frozen or active global state (the render context manages thawing preferences)
+                    // This isn't completely pointless, this method mutates as well to set up the global state as appropriate
+                    // If there's no active or frozen global state, then we'll fall back to the generated one from the server (which we know will be there, since if this is `None` we must be
+                    // the first page to access the global state).
+                    if render_ctx.get_active_or_frozen_global_state::<#global_state_rx>().is_none() {
+                        // Because this came from the server, we assume it's valid
+                        render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap()).unwrap();
+                    }
+
+                    #live_reload_frag
+
+                    #[cfg(target_arch = "wasm32")]
+                    #hsr_thaw_frag
+
+                    // The user's function
+                    // We know this won't be async because Sycamore doesn't allow that
+                    #(#attrs)*
+                    #[::sycamore::component(#component_name<#type_param>)]
+                    fn #name#generics(#state_arg) -> #return_type {
+                        let #global_state_arg_pat: #global_state_rx = {
+                            let global_state = ::perseus::get_render_ctx!().global_state.0;
+                            let global_state = global_state.borrow();
+                            // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
+                            let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
+                            (*global_state_ref).clone()
+                        };
+                        #block
+                    }
+                    ::sycamore::prelude::view! {
+                        #component_name(())
+                    }
                 }
+            },
+            // This template takes its own state and global state
+            _ => quote! {
+                #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                    use ::perseus::state::MakeRx;
 
-                #live_reload_frag
+                    let mut render_ctx = ::perseus::get_render_ctx!();
+                    // Get the frozen or active global state (the render context manages thawing preferences)
+                    // This isn't completely pointless, this method mutates as well to set up the global state as appropriate
+                    // If there's no active or frozen global state, then we'll fall back to the generated one from the server (which we know will be there, since if this is `None` we must be
+                    // the first page to access the global state).
+                    if render_ctx.get_active_or_frozen_global_state::<#global_state_rx>().is_none() {
+                        // Because this came from the server, we assume it's valid
+                        render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap()).unwrap();
+                    }
 
-                #[cfg(target_arch = "wasm32")]
-                #hsr_thaw_frag
+                    #live_reload_frag
 
-                // The user's function
-                // We know this won't be async because Sycamore doesn't allow that
-                #(#attrs)*
-                #[::sycamore::component(#component_name<#type_param>)]
-                fn #name#generics(#state_arg) -> #return_type {
-                    let #global_state_arg_pat: #global_state_rx = {
-                        let global_state = ::perseus::get_render_ctx!().global_state.0;
-                        let global_state = global_state.borrow();
-                        // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
-                        let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
-                        (*global_state_ref).clone()
-                    };
-                    #block
-                }
-                ::sycamore::prelude::view! {
-                    #component_name(
-                        {
-                            // Check if properties of the reactive type are already in the page state store
-                            // If they are, we'll use them (so state persists for templates across the whole app)
-                            let mut render_ctx = ::perseus::get_render_ctx!();
-                            // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                            match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
-                                ::std::option::Option::Some(existing_state) => existing_state,
-                                // Again, frozen state has been dealt with already, so we'll fall back to generated state
-                                ::std::option::Option::None => {
-                                    // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
-                                    // And we know that the properties will be provided if the user is expecting them, we just can't prove that to the compiler
-                                    // We also assume that this is valid because it comes from the server
-                                    render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap()).unwrap()
+                    #[cfg(target_arch = "wasm32")]
+                    #hsr_thaw_frag
+
+                    // The user's function
+                    // We know this won't be async because Sycamore doesn't allow that
+                    #(#attrs)*
+                    #[::sycamore::component(#component_name<#type_param>)]
+                    fn #name#generics(#state_arg) -> #return_type {
+                        let #global_state_arg_pat: #global_state_rx = {
+                            let global_state = ::perseus::get_render_ctx!().global_state.0;
+                            let global_state = global_state.borrow();
+                            // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
+                            let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
+                            (*global_state_ref).clone()
+                        };
+                        #block
+                    }
+                    ::sycamore::prelude::view! {
+                        #component_name(
+                            {
+                                // Check if properties of the reactive type are already in the page state store
+                                // If they are, we'll use them (so state persists for templates across the whole app)
+                                let mut render_ctx = ::perseus::get_render_ctx!();
+                                // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
+                                match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
+                                    ::std::option::Option::Some(existing_state) => existing_state,
+                                    // Again, frozen state has been dealt with already, so we'll fall back to generated state
+                                    ::std::option::Option::None => {
+                                        // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
+                                        // And we know that the properties will be provided if the user is expecting them, we just can't prove that to the compiler
+                                        // We also assume that this is valid because it comes from the server
+                                        render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap()).unwrap()
+                                    }
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
-            }
+            },
         }
     } else if fn_args.len() == 1 {
         // There's an argument for page properties that needs to have state extracted, so the wrapper will deserialize it
