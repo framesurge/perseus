@@ -8,10 +8,10 @@ One problem with making all static content available under `/.perseus/static/` i
 
 _Static aliases_ allow you to handle these conditions with ease, as they let you define static content to be available at any given path, and to map to any given file in your project's directory.
 
-You can define static aliases in the `define_app!` macro's `static_aliases` parameter. Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/lib.rs):
+You can define static aliases in the `define_app!` macro's `static_aliases` parameter. Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/basic/src/lib.rs):
 
 ```rust
-{{#include ../../../examples/basic/src/lib.rs}}
+{{#include ../../../examples/core/basic/src/lib.rs}}
 ```
 
 ### Security

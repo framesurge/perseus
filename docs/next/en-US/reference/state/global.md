@@ -15,24 +15,24 @@ The role of dark mode comes in in styling that toggle switch mostly, and wheneve
 
 ## Example
 
-All the following examples are taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/rx_state).
+All the following examples are taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/global_state).
 
 To being with, you'll need to set up a `GlobalStateCreator`, which will look something like this (it's supposed to be fairly similar to the process of generating state for a `Template`, but it currently only supports build-time state generation):
 
 ```rust
-{{#include ../../../../examples/rx_state/src/global_state.rs}}
+{{#include ../../../../examples/core/global_state/src/global_state.rs}}
 ```
 
 Then, you can tell Perseus about that by adding it to `define_app!` like so:
 
 ```rust
-{{#include ../../../../examples/rx_state/src/lib.rs}}
+{{#include ../../../../examples/core/global_state/src/lib.rs}}
 ```
 
 Finally, you can use it like so (note the second argument to `index_page`):
 
 ```rust
-{{#include ../../../../examples/rx_state/src/index.rs}}
+{{#include ../../../../examples/core/global_state/src/templates/index.rs}}
 ```
 
 ## Potential Issues

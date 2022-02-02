@@ -7,7 +7,7 @@ _To follow along here, you'll want to be familiar with Rust, which you can learn
 To begin, create a new folder for your project, let's call it `my-perseus-app`. Now, create a `Cargo.toml` file in that folder. This tells Rust which packages you want to use in your project and some other metadata. Put the following inside:
 
 ```toml
-{{#include ../../../examples/tiny/Cargo.toml.example}}
+{{#include ../../../examples/comprehensive/tiny/Cargo.toml.example}}
 ```
 
 <details>
@@ -23,7 +23,7 @@ Note that we've set these dependencies up so that they'll automatically update _
 Now, create an `index.html` file at the root of your project and put the following inside:
 
 ```html
-{{#include ../../../examples/tiny/index.html}}
+{{#include ../../../examples/comprehensive/tiny/index.html}}
 ```
 
 <details>
@@ -43,7 +43,7 @@ Note also that we don't have to import anything to make Perseus run here, the se
 Now, create a new directory called `src` and add a new file inside called `lib.rs`. Put the following inside:
 
 ```rust
-{{#include ../../../examples/tiny/src/lib.rs}}
+{{#include ../../../examples/comprehensive/tiny/src/lib.rs}}
 ```
 
 <details>
@@ -79,7 +79,7 @@ The first time you run this command, it can take quite a while to get everything
 
 Once that's done, hop over to <http://localhost:8080> in any modern browser (not Internet Explorer...), and you should see _Hello World!_ printed on the screen! If you try going to <http://localhost:8080/about> or any other page, you should see a message that tells you the page wasn't found.
 
-Congratulations! You've just created your first ever Perseus app! You can see the source code for this section [here](https://github.com/arctic-hen7/perseus/tree/main/examples/tiny).
+Congratulations! You've just created your first ever Perseus app! You can see the source code for this section [here](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny).
 
 ## Moving Forward
 

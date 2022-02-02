@@ -1,9 +1,9 @@
 # Using Plugins
 
-The plugins system is designed to be as easy as possible to use, and you can import plugins into your app like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/plugins/src/lib.rs)):
+The plugins system is designed to be as easy as possible to use, and you can import plugins into your app like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/plugins/src/lib.rs)):
 
 ```rust
-{{#include ../../../../examples/plugins/src/lib.rs}}
+{{#include ../../../../examples/core/plugins/src/lib.rs}}
 ```
 
 In addition to the usual `define_app!` calls, this also uses the `plugins` parameter, passing to it an instance of `perseus::plugins::Plugins`, which manages all the intricacies of the plugins system. If this parameter isn't provided, it'll default to `Plugins::new()`, which creates the configuration for plugins without registering any.

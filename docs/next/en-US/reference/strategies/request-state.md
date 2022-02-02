@@ -6,10 +6,10 @@ If you can avoid this strategy, do, because it will bring your app's TTFB (time 
 
 ## Usage
 
-Here's an example taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/ip.rs) of using this strategy to tell the user their own IP address (albeit not hugely reliably as this header can be trivially spoofed, but this is for demonstration purposes):
+Here's an example taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/state_generation/src/templates/request_state.rs) of using this strategy to tell the user their own IP address (albeit not hugely reliably as this header can be trivially spoofed, but this is for demonstration purposes):
 
 ```rust
-{{#include ../../../../examples/showcase/src/templates/ip.rs}}
+{{#include ../../../../examples/core/state_generation/src/templates/request_state.rs}}
 ```
 
 Note that, just like _build state_, this strategy generates stringified properties that will be passed to the page to render it (serialization is handled by `#[perseus::autoserde(request_state)]`), and it also uses `RenderFnWithCause` (see the section on [build state](:reference/strategies/build-state) for more information). The key difference though is that this strategy receives a second, very powerful parameter: the HTTP request that the user sent (`perseus::Request`).

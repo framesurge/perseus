@@ -20,10 +20,10 @@ Hopefully that explains the difference between a template and a page. This is a 
 
 ## Defining a Template
 
-You can define a template like so (taken from [the basic example](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/templates/about.rs)'s about page):
+You can define a template like so (taken from [the basic example](https://github.com/arctic-hen7/perseus/blob/main/examples/core/basic/src/templates/about.rs)'s about page):
 
 ```rust
-{{#include ../../../../examples/basic/src/templates/about.rs}}
+{{#include ../../../../examples/core/basic/src/templates/about.rs}}
 ```
 
 It's seen as convention in Perseus to define each template in its own file, which should expose a `get_template()` file. Note that this is just convention, and as long as you get an instance of `Template<G>` to the `define_app!` macro, it really doesn't matter. That said, using community conventions makes your code easier to understand and debug for others.
@@ -46,16 +46,12 @@ One niche case is defining a route like this: `/<locale>/about`. In this case, t
 
 ### Different Templates in the Same Domain
 
-It's perfectly possible in Perseus to define one template for `/post` (and its children) and a different one for `/post/new`. In fact, this is exactly what [the showcase example](https://github.com/arctic-hen7/perseus/tree/main/examples/showcase) does, and you can check it out for inspiration. This is based on a simple idea: **more specific templates win** the routing contest.
+It's perfectly possible in Perseus to define one template for `/post` (and its children) and a different one for `/post/new`. In fact, this is very similar to what [this example](https://github.com/arctic-hen7/perseus/tree/main/examples/core/state_generation/src/templates/build_paths.rs) does, and you can check it out for inspiration. This is based on a simple idea: **more specific templates win** the routing contest.
 
 There is one use-case though that requires a bit more fiddling: having a different template for the root path. A very common use-case for this would be having one template for `/posts`'s children (one URl for each blog post) and a different template for `/posts` itself that lists all available posts. Currently, the only way to do this is to define a property on the `posts` template that will be `true` if you're rendering for that root, and then to conditionally render the list of posts. Otherwise, you would render the given post content. This does require a lot of `Option<T>`s, but they could be safely unwrapped (data passing in Perseus is logical and safe).
 
-## Checking Render Context
+## Checking Render Environment
 
-It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with `web_sys`, which will `panic!` if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with Sycamore, just use `G::IS_BROWSER` (where `G` is the type parameter on your template). Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/i18n/src/templates/about.rs):
-
-```rust
-{{#include ../../../../examples/i18n/src/templates/about.rs}}
-```
+It's often necessary to make sure you're only running some logic on the client-side, particularly anything to do with `web_sys`, which will `panic!` if used on the server. Because Perseus renders your templates in both environments, you'll need to explicitly check if you want to do something only on the client (like get an authentication token from a cookie). This can be done trivially with Sycamore, just use `G::IS_BROWSER` (where `G` is the type parameter on your template).
 
 This is a very contrived example, but what you should note if you try this is the flash from `server` to `client` (when you go to the page from the URL bar, not when you go in from the link on the index page), because the page is pre-rendered on the server and then hydrated on the client. This is an important principle of Perseus, and you should be aware of this potential flashing (easily solved by a less contrived example) when your users [initially load](:advanced/initial-loads) a page.

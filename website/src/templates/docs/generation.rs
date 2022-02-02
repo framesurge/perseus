@@ -126,7 +126,8 @@ pub async fn get_build_state(
                 "intro"
             ),
         )
-    } else if path_vec[1].split('.').count() == 3 || path_vec[1] == "next" {
+    } else if path_vec[1].split('.').count() >= 3 || path_vec[1] == "next" {
+        // This conditional depends on checking for a semantic version number in the URL (e.g. `0.3.x`, `0.3.0-v0.3.2`)
         (
             path_vec[1],
             format!(
@@ -152,6 +153,7 @@ pub async fn get_build_state(
     };
     let fs_path = format!("../../{}.md", fs_path);
     // Read that file
+    dbg!(&fs_path);
     let contents = fs::read_to_string(&fs_path)?;
 
     // Handle the directives to include code from another file
@@ -175,7 +177,15 @@ pub async fn get_build_state(
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents = if version == "next" {
                     // Add a `../../` to the front so that it's relative from `.perseus/`, where we are now
-                    fs::read_to_string(format!("../../{}", &incl_path))?
+                    let path = format!("../../{}", &incl_path);
+                    match fs::read_to_string(&path) {
+                        Ok(contents) => contents,
+                        // If there's an error (which there will be after any major refactor), we'll tell the user which file couldn't be found
+                        Err(err) => {
+                            eprintln!("File not found: {} in page {}.", &path, &fs_path);
+                            return Err(err.into());
+                        }
+                    }
                 } else {
                     // Get the corresponding history point for this version
                     let history_point = DOCS_MANIFEST.history_map.get(version);
@@ -208,7 +218,15 @@ pub async fn get_build_state(
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents_full = if version == "next" {
                     // Add a `../../` to the front so that it's relative from `.perseus/`, where we are now
-                    fs::read_to_string(format!("../../{}", &incl_path))?
+                    let path = format!("../../{}", &incl_path);
+                    match fs::read_to_string(&path) {
+                        Ok(contents) => contents,
+                        // If there's an error (which there will be after any major refactor), we'll tell the user which file couldn't be found
+                        Err(err) => {
+                            eprintln!("File not found: {} in page {}.", &path, &fs_path);
+                            return Err(err.into());
+                        }
+                    }
                 } else {
                     // Get the corresponding history point for this version
                     let history_point = DOCS_MANIFEST.history_map.get(version);

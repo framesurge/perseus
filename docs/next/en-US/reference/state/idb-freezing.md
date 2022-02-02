@@ -6,10 +6,10 @@ To use this system, you'll need to enable the `idb-freezing` feature flag, and t
 
 # Example
 
-The following code is taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/rx_state/src/idb.rs).
+The following code is taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/idb_freezing/src/idb.rs).
 
 ```rust
-{{#include ../../../../examples/rx_state/src/idb.rs}}
+{{#include ../../../../examples/core/idb_freezing/src/templates/index.rs}}
 ```
 
 This example is very contrived, but it illustrates the fundamentals of freezing and thawing to IndexedDB. You'll need to perform most of this logic in a `wasm_bindgen_futures::spawn_local()`, a function that spawns a future in the browser, because the IndexedDB API is asynchronous (so that costly DB operations don't block the main UI thread). The first button we have in this example has its `on:click` handler set to one of these futures, and it then freezes the state, initializes the database (which will either create it or open it if it already exists), and then calls `.set()` to set the new frozen state (which will remove previously stored frozen states in the background). The rest of the code here is just boilerplate for reporting successes or failures to the user.

@@ -6,10 +6,10 @@ To avoid this, many modern frameworks support a loading bar at the top of the pa
 
 ## Usage
 
-This example (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/router_state.rs)) shows using router state to create a simple indicator of the router's current state, though this could easily be extended into a progress bar, loading indicator, or the like.
+This example (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/router_state/src/templates/index.rs)) shows using router state to create a simple indicator of the router's current state, though this could easily be extended into a progress bar, loading indicator, or the like.
 
 ```rust
-{{#include ../../../../examples/showcase/src/templates/router_state.rs}}
+{{#include ../../../../examples/core/router_state/src/templates/index.rs}}
 ```
 
 The first step in using router state is accessing it, which can be done through Sycamore's [context API](https://sycamore-rs.netlify.app/docs/advanced/contexts). Specifically, we access the context of type `perseus::templates::RenderCtx` (which also includes other information), which has a field `router_state`, which contains an instance of `perseus::templates::RouterState`. Then, we can use the `.get_load_state()` method on that to get a `ReadSignal<perseus::templates::RouterLoadState>` (Sycamore-speak for a read-only piece of state). Next, we use Sycamore's `create_memo` to create some derived state (so it will update whenever the router's loading state does) that just turns the router's state into a string to render for the user.

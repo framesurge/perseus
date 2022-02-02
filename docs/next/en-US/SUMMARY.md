@@ -13,7 +13,7 @@
 -   [`define_app!`](/docs/reference/define-app)
 -   [Writing Views](/docs/reference/views)
 -   [Debugging](/docs/reference/debugging)
--   [Live Reloading](/docsr/reference/live-reloading)
+-   [Live Reloading](/docs/reference/live-reloading)
 -   [Templates and Routing](/docs/reference/templates/intro)
     -   [Modifying the `<head>`](/docs/reference/templates/metadata-modification)
     -   [Modifying HTTP Headers](/docs/reference/templates/setting-headers)

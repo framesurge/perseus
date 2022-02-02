@@ -29,7 +29,7 @@ The only notable difference here is the absence of a `<title>`, which is because
 
 As in every Perseus app, `lib.rs` is how we communicate with the CLI and tell it how our app works. Put the following content in `src/lib.rs`:
 
-```rust,no_playground,no_run
+```rust
 {{#include ../../../examples/basic/src/lib.rs}}
 ```
 

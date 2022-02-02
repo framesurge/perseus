@@ -9,7 +9,7 @@ If learning by reading isn't really your thing, or you'd like a reference, you c
 Much like the _Hello World!_ app, we'll start off by creating a new directory for the project, maybe `my-second-perseus-app` (or you could exercise imagination...). Then, we'll create a new `Cargo.toml` file and fill it with the following:
 
 ```toml
-{{#include ../../../examples/basic/Cargo.toml.example}}
+{{#include ../../../examples/core/basic/Cargo.toml.example}}
 ```
 
 The only difference between this and the last `Cargo.toml` we created is two new dependencies:
@@ -20,7 +20,7 @@ The only difference between this and the last `Cargo.toml` we created is two new
 The next thing to do is to create `index.html`, which is pretty much the same as last time:
 
 ```html
-{{#include ../../../examples/basic/index.html}}
+{{#include ../../../examples/core/basic/index.html}}
 ```
 
 The only notable difference here is the absence of a `<title>`, which is because we'll be creating it inside Perseus! Any Perseus template can modify the `<head>` of the document, but anything you put into `index.html` will persist across all pages. We don't want to have conflicting titles, so we leave that property out of `index.html`.
@@ -29,8 +29,8 @@ The only notable difference here is the absence of a `<title>`, which is because
 
 As in every Perseus app, `lib.rs` is how we communicate with the CLI and tell it how our app works. Put the following content in `src/lib.rs`:
 
-```rust,no_playground,no_run
-{{#include ../../../examples/basic/src/lib.rs}}
+```rust
+{{#include ../../../examples/core/basic/src/lib.rs}}
 ```
 
 This code is quite different from your first app, so let's go through how it works.
@@ -46,7 +46,7 @@ The last thing we do is new, we define `static_aliases` to map the URL `/test.tx
 Before we get to the cool part of building the actual pages of the app, we should set up error pages again, which we'll do in `src/error_pages.rs`:
 
 ```rust
-{{#include ../../../examples/basic/src/error_pages.rs}}
+{{#include ../../../examples/core/basic/src/error_pages.rs}}
 ```
 
 This is a little more advanced than the last time we did this, and there are a few things we should note.
@@ -60,7 +60,7 @@ In this function, we also define a different error page for a 404 error, which w
 It's time to create the first page for this app! But first, we need to make sure that import in `src/lib.rs` of `mod templates;` works, which requires us to create a new file `src/templates/mod.rs`, which declares `src/templates` as a module with its own code. Add the following to that file:
 
 ```rust
-{{#include ../../../examples/basic/src/templates/mod.rs}}
+{{#include ../../../examples/core/basic/src/templates/mod.rs}}
 ```
 
 It's common practice to have a file for each _template_, which is slightly different to a page (explained in more detail later), and this app has two pages: a landing page (index) and an about page.
@@ -68,7 +68,7 @@ It's common practice to have a file for each _template_, which is slightly diffe
 Let's begin with the landing page. Create a new file `src/templates/index.rs` and put the following inside:
 
 ```rust
-{{#include ../../../examples/basic/src/templates/index.rs}}
+{{#include ../../../examples/core/basic/src/templates/index.rs}}
 ```
 
 This code is _much_ more complex than the _Hello World!_ example, so let's go through it carefully.
@@ -156,7 +156,7 @@ Note that this function has its own special return type, and that `HeaderMap` is
 Okay! We're past the hump, and now it's time to define the (much simpler) `/about` page. Create `src/templates/about.rs` and put the following inside:
 
 ```rust
-{{#include ../../../examples/basic/src/templates/about.rs}}
+{{#include ../../../examples/core/basic/src/templates/about.rs}}
 ```
 
 This is basically exactly the same as `index.rs`, except we don't have any properties to deal with, and we don't need to generate anything special at build time (but Perseus will still render this page to static HTML, ready to be served to your users).
@@ -183,7 +183,7 @@ Perseus is compatible with any browser that supports Wasm, which is most modern 
 By the way, remember this little bit of code in `src/lib.rs`?
 
 ```rust
-{{#lines_include ../../../examples/basic/src/lib.rs:12:14}}
+{{#lines_include ../../../examples/core/basic/src/lib.rs:12:14}}
 ```
 
 If you navigate to <http://localhost:8080/test.txt>, you should see the contents on `static/test.txt`! You can also access them at <http://localhost:8080/.perseus/static/test.txt>

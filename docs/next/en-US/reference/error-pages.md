@@ -6,10 +6,10 @@ When developing for the web, you'll need to be familiar with the idea of an _HTT
 
 Perseus has an _app shell_ that manages fetching pages for the user (it's a little more complicated than the traditional design of that kind of a system, but that's all you need to know for now), and this is where HTTP errors will occur as it communicates with the Perseus server. If the status code is an error, this shell will fail and render an error page instead of the page the user visited. This way, an error page can be displayed at any route, without having to navigate to a special route.
 
-You can define one error page for each HTTP status code in Perseus, and you can see a list of those [here](https://httpstatuses.com). Here's an example of doing so for _404 Not Found_ and _400_ (a generic error caused by the client) (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/showcase/src/error_pages.rs)):
+You can define one error page for each HTTP status code in Perseus, and you can see a list of those [here](https://httpstatuses.com). Here's an example of doing so for _404 Not Found_ and _400_ (a generic error caused by the client) (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/core/state_generation/src/error_pages.rs)):
 
 ```rust
-{{#include ../../../examples/showcase/src/error_pages.rs}}
+{{#include ../../../examples/core/state_generation/src/error_pages.rs}}
 ```
 
 It's conventional in Perseus to define a file called `src/error_pages.rs` and put your error pages in here for small apps, but for larger apps where your error pages are customized with beautiful logos and animations, you'll almost certainly want this to be a folder, and to have a separate file for each error page.

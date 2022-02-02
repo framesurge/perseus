@@ -6,10 +6,10 @@ There are two types of revalidation: time-based and logic-based. The former lets
 
 ## Time-Based Revalidation Usage
 
-Here's an example of time-based revalidation from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/time.rs) (note that this uses _incremental generation_ as well):
+Here's an example of time-based revalidation from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/state_generation/src/templates/revalidation_and_incremental_generation.rs) (note that this uses _incremental generation_ as well):
 
 ```rust
-{{#include ../../../../examples/showcase/src/templates/time.rs}}
+{{#include ../../../../examples/core/state_generation/src/templates/revalidation_and_incremental_generation.rs}}
 ```
 
 This page displays the time at which it was built (fetched with _build state_), but rebuilds every five seconds. Note that this doesn't translate to the server's actually rebuilding it every five seconds, but rather the server will rebuild it at the next request if more than five seconds have passed since it was last built (meaning templates on the same build schedule will likely go our of sync quickly).
@@ -28,10 +28,10 @@ Perseus uses a very simple syntax inspired by [this JavaScript project]() to spe
 
 ## Logic-Based Revalidation Usage
 
-Here's an example of logic-based revalidation from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/time_root.rs) (actually, this example uses both types of revalidation):
+Here's an example of logic-based revalidation from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/state_generation/src/templates/revalidation.rs) (actually, this example uses both types of revalidation):
 
 ```rust
-{{#include ../../../../examples/showcase/src/templates/time_root.rs}}
+{{#include ../../../../examples/core/state_generation/src/templates/revalidation.rs}}
 ```
 
 If it were just `.should_revalidate_fn()` being called here, this page would always be rebuilt every time it's requested (the closure always returns `true`, note that errors would be `String`s), however, the additional usage of time-based revalidation regulates this, and the page will only be rebuilt every five seconds. In short, your arbitrary revalidation logic will only be executed at the intervals of your time-based revalidation intervals (if none are set, it will run on every request).

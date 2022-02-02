@@ -15,10 +15,10 @@ To define a plugin, you'll call `perseus::plugins::Plugin::new()`, which takes f
 -   A [control actions](:reference/plugins/control) registrar, which is given some control actions and then extends them
 -   The environment for the plugin to run in (see below)
 
-Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:reference/plugins/tinker)-time (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/plugins/src/plugin.rs)):
+Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:reference/plugins/tinker)-time (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/plugins/src/plugin.rs)):
 
 ```rust
-{{#include ../../../../examples/plugins/src/plugin.rs}}
+{{#include ../../../../examples/core/plugins/src/plugin.rs}}
 ```
 
 One particularly important thing to note here is the absence of any control actions in this plugin. Because you still have to provide a registrar, this function is using the `empty_control_actions_registrar` convenience function, which does exactly what its name implies.

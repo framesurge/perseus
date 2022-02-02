@@ -8,7 +8,7 @@ Note that if a custom branch is not supplied, the CLI will fetch from the `stabl
 
 ## Developing Engines
 
-Developing a custom engine can be quite difficult, because Perseus expects a lot of things to be true. For starters, you'll need to follow a folder structure *identical* to the default Perseus engine (which you can find [here](https://github.com/arctic-hen7/perseus/tree/main/tests/basic/.perseus)). There are three modules here, the root one (responsible for exposing a library that `wasm-pack` will interpret as the app and exposing the user's app's code to the other modules), the server, and the builder (responsible for building and exporting). 
+Developing a custom engine can be quite difficult, because Perseus expects a lot of things to be true. For starters, you'll need to follow a folder structure *identical* to the default Perseus engine (which you can find [here](https://github.com/arctic-hen7/perseus/tree/main/examples/core/basic/.perseus)). There are three modules here, the root one (responsible for exposing a library that `wasm-pack` will interpret as the app and exposing the user's app's code to the other modules), the server, and the builder (responsible for building and exporting). 
 
 The process of actually coding your engine should best start by copying the code of the default engine, and then tweaking it piece by piece. For convenience, you may wish to do this in the context of the entire Perseus repository (which provides internal tools optimized for using an engine that's being actively developed). Beyond this, documentation is best provided by the actual code itself. However, any problems you have can be raised on [the Perseus Discord channel on Sycamore's server](https://discord.com/invite/GNqWYWNTdp).
 
