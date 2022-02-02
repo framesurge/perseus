@@ -154,17 +154,23 @@ ci-prep.desc = "creates empty directories to preserve the file structure that te
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
-    "bonnie test single basic --headless",
-    "bonnie test single i18n --headless",
-    "bonnie test single plugins --headless",
-    "bonnie test single showcase --headless"
+    "bonnie test example core basic --headless",
+    "bonnie test example core unreactive --headless",
+    "bonnie test example core i18n --headless",
+    "bonnie test example core plugins --headless",
+    "bonnie test example core state_generation --headless",
+    "bonnie test example core freezing_and_thawing --headless",
+    "bonnie test example core global_state --headless",
+    "bonnie test example core idb_freezing --headless",
+    "bonnie test example core router_state --headless",
+    "bonnie test example core rx_state --headless"
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
 test.subcommands.core.desc = "runs cargo tests only"
-test.subcommands.single.cmd = "bash ./test.sh %test %%" # A script can do backgrounding properly
-test.subcommands.single.args = [ "test" ]
-test.subcommands.single.desc = "tests a single tests (assumes geckodriver running in background), use `--headless` to run headlessly"
+test.subcommands.example.cmd = "bash ./test.sh %category %example %%" # A script can do backgrounding properly
+test.subcommands.example.args = [ "category", "example" ]
+test.subcommands.example.desc = "tests a single example (assumes geckodriver running in background), use `--headless` to run headlessly"
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
