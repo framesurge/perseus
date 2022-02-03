@@ -1,7 +1,4 @@
-use perseus::{
-    http::header::{HeaderMap, HeaderName},
-    Html, RenderFnResultWithCause, SsrNode, Template,
-};
+use perseus::{Html, RenderFnResultWithCause, SsrNode, Template};
 use sycamore::prelude::{view, View};
 
 #[perseus::make_rx(IndexPageStateRx)]
@@ -22,7 +19,6 @@ pub fn get_template<G: Html>() -> Template<G> {
         .build_state_fn(get_build_state)
         .template(index_page)
         .head(head)
-        .set_headers_fn(set_headers)
 }
 
 #[perseus::head]
@@ -40,14 +36,4 @@ pub async fn get_build_state(
     Ok(IndexPageState {
         greeting: "Hello World!".to_string(),
     })
-}
-
-#[perseus::autoserde(set_headers)]
-pub fn set_headers(props: Option<IndexPageState>) -> HeaderMap {
-    let mut map = HeaderMap::new();
-    map.insert(
-        HeaderName::from_lowercase(b"x-greeting").unwrap(),
-        props.unwrap().greeting.parse().unwrap(),
-    );
-    map
 }
