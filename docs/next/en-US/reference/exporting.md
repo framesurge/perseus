@@ -8,4 +8,4 @@ There is only one known difference between the behavior of your exported site an
 
 One slight hiccup with Perseus' static exporting system comes with regards to the `.html` file extension. Perseus' server expects that pages shouldn't have such extensions (hence `/about` rather than `/about.html`), but, when statically generated, they must have these extensions in the filesystem. So, if you don't want these extensions for your users (and if you want consistent behavior between exporting and serving), it's up to whatever system you're hosting your files with to strip these extensions. Many systems do this automatically, though some (like Python's `http.server`) do not.
 
-One of the best systems for testing static exporting on your local machine is the [`serve`](https://github.com/vercel/serve) JavaScript package, which can be run from the command-line without touching any JavaScript, and it handles this problem automatically. However, other solutions certainly exist if you don't want any JS polluting your system!
+Note that, in development, you can easily serve your app with `perseus export -s`, which will spin up a local server automatically!

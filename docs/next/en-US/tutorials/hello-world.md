@@ -51,7 +51,7 @@ Now, create a new directory called `src` and add a new file inside called `lib.r
 
 First, we import some things that'll be useful:
 
--   `perseus::{define_app, ErrorPages, Template}` -- the -`define_app!` macro, which tells Perseus how your app works; the `ErrorPages` `struct`, which lets you tell Perseus how to handle errors (like _404 Not Found_ if the user goes to a nonexistent page); and the `Template` `struct`, which is how Perseus manages pages in your app
+-   `perseus::{define_app, ErrorPages, Template}` -- the `define_app!` macro, which tells Perseus how your app works; the `ErrorPages` `struct`, which lets you tell Perseus how to handle errors (like _404 Not Found_ if the user goes to a nonexistent page); and the `Template` `struct`, which is how Perseus manages pages in your app
 -   `sycamore::view` -- Sycamore's `view!` macro, which lets you write HTML-like code in Rust
 
 Then, we use the `define_app!` macro to declare the different aspects of the app, starting with the _templates_. We only have one template, which we've called `index` (a special name that makes it render at the root of your app), and then we define how that should look, creating a paragraph (`p`) containing the text `Hello World!`.
@@ -65,13 +65,13 @@ Now install the Perseus CLI with `cargo install perseus-cli` (you'll need `wasm-
 <details>
 <summary>Why do I need a CLI?</summary>
 
-Perseus is a _very_ complex system, and, if you had to write all that complexity yourself, that _Hello World!_ example would be more like 1700 lines of code than 17! The CLI lets you abstract away all that complexity into a directory that you might have noticed appear called `.perseus/`. If you take a look inside, you'll actually find two crates (Rust packages): one for your app, and another for the server that serves your app. These are what actually run your app, and they import the code you've written. The `define_app!` macro defines a series of functions and constants at compile-time that make this possible.
+Perseus is a _very_ complex system, and, if you had to write all that complexity yourself, that _Hello World!_ example would be more like 1200 lines of code than 12! The CLI lets you abstract away all that complexity into a directory that you might have noticed appear called `.perseus/`. If you take a look inside, you'll actually find two crates (Rust packages): one for your app, and another for the server that serves your app. These are what actually run your app, and they import the code you've written. The `define_app!` macro defines a series of functions and constants at compile-time that make this possible.
 
 When you run `perseus serve`, the `.perseus/` directory is created and added to your `.gitignore`, and then three stages occur in parallel (they're shown in your terminal):
 
 -   _🔨 Generating your app_ -- here, your app is built to a series of static files in `.perseus/dist/static`, which makes your app lightning-fast (your app's pages are ready before it's even been deployed, which is called _static site generation_, or SSG)
 -   _🏗️ Building your app to Wasm_ -- here, your app is built to [WebAssembly](https://webassembly.org), which is what lets a low-level programming language like Rust run in the browser
--   _📡 Building server_ -- here, Perseus builds its internal server based on your code, and prepares to serve your app
+-   _📡 Building server_ -- here, Perseus builds its internal server based on your code, and prepares to serve your app (note that an app this simple can actually use [static exporting](:reference/exporting), but we'll deal with that later)
 
 The first time you run this command, it can take quite a while to get everything ready, but after that it'll be really fast. And, if you haven't changed any code (_at all_) since you last ran it, you can run `perseus serve --no-build` to run the server basically instantaneously.
 

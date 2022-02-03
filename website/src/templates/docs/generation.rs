@@ -153,7 +153,6 @@ pub async fn get_build_state(
     };
     let fs_path = format!("../../{}.md", fs_path);
     // Read that file
-    dbg!(&fs_path);
     let contents = fs::read_to_string(&fs_path)?;
 
     // Handle the directives to include code from another file
@@ -238,12 +237,23 @@ pub async fn get_build_state(
                     get_file_at_version(incl_path, history_point, PathBuf::from("../../"))?
                 };
                 // Get the specific lines wanted
-                let incl_contents_lines = incl_contents_full
+                let incl_contents_lines = match incl_contents_full
                     .lines()
                     .collect::<Vec<&str>>()
                     .get((lines_start - 1)..(lines_end))
-                    .unwrap()
-                    .join("\n");
+                {
+                    Some(incl_contents_lines) => incl_contents_lines.join("\n"),
+                    None => {
+                        eprintln!(
+                            "File {} couldn't be included from lines {}-{} in {}.",
+                            &incl_path,
+                            lines_start - 1,
+                            lines_end,
+                            &fs_path
+                        );
+                        panic!("file couldn't be included from lines");
+                    }
+                };
                 // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents_lines);
             }
