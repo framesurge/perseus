@@ -17,20 +17,5 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let title = c.find(Locator::Css("title")).await?.html(false).await?;
     assert!(title.contains("Index Page"));
 
-    // Go to `/about`
-    c.find(Locator::Id("about-link")).await?.click().await?;
-    let url = c.current_url().await?;
-    assert!(url.as_ref().starts_with("http://localhost:8080/about"));
-    wait_for_checkpoint!("initial_state_not_present", 0, c);
-    wait_for_checkpoint!("page_visible", 1, c);
-    // Make sure the hardcoded text there exists
-    let text = c.find(Locator::Css("p")).await?.text().await?;
-    assert_eq!(text, "About.");
-    let title = c.find(Locator::Css("title")).await?.html(false).await?;
-    assert!(title.contains("About Page"));
-    // Make sure we get initial state if we refresh
-    c.refresh().await?;
-    wait_for_checkpoint!("initial_state_present", 0, c);
-
     Ok(())
 }
