@@ -38,7 +38,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 pub async fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
     // This path is illegal, and can't be rendered
     // Because we're using incremental generation, we could gte literally anything as the `path`
-    if path == "post/tests" {
+    if path == "incremental_generation/tests" {
         // This tells Perseus to return an error that's the client's fault, with the HTTP status code 404 (not found) and the message 'illegal page'
         // You could return this error manually, but this is more convenient
         blame_err!(client, 404, "illegal page");

@@ -46,5 +46,9 @@ pub async fn get_build_state(path: String, _locale: String) -> RenderFnResultWit
 //
 // Note also that there's almost no point in using build paths without build state, as every page would come out exactly the same (unless you differentiated them on the client...)
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
-    Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
+    Ok(vec![
+        "".to_string(),
+        "test".to_string(),
+        "blah/test/blah".to_string(),
+    ])
 }
