@@ -17,10 +17,8 @@ Note that, just like _build state_, this strategy generates stringified properti
 <details>
 <summary>How do you get the user's request information?</summary>
 
-The web frameworks Perseus supports automatically pass this information to handlers like Perseus. The slightly difficult thing is then converting this from their custom format to Perseus' (which is just an alias for the [`http`](https://docs.rs/http) module's). This is done in the appropriate integration crate.
+The web frameworks Perseus supports automatically pass this information to handlers like Perseus. The slightly difficult thing is then converting this from their custom format to Perseus' (which is just an alias for the [`http`](https://docs.rs/http) module's). This is done in the appropriate server integration crate.
 
 </details>
 
 That parameter is actually just an alias for [this](https://docs.rs/http/0.2/http/request/struct.Request.html), which gives you access to all manner of things in the user's HTTP request. The main one we're concerned with in this example though is `X-Forwarded-For`, which contains the user's IP address (unless it's trivially spoofed). Because we can't assume that any HTTP header exists, we fall back to a message saying the IP address is hidden if we can't access the header.
-
-The other notable thing in the above example is the commented-out line at the beginning of `get_request_state`, which shows you how to return an error if the client didn't provide something that they should've.

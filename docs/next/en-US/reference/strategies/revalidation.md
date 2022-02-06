@@ -16,7 +16,7 @@ This page displays the time at which it was built (fetched with _build state_), 
 
 ### Time Syntax
 
-Perseus uses a very simple syntax inspired by [this JavaScript project]() to specify time intervals in the form `xXyYzZ` (e.g. `1w`, `5s`, `1w5s`), where the lower-case letters are number and the upper-case letters are intervals, the supported of which are listed below:
+Perseus uses a very simple syntax inspired by [this JavaScript project](https://github.com/vercel/ms) to specify time intervals in the form `xXyYzZ` (e.g. `1w`, `5s`, `1w5s`), where the lower-case letters are number and the upper-case letters are intervals, the supported of which are listed below:
 
 -   `s`: second,
 -   `m`: minute,
