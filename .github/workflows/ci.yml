@@ -24,61 +24,93 @@ jobs:
             - name: Run traditional tests
               run: cargo test --all
     # We now have a separate job for each example's E2E testing because they all take a while, we may as well run them in parallel
-    e2e-test-example-basic:
+    # The job for each E2E test is exactly the same except for a minor difference, so we'll use a matrix based on listing the subdirectories
+    e2e-example-test:
         runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    # For now, we list all the examples we're testing, but in future this will be automatic
+                    - name: basic
+                      type: core
+                    - name: i18n
+                      type: core
+                    - name: plugins
+                      type: core
+                    - name: set_headers
+                      type: core
+                    - name: state_generation
+                      type: core
+                    - name: static_content
+                      type: core
+                    - name: unreactive
+                      type: unreactive
         steps:
             - uses: actions/checkout@v2
-            - run: cargo install bonnie
-            - run: cargo install wasm-pack
+            - run: cargo install bonnie wasm-pack
             - run: sudo apt update
             - run: sudo apt install firefox firefox-geckodriver
             - name: Run Firefox WebDriver
               run: geckodriver &
             - run: bonnie copy-subcrates
             - run: bonnie ci-prep
-            - name: Run E2E tests
-              run: bonnie test single basic --headless
-    e2e-test-example-i18n:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - run: cargo install bonnie
-            - run: cargo install wasm-pack
-            - run: sudo apt update
-            - run: sudo apt install firefox firefox-geckodriver
-            - name: Run Firefox WebDriver
-              run: geckodriver &
-            - run: bonnie copy-subcrates
-            - run: bonnie ci-prep
-            - name: Run E2E tests
-              run: bonnie test single i18n --headless
-    e2e-test-example-plugins:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - run: cargo install bonnie
-            - run: cargo install wasm-pack
-            - run: sudo apt update
-            - run: sudo apt install firefox firefox-geckodriver
-            - name: Run Firefox WebDriver
-              run: geckodriver &
-            - run: bonnie copy-subcrates
-            - run: bonnie ci-prep
-            - name: Run E2E tests
-              run: bonnie test single plugins --headless
-    # This one is liable to fail for no particular reason (`geckodriver` seems to get tired...)
-    # It should be re-run if it fails unexpectedly, especially if the error message is something to do with WebDriver sessions
-    e2e-test-example-showcase:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - run: cargo install bonnie
-            - run: cargo install wasm-pack
-            - run: sudo apt update
-            - run: sudo apt install firefox firefox-geckodriver
-            - name: Run Firefox WebDriver
-              run: geckodriver &
-            - run: bonnie copy-subcrates
-            - run: bonnie ci-prep
-            - name: Run E2E tests
-              run: bonnie test single showcase --headless
+            - name: Run E2E tests for example ${ matrix.name } in category ${ matrix.type }
+              run: bonnie test example ${ matrix.type } ${ matrix.name } --headless
+    # e2e-test-example-basic:
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - uses: actions/checkout@v2
+    #         - run: cargo install bonnie
+    #         - run: cargo install wasm-pack
+    #         - run: sudo apt update
+    #         - run: sudo apt install firefox firefox-geckodriver
+    #         - name: Run Firefox WebDriver
+    #           run: geckodriver &
+    #         - run: bonnie copy-subcrates
+    #         - run: bonnie ci-prep
+    #         - name: Run E2E tests
+    #           run: bonnie test single basic --headless
+    # e2e-test-example-i18n:
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - uses: actions/checkout@v2
+    #         - run: cargo install bonnie
+    #         - run: cargo install wasm-pack
+    #         - run: sudo apt update
+    #         - run: sudo apt install firefox firefox-geckodriver
+    #         - name: Run Firefox WebDriver
+    #           run: geckodriver &
+    #         - run: bonnie copy-subcrates
+    #         - run: bonnie ci-prep
+    #         - name: Run E2E tests
+    #           run: bonnie test single i18n --headless
+    # e2e-test-example-plugins:
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - uses: actions/checkout@v2
+    #         - run: cargo install bonnie
+    #         - run: cargo install wasm-pack
+    #         - run: sudo apt update
+    #         - run: sudo apt install firefox firefox-geckodriver
+    #         - name: Run Firefox WebDriver
+    #           run: geckodriver &
+    #         - run: bonnie copy-subcrates
+    #         - run: bonnie ci-prep
+    #         - name: Run E2E tests
+    #           run: bonnie test single plugins --headless
+    # # This one is liable to fail for no particular reason (`geckodriver` seems to get tired...)
+    # # It should be re-run if it fails unexpectedly, especially if the error message is something to do with WebDriver sessions
+    # e2e-test-example-showcase:
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - uses: actions/checkout@v2
+    #         - run: cargo install bonnie
+    #         - run: cargo install wasm-pack
+    #         - run: sudo apt update
+    #         - run: sudo apt install firefox firefox-geckodriver
+    #         - name: Run Firefox WebDriver
+    #           run: geckodriver &
+    #         - run: bonnie copy-subcrates
+    #         - run: bonnie ci-prep
+    #         - name: Run E2E tests
+    #           run: bonnie test single showcase --headless
