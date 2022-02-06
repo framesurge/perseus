@@ -44,7 +44,7 @@ jobs:
                     - name: static_content
                       type: core
                     - name: unreactive
-                      type: unreactive
+                      type: core
         steps:
             - uses: actions/checkout@v2
             - run: cargo install bonnie wasm-pack
@@ -54,8 +54,8 @@ jobs:
               run: geckodriver &
             - run: bonnie copy-subcrates
             - run: bonnie ci-prep
-            - name: Run E2E tests for example ${ matrix.name } in category ${ matrix.type }
-              run: bonnie test example ${ matrix.type } ${ matrix.name } --headless
+            - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
+              run: bonnie test example ${{ matrix.type }} ${{ matrix.name }} --headless
     # e2e-test-example-basic:
     #     runs-on: ubuntu-latest
     #     steps:
