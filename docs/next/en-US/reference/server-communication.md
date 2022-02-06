@@ -11,34 +11,32 @@ Of course, a much simpler way of doing the above would be to make the database n
 
 </details>
 
-## The Perseus Server
+Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](/docs/ejecting), which can be brittle, because you'll have to redo everything every time there's a major update. This is NOT the recommended approach for setting up your backend!
 
-Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](/docs/ejecting), which can be brittle, because you'll have to redo everything every time there's a major update.
-
-## Your Own Server
-
-Instead, it's recommended that you create a server separate from Perseus that you control completely. You might do this with [Actix Web](https://actix.rs) or similar software.
-
-### Serverless Functions
-
-In the last few years, a new technology has sprung up that allows you to run individual _functions_ (which might be single API routes) whenever they're requested. Infinitely many functions can be spawned simultaneously, and none will be active if none are being requested, which significantly reduces costs and increases scalability. This is provided by services like [AWS Lambda](https://aws.amazon.com/lambda/), and can be used with Rust via [this library](https://docs.rs/netlify_lambda_http).
+Instead, it's recommended that you create a server separate from Perseus that you control completely. You might do this with [Actix Web](https://actix.rs) or similar software. You could even set up serverless functions on a platform like [AWS Lambda](https://aws.amazon.com/lambda), which can reduce operation costs.
 
 ## Querying a Server
 
-### At Build-Time
+Querying a server in Perseus is fairly simple, thoguh there are two different environments in which you'll want to do it, which are quite different from each other: on the server and in the browser. The main reason for this difference is because, in the browser, we're limited to the Web APIs, which are restricted by [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS), meaning the browser will ask APIs you query if they'r eexpecting your app, which they won't be unless they've been configured to. For this reason, it's nearly always best to proxy requests to third-party APIs through your own server, which you can configure CORS on as necessary. In many cases, you can even perform third-party queries entirely at build-time and then pass through the results as state to pages.
 
-It's fairly trivial to communicate with a server at build-time in Perseus, which allows you to fetch data when you build your app, and then your users don't have to do as much work. You can also use other strategies to fetch data [at request-time](:reference/strategies/request-state) if needed. Right now, it's best to use a blocking API to make requests on the server, which you can do with libraries like [`ureq`](https://docs.rs/ureq).
+Here's an example of both approaches (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/demos/fetching)):
 
-One of the problems with fetching data at build time (or request-time, etc.) in development is that it often adds a significant delay to building your project, which slows you down. To solve this, Perseus provides two functions `cache_res` and `cache_fallible_res` that can be used to wrap your request code. They'll run it the first time, and then they'll cache the result to `.perseus/cache/`, which will be used in all future requests. These functions take a name (for the cache file), the function to run (which must be async), and a boolean that can be set to `true` if you want to temporarily disable caching. Usefully, these functions don't have to be removed for production, because they'll automatically avoid caching there. You can find an example of using these in [this example](https://github.com/arctic-hen7/perseus/tree/main/examples/demo/fetching).
+```rust
+{{#include ../../../examples/demos/fetching/src/templates/index.rs}}
+```
+
+### Build-Time
+
+In the above example, we fetch the server's IP address at build-time from <https://api.ipify.org> using [`ureq`](https://docs.rs/ureq), a simple (and blocking) HTTP client. Note that Perseus gives you access to a full Tokio `1.x` runtime at build time, so you can easily use a non-blocking library like [`reqwest`](https://docs.rs/reqwest), which will be faster if you're making a lot of network requests at build-time. However, for simplicity's sake, this example uses `ureq`.
+
+One problem of fetching data at build-time though, in any framework, is that you have to fetch it again every time you rebuild your app, which slows down the build process and thus slows down your development cycle. To alleviate this, Perseus provides two helper functions, `cache_res` and `cache_fallible_res` (used for functions that return a `Result`) that can be used to wrap any asynchronous code that runs on the server-side (e.g. at build-time, request-time, etc.). The first time they run, these will just run your code, but then they'll cache the result to a file in `.perseus/`, which can be used in all subsequent requests, making your long-running code (typically network request code, but you could even put machine learning stuff in them in theory...) run almost instantaneously. Of course, sometimes you'll need to re-run that asynchronous code if you change something, which yo ucan do trivially by changing the second argument from `false` to `true`, which will override the cache and always re-run the given code.
 
 Incidentally, you can also use those functions to work in an offline environment, even if your app includes calls to external APIs at build time. As long as you've called your app's build process once so that Perseus can cache all the requests, it won't make any more network requests in development unless you tell it to explicitly or delete `.perseus/cache/`.
 
+Note also that those functions don't have to be removed for production, they'll automatically be disabled.
+
 ### In the Browser
 
-In some cases, it's just not possible to fetch the data you need on the server, and the client needs to fetch it themselves. This is often the case in [exported](:reference/exporting) apps. This is typically done with the browser's inbuilt Fetch API, which is conveniently wrapped by [`reqwasm`](https://docs.rs/reqwasm). Note that you'll need to do this in a `Future`, which you can spawn using [`wasm_bindgen_futures::spawn_local`](https://docs.rs/wasm-bindgen-futures/latest/wasm_bindgen_futures/fn.spawn_local.html), conveniently re-exported from Perseus as `perseus::spawn_local`. You can then modify a `Signal` in there that holds the data you want. It's common practice in web development today to show a page skeleton (those pulsating bars instead of text) while data are still being loaded.
+In the above example's `index_page()` function, we perform some request logic that we want to do in the browser. It's important to remember here that Perseus will run your template's code on the server as well when it prerenders (which happens more often than you may think!), so if we want to only run something in the browser, we have to check with `G::IS_BROWSER` (usefully provided by Sycamore). From there, the comments in the code should mostly explain what we're doing, but the broad idea is to spawn a `Future` in the browser (which we do with a function that Perseus re-exports from another library called [`wasm-bindgen-futures`](https://docs.rs/wasm-bindgen-futures)) that uses a library like [`reqwasm`](https://docs.rs/reqwasm) (a wrapper over the browser's Fetch API) to get some data. In this example, we fetch that data from some static content on the same site, which avoids issues with [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) (something you will very much want to understand, because it can generate some very confusing errors, especially for those new to web development).
 
-However, if you try to request from a public API in this way, you may run into problems with [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS), which can be very confusing, especially if you're not used to web development! The simple explanation of this is that CORS is a _thing_ that browsers use to make sure your code can't send requests to servers that haven't allowed it (as in your code specifically). If you're querying your own server and getting this problem, make sure to set the `Access-Control-Allow-Origin` header to allow your site to make requests (see [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for more details). However, if a public API hasn't set this, you're up the creek! In these cases, it's best to query through your own server or through one of Perseus' rendering strategies (if possible).
-
-## Example
-
-This can be confusing stuff, especially because it's different on the client and the server, so you may want to take a look at [this example](https://github.com/arctic-hen7/perseus/tree/main/examples/demo/fetching) in the Perseus repo, which gets the IP address of the machine that built it, and then shows the user a message hosted with a [static alias](:reference/static-content).
+As for what we do with the data we fetch, we just modify a Sycamore `Signal` to hold it, and our `view! {...}` will update accordingly!
