@@ -12,6 +12,6 @@ define_app! {
     //
     // Note that this is only needed for serving content at custom URLs in your app, anything in the `static/` filesystem directory will be served at the `/.perseus/static/` URL
     static_aliases: {
-        "/test" => "test.txt"
+        "/test.txt" => "test.txt"
     }
 }
