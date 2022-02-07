@@ -77,3 +77,4 @@
     -   [Subsequent Loads](/docs/advanced/subsequent-loads)
     -   [Routing](/docs/advanced/routing)
 -   [`define_app` in Detail](/docs/advanced/define_app)
+-   [Route Announcer](/docs/advanced/route-announcer)
