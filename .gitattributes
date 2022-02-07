@@ -1,0 +1,2 @@
+# Make sure Fluent doesn't come up in our language stats (I don't even know why it's considered a programming language...)
+*.ftl -linguist-detectable
