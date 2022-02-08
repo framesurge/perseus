@@ -16,7 +16,7 @@ pub fn index_page(state: IndexPageStateRx) -> View<G> {
         p { (format!("Greetings, {}!", username.get())) }
         input(bind:value = username_2, placeholder = "Username")
 
-        a(href = "about") { "About" }
+        a(href = "about", id = "about-link") { "About" }
     }
 }
 

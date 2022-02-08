@@ -24,7 +24,6 @@ pub fn about_page() -> View<G> {
         p { (format!("Greetings, {}!", username.get())) }
 
         a(href = "") { "Index" }
-        a(href = "test") { "Test" }
     }
 }
 
