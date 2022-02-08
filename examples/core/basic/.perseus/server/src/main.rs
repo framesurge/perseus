@@ -4,11 +4,7 @@ use perseus::internal::serve::{ServerOptions, ServerProps};
 use perseus::plugins::PluginAction;
 use perseus::stores::MutableStore;
 use perseus::SsrNode;
-use perseus_engine::app::{
-    get_app_root, get_error_pages_contained, get_global_state_creator, get_immutable_store,
-    get_locales, get_mutable_store, get_plugins, get_static_aliases,
-    get_templates_map_atomic_contained, get_translations_manager,
-};
+use perseus_engine::app::{get_app_root, get_error_pages, get_global_state_creator, get_immutable_store, get_locales, get_mutable_store, get_plugins, get_static_aliases, get_templates_map_atomic, get_translations_manager};
 use std::env;
 use std::fs;
 
@@ -107,6 +103,8 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
     let locales = get_locales(&plugins);
     let app_root = get_app_root(&plugins);
     let static_aliases = get_static_aliases(&plugins);
+    let templates_map = get_templates_map_atomic(&plugins);
+    let error_pages = get_error_pages(&plugins);
     // Generate the global state
     let global_state_creator = get_global_state_creator();
 
@@ -118,13 +116,11 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
         wasm_bundle: "dist/pkg/perseus_engine_bg.wasm".to_string(),
         // This probably won't exist, but on the off chance that the user needs to support older browsers, we'll provide it anyway
         wasm_js_bundle: "dist/pkg/perseus_engine_bg.wasm.js".to_string(),
-        // It's a nightmare to get the templates map to take plugins, so we use a self-contained version
-        // TODO reduce allocations here
-        templates_map: get_templates_map_atomic_contained(),
+        templates_map,
         locales,
         root_id: app_root,
         snippets: "dist/pkg/snippets".to_string(),
-        error_pages: get_error_pages_contained(),
+        error_pages,
         // The CLI supports static content in `../static` by default if it exists
         // This will be available directly at `/.perseus/static`
         static_dir: if fs::metadata(&static_dir_path).is_ok() {
