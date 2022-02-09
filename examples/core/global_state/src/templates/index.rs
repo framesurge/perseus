@@ -13,7 +13,7 @@ pub fn index_page(_: (), global_state: AppStateRx) -> View<G> {
         p { (test.get()) }
         input(bind:value = test_2)
 
-        a(href = "about") { "About" }
+        a(href = "about", id = "about-link") { "About" }
     }
 }
 

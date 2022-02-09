@@ -4,7 +4,11 @@ use perseus::internal::serve::{ServerOptions, ServerProps};
 use perseus::plugins::PluginAction;
 use perseus::stores::MutableStore;
 use perseus::SsrNode;
-use perseus_engine::app::{get_app_root, get_error_pages, get_global_state_creator, get_immutable_store, get_locales, get_mutable_store, get_plugins, get_static_aliases, get_templates_map_atomic, get_translations_manager};
+use perseus_engine::app::{
+    get_app_root, get_error_pages, get_global_state_creator, get_immutable_store, get_locales,
+    get_mutable_store, get_plugins, get_static_aliases, get_templates_map_atomic,
+    get_translations_manager,
+};
 use std::env;
 use std::fs;
 
