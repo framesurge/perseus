@@ -23,16 +23,16 @@ pub fn index_page(state: IndexPropsRx, global_state: AppStateRx) -> View<G> {
 
     view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
-        p { (format!("Greetings, {}!", username.get())) }
-        input(bind:value = username_2, placeholder = "Username")
-        p { (test.get()) }
-        input(bind:value = test_2, placeholder = "Global state")
+        p(id = "page_state") { (format!("Greetings, {}!", username.get())) }
+        input(id = "set_page_state", bind:value = username_2, placeholder = "Username")
+        p(id = "global_state") { (test.get()) }
+        input(id = "set_global_state", bind:value = test_2, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "about") { "About" }
+        a(href = "about", id = "about-link") { "About" }
         br()
 
-        button(on:click = cloned!(freeze_status, render_ctx => move |_|
+        button(id = "freeze_button", on:click = cloned!(freeze_status, render_ctx => move |_|
             // The IndexedDB API is asynchronous, so we'll spawn a future
             wasm_bindgen_futures::spawn_local(cloned!(render_ctx, freeze_status => async move {
                 // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
@@ -52,7 +52,7 @@ pub fn index_page(state: IndexPropsRx, global_state: AppStateRx) -> View<G> {
         )) { "Freeze to IndexedDB" }
         p { (freeze_status.get()) }
 
-        button(on:click = cloned!(thaw_status, render_ctx => move |_|
+        button(id = "thaw_button", on:click = cloned!(thaw_status, render_ctx => move |_|
             // The IndexedDB API is asynchronous, so we'll spawn a future
             wasm_bindgen_futures::spawn_local(cloned!(render_ctx, thaw_status => async move {
                 let idb_store = match IdbFrozenStateStore::new().await {
