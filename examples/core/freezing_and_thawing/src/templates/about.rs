@@ -12,17 +12,17 @@ pub fn about_page(_: (), global_state: AppStateRx) -> View<G> {
     let render_ctx = perseus::get_render_ctx!();
 
     view! {
-        p { (test.get()) }
+        p(id = "global_state") { (test.get()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "") { "Index" }
+        a(href = "", id = "index-link") { "Index" }
         br()
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
-        button(on:click = cloned!(frozen_app, render_ctx => move |_| {
+        button(id = "freeze_button", on:click = cloned!(frozen_app, render_ctx => move |_| {
             frozen_app.set(render_ctx.freeze());
         })) { "Freeze!" }
-        p { (frozen_app.get()) }
+        p(id = "frozen_app") { (frozen_app.get()) }
     }
 }
 

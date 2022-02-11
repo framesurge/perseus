@@ -24,22 +24,22 @@ pub fn index_page(state: IndexPropsRx, global_state: AppStateRx) -> View<G> {
 
     view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
-        p { (format!("Greetings, {}!", username.get())) }
-        input(bind:value = username_2, placeholder = "Username")
-        p { (test.get()) }
-        input(bind:value = test_2, placeholder = "Global state")
+        p(id = "page_state") { (format!("Greetings, {}!", username.get())) }
+        input(id = "set_page_state", bind:value = username_2, placeholder = "Username")
+        p(id = "global_state") { (test.get()) }
+        input(id = "set_global_state", bind:value = test_2, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "about") { "About" }
+        a(href = "about", id = "about-link") { "About" }
         br()
 
-        button(on:click = cloned!(frozen_app, render_ctx => move |_| {
+        button(id = "freeze_button", on:click = cloned!(frozen_app, render_ctx => move |_| {
             frozen_app.set(render_ctx.freeze());
         })) { "Freeze!" }
-        p { (frozen_app.get()) }
+        p(id = "frozen_app") { (frozen_app.get()) }
 
-        input(bind:value = frozen_app_2, placeholder = "Frozen state")
-        button(on:click = cloned!(frozen_app_3, render_ctx => move |_| {
+        input(id = "thaw_input", bind:value = frozen_app_2, placeholder = "Frozen state")
+        button(id = "thaw_button", on:click = cloned!(frozen_app_3, render_ctx => move |_| {
             render_ctx.thaw(&frozen_app_3.get(), perseus::state::ThawPrefs {
                 page: perseus::state::PageThawPrefs::IncludeAll,
                 global_prefer_frozen: true
