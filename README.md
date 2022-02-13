@@ -6,6 +6,8 @@
 [![Top Language](https://img.shields.io/github/languages/top/arctic-hen7/perseus?style=for-the-badge)]()
 [![Discord Chat](https://img.shields.io/discord/820400041332179004?label=Discord&style=for-the-badge)](https://discord.gg/PgwPn7dKEk)
 
+Perseus is a blazingly fast frontend web development framework built in Rust with support for generating page state at build-time, request-time, incrementally, or whatever you'd like! It supports reactivity using [Sycamore](https://github.com/syacmore-rs/sycamore), and builds on it to provide a fully-fledged framework for developing modern apps.
+
 Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies, reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)!
 
 -   📕 Supports static generation (serving only static resources)
@@ -15,6 +17,8 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 -   🏭 Open build matrix (use any rendering strategy with anything else)
 -   🖥️ CLI harness that lets you build apps with ease and confidence
 -   🌐 Full i18n support out-of-the-box with [Fluent](https://projectfluent.org)
+-   🏎 Lighthouse scores of 100 on desktop and over 95 on mobile
+-   ⚡ Support for *hot state reloading* (reload your entire app's state after you make any code changes in development, Perseus is the only framework in the world that can do this, to our knowledge)
 
 ## Usage
 
@@ -43,41 +47,17 @@ Support every major rendering strategy and provide developers the ability to eff
 
 ## Motivation
 
-There is a sore lack of Rust frameworks for frontend development that support more than just SPAs and client-side rendering, and so Perseus was born. We need something like NextJS for Wasm.
-
-## Roadmap
-
-### Pre-stable
-
-These tasks still need to be done before Perseus can be pushed to v1.0.0.
-
--   [x] Create a custom CLI as a harness for apps without ridiculous amounts of configuration needed
-
-*   [x] Support i18n out of the box
-*   [x] Implement custom router
-*   [x] Allow direct modification of the document head
-*   [x] Improve SEO and initial load performance
-*   [ ] Support custom template hierarchies
-*   [ ] Pre-built integrations
-    -   [x] Actix Web
-    -   [x] Warp
-    -   [ ] AWS Lambda
-
-### Beyond
-
-These tasks will be done after Perseus is stable.
-
--   [ ] Integrations for other platforms
+There is a sore lack of Rust frameworks for frontend development that support more than just SPAs and client-side rendering, and so Perseus was born. We need something like NextJS for Wasm (but why stop there?).
 
 ## Contributing
 
-We appreciate all kinds of contributions, check out our [contributing guidelines](./CONTRIBUTING.md) for more information! Also, please be sure to follow our [code of conduct](./CODE_OF_CONDUCT.md).
+We appreciate all kinds of contributions, check out our [contributing guidelines](https://github.com/arctic-hen7/blob/main/CONTRIBUTING.md) for more information! Also, please be sure to follow our [code of conduct](https://github.com/arctic-hen7/blob/main/CODE_OF_CONDUCT.md).
 
 You can also chat about Perseus on [our channel on Sycamore's Discord server](https://discord.com/invite/GNqWYWNTdp).
 
 ## License
 
-See [`LICENSE`](./LICENSE).
+See [`LICENSE`](https://github.com/arctic-hen7/blob/main/LICENSE).
 
 [book]: https://arctic-hen7.github.io/perseus
 [crate]: https://crates.io/crates/perseus
