@@ -1,36 +1,25 @@
+#![doc = include_str!("../../../README.md")]
 /*!
- * Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies,
- * reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of [Sycamore](https://github.com/sycamore-rs/sycamore)
- * and provides a NextJS-like API!
- *
- * - ✨ Supports static generation (serving only static resources)
- * - ✨ Supports server-side rendering (serving dynamic resources)
- * - ✨ Supports revalidation after time and/or with custom logic (updating rendered pages)
- * - ✨ Supports incremental regeneration (build on demand)
- * - ✨ Open build matrix (use any rendering strategy with anything else, mostly)
- * - ✨ CLI harness that lets you build apps with ease and confidence
- *
- * This is the documentation for the core Perseus crate, but there's also [a CLI](https://arctic-hen7.github.io/perseus/cli.html) and
- * [integrations](https://arctic-hen7.github.io/perseus/serving.html) to make serving apps easier!
- *
- * # Resources
- *
- * These docs will help you as a reference, but [the book](https://arctic-hen7.github.io/perseus) should be your first port of call for
- * learning about how to use Perseus and how it works.
- *
- * - [The Book](https://arctic-hen7.github.io/perseus)
- * - [GitHub repository](https://github.com/arctic-hen7/perseus)
- * - [Crate page](https://crates.io/crates/perseus)
- * - [Gitter chat](https://gitter.im/perseus-framework/community)
- * - [Discord server channel](https://discord.com/channels/820400041332179004/883168134331256892) (for Sycamore-related stuff)
- *
- * # Features
- *
- * Perseus performs internationalization using translators, each of which utilizes some translation engine, like [Fluent](https://projectfluent.org).
- * Each of the available translations are feature-gated, and can be enabled with the `translator-[engine-name]` feature. You can set
- * the default translator by setting the `translator-dflt-[engine-name]` (you of course can't have more than one default translator).
- * You can read more about this system [here](https://arctic-hen7.github.io/perseus/i18n.html).
- */
+## Features
+
+- `translator-fluent` -- enables internationalization using [Fluent](https://projectfluent.org)
+- `hydrate` -- enables Sycamore's *experimental* hydration system (if you experience odd issues, try disabling this)
+- `preload-wasm-on-redirect` -- *experimentally* preloads the Wasm bundle for locale redirections (this only partially works right now)
+- `idb-freezing` -- enables utilities for freezing your app's state to IndexedDB in the browser (see the book)
+- `live-reload` (default) -- enables reloading the browser automatically when you make changes to your app
+- `hsr` (default) -- enables *hot state reloading*, which reloads the state of your app right before you made code changes in development, allowing you to pick up where you left off
+
+The remaining features are used internally by the other Perseus packages, and enabling them manually in your project will very likely wreak havoc unless you seriously know what you're doing!
+
+- `tinker-plugins` -- makes tinker plugins be registered
+- `server-side` -- enables various functions only used on the server-side (minimizes the client-side bundle)
+- `standalone` -- makes Perseus able to be run as a standalone binary by changing some minor internal defaults
+
+## Packages
+
+This is the API documentation for the core `perseus` package, which underlies all Perseus apps. Note that Perseus mostly uses [the book](https://arctic-hen7.github.io/perseus/en-US) for
+documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
+*/
 
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]

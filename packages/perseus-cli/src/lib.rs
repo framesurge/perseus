@@ -1,29 +1,17 @@
+#![doc = include_str!("../../../README.md")]
 /*!
- * Perseus is a blazingly fast frontend web development framework built in Rust with support for major rendering strategies,
- * reactivity without a virtual DOM, and extreme customizability. It wraps the lower-level capabilities of[Sycamore](https://github.com/sycamore-rs/sycamore)
- * and provides a NextJS-like API!
- *
- * - ✨ Supports static generation (serving only static resources)
- * - ✨ Supports server-side rendering (serving dynamic resources)
- * - ✨ Supports revalidation after time and/or with custom logic (updating rendered pages)
- * - ✨ Supports incremental regeneration (build on demand)
- * - ✨ Open build matrix (use any rendering strategy with anything else, mostly)
- * - ✨ CLI harness that lets you build apps with ease and confidence
- *
- * This is the documentation for the Perseus CLI, but there's also [the core package](https://crates.io/crates/perseus) and [integrations](https://arctic-hen7.github.io/perseus/serving.html)
- * to make serving apps on other platforms easier!
- *
- * # Resources
- *
- * These docs will help you as a reference, but [the book](https://arctic-hen7.github.io/perseus/cli.html) should
- * be your first port of call for learning about how to use Perseus and how it works.
- *
- * - [The Book](https://arctic-hen7.github.io/perseus)
- * - [GitHub repository](https://github.com/arctic-hen7/perseus)
- * - [Crate page](https://crates.io/crates/perseus)
- * - [Gitter chat](https://gitter.im/perseus-framework/community)
- * - [Discord server channel](https://discord.com/channels/820400041332179004/883168134331256892) (for Sycamore-related stuff)
- */
+## Packages
+
+This is the API documentation for the `perseus-cli` package, which acts as a frontend for abstracting away a lot of Perseus' internal complexity. Note that Perseus mostly uses
+[the book](https://arctic-hen7.github.io/perseus/en-US) for documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples
+[here](https://github.com/arctic-hen7/perseus/tree/main/examples).
+
+## Why is this here?
+
+Usually, binary packages wouldn't have API documentation like this, but the Perseus CLI uses a hybrid structure of a library and a binary, which allows it to be used as a library in applications
+that build on Perseus. Note that this area of using Perseus is currently almost entirely undocumented, and there may be major hiccups! If you'd like to help us out, please [open a PR](https://github.com/arctic-hen7/pulls/new) for
+the documentation you'd like to see on this front!
+*/
 
 #![deny(missing_docs)]
 
