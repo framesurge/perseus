@@ -20,7 +20,7 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 
 ## Usage
 
-Here's a taste of Perseus (see [the _tiny_ example](https://github.com/arctic-hen7/perseus/tree/main/examples/tiny) for more):
+Here's a taste of Perseus (see [the _tiny_ example](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny) for more):
 
 ```rust
 use perseus::{define_app, ErrorPages, Template};
@@ -37,7 +37,7 @@ define_app! {
 }
 ```
 
-Check out [the book](https://arctic-hen7.github.io/perseus) to learn how to turn that into your next app!
+Check out [the book](https://arctic-hen7.github.io/perseus/en-US) to learn how to turn that into your next app!
 
 ## Aim
 
@@ -49,15 +49,10 @@ There is a sore lack of Rust frameworks for frontend development that support mo
 
 ## Contributing
 
-We appreciate all kinds of contributions, check out our [contributing guidelines](https://github.com/arctic-hen7/blob/main/CONTRIBUTING.md) for more information! Also, please be sure to follow our [code of conduct](https://github.com/arctic-hen7/blob/main/CODE_OF_CONDUCT.md).
+We appreciate all kinds of contributions, check out our [contributing guidelines](https://github.com/arctic-hen7/perseus/blob/main/CONTRIBUTING.md) for more information! Also, please be sure to follow our [code of conduct](https://github.com/arctic-hen7/perseus/blob/main/CODE_OF_CONDUCT.md).
 
 You can also chat about Perseus on [our channel on Sycamore's Discord server](https://discord.com/invite/GNqWYWNTdp).
 
 ## License
 
-See [`LICENSE`](https://github.com/arctic-hen7/blob/main/LICENSE).
-
-[book]: https://arctic-hen7.github.io/perseus
-[crate]: https://crates.io/crates/perseus
-[docs]: https://docs.rs/perseus
-[contrib]: ./CONTRIBUTING.md
+See [`LICENSE`](https://github.com/arctic-hen7/perseus/blob/main/LICENSE).
