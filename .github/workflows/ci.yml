@@ -33,9 +33,19 @@ jobs:
                     # For now, we list all the examples we're testing, but in future this will be automatic
                     - name: basic
                       type: core
+                    - name: freezing_and_thawing
+                      type: core
+                    - name: global_state
+                      type: core
                     - name: i18n
                       type: core
+                    - name: idb_freezing
+                      type: core
                     - name: plugins
+                      type: core
+                    - name: router_state
+                      type: core
+                    - name: rx_state
                       type: core
                     - name: set_headers
                       type: core
@@ -55,62 +65,4 @@ jobs:
             - run: bonnie copy-subcrates
             - run: bonnie ci-prep
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
-              run: bonnie test example ${{ matrix.type }} ${{ matrix.name }} --headless
-    # e2e-test-example-basic:
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #         - uses: actions/checkout@v2
-    #         - run: cargo install bonnie
-    #         - run: cargo install wasm-pack
-    #         - run: sudo apt update
-    #         - run: sudo apt install firefox firefox-geckodriver
-    #         - name: Run Firefox WebDriver
-    #           run: geckodriver &
-    #         - run: bonnie copy-subcrates
-    #         - run: bonnie ci-prep
-    #         - name: Run E2E tests
-    #           run: bonnie test single basic --headless
-    # e2e-test-example-i18n:
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #         - uses: actions/checkout@v2
-    #         - run: cargo install bonnie
-    #         - run: cargo install wasm-pack
-    #         - run: sudo apt update
-    #         - run: sudo apt install firefox firefox-geckodriver
-    #         - name: Run Firefox WebDriver
-    #           run: geckodriver &
-    #         - run: bonnie copy-subcrates
-    #         - run: bonnie ci-prep
-    #         - name: Run E2E tests
-    #           run: bonnie test single i18n --headless
-    # e2e-test-example-plugins:
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #         - uses: actions/checkout@v2
-    #         - run: cargo install bonnie
-    #         - run: cargo install wasm-pack
-    #         - run: sudo apt update
-    #         - run: sudo apt install firefox firefox-geckodriver
-    #         - name: Run Firefox WebDriver
-    #           run: geckodriver &
-    #         - run: bonnie copy-subcrates
-    #         - run: bonnie ci-prep
-    #         - name: Run E2E tests
-    #           run: bonnie test single plugins --headless
-    # # This one is liable to fail for no particular reason (`geckodriver` seems to get tired...)
-    # # It should be re-run if it fails unexpectedly, especially if the error message is something to do with WebDriver sessions
-    # e2e-test-example-showcase:
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #         - uses: actions/checkout@v2
-    #         - run: cargo install bonnie
-    #         - run: cargo install wasm-pack
-    #         - run: sudo apt update
-    #         - run: sudo apt install firefox firefox-geckodriver
-    #         - name: Run Firefox WebDriver
-    #           run: geckodriver &
-    #         - run: bonnie copy-subcrates
-    #         - run: bonnie ci-prep
-    #         - name: Run E2E tests
-    #           run: bonnie test single showcase --headless
+              run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }} --headless
