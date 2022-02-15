@@ -14,7 +14,7 @@ readme = "./README.md"
 [dependencies]
 # We use the current version of Perseus, not the local one
 # Hydration is temporarily disabled pending some fixes in Sycamore
-perseus = { version = "0.3.1", features = [ "translator-fluent" ] }
+perseus = { version = "0.3.3", features = [ "translator-fluent" ] }
 sycamore = "0.7"
 sycamore-router = "0.7"
 serde = "1"
