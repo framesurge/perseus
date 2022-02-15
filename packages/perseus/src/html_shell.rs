@@ -91,8 +91,7 @@ pub fn interpolate_page_data(html_shell: &str, page_data: &PageData, root_id: &s
     let html_replacement = format!(
         // We give the content a specific ID so that it can be deleted if an error page needs to be rendered on the client-side
         "{}<div id=\"__perseus_content_initial\" class=\"__perseus_content\">{}</div>",
-        &html_to_replace_double,
-        &page_data.content
+        &html_to_replace_double, &page_data.content
     );
     // Now interpolate that HTML into the HTML shell
     html_with_state

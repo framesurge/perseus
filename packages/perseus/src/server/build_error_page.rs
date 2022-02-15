@@ -43,8 +43,7 @@ pub fn build_error_page(
     let html_replacement = format!(
         // We give the content a specific ID so that it can be hydrated properly
         "{}<div id=\"__perseus_content_initial\" class=\"__perseus_content\">{}</div>",
-        &html_to_replace_double,
-        &error_html
+        &html_to_replace_double, &error_html
     );
     // Now interpolate that HTML into the HTML shell
     html_with_declaration
