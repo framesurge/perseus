@@ -11,7 +11,6 @@ This is the API documentation for the `perseus-macro` package, which manages Per
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
 */
 
-
 mod autoserde;
 mod head;
 mod rx_state;
