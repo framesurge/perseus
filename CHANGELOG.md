@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.3](https://github.com/arctic-hen7/perseus/compare/v0.3.2...v0.3.3) (2022-02-15)
+
+
+### Bug Fixes
+
+* fixed actix web beta issues ([2c2e460](https://github.com/arctic-hen7/perseus/commit/2c2e46085e55da8d3610902de7c6e0270f063e41)), closes [#125](https://github.com/arctic-hen7/perseus/issues/125)
+
 ### [0.3.2](https://github.com/arctic-hen7/perseus/compare/v0.3.1...v0.3.2) (2022-01-11)
 
 
