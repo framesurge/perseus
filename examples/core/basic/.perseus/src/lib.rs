@@ -1,3 +1,5 @@
+#![allow(clippy::unused_unit)] // rustwasm/wasm-bindgen#2774 awaiting next `wasm-bindgen` release
+
 pub mod app;
 
 use crate::app::{get_app_root, get_error_pages, get_locales, get_plugins, get_templates_map};
