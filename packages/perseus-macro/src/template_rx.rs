@@ -227,6 +227,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
             FnArg::Typed(PatType { pat, ty, .. }) => (pat, ty),
             FnArg::Receiver(_) => unreachable!(),
         };
+        let name_string = name.to_string();
         // Handle the case in which the template is just using global state and the first argument is the unit type
         // That's represented for Syn as a typle with no elements
         match &**rx_props_ty {
@@ -315,9 +316,9 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                                     // Again, frozen state has been dealt with already, so we'll fall back to generated state
                                     ::std::option::Option::None => {
                                         // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
-                                        // And we know that the properties will be provided if the user is expecting them, we just can't prove that to the compiler
-                                        // We also assume that this is valid because it comes from the server
-                                        render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap()).unwrap()
+                                        // We also assume that any state we have is valid because it comes from the server
+                                        // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
+                                        render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
                                     }
                                 }
                             }
@@ -334,6 +335,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
             FnArg::Typed(PatType { ty, .. }) => ty,
             FnArg::Receiver(_) => unreachable!(),
         };
+        let name_string = name.to_string();
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 use ::perseus::state::MakeRx;
@@ -362,9 +364,9 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                                 // Again, frozen state has been dealt with already, so we'll fall back to generated state
                                 ::std::option::Option::None => {
                                     // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
-                                    // And we know that the properties will be provided if the user is expecting them, we just can't prove that to the compiler
-                                    // We also assume that this is valid because it comes from the server
-                                    render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap()).unwrap()
+                                    // We also assume that any state we have is valid because it comes from the server
+                                    // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
+                                    render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
                                 }
                             }
                         }
