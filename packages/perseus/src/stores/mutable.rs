@@ -24,7 +24,7 @@ pub struct FsMutableStore {
     root_path: String,
 }
 impl FsMutableStore {
-    /// Creates a new filesystem configuration manager. You should provide a path like `/dist/mutable` here. Make sure that this is
+    /// Creates a new filesystem configuration manager. You should provide a path like `dist/mutable` here. Make sure that this is
     /// not the same path as the immutable store, as this will cause potentially problematic overlap between the two systems.
     pub fn new(root_path: String) -> Self {
         Self { root_path }

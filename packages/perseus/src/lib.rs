@@ -38,6 +38,7 @@ mod build;
 mod error_pages;
 mod export;
 mod i18n;
+mod init;
 mod macros;
 mod router;
 mod server;
@@ -66,6 +67,8 @@ pub use crate::plugins::{Plugin, PluginAction, Plugins};
 pub use crate::shell::checkpoint;
 pub use crate::template::{HeadFn, RenderFnResult, RenderFnResultWithCause, States, Template};
 pub use crate::utils::{cache_fallible_res, cache_res};
+// Everything in the `init.rs` file should be available at the top-level for convenience
+pub use crate::init::*;
 /// Utilities for developing templates, particularly including return types for various rendering strategies.
 pub mod templates {
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};

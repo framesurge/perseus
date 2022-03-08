@@ -19,6 +19,7 @@ web-sys = { version = "0.3", features = ["Event", "Headers", "Request", "Request
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 console_error_panic_hook = "0.1.6"
+lazy_static = "1"
 
 # This section is needed for Wasm Pack (which we use instead of Trunk for flexibility)
 [lib]

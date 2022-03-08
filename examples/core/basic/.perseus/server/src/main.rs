@@ -4,11 +4,7 @@ use perseus::internal::serve::{ServerOptions, ServerProps};
 use perseus::plugins::PluginAction;
 use perseus::stores::MutableStore;
 use perseus::SsrNode;
-use perseus_engine::app::{
-    get_app_root, get_error_pages, get_global_state_creator, get_immutable_store, get_locales,
-    get_mutable_store, get_plugins, get_static_aliases, get_templates_map_atomic,
-    get_translations_manager,
-};
+use perseus_engine as app;
 use std::env;
 use std::fs;
 
@@ -88,7 +84,8 @@ fn get_host_and_port() -> (String, u16) {
 
 /// Gets the properties to pass to the server.
 fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl TranslationsManager> {
-    let plugins = get_plugins::<SsrNode>();
+    let app = app::main::<SsrNode>();
+    let plugins = app.get_plugins();
 
     plugins
         .functional_actions
@@ -103,14 +100,14 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
         ("../index.html", "../static")
     };
 
-    let immutable_store = get_immutable_store(&plugins);
-    let locales = get_locales(&plugins);
-    let app_root = get_app_root(&plugins);
-    let static_aliases = get_static_aliases(&plugins);
-    let templates_map = get_templates_map_atomic(&plugins);
-    let error_pages = get_error_pages(&plugins);
+    let immutable_store = app.get_immutable_store();
+    let locales = app.get_locales();
+    let app_root = app.get_root();
+    let static_aliases = app.get_static_aliases();
+    let templates_map = app.get_atomic_templates_map();
+    let error_pages = app.get_error_pages();
     // Generate the global state
-    let global_state_creator = get_global_state_creator();
+    let global_state_creator = app.get_global_state_creator();
 
     let opts = ServerOptions {
         // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)
@@ -138,8 +135,8 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
     ServerProps {
         opts,
         immutable_store,
-        mutable_store: get_mutable_store(),
-        translations_manager: block_on(get_translations_manager()),
+        mutable_store: app.get_mutable_store(),
+        translations_manager: block_on(app.get_translations_manager()),
         global_state_creator,
     }
 }

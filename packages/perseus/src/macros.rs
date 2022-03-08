@@ -1,68 +1,19 @@
-/// An internal macro used for defining a function to get the user's preferred immutable store (which requires multiple branches).
-/// This can be reset by a control action.
+/// An internal macro for adding the translations manager to an instance of an app based on whether or not one has been provided. This can only be used internally.
+/// Regardless of the outcome of this, the locales must already have been set with `.locales_lit()`.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! define_get_immutable_store {
-    () => {
-        pub fn get_immutable_store() -> $crate::stores::ImmutableStore {
-            // This will be executed in the context of the user's directory, but moved into `.perseus`
-            // If we're in prod mode on the server though, this is fine too
-            $crate::stores::ImmutableStore::new("./dist".to_string())
-        }
-    };
-    ($dist_path:literal) => {
-        pub fn get_immutable_store() -> $crate::stores::ImmutableStore {
-            $crate::stores::ImmutableStore::new($dist_path.to_string())
-        }
+macro_rules! add_translations_manager {
+	($app:expr, $tm:expr, $locales:expr) => {
+        // We're not using `FsTranslationsManager`, set up the locales separately from the translations manager
+        $app = $app.locales_list($locales);
+		$app = $app.translations_manager($tm);
+	};
+    ($app:expr, $locales:expr) => {
+        // We're using `FsTranslationsManager`, and we have locales information, so there's a nice convenience function to do all the caching stuff for us!
+        $app = $app.locales_lit_and_translations_manager($locales);
     };
 }
-/// An internal macro used for defining a function to get the user's preferred mutable store (which requires multiple branches). This
-/// can be reset by a control action.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! define_get_mutable_store {
-    () => {
-        pub fn get_mutable_store() -> impl $crate::stores::MutableStore {
-            // This will be executed in the context of the user's directory, but moved into `.perseus`
-            // If we're in prod mode on the server though, this is fine too
-            // Note that this is separated out from the immutable store deliberately
-            $crate::stores::FsMutableStore::new("./dist/mutable".to_string())
-        }
-    };
-    ($mutable_store:expr) => {
-        pub fn get_mutable_store() -> impl $crate::stores::MutableStore {
-            $mutable_store
-        }
-    };
-}
-/// An internal macro used for defining the global state creator. This cannot be altered in any way by plugins, except through
-/// hooking into it through a generated template and modifying it.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! define_get_global_state_creator {
-    () => {
-        pub fn get_global_state_creator() -> $crate::state::GlobalStateCreator {
-            $crate::state::GlobalStateCreator::default()
-        }
-    };
-    ($global_state_creator:expr) => {
-        pub fn get_global_state_creator() -> $crate::state::GlobalStateCreator {
-            $global_state_creator
-        }
-    };
-}
-/// An internal macro used for defining the HTML `id` at which to render the Perseus app (which requires multiple branches). The default
-/// is `root`. This can be reset by a control action.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! define_app_root {
-    () => {
-        pub static APP_ROOT: &str = "root";
-    };
-    ($root_id:literal) => {
-        pub static APP_ROOT: &str = $root_id;
-    };
-}
+
 #[cfg(feature = "standalone")]
 #[doc(hidden)]
 /// The default translations directory when we're running as a standalone binary.
@@ -71,126 +22,6 @@ pub static DFLT_TRANSLATIONS_DIR: &str = "./translations";
 #[doc(hidden)]
 /// The default translations directory when we're running with the `.perseus/` support structure.
 pub static DFLT_TRANSLATIONS_DIR: &str = "../translations";
-/// An internal macro used for defining a function to get the user's preferred translations manager (which requires multiple branches).
-/// This is not plugin-extensible, but a control action can reset it later.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! define_get_translations_manager {
-    ($locales:expr) => {
-        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
-        {
-            // This will be executed in the context of the user's directory, but moved into `.perseus`
-            // Note that `translations/` must be next to `src/`, not within it
-            // By default, all translations are cached
-            let all_locales: Vec<String> = $locales
-                .get_all()
-                .iter()
-                // We have a `&&String` at this point, hence the double clone
-                .cloned()
-                .cloned()
-                .collect();
-            $crate::internal::i18n::FsTranslationsManager::new(
-                $crate::internal::i18n::DFLT_TRANSLATIONS_DIR.to_string(),
-                all_locales,
-                $crate::internal::i18n::TRANSLATOR_FILE_EXT.to_string(),
-            )
-            .await
-        }
-    };
-    ($locales:expr, $no_i18n:literal) => {
-        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
-        {
-            $crate::internal::i18n::DummyTranslationsManager::new()
-        }
-    };
-    ($locales:expr, $translations_manager:expr) => {
-        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
-        {
-            $translations_manager
-        }
-    };
-    // If the user doesn't want i18n but also sets their own transations manager, the latter takes priority
-    ($locales:expr, $no_i18n:literal, $translations_manager:expr) => {
-        pub async fn get_translations_manager() -> impl $crate::internal::i18n::TranslationsManager
-        {
-            $translations_manager
-        }
-    };
-}
-/// An internal macro used for defining locales data. This is abstracted because it needs multiple branches. The `Locales` `struct` is
-/// plugin-extensible.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! define_get_locales {
-    {
-        default: $default_locale:literal,
-        other: [$($other_locale:literal),*]
-    } => {
-        pub fn get_locales() -> $crate::internal::i18n::Locales {
-            $crate::internal::i18n::Locales {
-                default: $default_locale.to_string(),
-                other: vec![
-                    $($other_locale.to_string()),*
-                ],
-                using_i18n: true
-            }
-        }
-    };
-    // With i18n disabled, the default locale will be `xx-XX`
-    {
-        default: $default_locale:literal,
-        other: [$($other_locale:literal),*],
-        no_i18n: $no_i18n:literal
-    } => {
-        pub fn get_locales() -> $crate::internal::i18n::Locales {
-            $crate::internal::i18n::Locales {
-                default: "xx-XX".to_string(),
-                other: Vec::new(),
-                using_i18n: false
-            }
-        }
-    };
-}
-/// An internal macro for defining a function that gets the user's static content aliases (abstracted because it needs multiple
-/// branches). This returns a plugin-extensible `HashMap`.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! define_get_static_aliases {
-    (
-        static_aliases: {
-            $($url:literal => $resource:literal),*
-        }
-    ) => {
-        pub fn get_static_aliases() -> ::std::collections::HashMap<String, String> {
-            let mut static_aliases = ::std::collections::HashMap::new();
-            $(
-                static_aliases.insert($url.to_string(), $resource.to_string());
-            )*
-            static_aliases
-        }
-    };
-    () => {
-        pub fn get_static_aliases() -> ::std::collections::HashMap<String, String> {
-            ::std::collections::HashMap::new()
-        }
-    };
-}
-/// An internal macro used for defining the plugins for an app. Unsurprisingly, the results of this are not plugin-extensible! That
-/// said, plugins can certainly register third-party runners in their own registrars (though they need to be mindful of security).
-#[doc(hidden)]
-#[macro_export]
-macro_rules! define_plugins {
-    () => {
-        pub fn get_plugins<G: $crate::Html>() -> $crate::Plugins<G> {
-            $crate::Plugins::new()
-        }
-    };
-    ($plugins:expr) => {
-        pub fn get_plugins<G: $crate::Html>() -> $crate::Plugins<G> {
-            $plugins
-        }
-    };
-}
 
 /// Defines the components to create an entrypoint for the app. The actual entrypoint is created in the `.perseus/` crate (where we can
 /// get all the dependencies without driving the user's `Cargo.toml` nuts). This also defines the template map. This is intended to make
@@ -198,6 +29,8 @@ macro_rules! define_plugins {
 ///
 /// Warning: all properties must currently be in the correct order (`root`, `templates`, `error_pages`, `global_state_creator`, `locales`, `static_aliases`,
 /// `plugins`, `dist_path`, `mutable_store`, `translations_manager`).
+///
+/// Note: as of v0.3.4, this is just a wrapper over `PerseusAppBase`, which is the recommended way to create a new Perseus app (no macros involved).
 #[macro_export]
 macro_rules! define_app {
     // With locales
@@ -234,7 +67,8 @@ macro_rules! define_app {
                 locales: {
                     default: $default_locale,
                     // The user doesn't have to define any other locales (but they'll still get locale detection and the like)
-                    other: [$($other_locale),*]
+                    other: [$($other_locale),*],
+                    no_i18n: false
                 }
                 $(,static_aliases: {
                     $($url => $resource),*
@@ -299,9 +133,9 @@ macro_rules! define_app {
             locales: {
                 default: $default_locale:literal,
                 // The user doesn't have to define any other locales
-                other: [$($other_locale:literal),*]
-                // If this is defined at all, i18n will be disabled and the default locale will be set to `xx-XX`
-                $(,no_i18n: $no_i18n:literal)?
+                other: [$($other_locale:literal),*],
+                // If this is `true`
+                no_i18n: $no_i18n:literal
             }
             $(,static_aliases: {
                 $($url:literal => $resource:literal),*
@@ -312,62 +146,46 @@ macro_rules! define_app {
             $(,translations_manager: $translations_manager:expr)?
         }
     ) => {
-        /// Gets the plugins for the app.
-       $crate::define_plugins!($($plugins)?);
+        pub fn main<G: $crate::Html>() -> $crate::PerseusAppBase<G, impl $crate::stores::MutableStore, impl $crate::internal::i18n::TranslationsManager> {
+            let mut app = $crate::PerseusAppBase::new();
+            // If we have a mutable store, we'll actually initialize in a completely different way
+            $(
+                let mut app = $crate::PerseusAppBase::new_with_mutable_store($mutable_store).await;
+            )?;
+            // Conditionally add each property the user provided
+            $(
+                app = app.root($root_selector);
+            )?;
+            $(
+                app = app.template(|| $template);
+            )+;
+            app = app.error_pages(|| $error_pages);
+            $(
+                app = app.global_state_creator($global_state_creator);
+            )?;
+            $($(
+                app = app.static_alias($url, $resource);
+            )*)?;
+            $(
+                app = app.plugins($plugins);
+            )?;
+            // Build a `Locales` instance
+            let mut other_locales = Vec::new();
+            $(
+                other_locales.push($other_locale.to_string());
+            )*;
+            // We can't guarantee that the user is using `FsTranslationsManager`, so we set only the locales, and the translations manager separately later
+            let locales = $crate::internal::i18n::Locales {
+                default: $default_locale.to_string(),
+                other: other_locales,
+                using_i18n: !$no_i18n
+            };
 
-        /// The html `id` that will find the app root to render Perseus in. For server-side interpolation, this MUST be an element of
-        /// the form <div id="root_id">` in your markup (double or single quotes, `root_id` replaced by what this property is set to).
-        $crate::define_app_root!($($root_selector)?);
+            // Set the translations manager and locales information with a helper macro that can handle two different paths of provision
+            $crate::add_translations_manager!(app, $($translations_manager,)? locales);
 
-        /// Gets the immutable store to use. This allows the user to conveniently change the path of distribution artifacts.
-        $crate::define_get_immutable_store!($($dist_path)?);
-        /// Gets the mutable store to use. This allows the user to conveniently substitute the default filesystem store for another
-        /// one in development and production.
-        $crate::define_get_mutable_store!($($mutable_store)?);
-
-        /// Gets the translations manager to use. This allows the user to conveniently test production managers in development. If
-        /// nothing is given, the filesystem will be used.
-        $crate::define_get_translations_manager!(get_locales() $(, $no_i18n)? $(, $translations_manager)?);
-
-        /// Defines the locales the app should build for, specifying defaults and common locales (which will be built at build-time
-        /// rather than on-demand).
-        $crate::define_get_locales! {
-            default: $default_locale,
-            other: [
-                $($other_locale),*
-            ]
-            $(, no_i18n: $no_i18n)?
+            app
         }
 
-        /// Gets any static content aliases provided by the user.
-        $crate::define_get_static_aliases!(
-            $(static_aliases: {
-                $($url => $resource),*
-            })?
-        );
-
-        /// Gets the global state creator for the app.
-        $crate::define_get_global_state_creator!($($global_state_creator)?);
-
-        /// Gets a map of all the templates in the app by their root paths. This returns a `HashMap` that is plugin-extensible.
-        pub fn get_templates_map<G: $crate::Html>() -> $crate::templates::TemplateMap<G> {
-            $crate::get_templates_map![
-                $($template),+
-            ]
-        }
-
-        /// Gets a map of all the templates in the app by their root paths. This returns a `HashMap` that is plugin-extensible.
-        ///
-        /// This is the thread-safe version, which should only be called on the server.
-        pub fn get_templates_map_atomic<G: $crate::Html>() -> $crate::templates::ArcTemplateMap<G> {
-            $crate::get_templates_map_atomic![
-                $($template),+
-            ]
-        }
-
-        /// Gets the error pages (done here so the user doesn't have to worry about naming). This is plugin-extensible.
-        pub fn get_error_pages<G: $crate::Html>() -> $crate::ErrorPages<G> {
-            $error_pages
-        }
     };
 }

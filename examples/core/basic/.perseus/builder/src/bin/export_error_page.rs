@@ -6,7 +6,7 @@ use perseus::{
     },
     PluginAction, SsrNode,
 };
-use perseus_engine::app::{get_app_root, get_error_pages, get_immutable_store, get_plugins};
+use perseus_engine as app;
 use std::{env, fs};
 
 #[tokio::main]
@@ -18,12 +18,13 @@ async fn main() {
 async fn real_main() -> i32 {
     // We want to be working in the root of `.perseus/`
     env::set_current_dir("../").unwrap();
+    let app = app::main::<SsrNode>();
 
-    let plugins = get_plugins::<SsrNode>();
+    let plugins = app.get_plugins();
 
-    let error_pages = get_error_pages(&plugins);
-    let root_id = get_app_root(&plugins);
-    let immutable_store = get_immutable_store(&plugins);
+    let error_pages = app.get_error_pages();
+    let root_id = app.get_root();
+    let immutable_store = app.get_immutable_store();
     let render_cfg = match get_render_cfg(&immutable_store).await {
         Ok(render_cfg) => render_cfg,
         Err(err) => {
