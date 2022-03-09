@@ -382,7 +382,20 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Gets the error pages used in the app. This returns an `Rc`.
     pub fn get_error_pages(&self) -> ErrorPages<G> {
         // TODO Allow plugin modification of this
-        (self.error_pages.0)()
+        let mut error_pages = (self.error_pages.0)();
+        let extra_error_pages = self
+            .plugins
+            .functional_actions
+            .settings_actions
+            .add_error_pages
+            .run((), self.plugins.get_plugin_data());
+        for (_plugin_name, plugin_error_pages) in extra_error_pages {
+            for (status, error_page) in plugin_error_pages {
+                error_pages.add_page_rc(status, error_page);
+            }
+        }
+
+        error_pages
     }
     /// Gets the global state creator. This can't be directly modified by plugins because of reactive type complexities.
     pub fn get_global_state_creator(&self) -> GlobalStateCreator {
