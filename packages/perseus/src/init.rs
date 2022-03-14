@@ -1,4 +1,6 @@
 use crate::plugins::PluginAction;
+use crate::server::{get_render_cfg, HtmlShell};
+use crate::utils::get_path_prefix_server;
 use crate::{
     i18n::{FsTranslationsManager, Locales, TranslationsManager},
     state::GlobalStateCreator,
@@ -321,10 +323,24 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run((), self.plugins.get_plugin_data())
             .unwrap_or_else(|| self.root.to_string())
     }
-    /// Gets the index view.
-    pub fn get_index_view(&self) -> String {
+    /// Gets the index view. This is asynchronous because it constructs an HTML shell, which invovles fetching the configuration of pages.
+    #[cfg(feature = "server-side")]
+    pub async fn get_index_view<'a>(&self) -> HtmlShell<'a> {
         // TODO Allow plugin modification of this
-        self.index_view.to_string()
+        // We have to add an HTML document type declaration, otherwise the browser could think it's literally anything! (This shouldn't be a problem, but it could be in 100 years...)
+        let index_view_str = format!("<!DOCTYPE html>\n{}", self.index_view);
+        // Construct an HTML shell
+        let html_shell = HtmlShell::new(
+            index_view_str,
+            &self.get_root(),
+            // TODO Handle this properly (good enough for now because that's what we weere already doing)
+            &get_render_cfg(&self.get_immutable_store())
+                .await
+                .expect("Couldn't get render configuration!"),
+            &get_path_prefix_server(),
+        );
+
+        html_shell
     }
     /// Gets the templates in an `Rc`-based `HashMap` for non-concurrent access.
     pub fn get_templates_map(&self) -> TemplateMap<G> {
@@ -381,7 +397,6 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Gets the error pages used in the app. This returns an `Rc`.
     pub fn get_error_pages(&self) -> ErrorPages<G> {
-        // TODO Allow plugin modification of this
         let mut error_pages = (self.error_pages.0)();
         let extra_error_pages = self
             .plugins
@@ -506,7 +521,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 #[component(PerseusRoot<G>)]
 pub fn perseus_root() -> View<G> {
     view! {
-        div(id = "root") {}
+        div(dangerously_set_inner_html = "<div id=\"root\"></div>")
     }
 }
 

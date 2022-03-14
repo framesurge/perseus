@@ -60,7 +60,6 @@ async fn build_and_export() -> i32 {
     // We don't need this in exporting, but the build process does
     let mutable_store = app.get_mutable_store();
     let locales = app.get_locales();
-    let app_root = app.get_root();
     // Generate the global state
     let gsc = app.get_global_state_creator();
     let global_state = match gsc.get_build_state().await {
@@ -77,6 +76,7 @@ async fn build_and_export() -> i32 {
         }
     };
     let templates_map = app.get_templates_map();
+    let index_view = app.get_index_view().await;
     // This consumes `self`, so we get it finally
     let translations_manager = app.get_translations_manager().await;
 
@@ -110,9 +110,8 @@ async fn build_and_export() -> i32 {
     // Turn the build artifacts into self-contained static files
     let export_res = export_app(ExportProps {
         templates: &templates_map,
-        html_shell_path: "../index.html",
+        html_shell: index_view,
         locales: &locales,
-        root_id: &app_root,
         immutable_store: &immutable_store,
         translations_manager: &translations_manager,
         path_prefix: get_path_prefix_server(),

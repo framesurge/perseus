@@ -5,7 +5,6 @@ use crate::stores::ImmutableStore;
 use crate::template::TemplateMap;
 use crate::SsrNode;
 use futures::future::{try_join, try_join_all};
-use std::fs;
 
 /// Gets the static page data.
 pub async fn get_static_page_data(
@@ -41,12 +40,10 @@ pub async fn get_static_page_data(
 pub struct ExportProps<'a, T: TranslationsManager> {
     /// All the templates in the app.
     pub templates: &'a TemplateMap<SsrNode>,
-    /// The path to the HTML shell to use.
-    pub html_shell_path: &'a str,
+    /// The HTML shell to use.
+    pub html_shell: HtmlShell<'a>,
     /// The locales data for the app.
     pub locales: &'a Locales,
-    /// The HTML ID of the `<div>` to inject into.
-    pub root_id: &'a str,
     /// An immutable store.
     pub immutable_store: &'a ImmutableStore,
     /// A translations manager.
@@ -63,9 +60,8 @@ pub struct ExportProps<'a, T: TranslationsManager> {
 pub async fn export_app<T: TranslationsManager>(
     ExportProps {
         templates,
-        html_shell_path,
+        html_shell,
         locales,
-        root_id,
         immutable_store,
         translations_manager,
         path_prefix,
@@ -74,13 +70,6 @@ pub async fn export_app<T: TranslationsManager>(
 ) -> Result<(), ServerError> {
     // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(immutable_store).await?;
-    // Get the HTML shell and prepare it by interpolating necessary values
-    let raw_html_shell =
-        fs::read_to_string(html_shell_path).map_err(|err| BuildError::HtmlShellNotFound {
-            path: html_shell_path.to_string(),
-            source: err,
-        })?;
-    let html_shell = HtmlShell::new(raw_html_shell, root_id, &render_cfg, &path_prefix);
 
     // We can do literally everything concurrently here
     let mut export_futs = Vec::new();

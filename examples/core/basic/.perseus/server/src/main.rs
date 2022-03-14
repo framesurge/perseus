@@ -94,10 +94,10 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
         .run((), plugins.get_plugin_data());
 
     // This allows us to operate inside `.perseus/` and as a standalone binary in production
-    let (html_shell_path, static_dir_path) = if is_standalone {
-        ("./index.html", "./static")
+    let static_dir_path = if is_standalone {
+        "./static"
     } else {
-        ("../index.html", "../static")
+        "../static"
     };
 
     let immutable_store = app.get_immutable_store();
@@ -106,12 +106,13 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
     let static_aliases = app.get_static_aliases();
     let templates_map = app.get_atomic_templates_map();
     let error_pages = app.get_error_pages();
+    let index_view = block_on(app.get_index_view());
     // Generate the global state
     let global_state_creator = app.get_global_state_creator();
 
     let opts = ServerOptions {
         // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)
-        index: html_shell_path.to_string(), // The user must define their own `index.html` file
+        html_shell: index_view,
         js_bundle: "dist/pkg/perseus_engine.js".to_string(),
         // Our crate has the same name, so this will be predictable
         wasm_bundle: "dist/pkg/perseus_engine_bg.wasm".to_string(),

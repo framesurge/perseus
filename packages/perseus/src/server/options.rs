@@ -7,6 +7,8 @@ use crate::template::ArcTemplateMap;
 use crate::SsrNode;
 use std::collections::HashMap;
 
+use super::HtmlShell;
+
 /// The options for setting up all server integrations. This should be literally constructed, as nothing is optional. If integrations need further properties,
 /// they should expose their own options in addition to these. These should be accessed through an `Arc`/`Rc` for integration developers.
 #[derive(Debug)]
@@ -17,9 +19,8 @@ pub struct ServerOptions {
     pub wasm_bundle: String,
     /// The location on the filesystem of your JS bundle converted from your Wasm bundle. This isn't required, and if you haven't generated this, you should provide a fake path.
     pub wasm_js_bundle: String,
-    /// The location on the filesystem of your `index.html` file.
-    // TODO Should this actually be a raw string of HTML so plugins can inject efficiently?
-    pub index: String,
+    /// The HTML shell to interpolate Perseus into.
+    pub html_shell: HtmlShell<'static>,
     /// A `HashMap` of your app's templates by their paths.
     pub templates_map: ArcTemplateMap<SsrNode>,
     /// The locales information for the app.

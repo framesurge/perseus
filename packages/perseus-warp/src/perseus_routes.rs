@@ -7,11 +7,8 @@ use crate::{
     translations::translations_handler,
 };
 use perseus::internal::serve::{get_render_cfg, ServerProps};
-use perseus::{
-    internal::{get_path_prefix_server, i18n::TranslationsManager, serve::HtmlShell},
-    stores::MutableStore,
-};
-use std::{fs, sync::Arc};
+use perseus::{internal::i18n::TranslationsManager, stores::MutableStore};
+use std::sync::Arc;
 use warp::Filter;
 
 /// The routes for Perseus. These will configure an existing Warp instance to run Perseus, and should be provided after any other routes, as they include a wildcard
@@ -28,13 +25,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let render_cfg = get_render_cfg(&immutable_store)
         .await
         .expect("Couldn't get render configuration!");
-    let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
-    let index_with_render_cfg = HtmlShell::new(
-        index_file,
-        &opts.root_id,
-        &render_cfg,
-        &get_path_prefix_server(),
-    );
+    let index_with_render_cfg = opts.html_shell.clone();
     // Generate the global state
     let global_state = global_state_creator
         .get_build_state()
