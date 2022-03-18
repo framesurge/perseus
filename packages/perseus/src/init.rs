@@ -324,13 +324,16 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .unwrap_or_else(|| self.root.to_string())
     }
     /// Gets the index view. This is asynchronous because it constructs an HTML shell, which invovles fetching the configuration of pages.
+    ///
+    /// Note that this automatically adds `<!DOCTYPE html>` to the start of the HTMl shell produced, which can only be overriden with a control plugin (though you should really never do this
+    /// in Perseus, which targets HTML on the web).
     #[cfg(feature = "server-side")]
-    pub async fn get_index_view<'a>(&self) -> HtmlShell<'a> {
+    pub async fn get_index_view(&self) -> HtmlShell {
         // TODO Allow plugin modification of this
         // We have to add an HTML document type declaration, otherwise the browser could think it's literally anything! (This shouldn't be a problem, but it could be in 100 years...)
         let index_view_str = format!("<!DOCTYPE html>\n{}", self.index_view);
         // Construct an HTML shell
-        let html_shell = HtmlShell::new(
+        let mut html_shell = HtmlShell::new(
             index_view_str,
             &self.get_root(),
             // TODO Handle this properly (good enough for now because that's what we weere already doing)
@@ -338,6 +341,79 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 .await
                 .expect("Couldn't get render configuration!"),
             &get_path_prefix_server(),
+        );
+
+        // Apply the myriad plugin actions to the HTML shell (replacing the whole thing first if need be)
+        let shell_str = self
+            .plugins
+            .control_actions
+            .settings_actions
+            .html_shell_actions
+            .set_shell
+            .run((), self.plugins.get_plugin_data())
+            .unwrap_or(html_shell.shell);
+        html_shell.shell = shell_str;
+        // For convenience, we alias the HTML shell functional actions
+        let hsf_actions = &self
+            .plugins
+            .functional_actions
+            .settings_actions
+            .html_shell_actions;
+
+        // These all return `Vec<String>`, so the code is almost identical for all the places for flexible interpolation
+        html_shell.head_before_boundary.push(
+            hsf_actions
+                .add_to_head_before_boundary
+                .run((), self.plugins.get_plugin_data())
+                .values()
+                .flat_map(|v| v)
+                .cloned()
+                .collect(),
+        );
+        html_shell.scripts_before_boundary.push(
+            hsf_actions
+                .add_to_scripts_before_boundary
+                .run((), self.plugins.get_plugin_data())
+                .values()
+                .flat_map(|v| v)
+                .cloned()
+                .collect(),
+        );
+        html_shell.head_after_boundary.push(
+            hsf_actions
+                .add_to_head_after_boundary
+                .run((), self.plugins.get_plugin_data())
+                .values()
+                .flat_map(|v| v)
+                .cloned()
+                .collect(),
+        );
+        html_shell.scripts_after_boundary.push(
+            hsf_actions
+                .add_to_scripts_after_boundary
+                .run((), self.plugins.get_plugin_data())
+                .values()
+                .flat_map(|v| v)
+                .cloned()
+                .collect(),
+        );
+        html_shell.before_content.push(
+            hsf_actions
+                .add_to_before_content
+                .run((), self.plugins.get_plugin_data())
+                .values()
+                .flat_map(|v| v)
+                .cloned()
+                .collect(),
+        );
+        html_shell.after_content.push(
+            hsf_actions
+                .add_to_after_content
+                .run((), self.plugins.get_plugin_data())
+                .values()
+                .flat_map(|v| v)
+                .cloned()
+                .collect(),
         );
 
         html_shell

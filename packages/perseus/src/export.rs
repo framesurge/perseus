@@ -41,7 +41,7 @@ pub struct ExportProps<'a, T: TranslationsManager> {
     /// All the templates in the app.
     pub templates: &'a TemplateMap<SsrNode>,
     /// The HTML shell to use.
-    pub html_shell: HtmlShell<'a>,
+    pub html_shell: HtmlShell,
     /// The locales data for the app.
     pub locales: &'a Locales,
     /// An immutable store.
@@ -128,7 +128,7 @@ pub async fn export_path(
     (path, template_path): (String, String),
     templates: &TemplateMap<SsrNode>,
     locales: &Locales,
-    html_shell: &HtmlShell<'_>,
+    html_shell: &HtmlShell,
     immutable_store: &ImmutableStore,
     path_prefix: String,
     global_state: &Option<String>,

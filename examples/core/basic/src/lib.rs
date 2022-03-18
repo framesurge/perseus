@@ -8,13 +8,4 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .template(crate::templates::index::get_template)
         .template(crate::templates::about::get_template)
         .error_pages(crate::error_pages::get_error_pages)
-        .index_view(|| {
-            sycamore::view! {
-                head {}
-                body {
-                    p { "Test" }
-                    PerseusRoot()
-                }
-            }
-        })
 }

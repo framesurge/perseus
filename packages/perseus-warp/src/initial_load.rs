@@ -37,7 +37,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     path: FullPath,
     req: perseus::http::Request<()>,
     opts: Arc<ServerOptions>,
-    html_shell: Arc<HtmlShell<'_>>,
+    html_shell: Arc<HtmlShell>,
     render_cfg: Arc<HashMap<String, String>>,
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,

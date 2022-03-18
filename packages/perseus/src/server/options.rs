@@ -20,7 +20,7 @@ pub struct ServerOptions {
     /// The location on the filesystem of your JS bundle converted from your Wasm bundle. This isn't required, and if you haven't generated this, you should provide a fake path.
     pub wasm_js_bundle: String,
     /// The HTML shell to interpolate Perseus into.
-    pub html_shell: HtmlShell<'static>,
+    pub html_shell: HtmlShell,
     /// A `HashMap` of your app's templates by their paths.
     pub templates_map: ArcTemplateMap<SsrNode>,
     /// The locales information for the app.

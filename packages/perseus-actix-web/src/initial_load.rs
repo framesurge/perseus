@@ -40,7 +40,7 @@ fn return_error_page(
 pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
     opts: web::Data<Rc<ServerOptions>>,
-    html_shell: web::Data<HtmlShell<'_>>,
+    html_shell: web::Data<HtmlShell>,
     render_cfg: web::Data<HashMap<String, String>>,
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
