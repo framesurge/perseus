@@ -67,7 +67,7 @@ The speed of web frameworks is often measured by [Lighthouse](https://developers
 <details>
 <summary>Why not 100 on mobile?</summary>
 
-The only issue that prevents Perseus from achieving a consistent perfect score on mobile is _total blocking time_, which measures the time between when the first content appears on the page and wehn that content is interactive. Of course, WebAssembly code is used for this part (compiled from Rust), which isn't completely optimized for yet on many mobile devices. As mobile browsers get better at parsing WebAssembly, TBT will likely decrease further from the medium range to the green range (which we see for more poerful desktop systems).
+The only issue that prevents Perseus from achieving a consistent perfect score on mobile is _total blocking time_, which measures the time between when the first content appears on the page and when that content is interactive. Of course, WebAssembly code is used for this part (compiled from Rust), which isn't completely optimized for yet on many mobile devices. As mobile browsers get better at parsing WebAssembly, TBT will likely decrease further from the medium range to the green range (which we see for more powerful desktop systems).
 
 </details>
 

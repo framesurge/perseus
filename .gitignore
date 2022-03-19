@@ -2,3 +2,4 @@
 Cargo.lock
 pkg/
 .tribble/
+.idea/
