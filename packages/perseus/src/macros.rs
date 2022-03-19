@@ -169,8 +169,20 @@ macro_rules! define_app {
             $(
                 app = app.plugins($plugins);
             )?;
+            // Use `index.html` for the index view (for backward compatibility)
+            // We need the filesystem here, and we don't need on it in the browser
+            // We can't modify `app` if this is all in a block, so we compromise a bit
+            let index_html = if cfg!(target_arch = "wasm32") {
+                // In the browser, this would turn into using the hardocded default, but we don't need the index view there anyway
+                ::std::result::Result::Err(::std::io::Error::from(::std::io::ErrorKind::NotFound))
+            } else {
+                ::std::fs::read_to_string("../index.html")
+            };
+            if let ::std::result::Result::Ok(index_html) = index_html {
+                app = app.index_view_str(&index_html)
+            }
             // Build a `Locales` instance
-            let mut other_locales = Vec::new();
+            let mut other_locales = ::std::vec::Vec::new();
             $(
                 other_locales.push($other_locale.to_string());
             )*;
