@@ -1,6 +1,7 @@
 #![allow(clippy::unused_unit)] // rustwasm/wasm-bindgen#2774 awaiting next `wasm-bindgen` release
 
-pub use app::main;
+// The user should use the `main` macro to create this wrapper
+pub use app::__perseus_main as main;
 
 use perseus::{
     checkpoint, create_app_route,
@@ -17,7 +18,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 /// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
-    let app = app::main();
+    let app = main();
     let plugins = app.get_plugins();
 
     checkpoint("begin");
@@ -47,8 +48,8 @@ pub fn run() -> Result<(), JsValue> {
         render_cfg => &get_render_cfg().expect("render configuration invalid or not injected"),
         // TODO avoid unnecessary allocation here (major problem!)
         // The `G` parameter is ambient here for `RouteVerdict`
-        templates => &app::main::<G>().get_templates_map(),
-        locales => &app::main::<G>().get_locales()
+        templates => &main::<G>().get_templates_map(),
+        locales => &main::<G>().get_locales()
     }
     // Create a new version of the router with that
     type PerseusRouterWithAppRoute<G> = PerseusRouter<G, AppRoute<TemplateNodeType>>;
