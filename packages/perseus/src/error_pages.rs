@@ -3,6 +3,7 @@ use crate::{DomNode, Html, HydrateNode, SsrNode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
+use sycamore::view;
 use sycamore::view::View;
 use web_sys::Element;
 
@@ -122,6 +123,29 @@ impl ErrorPages<SsrNode> {
         sycamore::render_to_string(|| {
             template_fn(url.to_string(), status, err.to_string(), translator)
         })
+    }
+}
+// We provide default error pages to speed up development, but they have to be added before moving to production (or we'll `panic!`)
+impl<G: Html> Default for ErrorPages<G> {
+    #[cfg(debug_assertions)]
+    fn default() -> Self {
+        let mut error_pages = Self::new(|url, status, err, _| {
+            view! {
+                p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
+            }
+        });
+        // 404 is the most common by far, so we add a little page for that too
+        error_pages.add_page(404, |_, _, _, _| {
+            view! {
+                p { "Page not found." }
+            }
+        });
+
+        error_pages
+    }
+    #[cfg(not(debug_assertions))]
+    fn default() -> Self {
+        panic!("you must provide your own error pages in production")
     }
 }
 

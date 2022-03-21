@@ -8,10 +8,7 @@ use perseus::{
     },
     PluginAction, SsrNode,
 };
-use perseus_engine::app::{
-    get_app_root, get_global_state_creator, get_immutable_store, get_locales, get_mutable_store,
-    get_plugins, get_static_aliases, get_templates_map, get_translations_manager,
-};
+use perseus_engine as app;
 use std::fs;
 use std::path::PathBuf;
 
@@ -24,8 +21,9 @@ async fn main() {
 async fn real_main() -> i32 {
     // We want to be working in the root of `.perseus/`
     std::env::set_current_dir("../").unwrap();
+    let app = app::main::<SsrNode>();
 
-    let plugins = get_plugins::<SsrNode>();
+    let plugins = app.get_plugins();
 
     // Building and exporting must be sequential, but that can be done in parallel with static directory/alias copying
     let exit_code = build_and_export().await;
@@ -49,7 +47,8 @@ async fn real_main() -> i32 {
 }
 
 async fn build_and_export() -> i32 {
-    let plugins = get_plugins::<SsrNode>();
+    let app = app::main::<SsrNode>();
+    let plugins = app.get_plugins();
 
     plugins
         .functional_actions
@@ -57,13 +56,12 @@ async fn build_and_export() -> i32 {
         .before_build
         .run((), plugins.get_plugin_data());
 
-    let immutable_store = get_immutable_store(&plugins);
+    let immutable_store = app.get_immutable_store();
     // We don't need this in exporting, but the build process does
-    let mutable_store = get_mutable_store();
-    let translations_manager = get_translations_manager().await;
-    let locales = get_locales(&plugins);
+    let mutable_store = app.get_mutable_store();
+    let locales = app.get_locales();
     // Generate the global state
-    let gsc = get_global_state_creator();
+    let gsc = app.get_global_state_creator();
     let global_state = match gsc.get_build_state().await {
         Ok(global_state) => global_state,
         Err(err) => {
@@ -77,10 +75,13 @@ async fn build_and_export() -> i32 {
             return 1;
         }
     };
+    let templates_map = app.get_templates_map();
+    let index_view = app.get_index_view().await;
+    // This consumes `self`, so we get it finally
+    let translations_manager = app.get_translations_manager().await;
 
     // Build the site for all the common locales (done in parallel), denying any non-exportable features
     // We need to build and generate those artifacts before we can proceed on to exporting
-    let templates_map = get_templates_map::<SsrNode>(&plugins);
     let build_res = build_app(BuildProps {
         templates: &templates_map,
         locales: &locales,
@@ -107,12 +108,10 @@ async fn build_and_export() -> i32 {
         .after_successful_build
         .run((), plugins.get_plugin_data());
     // Turn the build artifacts into self-contained static files
-    let app_root = get_app_root(&plugins);
     let export_res = export_app(ExportProps {
         templates: &templates_map,
-        html_shell_path: "../index.html",
+        html_shell: index_view,
         locales: &locales,
-        root_id: &app_root,
         immutable_store: &immutable_store,
         translations_manager: &translations_manager,
         path_prefix: get_path_prefix_server(),
@@ -134,12 +133,13 @@ async fn build_and_export() -> i32 {
 }
 
 fn copy_static_dir() -> i32 {
-    let plugins = get_plugins::<SsrNode>();
+    let app = app::main::<SsrNode>();
+    let plugins = app.get_plugins();
     // Loop through any static aliases and copy them in too
     // Unlike with the server, these could override pages!
     // We'll copy from the alias to the path (it could be a directory or a file)
     // Remember: `alias` has a leading `/`!
-    for (alias, path) in get_static_aliases(&plugins) {
+    for (alias, path) in app.get_static_aliases() {
         let from = PathBuf::from(path);
         let to = format!("dist/exported{}", alias);
 
@@ -180,7 +180,8 @@ fn copy_static_dir() -> i32 {
 }
 
 fn copy_static_aliases() -> i32 {
-    let plugins = get_plugins::<SsrNode>();
+    let app = app::main::<SsrNode>();
+    let plugins = app.get_plugins();
     // Copy the `static` directory into the export package if it exists
     // If the user wants extra, they can use static aliases, plugins are unnecessary here
     let static_dir = PathBuf::from("../static");

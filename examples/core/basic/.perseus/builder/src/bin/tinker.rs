@@ -1,5 +1,5 @@
 use perseus::{plugins::PluginAction, SsrNode};
-use perseus_engine::app::get_plugins;
+use perseus_engine as app;
 
 fn main() {
     let exit_code = real_main();
@@ -10,7 +10,7 @@ fn real_main() -> i32 {
     // We want to be working in the root of `.perseus/`
     std::env::set_current_dir("../").unwrap();
 
-    let plugins = get_plugins::<SsrNode>();
+    let plugins = app::main::<SsrNode>().get_plugins();
     // Run all the tinker actions
     // Note: this is deliberately synchronous, tinker actions that need a multithreaded async runtime should probably
     // be making their own engines!
