@@ -146,6 +146,7 @@ macro_rules! define_app {
             $(,translations_manager: $translations_manager:expr)?
         }
     ) => {
+        #[$crate::main]
         pub fn main<G: $crate::Html>() -> $crate::PerseusAppBase<G, impl $crate::stores::MutableStore, impl $crate::internal::i18n::TranslationsManager> {
             let mut app = $crate::PerseusAppBase::new();
             // If we have a mutable store, we'll actually initialize in a completely different way
