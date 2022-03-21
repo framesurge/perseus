@@ -56,7 +56,7 @@ impl HtmlShell {
             // It's safe to assume that something we just deserialized will serialize again in this case
             render_cfg = serde_json::to_string(render_cfg).unwrap()
         );
-        scripts_before_boundary.push(render_cfg.into());
+        scripts_before_boundary.push(render_cfg);
 
         // Inject a global variable to identify whether we are testing (picked up by app shell to trigger helper DOM events)
         if env::var("PERSEUS_TESTING").is_ok() {
@@ -89,7 +89,7 @@ impl HtmlShell {
         "#,
             path_prefix = path_prefix
         );
-        scripts_before_boundary.push(load_wasm_bundle.into());
+        scripts_before_boundary.push(load_wasm_bundle);
 
         // If we're in development, pass through the host/port of the reload server if we're using it
         // We'll depend on the `PERSEUS_USE_RELOAD_SERVER` environment variable here, which is set by the CLI's controller process, not the user
@@ -101,9 +101,9 @@ impl HtmlShell {
             let port =
                 env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "3100".to_string());
             scripts_before_boundary
-                .push(format!("window.__PERSEUS_RELOAD_SERVER_HOST = '{}'", host).into());
+                .push(format!("window.__PERSEUS_RELOAD_SERVER_HOST = '{}'", host));
             scripts_before_boundary
-                .push(format!("window.__PERSEUS_RELOAD_SERVER_PORT = '{}'", port).into());
+                .push(format!("window.__PERSEUS_RELOAD_SERVER_PORT = '{}'", port));
         }
 
         // Add in the `<base>` element at the very top so that it applies to everything in the HTML shell
@@ -111,7 +111,7 @@ impl HtmlShell {
         // We add a trailing `/` to the base URL (https://stackoverflow.com/a/26043021)
         // Note that it's already had any pre-existing ones stripped away
         let base = format!(r#"<base href="{}/" />"#, path_prefix);
-        head_before_boundary.push(base.into());
+        head_before_boundary.push(base);
 
         Self {
             shell,
@@ -145,10 +145,10 @@ impl HtmlShell {
 
         // We put this at the very end of the head (after the delimiter comment) because it doesn't matter if it's expunged on subsequent loads
         let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`;", initial_state);
-        self.scripts_after_boundary.push(initial_state.into());
+        self.scripts_after_boundary.push(initial_state);
         // But we'll need the global state as a variable until a template accesses it, so we'll keep it around (even though it should actually instantiate validly and not need this after the initial load)
         let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
-        self.scripts_before_boundary.push(global_state.into());
+        self.scripts_before_boundary.push(global_state);
         // Interpolate the document `<head>` (this should of course be removed between page loads)
         self.head_after_boundary.push((&page_data.head).into());
         // And set the content
@@ -198,8 +198,8 @@ impl HtmlShell {
             redirect_url
         );
 
-        self.head_after_boundary.push(dumb_redirect.into());
-        self.scripts_after_boundary.push(js_redirect.into());
+        self.head_after_boundary.push(dumb_redirect);
+        self.scripts_after_boundary.push(js_redirect);
         #[cfg(feature = "preload-wasm-on-redirect")]
         {
             // Interpolate a preload of the Wasm bundle
@@ -224,7 +224,7 @@ impl HtmlShell {
             "window.__PERSEUS_INITIAL_STATE = `error-{}`;",
             escape_page_data(&error),
         );
-        self.scripts_after_boundary.push(state_var.into());
+        self.scripts_after_boundary.push(state_var);
         self.content = error_html.into();
 
         self

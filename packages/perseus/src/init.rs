@@ -366,7 +366,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 .add_to_head_before_boundary
                 .run((), self.plugins.get_plugin_data())
                 .values()
-                .flat_map(|v| v)
+                .flatten()
                 .cloned()
                 .collect(),
         );
@@ -375,7 +375,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 .add_to_scripts_before_boundary
                 .run((), self.plugins.get_plugin_data())
                 .values()
-                .flat_map(|v| v)
+                .flatten()
                 .cloned()
                 .collect(),
         );
@@ -384,7 +384,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 .add_to_head_after_boundary
                 .run((), self.plugins.get_plugin_data())
                 .values()
-                .flat_map(|v| v)
+                .flatten()
                 .cloned()
                 .collect(),
         );
@@ -393,7 +393,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 .add_to_scripts_after_boundary
                 .run((), self.plugins.get_plugin_data())
                 .values()
-                .flat_map(|v| v)
+                .flatten()
                 .cloned()
                 .collect(),
         );
@@ -402,7 +402,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 .add_to_before_content
                 .run((), self.plugins.get_plugin_data())
                 .values()
-                .flat_map(|v| v)
+                .flatten()
                 .cloned()
                 .collect(),
         );
@@ -411,7 +411,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 .add_to_after_content
                 .run((), self.plugins.get_plugin_data())
                 .values()
-                .flat_map(|v| v)
+                .flatten()
                 .cloned()
                 .collect(),
         );
