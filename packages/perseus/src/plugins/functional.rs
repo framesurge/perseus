@@ -107,6 +107,8 @@ pub struct FunctionalPluginSettingsActions<G: Html> {
     /// power to override the user's error pages.
     pub add_error_pages:
         FunctionalPluginAction<(), HashMap<u16, crate::error_pages::ErrorPageTemplate<G>>>,
+    /// Actions pertaining to the HTML shell, in their own category for cleanliness (as there are quite a few).
+    pub html_shell_actions: FunctionalPluginHtmlShellActions,
 }
 impl<G: Html> Default for FunctionalPluginSettingsActions<G> {
     fn default() -> Self {
@@ -114,8 +116,29 @@ impl<G: Html> Default for FunctionalPluginSettingsActions<G> {
             add_static_aliases: FunctionalPluginAction::default(),
             add_templates: FunctionalPluginAction::default(),
             add_error_pages: FunctionalPluginAction::default(),
+            html_shell_actions: FunctionalPluginHtmlShellActions::default(),
         }
     }
+}
+
+/// Functional actions that pertain to the HTML shell.
+///
+/// **IMPORTANT:** The HTML shell's `<head>` contains an *interpolation boundary*, after which all content is wiped between page loads. If you want the code you add (HTML or JS) to
+/// persist between pages (which you usually will), make sure to use the `..._before_boundary` actions.
+#[derive(Default, Debug)]
+pub struct FunctionalPluginHtmlShellActions {
+    /// Adds to the additional HTML content in the document `<head>` before the interpolation boundary.
+    pub add_to_head_before_boundary: FunctionalPluginAction<(), Vec<String>>,
+    /// Adds JS code (which will be placed into a `<script>` block) before the interpolation boundary.
+    pub add_to_scripts_before_boundary: FunctionalPluginAction<(), Vec<String>>,
+    /// Adds to the additional HTML content in the document `<head>` after the interpolation boundary.
+    pub add_to_head_after_boundary: FunctionalPluginAction<(), Vec<String>>,
+    /// Adds Js code (which will places into a `<script>` block) after the interpolation boundary.
+    pub add_to_scripts_after_boundary: FunctionalPluginAction<(), Vec<String>>,
+    /// Adds arbitrary HTML to the document `<body>` before the Perseus app markup. This will persist across all pages of the app.
+    pub add_to_before_content: FunctionalPluginAction<(), Vec<String>>,
+    /// Adds arbitrary HTML to the document `<body>` after the Perseus app markup. This will persist across all pages of the app.
+    pub add_to_after_content: FunctionalPluginAction<(), Vec<String>>,
 }
 
 /// Functional actions that pertain to the build process. Note that these actions are not available for the build

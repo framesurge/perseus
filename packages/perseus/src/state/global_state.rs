@@ -9,14 +9,14 @@ use std::rc::Rc;
 
 make_async_trait!(GlobalStateCreatorFnType, RenderFnResult<String>);
 /// The type of functions that generate global state. These will generate a `String` for their custom global state type.
-pub type GlobalStateCreatorFn = Box<dyn GlobalStateCreatorFnType + Send + Sync>;
+pub type GlobalStateCreatorFn = Rc<dyn GlobalStateCreatorFnType + Send + Sync>;
 
 /// A creator for global state. This stores user-provided functions that will be invoked to generate global state on the client
 /// and the server.
 ///
 /// The primary purpose of this is to allow the generation of top-level app state on the server and the client. Notably,
 /// this can also be interacted with by plugins.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct GlobalStateCreator {
     /// The function that creates state at build-time. This is roughly equivalent to the *build state* strategy for templates.
     build: Option<GlobalStateCreatorFn>,
@@ -45,7 +45,7 @@ impl GlobalStateCreator {
     ) -> Self {
         #[cfg(feature = "server-side")]
         {
-            self.build = Some(Box::new(val));
+            self.build = Some(Rc::new(val));
         }
         self
     }

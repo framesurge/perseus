@@ -12,6 +12,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 */
 
 mod autoserde;
+mod entrypoint;
 mod head;
 mod rx_state;
 mod template;
@@ -100,6 +101,16 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     test::test_impl(parsed, args).into()
+}
+
+/// Marks the given function as the entrypoint into your app. You should only use this once in the `lib.rs` file of your project.
+///
+/// Internally, this just normalizes the function's name so that Perseus can find it easily.
+#[proc_macro_attribute]
+pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as entrypoint::MainFn);
+
+    entrypoint::main_impl(parsed).into()
 }
 
 /// Processes the given `struct` to create a reactive version by wrapping each field in a `Signal`. This will generate a new `struct` with the given name and implement a `.make_rx()`

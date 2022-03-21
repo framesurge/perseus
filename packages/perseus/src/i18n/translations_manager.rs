@@ -34,16 +34,22 @@ use tokio::io::AsyncReadExt;
 /// be stored in a CMS. It is **strongly** advised that any implementations use some form of caching, guided by `FsTranslationsManager`.
 #[async_trait::async_trait]
 pub trait TranslationsManager: std::fmt::Debug + Clone + Send + Sync {
-    /// Gets a translator for the given locale.
+    /// Gets a translator for the given locale. If i18n is disabled, this should return an empty string.
     async fn get_translator_for_locale(
         &self,
         locale: String,
     ) -> Result<Translator, TranslationsManagerError>;
-    /// Gets the translations in string format for the given locale (avoids deserialize-then-serialize).
+    /// Gets the translations in string format for the given locale (avoids deserialize-then-serialize). If i18n is disabled, this should return a translator for the given locale
+    /// with no translation string.
     async fn get_translations_str_for_locale(
         &self,
         locale: String,
     ) -> Result<String, TranslationsManagerError>;
+    /// Creates a new instance of this translations manager, as a dummy for apps that aren't using i18n at all. This may seem pointless, but it's needed for trait completeness and to support
+    /// certain engine middleware use-cases. In general, this should simply create an empty instance of the manager, and all other functions should do nothing if it is empty.
+    ///
+    /// Notably, this must be synchronous.
+    fn new_dummy() -> Self;
 }
 
 /// A utility function for allowing parallel futures execution. This returns a tuple of the locale and the translations as a JSON string.
@@ -67,6 +73,8 @@ async fn get_translations_str_and_cache(
 /// The default translations manager. This will store static files in the specified location on disk. This should be suitable for
 /// nearly all development and serverful use-cases. Serverless is another matter though (more development needs to be done). This
 /// mandates that translations be stored as files named as the locale they describe (e.g. 'en-US.ftl', 'en-US.json', etc.).
+///
+/// As this is used as the default translations manager by most apps, this also supports not using i18n at all.
 #[derive(Clone, Debug)]
 pub struct FsTranslationsManager {
     root_path: String,
@@ -77,6 +85,8 @@ pub struct FsTranslationsManager {
     cached_locales: Vec<String>,
     /// The file extension expected (e.g. JSON, FTL, etc). This allows for greater flexibility of translation engines (future).
     file_ext: String,
+    /// This will be `true` is this translations manager is being used for an app that's not using i18n.
+    is_dummy: bool,
 }
 impl FsTranslationsManager {
     /// Creates a new filesystem translations manager. You should provide a path like `/translations` here. You should also provide
@@ -91,6 +101,7 @@ impl FsTranslationsManager {
             cached_translations: HashMap::new(),
             cached_locales: Vec::new(),
             file_ext,
+            is_dummy: false,
         };
         // Now use that to get the translations for the locales we want to cache (all done in parallel)
         let mut futs = Vec::new();
@@ -107,10 +118,24 @@ impl FsTranslationsManager {
 }
 #[async_trait::async_trait]
 impl TranslationsManager for FsTranslationsManager {
+    fn new_dummy() -> Self {
+        Self {
+            root_path: String::new(),
+            cached_translations: HashMap::new(),
+            cached_locales: Vec::new(),
+            file_ext: String::new(),
+            is_dummy: true,
+        }
+    }
     async fn get_translations_str_for_locale(
         &self,
         locale: String,
     ) -> Result<String, TranslationsManagerError> {
+        // If this is a dummy translations manager, we'll just return an empty string
+        if self.is_dummy {
+            return Ok(String::new());
+        }
+
         // Check if the locale is cached for
         // No dynamic caching, so if it isn't cached it stays that way
         if self.cached_locales.contains(&locale) {
@@ -151,6 +176,17 @@ impl TranslationsManager for FsTranslationsManager {
         &self,
         locale: String,
     ) -> Result<Translator, TranslationsManagerError> {
+        // If this is a dummy translations manager, we'll return a dysfunctional translator (obviously, do NOT use this if you want i18n!)
+        if self.is_dummy {
+            let translator = Translator::new(locale.clone(), String::new()).map_err(|err| {
+                TranslationsManagerError::SerializationFailed {
+                    locale,
+                    source: err.into(),
+                }
+            })?;
+            return Ok(translator);
+        }
+
         // Check if the locale is cached for
         // No dynamic caching, so if it isn't cached it stays that way
         let translations_str;
@@ -171,36 +207,36 @@ impl TranslationsManager for FsTranslationsManager {
     }
 }
 
-/// A dummy translations manager for use if you don't want i18n. This avoids errors of not being able to find translations. If you set
-/// `no_i18n: true` in the `locales` section of `define_app!`, this will be used by default. If you intend to use i18n, do not use this!
-/// Using the `link!` macro with this will NOT prepend the path prefix, and it will result in a nonsensical URL that won't work.
-#[derive(Clone, Default, Debug)]
-pub struct DummyTranslationsManager;
-impl DummyTranslationsManager {
-    /// Creates a new dummy translations manager.
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[async_trait::async_trait]
-impl TranslationsManager for DummyTranslationsManager {
-    async fn get_translations_str_for_locale(
-        &self,
-        _locale: String,
-    ) -> Result<String, TranslationsManagerError> {
-        Ok(String::new())
-    }
-    async fn get_translator_for_locale(
-        &self,
-        locale: String,
-    ) -> Result<Translator, TranslationsManagerError> {
-        let translator = Translator::new(locale.clone(), String::new()).map_err(|err| {
-            TranslationsManagerError::SerializationFailed {
-                locale,
-                source: err.into(),
-            }
-        })?;
+// /// A dummy translations manager for use if you don't want i18n. This avoids errors of not being able to find translations. If you set
+// /// `no_i18n: true` in the `locales` section of `define_app!`, this will be used by default. If you intend to use i18n, do not use this!
+// /// Using the `link!` macro with this will NOT prepend the path prefix, and it will result in a nonsensical URL that won't work.
+// #[derive(Clone, Default, Debug)]
+// pub struct DummyTranslationsManager;
+// impl DummyTranslationsManager {
+//     /// Creates a new dummy translations manager.
+//     pub fn new() -> Self {
+//         Self::default()
+//     }
+// }
+// #[async_trait::async_trait]
+// impl TranslationsManager for DummyTranslationsManager {
+//     async fn get_translations_str_for_locale(
+//         &self,
+//         _locale: String,
+//     ) -> Result<String, TranslationsManagerError> {
+//         Ok(String::new())
+//     }
+//     async fn get_translator_for_locale(
+//         &self,
+//         locale: String,
+//     ) -> Result<Translator, TranslationsManagerError> {
+//         let translator = Translator::new(locale.clone(), String::new()).map_err(|err| {
+//             TranslationsManagerError::SerializationFailed {
+//                 locale,
+//                 source: err.into(),
+//             }
+//         })?;
 
-        Ok(translator)
-    }
-}
+//         Ok(translator)
+//     }
+// }

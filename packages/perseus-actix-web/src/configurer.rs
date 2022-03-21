@@ -5,13 +5,11 @@ use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest};
 use perseus::{
     internal::{
-        get_path_prefix_server,
         i18n::TranslationsManager,
-        serve::{get_render_cfg, HtmlShell, ServerOptions, ServerProps},
+        serve::{get_render_cfg, ServerOptions, ServerProps},
     },
     stores::MutableStore,
 };
-use std::fs;
 use std::rc::Rc;
 
 async fn js_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
@@ -51,15 +49,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
     let render_cfg = get_render_cfg(&immutable_store)
         .await
         .expect("Couldn't get render configuration!");
-    // Get the index file and inject the render configuration into ahead of time
-    // Anything done here will affect any status code and all loads
-    let index_file = fs::read_to_string(&opts.index).expect("Couldn't get HTML index file!");
-    let index_with_render_cfg = HtmlShell::new(
-        index_file,
-        &opts.root_id,
-        &render_cfg,
-        &get_path_prefix_server(),
-    );
+    let index_with_render_cfg = opts.html_shell.clone();
     // Generate the global state
     // The user will get a more detailed error message in the build process
     let global_state = global_state_creator

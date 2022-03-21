@@ -89,6 +89,16 @@ pub struct ControlPluginSettingsActions {
     pub set_locales: ControlPluginAction<crate::i18n::Locales, crate::i18n::Locales>,
     /// Sets the app root to be used everywhere. This must correspond to the ID of an empty HTML `div`.
     pub set_app_root: ControlPluginAction<(), String>,
+    /// Actions pertaining to the HTML shell, partitioned away for deliberate inconvenience (you should almost never use these).
+    pub html_shell_actions: ControlPluginHtmlShellActions,
+}
+/// Control actions that pertain to the HTML shell. Note that these actions should be used extremely sparingly, as they are very rarely needed (see the available functional actions
+/// for the HTML shell), and they can have confusing side effects for CSS hierarchies, as well as potentially interrupting Perseus' interpolation processes. Changing certain things
+/// with these may break Perseus completely in certain cases!
+#[derive(Default, Debug)]
+pub struct ControlPluginHtmlShellActions {
+    /// Overrides whatever the user provided as their HTML shell completely. Whatever you provide here MUST contain a `<head>` and a `<body>` at least, or Perseus will completely fail.
+    pub set_shell: ControlPluginAction<(), String>,
 }
 /// Control actions that pertain to the build process.
 #[derive(Default, Debug)]

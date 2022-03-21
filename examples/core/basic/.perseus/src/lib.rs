@@ -1,8 +1,8 @@
 #![allow(clippy::unused_unit)] // rustwasm/wasm-bindgen#2774 awaiting next `wasm-bindgen` release
 
-pub mod app;
+// The user should use the `main` macro to create this wrapper
+pub use app::__perseus_main as main;
 
-use crate::app::{get_app_root, get_error_pages, get_locales, get_plugins, get_templates_map};
 use perseus::{
     checkpoint, create_app_route,
     internal::{
@@ -11,7 +11,6 @@ use perseus::{
     },
     plugins::PluginAction,
     templates::TemplateNodeType,
-    DomNode,
 };
 use sycamore::prelude::view;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -19,7 +18,8 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 /// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
-    let plugins = get_plugins::<DomNode>();
+    let app = main();
+    let plugins = app.get_plugins();
 
     checkpoint("begin");
     // Panics should always go to the console
@@ -37,7 +37,7 @@ pub fn run() -> Result<(), JsValue> {
         .unwrap()
         .document()
         .unwrap()
-        .query_selector(&format!("#{}", get_app_root(&plugins)))
+        .query_selector(&format!("#{}", app.get_root()))
         .unwrap()
         .unwrap();
 
@@ -48,16 +48,16 @@ pub fn run() -> Result<(), JsValue> {
         render_cfg => &get_render_cfg().expect("render configuration invalid or not injected"),
         // TODO avoid unnecessary allocation here (major problem!)
         // The `G` parameter is ambient here for `RouteVerdict`
-        templates => &get_templates_map::<G>(&get_plugins()),
-        locales => &get_locales::<G>(&get_plugins())
+        templates => &main::<G>().get_templates_map(),
+        locales => &main::<G>().get_locales()
     }
     // Create a new version of the router with that
     type PerseusRouterWithAppRoute<G> = PerseusRouter<G, AppRoute<TemplateNodeType>>;
 
     // Set up the properties we'll pass to the router
     let router_props = PerseusRouterProps {
-        locales: get_locales(&plugins),
-        error_pages: get_error_pages(&plugins),
+        locales: app.get_locales(),
+        error_pages: app.get_error_pages(),
     };
 
     sycamore::render_to(

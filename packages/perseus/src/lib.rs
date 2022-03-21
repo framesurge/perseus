@@ -38,6 +38,7 @@ mod build;
 mod error_pages;
 mod export;
 mod i18n;
+mod init;
 mod macros;
 mod router;
 mod server;
@@ -53,7 +54,7 @@ pub use http::Request as HttpRequest;
 pub use wasm_bindgen_futures::spawn_local;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
-pub use perseus_macro::{autoserde, head, make_rx, template, template_rx, test};
+pub use perseus_macro::{autoserde, head, main, make_rx, template, template_rx, test};
 pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?
 
@@ -66,6 +67,8 @@ pub use crate::plugins::{Plugin, PluginAction, Plugins};
 pub use crate::shell::checkpoint;
 pub use crate::template::{HeadFn, RenderFnResult, RenderFnResultWithCause, States, Template};
 pub use crate::utils::{cache_fallible_res, cache_res};
+// Everything in the `init.rs` file should be available at the top-level for convenience
+pub use crate::init::*;
 /// Utilities for developing templates, particularly including return types for various rendering strategies.
 pub mod templates {
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};

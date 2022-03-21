@@ -3,10 +3,7 @@ use perseus::{
     internal::build::{build_app, BuildProps},
     PluginAction, SsrNode,
 };
-use perseus_engine::app::{
-    get_global_state_creator, get_immutable_store, get_locales, get_mutable_store, get_plugins,
-    get_templates_map, get_translations_manager,
-};
+use perseus_engine as app;
 
 #[tokio::main]
 async fn main() {
@@ -17,7 +14,8 @@ async fn main() {
 async fn real_main() -> i32 {
     // We want to be working in the root of `.perseus/`
     std::env::set_current_dir("../").unwrap();
-    let plugins = get_plugins::<SsrNode>();
+    let app = app::main::<SsrNode>();
+    let plugins = app.get_plugins();
 
     plugins
         .functional_actions
@@ -25,13 +23,11 @@ async fn real_main() -> i32 {
         .before_build
         .run((), plugins.get_plugin_data());
 
-    let immutable_store = get_immutable_store(&plugins);
-    let mutable_store = get_mutable_store();
-    // We can't proceed without a translations manager
-    let translations_manager = get_translations_manager().await;
-    let locales = get_locales(&plugins);
+    let immutable_store = app.get_immutable_store();
+    let mutable_store = app.get_mutable_store();
+    let locales = app.get_locales();
     // Generate the global state
-    let gsc = get_global_state_creator();
+    let gsc = app.get_global_state_creator();
     let global_state = match gsc.get_build_state().await {
         Ok(global_state) => global_state,
         Err(err) => {
@@ -48,7 +44,11 @@ async fn real_main() -> i32 {
 
     // Build the site for all the common locales (done in parallel)
     // All these parameters can be modified by `define_app!` and plugins, so there's no point in having a plugin opportunity here
-    let templates_map = get_templates_map::<SsrNode>(&plugins);
+    let templates_map = app.get_templates_map();
+
+    // We have to get the translations manager last, because it consumes everything
+    let translations_manager = app.get_translations_manager().await;
+
     let res = build_app(BuildProps {
         templates: &templates_map,
         locales: &locales,

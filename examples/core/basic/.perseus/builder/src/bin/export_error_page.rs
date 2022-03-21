@@ -1,12 +1,6 @@
 use fmterr::fmt_err;
-use perseus::{
-    internal::{
-        get_path_prefix_server,
-        serve::{build_error_page, get_render_cfg, HtmlShell},
-    },
-    PluginAction, SsrNode,
-};
-use perseus_engine::app::{get_app_root, get_error_pages, get_immutable_store, get_plugins};
+use perseus::{internal::serve::build_error_page, PluginAction, SsrNode};
+use perseus_engine as app;
 use std::{env, fs};
 
 #[tokio::main]
@@ -18,28 +12,13 @@ async fn main() {
 async fn real_main() -> i32 {
     // We want to be working in the root of `.perseus/`
     env::set_current_dir("../").unwrap();
+    let app = app::main::<SsrNode>();
 
-    let plugins = get_plugins::<SsrNode>();
+    let plugins = app.get_plugins();
 
-    let error_pages = get_error_pages(&plugins);
-    let root_id = get_app_root(&plugins);
-    let immutable_store = get_immutable_store(&plugins);
-    let render_cfg = match get_render_cfg(&immutable_store).await {
-        Ok(render_cfg) => render_cfg,
-        Err(err) => {
-            eprintln!("{}", fmt_err(&err));
-            return 1;
-        }
-    };
+    let error_pages = app.get_error_pages();
     // Prepare the HTML shell
-    let html = match fs::read_to_string("../index.html") {
-        Ok(html) => html,
-        Err(err) => {
-            eprintln!("{}", fmt_err(&err));
-            return 1;
-        }
-    };
-    let html_shell = HtmlShell::new(html, &root_id, &render_cfg, &get_path_prefix_server());
+    let html_shell = app.get_index_view().await;
     // Get the error code to build from the arguments to this executable
     let args = env::args().collect::<Vec<String>>();
     let err_code_to_build_for = match args.get(1) {
