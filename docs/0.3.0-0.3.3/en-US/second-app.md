@@ -2,7 +2,7 @@
 
 This section will cover building a more realistic app than the _Hello World!_ section, with proper structuring and multiple templates.
 
-If learning by reading isn't really your thing, or you'd like a reference, you can see all the code in [this repository](https://github.com/arctic-hen7/perseus/tree/main/examples/basic)!
+If learning by reading isn't really your thing, or you'd like a reference, you can see all the code in [this repository](https://github.com/arctic-hen7/perseus/tree/v0.3.3/examples/basic)!
 
 ## Setup
 
@@ -51,7 +51,7 @@ Before we get to the cool part of building the actual pages of the app, we shoul
 
 This is a little more advanced than the last time we did this, and there are a few things we should note.
 
-The first is the import of [`Html`](https://docs.rs/sycamore/0.7/sycamore/generic_node/trait.Html.html), which we define as a type parameter on the `get_error_pages` function. This makes sure that we can compile these views on the client or the server as long as they're targeting HTML (Sycamore can also target other templating formats for completely different systems, like MacOS desktop apps).
+The first is the import of [`Html`](https://docs.rs/sycamore/0.7/sycamore/generic_node/trait.Html.html), which we define as a type parameter on the `get_error_pages` function. This makes sure that we can compile these views on the client or the server as long as they're targeting HTML (Sycamore can also target other templating formats for completely different systems, like macOS desktop apps).
 
 In this function, we also define a different error page for a 404 error, which will occur when a user tries to go to a page that doesn't exist. The fallback page (which we initialize `ErrorPages` with) is the same as last time, and will be called for any errors other than a _404 Not Found_.
 
