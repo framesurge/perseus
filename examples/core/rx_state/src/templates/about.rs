@@ -6,7 +6,7 @@ use sycamore::view::View;
 // WARNING: Accessing the page state store manually as this template does is NOT recommended, and is done for demonstration purposes only! In reality, you should use global state for anything that
 // you need to share between pages.
 
-#[perseus::template_rx(AboutPage)]
+#[perseus::template_rx]
 pub fn about_page() -> View<G> {
     // Get the page state store manually
     // The index page is just an empty string

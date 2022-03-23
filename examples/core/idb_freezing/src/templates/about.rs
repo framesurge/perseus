@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-#[perseus::template_rx(AboutPage)]
+#[perseus::template_rx]
 pub fn about_page(_: (), global_state: AppStateRx) -> View<G> {
     let test = global_state.test;
     // This is not part of our data model

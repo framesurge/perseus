@@ -9,7 +9,7 @@ pub struct PageState {
     content: String,
 }
 
-#[perseus::template_rx(IncrementalGenerationPage)]
+#[perseus::template_rx]
 pub fn incremental_generation_page(state: PageStateRx) -> View<G> {
     let title = state.title;
     let content = state.content;

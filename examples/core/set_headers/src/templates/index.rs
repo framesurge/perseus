@@ -9,7 +9,7 @@ struct PageState {
     greeting: String,
 }
 
-#[perseus::template_rx(IndexPage)]
+#[perseus::template_rx]
 pub fn index_page(state: PageStateRx) -> View<G> {
     view! {
         p { (state.greeting.get()) }

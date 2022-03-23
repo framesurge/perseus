@@ -173,26 +173,11 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
     } = input;
 
     // We want either one or two arguments
-    if attr_args.is_empty() || attr_args.len() > 2 {
-        return quote!(compile_error!(
-            "this macro takes either one or two arguments"
-        ));
+    if attr_args.len() > 1 {
+        return quote!(compile_error!("this macro takes one optional argument"));
     }
-    // This must always be provided
-    let component_name = match &attr_args[0] {
-        NestedMeta::Meta(meta) if meta.path().get_ident().is_some() => {
-            meta.path().get_ident().unwrap()
-        }
-        nested_meta => {
-            return syn::Error::new_spanned(
-                nested_meta,
-                "first argument must be a component identifier",
-            )
-            .to_compile_error()
-        }
-    };
-    // But this is optional (we'll use `G` as the default if it's not provided)
-    let type_param = match &attr_args.get(1) {
+    // This is optional (we'll use `G` as the default if it's not provided)
+    let type_param = match &attr_args.get(0) {
         Some(NestedMeta::Meta(meta)) if meta.path().get_ident().is_some() => {
             meta.path().get_ident().unwrap().clone()
         }
@@ -254,7 +239,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                     // The user's function
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
-                    #[::sycamore::component(#component_name<#type_param>)]
+                    #[::sycamore::component(PerseusPage<#type_param>)]
                     fn #name#generics(#state_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
                             let global_state = ::perseus::get_render_ctx!().global_state.0;
@@ -266,7 +251,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                         #block
                     }
                     ::sycamore::prelude::view! {
-                        #component_name(())
+                        PerseusPage(())
                     }
                 }
             },
@@ -293,7 +278,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                     // The user's function
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
-                    #[::sycamore::component(#component_name<#type_param>)]
+                    #[::sycamore::component(PerseusPage<#type_param>)]
                     fn #name#generics(#state_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
                             let global_state = ::perseus::get_render_ctx!().global_state.0;
@@ -305,7 +290,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                         #block
                     }
                     ::sycamore::prelude::view! {
-                        #component_name(
+                        PerseusPage(
                             {
                                 // Check if properties of the reactive type are already in the page state store
                                 // If they are, we'll use them (so state persists for templates across the whole app)
@@ -348,12 +333,12 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                #[::sycamore::component(#component_name<#type_param>)]
+                #[::sycamore::component(PerseusPage<#type_param>)]
                 fn #name#generics(#arg) -> #return_type {
                     #block
                 }
                 ::sycamore::prelude::view! {
-                    #component_name(
+                    PerseusPage(
                         {
                             // Check if properties of the reactive type are already in the page state store
                             // If they are, we'll use them (so state persists for templates across the whole app)
@@ -388,12 +373,12 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                #[::sycamore::component(#component_name<#type_param>)]
+                #[::sycamore::component(PerseusPage<#type_param>)]
                 fn #name#generics() -> #return_type {
                     #block
                 }
                 ::sycamore::prelude::view! {
-                    #component_name()
+                    PerseusPage()
                 }
             }
         }

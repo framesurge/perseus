@@ -1,7 +1,7 @@
 use perseus::Template;
 use sycamore::prelude::{view, Html, SsrNode, View};
 
-#[perseus::template_rx(AboutPage)]
+#[perseus::template_rx]
 pub fn about_page() -> View<G> {
     view! {
         p { "About." }

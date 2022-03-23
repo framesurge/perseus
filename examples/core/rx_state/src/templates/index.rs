@@ -7,7 +7,7 @@ pub struct IndexPageState {
 }
 
 // This macro will make our state reactive *and* store it in the page state store, which means it'll be the same even if we go to the about page and come back (as long as we're in the same session)
-#[perseus::template_rx(IndexPage)]
+#[perseus::template_rx]
 pub fn index_page(state: IndexPageStateRx) -> View<G> {
     let username = state.username;
     let username_2 = username.clone();

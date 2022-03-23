@@ -1,7 +1,7 @@
 use perseus::{link, t, Template};
 use sycamore::prelude::{view, Html, View};
 
-#[perseus::template_rx(IndexPage)]
+#[perseus::template_rx]
 pub fn index_page() -> View<G> {
     let username = "User";
     view! {

@@ -4,7 +4,7 @@ use sycamore::prelude::{view, SsrNode, View};
 use crate::global_state::AppStateRx;
 
 // This template needs global state, but doesn't have any state of its own, so the first argument is the unit type `()` (which the macro will detect)
-#[perseus::template_rx(AboutPage)]
+#[perseus::template_rx]
 pub fn about_page(_: (), global_state: AppStateRx) -> View<G> {
     let test = global_state.test;
     let test_2 = test.clone();

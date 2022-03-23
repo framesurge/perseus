@@ -6,7 +6,7 @@ pub struct PageState {
     pub time: String,
 }
 
-#[perseus::template_rx(RevalidationPage)]
+#[perseus::template_rx]
 pub fn revalidation_page(state: PageStateRx) -> View<G> {
     view! {
         p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }

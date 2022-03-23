@@ -7,7 +7,7 @@ pub struct PostPageState {
     content: String,
 }
 
-#[perseus::template_rx(PostPage)]
+#[perseus::template_rx]
 pub fn post_page(props: PostPageStateRx) -> View<G> {
     let title = props.title;
     let content = props.content;

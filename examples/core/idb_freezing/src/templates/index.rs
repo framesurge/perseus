@@ -9,7 +9,7 @@ pub struct IndexProps {
     username: String,
 }
 
-#[perseus::template_rx(IndexPage)]
+#[perseus::template_rx]
 pub fn index_page(state: IndexPropsRx, global_state: AppStateRx) -> View<G> {
     let username = state.username;
     let username_2 = username.clone(); // This is necessary until Sycamore's new reactive primitives are released

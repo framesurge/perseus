@@ -6,7 +6,7 @@ pub struct PageState {
     pub greeting: String,
 }
 
-#[perseus::template_rx(BuildStatePage)]
+#[perseus::template_rx]
 pub fn build_state_page(state: PageStateRx) -> View<G> {
     view! {
         p { (state.greeting.get()) }

@@ -7,7 +7,7 @@ pub struct PageState {
     content: String,
 }
 
-#[perseus::template_rx(BuildPathsPage)]
+#[perseus::template_rx]
 pub fn build_paths_page(state: PageStateRx) -> View<G> {
     let title = state.title;
     let content = state.content;
