@@ -23,7 +23,7 @@ To being with, you'll need to set up a `GlobalStateCreator`, which will look som
 {{#include ../../../../examples/core/global_state/src/global_state.rs}}
 ```
 
-Then, you can tell Perseus about that by adding it to `define_app!` like so:
+Then, you can tell Perseus about that by adding it to `PerseusApp` like so:
 
 ```rust
 {{#include ../../../../examples/core/global_state/src/lib.rs}}

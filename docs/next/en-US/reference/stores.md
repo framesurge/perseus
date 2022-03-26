@@ -6,7 +6,7 @@ As a solution to this, Perseus divides its data storage into two types: *mutable
 
 ## Immutable Stores
 
-An immutable store is used for all data that won't be changed after it's initially created, like for data about pages that are pre-rendered at build-time that don't revalidate. Because it's read-only after the build process, it can be used on a hosting provider with a read-only filesystem without problems, and so immutable stores always work on the filesystem. The only customizable part of them is the path they write to, which can be set with the `dist_path` parameter in the `define_app!` macro (by default it's `dist/`, relative to `.perseus/`).
+An immutable store is used for all data that won't be changed after it's initially created, like for data about pages that are pre-rendered at build-time that don't revalidate. Because it's read-only after the build process, it can be used on a hosting provider with a read-only filesystem without problems, and so immutable stores always work on the filesystem.
 
 ## Mutable Stores
 

@@ -38,7 +38,7 @@ However, because Perseus is juggling all the data for all the plugins the user h
 Right now, there are few things that you can't do with Perseus plugins, which can be quite weird.
 
 -   You can't extend the engine's server (due to a limitation of Actix Web types), you'll need to manually run a `tinker` on it (add your code into the file by writing it in using [the `tinker` action](:reference/plugins/tinker))
--   You can't set the [mutable store](:reference/stores) from a plugin due to a traits issue, so you'll need to provide something for the user to provide to the `mutable_store` parameter of the `define_app!` macro
+-   You can't set the [mutable store](:reference/stores) from a plugin due to a traits issue, so you'll need to provide something for the user to set as a custom mutable store (see [here](:reference/stores/))
 -   Similarly, you can't set the translations manager from a plugin
 
 ## Plugin Environments

@@ -9,7 +9,7 @@ Here's a list of all the functional actions currently supported by Perseus, whic
 If you'd like to request that a new action, functional or control, be added, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose).
 
 -   `tinker` -- see [this section](:reference/plugins/tinker)
--   `settings_actions` -- actions that can alter the settings provided by the user with [`define_app!`](:reference/define-app)
+-   `settings_actions` -- actions that can alter the settings provided by the user with [`PerseusApp`](:reference/perseus-app)
     -   `add_static_aliases` -- adds extra static aliases to the user's app (e.g. a [TailwindCSS](https://tailwindcss.com) stylesheet)
     -   `add_templates` -- adds extra templates to the user's app (e.g. a prebuilt documentation system)
     -   `add_error_pages` -- adds extra [error pages](:reference/error-pages) to the user's app (e.g. a prebuilt 404 page)

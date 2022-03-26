@@ -10,8 +10,10 @@
 
 # Reference
 
--   [`define_app!`](/docs/reference/define-app)
+-   [`PerseusApp`](/docs/reference/perseus-app)
+    -   [`define_app!`](/docs/reference/define-app)
 -   [Writing Views](/docs/reference/views)
+    -   [The Index View](/docs/reference/index-view)
 -   [Debugging](/docs/reference/debugging)
 -   [Live Reloading](/docs/reference/live-reloading)
 -   [Templates and Routing](/docs/reference/templates/intro)

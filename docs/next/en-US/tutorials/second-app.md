@@ -17,14 +17,6 @@ The only difference between this and the last `Cargo.toml` we created is two new
 -   [`serde`](https://serde.rs) -- a really useful Rust library for serializing/deserializing data
 -   [`serde_json`](https://github.com/serde-rs/json) -- Serde's integration for JSON, which lets us pass around properties for more advanced pages in Perseus (you may not explicitly use this, but you'll need it as a dependency for some Perseus macros)
 
-The next thing to do is to create `index.html`, which is pretty much the same as last time:
-
-```html
-{{#include ../../../examples/core/basic/index.html}}
-```
-
-The only notable difference here is the absence of a `<title>`, which is because we'll be creating it inside Perseus! Any Perseus template can modify the `<head>` of the document, but anything you put into `index.html` will persist across all pages. We don't want to have conflicting titles, so we leave that property out of `index.html`.
-
 ## `lib.rs`
 
 As in every Perseus app, `lib.rs` is how we communicate with the CLI and tell it how our app works. Put the following content in `src/lib.rs`:
@@ -35,33 +27,31 @@ As in every Perseus app, `lib.rs` is how we communicate with the CLI and tell it
 
 This code is quite different from your first app, so let's go through how it works.
 
-First, we define two other modules in our code: `error_pages` (at `src/error_pages.rs`) and `templates` (at `src/templates`). Don't worry, we'll create those in a moment. The rest of the code creates a new app with two templates, which are expected to be in the `src/templates` directory. Note the use of `<G>` here, which is a Rust _type parameter_ (the `get_template` function can work for the browser or the server, so Rust needs to know which one it is). This parameter is _ambient_ to the `templates` key, which means you can use it without declaring it as long as you're inside `templates: {...}`. This will be set to `DomNode` for the browser and `SsrNode` for the server, but that all happens behind the scenes.
+First, we define two other modules in our code: `error_pages` (at `src/error_pages.rs`) and `templates` (at `src/templates`). Don't worry, we'll create those in a moment. The rest of the code creates a new app with two templates, both from the `templates` module. Specifically, we provide the `.template()` function with another function that produces our template, which allows us to keep each template's code in a separate file.
 
-Also note that we're pulling in our error pages from another file as well (in a larger app you may even want to have a different file for each error page).
+We're also using `.error_pages()` here to tell Perseus how to handle errors in our app (like a nonexistent page), and we'll put these in the `error_pages` module. Note that you don't have to do this in development, Perseus has a set of defaults that it can use, but you can't use those in production, so you will have to create some error pages at some stage.
 
 ## Error Handling
 
-Before we get to the cool part of building the actual pages of the app, we should set up error pages again, which we'll do in `src/error_pages.rs`:
+Before we get to the cool part of building the actual pages of the app, we should set up error pages, which we'll do in `src/error_pages.rs`:
 
 ```rust
 {{#include ../../../examples/core/basic/src/error_pages.rs}}
 ```
 
-This is a little more advanced than the last time we did this, and there are a few things we should note.
+The first thing to note here is the import of [`Html`](https://docs.rs/sycamore/0.7/sycamore/generic_node/trait.Html.html), which we define as a type parameter on the `get_error_pages` function. This makes sure that we can compile these views on the client or the server as long as they're targeting HTML (Sycamore can also target other templating formats for completely different systems, like MacOS desktop apps).
 
-The first is the import of [`Html`](https://docs.rs/sycamore/0.7/sycamore/generic_node/trait.Html.html), which we define as a type parameter on the `get_error_pages` function. This makes sure that we can compile these views on the client or the server as long as they're targeting HTML (Sycamore can also target other templating formats for completely different systems, like MacOS desktop apps).
-
-In this function, we also define a different error page for a 404 error, which will occur when a user tries to go to a page that doesn't exist. The fallback page (which we initialize `ErrorPages` with) is the same as last time, and will be called for any errors other than a _404 Not Found_.
+In this function, we also define a different error page for a 404 error, which will occur when a user tries to go to a page that doesn't exist. The fallback page (which we initialize `ErrorPages` with) is the same as last time, and will be called for any errors other than a _404 Not Found_. Note that the error pages we define here are extremely similar to Perseus' defaults, and, in a real app, you'd probably create something much more fancy!
 
 ## `index.rs`
 
-It's time to create the first page for this app! But first, we need to make sure that import in `src/lib.rs` of `mod templates;` works, which requires us to create a new file `src/templates/mod.rs`, which declares `src/templates` as a module in your crate with its own code (you'll need this for every folder in a Rust project). Add the following to that file:
+It's time to create the first page for this app! But first, we need to make sure that import in `src/lib.rs` of `mod templates;` works, which requires us to create a new file `src/templates/mod.rs`, which declares `src/templates` as a module in your crate with its own code (this is how folders work in rust projects). Add the following to that file:
 
 ```rust
 {{#include ../../../examples/core/basic/src/templates/mod.rs}}
 ```
 
-It's common practice to have a file for each _template_, which is slightly different to a page (explained in more detail later), and this app has two pages: a landing page (index) and an about page.
+It's common practice to have a file (or even a folder) for each _template_, which is slightly different to a page (explained in more detail later), and this app has two pages: a landing page (index) and an about page.
 
 Let's begin with the landing page. Create a new file `src/templates/index.rs` and put the following inside:
 
@@ -174,7 +164,7 @@ You can also try changing some of the code for your app (like the greeting gener
 
 Perseus is compatible with any browser that supports Wasm, which is most modern browsers like Firefox and Chrome. However, legacy browsers like Internet Explorer will not work with any Perseus app, unless you _polyfill_ support for WebAssembly.
 
-*Note: technically, it's possible to 'compile' Wasm into JavaScript, and we're looking into possibly supporting this inside Perseus for sites that need to target very old browsers.*
+*Note: technically, it's possible to 'compile' Wasm into JavaScript, and we're looking into possibly supporting this inside Perseus for sites that need to target very old browsers. At the moment though, this is not supported through Perseus.*
 
 </details>
 

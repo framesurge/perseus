@@ -6,11 +6,11 @@ If you'd like to change this default behavior, this section is for you! Perseus 
 
 ## Using a Custom Translations Manager
 
-The `define_app!` macro accepts a property called `translations_manager` if you define `locales`, which can be used to specify a non-default translations manager.
+`PerseusApp` can be used with a custom translations manager through the `.translations_manager()` function. Note that this must be used with `PerseusAppWithTranslationsManager` rather than the usual `PerseusApp` (there's also `PerseusAppBase` if you want this and a custom mutable store). Further, translations managers all instantiate asynchronously, but we can't have asynchronous code in `PerseusApp` because of how it's called in the browser, so you should provide a future here (just don't add the `.await`), and Perseus will evaluate this when needed.
 
 ## Using a Custom Directory
 
-If you just want to change the directory in which translations are stored, you can still use `FsTranslationsmanager`, just initialize it with a different directory, and make sure to set up caching properly. See [here](https://github.com/arctic-hen7/perseus/blob/f7f7892fbf124a7d887b1f22a1641c79773d6246/packages/perseus/src/macros.rs#L35-L50) for how this is done internally.
+If you just want to change the directory in which translations are stored, you can still use `FsTranslationsmanager`, just initialize it with a different directory, and make sure to set up caching properly. 
 
 ## Building a Custom Translations Manager
 

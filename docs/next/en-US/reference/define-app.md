@@ -1,6 +1,6 @@
 # `define_app!`
 
-The core of Perseus is how it interacts with the CLI, which acts as the engine that runs your code. The bridge between these two systems is the `define_app!` macro, which accepts a number of options that define your app.
+Perseus used to be configured through a macro rather than through `PerseusApp`: `define_app!`. For now, this is still supported, but it will be removed in the next major release. If you're still using `define_app!`, you should switch to `PerseusApp` when possible. Note also that `define_app!` is now simply a wrapper for `PerseusApp`.
 
 The smallest this can reasonably get is a fully self-contained app (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny/src/lib.rs)):
 

@@ -26,7 +26,7 @@ You can define a template like so (taken from [the basic example](https://github
 {{#include ../../../../examples/core/basic/src/templates/about.rs}}
 ```
 
-It's seen as convention in Perseus to define each template in its own file, which should expose a `get_template()` file. Note that this is just convention, and as long as you get an instance of `Template<G>` to the `define_app!` macro, it really doesn't matter. That said, using community conventions makes your code easier to understand and debug for others.
+It's seen as convention in Perseus to define each template in its own file, which should expose a `get_template()` function. Note that this is just convention, and as long as you get an instance of `Template<G>` to the `PerseusApp`, it really doesn't matter how you do it. That said, using community conventions makes your code easier to understand and debug for others.
 
 There's a list of all the methods available on a template [here](https://docs.rs/perseus/0.3/perseus/template/struct.Template.html#implementations), along with explanations of what they all do. Technically, you could just define a template without calling any of these, but that would just render a blank page, which would probably be useless.
 

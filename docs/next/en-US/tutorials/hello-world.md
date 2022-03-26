@@ -27,16 +27,11 @@ Now, create an `index.html` file at the root of your project and put the followi
 ```
 
 <details>
-<summary>Why do I need an HTML file?</summary>
+<summary>Don't I need an `index.html` file?</summary>
 
-Perseus aims to be as versatile as possible, and so it allows you to include your own `index.html` file, in which you can import things like fonts, analytics, etc.
+With versions of Perseus before v0.3.4, an `index.html` file was required for Perseus to know how to display in your users' browsers, however, this is no longer required, as Perseus now has a default *index view* built in, with the option to provide your own through either `index.html` or Sycamore code!
 
-This file MUST contain at least the following:
-
--   `<div id="root"></div>`, which is where your app will be rendered, this must be a `<div>` with no other attributes except the `id`, and that spacing (that way parsing is lightweight and fast)
--   A `<head>`, which is where HTML metadata goes (even if you don't have any metadata, Perseus still needs it)
-
-Note also that we don't have to import anything to make Perseus run here, the server will do that automatically for us!
+For the requirements of any index views you create, see below.
 
 </details>
 
@@ -51,12 +46,14 @@ Now, create a new directory called `src` and add a new file inside called `lib.r
 
 First, we import some things that'll be useful:
 
--   `perseus::{define_app, ErrorPages, Template}` -- the `define_app!` macro, which tells Perseus how your app works; the `ErrorPages` `struct`, which lets you tell Perseus how to handle errors (like _404 Not Found_ if the user goes to a nonexistent page); and the `Template` `struct`, which is how Perseus manages pages in your app
+-   `perseus::{Html, PerseusApp, Template}` -- the `Html` trait, which lets your code be generic so that it can be rendered on either the server or in a browser (you'll see this throughout Sycamore code written for Perseus); the `PerseusApp` `struct`, which is how you represent a Perseus app; the `Template` `struct`, which represents a *template* in Perseus (which can create pages, as you'll soon learn -- this is the fundamental unit of Perseus)
 -   `sycamore::view` -- Sycamore's `view!` macro, which lets you write HTML-like code in Rust
 
-Then, we use the `define_app!` macro to declare the different aspects of the app, starting with the _templates_. We only have one template, which we've called `index` (a special name that makes it render at the root of your app), and then we define how that should look, creating a paragraph (`p`) containing the text `Hello World!`.
+Perseus used to use a macro called `define_app!` to define your app, though this has since been deprecated and replaced with a more modern builder `struct`, which has methods that you can use to add extra features to your app (like internationalization). This is `PerseusApp`, and here, we're just adding one template with the `.template()` call (which you'll run each time you want to add a new template to your app). Here, we create a very simple template called `index`, a special template name that will bind this template to the root of your app, this will be the landing page. We then define the view code for this template with the `.template()` method on the `Template` `struct`, to which we provide a simple closure that returns a Sycamore `view!`, which just renders an HTML paragraph element (`<p>Hello World!</p>` in usual HTML markup). Usually, we'd provide a fully-fledged function here that can do many more things (like access global state stores), but for now we'll keep things nice and simple.
 
-Finally, we tell Perseus what to do if something in your app fails, like if the user goes to a page that doesn't exist. This requires creating a new instance of `ErrorPages`, which is a `struct` that lets you define a separate error page for every [HTTP status code](https://httpstatuses.com), as well as a fallback. Here, we've just defined the fallback. That page is given the URL that caused the error, the HTTP status code, and the actual error message, all of which we display with a Sycamore `view!`, with seamless interpolation.
+In most apps, the main things you'll define on `PerseusApp` are `Template`s, though, when you move to production, you'll also want to define `ErrorPages`, which tell Perseus what to do if your app reaches a nonexistent page (a 404 not found error) or similar. For rapid development though, Perseus provides a series of prebuilt error pages (but if you try to use these implicitly in production, you'll get an error message).
+
+Also notice that we define this `PerseusApp` in a function called `main`, but you can call this anything you like, as long as you put `#[perseus::main]` before it, which turns it into something Perseus can expect (specifically, a special function named `__perseus_entrypoint`).
 
 </details>
 
@@ -65,7 +62,7 @@ Now install the Perseus CLI with `cargo install perseus-cli` (you'll need `wasm-
 <details>
 <summary>Why do I need a CLI?</summary>
 
-Perseus is a _very_ complex system, and, if you had to write all that complexity yourself, that _Hello World!_ example would be more like 1200 lines of code than 12! The CLI lets you abstract away all that complexity into a directory that you might have noticed appear called `.perseus/`. If you take a look inside, you'll actually find two crates (Rust packages): one for your app, and another for the server that serves your app. These are what actually run your app, and they import the code you've written. The `define_app!` macro defines a series of functions and constants at compile-time that make this possible.
+Perseus is a _very_ complex system, and, if you had to write all that complexity yourself, that _Hello World!_ example would be more like 1200 lines of code than 12! The CLI lets you abstract away all that complexity into a directory that you might have noticed appear called `.perseus/`. If you take a look inside, you'll actually find three crates (Rust packages): one for your app, another for the server that serves your app, and another for the builder that builds your app. These are what actually run your app, and they import the code you've written. They interface with the `PerseusApp` you define to make all this work.
 
 When you run `perseus serve`, the `.perseus/` directory is created and added to your `.gitignore`, and then three stages occur in parallel (they're shown in your terminal):
 

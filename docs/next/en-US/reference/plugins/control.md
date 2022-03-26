@@ -12,7 +12,7 @@ If you'd like to request that a new action, functional or control, be added, ple
 
 _Note: there are currently very few control actions, and this list will be expanded over time._
 
--   `settings_actions` -- actions that can alter the settings provided by the user with [`define_app!`](:reference/define-app)
+-   `settings_actions` -- actions that can alter the settings provided by the user with [`PerseusApp`](:reference/perseus-app)
     -   `set_immutable_store` -- sets an alternative [immutable store](:reference/stores) (e.g. to store data somewhere other than the filesystem for some reason)
     -   `set_locales` -- sets the app's locales (e.g. to fetch locales from a database in a more convenient way)
     -   `set_app_root` -- sets the HTML `id` of the `div` in which to render Perseus (e.g. to fetch the app root from some other service)

@@ -22,6 +22,10 @@ You can deploy to one of these providers without any further changes to your cod
 
 ### Alternative Mutable Stores
 
-The other option you have is deploying to a modern provider that has a read-only filesystem and then using an alternative mutable store. That is, you store your mutable data in a database or the like rather than on the filesystem. This requires you to implement the `MutableStore` `trait` for your storage system (see the [API docs](https://docs.rs/perseus)), which should be relatively easy. You can then provide this to the `define_app!` macro with the `mutable_store` parameter. Make sure to test this on your local system to ensure that your connections all work as expected before deploying to the server, which you can do with `perseus deploy` and by then copying the `pkg/` directory to the server.
+The other option you have is deploying to a modern provider that has a read-only filesystem and then using an alternative mutable store. That is, you store your mutable data in a database or the like rather than on the filesystem. This requires you to implement the `MutableStore` `trait` for your storage system (see the [API docs](https://docs.rs/perseus)), which should be relatively easy.
+
+You can then provide this to `PerseusApp` with the `.new_with_mutable_store()` function, which must be run on `PerseusAppWithMutableStore`, which takes a second parameter for the type of the mutable store.
+
+Make sure to test this on your local system to ensure that your connections all work as expected before deploying to the server, which you can do with `perseus deploy` and by then copying the `pkg/` directory to the server.
 
 This approach may seem more resilient and modern, but it comes with a severe downside: speed. Every request that involves mutable data (so any request for a revalidating page or an incrementally generated one) must go through four trips (an extra one to and from the database) rather than two, which is twice as many as usual! This will bring down your site's time to first byte (TTFB) radically, so you should ensure that your mutable store is as close to your server as possible so that the latency between them is negligible. If this performance pitfall is not acceptable, you should use an old-school hosting provider instead.
