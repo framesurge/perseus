@@ -59,17 +59,14 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 /// The new version of `#[template]` designed for reactive state. This can interface automatically with global state, and will automatically provide Sycamore `#[component]` annotations. To
-/// use this, you'll need to provide your component's name (e.g. `IndexPage`) as `#[template_rx(IndexPage)]` (just like with the old macro). You can also provide a custom type parameter
-/// name to use for your component (defaults to `G`) as the second argument.
+/// use this, you don't need to provide anything other than an optional custom type parameter letter (by default, `G` will be used). Unlike with the original macro, this will automatically
+/// handle component names internally.
 ///
 /// The first argument your template function can take is state generated for it (e.g. by the *build state* strategy), but the reactive version (created with `#[make_rx]` usually). From this,
 /// Perseus can infer the other required types and automatically make your state reactive for you.
 ///
 /// The second argument your template function can take is a global state generated with the `GlobalStateCreator`. You should also provide the reactive type here, and Perseus will do all the
 /// rest in the background.
-///
-/// **Warning:** this macro is currently exempt from semantic versioning, and breaking changes may be introduced here at any time! If you want stability, use the `#[template]` macro (but you won't
-/// get access to Perseus' reactive state platform).
 #[proc_macro_attribute]
 pub fn template_rx(args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template_rx::TemplateFn);
