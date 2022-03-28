@@ -16,5 +16,5 @@ pub fn head() -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("about").template(index_page).head(head)
+    Template::new("about").template(about_page).head(head)
 }

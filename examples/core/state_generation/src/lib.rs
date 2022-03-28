@@ -1,16 +1,17 @@
 mod error_pages;
 mod templates;
 
-use perseus::define_app;
-define_app! {
-    templates: [
-        crate::templates::build_state::get_template::<G>(),
-        crate::templates::build_paths::get_template::<G>(),
-        crate::templates::request_state::get_template::<G>(),
-        crate::templates::incremental_generation::get_template::<G>(),
-        crate::templates::revalidation::get_template::<G>(),
-        crate::templates::revalidation_and_incremental_generation::get_template::<G>(),
-        crate::templates::amalgamation::get_template::<G>()
-    ],
-    error_pages: crate::error_pages::get_error_pages()
+use perseus::{Html, PerseusApp};
+
+#[perseus::main]
+pub fn main<G: Html>() -> PerseusApp<G> {
+    PerseusApp::new()
+        .template(crate::templates::build_state::get_template)
+        .template(crate::templates::build_paths::get_template)
+        .template(crate::templates::request_state::get_template)
+        .template(crate::templates::incremental_generation::get_template)
+        .template(crate::templates::revalidation::get_template)
+        .template(crate::templates::revalidation_and_incremental_generation::get_template)
+        .template(crate::templates::amalgamation::get_template)
+        .error_pages(crate::error_pages::get_error_pages)
 }
