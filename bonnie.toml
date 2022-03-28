@@ -4,18 +4,18 @@ version="0.3.2"
 setup.cmd.generic = [
     # Create the dist directories for the CLI in the `basic` example
     # These are gitignored, and so not placed into Git unfortunately
-    "mkdir -p tests/basic/.perseus/dist",
-    "mkdir -p tests/basic/.perseus/dist/static",
-    "mkdir -p tests/basic/.perseus/dist/exported",
+    "mkdir -p examples/core/basic/.perseus/dist",
+    "mkdir -p examples/core/basic/.perseus/dist/static",
+    "mkdir -p examples/core/basic/.perseus/dist/exported",
     "bonnie copy-subcrates",
     "cargo build",
     "npm i --prefix ./website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.cmd.windows = [
-    "md -Force tests/basic/.perseus/dist",
-    "md -Force tests/basic/.perseus/dist",
-    "md -Force tests/basic/.perseus/dist",
+    "md -Force examples/core/basic/.perseus/dist",
+    "md -Force examples/core/basic/.perseus/dist",
+    "md -Force examples/core/basic/.perseus/dist",
     "bonnie copy-subcrates",
     "cargo build",
     "npm i --prefix website",
@@ -146,8 +146,8 @@ check.cmd = [
 check.desc = "checks code for formatting errors and the like"
 
 ci-prep.cmd = [
-    "mkdir -p tests/basic/.perseus/dist",
-    "mkdir -p tests/basic/.perseus/dist/static",
+    "mkdir -p examples/core/basic/.perseus/dist",
+    "mkdir -p examples/core/basic/.perseus/dist/static",
 ]
 ci-prep.desc = "creates empty directories to preserve the file structure that testing expects"
 
@@ -190,7 +190,7 @@ release.cmd = [
     "git push origin main"
 ]
 release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped)"
-replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./tests/basic/.perseus/*\" -not -path \"./tests/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
+replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/core/basic/.perseus/*\" -not -path \"./examples/core/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
 replace-versions.args = [ "old_version", "new_version" ]
 
 # Publishes each package
