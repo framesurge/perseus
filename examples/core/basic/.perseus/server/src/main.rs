@@ -3,6 +3,7 @@ use perseus::internal::i18n::TranslationsManager;
 use perseus::internal::serve::{ServerOptions, ServerProps};
 use perseus::plugins::PluginAction;
 use perseus::stores::MutableStore;
+use perseus::PerseusApp;
 use perseus::SsrNode;
 use perseus_engine as app;
 use std::env;
@@ -106,9 +107,16 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
     let static_aliases = app.get_static_aliases();
     let templates_map = app.get_atomic_templates_map();
     let error_pages = app.get_error_pages();
-    let index_view = block_on(app.get_index_view());
+    let index_view_str = app.get_index_view_str();
     // Generate the global state
     let global_state_creator = app.get_global_state_creator();
+    // By the time this binary is being run, the app has already been built be the CLI (hopefully!), so we can depend on access to hte render config
+    let index_view = block_on(PerseusApp::get_html_shell(
+        index_view_str,
+        &app_root,
+        &immutable_store,
+        &plugins,
+    ));
 
     let opts = ServerOptions {
         // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)

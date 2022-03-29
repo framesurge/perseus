@@ -323,39 +323,46 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run((), self.plugins.get_plugin_data())
             .unwrap_or_else(|| self.root.to_string())
     }
-    /// Gets the index view. This is asynchronous because it constructs an HTML shell, which invovles fetching the configuration of pages.
+    /// Gets the index view as a string, without generating an HTML shell (pass this into `::get_html_shell()` to do that).
     ///
     /// Note that this automatically adds `<!DOCTYPE html>` to the start of the HTMl shell produced, which can only be overriden with a control plugin (though you should really never do this
     /// in Perseus, which targets HTML on the web).
     #[cfg(feature = "server-side")]
-    pub async fn get_index_view(&self) -> HtmlShell {
-        // TODO Allow plugin modification of this
+    pub fn get_index_view_str(&self) -> String {
         // We have to add an HTML document type declaration, otherwise the browser could think it's literally anything! (This shouldn't be a problem, but it could be in 100 years...)
-        let index_view_str = format!("<!DOCTYPE html>\n{}", self.index_view);
+        format!("<!DOCTYPE html>\n{}", self.index_view)
+    }
+    /// Gets an HTML shell from an index view string. This is broken out so that it can be executed after the app has been built (which requries getting the translations manager, consuming
+    /// `self`). As inconvenient as this is, it's necessitated, otherwise exporting would try to access the built app before it had actually been built.
+    #[cfg(feature = "server-side")]
+    pub async fn get_html_shell(
+        index_view_str: String,
+        root: &str,
+        immutable_store: &ImmutableStore,
+        plugins: &Plugins<G>,
+    ) -> HtmlShell {
         // Construct an HTML shell
         let mut html_shell = HtmlShell::new(
             index_view_str,
-            &self.get_root(),
+            root,
             // TODO Handle this properly (good enough for now because that's what we weere already doing)
-            &get_render_cfg(&self.get_immutable_store())
+            &get_render_cfg(immutable_store)
                 .await
                 .expect("Couldn't get render configuration!"),
             &get_path_prefix_server(),
         );
 
         // Apply the myriad plugin actions to the HTML shell (replacing the whole thing first if need be)
-        let shell_str = self
-            .plugins
+        let shell_str = plugins
             .control_actions
             .settings_actions
             .html_shell_actions
             .set_shell
-            .run((), self.plugins.get_plugin_data())
+            .run((), plugins.get_plugin_data())
             .unwrap_or(html_shell.shell);
         html_shell.shell = shell_str;
         // For convenience, we alias the HTML shell functional actions
-        let hsf_actions = &self
-            .plugins
+        let hsf_actions = &plugins
             .functional_actions
             .settings_actions
             .html_shell_actions;
@@ -364,7 +371,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.head_before_boundary.push(
             hsf_actions
                 .add_to_head_before_boundary
-                .run((), self.plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())
                 .values()
                 .flatten()
                 .cloned()
@@ -373,7 +380,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.scripts_before_boundary.push(
             hsf_actions
                 .add_to_scripts_before_boundary
-                .run((), self.plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())
                 .values()
                 .flatten()
                 .cloned()
@@ -382,7 +389,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.head_after_boundary.push(
             hsf_actions
                 .add_to_head_after_boundary
-                .run((), self.plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())
                 .values()
                 .flatten()
                 .cloned()
@@ -391,7 +398,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.scripts_after_boundary.push(
             hsf_actions
                 .add_to_scripts_after_boundary
-                .run((), self.plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())
                 .values()
                 .flatten()
                 .cloned()
@@ -400,7 +407,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.before_content.push(
             hsf_actions
                 .add_to_before_content
-                .run((), self.plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())
                 .values()
                 .flatten()
                 .cloned()
@@ -409,7 +416,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.after_content.push(
             hsf_actions
                 .add_to_after_content
-                .run((), self.plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())
                 .values()
                 .flatten()
                 .cloned()

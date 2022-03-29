@@ -6,7 +6,7 @@ use perseus::{
         export::{export_app, ExportProps},
         get_path_prefix_server,
     },
-    PluginAction, SsrNode,
+    PerseusApp, PluginAction, SsrNode,
 };
 use perseus_engine as app;
 use std::fs;
@@ -76,7 +76,8 @@ async fn build_and_export() -> i32 {
         }
     };
     let templates_map = app.get_templates_map();
-    let index_view = app.get_index_view().await;
+    let index_view_str = app.get_index_view_str();
+    let root_id = app.get_root();
     // This consumes `self`, so we get it finally
     let translations_manager = app.get_translations_manager().await;
 
@@ -107,6 +108,10 @@ async fn build_and_export() -> i32 {
         .export_actions
         .after_successful_build
         .run((), plugins.get_plugin_data());
+    // The app has now been built, so we can safely instantiate the HTML shell (which needs access to the render config, generated in the above build step)
+    // It doesn't matter if the type parameters here are wrong, this function doesn't use them
+    let index_view =
+        PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins).await;
     // Turn the build artifacts into self-contained static files
     let export_res = export_app(ExportProps {
         templates: &templates_map,

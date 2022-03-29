@@ -1,5 +1,5 @@
 use fmterr::fmt_err;
-use perseus::{internal::serve::build_error_page, PluginAction, SsrNode};
+use perseus::{internal::serve::build_error_page, PerseusApp, PluginAction, SsrNode};
 use perseus_engine as app;
 use std::{env, fs};
 
@@ -18,7 +18,13 @@ async fn real_main() -> i32 {
 
     let error_pages = app.get_error_pages();
     // Prepare the HTML shell
-    let html_shell = app.get_index_view().await;
+    let index_view_str = app.get_index_view_str();
+    let root_id = app.get_root();
+    let immutable_store = app.get_immutable_store();
+    // We assume the app has already been built before running this (so the render config must be available)
+    // It doesn't matter if the type parameters here are wrong, this function doesn't use them
+    let html_shell =
+        PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins).await;
     // Get the error code to build from the arguments to this executable
     let args = env::args().collect::<Vec<String>>();
     let err_code_to_build_for = match args.get(1) {
@@ -50,6 +56,7 @@ async fn real_main() -> i32 {
             (err_code_to_build_for, output.to_string()),
             plugins.get_plugin_data(),
         );
+
     // Build that error page as the server does
     let err_page_str = build_error_page(
         "",
