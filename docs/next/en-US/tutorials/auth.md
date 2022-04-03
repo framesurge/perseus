@@ -23,7 +23,7 @@ TODO
 To start with, we'll set up a fairly typical Perseus app by initializing a new Rust project with `cargo new --lib`. Then, put the following in `Cargo.toml` (changing the package name as you want):
 
 ```toml
-{{#include ../../../../examples/auth/Cargo.toml}}
+{{#include ../../../examples/demos/auth/Cargo.toml}}
 ```
 
 The only things of particular note here are the dependency on `web-sys`, from which we use the `Storage` feature (important later), as well as not using Sycamore's [hydration](:reference/hydration) system, as it doesn't handle the kinds of page changes from unauthenticated to authenticated that we'll need in this app. Note that hydration will likely work fine with this in future version of Sycamore (it's currently experimental though).
@@ -31,7 +31,7 @@ The only things of particular note here are the dependency on `web-sys`, from wh
 Now add the following to `src/lib.rs`:
 
 ```rust
-{{#include ../../../../examples/auth/src/lib.rs}}
+{{#include ../../../examples/demos/auth/src/lib.rs}}
 ```
 
 This is a very typical scaffold, but the use of the global state creator is important, and that's what we'll look at next. You can put whatever you want into `src/error_pages.rs` to serve as your app's error pages, but that isn't the subject of this tutorial. You can read more about error pages [here](:reference/error-pages) though.
@@ -39,7 +39,7 @@ This is a very typical scaffold, but the use of the global state creator is impo
 In `src/global_state.rs`, put the following code:
 
 ```rust
-{{#include ../../../../examples/auth/src/global_state.rs}}
+{{#include ../../../examples/demos/auth/src/global_state.rs}}
 ```
 
 This is fairly intense, so let's break it down.
@@ -59,7 +59,7 @@ The only other two functions are very simple, just `.login()` and `.logout()`, w
 Okay, let's get into writing some views based on all this! We'll create an index page and an about page for demonstration, so set up a `src/templates/` directory with a `mod.rs` that declares both files. Then put the following in `src/templates/index.rs`:
 
 ```rust
-{{#include ../../../../examples/demos/auth/src/templates/index.rs}}
+{{#include ../../../examples/demos/auth/src/templates/index.rs}}
 ```
 
 The only strange stuff in here is in `index_view()`, the rest is pretty much bog-standard Perseus template code. In `index_view()`, we don't take any template sttate, for demonstration purposes (you easily could), but we do take in the global state, which you'll remember contains all the authentication properties. Then we set up some `Signal`s outside the data model for handling a very simple login input (again, demonstrations). The important thing is the call to `auth.detect_state()`, which will refresh the authentication status by checking the user's browser for the login 'token' being stored. Note that, because we coded this to return straight away if we already know the login state, it's perfectly safe to put this at the start of every template you want to be authentication-protected. We also gate this with `#[cfg(target_arch = "wasm32")]` to make sure it only runs on the browser (because we can't check for storage tokens in the server build process, that will throw plenty of errors!).
@@ -77,7 +77,7 @@ In theory though, on some odler mobile devices, this blank screen might be visib
 Finally, add the following into the about page (just a very basic unprotected page for comparison):
 
 ```rust
-{{#include ../../../../examples/demos/auth/src/templates/about.rs}}
+{{#include ../../../examples/demos/auth/src/templates/about.rs}}
 ```
 
 ## Conclusion
