@@ -7,7 +7,6 @@ setup.cmd.generic = [
     "mkdir -p examples/core/basic/.perseus/dist",
     "mkdir -p examples/core/basic/.perseus/dist/static",
     "mkdir -p examples/core/basic/.perseus/dist/exported",
-    "bonnie copy-subcrates",
     "cargo build",
     "npm i --prefix ./website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
@@ -16,7 +15,6 @@ setup.cmd.windows = [
     "md -Force examples/core/basic/.perseus/dist",
     "md -Force examples/core/basic/.perseus/dist",
     "md -Force examples/core/basic/.perseus/dist",
-    "bonnie copy-subcrates",
     "cargo build",
     "npm i --prefix website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
@@ -42,7 +40,6 @@ dev.subcommands.export-serve-deploy-relative.args = [ "example" ]
 dev.subcommands.export-serve-deploy-relative.desc = "deploy exports and serves the given example at a relative local path"
 
 dev.subcommands.example.cmd = [
-    "bonnie copy-subcrates",
     "cd packages/perseus-cli",
     # Point this live version of the CLI at the given example
     "TEST_EXAMPLE=../../examples/%category/%example cargo run -- %%"
@@ -111,33 +108,6 @@ site.subcommands.run.desc = "runs the website without watching for changes"
 
 build = "cargo build"
 
-copy-subcrates.cmd = [
-    # The CLI needs the `.perseus/` directory copied in for packaging (and we need to rename `Cargo.toml` to `Cargo.toml.old`)
-    "cd packages/perseus-cli",
-    "rm -rf ./.perseus",
-    "cp -r ../../examples/core/basic/.perseus/ .perseus/",
-    "mv .perseus/Cargo.toml .perseus/Cargo.toml.old",
-    "mv .perseus/server/Cargo.toml .perseus/server/Cargo.toml.old",
-    "mv .perseus/builder/Cargo.toml .perseus/builder/Cargo.toml.old",
-    # Remove distribution artifacts (they clog up the final bundle)
-    "rm -rf .perseus/dist",
-    "mkdir -p .perseus/dist",
-    "mkdir -p .perseus/dist/static",
-    "mkdir -p .perseus/dist/exported",
-    # Replace the example's package name with a token the CLI can use (compatible with alternative engines as well)
-    # We only need to do this in the root package, the others depend on it
-    "sed -i 's/perseus-example-basic/USER_PKG_NAME/' .perseus/Cargo.toml.old",
-    # Replace the relative path references with tokens too
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/Cargo.toml.old",
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/builder/Cargo.toml.old",
-    # These will need to be updated as more integrations are added
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus\"/PERSEUS_VERSION/' .perseus/server/Cargo.toml.old",
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus-actix-web\"/PERSEUS_ACTIX_WEB_VERSION/' .perseus/server/Cargo.toml.old",
-    "sed -i 's/path = \"\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/\\.\\.\\/packages\\/perseus-warp\"/PERSEUS_WARP_VERSION/' .perseus/server/Cargo.toml.old"
-
-]
-copy-subcrates.desc = "copies `.perseus/` into the CLI directory for packaging/usage"
-
 check.cmd = [
     "cargo check --all",
     "cargo fmt --all -- --check",
@@ -195,7 +165,6 @@ replace-versions.args = [ "old_version", "new_version" ]
 
 # Publishes each package
 publish.cmd = [
-    "bonnie copy-subcrates",
     "bonnie check-branch stable",
     "cd packages/perseus-macro",
     "cargo publish %%",
