@@ -2,47 +2,49 @@ version="0.3.2"
 
 [scripts]
 setup.cmd.generic = [
-    # Create the dist directories for the CLI in the `basic` example
-    # These are gitignored, and so not placed into Git unfortunately
-    "mkdir -p examples/core/basic/.perseus/dist",
-    "mkdir -p examples/core/basic/.perseus/dist/static",
-    "mkdir -p examples/core/basic/.perseus/dist/exported",
+    "rust-script scripts/setup.rs",
     "cargo build",
     "npm i --prefix ./website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
-setup.cmd.windows = [
-    "md -Force examples/core/basic/.perseus/dist",
-    "md -Force examples/core/basic/.perseus/dist",
-    "md -Force examples/core/basic/.perseus/dist",
+setup.cmd.targets.windows = [
+    "rust-script scripts/setup.rs",
     "cargo build",
-    "npm i --prefix website",
-    "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
+    "npm i --prefix ./website",
+    "Write-Host \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.desc = "sets everything up for local development"
 
-dev.subcommands.export-serve.cmd = [
-    "bonnie dev example %example export",
-    "serve -p 8080 examples/%example/.perseus/dist/exported/"
-]
-dev.subcommands.export-serve.args = [ "example" ]
-dev.subcommands.export-serve.desc = "exports and serves the given example locally"
-dev.subcommands.export-serve-deploy-relative.cmd = [
-    "PERSEUS_BASE_PATH=http://localhost:8080/relative bonnie dev example %example deploy --export-static",
-    "cd examples/%example",
+dev.subcommands.export-serve-deploy-relative.cmd.generic = [
+    "PERSEUS_BASE_PATH=http://localhost:8080/relative bonnie dev example %category %example deploy --export-static",
+    "cd examples/%category/%example",
     "mkdir pkg.new",
     "mv pkg/ pkg.new/",
     "mv pkg.new/ pkg/",
     "mv pkg/pkg/ pkg/relative",
     "serve -p 8080 pkg/"
 ]
-dev.subcommands.export-serve-deploy-relative.args = [ "example" ]
-dev.subcommands.export-serve-deploy-relative.desc = "deploy exports and serves the given example at a relative local path"
+dev.subcommands.export-serve-deploy-relative.cmd.targets.windows = [
+    "powershell -Command { $env:PERSEUS_BASE_PATH=\"http://localhost:8080/relative\"; bonnie dev example %category %example deploy --export-static }",
+    "cd examples\\%category\\%example",
+    "New-Item -Force -ItemType directory -Path pkg.new",
+    "Move-Item  -Path pkg -Destination pkg.new",
+    "Rename-Item -Path pkg.new -NewName pkg",
+    "Rename-Item -Path pkg\\pkg -NewName relative",
+    "serve -p 8080 pkg/"
+]
+dev.subcommands.export-serve-deploy-relative.args = [ "category", "example" ]
+dev.subcommands.export-serve-deploy-relative.desc = "deploys (exported) and serves the given example at a relative local path"
 
-dev.subcommands.example.cmd = [
+dev.subcommands.example.cmd.generic = [
     "cd packages/perseus-cli",
     # Point this live version of the CLI at the given example
     "TEST_EXAMPLE=../../examples/%category/%example cargo run -- %%"
+]
+dev.subcommands.example.cmd.targets.windows = [
+    "cd packages\\perseus-cli",
+    # Point this live version of the CLI at the given example
+    "powershell -Command { $env:TEST_EXAMPLE=\"..\\..\\examples\\%category\\%example\"; cargo run -- %% }"
 ]
 dev.subcommands.example.args = [ "category", "example" ]
 dev.subcommands.example.desc = "runs the given example using a live version of the cli"
@@ -64,21 +66,31 @@ site.subcommands.build-tailwind.cmd = [
     "tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css -w"
 ]
 site.subcommands.build-tailwind.desc = "builds a tailwind stylesheet for development, watching for changes"
-site.subcommands.build-tailwind.subcommands.prod.cmd = [
+site.subcommands.build-tailwind.subcommands.prod.cmd.generic = [
     "cd website",
     "NODE_ENV=production tailwindcss -c ./tailwind.config.js -o ./static/tailwind.css --minify"
 ]
+site.subcommands.build-tailwind.subcommands.prod.cmd.targets.windows = [
+    "cd website",
+    "powershell -Command { $env:NODE_ENV=\"production\"; tailwindcss -s tailwind.config.js -o static/tailwind.css --minify }"
+]
 site.subcommands.build-tailwind.subcommands.prod.desc = "builds a tailwind stylesheet for production (minifying)"
-site.subcommands.deploy.cmd = [
+site.subcommands.deploy.cmd.generic = [
     "bonnie site build-tailwind prod",
     "cd website",
     "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus tinker",
     # Point this live version of the CLI at the given example
     "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus deploy -e"
-
+]
+site.subcommands.deploy.cmd.targets.windows = [
+    "bonnie site build-tailwind prod",
+    "cd website",
+    "powershell -Command { $env:PERSEUS_BASE_PATH=\"http://localhost:8080/perseus\"; perseus tinker }",
+    # Point this live version of the CLI at the given example
+    "powershell -Command { $env:PERSEUS_BASE_PATH=\"http://localhost:8080/perseus\"; perseus deploy -e }"
 ]
 site.subcommands.deploy.desc = "builds the website for production and finalizes it at `website/pkg`"
-site.subcommands.deploy-prod.cmd = [
+site.subcommands.deploy-prod.cmd.generic = [
     "bonnie site build-tailwind prod",
     "cd website",
     "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus tinker",
@@ -89,12 +101,30 @@ site.subcommands.deploy-prod.cmd = [
     "tribble deploy --path https://arctic-hen7.github.io/perseus/tribble -o tribble",
     "mv tribble website/pkg/"
 ]
+site.subcommands.deploy-prod.cmd.targets.windows = [
+    "bonnie site build-tailwind prod",
+    "cd website",
+    "powershell -Command { $env:PERSEUS_BASE_PATH=\"http://localhost:8080/perseus\"; perseus tinker }",
+    # Point this live version of the CLI at the given example
+    "powershell -Command { $env:PERSEUS_BASE_PATH=\"https://arctic-hen7.github.io/perseus\"; perseus deploy -e }",
+    # Build the Tribble contributing docs
+    "cd ..",
+    "tribble deploy --path https://arctic-hen7.github.io/perseus/tribble -o tribble",
+    "Move-Item -Path tribble -Destination website\\pkg"
+]
 site.subcommands.deploy-prod.desc = "builds the website for production on GitHub Pages and finalizes it at `website/pkg`"
-site.subcommands.deploy.subcommands.serve.cmd = [
+site.subcommands.deploy.subcommands.serve.cmd.generic = [
     "cd website",
     "mkdir pkgs",
     "mv pkg pkgs/perseus",
     "mv pkgs pkg",
+    "serve -p 8080 pkg/"
+]
+site.subcommands.deploy.subcommands.serve.cmd.targets.windows = [
+    "cd website",
+    "New-Item -Force -ItemType directory -Path pkgs",
+    "Move-Item -Path pkg -Destination pkgs/perseus",
+    "Rename-Item -Path pkgs -NewName pkg",
     "serve -p 8080 pkg/"
 ]
 site.subcommands.deploy.subcommands.serve.desc = "serves the website for local testing after it's been built for production"
@@ -106,8 +136,6 @@ site.subcommands.run.cmd = [
 ]
 site.subcommands.run.desc = "runs the website without watching for changes"
 
-build = "cargo build"
-
 check.cmd = [
     "cargo check --all",
     "cargo fmt --all -- --check",
@@ -115,12 +143,17 @@ check.cmd = [
 ]
 check.desc = "checks code for formatting errors and the like"
 
-ci-prep.cmd = [
+ci-prep.cmd.generic = [
     "mkdir -p examples/core/basic/.perseus/dist",
     "mkdir -p examples/core/basic/.perseus/dist/static",
 ]
+ci-prep.cmd.targets.windows = [
+    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist",
+    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\static",
+]
 ci-prep.desc = "creates empty directories to preserve the file structure that testing expects"
 
+# TODO Cross-platform
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
@@ -160,8 +193,12 @@ release.cmd = [
     "git push origin main"
 ]
 release.desc = "creates a new project release and pushes it to github (cargo version must be manually bumped)"
+
+# --- COMMANDS FOLLOWING THIS POINT ARE LINUX-ONLY ---
+
 replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or -name \"*.md\" \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/core/basic/.perseus/*\" -not -path \"./examples/core/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
 replace-versions.args = [ "old_version", "new_version" ]
+replace-versions.desc = "replaces an old version number with a new one in all relevant files (Linux only)"
 
 # Publishes each package
 publish.cmd = [
@@ -179,9 +216,9 @@ publish.cmd = [
     "cd ../perseus-warp",
     "cargo publish %%"
 ]
-publish.desc = "publishes all packages to crates.io (needs branch 'stable')"
+publish.desc = "publishes all packages to crates.io (needs branch 'stable', Linux only)"
 
 check-branch.cmd.exec = "[[ $(git rev-parse --abbrev-ref HEAD) == \"%branch\" ]] && exit 0 || echo \"You need to be on Git branch '%branch' to run this command.\"; exit 1"
-check-branch.cmd.shell = ["bash", "-c", "{COMMAND}"]
+check-branch.cmd.shell = ["bash", "-c", "{COMMAND}"] # We need support for inline conditionals, so we can't use `sh`
 check-branch.args = [ "branch" ]
-check-branch.desc = "checks if the current git branch is the given argument, signals with exit codes (and warns), this will prevent following commands from running if it fails"
+check-branch.desc = "checks if the current git branch is the given argument, signals with exit codes (and warns), this will prevent following commands from running if it fails (Linux only)"
