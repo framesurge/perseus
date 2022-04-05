@@ -2,13 +2,17 @@ version="0.3.2"
 
 [scripts]
 setup.cmd.generic = [
-    "rust-script scripts/setup.rs",
+    "mkdir -p examples/core/basic/.perseus/dist",
+    "mkdir -p examples/core/basic/.perseus/dist/static",
+    "mkdir -p examples/core/basic/.perseus/dist/exported",
     "cargo build",
     "npm i --prefix ./website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.cmd.targets.windows = [
-    "rust-script scripts/setup.rs",
+    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist",
+    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist\\static",
+    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist\\exported",
     "cargo build",
     "npm i --prefix ./website",
     "Write-Host \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
@@ -153,7 +157,6 @@ ci-prep.cmd.targets.windows = [
 ]
 ci-prep.desc = "creates empty directories to preserve the file structure that testing expects"
 
-# TODO Cross-platform
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
@@ -171,9 +174,11 @@ test.cmd = [
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
 test.subcommands.core.desc = "runs cargo tests only"
+# TODO Cross-platform
 test.subcommands.example.cmd = "bash ./test.sh %category %example %integration %%" # A script can do backgrounding properly
 test.subcommands.example.args = [ "category", "example", "integration" ]
 test.subcommands.example.desc = "tests a single example with the given integration (assumes geckodriver running in background), use `--headless` to run headlessly"
+# TODO Cross-platform
 test.subcommands.example-all-integrations.cmd = [
     "bash ./test.sh %category %example actix-web %%",
     "bash ./test.sh %category %example warp %%"
