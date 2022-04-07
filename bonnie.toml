@@ -174,14 +174,12 @@ test.cmd = [
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
 test.subcommands.core.desc = "runs cargo tests only"
-# TODO Cross-platform
-test.subcommands.example.cmd = "bash ./test.sh %category %example %integration %%" # A script can do backgrounding properly
+test.subcommands.example.cmd = "rust-script scripts/test.rs %category %example %integration %%" # A script can do backgrounding properly
 test.subcommands.example.args = [ "category", "example", "integration" ]
 test.subcommands.example.desc = "tests a single example with the given integration (assumes geckodriver running in background), use `--headless` to run headlessly"
-# TODO Cross-platform
 test.subcommands.example-all-integrations.cmd = [
-    "bash ./test.sh %category %example actix-web %%",
-    "bash ./test.sh %category %example warp %%"
+    "rust-script scripts/test.rs %category %example actix-web %%",
+    "rust-script scripts/test.rs %category %example warp %%"
 ]
 test.subcommands.example-all-integrations.args = [ "category", "example" ]
 test.subcommands.example-all-integrations.desc = "tests a single example with all integrations (assumes geckodriver running in background), use `--headless` to run headlessly"
