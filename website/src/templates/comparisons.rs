@@ -354,6 +354,11 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> View<G> {
                                 })
                             }
                         }
+                        br(class = "mb-1 sm:mb-8 md:mb-12")
+                        h3(class = "text-2xl underline") { (t!("comparisons-sycamore-heading")) }
+                        div(class = "w-full flex justify-center") {
+                            p(class = "max-w-prose") { (t!("comparisons-sycamore-text")) }
+                        }
                     }
                 }
             }
