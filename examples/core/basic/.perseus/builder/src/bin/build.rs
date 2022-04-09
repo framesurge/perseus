@@ -43,7 +43,7 @@ async fn real_main() -> i32 {
     };
 
     // Build the site for all the common locales (done in parallel)
-    // All these parameters can be modified by `define_app!` and plugins, so there's no point in having a plugin opportunity here
+    // All these parameters can be modified by `PerseusApp` and plugins, so there's no point in having a plugin opportunity here
     let templates_map = app.get_templates_map();
 
     // We have to get the translations manager last, because it consumes everything

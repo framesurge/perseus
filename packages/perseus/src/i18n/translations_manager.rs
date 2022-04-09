@@ -206,37 +206,3 @@ impl TranslationsManager for FsTranslationsManager {
         Ok(translator)
     }
 }
-
-// /// A dummy translations manager for use if you don't want i18n. This avoids errors of not being able to find translations. If you set
-// /// `no_i18n: true` in the `locales` section of `define_app!`, this will be used by default. If you intend to use i18n, do not use this!
-// /// Using the `link!` macro with this will NOT prepend the path prefix, and it will result in a nonsensical URL that won't work.
-// #[derive(Clone, Default, Debug)]
-// pub struct DummyTranslationsManager;
-// impl DummyTranslationsManager {
-//     /// Creates a new dummy translations manager.
-//     pub fn new() -> Self {
-//         Self::default()
-//     }
-// }
-// #[async_trait::async_trait]
-// impl TranslationsManager for DummyTranslationsManager {
-//     async fn get_translations_str_for_locale(
-//         &self,
-//         _locale: String,
-//     ) -> Result<String, TranslationsManagerError> {
-//         Ok(String::new())
-//     }
-//     async fn get_translator_for_locale(
-//         &self,
-//         locale: String,
-//     ) -> Result<Translator, TranslationsManagerError> {
-//         let translator = Translator::new(locale.clone(), String::new()).map_err(|err| {
-//             TranslationsManagerError::SerializationFailed {
-//                 locale,
-//                 source: err.into(),
-//             }
-//         })?;
-
-//         Ok(translator)
-//     }
-// }

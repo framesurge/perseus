@@ -67,7 +67,7 @@ impl<A, R> std::fmt::Debug for ControlPluginAction<A, R> {
 /// All the control actions that a plugin can take.
 #[derive(Default, Debug)]
 pub struct ControlPluginActions {
-    /// Actions pertaining to the modification of settings created with the `define_app!` macro.
+    /// Actions pertaining to the modification of settings created with `PerseusApp`.
     pub settings_actions: ControlPluginSettingsActions,
     /// Actions pertaining to the build process.
     pub build_actions: ControlPluginBuildActions,
@@ -79,7 +79,7 @@ pub struct ControlPluginActions {
     pub client_actions: ControlPluginClientActions,
 }
 
-/// Control actions that pertain to altering settings from `define_app!`.
+/// Control actions that pertain to altering settings from `PerseusApp`.
 #[derive(Default, Debug)]
 pub struct ControlPluginSettingsActions {
     /// Sets an immutable store to be used everywhere. This will provided the current immutable store for reference.

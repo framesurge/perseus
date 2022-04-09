@@ -46,4 +46,4 @@ This is encapsulated in `.perseus/src/lib.rs`, and it performs a number of integ
 
 ### CLI Server
 
-This is just an invocation of the the appropriate server integration's systems with the data provided by the user through the `define_app!` macro. This also sets the default location for static content and the `index.html` file.
+This is just an invocation of the the appropriate server integration's systems with the data provided by the user through `PerseusApp`.

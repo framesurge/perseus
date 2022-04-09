@@ -119,7 +119,7 @@ fn get_props(is_standalone: bool) -> ServerProps<impl MutableStore, impl Transla
     ));
 
     let opts = ServerOptions {
-        // We don't support setting some attributes from `wasm-pack` through plugins/`define_app!` because that would require CLI changes as well (a job for an alternative engine)
+        // We don't support setting some attributes from `wasm-pack` through plugins/`PerseusApp` because that would require CLI changes as well (a job for an alternative engine)
         html_shell: index_view,
         js_bundle: "dist/pkg/perseus_engine.js".to_string(),
         // Our crate has the same name, so this will be predictable

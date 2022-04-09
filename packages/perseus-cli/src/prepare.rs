@@ -117,7 +117,7 @@ pub fn prepare(dir: PathBuf, engine_url: &str) -> Result<(), PrepError> {
             None => return Err(PrepError::MalformedUserManifest),
         };
         // Update the name of the user's crate (Cargo needs more than just a path and an alias)
-        // We don't need to do that in the server manifest because it uses the root code (which does parsing after `define_app!`)
+        // We don't need to do that in the server manifest because it uses the root code (which re-exports the `PerseusApp`)
         // We used to add a workspace here, but that means size optimizations apply to both the client and the server, so that's not done anymore
         // Now, we use an empty workspace to make sure we don't include the engine in any user workspaces
         // We use a token here that's set by the Bonnie `copy-subcrates` script

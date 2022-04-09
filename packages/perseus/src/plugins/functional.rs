@@ -66,7 +66,7 @@ pub struct FunctionalPluginActions<G: Html> {
     ///
     /// If your plugin uses this action in a way that may confuse other plugins, you should note this in your documentation.
     pub tinker: FunctionalPluginAction<(), ()>,
-    /// Actions pertaining to the modification of settings created with the `define_app!` macro.
+    /// Actions pertaining to the modification of settings created with `PerseusApp`.
     pub settings_actions: FunctionalPluginSettingsActions<G>,
     /// Actions pertaining to the build process.
     pub build_actions: FunctionalPluginBuildActions,
@@ -93,7 +93,7 @@ impl<G: Html> Default for FunctionalPluginActions<G> {
     }
 }
 
-/// Functional actions that pertain to altering the settings exported from the `define_app!` macro.
+/// Functional actions that pertain to altering the settings exported from `PerseusApp`.
 #[derive(Debug)]
 pub struct FunctionalPluginSettingsActions<G: Html> {
     /// Adds additional static aliases. Note that a static alias is a mapping of a URL path to a filesystem path (relative to the
