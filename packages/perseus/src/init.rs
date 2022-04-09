@@ -18,11 +18,10 @@ use sycamore::{
 };
 
 /// The default index view, because some simple apps won't need anything fancy here. The user should be able to provide the smallest possible amount of information for their app to work.
-/// Note that this doesn't declare a character set or anything else (for maximal cross-language compatibility)
 static DFLT_INDEX_VIEW: &str = r#"<!DOCTYPE html>
 <html>
     <head>
-        <meta charset=UTF-8" />
+        <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     </head>
     <body>
