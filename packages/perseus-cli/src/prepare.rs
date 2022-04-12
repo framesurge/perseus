@@ -120,7 +120,7 @@ pub fn prepare(dir: PathBuf, engine_url: &str) -> Result<(), PrepError> {
         // We don't need to do that in the server manifest because it uses the root code (which re-exports the `PerseusApp`)
         // We used to add a workspace here, but that means size optimizations apply to both the client and the server, so that's not done anymore
         // Now, we use an empty workspace to make sure we don't include the engine in any user workspaces
-        // We use a token here that's set by the Bonnie `copy-subcrates` script
+        // We use a token here that's set by the build script
         let updated_root_manifest =
             root_manifest_contents.replace("USER_PKG_NAME", &user_crate_name) + "\n[workspace]";
         let updated_server_manifest = server_manifest_contents + "\n[workspace]";
@@ -128,7 +128,7 @@ pub fn prepare(dir: PathBuf, engine_url: &str) -> Result<(), PrepError> {
 
         // We also need to set the Perseus version
         // In production, we'll use the full version, but in development we'll use relative path references from the examples
-        // The tokens here are set by Bonnie's `copy-subcrates` script once again
+        // The tokens here are set by the build script once again
         // Production
         #[cfg(not(debug_assertions))]
         let updated_root_manifest = updated_root_manifest.replace(
