@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4-rc.3](https://github.com/arctic-hen7/perseus/compare/v0.3.4-rc.2...v0.3.4-rc.3) (2022-04-13)
+
+
+### Bug Fixes
+
+* fixed versioning for `perseus-macro` dependencies ([e46c3ca](https://github.com/arctic-hen7/perseus/commit/e46c3caf0e36dfc6ec8a0a99a88ee83b99ceb2be))
+
 ### [0.3.4-rc.2](https://github.com/arctic-hen7/perseus/compare/v0.3.4-rc.1...v0.3.4-rc.2) (2022-04-13)
 
 ### [0.3.4-rc.1](https://github.com/arctic-hen7/perseus/compare/v0.3.3...v0.3.4-rc.1) (2022-04-13)
