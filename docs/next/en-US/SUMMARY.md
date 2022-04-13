@@ -66,7 +66,7 @@
     -   [Optimizing Code Size](/docs/reference/deploying/size)
     -   [Relative Paths](/docs/reference/deploying/relative-paths)
     -   [Docker Deployment](/docs/reference/deploying/docker)
--   [Migrating from v0.2.x](/docs/reference/updating)
+-   [Migrating from v0.3.3](/docs/reference/updating)
 -   [Common Pitfalls and Known Bugs](/docs/reference/pitfalls-and-bugs)
 
 ---

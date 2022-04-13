@@ -1,21 +1,17 @@
-# Migrating from v0.2.x
+# Migrating from v0.3.3
 
-Perseus v0.3.0 added significant architectural changes to Perseus under the hood, and also made it easier to use for you! Additionally, this update provides inbuilt deployment functionality for moving Perseus to production (though that's not recommended yet)! If you're currently running v0.2.x, here's how to upgrade!
+Perseus v0.3.4 added a *huge* number of new features to do with the new [reactive state platform](:reference/state/rx), but maintains backward-compatibility with (almost) all uses of v0.3.3. If you're currently running v0.3.0-0.3.3, here's how to upgrade! Note that any sites you've built with v0.3.3 should still work fine.
 
-1. Update your `Cargo.toml` dependencies for `perseus` to `0.3`.
-2. Upgrade the Perseus CLI with `cargo install perseus-cli`.
+1. Update your `Cargo.toml` dependencies for `perseus` to `0.3.4` (to force the upgrade).
+2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.3.4`.
 3. Run `perseus clean` to remove the old `.perseus/` directory.
-4. Remove any custom config managers you may have, they've been replaced by [mutable and immutable stores](:reference/stores).
-5. Take anything Perseus-related wrapped in `Rc::new` (these will be all through your template definitions and error pages) and remove the `Rc::new`, Perseus now handles that internally, with no performance cost!
-6. If you're using i18n, add the `translator-fluent` flag to `perseus` in your `Cargo.toml`. If you're not, your Wasm bundle size has been reduced!
-7. Change any uses of the `HOST` and `PORT` environment variables to the `--host` and `--port` flags on `perseus serve` in development, and use `PERSEUS_HOST` and `PERSEUS_PORT` in production. The original environment variable names will still work in deployments, but they'll be deprecated in v0.4.0.
-8. Update your code for the remaining breaking changes listed in [the CHANGELOG](https://github.com/arctic-hen7/perseus/blob/main/CHANGELOG).
+4. Update your code for the new [reactive state platform](:reference/state/rx) if you want to!
 
-Perseus v0.3.0 also changed a few common idioms, like breaking out the `.template()` call into a separate function `template_fn()`. This is no longer recommended, though it will still work fine. You can check out the [examples directory](https://github.com/arctic-hen7/perseus/tree/main/examples) to see how things are a bit nicer now in terms of formatting.
+Perseus v0.3.4 also changed several idioms, particularly deprecating `define_app!` in favor of the more versatile `PerseusApp`. This change isn't compulsory, and no warning will appear yet, but it's recommended that you upgrade soon. You can see examples of the new idioms [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
 
 ## If You've Ejected
 
-If you were running Perseus v0.2.x and had ejected, here are the steps you should take in addition to the above.
+If you were running Perseus v0.3.3 and had ejected, here are the steps you should take in addition to the above.
 
 1. Rename `.perseus/` to `.perseus.old/`.
 2. Run `perseus build` to create a new `.perseus/` directory.
@@ -23,4 +19,4 @@ If you were running Perseus v0.2.x and had ejected, here are the steps you shoul
 4. Delete `.perseus.old/` when you're done.
 5. Confirm everything works with `perseus serve`.
 
-This may seem arduous, but v0.3.0 includes notable updates to the innards in `.perseus/`, and it's typically simpler to re-apply your own changes to the new system than it is to apply Perseus' updates to your existing directory (though you could do this if you really wanted).
+This may seem arduous, but v0.3.4 includes extreme restructuring of the innards in `.perseus/`, and it's typically simpler to re-apply your own changes to the new system than it is to apply Perseus' updates to your existing directory (though you could do this if you really wanted).
