@@ -1,6 +1,6 @@
 [package]
 name = "perseus-macro"
-version = "0.3.4-rc.4"
+version = "0.3.4-rc.5"
 edition = "2018"
 autotests = false
 description = "The Perseus macros."
@@ -31,7 +31,7 @@ sycamore-reactive = "^0.7.1"
 trybuild = { version = "1.0", features = ["diff"] }
 sycamore = "^0.7.1"
 serde = { version = "1", features = [ "derive" ] }
-perseus = { path = "../perseus", version = "0.3.4-rc.4" }
+perseus = { path = "../perseus", version = "0.3.4-rc.5" }
 
 [features]
 # Enables live reloading support (which makes the macros listen for live reload events and adjust appropriately). Do NOT enable this here without also enabling it on `perseus`!

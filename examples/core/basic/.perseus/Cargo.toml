@@ -3,7 +3,7 @@
 
 [package]
 name = "perseus-engine"
-version = "0.3.4-rc.4"
+version = "0.3.4-rc.5"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -6,7 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { version = "0.3.4-rc.4", features = [ "hydrate" ] }
+perseus = { version = "0.3.4-rc.5", features = [ "hydrate" ] }
 sycamore = "0.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
