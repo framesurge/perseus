@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4-rc.4](https://github.com/arctic-hen7/perseus/compare/v0.3.4-rc.3...v0.3.4-rc.4) (2022-04-14)
+
 ### [0.3.4-rc.3](https://github.com/arctic-hen7/perseus/compare/v0.3.4-rc.2...v0.3.4-rc.3) (2022-04-13)
 
 
