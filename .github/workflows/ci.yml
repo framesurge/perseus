@@ -57,7 +57,7 @@ jobs:
                       type: core
         steps:
             - uses: actions/checkout@v2
-            - run: cargo install bonnie wasm-pack
+            - run: cargo install bonnie wasm-pack rust-script
             - run: sudo apt update
             - run: sudo apt install firefox firefox-geckodriver
             - name: Run Firefox WebDriver

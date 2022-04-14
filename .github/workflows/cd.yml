@@ -41,6 +41,7 @@ jobs:
         runs-on: ubuntu-latest # We cross-compile from Ubuntu
         steps:
             - uses: actions/checkout@v2
+            - run: sudo apt install musl-tools
             - name: Install musl toolchain
               run: rustup target add x86_64-unknown-linux-musl
             - run: cargo install bonnie
