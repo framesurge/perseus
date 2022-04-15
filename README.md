@@ -23,18 +23,20 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 Here's a taste of Perseus (see [the _tiny_ example](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny) for more):
 
 ```rust
-use perseus::{define_app, ErrorPages, Template};
+use perseus::{Html, PerseusApp, Template};
 use sycamore::view;
-define_app! {
-    templates: [
-        Template::<G>::new("index").template(|_| view! {
-            p { "Hello World!" }
+
+#[perseus::main]
+pub fn main<G: Html>() -> PerseusApp<G> {
+    PerseusApp::new().template(|| {
+        Template::new("index").template(|_| {
+            view! {
+                p { "Hello World!" }
+            }
         })
-    ],
-    error_pages: ErrorPages::new(|url, status, err, _| view! {
-        p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
     })
 }
+
 ```
 
 Check out [the book](https://arctic-hen7.github.io/perseus/en-US) to learn how to turn that into your next app!
