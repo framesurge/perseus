@@ -39,7 +39,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 
 ```
 
-Check out [the book](https://arctic-hen7.github.io/perseus/en-US) to learn how to turn that into your next app!
+Check out [the book](https://arctic-hen7.github.io/perseus/en-US/docs) to learn how to turn that into your next app!
 
 ## Aim
 
