@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4-rc.6](https://github.com/arctic-hen7/perseus/compare/v0.3.4-rc.5...v0.3.4-rc.6) (2022-04-17)
+
+
+### Bug Fixes
+
+* removed cyclical dependency ([ef307cc](https://github.com/arctic-hen7/perseus/commit/ef307cc1b2fedce9b73a4df4c58f26ece1cc3977))
+
+
+### Documentation Changes
+
+* updated readme book link ([0ba0187](https://github.com/arctic-hen7/perseus/commit/0ba01877b5c3e2994f6cfea66dc4193d14b79aa9))
+* updated readme code example ([bd30995](https://github.com/arctic-hen7/perseus/commit/bd3099526fe08101cbc8377e28df536ac13b6924))
+
 ### [0.3.4-rc.5](https://github.com/arctic-hen7/perseus/compare/v0.3.4-rc.4...v0.3.4-rc.5) (2022-04-14)
 
 ### [0.3.4-rc.4](https://github.com/arctic-hen7/perseus/compare/v0.3.4-rc.3...v0.3.4-rc.4) (2022-04-14)
