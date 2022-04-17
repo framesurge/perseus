@@ -1,6 +1,6 @@
 [package]
 name = "perseus-example-plugins"
-version = "0.3.4-rc.5"
+version = "0.3.0-rc.6"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
