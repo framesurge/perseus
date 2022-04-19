@@ -189,6 +189,10 @@ test.subcommands.example-all-integrations.desc = "tests a single example with al
 release.cmd = [
     "git checkout stable",
     "git merge main",
+    # Build the CLI to make sure all the version numbers are up to date
+    "cd packages/perseus-cli",
+    "cargo build",
+    "cd ../..",
     "standard-version --sign --commit-all %%",
     "git push --follow-tags origin stable",
     "git checkout main",
