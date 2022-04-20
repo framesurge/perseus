@@ -309,7 +309,16 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Warning: this view can't be reactive (yet). It will be rendered to a static string, which won't be hydrated.
     // The lifetime of the provided function doesn't need to be static, because we render using it and then we're done with it
     pub fn index_view<'a>(mut self, f: impl Fn() -> View<SsrNode> + 'a) -> Self {
+        // This, very problematically, could add hydration IDs to the `<head>` and `<body>`, which we MUST NOT have (or the HTML shell's interpolation breaks in unexpected ways)
         let html_str = sycamore::render_to_string(f);
+        // So, we get rid of the hydration IDs completely
+        // We have to get rid of leftover spaces as well to make sure we're completely good for the naive string replacement
+        #[cfg(not(target_arch = "wasm32"))]
+        let html_str = regex::Regex::new(r#"data-hk=".*?""#)
+            .unwrap()
+            .replace_all(&html_str, "")
+            .to_string()
+            .replace(" >", ">");
         self.index_view = html_str;
         self
     }

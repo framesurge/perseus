@@ -230,7 +230,8 @@ impl HtmlShell {
         self
     }
 }
-// This code actually interpolates everything in the correct places.
+// This code actually interpolates everything in the correct places
+// Because of the way these string interpolations work, there MUST NOT be hydration IDs on the `<head>` or `<body>` tags, or Perseus will break in very unexpected ways
 impl fmt::Display for HtmlShell {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let head_start = self.head_before_boundary.join("\n");

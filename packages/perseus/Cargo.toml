@@ -30,13 +30,15 @@ urlencoding = "2.1"
 chrono = "0.4"
 http = "0.2"
 async-trait = "0.1"
-cfg-if = "1"
 fluent-bundle = { version = "0.15", optional = true }
 unic-langid = { version = "0.9", optional = true }
 intl-memoizer = { version = "0.5", optional = true }
 tokio = { version = "1", features = [ "fs", "io-util" ] }
 rexie = { version = "0.2", optional = true }
 js-sys = { version = "0.3", optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+regex = "1"
 
 [features]
 # Live reloading will only take effect in development, and won't impact production
