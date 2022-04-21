@@ -115,7 +115,7 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
                 #(#attrs)*
-                async fn #name#generics(#args) -> #return_type {
+                async fn #name #generics(#args) -> #return_type {
                     #block
                 }
                 // Call the user's function with the usual arguments and then serialize the result to a string
@@ -133,7 +133,7 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
                 #(#attrs)*
-                async fn #name#generics(#args) -> #return_type {
+                async fn #name #generics(#args) -> #return_type {
                     #block
                 }
                 // Call the user's function with the usual arguments and then serialize the result to a string
@@ -151,7 +151,7 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 // The user's function
                 // We can assume the return type to be `HeaderMap`
                 #(#attrs)*
-                fn #name#generics(#args) -> #return_type {
+                fn #name #generics(#args) -> #return_type {
                     #block
                 }
                 // Deserialize the props and then call the user's function
@@ -166,7 +166,7 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<Option<CustomTemplatePropsType>>`
                 #(#attrs)*
-                fn #name#generics(#args) -> #return_type {
+                fn #name #generics(#args) -> #return_type {
                     #block
                 }
                 // Call the user's function with the usual arguments and then serialize the result to a string
@@ -183,7 +183,7 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomGlobalStateType>`
                 #(#attrs)*
-                async fn #name#generics(#args) -> #return_type {
+                async fn #name #generics(#args) -> #return_type {
                     #block
                 }
                 // Call the user's function and then serialize the result to a string

@@ -132,7 +132,7 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                fn #name#generics(#arg) -> #return_type {
+                fn #name #generics(#arg) -> #return_type {
                     #block
                 }
                 ::sycamore::prelude::view! {
@@ -155,7 +155,7 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                fn #name#generics(#arg) -> #return_type {
+                fn #name #generics(#arg) -> #return_type {
                     #block
                 }
                 ::sycamore::prelude::view! {

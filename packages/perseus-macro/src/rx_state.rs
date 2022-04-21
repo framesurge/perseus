@@ -180,23 +180,23 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         // We add a Serde derivation because it will always be necessary for Perseus on the original `struct`, and it's really difficult and brittle to filter it out
         #[derive(::serde::Serialize, ::serde::Deserialize, ::std::clone::Clone)]
         #orig_struct
-        impl#generics ::perseus::state::MakeRx for #ident#generics {
-            type Rx = #name#generics;
-            fn make_rx(self) -> #name#generics {
+        impl #generics ::perseus::state::MakeRx for #ident #generics {
+            type Rx = #name #generics;
+            fn make_rx(self) -> #name #generics {
                 use ::perseus::state::MakeRx;
                 #make_rx_fields
             }
         }
         #[derive(::std::clone::Clone)]
         #new_struct
-        impl#generics ::perseus::state::MakeUnrx for #name#generics {
-            type Unrx = #ident#generics;
-            fn make_unrx(self) -> #ident#generics {
+        impl #generics ::perseus::state::MakeUnrx for #name #generics {
+            type Unrx = #ident #generics;
+            fn make_unrx(self) -> #ident #generics {
                 use ::perseus::state::MakeUnrx;
                 #make_unrx_fields
             }
         }
-        impl#generics ::perseus::state::Freeze for #name#generics {
+        impl #generics ::perseus::state::Freeze for #name #generics {
             fn freeze(&self) -> ::std::string::String {
                 use ::perseus::state::MakeUnrx;
                 let unrx = #make_unrx_fields;

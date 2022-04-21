@@ -240,7 +240,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
                     #[::sycamore::component(PerseusPage<#type_param>)]
-                    fn #name#generics(#state_arg) -> #return_type {
+                    fn #name #generics(#state_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
                             let global_state = ::perseus::get_render_ctx!().global_state.0;
                             let global_state = global_state.borrow();
@@ -279,7 +279,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
                     #[::sycamore::component(PerseusPage<#type_param>)]
-                    fn #name#generics(#state_arg) -> #return_type {
+                    fn #name #generics(#state_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
                             let global_state = ::perseus::get_render_ctx!().global_state.0;
                             let global_state = global_state.borrow();
@@ -334,7 +334,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
                 #[::sycamore::component(PerseusPage<#type_param>)]
-                fn #name#generics(#arg) -> #return_type {
+                fn #name #generics(#arg) -> #return_type {
                     #block
                 }
                 ::sycamore::prelude::view! {
@@ -374,7 +374,7 @@ pub fn template_impl(input: TemplateFn, attr_args: AttributeArgs) -> TokenStream
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
                 #[::sycamore::component(PerseusPage<#type_param>)]
-                fn #name#generics() -> #return_type {
+                fn #name #generics() -> #return_type {
                     #block
                 }
                 ::sycamore::prelude::view! {
