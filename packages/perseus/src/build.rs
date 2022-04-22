@@ -136,9 +136,10 @@ async fn gen_state_for_path(
             global_state: global_state.clone(),
         };
         // Prerender the template using that state
-        let prerendered = sycamore::render_to_string(|| {
+        let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
                 page_props.clone(),
+                cx,
                 translator,
                 true,
                 RouterState::default(),
@@ -177,9 +178,10 @@ async fn gen_state_for_path(
             global_state: global_state.clone(),
         };
         // Prerender the template using that state
-        let prerendered = sycamore::render_to_string(|| {
+        let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
                 page_props.clone(),
+                cx,
                 translator,
                 true,
                 RouterState::default(),
@@ -228,9 +230,10 @@ async fn gen_state_for_path(
             state: None,
             global_state: global_state.clone(),
         };
-        let prerendered = sycamore::render_to_string(|| {
+        let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
                 page_props.clone(),
+                cx,
                 translator,
                 true,
                 RouterState::default(),

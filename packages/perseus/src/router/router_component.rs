@@ -13,8 +13,12 @@ use crate::{
 };
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use sycamore::prelude::{
-    cloned, component, create_effect, view, NodeRef, ReadSignal, Signal, View,
+use sycamore::{
+    prelude::{
+        cloned, component, create_effect, create_signal, view, NodeRef, ReadSignal, Scope, Signal,
+        View,
+    },
+    Prop,
 };
 use sycamore_router::{HistoryIntegration, Router, RouterProps};
 use web_sys::Element;
@@ -145,7 +149,7 @@ fn on_route_change<G: Html>(
 }
 
 /// The properties that the router takes.
-#[derive(Debug)]
+#[derive(Debug, Prop)]
 pub struct PerseusRouterProps {
     /// The error pages the app is using.
     pub error_pages: ErrorPages<DomNode>,
@@ -158,8 +162,9 @@ pub struct PerseusRouterProps {
 ///
 /// The `AppRoute` generic provided to this should be generated with `create_app_root!` and provided through Sycamore's
 /// [higher-order components system](https://github.com/sycamore-rs/sycamore/blob/master/examples/higher-order-components/src/main.rs).
-#[component(PerseusRouter<G>)]
-pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
+#[component]
+pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
+    cx: Scope,
     PerseusRouterProps {
         error_pages,
         locales,
@@ -198,15 +203,15 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
     // can signal the templates to perform freezing/thawing
     // It doesn't matter what the initial value is, this is just a flip-flop
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    let live_reload_indicator = Signal::new(true);
+    let live_reload_indicator = create_signal(cx, true);
 
     // Create a derived state for the route announcement
     // We do this with an effect because we only want to update in some cases (when the new page is actually loaded)
     // We also need to know if it's the first page (because we don't want to announce that, screen readers will get that one right)
-    let route_announcement = Signal::new(String::new());
+    let route_announcement = create_signal(cx, String::new());
     let mut is_first_page = true; // This is different from the first page load (this is the first page as a whole)
-    create_effect(
-        cloned!(route_announcement, router_state => move || if let RouterLoadState::Loaded { path, .. } = &*router_state.get_load_state().get() {
+    create_effect(cx, move || {
+        if let RouterLoadState::Loaded { path, .. } = &*router_state.get_load_state().get() {
             if is_first_page {
                 // This is the first load event, so the next one will be for a new page (or at least something that we should announce, if this page reloads then the content will change, that would be from thawing)
                 is_first_page = false;
@@ -240,15 +245,15 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
                         match first_h1 {
                             Some(val) => val,
                             // Our final fallback will be the path
-                            None => path.to_string()
+                            None => path.to_string(),
                         }
                     }
                 };
 
                 route_announcement.set(announcement);
             }
-        }),
-    );
+        }
+    });
 
     // Set up the function we'll call on a route change
     // Set up the properties for the function we'll call in a route change
@@ -264,24 +269,22 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
         initial_container,
         is_first,
         #[cfg(all(feature = "live-reload", debug_assertions))]
-        live_reload_indicator: live_reload_indicator.handle(),
+        live_reload_indicator: *live_reload_indicator,
     };
 
     // Listen for changes to the reload commander and reload as appropriate
     let reload_commander = router_state.reload_commander.clone();
-    create_effect(
-        cloned!(router_state, reload_commander, on_route_change_props => move || {
-            // This is just a flip-flop, but we need to add it to the effect's dependencies
-            let _ = reload_commander.get();
-            // Get the route verdict and re-run the function we use on route changes
-            let verdict = match router_state.get_last_verdict() {
-                Some(verdict) => verdict,
-                // If the first page hasn't loaded yet, terminate now
-                None => return
-            };
-            on_route_change(verdict, on_route_change_props.clone());
-        }),
-    );
+    create_effect(cx, move || {
+        // This is just a flip-flop, but we need to add it to the effect's dependencies
+        let _ = reload_commander.get();
+        // Get the route verdict and re-run the function we use on route changes
+        let verdict = match router_state.get_last_verdict() {
+            Some(verdict) => verdict,
+            // If the first page hasn't loaded yet, terminate now
+            None => return,
+        };
+        on_route_change(verdict, on_route_change_props.clone());
+    });
 
     // TODO State thawing in HSR
     // If live reloading is enabled, connect to the server now
@@ -289,24 +292,28 @@ pub fn perseus_router<AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
     #[cfg(all(feature = "live-reload", debug_assertions))]
     crate::state::connect_to_reload_server(live_reload_indicator);
 
-    view! {
-        Router(RouterProps::new(HistoryIntegration::new(), cloned!(on_route_change_props => move |route: ReadSignal<AppRoute>| {
-            // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
-            // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
-            create_effect(cloned!(route, on_route_change_props => move || {
-                let verdict = route.get().get_verdict().clone();
-                on_route_change(verdict, on_route_change_props.clone());
-            }));
+    view! { cx,
 
-            // This template is reactive, and will be updated as necessary
-            // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
-            // The main reason for this is that the router only intercepts click events from its children
-            view! {
-                div {
-                    div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
-                    p(id = "__perseus_route_announcer", aria_live = "assertive", role = "alert", style = ROUTE_ANNOUNCER_STYLES) { (route_announcement.get()) }
+        Router {
+            integration: HistoryIntegration::new(),
+            view: |cx, route: &ReadSignal<AppRoute>| {
+                // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
+                // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
+                create_effect(cx, move || {
+                    let verdict = route.get().get_verdict().clone();
+                    on_route_change(verdict, on_route_change_props.clone());
+                });
+
+                // This template is reactive, and will be updated as necessary
+                // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
+                // The main reason for this is that the router only intercepts click events from its children
+                view! { cx,
+                    div {
+                        div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
+                        p(id = "__perseus_route_announcer", aria_live = "assertive", role = "alert", style = ROUTE_ANNOUNCER_STYLES) { (route_announcement.get()) }
+                    }
                 }
             }
-        })))
+        }
     }
 }

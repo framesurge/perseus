@@ -6,15 +6,15 @@ use crate::{
     state::GlobalStateCreator,
     stores::{FsMutableStore, ImmutableStore, MutableStore},
     templates::TemplateMap,
-    ErrorPages, Html, Plugins, Template,
+    ErrorPages, Html, Plugins, SsrNode, Template,
 };
 use futures::Future;
 use std::pin::Pin;
 use std::{collections::HashMap, rc::Rc};
+use sycamore::prelude::Scope;
 use sycamore::{
     prelude::{component, view},
     view::View,
-    SsrNode,
 };
 
 /// The default index view, because some simple apps won't need anything fancy here. The user should be able to provide the smallest possible amount of information for their app to work.
@@ -308,7 +308,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ///
     /// Warning: this view can't be reactive (yet). It will be rendered to a static string, which won't be hydrated.
     // The lifetime of the provided function doesn't need to be static, because we render using it and then we're done with it
-    pub fn index_view<'a>(mut self, f: impl Fn() -> View<SsrNode> + 'a) -> Self {
+    pub fn index_view<'a>(mut self, f: impl Fn(Scope) -> View<SsrNode> + 'a) -> Self {
         // This, very problematically, could add hydration IDs to the `<head>` and `<body>`, which we MUST NOT have (or the HTML shell's interpolation breaks in unexpected ways)
         let html_str = sycamore::render_to_string(f);
         // So, we get rid of the hydration IDs completely
@@ -610,9 +610,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
 /// The component that represents the entrypoint at which Perseus will inject itself. You can use this with the `.index_view()` method of `PerseusApp` to avoid having to create the entrypoint
 /// `<div>` manually.
-#[component(PerseusRoot<G>)]
-pub fn perseus_root() -> View<G> {
-    view! {
+#[component]
+pub fn perseus_root<G: Html>(cx: Scope) -> View<G> {
+    view! { cx,
         div(dangerously_set_inner_html = "<div id=\"root\"></div>")
     }
 }

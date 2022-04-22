@@ -3,6 +3,7 @@ use crate::{DomNode, Html, HydrateNode, SsrNode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
+use sycamore::prelude::Scope;
 use sycamore::view;
 use sycamore::view::View;
 use web_sys::Element;
@@ -11,7 +12,7 @@ use web_sys::Element;
 /// problematic asset, and a translator if one is available . Many error pages are generated when a translator is not available or
 /// couldn't be instantiated, so you'll need to rely on symbols or the like in these cases.
 pub type ErrorPageTemplate<G> =
-    Box<dyn Fn(String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
+    Box<dyn Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
 
 /// A type alias for the `HashMap` the user should provide for error pages.
 pub struct ErrorPages<G: Html> {
@@ -26,7 +27,7 @@ impl<G: Html> std::fmt::Debug for ErrorPages<G> {
 impl<G: Html> ErrorPages<G> {
     /// Creates a new definition of error pages with just a fallback.
     pub fn new(
-        fallback: impl Fn(String, u16, String, Option<Rc<Translator>>) -> View<G>
+        fallback: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G>
             + Send
             + Sync
             + 'static,
@@ -41,7 +42,10 @@ impl<G: Html> ErrorPages<G> {
     pub fn add_page(
         &mut self,
         status: u16,
-        page: impl Fn(String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync + 'static,
+        page: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G>
+            + Send
+            + Sync
+            + 'static,
     ) {
         self.status_pages.insert(status, Box::new(page));
     }
@@ -60,6 +64,7 @@ impl<G: Html> ErrorPages<G> {
         }
     }
     /// Gets the template for a page without rendering it into a container.
+    // TODO Make this work somehow
     pub fn get_template_for_page(
         &self,
         url: &str,
@@ -85,7 +90,7 @@ impl ErrorPages<DomNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::render_to(
-            || template_fn(url.to_string(), status, err.to_string(), translator),
+            |cx| template_fn(cx, url.to_string(), status, err.to_string(), translator),
             container,
         );
     }
@@ -104,7 +109,7 @@ impl ErrorPages<HydrateNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::hydrate_to(
-            || template_fn(url.to_string(), status, err.to_string(), translator),
+            |cx| template_fn(cx, url.to_string(), status, err.to_string(), translator),
             container,
         );
     }
@@ -120,8 +125,8 @@ impl ErrorPages<SsrNode> {
     ) -> String {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
-        sycamore::render_to_string(|| {
-            template_fn(url.to_string(), status, err.to_string(), translator)
+        sycamore::render_to_string(|cx| {
+            template_fn(cx, url.to_string(), status, err.to_string(), translator)
         })
     }
 }
@@ -129,14 +134,14 @@ impl ErrorPages<SsrNode> {
 impl<G: Html> Default for ErrorPages<G> {
     #[cfg(debug_assertions)]
     fn default() -> Self {
-        let mut error_pages = Self::new(|url, status, err, _| {
-            view! {
+        let mut error_pages = Self::new(|cx, url, status, err, _| {
+            view! { cx,
                 p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
             }
         });
         // 404 is the most common by far, so we add a little page for that too
-        error_pages.add_page(404, |_, _, _, _| {
-            view! {
+        error_pages.add_page(404, |cx, _, _, _, _| {
+            view! { cx,
                 p { "Page not found." }
             }
         });

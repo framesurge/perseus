@@ -91,9 +91,10 @@ async fn render_request_state(
         global_state: global_state.clone(),
     };
     // Use that to render the static HTML
-    let html = sycamore::render_to_string(|| {
+    let html = sycamore::render_to_string(|cx| {
         template.render_for_template_server(
             page_props.clone(),
+            cx,
             translator,
             true,
             RouterState::default(),
@@ -190,9 +191,10 @@ async fn revalidate(
         state: state.clone(),
         global_state: global_state.clone(),
     };
-    let html = sycamore::render_to_string(|| {
+    let html = sycamore::render_to_string(|cx| {
         template.render_for_template_server(
             page_props.clone(),
+            cx,
             translator,
             true,
             RouterState::default(),
@@ -346,9 +348,10 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                         state: state.clone(),
                         global_state: global_state.clone(),
                     };
-                    let html_val = sycamore::render_to_string(|| {
+                    let html_val = sycamore::render_to_string(|cx| {
                         template.render_for_template_server(
                             page_props.clone(),
+                            cx,
                             &translator,
                             true,
                             RouterState::default(),

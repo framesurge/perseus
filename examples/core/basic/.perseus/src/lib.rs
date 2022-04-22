@@ -60,9 +60,10 @@ pub fn run() -> Result<(), JsValue> {
         error_pages: app.get_error_pages(),
     };
 
+    // The context here is for the top-level, and it's not used anywhere else (we have multiple nested views, and we manage scope contexts there)
     sycamore::render_to(
-        move || {
-            view! {
+        move |cx| {
+            view! { cx,
                 // Actually render the router
                 // The Perseus router includes our entire app, and is, for all intents and purposes, the app itself
                 PerseusRouterWithAppRoute(router_props)

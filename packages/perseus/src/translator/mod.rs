@@ -55,24 +55,24 @@ pub use DUMMY_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 #[macro_export]
 macro_rules! t {
     // When there are no arguments to interpolate
-    ($id:expr) => {
-        $crate::internal::i18n::t_macro_backend($id)
+    ($id:expr, $cx:expr) => {
+        $crate::internal::i18n::t_macro_backend($id, $cx)
     };
     // When there are arguments to interpolate
     ($id:expr, {
         $($key:literal: $value:expr),+
-    }) => {{
+    }, $cx:expr) => {{
         let mut args = $crate::internal::i18n::TranslationArgs::new();
         $(
             args.set($key, $value);
         )+
-        $crate::internal::i18n::t_macro_backend_with_args($id, args)
+        $crate::internal::i18n::t_macro_backend_with_args($id, args, $cx)
     }};
 }
 /// Gets the link to the given resource in internationalized form conveniently.
 #[macro_export]
 macro_rules! link {
-    ($url:expr) => {
-        $crate::internal::i18n::link_macro_backend($url)
+    ($url:expr, $cx:expr) => {
+        $crate::internal::i18n::link_macro_backend($url, $cx)
     };
 }

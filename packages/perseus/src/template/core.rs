@@ -15,6 +15,7 @@ use http::header::HeaderMap;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use sycamore::context::{ContextProvider, ContextProviderProps};
+use sycamore::prelude::Scope;
 use sycamore::prelude::{view, View};
 
 /// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
@@ -51,7 +52,7 @@ make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
 /// given `Option` inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be made available through Sycamore's
 /// [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
-pub type TemplateFn<G> = Box<dyn Fn(PageProps) -> View<G> + Send + Sync>;
+pub type TemplateFn<G> = Box<dyn Fn(PageProps, Scope) -> View<G> + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just a template function that will always be server-side
 /// rendered in function (it may be rendered on the client, but it will always be used to create an HTML string, rather than a reactive
 /// template).
@@ -161,9 +162,9 @@ impl<G: Html> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_| sycamore::view! {}),
+            template: Box::new(|_, cx| sycamore::view! { cx, }),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
-            head: Box::new(|_| sycamore::view! {}),
+            head: Box::new(|_, cx| sycamore::view! { cx, }),
             // We create sensible header defaults here
             set_headers: Box::new(|_| default_headers()),
             get_build_paths: None,
@@ -182,6 +183,7 @@ impl<G: Html> Template<G> {
     pub fn render_for_template_client(
         &self,
         props: PageProps,
+        cx: Scope,
         translator: &Translator,
         is_server: bool,
         router_state: RouterState,
@@ -193,7 +195,7 @@ impl<G: Html> Template<G> {
         #[cfg(all(feature = "live-reload", debug_assertions))]
         live_reload_indicator: sycamore::prelude::ReadSignal<bool>,
     ) -> View<G> {
-        view! {
+        view! { cx,
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
             ContextProvider(ContextProviderProps {
                 value: RenderCtx {
@@ -207,7 +209,7 @@ impl<G: Html> Template<G> {
                     #[cfg(all(feature = "live-reload", debug_assertions))]
                     live_reload_indicator
                 },
-                children: || (self.template)(props)
+                children: || (self.template)(props, cx)
             })
         }
     }
@@ -215,12 +217,13 @@ impl<G: Html> Template<G> {
     pub fn render_for_template_server(
         &self,
         props: PageProps,
+        cx: Scope,
         translator: &Translator,
         is_server: bool,
         router_state: RouterState,
         page_state_store: PageStateStore,
     ) -> View<G> {
-        view! {
+        view! { cx,
             // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
             ContextProvider(ContextProviderProps {
                 value: RenderCtx {
@@ -237,15 +240,15 @@ impl<G: Html> Template<G> {
                     #[cfg(all(feature = "live-reload", debug_assertions))]
                     live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
                 },
-                children: || (self.template)(props)
+                children: || (self.template)(props, cx)
             })
         }
     }
     /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually. Reactivity
     /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
     pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
-        sycamore::render_to_string(|| {
-            view! {
+        sycamore::render_to_string(|cx| {
+            view! { cx,
                 // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
                 ContextProvider(ContextProviderProps {
                     value: RenderCtx {
@@ -265,7 +268,7 @@ impl<G: Html> Template<G> {
                         #[cfg(all(feature = "live-reload", debug_assertions))]
                         live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
                     },
-                    children: || (self.head)(props)
+                    children: || (self.head)(props, cx)
                 })
             }
         })
@@ -456,7 +459,7 @@ impl<G: Html> Template<G> {
     /// Sets the template rendering function to use.
     pub fn template(
         mut self,
-        val: impl Fn(PageProps) -> View<G> + Send + Sync + 'static,
+        val: impl Fn(PageProps, Scope) -> View<G> + Send + Sync + 'static,
     ) -> Template<G> {
         self.template = Box::new(val);
         self
