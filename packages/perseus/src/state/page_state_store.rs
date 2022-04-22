@@ -21,8 +21,7 @@ impl PageStateStore {
     pub fn get<T: AnyFreeze + Clone>(&self, url: &str) -> Option<T> {
         let map = self.map.borrow();
         map.get(url)
-            .map(|val| val.as_any().downcast_ref::<T>().map(|val| (*val).clone()))
-            .flatten()
+            .and_then(|val| val.as_any().downcast_ref::<T>().map(|val| (*val).clone()))
     }
     /// Adds a new element to the state by its URL. Any existing element with the same URL will be silently overriden (use `.contains()` to check first if needed).
     pub fn add<T: AnyFreeze + Clone>(&mut self, url: &str, val: T) {

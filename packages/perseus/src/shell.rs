@@ -109,8 +109,8 @@ pub fn get_initial_state() -> InitialState {
         let err_page_data_str = state_str
             .strip_prefix("error-")
             .unwrap()
-            .replace("\n", "\\n")
-            .replace("\t", "\\t");
+            .replace('\n', "\\n")
+            .replace('\t', "\\t");
         // There will be error page data encoded after `error-`
         let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str) {
             Ok(render_cfg) => render_cfg,

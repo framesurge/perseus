@@ -40,7 +40,7 @@ where
     Ft: Future<Output = Result<D, E>>,
 {
     // Replace any slashes with dashes to keep a flat directory structure
-    let name = name.replace("/", "-");
+    let name = name.replace('/', "-");
     // In production, we'll just run the function directly
     if cfg!(debug_assertions) {
         // Check if the cache file exists

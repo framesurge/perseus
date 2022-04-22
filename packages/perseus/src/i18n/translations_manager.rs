@@ -189,12 +189,11 @@ impl TranslationsManager for FsTranslationsManager {
 
         // Check if the locale is cached for
         // No dynamic caching, so if it isn't cached it stays that way
-        let translations_str;
-        if self.cached_locales.contains(&locale) {
-            translations_str = self.cached_translations.get(&locale).unwrap().to_string();
+        let translations_str = if self.cached_locales.contains(&locale) {
+            self.cached_translations.get(&locale).unwrap().to_string()
         } else {
-            translations_str = self.get_translations_str_for_locale(locale.clone()).await?;
-        }
+            self.get_translations_str_for_locale(locale.clone()).await?
+        };
         // We expect the translations defined there, but not the locale itself
         let translator = Translator::new(locale.clone(), translations_str).map_err(|err| {
             TranslationsManagerError::SerializationFailed {

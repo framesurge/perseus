@@ -233,16 +233,14 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
                 let title = document
                     .query_selector("title")
                     .unwrap()
-                    .map(make_empty_none)
-                    .flatten();
+                    .and_then(make_empty_none);
                 let announcement = match title {
                     Some(title) => title,
                     None => {
                         let first_h1 = document
                             .query_selector("h1")
                             .unwrap()
-                            .map(make_empty_none)
-                            .flatten();
+                            .and_then(make_empty_none);
                         match first_h1 {
                             Some(val) => val,
                             // Our final fallback will be the path
