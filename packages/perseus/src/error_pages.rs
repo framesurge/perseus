@@ -63,19 +63,19 @@ impl<G: Html> ErrorPages<G> {
             false => &self.fallback,
         }
     }
-    /// Gets the template for a page without rendering it into a container.
-    // TODO Make this work somehow
-    pub fn get_template_for_page(
-        &self,
-        url: &str,
-        status: u16,
-        err: &str,
-        translator: Option<Rc<Translator>>,
-    ) -> View<G> {
-        let template_fn = self.get_template_fn(status);
+    // /// Gets the template for a page without rendering it into a container.
+    // // TODO Make this work somehow
+    // pub fn get_template_for_page(
+    //     &self,
+    //     url: &str,
+    //     status: u16,
+    //     err: &str,
+    //     translator: Option<Rc<Translator>>,
+    // ) -> View<G> {
+    //     let template_fn = self.get_template_fn(status);
 
-        template_fn(url.to_string(), status, err.to_string(), translator)
-    }
+    //     template_fn(url.to_string(), status, err.to_string(), translator)
+    // }
 }
 impl ErrorPages<DomNode> {
     /// Renders the appropriate error page to the given DOM container.

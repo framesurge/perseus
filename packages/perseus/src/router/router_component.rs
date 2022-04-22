@@ -15,12 +15,12 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use sycamore::{
     prelude::{
-        cloned, component, create_effect, create_signal, view, NodeRef, ReadSignal, Scope, Signal,
-        View,
+        component, create_effect, create_rc_signal, create_signal, view, NodeRef, RcSignal,
+        ReadSignal, Scope, View,
     },
     Prop,
 };
-use sycamore_router::{HistoryIntegration, Router, RouterProps};
+use sycamore_router::{HistoryIntegration, Router};
 use web_sys::Element;
 
 // We don't want to bring in a styling library, so we do this the old-fashioned way!
@@ -53,7 +53,7 @@ struct OnRouteChangeProps<G: Html> {
     initial_container: Option<Element>,
     is_first: Rc<Cell<bool>>,
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    live_reload_indicator: ReadSignal<bool>,
+    live_reload_indicator: RcSignal<bool>,
 }
 
 /// The function that runs when a route change takes place. This can also be run at any time to force the current page to reload.
@@ -203,15 +203,16 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     // can signal the templates to perform freezing/thawing
     // It doesn't matter what the initial value is, this is just a flip-flop
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    let live_reload_indicator = create_signal(cx, true);
+    let live_reload_indicator = create_rc_signal(true);
 
     // Create a derived state for the route announcement
     // We do this with an effect because we only want to update in some cases (when the new page is actually loaded)
     // We also need to know if it's the first page (because we don't want to announce that, screen readers will get that one right)
     let route_announcement = create_signal(cx, String::new());
     let mut is_first_page = true; // This is different from the first page load (this is the first page as a whole)
+    let load_state = router_state.get_load_state();
     create_effect(cx, move || {
-        if let RouterLoadState::Loaded { path, .. } = &*router_state.get_load_state().get() {
+        if let RouterLoadState::Loaded { path, .. } = &*load_state.get() {
             if is_first_page {
                 // This is the first load event, so the next one will be for a new page (or at least something that we should announce, if this page reloads then the content will change, that would be from thawing)
                 is_first_page = false;
@@ -269,21 +270,21 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
         initial_container,
         is_first,
         #[cfg(all(feature = "live-reload", debug_assertions))]
-        live_reload_indicator: *live_reload_indicator,
+        live_reload_indicator: live_reload_indicator.clone(),
     };
 
     // Listen for changes to the reload commander and reload as appropriate
-    let reload_commander = router_state.reload_commander.clone();
+    let on_route_change_props_clone = on_route_change_props.clone();
     create_effect(cx, move || {
         // This is just a flip-flop, but we need to add it to the effect's dependencies
-        let _ = reload_commander.get();
+        let _ = router_state.reload_commander.get();
         // Get the route verdict and re-run the function we use on route changes
         let verdict = match router_state.get_last_verdict() {
             Some(verdict) => verdict,
             // If the first page hasn't loaded yet, terminate now
             None => return,
         };
-        on_route_change(verdict, on_route_change_props.clone());
+        on_route_change(verdict, on_route_change_props_clone.clone());
     });
 
     // TODO State thawing in HSR
@@ -296,7 +297,7 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
 
         Router {
             integration: HistoryIntegration::new(),
-            view: |cx, route: &ReadSignal<AppRoute>| {
+            view: move |cx, route: &ReadSignal<AppRoute>| {
                 // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                 // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                 create_effect(cx, move || {

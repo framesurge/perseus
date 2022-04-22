@@ -1,10 +1,10 @@
-use sycamore::prelude::Signal;
+use sycamore::prelude::RcSignal;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket};
 
 /// Connects to the reload server if it's online. This takes a flip-flop `Signal` that it can use to signal other parts of the code to perform actual reloading (we can't do that here because
 /// we don't have access to the render context for freezing and thawing).
-pub(crate) fn connect_to_reload_server(live_reload_indicator: Signal<bool>) {
+pub(crate) fn connect_to_reload_server(live_reload_indicator: RcSignal<bool>) {
     // Get the host and port
     let host = get_window_var("__PERSEUS_RELOAD_SERVER_HOST");
     let port = get_window_var("__PERSEUS_RELOAD_SERVER_PORT");

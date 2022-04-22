@@ -14,9 +14,8 @@ use futures::Future;
 use http::header::HeaderMap;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use sycamore::context::{ContextProvider, ContextProviderProps};
-use sycamore::prelude::Scope;
-use sycamore::prelude::{view, View};
+use sycamore::prelude::create_rc_signal;
+use sycamore::prelude::{provide_context, Scope, View};
 
 /// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
 /// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
@@ -52,7 +51,7 @@ make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
 /// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
 /// given `Option` inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be made available through Sycamore's
 /// [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
-pub type TemplateFn<G> = Box<dyn Fn(PageProps, Scope) -> View<G> + Send + Sync>;
+pub type TemplateFn<G> = Box<dyn Fn(Scope, PageProps) -> View<G> + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just a template function that will always be server-side
 /// rendered in function (it may be rendered on the client, but it will always be used to create an HTML string, rather than a reactive
 /// template).
@@ -162,9 +161,9 @@ impl<G: Html> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_, cx| sycamore::view! { cx, }),
+            template: Box::new(|cx, _| sycamore::view! { cx, }),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
-            head: Box::new(|_, cx| sycamore::view! { cx, }),
+            head: Box::new(|cx, _| sycamore::view! { cx, }),
             // We create sensible header defaults here
             set_headers: Box::new(|_| default_headers()),
             get_build_paths: None,
@@ -193,25 +192,22 @@ impl<G: Html> Template<G> {
         frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
         is_first: Rc<Cell<bool>>,
         #[cfg(all(feature = "live-reload", debug_assertions))]
-        live_reload_indicator: sycamore::prelude::ReadSignal<bool>,
+        live_reload_indicator: sycamore::prelude::RcSignal<bool>,
     ) -> View<G> {
-        view! { cx,
-            // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
-            ContextProvider(ContextProviderProps {
-                value: RenderCtx {
-                    is_server,
-                    translator: translator.clone(),
-                    router: router_state,
-                    page_state_store,
-                    global_state,
-                    frozen_app,
-                    is_first,
-                    #[cfg(all(feature = "live-reload", debug_assertions))]
-                    live_reload_indicator
-                },
-                children: || (self.template)(props, cx)
-            })
-        }
+        let render_ctx = RenderCtx {
+            is_server,
+            translator: translator.clone(),
+            router: router_state,
+            page_state_store,
+            global_state,
+            frozen_app,
+            is_first,
+            #[cfg(all(feature = "live-reload", debug_assertions))]
+            live_reload_indicator,
+        };
+        provide_context(cx, render_ctx);
+
+        (self.template)(cx, props)
     }
     /// Executes the user-given function that renders the template on the server-side ONLY. This automatically initializes an isolated global state.
     pub fn render_for_template_server(
@@ -223,54 +219,48 @@ impl<G: Html> Template<G> {
         router_state: RouterState,
         page_state_store: PageStateStore,
     ) -> View<G> {
-        view! { cx,
-            // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
-            ContextProvider(ContextProviderProps {
-                value: RenderCtx {
-                    is_server,
-                    translator: translator.clone(),
-                    router: router_state,
-                    page_state_store,
-                    global_state: GlobalState::default(),
-                    // Hydrating state on the server-side is pointless
-                    frozen_app: Rc::new(RefCell::new(None)),
-                    // On the server-side, every template is the first
-                    // We won't do anything with HSR on the server-side though
-                    is_first: Rc::new(Cell::new(true)),
-                    #[cfg(all(feature = "live-reload", debug_assertions))]
-                    live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
-                },
-                children: || (self.template)(props, cx)
-            })
-        }
+        let render_ctx = RenderCtx {
+            is_server,
+            translator: translator.clone(),
+            router: router_state,
+            page_state_store,
+            global_state: GlobalState::default(),
+            // Hydrating state on the server-side is pointless
+            frozen_app: Rc::new(RefCell::new(None)),
+            // On the server-side, every template is the first
+            // We won't do anything with HSR on the server-side though
+            is_first: Rc::new(Cell::new(true)),
+            #[cfg(all(feature = "live-reload", debug_assertions))]
+            live_reload_indicator: create_rc_signal(false),
+        };
+        provide_context(cx, render_ctx);
+
+        (self.template)(cx, props)
     }
     /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually. Reactivity
     /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
     pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
         sycamore::render_to_string(|cx| {
-            view! { cx,
-                // We provide the translator through context, which avoids having to define a separate variable for every translation due to Sycamore's `template!` macro taking ownership with `move` closures
-                ContextProvider(ContextProviderProps {
-                    value: RenderCtx {
-                        // This function renders to a string, so we're effectively always on the server
-                        // It's also only ever run on the server
-                        is_server: true,
-                        translator: translator.clone(),
-                        // The head string is rendered to a string, and so never has information about router or page state
-                        router: RouterState::default(),
-                        page_state_store: PageStateStore::default(),
-                        global_state: GlobalState::default(),
-                        // Hydrating state on the server-side is pointless
-                        frozen_app: Rc::new(RefCell::new(None)),
-                        // On the server-side, every template is the first
-                        // We won't do anything with HSR on the server-side though
-                        is_first: Rc::new(Cell::new(true)),
-                        #[cfg(all(feature = "live-reload", debug_assertions))]
-                        live_reload_indicator: sycamore::prelude::Signal::new(false).handle()
-                    },
-                    children: || (self.head)(props, cx)
-                })
-            }
+            let render_ctx = RenderCtx {
+                // This function renders to a string, so we're effectively always on the server
+                // It's also only ever run on the server
+                is_server: true,
+                translator: translator.clone(),
+                // The head string is rendered to a string, and so never has information about router or page state
+                router: RouterState::default(),
+                page_state_store: PageStateStore::default(),
+                global_state: GlobalState::default(),
+                // Hydrating state on the server-side is pointless
+                frozen_app: Rc::new(RefCell::new(None)),
+                // On the server-side, every template is the first
+                // We won't do anything with HSR on the server-side though
+                is_first: Rc::new(Cell::new(true)),
+                #[cfg(all(feature = "live-reload", debug_assertions))]
+                live_reload_indicator: create_rc_signal(false),
+            };
+            provide_context(cx, render_ctx);
+
+            (self.head)(cx, props)
         })
     }
     /// Gets the list of templates that should be prerendered for at build-time.
@@ -459,7 +449,7 @@ impl<G: Html> Template<G> {
     /// Sets the template rendering function to use.
     pub fn template(
         mut self,
-        val: impl Fn(PageProps, Scope) -> View<G> + Send + Sync + 'static,
+        val: impl Fn(Scope, PageProps) -> View<G> + Send + Sync + 'static,
     ) -> Template<G> {
         self.template = Box::new(val);
         self
@@ -469,7 +459,7 @@ impl<G: Html> Template<G> {
     #[allow(unused_variables)]
     pub fn head(
         mut self,
-        val: impl Fn(PageProps) -> View<SsrNode> + Send + Sync + 'static,
+        val: impl Fn(Scope, PageProps) -> View<SsrNode> + Send + Sync + 'static,
     ) -> Template<G> {
         // Headers are always prerendered on the server-side
         #[cfg(feature = "server-side")]
@@ -582,10 +572,10 @@ impl<G: Html> Template<G> {
 // The engine needs to know whether or not to use hydration, this is how we pass those feature settings through
 #[cfg(not(feature = "hydrate"))]
 #[doc(hidden)]
-pub type TemplateNodeType = sycamore::DomNode;
+pub type TemplateNodeType = sycamore::prelude::DomNode;
 #[cfg(feature = "hydrate")]
 #[doc(hidden)]
-pub type TemplateNodeType = sycamore::HydrateNode;
+pub type TemplateNodeType = sycamore::prelude::HydrateNode;
 
 /// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
 /// because it uses Sycamore context.

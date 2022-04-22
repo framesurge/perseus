@@ -10,7 +10,7 @@ use sycamore_router::navigate;
 
 /// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
 /// to make this easier for each thing in here.
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct RenderCtx {
     /// Whether or not we're being executed on the server-side. This can be used to gate `web_sys` functions and the like that expect
     /// to be run in the browser.
@@ -38,7 +38,7 @@ pub struct RenderCtx {
     #[cfg(all(feature = "live-reload", debug_assertions))]
     /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server. Hooking into this to run code
     /// before live reloading takes place is NOT supported, as no guarantee can be made that your code will run before Perseus reloads the page fully (at which point no more code will run).
-    pub live_reload_indicator: sycamore::prelude::ReadSignal<bool>,
+    pub live_reload_indicator: sycamore::prelude::RcSignal<bool>,
 }
 impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized `String` that can later be used to re-initialize the app to the same state at the time of freezing.

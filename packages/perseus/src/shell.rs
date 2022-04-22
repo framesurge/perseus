@@ -264,7 +264,7 @@ pub struct ShellProps {
     pub is_first: Rc<Cell<bool>>,
     #[cfg(all(feature = "live-reload", debug_assertions))]
     /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server.
-    pub live_reload_indicator: ReadSignal<bool>,
+    pub live_reload_indicator: RcSignal<bool>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -366,9 +366,10 @@ pub async fn app_shell(
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
-                    move || {
+                    move |cx| {
                         template.render_for_template_client(
                             page_props,
+                            cx,
                             translator,
                             false,
                             router_state_2,
@@ -386,9 +387,10 @@ pub async fn app_shell(
             #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                || {
+                |cx| {
                     template.render_for_template_client(
                         page_props,
+                        cx,
                         translator,
                         false,
                         router_state_2,
@@ -494,9 +496,10 @@ pub async fn app_shell(
                                     // If we aren't hydrating, we'll have to delete everything and re-render
                                     container_rx_elem.set_inner_html("");
                                     sycamore::render_to(
-                                        move || {
+                                        move |cx| {
                                             template.render_for_template_client(
                                                 page_props,
+                                                cx,
                                                 translator,
                                                 false,
                                                 router_state_2.clone(),
@@ -517,9 +520,10 @@ pub async fn app_shell(
                                 #[cfg(feature = "hydrate")]
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
-                                    move || {
+                                    move |cx| {
                                         template.render_for_template_client(
                                             page_props,
+                                            cx,
                                             translator,
                                             false,
                                             router_state_2,

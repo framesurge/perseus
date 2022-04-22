@@ -1,5 +1,7 @@
 use crate::plugins::PluginAction;
+#[cfg(feature = "server-side")]
 use crate::server::{get_render_cfg, HtmlShell};
+#[cfg(feature = "server-side")]
 use crate::utils::get_path_prefix_server;
 use crate::{
     i18n::{FsTranslationsManager, Locales, TranslationsManager},
