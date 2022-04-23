@@ -12,6 +12,10 @@ use crate::Request;
 use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
+use sycamore::prelude::Signal;
+use sycamore::prelude::create_signal;
+use sycamore::prelude::provide_context_ref;
+use sycamore::prelude::try_use_context;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use sycamore::prelude::create_rc_signal;
@@ -205,7 +209,11 @@ impl<G: Html> Template<G> {
             #[cfg(all(feature = "live-reload", debug_assertions))]
             live_reload_indicator,
         };
-        provide_context(cx, render_ctx);
+        if let Some(ctx) = try_use_context::<Signal<RenderCtx>>(cx) {
+            ctx.set(render_ctx);
+        } else {
+            provide_context_ref(cx, create_signal(cx, render_ctx));
+        }
 
         (self.template)(cx, props)
     }
@@ -233,7 +241,11 @@ impl<G: Html> Template<G> {
             #[cfg(all(feature = "live-reload", debug_assertions))]
             live_reload_indicator: create_rc_signal(false),
         };
-        provide_context(cx, render_ctx);
+        if let Some(ctx) = try_use_context::<Signal<RenderCtx>>(cx) {
+            ctx.set(render_ctx);
+        } else {
+            provide_context_ref(cx, create_signal(cx, render_ctx));
+        }
 
         (self.template)(cx, props)
     }
@@ -258,6 +270,7 @@ impl<G: Html> Template<G> {
                 #[cfg(all(feature = "live-reload", debug_assertions))]
                 live_reload_indicator: create_rc_signal(false),
             };
+            // We don't have to worry about the type already existing (the scope has just been instantiated)
             provide_context(cx, render_ctx);
 
             (self.head)(cx, props)

@@ -57,7 +57,7 @@ pub fn run() -> Result<(), JsValue> {
         error_pages: app.get_error_pages(),
     };
 
-    // The context here is for the top-level, and it's not used anywhere else (we have multiple nested views, and we manage scope contexts there)
+    // This top-level context is what we sue for everything, allowing page state to be registered and stored for the lifetime of the app
     sycamore::render_to(
         move |cx| perseus_router::<_, AppRoute<TemplateNodeType>>(cx, router_props),
         &root,

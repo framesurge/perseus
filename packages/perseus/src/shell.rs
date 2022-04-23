@@ -231,8 +231,10 @@ pub enum InitialState {
 }
 
 /// Properties for the app shell. These should be constructed literally when working with the app shell.
-#[derive(Debug)]
-pub struct ShellProps {
+// #[derive(Debug)]
+pub struct ShellProps<'a> {
+    /// The app's reactive scope.
+    pub cx: Scope<'a>,
     /// The path we're rendering for (not the template path, the full path, though parsed a little).
     pub path: String,
     /// The template to render for.
@@ -272,6 +274,7 @@ pub struct ShellProps {
 // TODO handle exceptions higher up
 pub async fn app_shell(
     ShellProps {
+        cx,
         path,
         template,
         was_incremental_match,
@@ -288,7 +291,7 @@ pub async fn app_shell(
         is_first,
         #[cfg(all(feature = "live-reload", debug_assertions))]
         live_reload_indicator,
-    }: ShellProps,
+    }: ShellProps<'_>,
 ) {
     checkpoint("app_shell_entry");
     let path_with_locale = match locale.as_str() {
@@ -343,9 +346,9 @@ pub async fn app_shell(
                     container_rx_elem.set_inner_html("");
                     match &err {
                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
-                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, 500, &fmt_err(&err), None, &container_rx_elem),
-                        ClientError::LocaleNotSupported { .. } => return error_pages.render_page(&format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(cx, url, *status, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(cx, url, 500, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::LocaleNotSupported { .. } => return error_pages.render_page(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
                         // No other errors should be returned
                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                     }
@@ -366,7 +369,7 @@ pub async fn app_shell(
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
-                    move |cx| {
+                    move |_| {
                         template.render_for_template_client(
                             page_props,
                             cx,
@@ -387,7 +390,7 @@ pub async fn app_shell(
             #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                |cx| {
+                |_| {
                     template.render_for_template_client(
                         page_props,
                         cx,
@@ -474,9 +477,9 @@ pub async fn app_shell(
                                     Ok(translator) => translator,
                                     Err(err) => match &err {
                                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
-                                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, 500, &fmt_err(&err), None, &container_rx_elem),
-                                        ClientError::LocaleNotSupported { locale } => return error_pages.render_page(&format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(cx, url, *status, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(cx, url, 500, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::LocaleNotSupported { locale } => return error_pages.render_page(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
                                         // No other errors should be returned
                                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                                     }
@@ -496,7 +499,7 @@ pub async fn app_shell(
                                     // If we aren't hydrating, we'll have to delete everything and re-render
                                     container_rx_elem.set_inner_html("");
                                     sycamore::render_to(
-                                        move |cx| {
+                                        move |_| {
                                             template.render_for_template_client(
                                                 page_props,
                                                 cx,
@@ -520,7 +523,7 @@ pub async fn app_shell(
                                 #[cfg(feature = "hydrate")]
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
-                                    move |cx| {
+                                    move |_| {
                                         template.render_for_template_client(
                                             page_props,
                                             cx,
@@ -550,6 +553,7 @@ pub async fn app_shell(
                     }
                     // No translators ready yet
                     None => error_pages.render_page(
+                        cx,
                         &asset_url,
                         404,
                         "page not found",
@@ -560,7 +564,7 @@ pub async fn app_shell(
                 Err(err) => match &err {
                     // No translators ready yet
                     ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages
-                        .render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
+                        .render_page(cx, url, *status, &fmt_err(&err), None, &container_rx_elem),
                     // No other errors should be returned
                     _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
                 },
@@ -586,7 +590,7 @@ pub async fn app_shell(
             // We render this rather than hydrating because otherwise we'd need a `HydrateNode` at the plugins level, which is way too inefficient
             #[cfg(not(feature = "hydrate"))]
             container_rx_elem.set_inner_html("");
-            error_pages.render_page(&url, status, &err, None, &container_rx_elem);
+            error_pages.render_page(cx, &url, status, &err, None, &container_rx_elem);
         }
     };
 }

@@ -40,8 +40,9 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
 "#;
 
 /// The properties that `on_route_change` takes. See the shell properties for the details for most of these.
-#[derive(Debug, Clone)]
-struct OnRouteChangeProps<G: Html> {
+#[derive(Clone)]
+struct OnRouteChangeProps<'a, G: Html> {
+    cx: Scope<'a>,
     locales: Rc<Locales>,
     container_rx: NodeRef<G>,
     router_state: RouterState,
@@ -60,6 +61,7 @@ struct OnRouteChangeProps<G: Html> {
 fn on_route_change<G: Html>(
     verdict: RouteVerdict<TemplateNodeType>,
     OnRouteChangeProps {
+        cx,
         locales,
         container_rx,
         router_state,
@@ -72,9 +74,9 @@ fn on_route_change<G: Html>(
         is_first,
         #[cfg(all(feature = "live-reload", debug_assertions))]
         live_reload_indicator,
-    }: OnRouteChangeProps<G>,
+    }: OnRouteChangeProps<'_, G>,
 ) {
-    wasm_bindgen_futures::spawn_local(async move {
+    sycamore_futures::spawn_local_scoped(cx, async move {
         let container_rx_elem = container_rx
             .get::<DomNode>()
             .unchecked_into::<web_sys::Element>();
@@ -91,6 +93,7 @@ fn on_route_change<G: Html>(
                 app_shell(
                     // TODO Make this not allocate so much
                     ShellProps {
+                        cx,
                         path: path.clone(),
                         template: template.clone(),
                         was_incremental_match: *was_incremental_match,
@@ -137,11 +140,11 @@ fn on_route_change<G: Html>(
                         .unwrap();
                     // Hydrate the error pages
                     // Right now, we don't provide translators to any error pages that have come from the server
-                    error_pages.render_page(&url, status, &err, None, &container_rx_elem);
+                    error_pages.render_page(cx, &url, status, &err, None, &container_rx_elem);
                 } else {
                     // This is an error from navigating within the app (probably the dev mistyped a link...), so we'll clear the page
                     container_rx_elem.set_inner_html("");
-                    error_pages.render_page("", 404, "not found", None, &container_rx_elem);
+                    error_pages.render_page(cx, "", 404, "not found", None, &container_rx_elem);
                 }
             }
         };
@@ -161,7 +164,7 @@ pub struct PerseusRouterProps {
 /// you're building a custom engine. Note that this actually encompasses your entire app, and takes no child properties.
 ///
 /// Note: this deliberately has a snake case name, and should be called directly with `cx` as the first argument, allowing the `AppRoute` generic
-/// creates with `creatr_app_root!` to be provided easily.
+/// creates with `create_app_root!` to be provided easily. That given `cx` property will be used for all context registration in the app.
 #[component]
 pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
     cx: Scope,
@@ -257,6 +260,7 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     // Set up the function we'll call on a route change
     // Set up the properties for the function we'll call in a route change
     let on_route_change_props = OnRouteChangeProps {
+        cx,
         locales,
         container_rx: container_rx.clone(),
         router_state: router_state.clone(),

@@ -64,9 +64,9 @@ impl<G: Html> ErrorPages<G> {
         }
     }
     // /// Gets the template for a page without rendering it into a container.
-    // // TODO Make this work somehow
     // pub fn get_template_for_page(
     //     &self,
+    //     cx: Scope,
     //     url: &str,
     //     status: u16,
     //     err: &str,
@@ -74,13 +74,14 @@ impl<G: Html> ErrorPages<G> {
     // ) -> View<G> {
     //     let template_fn = self.get_template_fn(status);
 
-    //     template_fn(url.to_string(), status, err.to_string(), translator)
+    //     template_fn(cx, url.to_string(), status, err.to_string(), translator)
     // }
 }
 impl ErrorPages<DomNode> {
     /// Renders the appropriate error page to the given DOM container.
     pub fn render_page(
         &self,
+        cx: Scope,
         url: &str,
         status: u16,
         err: &str,
@@ -90,7 +91,7 @@ impl ErrorPages<DomNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::render_to(
-            |cx| template_fn(cx, url.to_string(), status, err.to_string(), translator),
+            |_| template_fn(cx, url.to_string(), status, err.to_string(), translator),
             container,
         );
     }
@@ -100,6 +101,7 @@ impl ErrorPages<HydrateNode> {
     /// and then needs interactivity.
     pub fn hydrate_page(
         &self,
+        cx: Scope,
         url: &str,
         status: u16,
         err: &str,
@@ -109,13 +111,13 @@ impl ErrorPages<HydrateNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::hydrate_to(
-            |cx| template_fn(cx, url.to_string(), status, err.to_string(), translator),
+            |_| template_fn(cx, url.to_string(), status, err.to_string(), translator),
             container,
         );
     }
 }
 impl ErrorPages<SsrNode> {
-    /// Renders the error page to a string. This should then be hydrated on the client-side.
+    /// Renders the error page to a string. This should then be hydrated on the client-side. No reactive scope is provided to this function, it uses an internal one.
     pub fn render_to_string(
         &self,
         url: &str,
@@ -126,6 +128,22 @@ impl ErrorPages<SsrNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::render_to_string(|cx| {
+            template_fn(cx, url.to_string(), status, err.to_string(), translator)
+        })
+    }
+    /// Renders the error page to a string, using the given reactive scope. Note that this function is not used internally, and `.render_to_string()` should cover all uses. This is included for
+    /// completeness.
+    pub fn render_to_string_scoped(
+        &self,
+        cx: Scope,
+        url: &str,
+        status: u16,
+        err: &str,
+        translator: Option<Rc<Translator>>,
+    ) -> String {
+        let template_fn = self.get_template_fn(status);
+        // Render that to the given container
+        sycamore::render_to_string(|_| {
             template_fn(cx, url.to_string(), status, err.to_string(), translator)
         })
     }
