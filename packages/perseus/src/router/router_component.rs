@@ -160,8 +160,8 @@ pub struct PerseusRouterProps {
 /// The Perseus router. This is used internally in the Perseus engine, and you shouldn't need to access this directly unless
 /// you're building a custom engine. Note that this actually encompasses your entire app, and takes no child properties.
 ///
-/// The `AppRoute` generic provided to this should be generated with `create_app_root!` and provided through Sycamore's
-/// [higher-order components system](https://github.com/sycamore-rs/sycamore/blob/master/examples/higher-order-components/src/main.rs).
+/// Note: this deliberately has a snake case name, and should be called directly with `cx` as the first argument, allowing the `AppRoute` generic
+/// creates with `creatr_app_root!` to be provided easily.
 #[component]
 pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
     cx: Scope,
