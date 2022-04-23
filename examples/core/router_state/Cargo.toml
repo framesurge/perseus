@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 perseus = { path = "../../../packages/perseus", features = [ "hydrate" ] }
-sycamore = "0.7"
+sycamore = "=0.8.0-beta.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

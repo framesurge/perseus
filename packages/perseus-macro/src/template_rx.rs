@@ -77,7 +77,7 @@ impl Parse for TemplateFn {
                 }
                 // We can have anywhere between 1 and 3 arguments (scope, ?state, ?global state)
                 if args.len() > 3 || args.is_empty() {
-                    return Err(syn::Error::new_spanned(&args[2], "template functions accept between one and three arguments (reactive scope; then one for custom properties and another for global state, both optional)"));
+                    return Err(syn::Error::new_spanned(&sig.inputs, "template functions accept between one and three arguments (reactive scope; then one for custom properties and another for global state, both optional)"));
                 }
 
                 Ok(Self {

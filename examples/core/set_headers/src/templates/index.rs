@@ -2,7 +2,7 @@ use perseus::{
     http::header::{HeaderMap, HeaderName},
     Html, RenderFnResultWithCause, Template,
 };
-use sycamore::prelude::{view, SsrNode, View};
+use sycamore::prelude::{view, Scope, SsrNode, View};
 
 #[perseus::make_rx(PageStateRx)]
 struct PageState {
@@ -10,15 +10,15 @@ struct PageState {
 }
 
 #[perseus::template_rx]
-pub fn index_page(state: PageStateRx) -> View<G> {
-    view! {
+pub fn index_page<G: Html>(cx: Scope, state: PageStateRx) -> View<G> {
+    view! { cx,
         p { (state.greeting.get()) }
     }
 }
 
 #[perseus::head]
-pub fn head() -> View<SsrNode> {
-    view! {
+pub fn head(cx: Scope) -> View<SsrNode> {
+    view! { cx,
         title { "Index Page" }
     }
 }

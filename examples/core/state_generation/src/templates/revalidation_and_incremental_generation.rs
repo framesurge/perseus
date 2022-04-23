@@ -2,7 +2,7 @@
 // ways together)
 
 use perseus::{RenderFnResult, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
 pub struct PageState {
@@ -10,8 +10,11 @@ pub struct PageState {
 }
 
 #[perseus::template_rx]
-pub fn revalidation_and_incremental_generation_page(state: PageStateRx) -> View<G> {
-    view! {
+pub fn revalidation_and_incremental_generation_page<G: Html>(
+    cx: Scope,
+    state: PageStateRx,
+) -> View<G> {
+    view! { cx,
         p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }
     }
 }

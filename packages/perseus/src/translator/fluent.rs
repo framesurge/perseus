@@ -80,7 +80,7 @@ impl FluentTranslator {
     /// This will `panic!` if any errors occur while trying to prepare the given ID. Therefore, this method should only be used for
     /// hardcoded IDs that can be confirmed as valid. If you need to parse arbitrary IDs, use `.translate_checked()` instead.
     pub fn translate(&self, id: &str, args: Option<FluentArgs>) -> String {
-        let translation_res = self.translate_checked(&id.to_string(), args);
+        let translation_res = self.translate_checked(id, args);
         match translation_res {
             Ok(translation) => translation,
             Err(_) => panic!("translation id '{}' not found for locale '{}' (if you're not hardcoding the id, use `.translate_checked()` instead)", id, self.locale)

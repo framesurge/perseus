@@ -25,9 +25,9 @@ pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
                         let about_page_greeting = plugin_data.about_page_greeting.to_string();
                         // Note that this doesn't work with hydration, but a full template does (there's some difference there that causes a hydration ID overlap for some reason)
                         vec![Template::new("about")
-                        .template(move |_| sycamore::view! { p { (about_page_greeting) } })
-                        .head(|_| {
-                            sycamore::view! {
+                        .template(move |cx, _| sycamore::view! { cx,  p { (about_page_greeting) } })
+                        .head(|cx, _| {
+                            sycamore::view! { cx,
                                 title { "About Page (Plugin Modified) | Perseus Example – Plugins" }
                             }
                         })]

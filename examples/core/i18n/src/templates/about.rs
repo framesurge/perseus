@@ -1,10 +1,10 @@
 use perseus::{t, Template};
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::template_rx]
-pub fn about_page() -> View<G> {
-    view! {
-        p { (t!("about")) }
+pub fn about_page<G: Html>(cx: Scope) -> View<G> {
+    view! { cx,
+        p { (t!("about", cx)) }
         p {
             (
                 if !G::IS_BROWSER {
