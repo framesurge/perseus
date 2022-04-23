@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
@@ -177,6 +177,8 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     let live_reload_frag = get_live_reload_frag();
     let hsr_thaw_frag = get_hsr_thaw_frag();
 
+    let component_name = Ident::new(&(name.to_string() + "_component"), Span::call_site());
+
     // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
     // This is dependent on what arguments the template takes
     if fn_args.len() == 3 {
@@ -224,7 +226,8 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
                     #[::sycamore::component]
-                    fn #name #generics(#cx_arg, #state_arg) -> #return_type {
+                    // WARNING: I removed the `#state_arg` here because the new Sycamore throws errors for unit type props (possible consequences?)
+                    fn #component_name #generics(#cx_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
                             let global_state = ::perseus::get_render_ctx!(cx).clone().global_state.0;
                             let global_state = global_state.borrow();
@@ -235,7 +238,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                         #block
                     }
 
-                    #name(cx, ())
+                    #component_name(cx, ())
                     // ::sycamore::prelude::view! { cx,
                     //     #component_name(())
                     // }
@@ -265,7 +268,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
                     #[::sycamore::component]
-                    fn #name #generics(#cx_arg, #state_arg) -> #return_type {
+                    fn #component_name #generics(#cx_arg, #state_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
                             let global_state = ::perseus::get_render_ctx!(cx).clone().global_state.0;
                             let global_state = global_state.borrow();
@@ -298,7 +301,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
 
                     //     )
                     // }
-                    #name(cx, props)
+                    #component_name(cx, props)
                 }
             },
         }
@@ -326,7 +329,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
                 #[::sycamore::component]
-                fn #name #generics(#cx_arg, #arg) -> #return_type {
+                fn #component_name #generics(#cx_arg, #arg) -> #return_type {
                     #block
                 }
 
@@ -347,7 +350,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     }
                 };
 
-                #name(cx, props)
+                #component_name(cx, props)
                 // ::sycamore::prelude::view! { cx,
                 //     #component_name(props)
                 // }
@@ -370,14 +373,14 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
                 #[::sycamore::component]
-                fn #name #generics(#cx_arg) -> #return_type {
+                fn #component_name #generics(#cx_arg) -> #return_type {
                     #block
                 }
 
                 // ::sycamore::prelude::view! { cx,
                 //     #component_name
                 // }
-                #name(cx, ())
+                #component_name(cx, ())
             }
         }
     } else {
