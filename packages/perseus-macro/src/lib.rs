@@ -68,10 +68,9 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
 /// The second argument your template function can take is a global state generated with the `GlobalStateCreator`. You should also provide the reactive type here, and Perseus will do all the
 /// rest in the background.
 #[proc_macro_attribute]
-pub fn template_rx(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn template_rx(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template_rx::TemplateFn);
-    let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
-    template_rx::template_impl(parsed, attr_args).into()
+    template_rx::template_impl(parsed).into()
 }
 
 /// Labels a function as a Perseus head function, which is very similar to a template, but

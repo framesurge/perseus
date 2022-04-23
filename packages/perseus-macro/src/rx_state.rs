@@ -15,7 +15,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
     // Reset the attributes entirely (we don't want any Serde derivations in there)
     // Look through the attributes for any that warn about nested fields
     // These can't exist on the fields themselves because they'd be parsed before this macro, and tehy're technically invalid syntax (grr.)
-    // When we come across these fields, we'll run `.make_rx()` on them instead of naively wrapping them in a `Signal`
+    // When we come across these fields, we'll run `.make_rx()` on them instead of naively wrapping them in an `RcSignal`
     let nested_fields = new_struct
         .attrs
         .iter()
@@ -95,7 +95,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                 field.ty = if let Some(wrapper_ty) = wrapper_ty {
                     syn::Type::Verbatim(quote!(#wrapper_ty))
                 } else {
-                    syn::Type::Verbatim(quote!(::sycamore::prelude::Signal<#orig_ty>))
+                    syn::Type::Verbatim(quote!(::sycamore::prelude::RcSignal<#orig_ty>))
                 };
                 // Remove any `serde` attributes (Serde can't be used with the reactive version)
                 let mut new_attrs = Vec::new();
@@ -133,7 +133,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                     })
                 } else {
                     field_assignments.extend(quote! {
-                        #field_name: ::sycamore::prelude::Signal::new(self.#field_name),
+                        #field_name: ::sycamore::prelude::create_rc_signal(self.#field_name),
                     });
                 }
             }

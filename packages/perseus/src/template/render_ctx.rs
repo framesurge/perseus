@@ -321,7 +321,7 @@ impl RenderCtx {
 /// Gets the `RenderCtx` efficiently.
 #[macro_export]
 macro_rules! get_render_ctx {
-    () => {
-        ::sycamore::context::use_context::<::perseus::templates::RenderCtx>()
+    ($cx:expr) => {
+        ::sycamore::prelude::use_context::<::perseus::templates::RenderCtx>($cx)
     };
 }

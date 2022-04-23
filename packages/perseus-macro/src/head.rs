@@ -9,6 +9,8 @@ use syn::{
 pub struct HeadFn {
     /// The body of the function.
     pub block: Box<Block>,
+    /// The argument for the reactive scope.
+    pub cx_arg: FnArg,
     /// The possible single argument for custom properties, or there might be no arguments.
     pub arg: Option<FnArg>,
     /// The visibility of the function.
@@ -66,8 +68,18 @@ impl Parse for HeadFn {
                     }
                     ReturnType::Type(_, ty) => ty,
                 };
-                // Can either accept a single argument for properties or no arguments
+                // Can accept two arguments (scope, properties), or one (scope only)
                 let mut inputs = sig.inputs.into_iter();
+                let cx_arg = match inputs.next() {
+                    Some(arg) => arg,
+                    None => {
+                        let params: TokenStream = inputs.map(|it| it.to_token_stream()).collect();
+                        return Err(syn::Error::new_spanned(
+                            params,
+                            "head functions must accept an argument for the reactive scope",
+                        ));
+                    }
+                };
                 let arg = inputs.next();
                 // We don't care what the type is, as long as it's not `self`
                 if let Some(FnArg::Receiver(arg)) = arg {
@@ -82,12 +94,13 @@ impl Parse for HeadFn {
                     let params: TokenStream = inputs.map(|it| it.to_token_stream()).collect();
                     return Err(syn::Error::new_spanned(
                         params,
-                        "head functions must accept either one argument for custom properties or no arguments",
+                        "head functions must accept either two arguments for scope, and custom properties or just one argument for scope",
                     ));
                 }
 
                 Ok(Self {
                     block,
+                    cx_arg,
                     arg,
                     vis,
                     attrs,
@@ -107,6 +120,7 @@ impl Parse for HeadFn {
 pub fn head_impl(input: HeadFn) -> TokenStream {
     let HeadFn {
         block,
+        cx_arg,
         arg,
         generics,
         vis,
@@ -120,14 +134,15 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
     if arg.is_some() {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         quote! {
-            #vis fn #name(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
+            #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                fn #name #generics(#arg) -> #return_type {
+                fn #name #generics(#cx_arg, #arg) -> #return_type {
                     #block
                 }
                 #name(
+                    cx,
                     // If there are props, they will always be provided, the compiler just doesn't know that
                     ::serde_json::from_str(&props.state.unwrap()).unwrap()
                 )
@@ -136,14 +151,14 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
     } else {
         // There are no arguments
         quote! {
-            #vis fn #name(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
+            #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                fn #name #generics(#arg) -> #return_type {
+                fn #name #generics(#cx_arg) -> #return_type {
                     #block
                 }
-                #name()
+                #name(cx)
             }
         }
     }

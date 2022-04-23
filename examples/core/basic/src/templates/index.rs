@@ -1,5 +1,5 @@
 use perseus::{Html, RenderFnResultWithCause, SsrNode, Template};
-use sycamore::prelude::{view, View};
+use sycamore::prelude::{view, Scope, View};
 
 #[perseus::make_rx(IndexPageStateRx)]
 pub struct IndexPageState {
@@ -7,8 +7,8 @@ pub struct IndexPageState {
 }
 
 #[perseus::template_rx]
-pub fn index_page(state: IndexPageStateRx) -> View<G> {
-    view! {
+pub fn index_page<G: Html>(cx: Scope, state: IndexPageStateRx) -> View<G> {
+    view! { cx,
         p { (state.greeting.get()) }
         a(href = "about", id = "about-link") { "About!" }
     }
@@ -22,8 +22,8 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 #[perseus::head]
-pub fn head(_props: IndexPageState) -> View<SsrNode> {
-    view! {
+pub fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
+    view! { cx,
         title { "Index Page | Perseus Example – Basic" }
     }
 }
