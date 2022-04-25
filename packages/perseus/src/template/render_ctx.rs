@@ -28,6 +28,14 @@ impl<'a> IsFirst<'a> {
     pub fn from_ctx(cx: Scope<'a>) -> Self {
         Self(use_context(cx))
     }
+    /// Gets the inner value.
+    pub fn get(&self) -> bool {
+        (*self.0.get()).0
+    }
+    /// Sets the inner value.
+    pub fn set(&self, val: bool) {
+        self.0.set(IsFirstInner(val))
+    }
 }
 
 /// A representation of the render context of the app, constructed from references to a series of `struct`s that mirror context values. This is purely a proxy `struct` for function
@@ -379,6 +387,6 @@ impl<'a> RenderCtx<'a> {
 #[macro_export]
 macro_rules! get_render_ctx {
     ($cx:expr) => {
-        ::perseus::template::RenderCtx::from_ctx($cx)
+        ::perseus::templates::RenderCtx::from_ctx($cx)
     };
 }

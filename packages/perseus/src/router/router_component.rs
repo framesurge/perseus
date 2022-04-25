@@ -247,7 +247,9 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     create_effect(cx, move || {
         router_state.reload_commander.track();
         // Get the route verdict and re-run the function we use on route changes
-        let verdict_rc = router_state.get_last_verdict();
+        // This has to be untracked, otherwise we get an infinite loop that will actually break client browsers (I had to manually kill Firefox...)
+        // TODO Investigate how the heck this actually caused an infinite loop...
+        let verdict_rc = router_state.get_last_verdict_untracked();
         let verdict = match &verdict_rc.0 {
             Some(verdict) => verdict,
             // If the first page hasn't loaded yet, terminate now

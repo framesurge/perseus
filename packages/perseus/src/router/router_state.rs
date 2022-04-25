@@ -54,6 +54,10 @@ impl<'a> RouterState<'a> {
     pub fn get_last_verdict(&self) -> Rc<LastVerdict> {
         self.last_verdict.get()
     }
+    /// Gets the last verdict, without adding to the reactive dependencies.
+    pub fn get_last_verdict_untracked(&self) -> Rc<LastVerdict> {
+        self.last_verdict.get_untracked()
+    }
     /// Sets the last verdict.
     pub fn set_last_verdict(&mut self, new: RouteVerdict<TemplateNodeType>) {
         self.last_verdict.set(LastVerdict(Some(new)));

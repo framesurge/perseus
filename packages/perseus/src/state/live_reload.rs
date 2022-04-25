@@ -43,6 +43,10 @@ impl<'a> LiveReloadIndicator {
     pub fn set(&self, val: bool) {
         self.0.set(LiveReloadIndicatorInner(val))
     }
+    /// Calls `.track()` on the underlying `RcSignal`.
+    pub fn track(&self) {
+        self.0.track()
+    }
 }
 
 /// Connects to the reload server if it's online. This takes a flip-flop `RcSignal` that it can use to signal other parts of the code to perform actual reloading (we can't do that here because
