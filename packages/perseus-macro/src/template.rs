@@ -1,8 +1,8 @@
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use proc_macro2::{TokenStream, Span};
+use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
+    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility
 };
 
 use crate::template_rx::{get_hsr_thaw_frag, get_live_reload_frag};
@@ -11,8 +11,8 @@ use crate::template_rx::{get_hsr_thaw_frag, get_live_reload_frag};
 pub struct TemplateFn {
     /// The body of the function.
     pub block: Box<Block>,
-    /// The possible single argument for custom properties, or there might be no arguments.
-    pub arg: Option<FnArg>,
+    /// The arguments to the function. One is mandatory for the reactive scope, and then there can be an optional state type.
+    pub args: Vec<FnArg>,
     /// The visibility of the function.
     pub vis: Visibility,
     /// Any attributes the function uses.
@@ -68,26 +68,23 @@ impl Parse for TemplateFn {
                     }
                     ReturnType::Type(_, ty) => ty,
                 };
-                // Can either accept a single argument for properties or no arguments
-                let mut inputs = sig.inputs.into_iter();
-                let arg = inputs.next();
-                // We don't care what the type is, as long as it's not `self`
-                if let Some(FnArg::Receiver(arg)) = arg {
-                    return Err(syn::Error::new_spanned(arg, "templates can't take `self`"));
-                }
 
-                // This operates on what's left over after calling `.next()`
-                if inputs.len() > 0 {
-                    let params: TokenStream = inputs.map(|it| it.to_token_stream()).collect();
-                    return Err(syn::Error::new_spanned(
-                        params,
-                        "template functions must accept either one argument for custom properties or no arguments",
-                    ));
+                let mut args = Vec::new();
+                for arg in sig.inputs.iter() {
+                    // We don't care what the type is, as long as it's not `self`
+                    if let FnArg::Receiver(arg) = arg {
+                        return Err(syn::Error::new_spanned(arg, "templates can't take `self`"));
+                    }
+                    args.push(arg.clone())
+                }
+                // We can have anywhere between 1 and 3 arguments (scope, ?state, ?global state)
+                if args.len() > 3 || args.is_empty() {
+                    return Err(syn::Error::new_spanned(&sig.inputs, "template functions accept between one and two arguments (reactive scope; then one optional for custom properties)"));
                 }
 
                 Ok(Self {
                     block,
-                    arg,
+                    args,
                     vis,
                     attrs,
                     name: sig.ident,
@@ -103,10 +100,10 @@ impl Parse for TemplateFn {
     }
 }
 
-pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
+pub fn template_impl(input: TemplateFn) -> TokenStream {
     let TemplateFn {
         block,
-        arg,
+        args,
         generics,
         vis,
         attrs,
@@ -114,16 +111,21 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
         return_type,
     } = input;
 
+    let component_name = Ident::new(&(name.to_string() + "_component"), Span::call_site());
+
     // Set up a code fragment for responding to live reload events
     let live_reload_frag = get_live_reload_frag();
     let hsr_thaw_frag = get_hsr_thaw_frag();
 
     // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
     // This is dependent on what arguments the template takes
-    if arg.is_some() {
-        // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
+    if args.len() == 2 {
+        // There's an argument that will be provided as a `String`, so the wrapper will deserialize it (also the reactive state)
+        let cx_arg = &args[0];
+        let arg = &args[1];
+        
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 #[cfg(target_arch = "wasm32")]
                 #hsr_thaw_frag
 
@@ -132,21 +134,22 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                fn #name #generics(#arg) -> #return_type {
+                fn #component_name #generics(#cx_arg, #arg) -> #return_type {
                     #block
                 }
-                ::sycamore::prelude::view! {
-                    #component_name(
-                        // If there are props, they will always be provided, the compiler just doesn't know that
-                        ::serde_json::from_str(&props.state.unwrap()).unwrap()
-                    )
-                }
+
+                // If there are props, they will always be provided, the compiler just doesn't know that
+                let props = ::serde_json::from_str(&props.state.unwrap()).unwrap();
+
+                #component_name(cx, props)
             }
         }
     } else {
-        // There are no arguments
+        // There is one argument for the reactive scope
+        let cx_arg = &args[0];
+        
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 #[cfg(target_arch = "wasm32")]
                 #hsr_thaw_frag
 
@@ -155,12 +158,11 @@ pub fn template_impl(input: TemplateFn, component_name: Ident) -> TokenStream {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                fn #name #generics(#arg) -> #return_type {
+                fn #component_name #generics(#cx_arg) -> #return_type {
                     #block
                 }
-                ::sycamore::prelude::view! {
-                    #component_name()
-                }
+
+                #component_name(cx, ())
             }
         }
     }
