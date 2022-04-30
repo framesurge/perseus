@@ -1,12 +1,12 @@
 use sycamore::prelude::{use_context, Scope, Signal};
 
-use crate::{state::AnyFreeze, utils::provide_context_signal_replace};
+use crate::{state::Freeze, utils::provide_context_signal_replace};
 use std::collections::HashMap;
 use std::rc::Rc;
 
 // TODO Change this to a direct reference if possible (using `Signal`s etc.)
 #[derive(Clone)]
-struct PssMap(HashMap<String, Rc<dyn AnyFreeze>>);
+struct PssMap<'a>(HashMap<String, Rc<dyn Freeze + 'a>>);
 
 /// A container for page state in Perseus. This is designed as a context store, in which one of each type can be stored. Therefore, it acts very similarly to Sycamore's context system,
 /// though it's specifically designed for each page to store one reactive properties object. In theory, you could interact with this entirely independently of Perseus' state interface,
@@ -18,7 +18,7 @@ pub struct PageStateStore<'a> {
     /// A map of type IDs to anything, allowing one storage of each type (each type is intended to a properties `struct` for a template). Entries must be `Clone`able because we assume them
     /// to be `Signal`s or `struct`s composed of `Signal`s.
     // Technically, this should be `Any + Clone`, but that's not possible without something like `dyn_clone`, and we don't need it because we can restrict on the methods instead!
-    map: &'a Signal<PssMap>,
+    map: &'a Signal<PssMap<'a>>,
 }
 impl<'a> PageStateStore<'a> {
     /// Creates a new, empty `PageStateStore`. This inserts the properties into the context of the given reactive scope and then mirrors them.
@@ -34,7 +34,7 @@ impl<'a> PageStateStore<'a> {
         }
     }
     /// Gets an element out of the state by its type and URL. If the element stored for the given URL doesn't match the provided type, `None` will be returned.
-    pub fn get<T: AnyFreeze + Clone>(&self, url: &str) -> Option<T> {
+    pub fn get<T: Freeze + Clone>(&self, url: &str) -> Option<T> {
         self.map
             .get()
             .0
@@ -42,7 +42,7 @@ impl<'a> PageStateStore<'a> {
             .and_then(|val| val.as_any().downcast_ref::<T>().map(|val| (*val).clone()))
     }
     /// Adds a new element to the state by its URL. Any existing element with the same URL will be silently overriden (use `.contains()` to check first if needed).
-    pub fn add<T: AnyFreeze + Clone>(&self, url: &str, val: T) {
+    pub fn add<T: Freeze + Clone + 'a>(&self, url: &str, val: T) {
         self.map.modify().0.insert(url.to_string(), Rc::new(val));
     }
     /// Checks if the state contains an entry for the given URL.

@@ -151,11 +151,12 @@ impl<'a> RenderCtx<'a> {
     fn get_frozen_page_state_and_register<R>(
         &mut self,
         url: &str,
-    ) -> Option<<R::Unrx as MakeRx>::Rx>
+        cx: Scope<'a>
+    ) -> Option<<R::Unrx as MakeRx<'a>>::Rx>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         let frozen_app_full = self.frozen_app.get();
         // We don't use an `if let` here because that would require access to the `FrozenAppStoreState` wrapper type, which is private
@@ -176,7 +177,7 @@ impl<'a> RenderCtx<'a> {
                         };
                         // This returns the reactive version of the unreactive version of `R`, which is why we have to make everything else do the same
                         // Then we convince the compiler that that actually is `R` with the ludicrous trait bound at the beginning of this function
-                        let rx = unrx.make_rx();
+                        let rx = unrx.make_rx(cx);
                         // And we do want to add this to the page state store
                         self.page_state_store.add(url, rx.clone());
                         // We have to drop this now so that we can `.take()` from the `Signal<T>` without a panic (this is the only borrow because the `.get()` call is public to this crate only)
@@ -201,11 +202,11 @@ impl<'a> RenderCtx<'a> {
         }
     }
     /// An internal getter for the active (already registered) state for the given page.
-    fn get_active_page_state<R>(&self, url: &str) -> Option<<R::Unrx as MakeRx>::Rx>
+    fn get_active_page_state<R>(&self, url: &str) -> Option<<R::Unrx as MakeRx<'a>>::Rx>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
     }
@@ -216,11 +217,12 @@ impl<'a> RenderCtx<'a> {
     pub fn get_active_or_frozen_page_state<R>(
         &mut self,
         url: &str,
-    ) -> Option<<R::Unrx as MakeRx>::Rx>
+        cx: Scope<'a>,
+    ) -> Option<<R::Unrx as MakeRx<'a>>::Rx>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         let frozen_app_full = self.frozen_app.get();
         // We don't use an `if let` here because that would require access to the `FrozenAppStoreState` wrapper type, which is private
@@ -231,7 +233,7 @@ impl<'a> RenderCtx<'a> {
             if thaw_prefs.page.should_use_frozen_state(url) {
                 drop(frozen_app_full);
                 // We'll fall back to active state if no frozen state is available
-                match self.get_frozen_page_state_and_register::<R>(url) {
+                match self.get_frozen_page_state_and_register::<R>(url, cx) {
                     Some(state) => Some(state),
                     None => self.get_active_page_state::<R>(url),
                 }
@@ -240,7 +242,7 @@ impl<'a> RenderCtx<'a> {
                 // We're preferring active state, but we'll fall back to frozen state if none is available
                 match self.get_active_page_state::<R>(url) {
                     Some(state) => Some(state),
-                    None => self.get_frozen_page_state_and_register::<R>(url),
+                    None => self.get_frozen_page_state_and_register::<R>(url, cx),
                 }
             }
         } else {
@@ -250,11 +252,11 @@ impl<'a> RenderCtx<'a> {
     }
     /// An internal getter for the frozen global state. When this is called, it will also add any frozen state to the registered
     /// global state, removing whatever was there before.
-    fn get_frozen_global_state_and_register<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    fn get_frozen_global_state_and_register<R>(&mut self, cx: Scope<'a>) -> Option<<R::Unrx as MakeRx<'a>>::Rx>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         let frozen_app_full = self.frozen_app.get();
         if frozen_app_full.is_some() {
@@ -275,7 +277,7 @@ impl<'a> RenderCtx<'a> {
                         };
                         // This returns the reactive version of the unreactive version of `R`, which is why we have to make everything else do the same
                         // Then we convince the compiler that that actually is `R` with the ludicrous trait bound at the beginning of this function
-                        let rx = unrx.make_rx();
+                        let rx = unrx.make_rx(cx);
                         // And we'll register this as the new active global state
                         // This just references the `Signal` inside `GlobalState`
                         self.global_state.set(Box::new(rx.clone()));
@@ -299,11 +301,11 @@ impl<'a> RenderCtx<'a> {
         }
     }
     /// An internal getter for the active (already registered) global state.
-    fn get_active_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
+    fn get_active_global_state<R>(&self) -> Option<<R::Unrx as MakeRx<'a>>::Rx>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         self.global_state
             .get()
@@ -313,11 +315,11 @@ impl<'a> RenderCtx<'a> {
             .cloned()
     }
     /// Gets either the active or the frozen global state, depending on thaw preferences. Otherwise, this is exactly the same as `.get_active_or_frozen_state()`.
-    pub fn get_active_or_frozen_global_state<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    pub fn get_active_or_frozen_global_state<R>(&mut self, cx: Scope<'a>) -> Option<<R::Unrx as MakeRx<'a>>::Rx>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         let frozen_app_full = self.frozen_app.get();
         if frozen_app_full.is_some() {
@@ -327,7 +329,7 @@ impl<'a> RenderCtx<'a> {
             if thaw_prefs.global_prefer_frozen {
                 drop(frozen_app_full);
                 // We'll fall back to the active state if there's no frozen state
-                match self.get_frozen_global_state_and_register::<R>() {
+                match self.get_frozen_global_state_and_register::<R>(cx) {
                     Some(state) => Some(state),
                     None => self.get_active_global_state::<R>(),
                 }
@@ -336,7 +338,7 @@ impl<'a> RenderCtx<'a> {
                 // We'll fall back to the frozen state there's no active state available
                 match self.get_active_global_state::<R>() {
                     Some(state) => Some(state),
-                    None => self.get_frozen_global_state_and_register::<R>(),
+                    None => self.get_frozen_global_state_and_register::<R>(cx),
                 }
             }
         } else {
@@ -349,16 +351,17 @@ impl<'a> RenderCtx<'a> {
         &mut self,
         url: &str,
         state_str: &str,
-    ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
+        cx: Scope<'a>,
+    ) -> Result<<R::Unrx as MakeRx<'a>>::Rx, ClientError>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         // Deserialize it (we know nothing about the calling situation, so we assume it could be invalid, hence the fallible return type)
         let unrx = serde_json::from_str::<R::Unrx>(state_str)
             .map_err(|err| ClientError::StateInvalid { source: err })?;
-        let rx = unrx.make_rx();
+        let rx = unrx.make_rx(cx);
         self.page_state_store.add(url, rx.clone());
 
         Ok(rx)
@@ -367,16 +370,17 @@ impl<'a> RenderCtx<'a> {
     pub fn register_global_state_str<R>(
         &mut self,
         state_str: &str,
-    ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
+        cx: Scope<'a>,
+    ) -> Result<<R::Unrx as MakeRx<'a>>::Rx, ClientError>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
+        R: Clone + Freeze + MakeUnrx<'a>,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        <<R as MakeUnrx<'a>>::Unrx as MakeRx<'a>>::Rx: Clone + Freeze + MakeUnrx<'a>,
     {
         // Deserialize it (we know nothing about the calling situation, so we assume it could be invalid, hence the fallible return type)
         let unrx = serde_json::from_str::<R::Unrx>(state_str)
             .map_err(|err| ClientError::StateInvalid { source: err })?;
-        let rx = unrx.make_rx();
+        let rx = unrx.make_rx(cx);
         self.global_state.set(Box::new(rx.clone()));
 
         Ok(rx)

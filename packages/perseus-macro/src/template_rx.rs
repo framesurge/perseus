@@ -211,9 +211,9 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // This isn't completely pointless, this method mutates as well to set up the global state as appropriate
                     // If there's no active or frozen global state, then we'll fall back to the generated one from the server (which we know will be there, since if this is `None` we must be
                     // the first page to access the global state).
-                    if render_ctx.get_active_or_frozen_global_state::<#global_state_rx>().is_none() {
+                    if render_ctx.get_active_or_frozen_global_state::<#global_state_rx>(cx).is_none() {
                         // Because this came from the server, we assume it's valid
-                        render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap()).unwrap();
+                        render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap(), cx).unwrap();
                     }
 
                     #live_reload_frag
@@ -224,7 +224,6 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // The user's function
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
-                    #[::sycamore::component]
                     // WARNING: I removed the `#state_arg` here because the new Sycamore throws errors for unit type props (possible consequences?)
                     fn #component_name #generics(#cx_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
@@ -236,7 +235,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                         #block
                     }
 
-                    #component_name(cx, ())
+                    #component_name(cx)
                 }
             },
             // This template takes its own state and global state
@@ -249,9 +248,9 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // This isn't completely pointless, this method mutates as well to set up the global state as appropriate
                     // If there's no active or frozen global state, then we'll fall back to the generated one from the server (which we know will be there, since if this is `None` we must be
                     // the first page to access the global state).
-                    if render_ctx.get_active_or_frozen_global_state::<#global_state_rx>().is_none() {
+                    if render_ctx.get_active_or_frozen_global_state::<#global_state_rx>(cx).is_none() {
                         // Because this came from the server, we assume it's valid
-                        render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap()).unwrap();
+                        render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.unwrap(), cx).unwrap();
                     }
 
                     #live_reload_frag
@@ -262,10 +261,9 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // The user's function
                     // We know this won't be async because Sycamore doesn't allow that
                     #(#attrs)*
-                    #[::sycamore::component]
                     fn #component_name #generics(#cx_arg, #state_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
-                            let global_state = ::perseus::get_render_ctx!(cx).global_state.get().0;
+                            let global_state = &::perseus::get_render_ctx!(cx).global_state.get().0;
                             // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
                             let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
                             (*global_state_ref).clone()
@@ -278,14 +276,14 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                         // If they are, we'll use them (so state persists for templates across the whole app)
                         let mut render_ctx = ::perseus::get_render_ctx!(cx);
                         // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                        match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
+                        match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path, cx) {
                             ::std::option::Option::Some(existing_state) => existing_state,
                             // Again, frozen state has been dealt with already, so we'll fall back to generated state
                             ::std::option::Option::None => {
                                 // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
                                 // We also assume that any state we have is valid because it comes from the server
                                 // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
-                                render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
+                                render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string)), cx).unwrap()
                             }
                         }
                     };
@@ -306,7 +304,8 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         };
         let name_string = name.to_string();
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+            // BUG: Remove this `'rx` here and get the lifetimes to work properly (DO NOT SHIP THIS!!!)
+            #vis fn #name<'rx, G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 use ::perseus::state::MakeRx;
 
                 #[cfg(target_arch = "wasm32")]
@@ -317,7 +316,6 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                #[::sycamore::component]
                 fn #component_name #generics(#cx_arg, #arg) -> #return_type {
                     #block
                 }
@@ -327,14 +325,14 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // If they are, we'll use them (so state persists for templates across the whole app)
                     let mut render_ctx = ::perseus::get_render_ctx!(cx);
                     // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                    match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
+                    match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path, cx) {
                         ::std::option::Option::Some(existing_state) => existing_state,
                         // Again, frozen state has been dealt with already, so we'll fall back to generated state
                         ::std::option::Option::None => {
                             // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
                             // We also assume that any state we have is valid because it comes from the server
                             // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
-                            render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
+                            render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string)), cx).unwrap()
                         }
                     }
                 };
@@ -358,12 +356,11 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
-                #[::sycamore::component]
                 fn #component_name #generics(#cx_arg) -> #return_type {
                     #block
                 }
 
-                #component_name(cx, ())
+                #component_name(cx)
             }
         }
     } else {
