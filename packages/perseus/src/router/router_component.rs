@@ -7,8 +7,7 @@ use crate::{
         router::{PerseusRoute, RouteInfo, RouteVerdict},
         shell::{app_shell, get_initial_state, InitialState, ShellProps},
     },
-    state::{FrozenAppStore, GlobalState, LiveReloadIndicator, PageStateStore},
-    templates::{IsFirst, RouterLoadState, RouterState, TemplateNodeType},
+    templates::{RenderCtx, RouterLoadState, RouterState, TemplateNodeType},
     DomNode, ErrorPages, Html,
 };
 use std::cell::RefCell;
@@ -42,7 +41,7 @@ struct OnRouteChangeProps<'a, G: Html> {
     cx: Scope<'a>,
     locales: Rc<Locales>,
     container_rx: NodeRef<G>,
-    router_state: RouterState<'a>,
+    router_state: RouterState,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     error_pages: Rc<ErrorPages<DomNode>>,
     initial_container: Option<Element>,
@@ -167,19 +166,17 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     // Get the error pages in an `Rc` so we aren't creating hundreds of them
     let error_pages = Rc::new(error_pages);
 
-    // Now we generate every part of the context we'll need
-    // With this done, we can construct `RenderCtx`s with `.from_ctx()`, and mirror `struct`s can modify values as necessary
-    // We don't need these as values, we just need them to add themselves to context
-    let router_state = RouterState::new(cx); // We need this for interfacing with the router though
-    let _pss = PageStateStore::new(cx);
-    let _global_state = GlobalState::new(cx);
-    let _frozen_app = FrozenAppStore::new(cx);
-    let _is_first = IsFirst::new(cx);
-    // If we're using live reload, set up an indicator so that our listening to the WebSocket at the top-level (where we don't have the render context that we need for freezing/thawing)
+    // Now create an instance of `RenderCtx`, which we'll insert into context and use everywhere throughout the app
+    let render_ctx = RenderCtx::default().set_ctx(cx);
+
+    // TODO Replace passing a router state around with getting it out of context instead in the shell
+    let router_state = &render_ctx.router; // We need this for interfacing with the router though
+
+    // If we're using live reload, get an indicator so that our listening to the WebSocket at the top-level (where we don't have the render context that we need for freezing/thawing)
     // can signal the templates to perform freezing/thawing
     // It doesn't matter what the initial value is, this is just a flip-flop
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    let live_reload_indicator = LiveReloadIndicator::new(cx);
+    let live_reload_indicator = &render_ctx.live_reload_indicator;
 
     // Create a derived state for the route announcement
     // We do this with an effect because we only want to update in some cases (when the new page is actually loaded)
@@ -249,8 +246,8 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
         // Get the route verdict and re-run the function we use on route changes
         // This has to be untracked, otherwise we get an infinite loop that will actually break client browsers (I had to manually kill Firefox...)
         // TODO Investigate how the heck this actually caused an infinite loop...
-        let verdict_rc = router_state.get_last_verdict_untracked();
-        let verdict = match &verdict_rc.0 {
+        let verdict = router_state.get_last_verdict();
+        let verdict = match &verdict {
             Some(verdict) => verdict,
             // If the first page hasn't loaded yet, terminate now
             None => return,
@@ -261,8 +258,9 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     // TODO State thawing in HSR (TODO 99% sure I've done this...)
     // If live reloading is enabled, connect to the server now
     // This doesn't actually perform any reloading or the like, it just signals places that have access to the render context to do so (because we need that for state freezing/thawing)
+    // We're only cloning an `RcSignal` here, so that's okay (we need it owned for closure stuff)
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    crate::state::connect_to_reload_server(live_reload_indicator);
+    crate::state::connect_to_reload_server(live_reload_indicator.clone());
 
     view! { cx,
         Router {

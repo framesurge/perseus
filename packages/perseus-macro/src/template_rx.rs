@@ -143,7 +143,7 @@ pub fn get_live_reload_frag() -> TokenStream {
 pub fn get_hsr_thaw_frag() -> TokenStream {
     #[cfg(all(feature = "hsr", debug_assertions))]
     let hsr_thaw_frag = quote! {{
-        let mut render_ctx = ::perseus::get_render_ctx!(cx);
+        let render_ctx = ::perseus::get_render_ctx!(cx);
         ::perseus::spawn_local_scoped(cx, async move {
             // We need to make sure we don't run this more than once, because that would lead to a loop
             // It also shouldn't run on any pages after the initial load
@@ -206,7 +206,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                     use ::perseus::state::MakeRx;
 
-                    let mut render_ctx = ::perseus::get_render_ctx!(cx);
+                    let render_ctx = ::perseus::get_render_ctx!(cx);
                     // Get the frozen or active global state (the render context manages thawing preferences)
                     // This isn't completely pointless, this method mutates as well to set up the global state as appropriate
                     // If there's no active or frozen global state, then we'll fall back to the generated one from the server (which we know will be there, since if this is `None` we must be
@@ -244,7 +244,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                     use ::perseus::state::MakeRx;
 
-                    let mut render_ctx = ::perseus::get_render_ctx!(cx).clone();
+                    let render_ctx = ::perseus::get_render_ctx!(cx).clone();
                     // Get the frozen or active global state (the render context manages thawing preferences)
                     // This isn't completely pointless, this method mutates as well to set up the global state as appropriate
                     // If there's no active or frozen global state, then we'll fall back to the generated one from the server (which we know will be there, since if this is `None` we must be
@@ -276,7 +276,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     let props = {
                         // Check if properties of the reactive type are already in the page state store
                         // If they are, we'll use them (so state persists for templates across the whole app)
-                        let mut render_ctx = ::perseus::get_render_ctx!(cx);
+                        let render_ctx = ::perseus::get_render_ctx!(cx);
                         // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
                         match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
                             ::std::option::Option::Some(existing_state) => existing_state,
@@ -325,7 +325,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 let props = {
                     // Check if properties of the reactive type are already in the page state store
                     // If they are, we'll use them (so state persists for templates across the whole app)
-                    let mut render_ctx = ::perseus::get_render_ctx!(cx);
+                    let render_ctx = ::perseus::get_render_ctx!(cx);
                     // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
                     match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
                         ::std::option::Option::Some(existing_state) => existing_state,

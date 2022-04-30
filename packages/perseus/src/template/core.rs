@@ -196,7 +196,7 @@ impl<G: Html> Template<G> {
     ) -> View<G> {
         // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
-        let _ = RenderCtx::server(cx);
+        let _ = RenderCtx::default().set_ctx(cx);
         // And now provide a translator separately
         provide_context_signal_replace(cx, translator.clone());
 
@@ -208,7 +208,7 @@ impl<G: Html> Template<G> {
         sycamore::render_to_string(|cx| {
             // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
-            let _ = RenderCtx::server(cx);
+            let _ = RenderCtx::default().set_ctx(cx);
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
 

@@ -1,8 +1,8 @@
-use proc_macro2::{TokenStream, Span};
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility
+    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, Result, ReturnType, Type, Visibility,
 };
 
 use crate::template_rx::{get_hsr_thaw_frag, get_live_reload_frag};
@@ -123,7 +123,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it (also the reactive state)
         let cx_arg = &args[0];
         let arg = &args[1];
-        
+
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 #[cfg(target_arch = "wasm32")]
@@ -147,7 +147,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     } else {
         // There is one argument for the reactive scope
         let cx_arg = &args[0];
-        
+
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
                 #[cfg(target_arch = "wasm32")]
