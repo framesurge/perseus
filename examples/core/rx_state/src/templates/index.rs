@@ -1,5 +1,5 @@
 use perseus::{Html, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Scope, SsrNode, View};
+use sycamore::prelude::{Scope, SsrNode, View, view};
 
 #[perseus::make_rx(IndexPageStateRx)]
 pub struct IndexPageState {

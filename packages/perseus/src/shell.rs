@@ -3,11 +3,13 @@ use crate::errors::*;
 use crate::i18n::ClientTranslationsManager;
 use crate::router::{RouteVerdict, RouterLoadState, RouterState};
 use crate::server::PageData;
+use crate::state::PageStateStore;
+use crate::state::{FrozenApp, GlobalState, ThawPrefs};
 use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::*;
@@ -242,7 +244,9 @@ pub struct ShellProps<'a> {
     /// The locale we're rendering in.
     pub locale: String,
     /// The router state.
-    pub router_state: RouterState<'a>,
+    pub router_state: RouterState,
+    /// The template state store.
+    pub page_state_store: PageStateStore,
     /// A *client-side* translations manager to use (this manages caching translations).
     pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     /// The error pages, for use if something fails.
@@ -251,9 +255,18 @@ pub struct ShellProps<'a> {
     pub initial_container: Element,
     /// The container for reactive content.
     pub container_rx_elem: Element,
+    /// The global state store. Brekaing it out here prevents it being overriden every time a new template loads.
+    pub global_state: GlobalState,
+    /// A previous frozen state to be gradully rehydrated. This should always be `None`, it only serves to provide continuity across templates.
+    pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
     /// The current route verdict. This will be stored in context so that it can be used for possible reloads. Eventually,
     /// this will be made obsolete when Sycamore supports this natively.
     pub route_verdict: RouteVerdict<TemplateNodeType>,
+    /// Whether or not this page is the very first to have been rendered since the browser loaded the app.
+    pub is_first: Rc<Cell<bool>>,
+    #[cfg(all(feature = "live-reload", debug_assertions))]
+    /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server.
+    pub live_reload_indicator: RcSignal<bool>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -267,11 +280,17 @@ pub async fn app_shell(
         was_incremental_match,
         locale,
         mut router_state,
+        page_state_store,
         translations_manager,
         error_pages,
         initial_container,
         container_rx_elem,
+        global_state: curr_global_state,
+        frozen_app,
         route_verdict,
+        is_first,
+        #[cfg(all(feature = "live-reload", debug_assertions))]
+        live_reload_indicator,
     }: ShellProps<'_>,
 ) {
     checkpoint("app_shell_entry");
@@ -284,7 +303,7 @@ pub async fn app_shell(
         template_name: template.get_path(),
         path: path_with_locale.clone(),
     });
-    router_state.set_last_verdict(route_verdict.clone());
+    router_state.set_last_verdict(route_verdict);
     // Get the global state if possible (we'll want this in all cases except errors)
     // If this is a subsequent load, the template macro will have already set up the global state, and it will ignore whatever we naively give it (so we'll give it `None`)
     let global_state = get_global_state();
@@ -338,6 +357,7 @@ pub async fn app_shell(
 
             let path = template.get_path();
             // Hydrate that static code using the acquired state
+            let router_state_2 = router_state.clone();
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
             let page_props = PageProps {
                 path: path_with_locale.clone(),
@@ -349,14 +369,42 @@ pub async fn app_shell(
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
-                    move |_| template.render_for_template_client(page_props, cx, translator),
+                    move |_| {
+                        template.render_for_template_client(
+                            page_props,
+                            cx,
+                            translator,
+                            false,
+                            router_state_2,
+                            page_state_store,
+                            curr_global_state,
+                            frozen_app,
+                            is_first,
+                            #[cfg(all(feature = "live-reload", debug_assertions))]
+                            live_reload_indicator,
+                        )
+                    },
                     &container_rx_elem,
                 );
             }
             #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                |_| template.render_for_template_client(page_props, cx, translator),
+                |_| {
+                    template.render_for_template_client(
+                        page_props,
+                        cx,
+                        translator,
+                        false,
+                        router_state_2,
+                        page_state_store,
+                        curr_global_state,
+                        frozen_app,
+                        is_first,
+                        #[cfg(all(feature = "live-reload", debug_assertions))]
+                        live_reload_indicator,
+                    )
+                },
                 &container_rx_elem,
             );
             checkpoint("page_interactive");
@@ -438,6 +486,7 @@ pub async fn app_shell(
                                 };
 
                                 // Hydrate that static code using the acquired state
+                                let router_state_2 = router_state.clone();
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                                 let page_props = PageProps {
                                     path: path_with_locale.clone(),
@@ -452,7 +501,20 @@ pub async fn app_shell(
                                     sycamore::render_to(
                                         move |_| {
                                             template.render_for_template_client(
-                                                page_props, cx, translator,
+                                                page_props,
+                                                cx,
+                                                translator,
+                                                false,
+                                                router_state_2.clone(),
+                                                page_state_store,
+                                                curr_global_state,
+                                                frozen_app,
+                                                is_first,
+                                                #[cfg(all(
+                                                    feature = "live-reload",
+                                                    debug_assertions
+                                                ))]
+                                                live_reload_indicator,
                                             )
                                         },
                                         &container_rx_elem,
@@ -462,8 +524,19 @@ pub async fn app_shell(
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
                                     move |_| {
-                                        template
-                                            .render_for_template_client(page_props, cx, translator)
+                                        template.render_for_template_client(
+                                            page_props,
+                                            cx,
+                                            translator,
+                                            false,
+                                            router_state_2,
+                                            page_state_store,
+                                            curr_global_state,
+                                            frozen_app,
+                                            is_first,
+                                            #[cfg(all(feature = "live-reload", debug_assertions))]
+                                            live_reload_indicator,
+                                        )
                                     },
                                     &container_rx_elem,
                                 );

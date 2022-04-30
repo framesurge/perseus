@@ -51,10 +51,11 @@ pub fn autoserde(args: TokenStream, input: TokenStream) -> TokenStream {
 /// function, avoiding the need for you to manually serialize/deserialize things. This should be provided the name of the Sycamore component (same as given
 /// to Sycamore's `#[component()]`, but without the `<G>`).
 #[proc_macro_attribute]
-pub fn template(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template::TemplateFn);
+    let arg = syn::parse_macro_input!(args as syn::Ident);
 
-    template::template_impl(parsed).into()
+    template::template_impl(parsed, arg).into()
 }
 
 /// The new version of `#[template]` designed for reactive state. This can interface automatically with global state, and will automatically provide Sycamore `#[component]` annotations. To

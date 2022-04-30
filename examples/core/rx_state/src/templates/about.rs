@@ -1,6 +1,6 @@
 use crate::templates::index::IndexPageStateRx;
 use perseus::{get_render_ctx, Html, Template};
-use sycamore::prelude::{create_rc_signal, view, Scope};
+use sycamore::prelude::{Scope, create_rc_signal, view};
 use sycamore::view::View;
 
 // WARNING: Accessing the page state store manually as this template does is NOT recommended, and is done for demonstration purposes only! In reality, you should use global state for anything that

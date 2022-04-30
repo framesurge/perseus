@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{Ident, ItemStruct, Lifetime, LifetimeDef, Lit, Meta, NestedMeta, Result, GenericParam};
+use syn::{Ident, ItemStruct, Lit, Meta, NestedMeta, Result};
 
 pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
     // So that we don't have to worry about unit structs or unnamed fields, we'll just copy the struct and change the parts we want to
@@ -85,9 +85,6 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
     }
     orig_struct.attrs = filtered_attrs_orig;
     new_struct.attrs = filtered_attrs_new;
-    // Now add the `'rx` lifetime to the new `struct`'s generics (we'll need it for all the `Signal`s)
-    new_struct.generics.params.insert(0, GenericParam::Lifetime(LifetimeDef::new(Lifetime::new("'rx", Span::call_site()))));
-    let new_generics = &new_struct.generics;
 
     match new_struct.fields {
         syn::Fields::Named(ref mut fields) => {
@@ -98,7 +95,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                 field.ty = if let Some(wrapper_ty) = wrapper_ty {
                     syn::Type::Verbatim(quote!(#wrapper_ty))
                 } else {
-                    syn::Type::Verbatim(quote!(&'rx ::sycamore::prelude::Signal<#orig_ty>))
+                    syn::Type::Verbatim(quote!(::sycamore::prelude::RcSignal<#orig_ty>))
                 };
                 // Remove any `serde` attributes (Serde can't be used with the reactive version)
                 let mut new_attrs = Vec::new();
@@ -136,8 +133,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                     })
                 } else {
                     field_assignments.extend(quote! {
-                        // The `cx` parameter will be available where we interpolate this
-                        #field_name: ::sycamore::prelude::create_signal(self.#field_name, cx),
+                        #field_name: ::sycamore::prelude::create_rc_signal(self.#field_name),
                     });
                 }
             }
@@ -184,24 +180,23 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         // We add a Serde derivation because it will always be necessary for Perseus on the original `struct`, and it's really difficult and brittle to filter it out
         #[derive(::serde::Serialize, ::serde::Deserialize, ::std::clone::Clone)]
         #orig_struct
-        // BUG The lifetime parameter `'rx` is unconstrained here
         impl #generics ::perseus::state::MakeRx for #ident #generics {
-            type Rx = #name #new_generics;
-            fn make_rx<'rx>(self, cx: ::sycamore::prelude::Scope<'rx>) -> #name #new_generics {
+            type Rx = #name #generics;
+            fn make_rx(self) -> #name #generics {
                 use ::perseus::state::MakeRx;
                 #make_rx_fields
             }
         }
         #[derive(::std::clone::Clone)]
         #new_struct
-        impl #new_generics ::perseus::state::MakeUnrx for #name #new_generics {
+        impl #generics ::perseus::state::MakeUnrx for #name #generics {
             type Unrx = #ident #generics;
             fn make_unrx(self) -> #ident #generics {
                 use ::perseus::state::MakeUnrx;
                 #make_unrx_fields
             }
         }
-        impl #new_generics ::perseus::state::Freeze for #name #new_generics {
+        impl #generics ::perseus::state::Freeze for #name #generics {
             fn freeze(&self) -> ::std::string::String {
                 use ::perseus::state::MakeUnrx;
                 let unrx = #make_unrx_fields;

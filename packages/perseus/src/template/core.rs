@@ -3,15 +3,23 @@
 use super::{default_headers, PageProps, RenderCtx, States};
 use crate::errors::*;
 use crate::make_async_trait;
+use crate::router::RouterState;
+use crate::state::{FrozenApp, GlobalState, PageStateStore, ThawPrefs};
 use crate::translator::Translator;
-use crate::utils::provide_context_signal_replace;
 use crate::utils::AsyncFnReturn;
 use crate::Html;
 use crate::Request;
 use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
-use sycamore::prelude::{Scope, View};
+use sycamore::prelude::Signal;
+use sycamore::prelude::create_signal;
+use sycamore::prelude::provide_context_ref;
+use sycamore::prelude::try_use_context;
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+use sycamore::prelude::create_rc_signal;
+use sycamore::prelude::{provide_context, Scope, View};
 
 /// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
 /// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
@@ -175,30 +183,69 @@ impl<G: Html> Template<G> {
     // Render executors
     /// Executes the user-given function that renders the template on the client-side ONLY. This takes in an extsing global state.
     #[allow(clippy::too_many_arguments)]
-    pub fn render_for_template_client<'a>(
+    pub fn render_for_template_client(
         &self,
         props: PageProps,
-        cx: Scope<'a>,
+        cx: Scope,
         translator: &Translator,
+        is_server: bool,
+        router_state: RouterState,
+        page_state_store: PageStateStore,
+        global_state: GlobalState,
+        // This should always be empty, it just allows us to persist the value across template loads
+        frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
+        is_first: Rc<Cell<bool>>,
+        #[cfg(all(feature = "live-reload", debug_assertions))]
+        live_reload_indicator: sycamore::prelude::RcSignal<bool>,
     ) -> View<G> {
-        // The router component has already set up all the elements of context needed by the rest of the system, we can get on with rendering the template
-        // All we have to do is provide the translator, replacing whatever is present
-        provide_context_signal_replace(cx, translator.clone());
+        let render_ctx = RenderCtx {
+            is_server,
+            translator: translator.clone(),
+            router: router_state,
+            page_state_store,
+            global_state,
+            frozen_app,
+            is_first,
+            #[cfg(all(feature = "live-reload", debug_assertions))]
+            live_reload_indicator,
+        };
+        if let Some(ctx) = try_use_context::<Signal<RenderCtx>>(cx) {
+            ctx.set(render_ctx);
+        } else {
+            provide_context_ref(cx, create_signal(cx, render_ctx));
+        }
 
         (self.template)(cx, props)
     }
     /// Executes the user-given function that renders the template on the server-side ONLY. This automatically initializes an isolated global state.
-    pub fn render_for_template_server<'a>(
+    pub fn render_for_template_server(
         &self,
         props: PageProps,
-        cx: Scope<'a>,
+        cx: Scope,
         translator: &Translator,
+        is_server: bool,
+        router_state: RouterState,
+        page_state_store: PageStateStore,
     ) -> View<G> {
-        // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
-        // We don't need the value, we just want the context instantiations
-        let _ = RenderCtx::server(cx);
-        // And now provide a translator separately
-        provide_context_signal_replace(cx, translator.clone());
+        let render_ctx = RenderCtx {
+            is_server,
+            translator: translator.clone(),
+            router: router_state,
+            page_state_store,
+            global_state: GlobalState::default(),
+            // Hydrating state on the server-side is pointless
+            frozen_app: Rc::new(RefCell::new(None)),
+            // On the server-side, every template is the first
+            // We won't do anything with HSR on the server-side though
+            is_first: Rc::new(Cell::new(true)),
+            #[cfg(all(feature = "live-reload", debug_assertions))]
+            live_reload_indicator: create_rc_signal(false),
+        };
+        if let Some(ctx) = try_use_context::<Signal<RenderCtx>>(cx) {
+            ctx.set(render_ctx);
+        } else {
+            provide_context_ref(cx, create_signal(cx, render_ctx));
+        }
 
         (self.template)(cx, props)
     }
@@ -206,11 +253,25 @@ impl<G: Html> Template<G> {
     /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
     pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
         sycamore::render_to_string(|cx| {
-            // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
-            // We don't need the value, we just want the context instantiations
-            let _ = RenderCtx::server(cx);
-            // And now provide a translator separately
-            provide_context_signal_replace(cx, translator.clone());
+            let render_ctx = RenderCtx {
+                // This function renders to a string, so we're effectively always on the server
+                // It's also only ever run on the server
+                is_server: true,
+                translator: translator.clone(),
+                // The head string is rendered to a string, and so never has information about router or page state
+                router: RouterState::default(),
+                page_state_store: PageStateStore::default(),
+                global_state: GlobalState::default(),
+                // Hydrating state on the server-side is pointless
+                frozen_app: Rc::new(RefCell::new(None)),
+                // On the server-side, every template is the first
+                // We won't do anything with HSR on the server-side though
+                is_first: Rc::new(Cell::new(true)),
+                #[cfg(all(feature = "live-reload", debug_assertions))]
+                live_reload_indicator: create_rc_signal(false),
+            };
+            // We don't have to worry about the type already existing (the scope has just been instantiated)
+            provide_context(cx, render_ctx);
 
             (self.head)(cx, props)
         })
