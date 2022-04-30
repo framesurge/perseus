@@ -2,10 +2,11 @@ use super::rx_state::AnyFreeze;
 use crate::errors::*;
 use crate::make_async_trait;
 use crate::template::RenderFnResult;
+use crate::utils::provide_context_signal_replace;
 use crate::utils::AsyncFnReturn;
 use futures::Future;
-use std::cell::RefCell;
 use std::rc::Rc;
+use sycamore::prelude::{use_context, Scope, Signal};
 
 make_async_trait!(GlobalStateCreatorFnType, RenderFnResult<String>);
 /// The type of functions that generate global state. These will generate a `String` for their custom global state type.
@@ -63,15 +64,36 @@ impl GlobalStateCreator {
     }
 }
 
+pub struct GlobalStateBox(pub Box<dyn AnyFreeze>);
+
 /// A representation of the global state in an app.
-#[derive(Clone)]
-pub struct GlobalState(pub Rc<RefCell<Box<dyn AnyFreeze>>>);
-impl Default for GlobalState {
-    fn default() -> Self {
-        Self(Rc::new(RefCell::new(Box::new(Option::<()>::None))))
+pub struct GlobalState<'a> {
+    state: &'a Signal<GlobalStateBox>,
+}
+impl<'a> GlobalState<'a> {
+    /// Creates a new, empty `GlobalState` store.
+    pub fn new(cx: Scope<'a>) -> Self {
+        let state =
+            provide_context_signal_replace(cx, GlobalStateBox(Box::new(Option::<()>::None)));
+
+        Self { state }
+    }
+    /// Creates a new instance of the global state store from the context of the given reactive scope. If the required types do not exist in the given scope, this will panic.
+    pub fn from_ctx(cx: Scope<'a>) -> Self {
+        Self {
+            state: use_context(cx),
+        }
+    }
+    /// Gets the inner value.
+    pub fn get(&self) -> Rc<GlobalStateBox> {
+        self.state.get()
+    }
+    /// Sets the inner value.
+    pub fn set(&self, val: Box<dyn AnyFreeze>) {
+        self.state.set(GlobalStateBox(val))
     }
 }
-impl std::fmt::Debug for GlobalState {
+impl<'a> std::fmt::Debug for GlobalState<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("GlobalState").finish()
     }

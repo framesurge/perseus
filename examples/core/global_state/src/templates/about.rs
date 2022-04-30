@@ -1,5 +1,5 @@
 use perseus::{Html, Template};
-use sycamore::prelude::{Scope, SsrNode, View, view};
+use sycamore::prelude::{view, Scope, SsrNode, View};
 
 use crate::global_state::AppStateRx;
 

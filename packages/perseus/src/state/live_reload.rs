@@ -1,10 +1,59 @@
-use sycamore::prelude::RcSignal;
+use sycamore::prelude::{
+    create_rc_signal, provide_context, try_use_context, use_context, RcSignal, Scope,
+};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket};
 
-/// Connects to the reload server if it's online. This takes a flip-flop `Signal` that it can use to signal other parts of the code to perform actual reloading (we can't do that here because
+#[derive(Debug)]
+struct LiveReloadIndicatorInner(bool);
+
+/// A context store for the live reload indicator, a flip-flop `RcSignal` used for emitting a live reload event.
+///
+/// This has to be an `RcSignal` to avoid the issues of closure wrapping.
+#[derive(Debug, Clone)]
+pub struct LiveReloadIndicator(RcSignal<LiveReloadIndicatorInner>);
+impl<'a> LiveReloadIndicator {
+    /// Creates a new instance of the live reload indicator, registering with the context of the given reactive scope and mirroring it.
+    pub fn new(cx: Scope<'a>) -> Self {
+        let inner = {
+            if let Some(ctx) = try_use_context::<RcSignal<LiveReloadIndicatorInner>>(cx) {
+                ctx.set(LiveReloadIndicatorInner(true));
+            } else {
+                provide_context(cx, create_rc_signal(LiveReloadIndicatorInner(true)));
+            }
+            use_context::<RcSignal<LiveReloadIndicatorInner>>(cx)
+        }
+        .clone();
+
+        Self(inner)
+    }
+    /// Creates a new instance of the live reload indicator from the context of the given reactive scope. If the required types do not exist in the given scope, this will panic.
+    pub fn from_ctx(cx: Scope<'a>) -> Self {
+        Self(use_context::<RcSignal<LiveReloadIndicatorInner>>(cx).clone())
+    }
+    /// Gets the inner value.
+    pub fn get(&self) -> bool {
+        self.0.get().0
+    }
+    /// Gets the inner value without adding it to reactive dependencies.
+    pub fn get_untracked(&self) -> bool {
+        self.0.get_untracked().0
+    }
+    /// Sets the inner value.
+    pub fn set(&self, val: bool) {
+        self.0.set(LiveReloadIndicatorInner(val))
+    }
+    /// Calls `.track()` on the underlying `RcSignal`.
+    pub fn track(&self) {
+        self.0.track()
+    }
+}
+
+/// Connects to the reload server if it's online. This takes a flip-flop `RcSignal` that it can use to signal other parts of the code to perform actual reloading (we can't do that here because
 /// we don't have access to the render context for freezing and thawing).
-pub(crate) fn connect_to_reload_server(live_reload_indicator: RcSignal<bool>) {
+///
+/// We need to use an `RcSignal` here due to the requirements of closure wrapping (lifetime scopes do not work there).
+pub(crate) fn connect_to_reload_server(live_reload_indicator: LiveReloadIndicator) {
     // Get the host and port
     let host = get_window_var("__PERSEUS_RELOAD_SERVER_HOST");
     let port = get_window_var("__PERSEUS_RELOAD_SERVER_PORT");
@@ -28,7 +77,7 @@ pub(crate) fn connect_to_reload_server(live_reload_indicator: RcSignal<bool>) {
         log("Reloading...");
         // Signal the rest of the code that we need to reload (and potentially freeze state if HSR is enabled)
         // Amazingly, the reactive scope isn't interrupted and this actually works!
-        live_reload_indicator.set(!*live_reload_indicator.get_untracked());
+        live_reload_indicator.set(!live_reload_indicator.get_untracked());
     }) as Box<dyn FnMut(MessageEvent)>);
     ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
     // To keep the closure alive, we need to forget about it
