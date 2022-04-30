@@ -202,8 +202,8 @@ impl<G: Html> Template<G> {
 
         (self.template)(cx, props)
     }
-    /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually. Reactivity
-    /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
+    /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually.
+    /// Reactivity in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
     pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
         sycamore::render_to_string(|cx| {
             // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
