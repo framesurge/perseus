@@ -12,6 +12,7 @@ use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
 use sycamore::prelude::{create_scope_immediate, Scope, View};
+use sycamore::utils::hydrate::with_no_hydration_context;
 
 /// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
 /// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
@@ -205,21 +206,15 @@ impl<G: Html> Template<G> {
     /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually.
     /// Reactivity in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
     pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
-        let mut ret = None;
-        // TODO: This is a hack to prevent inserting hydration keys into the head.
-        // We render the template into a `View<SsrNode>` outside of the hydration context (created in `sycamore::render_to_string`).
-        create_scope_immediate(|cx| {
+        sycamore::render_to_string(|cx| {
             // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             let _ = RenderCtx::server(cx);
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
-
-            let view = (self.head)(cx, props);
-
-            ret = Some(sycamore::render_to_string(|_| view));
-        });
-        ret.unwrap()
+            // We don't want to generate hydration keys for the head because it is static.
+            with_no_hydration_context(|| (self.head)(cx, props))
+        })
     }
     /// Gets the list of templates that should be prerendered for at build-time.
     pub async fn get_build_paths(&self) -> Result<Vec<String>, ServerError> {
