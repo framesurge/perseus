@@ -11,8 +11,7 @@ use crate::Request;
 use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
-use sycamore::prelude::create_scope_immediate;
-use sycamore::prelude::{Scope, View};
+use sycamore::prelude::{create_scope_immediate, Scope, View};
 
 /// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
 /// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
