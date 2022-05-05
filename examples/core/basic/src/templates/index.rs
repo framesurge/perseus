@@ -7,7 +7,7 @@ pub struct IndexPageState {
 }
 
 #[perseus::template_rx]
-pub fn index_page<G: Html>(cx: Scope, state: IndexPageStateRx) -> View<G> {
+pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G> {
     view! { cx,
         p { (state.greeting.get()) }
         a(href = "about", id = "about-link") { "About!" }
