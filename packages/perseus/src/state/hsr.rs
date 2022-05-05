@@ -18,7 +18,7 @@ pub async fn hsr_freeze(frozen_state: String) {
 /// Thaws a previous state frozen in development.
 // This will be run at the beginning of every template function, which means it gets executed on the server as well, so we have to Wasm-gate this
 #[cfg(target_arch = "wasm32")]
-pub async fn hsr_thaw(render_ctx: &RenderCtx<'_>) {
+pub async fn hsr_thaw(render_ctx: &RenderCtx) {
     use super::{PageThawPrefs, ThawPrefs};
 
     let idb_store = match IdbFrozenStateStore::new_with_name("perseus_hsr").await {
@@ -56,7 +56,7 @@ pub async fn hsr_thaw(render_ctx: &RenderCtx<'_>) {
 
 /// Thaws a previous state frozen in development.
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn hsr_thaw(_render_ctx: &RenderCtx<'_>) {}
+pub async fn hsr_thaw(_render_ctx: &RenderCtx) {}
 
 /// An internal function for logging data about HSR.
 fn log(msg: &str) {

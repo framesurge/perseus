@@ -1,51 +1,5 @@
-use crate::utils::provide_context_signal_replace;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::rc::Rc;
-use sycamore::prelude::{use_context, Scope, Signal};
-
-#[derive(Debug, Clone)]
-pub struct FrozenAppStoreState(pub FrozenApp, pub ThawPrefs);
-
-/// A representation of the context store that stores a frozen app and thaw preferences.
-#[derive(Debug)]
-pub struct FrozenAppStore<'a> {
-    state: &'a Signal<Option<FrozenAppStoreState>>,
-}
-impl<'a> FrozenAppStore<'a> {
-    /// Creates a new instance of the frozen app store.
-    pub fn new(cx: Scope<'a>) -> Self {
-        let state = provide_context_signal_replace(cx, None);
-
-        Self { state }
-    }
-    /// Creates a new instance of the frozen app store from the context of the given reactive scope. If the required types do not exist in the given scope, this will panic.
-    pub fn from_ctx(cx: Scope<'a>) -> Self {
-        Self {
-            state: use_context(cx),
-        }
-    }
-    /// Gets the inner value.
-    pub fn get(&self) -> Rc<Option<FrozenAppStoreState>> {
-        self.state.get()
-    }
-    /// Sets the inner value using a tuple.
-    pub fn set_tuple(&self, val: Option<(FrozenApp, ThawPrefs)>) {
-        self.state.set(val.map(|(f, t)| FrozenAppStoreState(f, t)))
-    }
-    /// Sets the inner value using the wrapper type.
-    pub fn set(&self, val: Option<FrozenAppStoreState>) {
-        self.state.set(val);
-    }
-    /// Extracts the stored `FrozenAppStoreState`. This should only ever be called if there are no outstanding references to the `Signal`.
-    // TODO Check if this is remotely okay to do...
-    pub fn take_unwrap(&self) -> Option<FrozenAppStoreState> {
-        match Rc::try_unwrap(self.state.take()) {
-            Ok(val) => val,
-            Err(val_rc) => (*val_rc).clone(),
-        }
-    }
-}
 
 /// A representation of a frozen app.
 ///

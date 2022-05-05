@@ -242,7 +242,7 @@ pub struct ShellProps<'a> {
     /// The locale we're rendering in.
     pub locale: String,
     /// The router state.
-    pub router_state: RouterState<'a>,
+    pub router_state: RouterState,
     /// A *client-side* translations manager to use (this manages caching translations).
     pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     /// The error pages, for use if something fails.
