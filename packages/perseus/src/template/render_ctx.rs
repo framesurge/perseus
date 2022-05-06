@@ -205,7 +205,7 @@ impl RenderCtx {
     }
     /// An internal getter for the frozen global state. When this is called, it will also add any frozen state to the registered
     /// global state, removing whatever was there before.
-    fn get_frozen_global_state_and_register<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    fn get_frozen_global_state_and_register<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
@@ -264,7 +264,7 @@ impl RenderCtx {
             .cloned()
     }
     /// Gets either the active or the frozen global state, depending on thaw preferences. Otherwise, this is exactly the same as `.get_active_or_frozen_state()`.
-    pub fn get_active_or_frozen_global_state<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    pub fn get_active_or_frozen_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
@@ -314,7 +314,7 @@ impl RenderCtx {
     }
     /// Registers a serialized and unreactive state string as the new active global state, returning a fully reactive version.
     pub fn register_global_state_str<R>(
-        &mut self,
+        &self,
         state_str: &str,
     ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
     where

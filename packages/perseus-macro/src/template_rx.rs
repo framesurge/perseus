@@ -105,15 +105,21 @@ impl Parse for TemplateFn {
 /// Converts the user-given name of a final reactive `struct` into the intermediary name used for the one we'll interface with. This will remove any associated lifetimes
 /// because we want just the type name. This will leave generics intact though.
 fn make_mid(ty: &Type) -> Type {
-    let ty_str = ty.to_token_stream().to_string();
-    // Remove any lifetimes from the type (anything in angular brackets beginning with `'`)
-    // This regex just removes any lifetimes next to generics or on their own, allowing for the whitespace Syn seems to insert
-    let ty_str = Regex::new(r#"(('.*?) |<\s*('[^, ]*?)\s*>)"#)
-        .unwrap()
-        .replace_all(&ty_str, "");
-    // And now actually make the replacement we need (ref to intermediate)
-    let ty_str = ty_str.trim().to_string() + "PerseusRxIntermediary";
-    Type::Verbatim(TokenStream::from_str(&ty_str).unwrap())
+    // Don't run any transformation if this is the unit type
+    match ty {
+        Type::Tuple(TypeTuple { elems, .. }) if elems.is_empty() => ty.clone(),
+        _ => {
+            let ty_str = ty.to_token_stream().to_string();
+            // Remove any lifetimes from the type (anything in angular brackets beginning with `'`)
+            // This regex just removes any lifetimes next to generics or on their own, allowing for the whitespace Syn seems to insert
+            let ty_str = Regex::new(r#"(('.*?) |<\s*('[^, ]*?)\s*>)"#)
+                .unwrap()
+                .replace_all(&ty_str, "");
+            // And now actually make the replacement we need (ref to intermediate)
+            let ty_str = ty_str.trim().to_string() + "PerseusRxIntermediary";
+            Type::Verbatim(TokenStream::from_str(&ty_str).unwrap())
+        }
+    }
 }
 
 /// Gets the code fragment used to support live reloading and HSR.
@@ -246,11 +252,12 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // WARNING: I removed the `#state_arg` here because the new Sycamore throws errors for unit type props (possible consequences?)
                     fn #component_name #generics(#cx_arg) -> #return_type {
                         let #global_state_arg_pat: #global_state_rx = {
-                            let global_state = ::perseus::get_render_ctx!(cx).global_state.get().0;
+                            let global_state = ::perseus::get_render_ctx!(cx).global_state.0.borrow();
                             // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
                             let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
                             (*global_state_ref).clone()
                         };
+                        let #global_state_arg_pat = #global_state_arg_pat.to_ref_struct(cx);
                         #block
                     }
 
@@ -282,13 +289,13 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     #(#attrs)*
                     #[::sycamore::component]
                     fn #component_name #generics(#cx_arg, #state_arg) -> #return_type {
-                        // TODO Make the return a ref struct
                         let #global_state_arg_pat: #global_state_rx = {
-                            let global_state = ::perseus::get_render_ctx!(cx).global_state.get().0;
+                            let global_state = ::perseus::get_render_ctx!(cx).global_state.0.borrow();
                             // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
                             let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
                             (*global_state_ref).clone()
                         };
+                        let #global_state_arg_pat = #global_state_arg_pat.to_ref_struct();
                         #block
                     }
 
@@ -309,7 +316,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                         }
                     };
 
-                    #component_name(cx, props.to_ref_struct())
+                    #component_name(cx, props.to_ref_struct(cx))
                 }
             },
         }
