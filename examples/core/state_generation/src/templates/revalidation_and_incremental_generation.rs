@@ -10,9 +10,9 @@ pub struct PageState {
 }
 
 #[perseus::template_rx]
-pub fn revalidation_and_incremental_generation_page<G: Html>(
-    cx: Scope,
-    state: PageStateRx,
+pub fn revalidation_and_incremental_generation_page<'a, G: Html>(
+    cx: Scope<'a>,
+    state: PageStateRx<'a>,
 ) -> View<G> {
     view! { cx,
         p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }

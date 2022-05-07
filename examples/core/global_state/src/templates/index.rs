@@ -6,12 +6,10 @@ use crate::global_state::*; // This is necessary because Perseus generates an in
 // This template needs global state, but doesn't have any state of its own, so the first argument is the unit type `()` (which the macro will detect)
 #[perseus::template_rx]
 pub fn index_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a>) -> View<G> {
-    let test = global_state.test;
-    let test_2 = test.clone();
     view! { cx,
         // The user can change the global state through an input, and the changes they make will be reflected throughout the app
-        p { (test.get()) }
-        input(bind:value = test_2)
+        p { (global_state.test.get()) }
+        input(bind:value = global_state.test)
 
         a(href = "about", id = "about-link") { "About" }
     }

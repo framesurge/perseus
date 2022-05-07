@@ -295,7 +295,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                             let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
                             (*global_state_ref).clone()
                         };
-                        let #global_state_arg_pat = #global_state_arg_pat.to_ref_struct();
+                        let #global_state_arg_pat = #global_state_arg_pat.to_ref_struct(cx);
                         #block
                     }
 

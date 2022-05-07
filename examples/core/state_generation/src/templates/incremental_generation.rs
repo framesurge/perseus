@@ -10,7 +10,7 @@ pub struct PageState {
 }
 
 #[perseus::template_rx]
-pub fn incremental_generation_page<G: Html>(cx: Scope, state: PageStateRx) -> View<G> {
+pub fn incremental_generation_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
     let title = state.title;
     let content = state.content;
     view! { cx,
