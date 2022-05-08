@@ -251,13 +251,13 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     #[::sycamore::component]
                     // WARNING: I removed the `#state_arg` here because the new Sycamore throws errors for unit type props (possible consequences?)
                     fn #component_name #generics(#cx_arg) -> #return_type {
-                        let #global_state_arg_pat: #global_state_rx = {
+                        let __perseus_global_state_intermediate: #global_state_rx = {
                             let global_state = ::perseus::get_render_ctx!(cx).global_state.0.borrow();
                             // We can guarantee that it will downcast correctly now, because we'll only invoke the component from this function, which sets up the global state correctly
                             let global_state_ref = global_state.as_any().downcast_ref::<#global_state_rx>().unwrap();
                             (*global_state_ref).clone()
                         };
-                        let #global_state_arg_pat = #global_state_arg_pat.to_ref_struct(cx);
+                        let #global_state_arg_pat = __perseus_global_state_intermediate.to_ref_struct(cx);
                         #block
                     }
 

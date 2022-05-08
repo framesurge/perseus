@@ -8,7 +8,7 @@ pub struct PostPageState {
 }
 
 #[perseus::template_rx]
-pub fn post_page<G: Html>(cx: Scope, props: PostPageStateRx) -> View<G> {
+pub fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostPageStateRx<'a>) -> View<G> {
     let title = props.title;
     let content = props.content;
     view! { cx,

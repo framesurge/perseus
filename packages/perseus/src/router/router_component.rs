@@ -183,7 +183,7 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     // We also need to know if it's the first page (because we don't want to announce that, screen readers will get that one right)
     let route_announcement = create_signal(cx, String::new());
     let mut is_first_page = true; // This is different from the first page load (this is the first page as a whole)
-    let load_state = router_state.get_load_state();
+    let load_state = router_state.get_load_state_rc();
     create_effect(cx, move || {
         if let RouterLoadState::Loaded { path, .. } = &*load_state.get() {
             if is_first_page {

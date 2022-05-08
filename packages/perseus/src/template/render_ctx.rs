@@ -56,7 +56,7 @@ impl Freeze for RenderCtx {
     fn freeze(&self) -> String {
         let frozen_app = FrozenApp {
             global_state: self.global_state.0.borrow().freeze(),
-            route: match &*self.router.get_load_state().get_untracked() {
+            route: match &*self.router.get_load_state_rc().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => path,
                 RouterLoadState::Loading { path, .. } => path,
                 // If we encounter this during re-hydration, we won't try to set the URL in the browser
@@ -98,7 +98,7 @@ impl RenderCtx {
         drop(frozen_app);
 
         // Check if we're on the same page now as we were at freeze-time
-        let curr_route = match &*self.router.get_load_state().get_untracked() {
+        let curr_route = match &*self.router.get_load_state_rc().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => path.to_string(),
                 RouterLoadState::Loading { path, .. } => path.to_string(),
                 // The user is trying to thaw on the server, which is an absolutely horrific idea (we should be generating state, and loops could happen)

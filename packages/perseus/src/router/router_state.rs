@@ -2,7 +2,7 @@ use super::RouteVerdict;
 use crate::templates::TemplateNodeType;
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::prelude::{create_rc_signal, RcSignal};
+use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
 
 /// The state for the router. This makes use of `RcSignal`s internally, and can be cheaply cloned.
 #[derive(Debug, Clone)]
@@ -27,8 +27,14 @@ impl Default for RouterState {
     }
 }
 impl RouterState {
-    /// Gets the load state of the router. You'll still need to call `.get()` after this (this just returns a `ReadSignal` to derive other state from in a `create_memo` or the like).
-    pub fn get_load_state(&self) -> RcSignal<RouterLoadState> {
+    /// Gets the load state of the router. You'll still need to call `.get()` after this (this just returns a `&'a RcSignal` to derive other state from in a `create_memo` or the like).
+    pub fn get_load_state<'a>(&self, cx: Scope<'a>) -> &'a RcSignal<RouterLoadState> {
+        create_ref(cx, self.load_state.clone())
+    }
+    /// Gets the load state of the router. You'll still need to call `.get()` after this (this just returns a `RcSignal` to derive other state from in a `create_memo` or the like).
+    ///
+    /// This is designed for internal use only. End users should get a reference with `.get_load_state()`.
+    pub(crate) fn get_load_state_rc(&self) -> RcSignal<RouterLoadState> {
         self.load_state.clone() // TODO Better approach than cloning here?
     }
     /// Sets the load state of the router.
