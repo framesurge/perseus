@@ -145,7 +145,9 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
                 // Check if this field was registered as one to use nested reactivity
                 let wrapper_ty = nested_fields_map.get(field.ident.as_ref().unwrap());
                 field.ty = if let Some(wrapper_ty) = wrapper_ty {
-                    syn::Type::Verbatim(quote!(#wrapper_ty<'rx>))
+                    // If we don't make this a reference, nested properties have to be cloned (not nice for ergonomics)
+                    // TODO Chekc back on this, could bite back!
+                    syn::Type::Verbatim(quote!(&'rx #wrapper_ty<'rx>))
                 } else {
                     // This is the only difference from the intermediate `struct` (this lifetime is declared above)
                     syn::Type::Verbatim(quote!(&'rx ::sycamore::prelude::RcSignal<#orig_ty>))
@@ -210,7 +212,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
                 // Check if this field was registered as one to use nested reactivity
                 if nested_fields_map.contains_key(field.ident.as_ref().unwrap()) {
                     field_assignments.extend(quote! {
-                        #field_name: self.#field_name.to_ref_struct(cx),
+                        #field_name: ::sycamore::prelude::create_ref(cx, self.#field_name.to_ref_struct(cx)),
                     })
                 } else {
                     // This will be used in a place in which the `cx` variable stores a reactive scope

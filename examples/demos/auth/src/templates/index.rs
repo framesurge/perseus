@@ -4,6 +4,7 @@ use sycamore::prelude::*;
 
 #[perseus::template_rx]
 fn index_view<'a, G: Html>(cx: Scope<'a>, _: (), AppStateRx { auth }: AppStateRx<'a>) -> View<G> {
+    let AuthDataRx { state, username } = auth;
     // This isn't part of our data model because it's only used here to pass to the login function
     let entered_username = create_signal(cx, String::new());
 
@@ -12,33 +13,30 @@ fn index_view<'a, G: Html>(cx: Scope<'a>, _: (), AppStateRx { auth }: AppStateRx
     #[cfg(target_arch = "wasm32")]
     auth.detect_state();
 
-    // We make the view as a memo outside the root `view!` for better editor support (some editors don't like highlighting code in macros)
-    // We need to clone `global_state` because otherwise the `Signal` updates won't be registered
-    let view = create_memo(cx, || {
-        match *auth.state.get() {
-            LoginState::Yes => {
-                let username = auth.username.get();
-                view! { cx,
-                    h1 { (format!("Welcome back, {}!", &username)) }
-                    button(on:click =  |_| {
-                        auth.logout();
-                    }) { "Logout" }
+    view! { cx,
+        (
+            match *state.get() {
+                LoginState::Yes => {
+                    let username = username.get();
+                    view! { cx,
+                            h1 { (format!("Welcome back, {}!", &username)) }
+                            button(on:click =  |_| {
+                                auth.logout();
+                            }) { "Logout" }
+                    }
                 }
-            }
-            // You could also redirect the user to a dedicated login page
-            LoginState::No => view! { cx,
-                h1 { "Welcome, stranger!" }
-                input(bind:value = entered_username.clone(), placeholder = "Username")
+                // You could also redirect the user to a dedicated login page
+                LoginState::No => view! { cx,
+                    h1 { "Welcome, stranger!" }
+                    input(bind:value = entered_username, placeholder = "Username")
                     button(on:click = |_| {
                         auth.login(&entered_username.get())
                     }) { "Login" }
-            },
-            // This will appear for a few moments while we figure out if the user is logged in or not
-            LoginState::Server => View::empty(),
-        }
-    });
-    view! { cx,
-        (*view.get())
+                },
+                // This will appear for a few moments while we figure out if the user is logged in or not
+                LoginState::Server => View::empty(),
+            }
+        )
         br()
         a(href = "about") { "About" }
     }
