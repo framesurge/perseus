@@ -11,7 +11,8 @@ use crate::Request;
 use crate::SsrNode;
 use futures::Future;
 use http::header::HeaderMap;
-use sycamore::prelude::{Scope, View};
+use sycamore::prelude::{create_scope_immediate, Scope, View};
+use sycamore::utils::hydrate::with_no_hydration_context;
 
 /// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
 /// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
@@ -202,8 +203,8 @@ impl<G: Html> Template<G> {
 
         (self.template)(cx, props)
     }
-    /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually. Reactivity
-    /// in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
+    /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually.
+    /// Reactivity in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
     pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
         sycamore::render_to_string(|cx| {
             // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
@@ -211,8 +212,8 @@ impl<G: Html> Template<G> {
             let _ = RenderCtx::default().set_ctx(cx);
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
-
-            (self.head)(cx, props)
+            // We don't want to generate hydration keys for the head because it is static.
+            with_no_hydration_context(|| (self.head)(cx, props))
         })
     }
     /// Gets the list of templates that should be prerendered for at build-time.
