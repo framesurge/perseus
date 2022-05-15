@@ -9,8 +9,8 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .template(crate::templates::index::get_template)
         .template(crate::templates::about::get_template)
         .error_pages(crate::error_pages::get_error_pages)
-        .index_view(|| {
-            sycamore::view! {
+        .index_view(|cx| {
+            sycamore::view! { cx,
                 // We don't need a `<!DOCTYPE html>`, that's added automatically by Perseus (though that can be overriden if you really want by using `.index_view_str()`)
                 // We need a `<head>` and a `<body>` at the absolute minimum for Perseus to work properly (otherwise certain script injections will fail)
                 head {
