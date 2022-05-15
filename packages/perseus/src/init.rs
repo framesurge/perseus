@@ -613,7 +613,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 /// The component that represents the entrypoint at which Perseus will inject itself. You can use this with the `.index_view()` method of `PerseusApp` to avoid having to create the entrypoint
 /// `<div>` manually.
 #[component]
-pub fn perseus_root<G: Html>(cx: Scope) -> View<G> {
+#[allow(non_snake_case)]
+pub fn PerseusRoot<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         div(dangerously_set_inner_html = "<div id=\"root\"></div>")
     }
