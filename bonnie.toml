@@ -221,6 +221,8 @@ publish.cmd = [
     "cd ../perseus-actix-web",
     "cargo publish %%",
     "cd ../perseus-warp",
+    "cargo publish %%",
+    "cd ../perseus-axum",
     "cargo publish %%"
 ]
 publish.desc = "publishes all packages to crates.io (needs branch 'stable', Linux only)"
