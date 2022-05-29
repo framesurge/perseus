@@ -123,7 +123,7 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,ignore
 /// use serde::{Serialize, Deserialize};
 /// use perseus::make_rx;
 /// // We need this trait in scope to manually invoke `.make_rx()`
