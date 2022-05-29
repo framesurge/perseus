@@ -7,7 +7,7 @@ pub fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "Try going back to the index page, and the state should still be the same!" }
 
-        a(href = "") { "Index" }
+        a(id = "index-link", href = "") { "Index" }
     }
 }
 
