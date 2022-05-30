@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.1](https://github.com/arctic-hen7/perseus/compare/v0.3.5...v0.4.0-beta.1) (2022-05-30)
+
+
+### Features
+
+* upgrade to Sycamore v0.8.0 ([#142](https://github.com/arctic-hen7/perseus/issues/142)) ([b14b4e0](https://github.com/arctic-hen7/perseus/commit/b14b4e0afc8c0b73a3f6ba64bec1bb0460849ea9)), closes [#137](https://github.com/arctic-hen7/perseus/issues/137) [#137](https://github.com/arctic-hen7/perseus/issues/137)
+
+
+### Documentation Changes
+
+* added notes about hydration bugs ([2aef79c](https://github.com/arctic-hen7/perseus/commit/2aef79c402174e92b931de678648a95c1db6c678))
+* fix typo in `basic` example readme ([#141](https://github.com/arctic-hen7/perseus/issues/141)) ([35ff172](https://github.com/arctic-hen7/perseus/commit/35ff172b44b42e5dcd68a3023c1450d903fa0804))
+* updated docs for index view with example ([eccf137](https://github.com/arctic-hen7/perseus/commit/eccf137032fbe8e6507be9e9317edc16e7576a4f))
+
 ### [0.3.5](https://github.com/arctic-hen7/perseus/compare/v0.3.4...v0.3.5) (2022-04-20)
 
 
