@@ -1,16 +1,16 @@
 use perseus::{Html, Template};
-use sycamore::prelude::{view, SsrNode, View};
+use sycamore::prelude::{view, Scope, SsrNode, View};
 
 #[perseus::template_rx]
-pub fn index_page() -> View<G> {
-    view! {
+pub fn index_page<G: Html>(cx: Scope) -> View<G> {
+    view! { cx,
         p { "Hello World!" }
     }
 }
 
 #[perseus::head]
-pub fn head() -> View<SsrNode> {
-    view! {
+pub fn head(cx: Scope) -> View<SsrNode> {
+    view! { cx,
         title { "Index Page" }
     }
 }

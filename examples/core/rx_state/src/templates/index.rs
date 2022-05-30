@@ -1,5 +1,5 @@
 use perseus::{Html, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, SsrNode, View};
+use sycamore::prelude::{view, Scope, SsrNode, View};
 
 #[perseus::make_rx(IndexPageStateRx)]
 pub struct IndexPageState {
@@ -8,21 +8,18 @@ pub struct IndexPageState {
 
 // This macro will make our state reactive *and* store it in the page state store, which means it'll be the same even if we go to the about page and come back (as long as we're in the same session)
 #[perseus::template_rx]
-pub fn index_page(state: IndexPageStateRx) -> View<G> {
-    let username = state.username;
-    let username_2 = username.clone();
-
-    view! {
-        p { (format!("Greetings, {}!", username.get())) }
-        input(bind:value = username_2, placeholder = "Username")
+pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G> {
+    view! { cx,
+        p { (format!("Greetings, {}!", state.username.get())) }
+        input(bind:value = state.username, placeholder = "Username")
 
         a(href = "about", id = "about-link") { "About" }
     }
 }
 
 #[perseus::head]
-pub fn head() -> View<SsrNode> {
-    view! {
+pub fn head(cx: Scope) -> View<SsrNode> {
+    view! { cx,
         title { "Index Page" }
     }
 }

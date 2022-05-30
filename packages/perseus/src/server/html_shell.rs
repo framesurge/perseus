@@ -7,9 +7,9 @@ use std::{env, fmt};
 fn escape_page_data(data: &str) -> String {
     data.to_string()
         // We escape any backslashes to prevent their interfering with JSON delimiters
-        .replace(r#"\"#, r#"\\"#)
+        .replace('\\', r#"\\"#)
         // We escape any backticks, which would interfere with JS's raw strings system
-        .replace(r#"`"#, r#"\`"#)
+        .replace('`', r#"\`"#)
         // We escape any interpolations into JS's raw string system
         .replace(r#"${"#, r#"\${"#)
 }

@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// A representation of a frozen app.
-#[derive(Serialize, Deserialize, Debug)]
+///
+/// This is only `Clone` for fault tolerance. Do NOT ever clone this unless you seriously know what you're doing!
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FrozenApp {
     /// The frozen global state. If it was never initialized, this will be `None`.
     pub global_state: String,
@@ -13,7 +15,7 @@ pub struct FrozenApp {
 }
 
 /// The user's preferences on state thawing.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ThawPrefs {
     /// The preference for page thawing.
     pub page: PageThawPrefs,
@@ -24,7 +26,7 @@ pub struct ThawPrefs {
 /// The user's preferences on page state thawing. Templates have three places they can fetch state from: the page state store (called *active* state), the frozen state, and the server. They're
 /// typically prioritized in that order, but if thawing occurs later in an app, it may be desirable to override active state in favor of frozen state. These preferences allow setting an
 /// inclusion or exclusion list.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PageThawPrefs {
     /// Include the attached pages by their URLs (with no leading `/`). Pages listed here will prioritize frozen state over active state, allowing thawing to override the current state of the app.
     Include(Vec<String>),

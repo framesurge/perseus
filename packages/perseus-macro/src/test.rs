@@ -137,7 +137,7 @@ pub fn test_impl(input: TestFn, args: TestArgs) -> TokenStream {
         #vis async fn #name() {
             // The user's function
             #(#attrs)*
-            async fn fn_internal#generics(#arg) -> #return_type {
+            async fn fn_internal #generics(#arg) -> #return_type {
                 #block
             }
             // Only run the test if the environment variable is specified (avoids having to do exclusions for workspace `cargo test`)

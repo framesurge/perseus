@@ -94,7 +94,7 @@ pub fn main_impl(input: MainFn) -> TokenStream {
         pub fn __perseus_main<G: ::perseus::Html>() -> #return_type {
             // The user's function
             #(#attrs)*
-            fn fn_internal#generics() -> #return_type {
+            fn fn_internal #generics() -> #return_type {
                 #block
             }
             fn_internal()

@@ -1,14 +1,15 @@
 use perseus::{link, t, Template};
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::template_rx]
-pub fn index_page() -> View<G> {
+pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     let username = "User";
-    view! {
+
+    view! { cx,
         p { (t!("hello", {
             "user": username
-        })) }
-        a(href = link!("/about")) { "About" }
+        }, cx)) }
+        a(href = link!("/about", cx)) { "About" }
     }
 }
 

@@ -6,13 +6,12 @@ pub use app::__perseus_main as main;
 use perseus::{
     checkpoint, create_app_route,
     internal::{
-        router::{PerseusRouter, PerseusRouterProps},
+        router::{perseus_router, PerseusRouterProps},
         shell::get_render_cfg,
     },
     plugins::PluginAction,
     templates::TemplateNodeType,
 };
-use sycamore::prelude::view;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 /// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
@@ -51,8 +50,6 @@ pub fn run() -> Result<(), JsValue> {
         templates => &main::<G>().get_templates_map(),
         locales => &main::<G>().get_locales()
     }
-    // Create a new version of the router with that
-    type PerseusRouterWithAppRoute<G> = PerseusRouter<G, AppRoute<TemplateNodeType>>;
 
     // Set up the properties we'll pass to the router
     let router_props = PerseusRouterProps {
@@ -60,14 +57,9 @@ pub fn run() -> Result<(), JsValue> {
         error_pages: app.get_error_pages(),
     };
 
+    // This top-level context is what we sue for everything, allowing page state to be registered and stored for the lifetime of the app
     sycamore::render_to(
-        move || {
-            view! {
-                // Actually render the router
-                // The Perseus router includes our entire app, and is, for all intents and purposes, the app itself
-                PerseusRouterWithAppRoute(router_props)
-            }
-        },
+        move |cx| perseus_router::<_, AppRoute<TemplateNodeType>>(cx, router_props),
         &root,
     );
 

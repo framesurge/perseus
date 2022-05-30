@@ -1,5 +1,5 @@
 use perseus::{link, RenderFnResult, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PostPageStateRx)]
 pub struct PostPageState {
@@ -8,19 +8,19 @@ pub struct PostPageState {
 }
 
 #[perseus::template_rx]
-pub fn post_page(props: PostPageStateRx) -> View<G> {
+pub fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostPageStateRx<'a>) -> View<G> {
     let title = props.title;
     let content = props.content;
-    view! {
+    view! { cx,
         h1 {
             (title.get())
         }
         p {
             (content.get())
         }
-        a(href = link!("/post")) { "Root post page" }
+        a(href = link!("/post", cx)) { "Root post page" }
         br()
-        a(href = link!("/post/blah/test/blah")) { "Complex post page" }
+        a(href = link!("/post/blah/test/blah", cx)) { "Complex post page" }
     }
 }
 

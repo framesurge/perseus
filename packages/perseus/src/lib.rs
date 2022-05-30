@@ -22,7 +22,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 */
 
 #![deny(missing_docs)]
-#![deny(missing_debug_implementations)]
+// #![deny(missing_debug_implementations)] // TODO Pending sycamore-rs/sycamore#412
 #![forbid(unsafe_code)]
 #![recursion_limit = "256"] // TODO Do we need this anymore?
 
@@ -51,11 +51,11 @@ mod utils;
 // Re-exports
 pub use http;
 pub use http::Request as HttpRequest;
-pub use wasm_bindgen_futures::spawn_local;
+pub use sycamore_futures::spawn_local_scoped;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
 pub use perseus_macro::{autoserde, head, main, make_rx, template, template_rx, test};
-pub use sycamore::{generic_node::Html, DomNode, HydrateNode, SsrNode};
+pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?
 
 // TODO Restructure everything here (needs to stay the same until v0.4.0 though)

@@ -1,8 +1,6 @@
 use super::PageData;
 use crate::errors::*;
 use crate::i18n::TranslationsManager;
-use crate::router::RouterState;
-use crate::state::PageStateStore;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{PageProps, States, Template, TemplateMap};
 use crate::translator::Translator;
@@ -91,14 +89,8 @@ async fn render_request_state(
         global_state: global_state.clone(),
     };
     // Use that to render the static HTML
-    let html = sycamore::render_to_string(|| {
-        template.render_for_template_server(
-            page_props.clone(),
-            translator,
-            true,
-            RouterState::default(),
-            PageStateStore::default(),
-        )
+    let html = sycamore::render_to_string(|cx| {
+        template.render_for_template_server(page_props.clone(), cx, translator)
     });
     let head = template.render_head_str(page_props, translator);
 
@@ -190,14 +182,8 @@ async fn revalidate(
         state: state.clone(),
         global_state: global_state.clone(),
     };
-    let html = sycamore::render_to_string(|| {
-        template.render_for_template_server(
-            page_props.clone(),
-            translator,
-            true,
-            RouterState::default(),
-            PageStateStore::default(),
-        )
+    let html = sycamore::render_to_string(|cx| {
+        template.render_for_template_server(page_props.clone(), cx, translator)
     });
     let head = template.render_head_str(page_props, translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
@@ -346,14 +332,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                         state: state.clone(),
                         global_state: global_state.clone(),
                     };
-                    let html_val = sycamore::render_to_string(|| {
-                        template.render_for_template_server(
-                            page_props.clone(),
-                            &translator,
-                            true,
-                            RouterState::default(),
-                            PageStateStore::default(),
-                        )
+                    let html_val = sycamore::render_to_string(|cx| {
+                        template.render_for_template_server(page_props.clone(), cx, &translator)
                     });
                     let head_val = template.render_head_str(page_props, &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes

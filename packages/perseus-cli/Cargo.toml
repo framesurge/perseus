@@ -1,7 +1,7 @@
 [package]
 name = "perseus-cli"
 version = "0.3.5"
-edition = "2018"
+edition = "2021"
 description = "The CLI for the Perseus frontend framework."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
 license = "MIT"

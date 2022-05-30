@@ -1,7 +1,7 @@
 [package]
 name = "perseus"
 version = "0.3.5"
-edition = "2018"
+edition = "2021"
 description = "A lightning-fast frontend web dev platform with full support for SSR and SSG."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
 license = "MIT"
@@ -14,8 +14,9 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sycamore = { version = "^0.7.1", features = ["ssr"] }
-sycamore-router = "^0.7.1"
+sycamore = { version = "=0.8.0-beta.6", features = [ "ssr" ] }
+sycamore-router = "=0.8.0-beta.6"
+sycamore-futures = "=0.8.0-beta.6"
 perseus-macro = { path = "../perseus-macro", version = "0.3.5" }
 # TODO review feature flags here
 web-sys = { version = "0.3", features = [ "Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window" ] }

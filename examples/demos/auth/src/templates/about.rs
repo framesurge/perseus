@@ -1,9 +1,9 @@
 use perseus::Template;
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::template_rx]
-pub fn about_page() -> View<G> {
-    view! {
+pub fn about_page<G: Html>(cx: Scope) -> View<G> {
+    view! { cx,
         p { "About." }
         a(href = "") { "Index" }
     }

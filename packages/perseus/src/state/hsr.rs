@@ -1,10 +1,9 @@
-use super::{Freeze, IdbFrozenStateStore};
+use super::IdbFrozenStateStore;
 use crate::templates::RenderCtx;
 use wasm_bindgen::JsValue;
 
-/// Freezes the app's state to IndexedDB to be accessed in future.
-pub async fn hsr_freeze(render_ctx: RenderCtx) {
-    let frozen_state = render_ctx.freeze();
+/// Freezes the app's state to IndexedDB to be accessed in future. This takes a pre-determined frozen state to avoid *really* annoying lifetime errors.
+pub async fn hsr_freeze(frozen_state: String) {
     // We use a custom name so we don't interfere with any state freezing the user's doing independently
     let idb_store = match IdbFrozenStateStore::new_with_name("perseus_hsr").await {
         Ok(idb_store) => idb_store,
@@ -19,7 +18,7 @@ pub async fn hsr_freeze(render_ctx: RenderCtx) {
 /// Thaws a previous state frozen in development.
 // This will be run at the beginning of every template function, which means it gets executed on the server as well, so we have to Wasm-gate this
 #[cfg(target_arch = "wasm32")]
-pub async fn hsr_thaw(render_ctx: RenderCtx) {
+pub async fn hsr_thaw(render_ctx: &RenderCtx) {
     use super::{PageThawPrefs, ThawPrefs};
 
     let idb_store = match IdbFrozenStateStore::new_with_name("perseus_hsr").await {
@@ -57,7 +56,7 @@ pub async fn hsr_thaw(render_ctx: RenderCtx) {
 
 /// Thaws a previous state frozen in development.
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn hsr_thaw(_render_ctx: RenderCtx) {}
+pub async fn hsr_thaw(_render_ctx: &RenderCtx) {}
 
 /// An internal function for logging data about HSR.
 fn log(msg: &str) {

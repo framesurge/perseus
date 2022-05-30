@@ -2,8 +2,6 @@
 
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
-use crate::router::RouterState;
-use crate::state::PageStateStore;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::Template;
 use crate::template::{PageProps, TemplateMap};
@@ -136,14 +134,8 @@ async fn gen_state_for_path(
             global_state: global_state.clone(),
         };
         // Prerender the template using that state
-        let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template_server(
-                page_props.clone(),
-                translator,
-                true,
-                RouterState::default(),
-                PageStateStore::default(),
-            )
+        let prerendered = sycamore::render_to_string(|cx| {
+            template.render_for_template_server(page_props.clone(), cx, translator)
         });
         // Write that prerendered HTML to a static file
         mutable_store
@@ -177,14 +169,8 @@ async fn gen_state_for_path(
             global_state: global_state.clone(),
         };
         // Prerender the template using that state
-        let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template_server(
-                page_props.clone(),
-                translator,
-                true,
-                RouterState::default(),
-                PageStateStore::default(),
-            )
+        let prerendered = sycamore::render_to_string(|cx| {
+            template.render_for_template_server(page_props.clone(), cx, translator)
         });
         // Write that prerendered HTML to a static file
         immutable_store
@@ -228,14 +214,8 @@ async fn gen_state_for_path(
             state: None,
             global_state: global_state.clone(),
         };
-        let prerendered = sycamore::render_to_string(|| {
-            template.render_for_template_server(
-                page_props.clone(),
-                translator,
-                true,
-                RouterState::default(),
-                PageStateStore::default(),
-            )
+        let prerendered = sycamore::render_to_string(|cx| {
+            template.render_for_template_server(page_props.clone(), cx, translator)
         });
         let head_str = template.render_head_str(page_props, translator);
         // Write that prerendered HTML to a static file

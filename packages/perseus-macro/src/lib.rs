@@ -51,11 +51,10 @@ pub fn autoserde(args: TokenStream, input: TokenStream) -> TokenStream {
 /// function, avoiding the need for you to manually serialize/deserialize things. This should be provided the name of the Sycamore component (same as given
 /// to Sycamore's `#[component()]`, but without the `<G>`).
 #[proc_macro_attribute]
-pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn template(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template::TemplateFn);
-    let arg = syn::parse_macro_input!(args as syn::Ident);
 
-    template::template_impl(parsed, arg).into()
+    template::template_impl(parsed).into()
 }
 
 /// The new version of `#[template]` designed for reactive state. This can interface automatically with global state, and will automatically provide Sycamore `#[component]` annotations. To
@@ -68,10 +67,9 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
 /// The second argument your template function can take is a global state generated with the `GlobalStateCreator`. You should also provide the reactive type here, and Perseus will do all the
 /// rest in the background.
 #[proc_macro_attribute]
-pub fn template_rx(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn template_rx(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template_rx::TemplateFn);
-    let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
-    template_rx::template_impl(parsed, attr_args).into()
+    template_rx::template_impl(parsed).into()
 }
 
 /// Labels a function as a Perseus head function, which is very similar to a template, but
@@ -125,7 +123,7 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,ignore
 /// use serde::{Serialize, Deserialize};
 /// use perseus::make_rx;
 /// // We need this trait in scope to manually invoke `.make_rx()`

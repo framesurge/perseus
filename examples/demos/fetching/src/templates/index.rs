@@ -8,11 +8,12 @@ pub struct IndexPageState {
 }
 
 #[perseus::template_rx]
-pub fn index_page(
+pub fn index_page<'a, G: Html>(
+    cx: Scope<'a>,
     IndexPageStateRx {
         server_ip,
         browser_ip,
-    }: IndexPageStateRx,
+    }: IndexPageStateRx<'a>,
 ) -> View<G> {
     // This will only run in the browser
     // `reqwasm` wraps browser-specific APIs, so we don't want it running on the server
@@ -22,7 +23,7 @@ pub fn index_page(
         // Don't worry, this doesn't need to be sent to JavaScript for execution
         //
         // We want to access the `message` `Signal`, so we'll clone it in (and then we need `move` because this has to be `'static`)
-        perseus::spawn_local(cloned!(browser_ip => async move {
+        perseus::spawn_local_scoped(cx, async move {
             // This interface may seem weird, that's because it wraps the browser's Fetch API
             // We request from a local path here because of CORS restrictions (see the book)
             let body = reqwasm::http::Request::get("/.perseus/static/message.txt")
@@ -33,7 +34,7 @@ pub fn index_page(
                 .await
                 .unwrap();
             browser_ip.set(Some(body));
-        }));
+        });
     }
 
     // If the future hasn't finished yet, we'll display a placeholder
@@ -43,7 +44,7 @@ pub fn index_page(
         None => "fetching".to_string(),
     };
 
-    view! {
+    view! { cx,
         p { (format!("IP address of the server was: {}", server_ip.get())) }
         p { (format!("The message is: {}", browser_ip_display)) }
     }

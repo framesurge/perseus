@@ -1,5 +1,5 @@
 use perseus::{RenderFnResult, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
 pub struct PageState {
@@ -8,10 +8,10 @@ pub struct PageState {
 }
 
 #[perseus::template_rx]
-pub fn build_paths_page(state: PageStateRx) -> View<G> {
+pub fn build_paths_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
     let title = state.title;
     let content = state.content;
-    view! {
+    view! { cx,
         h1 {
             (title.get())
         }

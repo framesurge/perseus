@@ -1,7 +1,7 @@
 // This is exactly the same as the build paths example except for a few lines and some names
 
 use perseus::{blame_err, RenderFnResult, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
 pub struct PageState {
@@ -10,10 +10,10 @@ pub struct PageState {
 }
 
 #[perseus::template_rx]
-pub fn incremental_generation_page(state: PageStateRx) -> View<G> {
+pub fn incremental_generation_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
     let title = state.title;
     let content = state.content;
-    view! {
+    view! { cx,
         h1 {
             (title.get())
         }

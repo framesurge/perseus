@@ -2,7 +2,7 @@ use crate::translator::errors::*;
 use fluent_bundle::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::sync::Arc;
-use sycamore::context::use_context;
+use sycamore::prelude::{use_context, Scope, Signal};
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 /// The file extension used by the Fluent translator, which expects FTL files.
@@ -80,7 +80,7 @@ impl FluentTranslator {
     /// This will `panic!` if any errors occur while trying to prepare the given ID. Therefore, this method should only be used for
     /// hardcoded IDs that can be confirmed as valid. If you need to parse arbitrary IDs, use `.translate_checked()` instead.
     pub fn translate(&self, id: &str, args: Option<FluentArgs>) -> String {
-        let translation_res = self.translate_checked(&id.to_string(), args);
+        let translation_res = self.translate_checked(id, args);
         match translation_res {
             Ok(translation) => translation,
             Err(_) => panic!("translation id '{}' not found for locale '{}' (if you're not hardcoding the id, use `.translate_checked()` instead)", id, self.locale)
@@ -179,22 +179,19 @@ pub type TranslationArgs<'args> = FluentArgs<'args>;
 
 /// The internal Fluent backend for the `t!` macro.
 #[doc(hidden)]
-pub fn t_macro_backend(id: &str) -> String {
-    let render_ctx = use_context::<crate::template::RenderCtx>();
-    let translator = render_ctx.translator;
+pub fn t_macro_backend(id: &str, cx: Scope) -> String {
+    let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();
     translator.translate(id, None)
 }
 /// The internal Fluent backend for the `t!` macro, when it's used with arguments.
 #[doc(hidden)]
-pub fn t_macro_backend_with_args(id: &str, args: FluentArgs) -> String {
-    let render_ctx = use_context::<crate::template::RenderCtx>();
-    let translator = render_ctx.translator;
+pub fn t_macro_backend_with_args(id: &str, args: FluentArgs, cx: Scope) -> String {
+    let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();
     translator.translate(id, Some(args))
 }
 /// The internal Fluent backend for the `link!` macro.
 #[doc(hidden)]
-pub fn link_macro_backend(url: &str) -> String {
-    let render_ctx = use_context::<crate::template::RenderCtx>();
-    let translator = render_ctx.translator;
+pub fn link_macro_backend(url: &str, cx: Scope) -> String {
+    let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();
     translator.url(url)
 }

@@ -3,13 +3,11 @@ use crate::errors::*;
 use crate::i18n::ClientTranslationsManager;
 use crate::router::{RouteVerdict, RouterLoadState, RouterState};
 use crate::server::PageData;
-use crate::state::PageStateStore;
-use crate::state::{FrozenApp, GlobalState, ThawPrefs};
 use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::*;
@@ -109,8 +107,8 @@ pub fn get_initial_state() -> InitialState {
         let err_page_data_str = state_str
             .strip_prefix("error-")
             .unwrap()
-            .replace("\n", "\\n")
-            .replace("\t", "\\t");
+            .replace('\n', "\\n")
+            .replace('\t', "\\t");
         // There will be error page data encoded after `error-`
         let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str) {
             Ok(render_cfg) => render_cfg,
@@ -231,8 +229,10 @@ pub enum InitialState {
 }
 
 /// Properties for the app shell. These should be constructed literally when working with the app shell.
-#[derive(Debug)]
-pub struct ShellProps {
+// #[derive(Debug)]
+pub struct ShellProps<'a> {
+    /// The app's reactive scope.
+    pub cx: Scope<'a>,
     /// The path we're rendering for (not the template path, the full path, though parsed a little).
     pub path: String,
     /// The template to render for.
@@ -243,8 +243,6 @@ pub struct ShellProps {
     pub locale: String,
     /// The router state.
     pub router_state: RouterState,
-    /// The template state store.
-    pub page_state_store: PageStateStore,
     /// A *client-side* translations manager to use (this manages caching translations).
     pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     /// The error pages, for use if something fails.
@@ -253,18 +251,9 @@ pub struct ShellProps {
     pub initial_container: Element,
     /// The container for reactive content.
     pub container_rx_elem: Element,
-    /// The global state store. Brekaing it out here prevents it being overriden every time a new template loads.
-    pub global_state: GlobalState,
-    /// A previous frozen state to be gradully rehydrated. This should always be `None`, it only serves to provide continuity across templates.
-    pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
     /// The current route verdict. This will be stored in context so that it can be used for possible reloads. Eventually,
     /// this will be made obsolete when Sycamore supports this natively.
     pub route_verdict: RouteVerdict<TemplateNodeType>,
-    /// Whether or not this page is the very first to have been rendered since the browser loaded the app.
-    pub is_first: Rc<Cell<bool>>,
-    #[cfg(all(feature = "live-reload", debug_assertions))]
-    /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server.
-    pub live_reload_indicator: ReadSignal<bool>,
 }
 
 /// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
@@ -272,23 +261,18 @@ pub struct ShellProps {
 // TODO handle exceptions higher up
 pub async fn app_shell(
     ShellProps {
+        cx,
         path,
         template,
         was_incremental_match,
         locale,
         mut router_state,
-        page_state_store,
         translations_manager,
         error_pages,
         initial_container,
         container_rx_elem,
-        global_state: curr_global_state,
-        frozen_app,
         route_verdict,
-        is_first,
-        #[cfg(all(feature = "live-reload", debug_assertions))]
-        live_reload_indicator,
-    }: ShellProps,
+    }: ShellProps<'_>,
 ) {
     checkpoint("app_shell_entry");
     let path_with_locale = match locale.as_str() {
@@ -300,7 +284,7 @@ pub async fn app_shell(
         template_name: template.get_path(),
         path: path_with_locale.clone(),
     });
-    router_state.set_last_verdict(route_verdict);
+    router_state.set_last_verdict(route_verdict.clone());
     // Get the global state if possible (we'll want this in all cases except errors)
     // If this is a subsequent load, the template macro will have already set up the global state, and it will ignore whatever we naively give it (so we'll give it `None`)
     let global_state = get_global_state();
@@ -343,9 +327,9 @@ pub async fn app_shell(
                     container_rx_elem.set_inner_html("");
                     match &err {
                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
-                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, 500, &fmt_err(&err), None, &container_rx_elem),
-                        ClientError::LocaleNotSupported { .. } => return error_pages.render_page(&format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(cx, url, *status, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(cx, url, 500, &fmt_err(&err), None, &container_rx_elem),
+                        ClientError::LocaleNotSupported { .. } => return error_pages.render_page(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
                         // No other errors should be returned
                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                     }
@@ -354,7 +338,6 @@ pub async fn app_shell(
 
             let path = template.get_path();
             // Hydrate that static code using the acquired state
-            let router_state_2 = router_state.clone();
             // BUG (Sycamore): this will double-render if the component is just text (no nodes)
             let page_props = PageProps {
                 path: path_with_locale.clone(),
@@ -366,40 +349,14 @@ pub async fn app_shell(
                 // If we aren't hydrating, we'll have to delete everything and re-render
                 container_rx_elem.set_inner_html("");
                 sycamore::render_to(
-                    move || {
-                        template.render_for_template_client(
-                            page_props,
-                            translator,
-                            false,
-                            router_state_2,
-                            page_state_store,
-                            curr_global_state,
-                            frozen_app,
-                            is_first,
-                            #[cfg(all(feature = "live-reload", debug_assertions))]
-                            live_reload_indicator,
-                        )
-                    },
+                    move |_| template.render_for_template_client(page_props, cx, translator),
                     &container_rx_elem,
                 );
             }
             #[cfg(feature = "hydrate")]
             sycamore::hydrate_to(
                 // This function provides translator context as needed
-                || {
-                    template.render_for_template_client(
-                        page_props,
-                        translator,
-                        false,
-                        router_state_2,
-                        page_state_store,
-                        curr_global_state,
-                        frozen_app,
-                        is_first,
-                        #[cfg(all(feature = "live-reload", debug_assertions))]
-                        live_reload_indicator,
-                    )
-                },
+                |_| template.render_for_template_client(page_props, cx, translator),
                 &container_rx_elem,
             );
             checkpoint("page_interactive");
@@ -472,16 +429,15 @@ pub async fn app_shell(
                                     Ok(translator) => translator,
                                     Err(err) => match &err {
                                         // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
-                                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(url, 500, &fmt_err(&err), None, &container_rx_elem),
-                                        ClientError::LocaleNotSupported { locale } => return error_pages.render_page(&format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.render_page(cx, url, *status, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.render_page(cx, url, 500, &fmt_err(&err), None, &container_rx_elem),
+                                        ClientError::LocaleNotSupported { locale } => return error_pages.render_page(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None, &container_rx_elem),
                                         // No other errors should be returned
                                         _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                                     }
                                 };
 
                                 // Hydrate that static code using the acquired state
-                                let router_state_2 = router_state.clone();
                                 // BUG (Sycamore): this will double-render if the component is just text (no nodes)
                                 let page_props = PageProps {
                                     path: path_with_locale.clone(),
@@ -494,21 +450,9 @@ pub async fn app_shell(
                                     // If we aren't hydrating, we'll have to delete everything and re-render
                                     container_rx_elem.set_inner_html("");
                                     sycamore::render_to(
-                                        move || {
+                                        move |_| {
                                             template.render_for_template_client(
-                                                page_props,
-                                                translator,
-                                                false,
-                                                router_state_2.clone(),
-                                                page_state_store,
-                                                curr_global_state,
-                                                frozen_app,
-                                                is_first,
-                                                #[cfg(all(
-                                                    feature = "live-reload",
-                                                    debug_assertions
-                                                ))]
-                                                live_reload_indicator,
+                                                page_props, cx, translator,
                                             )
                                         },
                                         &container_rx_elem,
@@ -517,19 +461,9 @@ pub async fn app_shell(
                                 #[cfg(feature = "hydrate")]
                                 sycamore::hydrate_to(
                                     // This function provides translator context as needed
-                                    move || {
-                                        template.render_for_template_client(
-                                            page_props,
-                                            translator,
-                                            false,
-                                            router_state_2,
-                                            page_state_store,
-                                            curr_global_state,
-                                            frozen_app,
-                                            is_first,
-                                            #[cfg(all(feature = "live-reload", debug_assertions))]
-                                            live_reload_indicator,
-                                        )
+                                    move |_| {
+                                        template
+                                            .render_for_template_client(page_props, cx, translator)
                                     },
                                     &container_rx_elem,
                                 );
@@ -546,6 +480,7 @@ pub async fn app_shell(
                     }
                     // No translators ready yet
                     None => error_pages.render_page(
+                        cx,
                         &asset_url,
                         404,
                         "page not found",
@@ -556,7 +491,7 @@ pub async fn app_shell(
                 Err(err) => match &err {
                     // No translators ready yet
                     ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages
-                        .render_page(url, *status, &fmt_err(&err), None, &container_rx_elem),
+                        .render_page(cx, url, *status, &fmt_err(&err), None, &container_rx_elem),
                     // No other errors should be returned
                     _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
                 },
@@ -582,7 +517,7 @@ pub async fn app_shell(
             // We render this rather than hydrating because otherwise we'd need a `HydrateNode` at the plugins level, which is way too inefficient
             #[cfg(not(feature = "hydrate"))]
             container_rx_elem.set_inner_html("");
-            error_pages.render_page(&url, status, &err, None, &container_rx_elem);
+            error_pages.render_page(cx, &url, status, &err, None, &container_rx_elem);
         }
     };
 }

@@ -20,11 +20,16 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         .await?;
     assert_eq!(greeting.text().await?, "Greetings, Test User!");
 
-    // Go to the about page and make sure the changed greeting is reflected there too
+    // Go to the about page and make sure the changed greeting is reflected once we go back
     // This tests that pages can access each others' states
     c.find(Locator::Id("about-link")).await?.click().await?;
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080/about"));
+    wait_for_checkpoint!("initial_state_not_present", 0, c);
+    wait_for_checkpoint!("page_visible", 1, c);
+    c.find(Locator::Id("index-link")).await?.click().await?;
+    let url = c.current_url().await?;
+    assert!(url.as_ref().starts_with("http://localhost:8080"));
     wait_for_checkpoint!("initial_state_not_present", 0, c);
     wait_for_checkpoint!("page_visible", 1, c);
 

@@ -44,7 +44,7 @@ pub struct AuthData {
 }
 // We implement a custom function on the reactive version of the global state here (hence the `.get()`s and `.set()`s, all the fields become `Signal`s)
 // There's no point in implementing it on the unreactive version, since this will only be called from within the browser, in which we have a reactive version
-impl AuthDataRx {
+impl<'a> AuthDataRx<'a> {
     /// Checks whether or not the user is logged in and modifies the internal state accordingly. If this has already been run, it won't do anything (aka. it will only run if it's `Server`)
     #[cfg(target_arch = "wasm32")] // This just avoids an unused function warning (since we have to gate the `.update()` call)
     pub fn detect_state(&self) {

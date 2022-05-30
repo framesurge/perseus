@@ -2,21 +2,29 @@ use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{Ident, ItemStruct, Lit, Meta, NestedMeta, Result};
+use syn::{GenericParam, Ident, ItemStruct, Lifetime, LifetimeDef, Lit, Meta, NestedMeta, Result};
 
-pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
+pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream {
+    // Note: we create three `struct`s with this macro: the original, the new one (with references), and the new one (intermediary without references, stored in context)
     // So that we don't have to worry about unit structs or unnamed fields, we'll just copy the struct and change the parts we want to
-    let mut new_struct = orig_struct.clone();
+    // We won't create the final `struct` yet to avoid more operations than necessary
+    let mut mid_struct = orig_struct.clone(); // This will use `RcSignal`s, and will be stored in context
     let ItemStruct {
-        ident, generics, ..
+        ident: orig_name,
+        generics,
+        ..
     } = orig_struct.clone();
 
-    new_struct.ident = name.clone();
-    // Reset the attributes entirely (we don't want any Serde derivations in there)
+    let ref_name = name_raw.clone();
+    let mid_name = Ident::new(
+        &(name_raw.to_string() + "PerseusRxIntermediary"),
+        Span::call_site(),
+    );
+    mid_struct.ident = mid_name.clone();
     // Look through the attributes for any that warn about nested fields
     // These can't exist on the fields themselves because they'd be parsed before this macro, and tehy're technically invalid syntax (grr.)
-    // When we come across these fields, we'll run `.make_rx()` on them instead of naively wrapping them in a `Signal`
-    let nested_fields = new_struct
+    // When we come across these fields, we'll run `.make_rx()` on them instead of naively wrapping them in an `RcSignal`
+    let nested_fields = mid_struct
         .attrs
         .iter()
         // We only care about our own attributes
@@ -71,31 +79,43 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
             Err(err) => return err.to_compile_error(),
         };
     }
-    // Now remove our attributes from both the original and the new `struct`s
-    let mut filtered_attrs_orig = Vec::new();
-    let mut filtered_attrs_new = Vec::new();
+    // Now remove our attributes from all the `struct`s
+    let mut filtered_attrs = Vec::new();
     for attr in orig_struct.attrs.iter() {
         if !(attr.path.segments.len() == 2
             && attr.path.segments.first().unwrap().ident == "rx"
             && attr.path.segments.last().unwrap().ident == "nested")
         {
-            filtered_attrs_orig.push(attr.clone());
-            filtered_attrs_new.push(attr.clone());
+            filtered_attrs.push(attr.clone());
         }
     }
-    orig_struct.attrs = filtered_attrs_orig;
-    new_struct.attrs = filtered_attrs_new;
+    orig_struct.attrs = filtered_attrs.clone();
+    mid_struct.attrs = filtered_attrs;
 
-    match new_struct.fields {
+    // Now define the final `struct` that uses references
+    let mut ref_struct = mid_struct.clone();
+    ref_struct.ident = ref_name.clone();
+    // Add the `'rx` lifetime to the generics
+    // We also need a separate variable for the generics, but using an anonymous lifetime for a function's return value
+    ref_struct.generics.params.insert(
+        0,
+        GenericParam::Lifetime(LifetimeDef::new(Lifetime::new("'rx", Span::call_site()))),
+    );
+
+    match mid_struct.fields {
         syn::Fields::Named(ref mut fields) => {
             for field in fields.named.iter_mut() {
                 let orig_ty = &field.ty;
                 // Check if this field was registered as one to use nested reactivity
                 let wrapper_ty = nested_fields_map.get(field.ident.as_ref().unwrap());
                 field.ty = if let Some(wrapper_ty) = wrapper_ty {
-                    syn::Type::Verbatim(quote!(#wrapper_ty))
+                    let mid_wrapper_ty = Ident::new(
+                        &(wrapper_ty.to_string() + "PerseusRxIntermediary"),
+                        Span::call_site(),
+                    );
+                    syn::Type::Verbatim(quote!(#mid_wrapper_ty))
                 } else {
-                    syn::Type::Verbatim(quote!(::sycamore::prelude::Signal<#orig_ty>))
+                    syn::Type::Verbatim(quote!(::sycamore::prelude::RcSignal<#orig_ty>))
                 };
                 // Remove any `serde` attributes (Serde can't be used with the reactive version)
                 let mut new_attrs = Vec::new();
@@ -110,7 +130,42 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
             }
         }
         syn::Fields::Unnamed(_) => return syn::Error::new_spanned(
-            new_struct,
+            mid_struct,
+            "tuple structs can't be made reactive with this macro (try using named fields instead)",
+        )
+        .to_compile_error(),
+        // We may well need a unit struct for templates that use global state but don't have proper state of their own
+        // We don't need to modify any fields
+        syn::Fields::Unit => (),
+    };
+    match ref_struct.fields {
+        syn::Fields::Named(ref mut fields) => {
+            for field in fields.named.iter_mut() {
+                let orig_ty = &field.ty;
+                // Check if this field was registered as one to use nested reactivity
+                let wrapper_ty = nested_fields_map.get(field.ident.as_ref().unwrap());
+                field.ty = if let Some(wrapper_ty) = wrapper_ty {
+                    // If we don't make this a reference, nested properties have to be cloned (not nice for ergonomics)
+                    // TODO Chekc back on this, could bite back!
+                    syn::Type::Verbatim(quote!(&'rx #wrapper_ty<'rx>))
+                } else {
+                    // This is the only difference from the intermediate `struct` (this lifetime is declared above)
+                    syn::Type::Verbatim(quote!(&'rx ::sycamore::prelude::RcSignal<#orig_ty>))
+                };
+                // Remove any `serde` attributes (Serde can't be used with the reactive version)
+                let mut new_attrs = Vec::new();
+                for attr in field.attrs.iter() {
+                    if !(attr.path.segments.len() == 1
+                        && attr.path.segments.first().unwrap().ident == "serde")
+                    {
+                        new_attrs.push(attr.clone());
+                    }
+                }
+                field.attrs = new_attrs;
+            }
+        }
+        syn::Fields::Unnamed(_) => return syn::Error::new_spanned(
+            mid_struct,
             "tuple structs can't be made reactive with this macro (try using named fields instead)",
         )
         .to_compile_error(),
@@ -120,7 +175,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
     };
 
     // Create a list of fields for the `.make_rx()` method
-    let make_rx_fields = match new_struct.fields {
+    let make_rx_fields = match mid_struct.fields {
         syn::Fields::Named(ref mut fields) => {
             let mut field_assignments = quote!();
             for field in fields.named.iter_mut() {
@@ -133,17 +188,46 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                     })
                 } else {
                     field_assignments.extend(quote! {
-                        #field_name: ::sycamore::prelude::Signal::new(self.#field_name),
+                        #field_name: ::sycamore::prelude::create_rc_signal(self.#field_name),
                     });
                 }
             }
             quote! {
-                #name {
+                #mid_name {
                     #field_assignments
                 }
             }
         }
-        syn::Fields::Unit => quote!(#name),
+        syn::Fields::Unit => quote!(#mid_name),
+        // We filtered out the other types before
+        _ => unreachable!(),
+    };
+    // Create a list of fields for turning the intermediary `struct` into one using scoped references
+    let make_ref_fields = match mid_struct.fields {
+        syn::Fields::Named(ref mut fields) => {
+            let mut field_assignments = quote!();
+            for field in fields.named.iter_mut() {
+                // We know it has an identifier because it's a named field
+                let field_name = field.ident.as_ref().unwrap();
+                // Check if this field was registered as one to use nested reactivity
+                if nested_fields_map.contains_key(field.ident.as_ref().unwrap()) {
+                    field_assignments.extend(quote! {
+                        #field_name: ::sycamore::prelude::create_ref(cx, self.#field_name.to_ref_struct(cx)),
+                    })
+                } else {
+                    // This will be used in a place in which the `cx` variable stores a reactive scope
+                    field_assignments.extend(quote! {
+                        #field_name: ::sycamore::prelude::create_ref(cx, self.#field_name),
+                    });
+                }
+            }
+            quote! {
+                #ref_name {
+                    #field_assignments
+                }
+            }
+        }
+        syn::Fields::Unit => quote!(#ref_name),
         // We filtered out the other types before
         _ => unreachable!(),
     };
@@ -166,12 +250,12 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
                 }
             }
             quote! {
-                #ident {
+                #orig_name {
                     #field_assignments
                 }
             }
         }
-        syn::Fields::Unit => quote!(#ident),
+        syn::Fields::Unit => quote!(#orig_name),
         // We filtered out the other types before
         _ => unreachable!(),
     };
@@ -180,28 +264,35 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name: Ident) -> TokenStream {
         // We add a Serde derivation because it will always be necessary for Perseus on the original `struct`, and it's really difficult and brittle to filter it out
         #[derive(::serde::Serialize, ::serde::Deserialize, ::std::clone::Clone)]
         #orig_struct
-        impl#generics ::perseus::state::MakeRx for #ident#generics {
-            type Rx = #name#generics;
-            fn make_rx(self) -> #name#generics {
+        impl #generics ::perseus::state::MakeRx for #orig_name #generics {
+            type Rx = #mid_name #generics;
+            fn make_rx(self) -> #mid_name #generics {
                 use ::perseus::state::MakeRx;
                 #make_rx_fields
             }
         }
         #[derive(::std::clone::Clone)]
-        #new_struct
-        impl#generics ::perseus::state::MakeUnrx for #name#generics {
-            type Unrx = #ident#generics;
-            fn make_unrx(self) -> #ident#generics {
+        #mid_struct
+        impl #generics ::perseus::state::MakeUnrx for #mid_name #generics {
+            type Unrx = #orig_name #generics;
+            fn make_unrx(self) -> #orig_name #generics {
                 use ::perseus::state::MakeUnrx;
                 #make_unrx_fields
             }
         }
-        impl#generics ::perseus::state::Freeze for #name#generics {
+        impl #generics ::perseus::state::Freeze for #mid_name #generics {
             fn freeze(&self) -> ::std::string::String {
                 use ::perseus::state::MakeUnrx;
                 let unrx = #make_unrx_fields;
                 // TODO Is this `.unwrap()` safe?
                 ::serde_json::to_string(&unrx).unwrap()
+            }
+        }
+        #[derive(::std::clone::Clone)]
+        #ref_struct
+        impl #generics #mid_name #generics {
+            pub fn to_ref_struct(self, cx: ::sycamore::prelude::Scope) -> #ref_name #generics {
+                #make_ref_fields
             }
         }
     }

@@ -1,23 +1,21 @@
 use crate::errors::*;
 use crate::router::{RouterLoadState, RouterState};
+#[cfg(all(feature = "live-reload", debug_assertions))]
 use crate::state::{
     AnyFreeze, Freeze, FrozenApp, GlobalState, MakeRx, MakeUnrx, PageStateStore, ThawPrefs,
 };
-use crate::translator::Translator;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use sycamore::prelude::{create_rc_signal, provide_context, use_context, RcSignal, Scope};
 use sycamore_router::navigate;
 
-/// This encapsulates all elements of context currently provided to Perseus templates. While this can be used manually, there are macros
-/// to make this easier for each thing in here.
-#[derive(Clone, Debug)]
+/// A representation of the render context of the app, constructed from references to a series of `struct`s that mirror context values. This is purely a proxy `struct` for function
+/// organization.
+#[derive(Debug)]
 pub struct RenderCtx {
-    /// Whether or not we're being executed on the server-side. This can be used to gate `web_sys` functions and the like that expect
-    /// to be run in the browser.
-    pub is_server: bool,
-    /// A translator for templates to use. This will still be present in non-i18n apps, but it will have no message IDs and support for
-    /// the non-existent locale `xx-XX`. This uses an `Arc<T>` for thread-safety.
-    pub translator: Translator,
+    // /// A translator for templates to use. This will still be present in non-i18n apps, but it will have no message IDs and support for
+    // /// the non-existent locale `xx-XX`. This uses an `Arc<T>` for thread-safety.
+    // translator: Translator,
     /// The router's state.
     pub router: RouterState,
     /// The page state store for the app. This is a type map to which pages can add state that they need to access later. Usually, this will be interfaced with through
@@ -38,14 +36,27 @@ pub struct RenderCtx {
     #[cfg(all(feature = "live-reload", debug_assertions))]
     /// An indicator `Signal` used to allow the root to instruct the app that we're about to reload because of an instruction from the live reloading server. Hooking into this to run code
     /// before live reloading takes place is NOT supported, as no guarantee can be made that your code will run before Perseus reloads the page fully (at which point no more code will run).
-    pub live_reload_indicator: sycamore::prelude::ReadSignal<bool>,
+    pub live_reload_indicator: RcSignal<bool>,
+}
+impl Default for RenderCtx {
+    fn default() -> Self {
+        Self {
+            router: RouterState::default(),
+            page_state_store: PageStateStore::default(),
+            global_state: GlobalState::default(),
+            frozen_app: Rc::new(RefCell::new(None)),
+            is_first: Rc::new(Cell::new(true)),
+            #[cfg(all(feature = "live-reload", debug_assertions))]
+            live_reload_indicator: create_rc_signal(true),
+        }
+    }
 }
 impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized `String` that can later be used to re-initialize the app to the same state at the time of freezing.
     fn freeze(&self) -> String {
         let frozen_app = FrozenApp {
             global_state: self.global_state.0.borrow().freeze(),
-            route: match &*self.router.get_load_state().get_untracked() {
+            route: match &*self.router.get_load_state_rc().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => path,
                 RouterLoadState::Loading { path, .. } => path,
                 // If we encounter this during re-hydration, we won't try to set the URL in the browser
@@ -58,6 +69,16 @@ impl Freeze for RenderCtx {
     }
 }
 impl RenderCtx {
+    // TODO Use a custom, optimized context system instead of Sycamore's? (GIven we only need to store one thing...)
+    /// Gets an instance of `RenderCtx` out of Sycamore's context system.
+    pub fn from_ctx(cx: Scope) -> &Self {
+        use_context::<Self>(cx)
+    }
+    /// Places this instance of `RenderCtx` into Sycamore's context system, returning a reference. This assumes no other instances of `RenderCtx` have been added to context
+    /// already (or Sycamore will cause a panic). Once this is done, the render context can be modified safely with interior mutability.
+    pub fn set_ctx(self, cx: Scope) -> &Self {
+        provide_context(cx, self)
+    }
     /// Commands Perseus to 'thaw' the app from the given frozen state. You'll also need to provide preferences for thawing, which allow you to control how different pages should prioritize
     /// frozen state over existing (or *active*) state. Once you call this, assume that any following logic will not run, as this may navigate to a different route in your app. How you get
     /// the frozen state to supply to this is up to you.
@@ -77,7 +98,7 @@ impl RenderCtx {
         drop(frozen_app);
 
         // Check if we're on the same page now as we were at freeze-time
-        let curr_route = match &*self.router.get_load_state().get_untracked() {
+        let curr_route = match &*self.router.get_load_state_rc().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => path.to_string(),
                 RouterLoadState::Loading { path, .. } => path.to_string(),
                 // The user is trying to thaw on the server, which is an absolutely horrific idea (we should be generating state, and loops could happen)
@@ -96,10 +117,7 @@ impl RenderCtx {
     }
     /// An internal getter for the frozen state for the given page. When this is called, it will also add any frozen state
     /// it finds to the page state store, overriding what was already there.
-    fn get_frozen_page_state_and_register<R>(
-        &mut self,
-        url: &str,
-    ) -> Option<<R::Unrx as MakeRx>::Rx>
+    fn get_frozen_page_state_and_register<R>(&self, url: &str) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
@@ -156,10 +174,7 @@ impl RenderCtx {
     /// frozen or active state. If neither is available, the caller should use generated state instead.
     ///
     /// This takes a single type parameter for the reactive state type, from which the unreactive state type can be derived.
-    pub fn get_active_or_frozen_page_state<R>(
-        &mut self,
-        url: &str,
-    ) -> Option<<R::Unrx as MakeRx>::Rx>
+    pub fn get_active_or_frozen_page_state<R>(&self, url: &str) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
@@ -190,7 +205,7 @@ impl RenderCtx {
     }
     /// An internal getter for the frozen global state. When this is called, it will also add any frozen state to the registered
     /// global state, removing whatever was there before.
-    fn get_frozen_global_state_and_register<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    fn get_frozen_global_state_and_register<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
@@ -249,7 +264,7 @@ impl RenderCtx {
             .cloned()
     }
     /// Gets either the active or the frozen global state, depending on thaw preferences. Otherwise, this is exactly the same as `.get_active_or_frozen_state()`.
-    pub fn get_active_or_frozen_global_state<R>(&mut self) -> Option<<R::Unrx as MakeRx>::Rx>
+    pub fn get_active_or_frozen_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the unreactive version of `R` has the same properties as `R` itself
@@ -280,7 +295,7 @@ impl RenderCtx {
     }
     /// Registers a serialized and unreactive state string to the page state store, returning a fully reactive version.
     pub fn register_page_state_str<R>(
-        &mut self,
+        &self,
         url: &str,
         state_str: &str,
     ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
@@ -299,7 +314,7 @@ impl RenderCtx {
     }
     /// Registers a serialized and unreactive state string as the new active global state, returning a fully reactive version.
     pub fn register_global_state_str<R>(
-        &mut self,
+        &self,
         state_str: &str,
     ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
     where
@@ -321,7 +336,7 @@ impl RenderCtx {
 /// Gets the `RenderCtx` efficiently.
 #[macro_export]
 macro_rules! get_render_ctx {
-    () => {
-        ::sycamore::context::use_context::<::perseus::templates::RenderCtx>()
+    ($cx:expr) => {
+        ::perseus::templates::RenderCtx::from_ctx($cx)
     };
 }

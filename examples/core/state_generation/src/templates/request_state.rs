@@ -1,5 +1,5 @@
 use perseus::{RenderFnResultWithCause, Request, Template};
-use sycamore::prelude::{view, Html, View};
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
 pub struct PageState {
@@ -7,8 +7,8 @@ pub struct PageState {
 }
 
 #[perseus::template_rx]
-pub fn request_state_page(state: PageStateRx) -> View<G> {
-    view! {
+pub fn request_state_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
+    view! { cx,
         p {
             (
                 format!("Your IP address is {}.", state.ip.get())
