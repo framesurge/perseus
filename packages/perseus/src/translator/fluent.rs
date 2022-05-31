@@ -2,7 +2,7 @@ use crate::translator::errors::*;
 use fluent_bundle::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::sync::Arc;
-use sycamore::prelude::{use_context, Scope};
+use sycamore::prelude::{use_context, Scope, Signal};
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 /// The file extension used by the Fluent translator, which expects FTL files.
@@ -180,18 +180,18 @@ pub type TranslationArgs<'args> = FluentArgs<'args>;
 /// The internal Fluent backend for the `t!` macro.
 #[doc(hidden)]
 pub fn t_macro_backend(id: &str, cx: Scope) -> String {
-    let translator = use_context::<super::Translator>(cx);
+    let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();
     translator.translate(id, None)
 }
 /// The internal Fluent backend for the `t!` macro, when it's used with arguments.
 #[doc(hidden)]
 pub fn t_macro_backend_with_args(id: &str, args: FluentArgs, cx: Scope) -> String {
-    let translator = use_context::<super::Translator>(cx);
+    let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();
     translator.translate(id, Some(args))
 }
 /// The internal Fluent backend for the `link!` macro.
 #[doc(hidden)]
 pub fn link_macro_backend(url: &str, cx: Scope) -> String {
-    let translator = use_context::<super::Translator>(cx);
+    let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();
     translator.url(url)
 }

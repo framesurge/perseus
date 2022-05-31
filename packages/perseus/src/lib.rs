@@ -55,7 +55,7 @@ pub use sycamore_futures::spawn_local_scoped;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
 pub use perseus_macro::{autoserde, head, main, make_rx, template, template_rx, test};
-pub use sycamore::generic_node::{DomNode, Html, HydrateNode, SsrNode};
+pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?
 
 // TODO Restructure everything here (needs to stay the same until v0.4.0 though)

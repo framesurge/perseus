@@ -4,11 +4,12 @@
 
 Currently, the following versions are receiving security updates.
 
-| Version | Supported                                   |
-| ------- | ------------------                          |
-| 0.3.x   | :white_check_mark:                          |
-| 0.2.x   | ❌ (since December 14th 2021)               |
-| 0.1.x   | ❌ (since September 30th 2021)              |
+| Version | Supported                      |
+|---------|--------------------------------|
+| 0.4.x   | :white_check_mark: (beta)      |
+| 0.3.x   | :white_check_mark:             |
+| 0.2.x   | ❌ (since December 14th 2021)  |
+| 0.1.x   | ❌ (since September 30th 2021) |
 
 Please note that v0.3.x is still currently in beta, though due to significant infrastructural changes, security updates are not being issued for v0.2.x.
 
