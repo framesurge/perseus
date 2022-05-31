@@ -12,19 +12,21 @@ edition = "2021"
 perseus = { path = "../../../../../packages/perseus", features = [ "server-side" ] }
 perseus-actix-web = { path = "../../../../../packages/perseus-actix-web", optional = true }
 perseus-warp = { path = "../../../../../packages/perseus-warp", optional = true }
+perseus-axum = { path = "../../../../../packages/perseus-axum", optional = true }
 perseus-engine = { path = "../" }
 actix-web = { version = "=4.0.0-rc.3", optional = true }
 actix-http = { version = "=3.0.0-rc.2", optional = true } # Without this, Actix can introduce breaking changes in a dependency tree
 # actix-router = { version = "=0.5.0-rc.3", optional = true }
 futures = "0.3"
 warp = { package = "warp-fix-171", version = "0.3", optional = true }
-# TODO Choose features here
 tokio = { version = "1", optional = true, features = [ "macros", "rt-multi-thread" ] } # We don't need this for Actix Web
+axum = { version = "0.5", optional = true }
 
 # This binary can use any of the server integrations
 [features]
 integration-actix-web = [ "perseus-actix-web", "actix-web", "actix-http" ]
 integration-warp = [ "perseus-warp", "warp", "tokio" ]
+integration-axum = [ "perseus-axum", "axum", "tokio" ]
 
 default = [ "integration-warp" ]
 

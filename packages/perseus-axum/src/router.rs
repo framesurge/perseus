@@ -11,6 +11,7 @@ use axum::{
 use perseus::internal::serve::{get_render_cfg, ServerProps};
 use perseus::{internal::i18n::TranslationsManager, stores::MutableStore};
 use std::sync::Arc;
+use tower::builder::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
 
 /// Gets the `Router` needed to configure an existing Axum app for Perseus, and should be provided after any other routes, as they include a wildcard
@@ -34,12 +35,6 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         .await
         .expect("Couldn't generate global state.");
 
-    // // Handle static aliases
-    // let static_aliases = warp::any()
-    //     .and(static_aliases_filter(opts.static_aliases.clone()))
-    //     .and_then(serve_file);
-
-    // Define some filters to handle all the data we want to pass through
     let immutable_store = Arc::new(immutable_store);
     let mutable_store = Arc::new(mutable_store);
     let translations_manager = Arc::new(translations_manager);
@@ -71,14 +66,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             "/.perseus/translations/:locale",
             get(translations_handler::<T>),
         )
-        .route("/.perseus/page/:locale/*tail", get(page_handler::<M, T>))
-        .layer(Extension(Arc::new(opts)))
-        .layer(Extension(Arc::new(immutable_store)))
-        .layer(Extension(Arc::new(mutable_store)))
-        .layer(Extension(Arc::new(translations_manager)))
-        .layer(Extension(Arc::new(html_shell)))
-        .layer(Extension(Arc::new(render_cfg)))
-        .layer(Extension(Arc::new(global_state)));
+        .route("/.perseus/page/:locale/*tail", get(page_handler::<M, T>));
     // Only add the static content directory route if such a directory is being used
     if let Some(static_dir) = static_dir {
         router = router.route(
@@ -95,8 +83,18 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         );
     }
     // And add the fallback for initial loads
-    // We use a normal route rather than Axum's fallback system so we can more easily get the path section we care about (without having to strip relative paths etc.)
-    router.route("*_", get(initial_load_handler::<M, T>))
+    router = router.fallback(get(initial_load_handler::<M, T>));
+    // And finally all the shared state
+    let shared_state = ServiceBuilder::new()
+        .layer(Extension(Arc::new(opts)))
+        .layer(Extension(Arc::new(immutable_store)))
+        .layer(Extension(Arc::new(mutable_store)))
+        .layer(Extension(Arc::new(translations_manager)))
+        .layer(Extension(Arc::new(html_shell)))
+        .layer(Extension(Arc::new(render_cfg)))
+        .layer(Extension(Arc::new(global_state)))
+        .into_inner();
+    router.layer(shared_state)
 }
 
 // TODO Review if there's anything more to do here

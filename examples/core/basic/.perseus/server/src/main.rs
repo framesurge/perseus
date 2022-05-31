@@ -48,6 +48,26 @@ async fn main() {
     warp::serve(routes).run(addr).await;
 }
 
+// Integration: Axum
+#[cfg(feature = "integration-axum")]
+#[tokio::main]
+async fn main() {
+    use perseus_axum::get_router;
+    use std::net::SocketAddr;
+
+    let is_standalone = get_standalone_and_act();
+    let props = get_props(is_standalone);
+    let (host, port) = get_host_and_port();
+    let addr: SocketAddr = format!("{}:{}", host, port)
+        .parse()
+        .expect("Invalid address provided to bind to.");
+    let app = block_on(get_router(props));
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}
+
 /// Determines whether or not we're operating in standalone mode, and acts accordingly. This MUST be executed in the parent thread, as it switches the current directory.
 fn get_standalone_and_act() -> bool {
     // So we don't have to define a different `FsConfigManager` just for the server, we shift the execution context to the same level as everything else

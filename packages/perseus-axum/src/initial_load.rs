@@ -43,7 +43,6 @@ fn return_error_page(
 /// the app shell.
 #[allow(clippy::too_many_arguments)] // As for `page_data_handler`, we don't have a choice
 pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
-    path: Path<Vec<(String, String)>>,
     http_req: perseus::http::Request<Body>,
     Extension(opts): Extension<Arc<ServerOptions>>,
     Extension(html_shell): Extension<Arc<HtmlShell>>,
@@ -53,11 +52,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     Extension(translations_manager): Extension<Arc<T>>,
     Extension(global_state): Extension<Arc<Option<String>>>,
 ) -> (StatusCode, HeaderMap, String) {
-    let path = path
-        .iter()
-        .map(|x| x.1.as_str())
-        .collect::<Vec<&str>>()
-        .join("/");
+    let path = http_req.uri().path().to_string();
     let http_req = Request::from_parts(http_req.into_parts().0, ());
 
     let templates = &opts.templates_map;
