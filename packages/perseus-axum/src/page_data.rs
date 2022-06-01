@@ -2,7 +2,6 @@ use axum::{
     body::Body,
     extract::{Path, Query},
     http::{HeaderMap, StatusCode},
-    Extension,
 };
 use fmterr::fmt_err;
 use perseus::{
@@ -26,27 +25,28 @@ pub struct PageDataReq {
 
 #[allow(clippy::too_many_arguments)] // Because of how Axum extractors work, we don't exactly have a choice
 pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
-    Path(path_parts): Path<Vec<(String, String)>>, // From this, we can extract the locale and the path tail (the page path, which *does* have slashes)
+    Path(path_parts): Path<Vec<String>>, // From this, we can extract the locale and the path tail (the page path, which *does* have slashes)
     Query(PageDataReq {
         template_name,
         was_incremental_match,
     }): Query<PageDataReq>,
     // This works without any conversion because Axum allows us to directly get an `http::Request` out!
-    // TODO Make sure the type parameter here works
     http_req: perseus::http::Request<Body>,
-    Extension(opts): Extension<Arc<ServerOptions>>,
-    Extension(immutable_store): Extension<Arc<ImmutableStore>>,
-    Extension(mutable_store): Extension<Arc<M>>,
-    Extension(translations_manager): Extension<Arc<T>>,
-    Extension(global_state): Extension<Arc<Option<String>>>,
+    opts: Arc<ServerOptions>,
+    immutable_store: Arc<ImmutableStore>,
+    mutable_store: Arc<M>,
+    translations_manager: Arc<T>,
+    global_state: Arc<Option<String>>,
 ) -> (StatusCode, HeaderMap, String) {
-    // Separate the locale from the rest of the page name (and we only care about the values, not the names Axum assigns)
-    let locale = &path_parts[0].1;
+    // Separate the locale from the rest of the page name
+    let locale = &path_parts[0];
     let path = path_parts[1..]
         .iter()
-        .map(|x| x.1.as_str())
+        .map(|x| x.as_str())
         .collect::<Vec<&str>>()
         .join("/");
+    // Axum's paths have leading slashes
+    let path = path.strip_prefix('/').unwrap();
 
     let templates = &opts.templates_map;
     // Check if the locale is supported

@@ -1,12 +1,12 @@
-use axum::{extract::Path, http::StatusCode, Extension};
+use axum::{extract::Path, http::StatusCode};
 use fmterr::fmt_err;
 use perseus::internal::{i18n::TranslationsManager, serve::ServerOptions};
 use std::sync::Arc;
 
 pub async fn translations_handler<T: TranslationsManager>(
     Path(locale): Path<String>,
-    Extension(opts): Extension<Arc<ServerOptions>>,
-    Extension(translations_manager): Extension<Arc<T>>,
+    opts: Arc<ServerOptions>,
+    translations_manager: Arc<T>,
 ) -> (StatusCode, String) {
     // Check if the locale is supported
     if opts.locales.is_supported(&locale) {

@@ -2,16 +2,15 @@ use crate::initial_load::initial_load_handler;
 use crate::page_data::page_handler;
 use crate::translations::translations_handler;
 use axum::{
-    extract::Extension,
     http::StatusCode,
     response::IntoResponse,
     routing::{get, get_service},
     Router,
 };
+use closure::closure;
 use perseus::internal::serve::{get_render_cfg, ServerProps};
 use perseus::{internal::i18n::TranslationsManager, stores::MutableStore};
 use std::sync::Arc;
-use tower::builder::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
 
 /// Gets the `Router` needed to configure an existing Axum app for Perseus, and should be provided after any other routes, as they include a wildcard
@@ -45,7 +44,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     let static_dir = opts.static_dir.clone();
     let static_aliases = opts.static_aliases.clone();
 
-    let mut router = Router::new()
+    let router = Router::new()
         .route(
             "/.perseus/bundle.js",
             get_service(ServeFile::new(opts.js_bundle.clone())).handle_error(handle_fs_error),
@@ -61,12 +60,33 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         .route(
             "/.perseus/snippets/*_",
             get_service(ServeDir::new(opts.snippets.clone())).handle_error(handle_fs_error),
-        )
+        );
+    let opts = Arc::new(opts);
+    let mut router = router
         .route(
             "/.perseus/translations/:locale",
-            get(translations_handler::<T>),
+            get(closure!(clone opts, clone translations_manager, |path| translations_handler::<T>(path, opts, translations_manager))),
         )
-        .route("/.perseus/page/:locale/*tail", get(page_handler::<M, T>));
+        .route("/.perseus/page/:locale/*tail", get(
+            closure!(
+                clone opts,
+                clone immutable_store,
+                clone mutable_store,
+                clone translations_manager,
+                clone global_state,
+                |path, query, http_req|
+                    page_handler::<M, T>(
+                        path,
+                        query,
+                        http_req,
+                        opts,
+                        immutable_store,
+                        mutable_store,
+                        translations_manager,
+                        global_state
+                    )
+            )
+        ));
     // Only add the static content directory route if such a directory is being used
     if let Some(static_dir) = static_dir {
         router = router.route(
@@ -83,18 +103,26 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         );
     }
     // And add the fallback for initial loads
-    router = router.fallback(get(initial_load_handler::<M, T>));
-    // And finally all the shared state
-    let shared_state = ServiceBuilder::new()
-        .layer(Extension(Arc::new(opts)))
-        .layer(Extension(Arc::new(immutable_store)))
-        .layer(Extension(Arc::new(mutable_store)))
-        .layer(Extension(Arc::new(translations_manager)))
-        .layer(Extension(Arc::new(html_shell)))
-        .layer(Extension(Arc::new(render_cfg)))
-        .layer(Extension(Arc::new(global_state)))
-        .into_inner();
-    router.layer(shared_state)
+    router.fallback(get(closure!(
+        clone opts,
+        clone html_shell,
+        clone render_cfg,
+        clone immutable_store,
+        clone mutable_store,
+        clone translations_manager,
+        clone global_state,
+        |http_req|
+        initial_load_handler::<M, T>(
+            http_req,
+            opts,
+            html_shell,
+            render_cfg,
+            immutable_store,
+            mutable_store,
+            translations_manager,
+            global_state
+        )
+    )))
 }
 
 // TODO Review if there's anything more to do here

@@ -1,8 +1,7 @@
 use axum::{
     body::Body,
-    extract::Path,
     http::{HeaderMap, StatusCode},
-    Extension,
+    response::Html,
 };
 use fmterr::fmt_err;
 use perseus::{
@@ -30,12 +29,12 @@ fn return_error_page(
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
     html_shell: &HtmlShell,
-) -> (StatusCode, HeaderMap, String) {
+) -> (StatusCode, HeaderMap, Html<String>) {
     let html = build_error_page(url, status, err, translator, error_pages, html_shell);
     (
         StatusCode::from_u16(status).unwrap(),
         HeaderMap::new(),
-        html,
+        Html(html),
     )
 }
 
@@ -44,14 +43,14 @@ fn return_error_page(
 #[allow(clippy::too_many_arguments)] // As for `page_data_handler`, we don't have a choice
 pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     http_req: perseus::http::Request<Body>,
-    Extension(opts): Extension<Arc<ServerOptions>>,
-    Extension(html_shell): Extension<Arc<HtmlShell>>,
-    Extension(render_cfg): Extension<Arc<HashMap<String, String>>>,
-    Extension(immutable_store): Extension<Arc<ImmutableStore>>,
-    Extension(mutable_store): Extension<Arc<M>>,
-    Extension(translations_manager): Extension<Arc<T>>,
-    Extension(global_state): Extension<Arc<Option<String>>>,
-) -> (StatusCode, HeaderMap, String) {
+    opts: Arc<ServerOptions>,
+    html_shell: Arc<HtmlShell>,
+    render_cfg: Arc<HashMap<String, String>>,
+    immutable_store: Arc<ImmutableStore>,
+    mutable_store: Arc<M>,
+    translations_manager: Arc<T>,
+    global_state: Arc<Option<String>>,
+) -> (StatusCode, HeaderMap, Html<String>) {
     let path = http_req.uri().path().to_string();
     let http_req = Request::from_parts(http_req.into_parts().0, ());
 
@@ -110,7 +109,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                 header_map.insert(key.unwrap(), val);
             }
 
-            (StatusCode::OK, header_map, final_html)
+            (StatusCode::OK, header_map, Html(final_html))
         }
         // For locale detection, we don't know the user's locale, so there's not much we can do except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
         RouteVerdictAtomic::LocaleDetection(path) => {
@@ -119,19 +118,21 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             (
                 StatusCode::FOUND,
                 HeaderMap::new(),
-                html_shell
-                    .as_ref()
-                    .clone()
-                    .locale_redirection_fallback(
-                        // We'll redirect the user to the default locale
-                        &format!(
-                            "{}/{}/{}",
-                            get_path_prefix_server(),
-                            opts.locales.default,
-                            path
-                        ),
-                    )
-                    .to_string(),
+                Html(
+                    html_shell
+                        .as_ref()
+                        .clone()
+                        .locale_redirection_fallback(
+                            // We'll redirect the user to the default locale
+                            &format!(
+                                "{}/{}/{}",
+                                get_path_prefix_server(),
+                                opts.locales.default,
+                                path
+                            ),
+                        )
+                        .to_string(),
+                ),
             )
         }
         RouteVerdictAtomic::NotFound => html_err(404, "page not found"),

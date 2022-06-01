@@ -25,3 +25,4 @@ thiserror = "1"
 fmterr = "0.1"
 futures = "0.3"
 sycamore = { version = "=0.8.0-beta.6", features = ["ssr"] }
+closure = "0.3"
