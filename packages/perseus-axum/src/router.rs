@@ -58,7 +58,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             get_service(ServeFile::new(opts.wasm_js_bundle.clone())).handle_error(handle_fs_error),
         )
         .route(
-            "/.perseus/snippets/*_",
+            "/.perseus/snippets/*path",
             get_service(ServeDir::new(opts.snippets.clone())).handle_error(handle_fs_error),
         );
     let opts = Arc::new(opts);
@@ -89,8 +89,8 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         ));
     // Only add the static content directory route if such a directory is being used
     if let Some(static_dir) = static_dir {
-        router = router.route(
-            "/.perseus/static/*_",
+        router = router.nest(
+            "/.perseus/static",
             get_service(ServeDir::new(static_dir)).handle_error(handle_fs_error),
         )
     }
@@ -98,7 +98,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     for (url, static_path) in static_aliases.iter() {
         // Note that `static_path` is already relative to the right place (`.perseus/server/`)
         router = router.route(
-            &format!("/{}", url),
+            url, // This comes with a leading forward slash!
             get_service(ServeFile::new(static_path)).handle_error(handle_fs_error),
         );
     }
