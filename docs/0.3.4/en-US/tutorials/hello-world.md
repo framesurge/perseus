@@ -20,12 +20,6 @@ Note that we've set these dependencies up so that they'll automatically update _
 
 </details>
 
-Now, create an `index.html` file at the root of your project and put the following inside:
-
-```html
-{{#include ../../../examples/comprehensive/tiny/index.html}}
-```
-
 <details>
 <summary>Don't I need an `index.html` file?</summary>
 
