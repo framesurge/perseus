@@ -22,6 +22,7 @@ pub struct Opts {
 pub enum Integration {
     ActixWeb,
     Warp,
+    Axum,
 }
 // We use an `enum` for this so we don't get errors from Cargo about non-existent feature flags, overly verbose but fails quickly
 impl std::str::FromStr for Integration {
@@ -31,6 +32,7 @@ impl std::str::FromStr for Integration {
         match s {
             "actix-web" => Ok(Self::ActixWeb),
             "warp" => Ok(Self::Warp),
+            "axum" => Ok(Self::Axum),
             _ => Err("invalid integration name".into()),
         }
     }
@@ -40,6 +42,7 @@ impl ToString for Integration {
         match self {
             Self::ActixWeb => "actix-web".to_string(),
             Self::Warp => "warp".to_string(),
+            Self::Axum => "axum".to_string(),
         }
     }
 }

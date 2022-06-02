@@ -1,3 +1,8 @@
+use axum::{
+    body::Body,
+    http::{HeaderMap, StatusCode},
+    response::Html,
+};
 use fmterr::fmt_err;
 use perseus::{
     errors::err_to_status_code,
@@ -11,10 +16,9 @@ use perseus::{
         },
     },
     stores::{ImmutableStore, MutableStore},
-    ErrorPages, SsrNode,
+    ErrorPages, Request, SsrNode,
 };
 use std::{collections::HashMap, rc::Rc, sync::Arc};
-use warp::{http::Response, path::FullPath};
 
 /// Builds on the internal Perseus primitives to provide a utility function that returns a `Response` automatically.
 fn return_error_page(
@@ -25,17 +29,20 @@ fn return_error_page(
     translator: Option<Rc<Translator>>,
     error_pages: &ErrorPages<SsrNode>,
     html_shell: &HtmlShell,
-) -> Response<String> {
+) -> (StatusCode, HeaderMap, Html<String>) {
     let html = build_error_page(url, status, err, translator, error_pages, html_shell);
-    Response::builder().status(status).body(html).unwrap()
+    (
+        StatusCode::from_u16(status).unwrap(),
+        HeaderMap::new(),
+        Html(html),
+    )
 }
 
 /// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
 /// the app shell.
 #[allow(clippy::too_many_arguments)] // As for `page_data_handler`, we don't have a choice
 pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
-    path: FullPath,
-    req: perseus::http::Request<()>,
+    http_req: perseus::http::Request<Body>,
     opts: Arc<ServerOptions>,
     html_shell: Arc<HtmlShell>,
     render_cfg: Arc<HashMap<String, String>>,
@@ -43,14 +50,16 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
     global_state: Arc<Option<String>>,
-) -> Response<String> {
-    let path = path.as_str();
+) -> (StatusCode, HeaderMap, Html<String>) {
+    let path = http_req.uri().path().to_string();
+    let http_req = Request::from_parts(http_req.into_parts().0, ());
+
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
-    let path_slice = get_path_slice(path);
+    let path_slice = get_path_slice(&path);
     // Create a closure to make returning error pages easier (most have the same data)
     let html_err = |status: u16, err: &str| {
-        return return_error_page(path, status, err, None, error_pages, html_shell.as_ref());
+        return return_error_page(&path, status, err, None, error_pages, html_shell.as_ref());
     };
 
     // Run the routing algorithms on the path to figure out which template we need
@@ -70,7 +79,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                     raw_path: &path,
                     locale: &locale,
                     was_incremental_match,
-                    req,
+                    req: http_req,
                     global_state: &global_state,
                     immutable_store: &immutable_store,
                     mutable_store: &mutable_store,
@@ -93,22 +102,23 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                 .page_data(&page_data, &global_state)
                 .to_string();
 
-            let mut http_res = Response::builder().status(200);
             // http_res.content_type("text/html");
             // Generate and add HTTP headers
+            let mut header_map = HeaderMap::new();
             for (key, val) in template.get_headers(page_data.state) {
-                http_res = http_res.header(key.unwrap(), val);
+                header_map.insert(key.unwrap(), val);
             }
 
-            http_res.body(final_html).unwrap()
+            (StatusCode::OK, header_map, Html(final_html))
         }
         // For locale detection, we don't know the user's locale, so there's not much we can do except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
         RouteVerdictAtomic::LocaleDetection(path) => {
             // We use a `302 Found` status code to indicate a redirect
             // We 'should' generate a `Location` field for the redirect, but it's not RFC-mandated, so we can use the app shell
-            Response::builder()
-                .status(302) // NOTE: Changed this from 200 (I think that was a mistake...)
-                .body(
+            (
+                StatusCode::FOUND,
+                HeaderMap::new(),
+                Html(
                     html_shell
                         .as_ref()
                         .clone()
@@ -122,8 +132,8 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                             ),
                         )
                         .to_string(),
-                )
-                .unwrap()
+                ),
+            )
         }
         RouteVerdictAtomic::NotFound => html_err(404, "page not found"),
     }

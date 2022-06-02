@@ -179,7 +179,8 @@ test.subcommands.example.args = [ "category", "example", "integration" ]
 test.subcommands.example.desc = "tests a single example with the given integration (assumes geckodriver running in background), use `--headless` to run headlessly"
 test.subcommands.example-all-integrations.cmd = [
     "rust-script scripts/test.rs %category %example actix-web %%",
-    "rust-script scripts/test.rs %category %example warp %%"
+    "rust-script scripts/test.rs %category %example warp %%",
+    "rust-script scripts/test.rs %category %example axum %%"
 ]
 test.subcommands.example-all-integrations.args = [ "category", "example" ]
 test.subcommands.example-all-integrations.desc = "tests a single example with all integrations (assumes geckodriver running in background), use `--headless` to run headlessly"
@@ -221,6 +222,8 @@ publish.cmd = [
     "cd ../perseus-actix-web",
     "cargo publish %%",
     "cd ../perseus-warp",
+    "cargo publish %%",
+    "cd ../perseus-axum",
     "cargo publish %%"
 ]
 publish.desc = "publishes all packages to crates.io (needs branch 'stable', Linux only)"
