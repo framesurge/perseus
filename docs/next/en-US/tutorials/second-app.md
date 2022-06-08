@@ -123,7 +123,7 @@ If that all went over your head, don't worry, that's just what Perseus does behi
 
 This is just the equivalent of `.template()` for the `head()` function, and it does basically the exact same thing. The only particular thing of note here is that the properties this expects are again as an `Option<String>`, and those are deserialized automatically by the `#[perseus::head]` macro that we used on `head()` earlier.
 
-### `get_build_props()`
+### `get_build_state()`
 
 This function is part of Perseus' secret sauce (actually _open_ sauce), and it will be called when the CLI builds your app to create properties that the template will take (it expects a string, hence the serialization). Here, we just hard-code a greeting in to be used, but the real power of this comes when you start using the fact that this function is `async`. You might query a database to get a list of blog posts, or pull in a Markdown documentation page and parse it, the possibilities are endless!
 
