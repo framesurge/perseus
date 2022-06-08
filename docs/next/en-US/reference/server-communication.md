@@ -11,7 +11,7 @@ Of course, a much simpler way of doing the above would be to make the database n
 
 </details>
 
-Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](/docs/ejecting), which can be brittle, because you'll have to redo everything every time there's a major update. This is NOT the recommended approach for setting up your backend!
+Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](:reference/ejecting), which can be brittle, because you'll have to redo everything every time there's a major update. This is NOT the recommended approach for setting up your backend!
 
 Instead, it's recommended that you create a server separate from Perseus that you control completely. You might do this with [Actix Web](https://actix.rs) or similar software. You could even set up serverless functions on a platform like [AWS Lambda](https://aws.amazon.com/lambda), which can reduce operation costs.
 

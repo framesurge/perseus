@@ -5,7 +5,7 @@ In most Perseus apps, you can just ofcus on building your app's templates, and l
 However, if you're using Perseus, you probably don't want to be writing HTML right? You're supposed to be using Sycamore! Well, that's completely true, and so Perseus supports creating an index view with Sycamore code! You can do this like so:
 
 ```rust
-TODO example
+{{#include ../../../examples/core/index_view/src/lib.rs}}
 ```
 
 Note that you can also use `.index_view_str()` to provide an arbitrary HTML string to use instead of Sycamore code.
@@ -20,4 +20,4 @@ Perseus' index view is very versatile, but there are a few things you HAVE to in
 2. You need a `<body>`. This needs to be defined as `<body></body>`, for similar reasons to the `<head>`.
 3. You need a `<div id="root"></div>`. Literally, you need that *exact* string in your index view, or Perseus won't be able to find your app at all! Now, yes we could parse the HTML fully and find this by ID, or we could just use string replacement and reduce dependencies and build time. Importantly, you can't use this directly is you use `.index_view()` and provide Sycamore code, as Sycamore will add some extra information that stuffs things up. Instead, you should use `perseus::PerseusRoot`, which is specially designed to be a drop-in entrypoint for Perseus. It should go without saying that you need to put this in the `<body>` of your app.
 
-*Note: you don't need the typical `<!DOCTYPE html>`in your index view, since that's all Perseus targets, so it's added automatically. If, for some magical reason, you need to override this, you can do so with a [control plugin](reference/plugins/control).*
+*Note: you don't need the typical `<!DOCTYPE html>`in your index view, since that's all Perseus targets, so it's added automatically. If, for some magical reason, you need to override this, you can do so with a [control plugin](:reference/plugins/control).*
