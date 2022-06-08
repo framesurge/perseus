@@ -23,7 +23,7 @@ pub fn index_page<'a, G: Html>(
         // Don't worry, this doesn't need to be sent to JavaScript for execution
         //
         // We want to access the `message` `Signal`, so we'll clone it in (and then we need `move` because this has to be `'static`)
-        perseus::spawn_local_scoped(cx, async move {
+        perseus::spawn_local_scoped(cx, async {
             // This interface may seem weird, that's because it wraps the browser's Fetch API
             // We request from a local path here because of CORS restrictions (see the book)
             let body = reqwasm::http::Request::get("/.perseus/static/message.txt")
@@ -39,10 +39,10 @@ pub fn index_page<'a, G: Html>(
 
     // If the future hasn't finished yet, we'll display a placeholder
     // We use the wacky `&*` syntax to get the content of the `browser_ip` `Signal` and then we tell Rust to take a reference to that (we can't move it out because it might be used later)
-    let browser_ip_display = match &*browser_ip.get() {
+    let browser_ip_display = create_memo(cx, || match &*browser_ip.get() {
         Some(ip) => ip.to_string(),
         None => "fetching".to_string(),
-    };
+    });
 
     view! { cx,
         p { (format!("IP address of the server was: {}", server_ip.get())) }
@@ -62,16 +62,22 @@ pub async fn get_build_state(
     _locale: String,
 ) -> RenderFnResultWithCause<IndexPageState> {
     // We'll cache the result with `try_cache_res`, which means we only make the request once, and future builds will use the cached result (speeds up development)
+    // Currently, target gating isn't fully sorted out in the latest version, so, because `reqwest` is only available on the server-side, we have to note that (in future, this won't be necessary)
+    #[cfg(not(target_arch = "wasm32"))]
     let body = perseus::cache_fallible_res(
         "ipify",
         || async {
             // This just gets the IP address of the machine that built the app
-            let res = ureq::get("https://api.ipify.org").call()?.into_string()?;
-            Ok::<String, ureq::Error>(res)
+            let res = reqwest::get("https://api.ipify.org").await?.text().await?;
+            Ok::<String, reqwest::Error>(res)
         },
         false,
     )
     .await?;
+    // To be clear, this will never ever run, we just need it in the current version to appease the compiler (soon, this will be totally unnecessary)
+    #[cfg(target_arch = "wasm32")]
+    let body = "".to_string();
+
     Ok(IndexPageState {
         server_ip: body,
         browser_ip: None,
