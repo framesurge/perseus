@@ -35,8 +35,8 @@ pub mod state;
 pub mod stores;
 
 mod build;
-mod error_pages;
 mod export;
+mod error_pages;
 mod i18n;
 mod init;
 mod macros;
@@ -46,6 +46,8 @@ mod shell;
 mod template;
 mod translator;
 mod utils;
+#[cfg(feature = "builder")]
+mod engine;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
@@ -75,6 +77,11 @@ pub mod templates {
     pub use crate::router::{RouterLoadState, RouterState};
     pub use crate::template::*;
 }
+/// Utilities for building an app.
+#[cfg(feature = "builder")]
+pub mod builder {
+    pub use crate::engine::*;
+}
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.
 pub mod internal {
@@ -102,11 +109,11 @@ pub mod internal {
     pub mod shell {
         pub use crate::shell::*;
     }
-    /// Internal utilities for building.
+    /// Internal utilities for building apps at a very low level.
     pub mod build {
         pub use crate::build::*;
     }
-    /// Internal utilities for exporting.
+    /// Internal utilities for exporting apps at a very low level.
     pub mod export {
         pub use crate::export::*;
     }

@@ -14,9 +14,16 @@ pub struct ImmutableStore {
     root_path: String,
 }
 impl ImmutableStore {
-    /// Creates a new immutable store. You should provide a path like `dist/` here.
+    /// Creates a new immutable store. You should provide a path like `dist` here. Note that any trailing slashes will be automatically stripped.
     pub fn new(root_path: String) -> Self {
+        let root_path = root_path.strip_prefix('/').unwrap_or(&root_path).to_string();
         Self { root_path }
+    }
+    /// Gets the filesystem path used for this immutable store.
+    ///
+    /// This is designed to be used in particular by the engine to work out where to put static assets and the like when exporting.
+    pub fn get_path(&self) -> &str {
+        &self.root_path
     }
     /// Reads the given asset from the filesystem asynchronously.
     pub async fn read(&self, name: &str) -> Result<String, StoreError> {

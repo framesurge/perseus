@@ -108,6 +108,9 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The app's translations manager, expressed as a function yielding a `Future`. This is only ever needed on the server-side, and can't be set up properly on the client-side because
     /// we can't use futures in the app initialization in Wasm.
     translations_manager: Tm<T>,
+    /// The location of the directory to use for static assets that will placed under the URL `/.perseus/static/`. By default, this is the `static/` directory at the root
+    /// of your project. Note that the directory set here will only be used if it exists.
+    static_dir: String
 }
 
 // The usual implementation in which the default mutable store is used
@@ -199,6 +202,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             translations_manager: Tm::Dummy(T::new_dummy()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
+            static_dir: "./static".to_string()
         }
     }
 
@@ -206,6 +210,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Sets the HTML ID of the `<div>` element at which to insert Perseus.
     pub fn root(mut self, val: &str) -> Self {
         self.root = val.to_string();
+        self
+    }
+    /// Sets the location of the directory storing static assets to be hosted under the URL `/.perseus/static/`.
+    pub fn static_dir(mut self, val: &str) -> Self {
+        self.static_dir = val.to_string();
         self
     }
     /// Sets all the app's templates. This takes a vector of boxed functions that return templates.
@@ -333,6 +342,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .set_app_root
             .run((), self.plugins.get_plugin_data())
             .unwrap_or_else(|| self.root.to_string())
+    }
+    /// Gets the directory containing static assets to be hosted under the URL `/.perseus/static/`.
+    // TODO Plugin action for this?
+    pub fn get_static_dir(&self) -> String {
+        self.static_dir.to_string()
     }
     /// Gets the index view as a string, without generating an HTML shell (pass this into `::get_html_shell()` to do that).
     ///

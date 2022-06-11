@@ -10,6 +10,45 @@ pub enum Error {
     ClientError(#[from] ClientError),
     #[error(transparent)]
     ServerError(#[from] ServerError),
+    #[cfg(feature = "builder")]
+    #[error(transparent)]
+    EngineError(#[from] EngineError),
+}
+
+/// Errors that can occur in the server-side engine system (responsible for building the app).
+#[cfg(feature = "builder")]
+#[derive(Error, Debug)]
+pub enum EngineError {
+    // Many of the build/export processes return these more generic errors
+    #[error(transparent)]
+    ServerError(#[from] ServerError),
+    #[error("couldn't copy static directory at '{path}' to '{dest}'")]
+    CopyStaticDirError {
+        #[source]
+        source: fs_extra::error::Error,
+        path: String,
+        dest: String,
+    },
+    #[error("couldn't copy static alias file from '{from}' to '{to}'")]
+    CopyStaticAliasFileError {
+        #[source]
+        source: std::io::Error,
+        from: String,
+        to: String,
+    },
+    #[error("couldn't copy static alias directory from '{from}' to '{to}'")]
+    CopyStaticAliasDirErr {
+        #[source]
+        source: fs_extra::error::Error,
+        from: String,
+        to: String
+    },
+    #[error("couldn't write the generated error page to '{dest}'")]
+    WriteErrorPageError {
+        #[source]
+        source: std::io::Error,
+        dest: String,
+    }
 }
 
 /// Errors that can occur in the browser.

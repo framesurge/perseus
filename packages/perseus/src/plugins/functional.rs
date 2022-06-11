@@ -1,7 +1,9 @@
+use crate::errors::EngineError;
 use crate::plugins::*;
 use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 /// An action which can be taken by many plugins. When run, a functional action will return a map of plugin names to their return types.
 pub struct FunctionalPluginAction<A, R> {
@@ -69,10 +71,13 @@ pub struct FunctionalPluginActions<G: Html> {
     /// Actions pertaining to the modification of settings created with `PerseusApp`.
     pub settings_actions: FunctionalPluginSettingsActions<G>,
     /// Actions pertaining to the build process.
+    #[cfg(feature = "builder")]
     pub build_actions: FunctionalPluginBuildActions,
     /// Actions pertaining to the export process.
+    #[cfg(feature = "builder")]
     pub export_actions: FunctionalPluginExportActions,
     /// Actions pertaining to the process of exporting an error page.
+    #[cfg(feature = "builder")]
     pub export_error_page_actions: FunctionalPluginExportErrorPageActions,
     /// Actions pertaining to the server.
     pub server_actions: FunctionalPluginServerActions,
@@ -84,8 +89,11 @@ impl<G: Html> Default for FunctionalPluginActions<G> {
         Self {
             tinker: FunctionalPluginAction::default(),
             settings_actions: FunctionalPluginSettingsActions::<G>::default(),
+            #[cfg(feature = "builder")]
             build_actions: FunctionalPluginBuildActions::default(),
+            #[cfg(feature = "builder")]
             export_actions: FunctionalPluginExportActions::default(),
+            #[cfg(feature = "builder")]
             export_error_page_actions: FunctionalPluginExportErrorPageActions::default(),
             server_actions: FunctionalPluginServerActions::default(),
             client_actions: FunctionalPluginClientActions::default(),
@@ -143,6 +151,7 @@ pub struct FunctionalPluginHtmlShellActions {
 
 /// Functional actions that pertain to the build process. Note that these actions are not available for the build
 /// stage of the export process, and those should be registered separately.
+#[cfg(feature = "builder")]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginBuildActions {
     /// Runs before the build process.
@@ -150,12 +159,13 @@ pub struct FunctionalPluginBuildActions {
     /// Runs after the build process if it completes successfully.
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build process if it fails.
-    pub after_failed_build: FunctionalPluginAction<crate::errors::ServerError, ()>,
+    pub after_failed_build: FunctionalPluginAction<Rc<EngineError>, ()>,
     /// Runs after the build process if it failed to generate global state.
     pub after_failed_global_state_creation:
-        FunctionalPluginAction<crate::errors::GlobalStateError, ()>,
+        FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the export process.
+#[cfg(feature = "builder")]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginExportActions {
     /// Runs before the export process.
@@ -163,24 +173,24 @@ pub struct FunctionalPluginExportActions {
     /// Runs after the build stage in the export process if it completes successfully.
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build stage in the export process if it fails.
-    pub after_failed_build: FunctionalPluginAction<crate::errors::ServerError, ()>,
+    pub after_failed_build: FunctionalPluginAction<Rc<EngineError>, ()>,
     /// Runs after the export process if it fails.
-    pub after_failed_export: FunctionalPluginAction<crate::errors::ServerError, ()>,
-    /// Runs if copying the static directory failed. The error type here is likely from a third-party library, so it's
-    /// provided as a string (otherwise we'd be hauling in an extra library for one type).
-    pub after_failed_static_copy: FunctionalPluginAction<String, ()>,
-    /// Runs if copying a static alias that was a directory failed. The error type here is likely from a third-party library, so it's
-    /// provided as a string (otherwise we'd be hauling in an extra library for one type).
-    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<String, ()>,
-    /// Runs if copying a static alias that was a file failed.
-    pub after_failed_static_alias_file_copy: FunctionalPluginAction<std::io::Error, ()>,
+    pub after_failed_export: FunctionalPluginAction<Rc<EngineError>, ()>,
+    /// Runs if copying the static directory failed.
+    pub after_failed_static_copy: FunctionalPluginAction<Rc<EngineError>, ()>,
+    /// Runs if copying a static alias that was a directory failed. The argument to this is a tuple of the from and to locations of the copy, along with the error.
+    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<Rc<EngineError>, ()>,
+    /// Runs if copying a static alias that was a file failed. The argument to this is a tuple of the from and to locations of the copy, along with the error.
+    pub after_failed_static_alias_file_copy: FunctionalPluginAction<Rc<EngineError>, ()>,
     /// Runs after the export process if it completes successfully.
     pub after_successful_export: FunctionalPluginAction<(), ()>,
-    /// Runs after the export process if it failed to generate global state.
+    /// Runs after the export process if it failed to generate global state. Note that the error here will always be a `GlobalStateError`, but it must be processed as a
+    /// `ServerError` due to ownership constraints.
     pub after_failed_global_state_creation:
-        FunctionalPluginAction<crate::errors::GlobalStateError, ()>,
+        FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
+#[cfg(feature = "builder")]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginExportErrorPageActions {
     /// Runs before the process of exporting an error page, providing the HTTP status code to be exported and the output filename (relative to the root of the project, not to `.perseus/`).
@@ -188,7 +198,7 @@ pub struct FunctionalPluginExportErrorPageActions {
     /// Runs after a error page was exported successfully.
     pub after_successful_export_error_page: FunctionalPluginAction<(), ()>,
     /// Runs if writing to the output file failed. Error and filename are given.
-    pub after_failed_write: FunctionalPluginAction<(std::io::Error, String), ()>,
+    pub after_failed_write: FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the server.
 #[derive(Default, Debug)]
