@@ -1,4 +1,7 @@
-use crate::{PerseusApp, PerseusAppBase, PluginAction, SsrNode, errors::EngineError, i18n::TranslationsManager, internal::serve::build_error_page, stores::MutableStore};
+use crate::{
+    errors::EngineError, i18n::TranslationsManager, internal::serve::build_error_page,
+    stores::MutableStore, PerseusApp, PerseusAppBase, PluginAction, SsrNode,
+};
 use std::{fs, rc::Rc};
 
 /// Exports a single error page for the given HTTP status code to the given output location. If the status code doesn't exist or isn't handled, then the fallback page will be
@@ -7,7 +10,11 @@ use std::{fs, rc::Rc};
 /// This expects to run in the root of the project.
 ///
 /// This can only return IO errors from failures to write to the given output location. (Wrapped in an `Rc` so they can be sent to plugins as well.)
-pub async fn export_error_page(app: PerseusAppBase<SsrNode, impl MutableStore, impl TranslationsManager>, code: u16, output: &str) -> Result<(), Rc<EngineError>> {
+pub async fn export_error_page(
+    app: PerseusAppBase<SsrNode, impl MutableStore, impl TranslationsManager>,
+    code: u16,
+    output: &str,
+) -> Result<(), Rc<EngineError>> {
     let plugins = app.get_plugins();
 
     let error_pages = app.get_error_pages();
@@ -24,26 +31,19 @@ pub async fn export_error_page(app: PerseusAppBase<SsrNode, impl MutableStore, i
         .functional_actions
         .export_error_page_actions
         .before_export_error_page
-        .run(
-            (code, output.to_string()),
-            plugins.get_plugin_data(),
-        );
+        .run((code, output.to_string()), plugins.get_plugin_data());
 
     // Build that error page as the server does
-    let err_page_str = build_error_page(
-        "",
-        code,
-        "",
-        None,
-        &error_pages,
-        &html_shell,
-    );
+    let err_page_str = build_error_page("", code, "", None, &error_pages, &html_shell);
 
     // Write that to the given output location
     match fs::write(&output, err_page_str) {
         Ok(_) => (),
         Err(err) => {
-            let err = EngineError::WriteErrorPageError { source: err, dest: output.to_string() };
+            let err = EngineError::WriteErrorPageError {
+                source: err,
+                dest: output.to_string(),
+            };
             let err = Rc::new(err);
             plugins
                 .functional_actions

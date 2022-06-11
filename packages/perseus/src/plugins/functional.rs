@@ -161,8 +161,7 @@ pub struct FunctionalPluginBuildActions {
     /// Runs after the build process if it fails.
     pub after_failed_build: FunctionalPluginAction<Rc<EngineError>, ()>,
     /// Runs after the build process if it failed to generate global state.
-    pub after_failed_global_state_creation:
-        FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_global_state_creation: FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the export process.
 #[cfg(feature = "builder")]
@@ -186,8 +185,7 @@ pub struct FunctionalPluginExportActions {
     pub after_successful_export: FunctionalPluginAction<(), ()>,
     /// Runs after the export process if it failed to generate global state. Note that the error here will always be a `GlobalStateError`, but it must be processed as a
     /// `ServerError` due to ownership constraints.
-    pub after_failed_global_state_creation:
-        FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_global_state_creation: FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
 #[cfg(feature = "builder")]

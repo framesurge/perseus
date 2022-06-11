@@ -16,4 +16,4 @@ mod get_op;
 pub use get_op::{get_op, EngineOperation};
 
 mod serve;
-pub use serve::{get_host_and_port, get_standalone_and_act, get_props};
+pub use serve::{get_host_and_port, get_props, get_standalone_and_act};

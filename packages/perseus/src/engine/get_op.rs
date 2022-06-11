@@ -9,7 +9,7 @@ pub fn get_op() -> Option<EngineOperation> {
         "export" => Some(EngineOperation::Export),
         "export_error_page" => Some(EngineOperation::ExportErrorPage),
         "tinker" => Some(EngineOperation::Tinker),
-        _ => None
+        _ => None,
     }
 }
 

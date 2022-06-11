@@ -35,8 +35,12 @@ pub mod state;
 pub mod stores;
 
 mod build;
-mod export;
+#[cfg(feature = "client-helpers")]
+mod client;
+#[cfg(feature = "builder")]
+mod engine;
 mod error_pages;
+mod export;
 mod i18n;
 mod init;
 mod macros;
@@ -46,8 +50,6 @@ mod shell;
 mod template;
 mod translator;
 mod utils;
-#[cfg(feature = "builder")]
-mod engine;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
@@ -56,6 +58,8 @@ pub use http::Request as HttpRequest;
 pub use sycamore_futures::spawn_local_scoped;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
 pub type Request = HttpRequest<()>;
+#[cfg(feature = "client-helpers")]
+pub use client::{run_client, ClientReturn};
 pub use perseus_macro::{autoserde, head, main, make_rx, template, template_rx, test};
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?

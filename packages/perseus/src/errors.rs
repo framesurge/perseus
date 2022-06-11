@@ -41,14 +41,14 @@ pub enum EngineError {
         #[source]
         source: fs_extra::error::Error,
         from: String,
-        to: String
+        to: String,
     },
     #[error("couldn't write the generated error page to '{dest}'")]
     WriteErrorPageError {
         #[source]
         source: std::io::Error,
         dest: String,
-    }
+    },
 }
 
 /// Errors that can occur in the browser.

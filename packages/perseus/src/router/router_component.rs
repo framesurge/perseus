@@ -141,7 +141,7 @@ pub struct PerseusRouterProps {
 /// Note: this deliberately has a snake case name, and should be called directly with `cx` as the first argument, allowing the `AppRoute` generic
 /// creates with `create_app_root!` to be provided easily. That given `cx` property will be used for all context registration in the app.
 #[component]
-pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
+pub fn perseus_router<G: Html>(
     cx: Scope,
     PerseusRouterProps {
         error_pages,
@@ -265,7 +265,7 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     view! { cx,
         Router {
             integration: HistoryIntegration::new(),
-            view: move |cx, route: &ReadSignal<AppRoute>| {
+            view: move |cx, route: &ReadSignal<PerseusRoute<TemplateNodeType>>| {
                 // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                 // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                 create_effect(cx, move || {

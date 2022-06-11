@@ -10,14 +10,14 @@ documentation, and this should mostly be used as a secondary reference source. Y
 
 mod configurer;
 mod conv_req;
+#[cfg(feature = "dflt-server")]
+mod dflt_server;
 pub mod errors;
 mod initial_load;
 mod page_data;
 mod translations;
-#[cfg(feature = "dflt-server")]
-mod dflt_server;
 
 pub use crate::configurer::configurer;
-pub use perseus::internal::serve::ServerOptions;
 #[cfg(feature = "dflt-server")]
 pub use dflt_server::dflt_server;
+pub use perseus::internal::serve::ServerOptions;

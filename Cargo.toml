@@ -11,3 +11,12 @@ members = [
     "examples/core/basic/.perseus/server",
     "examples/core/basic/.perseus/builder"
 ]
+
+[patch.crates-io]
+sycamore = { git = "https://github.com/arctic-hen7/sycamore" }
+sycamore-router = { git = "https://github.com/arctic-hen7/sycamore" }
+sycamore-router-macro = { git = "https://github.com/arctic-hen7/sycamore" }
+sycamore-macro = { git = "https://github.com/arctic-hen7/sycamore" }
+sycamore-core = { git = "https://github.com/arctic-hen7/sycamore" }
+sycamore-reactive = { git = "https://github.com/arctic-hen7/sycamore" }
+sycamore-web = { git = "https://github.com/arctic-hen7/sycamore" }

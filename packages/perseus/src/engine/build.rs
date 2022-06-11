@@ -1,11 +1,18 @@
-use crate::{PerseusAppBase, PluginAction, SsrNode, errors::{ServerError, EngineError}, i18n::TranslationsManager, stores::MutableStore};
 use crate::build::{build_app, BuildProps};
+use crate::{
+    errors::{EngineError, ServerError},
+    i18n::TranslationsManager,
+    stores::MutableStore,
+    PerseusAppBase, PluginAction, SsrNode,
+};
 use std::rc::Rc;
 
 /// Builds the app, calling all necessary plugin opportunities. This works solely with the properties provided in the given `PerseusApp`, so this is entirely engine-agnostic.
 ///
 /// Note that this expects to be run in the root of the project.
-pub async fn build<M: MutableStore, T: TranslationsManager>(app: PerseusAppBase<SsrNode, M, T>) -> Result<(), Rc<EngineError>> {
+pub async fn build<M: MutableStore, T: TranslationsManager>(
+    app: PerseusAppBase<SsrNode, M, T>,
+) -> Result<(), Rc<EngineError>> {
     let plugins = app.get_plugins();
 
     plugins

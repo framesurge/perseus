@@ -9,14 +9,14 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 
 // This integration doesn't need to convert request types, because we can get them straight out of Axum and then just delete the bodies
+#[cfg(feature = "dflt-server")]
+mod dflt_server;
 mod initial_load;
 mod page_data;
 mod router;
 mod translations;
-#[cfg(feature = "dflt-server")]
-mod dflt_server;
 
 pub use crate::router::get_router;
-pub use perseus::internal::serve::ServerOptions;
 #[cfg(feature = "dflt-server")]
 pub use dflt_server::dflt_server;
+pub use perseus::internal::serve::ServerOptions;

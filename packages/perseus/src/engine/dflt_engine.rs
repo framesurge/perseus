@@ -1,7 +1,7 @@
 // This file contains functions exclusive to the default engine systems
 
-use crate::{PerseusAppBase, i18n::TranslationsManager, stores::MutableStore, SsrNode};
 use super::EngineOperation;
+use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase, SsrNode};
 use fmterr::fmt_err;
 use futures::Future;
 use std::env;
@@ -19,7 +19,7 @@ use std::env;
 pub async fn run_dflt_engine<M: MutableStore, T: TranslationsManager, F: Future<Output = ()>>(
     op: EngineOperation,
     app: PerseusAppBase<SsrNode, M, T>,
-    serve_fn: impl Fn(PerseusAppBase<SsrNode, M, T>) -> F
+    serve_fn: impl Fn(PerseusAppBase<SsrNode, M, T>) -> F,
 ) -> i32 {
     match op {
         EngineOperation::Build => match super::engine_build(app).await {
@@ -41,13 +41,15 @@ pub async fn run_dflt_engine<M: MutableStore, T: TranslationsManager, F: Future<
             // We print errors directly here because we can, and because this behavior is unique to the default engine
             let args = env::args().collect::<Vec<String>>();
             let code = match args.get(1) {
-                Some(arg) => match arg.parse::<u16>() {
-                    Ok(err_code) => err_code,
-                    Err(_) => {
-                        eprintln!("HTTP status code for error page exporting must be a valid integer.");
-                        return 1;
+                Some(arg) => {
+                    match arg.parse::<u16>() {
+                        Ok(err_code) => err_code,
+                        Err(_) => {
+                            eprintln!("HTTP status code for error page exporting must be a valid integer.");
+                            return 1;
+                        }
                     }
-                },
+                }
                 None => {
                     eprintln!("Error page exporting requires an HTTP status code for which to export the error page.");
                     return 1;
@@ -68,15 +70,15 @@ pub async fn run_dflt_engine<M: MutableStore, T: TranslationsManager, F: Future<
                     1
                 }
             }
-        },
+        }
         EngineOperation::Serve => {
             serve_fn(app).await;
             0
-        },
+        }
         EngineOperation::Tinker => {
             // This is infallible (though plugins could panic)
             super::engine_tinker(app);
             0
-        },
+        }
     }
 }

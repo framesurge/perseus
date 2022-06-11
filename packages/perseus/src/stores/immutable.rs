@@ -16,7 +16,10 @@ pub struct ImmutableStore {
 impl ImmutableStore {
     /// Creates a new immutable store. You should provide a path like `dist` here. Note that any trailing slashes will be automatically stripped.
     pub fn new(root_path: String) -> Self {
-        let root_path = root_path.strip_prefix('/').unwrap_or(&root_path).to_string();
+        let root_path = root_path
+            .strip_prefix('/')
+            .unwrap_or(&root_path)
+            .to_string();
         Self { root_path }
     }
     /// Gets the filesystem path used for this immutable store.

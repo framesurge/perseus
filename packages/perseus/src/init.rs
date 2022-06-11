@@ -110,7 +110,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     translations_manager: Tm<T>,
     /// The location of the directory to use for static assets that will placed under the URL `/.perseus/static/`. By default, this is the `static/` directory at the root
     /// of your project. Note that the directory set here will only be used if it exists.
-    static_dir: String
+    static_dir: String,
 }
 
 // The usual implementation in which the default mutable store is used
@@ -202,7 +202,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             translations_manager: Tm::Dummy(T::new_dummy()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
-            static_dir: "./static".to_string()
+            static_dir: "./static".to_string(),
         }
     }
 

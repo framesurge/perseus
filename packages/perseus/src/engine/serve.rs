@@ -1,12 +1,12 @@
-use futures::executor::block_on;
-use sycamore::web::SsrNode;
-use std::env;
-use std::fs;
-use crate::PerseusAppBase;
 use crate::i18n::TranslationsManager;
+use crate::plugins::PluginAction;
 use crate::server::{ServerOptions, ServerProps};
 use crate::stores::MutableStore;
-use crate::plugins::PluginAction;
+use crate::PerseusAppBase;
+use futures::executor::block_on;
+use std::env;
+use std::fs;
+use sycamore::web::SsrNode;
 
 // TODO Can we unify the two modes of server execution now?
 // This server executable can be run in two modes:
@@ -47,7 +47,9 @@ pub fn get_host_and_port() -> (String, u16) {
 }
 
 /// Gets the properties to pass to the server, invoking plugin opportunities as necessary. This is entirely engine-agnostic.
-pub fn get_props<M: MutableStore, T: TranslationsManager>(app: PerseusAppBase<SsrNode, M, T>) -> ServerProps<M, T> {
+pub fn get_props<M: MutableStore, T: TranslationsManager>(
+    app: PerseusAppBase<SsrNode, M, T>,
+) -> ServerProps<M, T> {
     let plugins = app.get_plugins();
 
     plugins

@@ -1,5 +1,5 @@
-use crate::{plugins::PluginAction, SsrNode, PerseusAppBase};
 use crate::{i18n::TranslationsManager, stores::MutableStore};
+use crate::{plugins::PluginAction, PerseusAppBase, SsrNode};
 
 /// Runs tinker plugin actions.
 ///
