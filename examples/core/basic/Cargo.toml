@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 perseus = { path = "../../../packages/perseus", features = [ "hydrate", "builder", "dflt-engine" ] }
+perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
 sycamore = "=0.8.0-beta.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

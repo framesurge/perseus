@@ -14,6 +14,10 @@ pub mod errors;
 mod initial_load;
 mod page_data;
 mod translations;
+#[cfg(feature = "dflt-server")]
+mod dflt_server;
 
 pub use crate::configurer::configurer;
 pub use perseus::internal::serve::ServerOptions;
+#[cfg(feature = "dflt-server")]
+pub use dflt_server::dflt_server;

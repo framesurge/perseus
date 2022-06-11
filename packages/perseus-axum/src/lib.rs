@@ -13,6 +13,10 @@ mod initial_load;
 mod page_data;
 mod router;
 mod translations;
+#[cfg(feature = "dflt-server")]
+mod dflt_server;
 
 pub use crate::router::get_router;
 pub use perseus::internal::serve::ServerOptions;
+#[cfg(feature = "dflt-server")]
+pub use dflt_server::dflt_server;

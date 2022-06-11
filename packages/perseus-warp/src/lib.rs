@@ -14,6 +14,10 @@ mod page_data;
 mod perseus_routes;
 mod static_content;
 mod translations;
+#[cfg(feature = "dflt-server")]
+mod dflt_server;
 
 pub use crate::perseus_routes::perseus_routes;
 pub use perseus::internal::serve::ServerOptions;
+#[cfg(feature = "dflt-server")]
+pub use dflt_server::dflt_server;

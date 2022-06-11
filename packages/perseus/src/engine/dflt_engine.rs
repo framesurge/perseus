@@ -3,16 +3,24 @@
 use crate::{PerseusAppBase, i18n::TranslationsManager, stores::MutableStore, SsrNode};
 use super::EngineOperation;
 use fmterr::fmt_err;
+use futures::Future;
 use std::env;
 
 /// A convenience function that automatically runs the necessary engine operation based on the given directive. This provides almost no options for customization, and is
 /// usually elided by a macro. More advanced use-cases should bypass this and call the functions this calls manually, with their own configurations.
 ///
+/// The third argument to this is a function to produce a server. In simple cases, this will be the `dflt_server` export from your server integration of choice (which is
+/// assumed to use a Tokio 1.x runtime). This function must be infallible (any errors should be panics, as they *will* be treated as unrecoverable).
+///
 /// If the action is to export a single error page, the HTTP status code of the error page to export and the output will be read as the first and second arguments
 /// to the binary invocation. If this is not the desired behavior, you should handle the `EngineOperation::ExportErrorPage` case manually.
 ///
 /// This returns an exit code, which should be returned from the process. Any hanlded errors will be printed to the console.
-pub async fn run_dflt_engine(op: EngineOperation, app: PerseusAppBase<SsrNode, impl MutableStore, impl TranslationsManager>) -> i32 {
+pub async fn run_dflt_engine<M: MutableStore, T: TranslationsManager, F: Future<Output = ()>>(
+    op: EngineOperation,
+    app: PerseusAppBase<SsrNode, M, T>,
+    serve_fn: impl Fn(PerseusAppBase<SsrNode, M, T>) -> F
+) -> i32 {
     match op {
         EngineOperation::Build => match super::engine_build(app).await {
             Ok(_) => 0,
@@ -61,7 +69,10 @@ pub async fn run_dflt_engine(op: EngineOperation, app: PerseusAppBase<SsrNode, i
                 }
             }
         },
-        EngineOperation::Serve => todo!(),
+        EngineOperation::Serve => {
+            serve_fn(app).await;
+            0
+        },
         EngineOperation::Tinker => {
             // This is infallible (though plugins could panic)
             super::engine_tinker(app);

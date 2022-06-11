@@ -14,14 +14,9 @@ macro_rules! add_translations_manager {
     };
 }
 
-#[cfg(feature = "standalone")]
-#[doc(hidden)]
-/// The default translations directory when we're running as a standalone binary.
-pub static DFLT_TRANSLATIONS_DIR: &str = "./translations";
-#[cfg(not(feature = "standalone"))]
 #[doc(hidden)]
 /// The default translations directory when we're running with the `.perseus/` support structure.
-pub static DFLT_TRANSLATIONS_DIR: &str = "../translations";
+pub static DFLT_TRANSLATIONS_DIR: &str = "./translations";
 
 /// Defines the components to create an entrypoint for the app. The actual entrypoint is created in the `.perseus/` crate (where we can
 /// get all the dependencies without driving the user's `Cargo.toml` nuts). This also defines the template map. This is intended to make

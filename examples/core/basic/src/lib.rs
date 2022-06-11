@@ -16,7 +16,7 @@ pub fn get_app<G: Html>() -> PerseusApp<G> {
 #[tokio::main]
 async fn main() {
     let op = get_op().unwrap();
-    let exit_code = run_dflt_engine(op, get_app()).await;
+    let exit_code = run_dflt_engine(op, get_app(), perseus_warp::dflt_server).await;
     std::process::exit(exit_code);
 }
 
