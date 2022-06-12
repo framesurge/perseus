@@ -261,7 +261,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                         #block
                     }
 
-                    #component_name(cx, ())
+                    #component_name(cx)
                 }
             },
             // This template takes its own state and global state

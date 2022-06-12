@@ -15,7 +15,7 @@ pub fn get_op() -> Option<EngineOperation> {
                 } else {
                     Some(EngineOperation::Serve)
                 }
-            }
+            };
         }
     };
 

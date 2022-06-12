@@ -1,4 +1,3 @@
-use perseus::state::{Freeze, IdbFrozenStateStore, PageThawPrefs, ThawPrefs};
 use perseus::{Html, RenderFnResultWithCause, Template};
 use sycamore::prelude::*;
 
@@ -18,6 +17,9 @@ pub fn index_page<'a, G: Html>(
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());
     let thaw_status = create_signal(cx, String::new());
+    // It's faster to get this only once and rely on reactivity
+    // But it's unused when this runs on the server-side because of the target-gate below
+    #[allow(unused_variables)]
     let render_ctx = perseus::get_render_ctx!(cx);
 
     view! { cx,
@@ -31,9 +33,11 @@ pub fn index_page<'a, G: Html>(
         a(href = "about", id = "about-link") { "About" }
         br()
 
-        button(id = "freeze_button", on:click = move |_|
+        button(id = "freeze_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
+            #[cfg(target_arch = "wasm32")] // The freezing types are only available in the browser
             perseus::spawn_local_scoped(cx, async {
+                use perseus::state::{IdbFrozenStateStore, Freeze, PageThawPrefs, ThawPrefs};
                 // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
                 let frozen_state = render_ctx.freeze();
                 let idb_store = match IdbFrozenStateStore::new().await {
@@ -48,12 +52,14 @@ pub fn index_page<'a, G: Html>(
                     Err(_) => freeze_status.set("Error.".to_string())
                 };
             })
-        ) { "Freeze to IndexedDB" }
+        }) { "Freeze to IndexedDB" }
         p { (freeze_status.get()) }
 
-        button(id = "thaw_button", on:click = move |_|
+        button(id = "thaw_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
+            #[cfg(target_arch = "wasm32")] // The freezing types are only available in the browser
             perseus::spawn_local_scoped(cx, async move {
+                use perseus::state::{IdbFrozenStateStore, Freeze, PageThawPrefs, ThawPrefs};
                 let idb_store = match IdbFrozenStateStore::new().await {
                     Ok(idb_store) => idb_store,
                     Err(_) => {
@@ -79,7 +85,7 @@ pub fn index_page<'a, G: Html>(
                     Err(_) => thaw_status.set("Error.".to_string())
                 }
             })
-        ) { "Thaw from IndexedDB" }
+        }) { "Thaw from IndexedDB" }
         p { (thaw_status.get()) }
     }
 }
