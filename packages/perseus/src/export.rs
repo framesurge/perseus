@@ -1,9 +1,9 @@
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
-use crate::server::{get_render_cfg, HtmlShell, PageData};
+use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
 use crate::template::TemplateMap;
-use crate::SsrNode;
+use crate::{PageData, SsrNode};
 use futures::future::{try_join, try_join_all};
 
 /// Gets the static page data.

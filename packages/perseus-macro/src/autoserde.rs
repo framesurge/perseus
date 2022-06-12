@@ -111,6 +111,10 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
     if fn_type.build_state {
         // This will always be asynchronous
         quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis async fn #name(path: ::std::string::String, locale: ::std::string::String) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
@@ -129,6 +133,10 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
     } else if fn_type.request_state {
         // This will always be asynchronous
         quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, req: ::perseus::Request) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
@@ -147,6 +155,10 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
     } else if fn_type.set_headers {
         // This will always be synchronous
         quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
                 // The user's function
                 // We can assume the return type to be `HeaderMap`
@@ -162,6 +174,10 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
     } else if fn_type.amalgamate_states {
         // This will always be synchronous
         quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis fn #name(states: ::perseus::States) -> ::perseus::RenderFnResultWithCause<::std::option::Option<::std::string::String>> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<Option<CustomTemplatePropsType>>`
@@ -179,6 +195,10 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
         }
     } else if fn_type.global_build_state {
         quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis async fn #name() -> ::perseus::RenderFnResult<::std::string::String> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomGlobalStateType>`

@@ -1,6 +1,5 @@
 use crate::errors::*;
 use crate::export;
-use crate::parse::Integration;
 use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
 use fs_extra::copy_items;
@@ -16,7 +15,7 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
     let exit_code = if opts.export_static {
         deploy_export(dir, opts.output)?
     } else {
-        deploy_full(dir, opts.output, opts.integration)?
+        deploy_full(dir, opts.output)?
     };
 
     Ok(exit_code)
@@ -24,7 +23,7 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
 
 /// Deploys the user's app in its entirety, with a bundled server. This can return any kind of error because deploying involves working
 /// with other subcommands.
-fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result<i32, Error> {
+fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
     // Build everything for production, not running the server
     let (serve_exit_code, server_path) = serve(
         dir.clone(),
@@ -33,7 +32,6 @@ fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result
             no_build: false,
             release: true,
             standalone: true,
-            integration,
             watch: false,
             // These have no impact if `no_run` is `true` (which it is), so we can use the defaults here
             host: "127.0.0.1".to_string(),
@@ -72,17 +70,6 @@ fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result
             }
             .into());
         }
-        // Copy in the `index.html` file
-        let from = dir.join("index.html");
-        let to = output_path.join("index.html");
-        if let Err(err) = fs::copy(&from, &to) {
-            return Err(DeployError::MoveAssetFailed {
-                to: to.to_str().map(|s| s.to_string()).unwrap(),
-                from: from.to_str().map(|s| s.to_string()).unwrap(),
-                source: err,
-            }
-            .into());
-        }
         // Copy in the `static/` directory if it exists
         let from = dir.join("static");
         if from.exists() {
@@ -107,8 +94,8 @@ fn deploy_full(dir: PathBuf, output: String, integration: Integration) -> Result
                 .into());
             }
         }
-        // Copy in the entire `.perseus/dist` directory (it must exist)
-        let from = dir.join(".perseus/dist");
+        // Copy in the entire `dist` directory (it must exist)
+        let from = dir.join("dist");
         if let Err(err) = copy_dir(&from, &output, &CopyOptions::new()) {
             return Err(DeployError::MoveDirFailed {
                 to: output,
@@ -145,9 +132,9 @@ fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
     if export_exit_code != 0 {
         return Ok(export_exit_code);
     }
-    // That subcommand produces a self-contained static site at `.perseus/dist/exported/`
+    // That subcommand produces a self-contained static site at `dist/exported/`
     // Just copy that out to the output directory
-    let from = dir.join(".perseus/dist/exported");
+    let from = dir.join("dist/exported");
     let output_path = PathBuf::from(&output);
     // Delete the output directory if it exists and recreate it
     if output_path.exists() {

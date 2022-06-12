@@ -18,11 +18,9 @@ the documentation you'd like to see on this front!
 mod build;
 mod cmd;
 mod deploy;
-mod eject;
 pub mod errors;
 mod export;
 mod export_error_page;
-mod extraction;
 /// Parsing utilities for arguments.
 pub mod parse;
 mod prepare;
@@ -41,34 +39,35 @@ use std::path::PathBuf;
 pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use build::build;
 pub use deploy::deploy;
-pub use eject::{eject, has_ejected};
 pub use export::export;
 pub use export_error_page::export_error_page;
-pub use prepare::{check_env, prepare};
+pub use prepare::check_env;
 pub use reload_server::{order_reload, run_reload_server};
 pub use serve::serve;
 pub use serve_exported::serve_exported;
 pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};
 pub use tinker::tinker;
 
-/// Deletes a corrupted '.perseus/' directory. This will be called on certain error types that would leave the user with a half-finished
-/// product, which is better to delete for safety and sanity.
-pub fn delete_bad_dir(dir: PathBuf) -> Result<(), PrepError> {
-    let mut target = dir;
-    target.extend([".perseus"]);
-    // We'll only delete the directory if it exists, otherwise we're fine
+/// Deletes the entire `dist/` directory. Nicely, because there are no Cargo artifacts in there,
+/// running this won't slow down future runs at all.
+pub fn delete_dist(dir: PathBuf) -> Result<(), ExecutionError> {
+    let target = dir.join("dist");
     if target.exists() {
         if let Err(err) = fs::remove_dir_all(&target) {
-            return Err(PrepError::RemoveBadDirFailed { source: err });
+            return Err(ExecutionError::RemoveArtifactsFailed {
+                target: target.to_str().map(|s| s.to_string()),
+                source: err,
+            });
         }
     }
+
     Ok(())
 }
 
-/// Deletes build artifacts in `.perseus/dist/static` or `.perseus/dist/pkg` and replaces the directory.
+/// Deletes build artifacts in `dist/static` or `dist/pkg` and replaces the directory.
 pub fn delete_artifacts(dir: PathBuf, dir_to_remove: &str) -> Result<(), ExecutionError> {
     let mut target = dir;
-    target.extend([".perseus", "dist", dir_to_remove]);
+    target.extend(["dist", dir_to_remove]);
     // We'll only delete the directory if it exists, otherwise we're fine
     if target.exists() {
         if let Err(err) = fs::remove_dir_all(&target) {

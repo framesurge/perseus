@@ -1,16 +1,20 @@
 use crate::plugins::PluginAction;
-#[cfg(feature = "server-side")]
+#[cfg(not(target_arch = "wasm32"))]
 use crate::server::{get_render_cfg, HtmlShell};
-#[cfg(feature = "server-side")]
+#[cfg(not(target_arch = "wasm32"))]
 use crate::utils::get_path_prefix_server;
+use crate::stores::ImmutableStore;
 use crate::{
-    i18n::{FsTranslationsManager, Locales, TranslationsManager},
+    i18n::{Locales, TranslationsManager},
     state::GlobalStateCreator,
-    stores::{FsMutableStore, ImmutableStore, MutableStore},
+    stores::MutableStore,
     templates::TemplateMap,
     ErrorPages, Html, Plugins, SsrNode, Template,
 };
 use futures::Future;
+#[cfg(target_arch = "wasm32")]
+use std::marker::PhantomData;
+#[cfg(not(target_arch = "wasm32"))]
 use std::pin::Pin;
 use std::{collections::HashMap, rc::Rc};
 use sycamore::prelude::Scope;
@@ -48,10 +52,12 @@ impl<G: Html> std::fmt::Debug for ErrorPagesGetter<G> {
 
 /// The different types of translations managers that can be stored. This allows us to store dummy translations managers directly, without holding futures. If this stores a full
 /// translations manager though, it will store it as a `Future`, which is later evaluated.
+#[cfg(not(target_arch = "wasm32"))]
 enum Tm<T: TranslationsManager> {
     Dummy(T),
     Full(Pin<Box<dyn Future<Output = T>>>),
 }
+#[cfg(not(target_arch = "wasm32"))]
 impl<T: TranslationsManager> std::fmt::Debug for Tm<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Tm").finish()
@@ -91,26 +97,35 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The app's error pages.
     error_pages: ErrorPagesGetter<G>,
     /// The global state creator for the app.
+    #[cfg(not(target_arch = "wasm32"))]
     global_state_creator: GlobalStateCreator,
     /// The internationalization information for the app.
     locales: Locales,
     /// The static aliases the app serves.
+    #[cfg(not(target_arch = "wasm32"))]
     static_aliases: HashMap<String, String>,
     /// The plugins the app uses.
     plugins: Rc<Plugins<G>>,
     /// The app's immutable store.
+    #[cfg(not(target_arch = "wasm32"))]
     immutable_store: ImmutableStore,
     /// The HTML template that'll be used to render the app into. This must be static, but can be generated or sourced in any way. Note that this MUST
     /// contain a `<div>` with the `id` set to whatever the value of `self.root` is.
     index_view: String,
     /// The app's mutable store.
+    #[cfg(not(target_arch = "wasm32"))]
     mutable_store: M,
     /// The app's translations manager, expressed as a function yielding a `Future`. This is only ever needed on the server-side, and can't be set up properly on the client-side because
     /// we can't use futures in the app initialization in Wasm.
+    #[cfg(not(target_arch = "wasm32"))]
     translations_manager: Tm<T>,
     /// The location of the directory to use for static assets that will placed under the URL `/.perseus/static/`. By default, this is the `static/` directory at the root
     /// of your project. Note that the directory set here will only be used if it exists.
+    #[cfg(not(target_arch = "wasm32"))]
     static_dir: String,
+    // We need this on the client-side to account for the unused type parameters
+    #[cfg(target_arch = "wasm32")]
+    _marker: PhantomData<(M, T)>
 }
 
 // The usual implementation in which the default mutable store is used
@@ -123,9 +138,22 @@ impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
     ///
     /// This is asynchronous because it creates a translations manager in the background.
     // It makes no sense to implement `Default` on this, so we silence Clippy deliberately
+    #[cfg(not(target_arch = "wasm32"))]
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self::new_with_mutable_store(FsMutableStore::new("./dist/mutable".to_string()))
+    }
+    /// Creates a new instance of a Perseus app using the default filesystem-based mutable store. For most apps, this will be sufficient. Note that this initializes the translations manager
+    /// as a dummy, and adds no templates or error pages.
+    ///
+    /// In development, you can get away with defining no error pages, but production apps (e.g. those created with `perseus deploy`) MUST set their own custom error pages.
+    ///
+    /// This is asynchronous because it creates a translations manager in the background.
+    // It makes no sense to implement `Default` on this, so we silence Clippy deliberately
+    #[cfg(target_arch = "wasm32")]
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self::new_wasm()
     }
 }
 // If one's using the default translations manager, caching should be handled automatically for them
@@ -133,29 +161,36 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
     /// The same as `.locales_and_translations_manager()`, but this accepts a literal `Locales` `struct`, which means this can be used when you're using `FsTranslationsManager` but when you don't
     /// know if your app is using i18n or not (almost always middleware).
     pub fn locales_lit_and_translations_manager(mut self, locales: Locales) -> Self {
+        #[cfg(not(target_arch = "wasm32"))]
         let using_i18n = locales.using_i18n;
+
         self.locales = locales;
-        // If we're using i18n, do caching stuff
-        // If not, use a dummy translations manager
-        if using_i18n {
-            // By default, all translations are cached
-            let all_locales: Vec<String> = self
-                .locales
-                .get_all()
-                .iter()
+        // We only handle the translations manager on the server-side (it doesn't exist on the client-side)
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            // If we're using i18n, do caching stuff
+            // If not, use a dummy translations manager
+            if using_i18n {
+                // By default, all translations are cached
+                let all_locales: Vec<String> = self
+                    .locales
+                    .get_all()
+                    .iter()
                 // We have a `&&String` at this point, hence the double clone
-                .cloned()
-                .cloned()
-                .collect();
-            let tm_fut = FsTranslationsManager::new(
-                crate::internal::i18n::DFLT_TRANSLATIONS_DIR.to_string(),
-                all_locales,
-                crate::internal::i18n::TRANSLATOR_FILE_EXT.to_string(),
-            );
-            self.translations_manager = Tm::Full(Box::pin(tm_fut));
-        } else {
-            self.translations_manager = Tm::Dummy(FsTranslationsManager::new_dummy());
+                    .cloned()
+                    .cloned()
+                    .collect();
+                let tm_fut = FsTranslationsManager::new(
+                    crate::internal::i18n::DFLT_TRANSLATIONS_DIR.to_string(),
+                    all_locales,
+                    crate::internal::i18n::TRANSLATOR_FILE_EXT.to_string(),
+                );
+                self.translations_manager = Tm::Full(Box::pin(tm_fut));
+            } else {
+                self.translations_manager = Tm::Dummy(FsTranslationsManager::new_dummy());
+            }
         }
+
 
         self
     }
@@ -178,6 +213,7 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
 // The base implementation, generic over the mutable store and translations manager
 impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Creates a new instance of a Perseus app, with the default options and a custom mutable store.
+    #[allow(unused_variables)]
     pub fn new_with_mutable_store(mutable_store: M) -> Self {
         Self {
             root: "root".to_string(),
@@ -185,6 +221,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             template_getters: TemplateGetters(Vec::new()),
             // We do offer default error pages, but they'll panic if they're called for production building
             error_pages: ErrorPagesGetter(Box::new(ErrorPages::default)),
+            #[cfg(not(target_arch = "wasm32"))]
             global_state_creator: GlobalStateCreator::default(),
             // By default, we'll disable i18n (as much as I may want more websites to support more languages...)
             locales: Locales {
@@ -193,16 +230,44 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 using_i18n: false,
             },
             // By default, we won't serve any static content outside the `static/` directory
+            #[cfg(not(target_arch = "wasm32"))]
             static_aliases: HashMap::new(),
             // By default, we won't use any plugins
             plugins: Rc::new(Plugins::new()),
-            // This is relative to `.perseus/`
+            #[cfg(not(target_arch = "wasm32"))]
             immutable_store: ImmutableStore::new("./dist".to_string()),
+            #[cfg(not(target_arch = "wasm32"))]
             mutable_store,
+            #[cfg(not(target_arch = "wasm32"))]
             translations_manager: Tm::Dummy(T::new_dummy()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
+            #[cfg(not(target_arch = "wasm32"))]
             static_dir: "./static".to_string(),
+            #[cfg(target_arch = "wasm32")]
+            _marker: PhantomData
+        }
+    }
+    /// Internal function for Wasm initialization. This should never be called by the user!
+    #[cfg(target_arch = "wasm32")]
+    fn new_wasm() -> Self {
+        Self {
+            root: "root".to_string(),
+            // We do initialize with no templates, because an app without templates is in theory possible (and it's more convenient to call `.template()` for each one)
+            template_getters: TemplateGetters(Vec::new()),
+            // We do offer default error pages, but they'll panic if they're called for production building
+            error_pages: ErrorPagesGetter(Box::new(ErrorPages::default)),
+            // By default, we'll disable i18n (as much as I may want more websites to support more languages...)
+            locales: Locales {
+                default: "xx-XX".to_string(),
+                other: Vec::new(),
+                using_i18n: false,
+            },
+            // By default, we won't use any plugins
+            plugins: Rc::new(Plugins::new()),
+            // Many users won't need anything fancy in the index view, so we provide a default
+            index_view: DFLT_INDEX_VIEW.to_string(),
+            _marker: PhantomData
         }
     }
 
@@ -213,8 +278,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self
     }
     /// Sets the location of the directory storing static assets to be hosted under the URL `/.perseus/static/`.
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
     pub fn static_dir(mut self, val: &str) -> Self {
-        self.static_dir = val.to_string();
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.static_dir = val.to_string(); }
         self
     }
     /// Sets all the app's templates. This takes a vector of boxed functions that return templates.
@@ -233,8 +301,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self
     }
     /// Sets the app's global state creator.
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
     pub fn global_state_creator(mut self, val: GlobalStateCreator) -> Self {
-        self.global_state_creator = val;
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.global_state_creator = val; }
         self
     }
     /// Sets the locales information for the app. The first argument is the default locale (used as a fallback for users with no locale preferences set in their browsers), and
@@ -265,8 +336,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// When your code is run on the server, the `Future` will be `.await`ed on, but on Wasm, it will be discarded and ignored, since the translations manager isn't needed in Wasm.
     ///
     /// This is generally intended for use with custom translations manager or specific use-cases with the default (mostly to do with custom caching behavior).
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
     pub fn translations_manager(mut self, val: impl Future<Output = T> + 'static) -> Self {
-        self.translations_manager = Tm::Full(Box::pin(val));
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.translations_manager = Tm::Full(Box::pin(val)); }
         self
     }
     /// Explicitly disables internationalization. You shouldn't ever need to call this, as it's the default, but you may want to if you're writing middleware that doesn't support i18n.
@@ -277,16 +351,23 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             using_i18n: false,
         };
         // All translations manager must implement this function, which is designed for this exact purpose
-        self.translations_manager = Tm::Dummy(T::new_dummy());
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.translations_manager = Tm::Dummy(T::new_dummy()); }
         self
     }
     /// Sets all the app's static aliases. This takes a map of URLs (e.g. `/file`) to resource paths, relative to the project directory (e.g. `style.css`).
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
     pub fn static_aliases(mut self, val: HashMap<String, String>) -> Self {
-        self.static_aliases = val;
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.static_aliases = val; }
         self
     }
     /// Adds a single static alias (convenience function). This takes a URL path (e.g. `/file`) followed by a path to a resource (which must be within the project directory, e.g. `style.css`).
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
     pub fn static_alias(mut self, url: &str, resource: &str) -> Self {
+        #[cfg(not(target_arch = "wasm32"))]
         // We don't elaborate the alias to an actual filesystem path until the getter
         self.static_aliases
             .insert(url.to_string(), resource.to_string());
@@ -299,13 +380,19 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Sets the mutable store for the app to use, which you would change for some production server environments if you wanted to store build artifacts that can change at runtime in a
     /// place other than on the filesystem (created for serverless functions specifically).
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
     pub fn mutable_store(mut self, val: M) -> Self {
-        self.mutable_store = val;
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.mutable_store = val; }
         self
     }
     /// Sets the immutable store for the app to use. You should almost never need to change this unless you're not working with the CLI.
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
     pub fn immutable_store(mut self, val: ImmutableStore) -> Self {
-        self.immutable_store = val;
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.immutable_store = val; }
         self
     }
     /// Sets the index view as a string. This should be used if you're using an `index.html` file or the like.
@@ -345,6 +432,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Gets the directory containing static assets to be hosted under the URL `/.perseus/static/`.
     // TODO Plugin action for this?
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_static_dir(&self) -> String {
         self.static_dir.to_string()
     }
@@ -352,14 +440,14 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ///
     /// Note that this automatically adds `<!DOCTYPE html>` to the start of the HTMl shell produced, which can only be overriden with a control plugin (though you should really never do this
     /// in Perseus, which targets HTML on the web).
-    #[cfg(feature = "server-side")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_index_view_str(&self) -> String {
         // We have to add an HTML document type declaration, otherwise the browser could think it's literally anything! (This shouldn't be a problem, but it could be in 100 years...)
         format!("<!DOCTYPE html>\n{}", self.index_view)
     }
     /// Gets an HTML shell from an index view string. This is broken out so that it can be executed after the app has been built (which requries getting the translations manager, consuming
     /// `self`). As inconvenient as this is, it's necessitated, otherwise exporting would try to access the built app before it had actually been built.
-    #[cfg(feature = "server-side")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_html_shell(
         index_view_str: String,
         root: &str,
@@ -477,7 +565,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         map
     }
     /// Gets the templates in an `Arc`-based `HashMap` for concurrent access. This should only be relevant on the server-side.
-    #[cfg(feature = "server-side")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_atomic_templates_map(&self) -> crate::templates::ArcTemplateMap<G> {
         let mut map = HashMap::new();
 
@@ -521,6 +609,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         error_pages
     }
     /// Gets the global state creator. This can't be directly modified by plugins because of reactive type complexities.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_global_state_creator(&self) -> GlobalStateCreator {
         self.global_state_creator.clone()
     }
@@ -537,7 +626,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Gets the server-side translations manager. Like the mutable store, this can't be modified by plugins due to trait complexities.
     ///
     /// This involves evaluating the future stored for the translations manager, and so this consumes `self`.
-    #[cfg(feature = "server-side")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_translations_manager(self) -> T {
         match self.translations_manager {
             Tm::Dummy(tm) => tm,
@@ -545,7 +634,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
     }
     /// Gets the immutable store.
-    #[cfg(feature = "server-side")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_immutable_store(&self) -> ImmutableStore {
         let immutable_store = self.immutable_store.clone();
         self.plugins
@@ -556,7 +645,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .unwrap_or(immutable_store)
     }
     /// Gets the mutable store. This can't be modified by plugins due to trait complexities, so plugins should instead expose a function that the user can use to manually set it.
-    #[cfg(feature = "server-side")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_mutable_store(&self) -> M {
         self.mutable_store.clone()
     }
@@ -566,7 +655,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Gets the static aliases. This will check all provided resource paths to ensure they don't reference files outside the project directory, due to potential security risks in production
     /// (we don't want to accidentally serve an arbitrary in a production environment where a path may point to somewhere evil, like an alias to `/etc/passwd`).
-    #[cfg(feature = "server-side")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_static_aliases(&self) -> HashMap<String, String> {
         let mut static_aliases = self.static_aliases.clone();
         // This will return a map of plugin name to another map of static aliases that that plugin produced
@@ -633,6 +722,9 @@ pub fn PerseusRoot<G: Html>(cx: Scope) -> View<G> {
         div(dangerously_set_inner_html = "<div id=\"root\"></div>")
     }
 }
+
+use crate::stores::FsMutableStore;
+use crate::i18n::FsTranslationsManager;
 
 /// An alias for the usual kind of Perseus app, which uses the filesystem-based mutable store and translations manager.
 pub type PerseusApp<G> = PerseusAppBase<G, FsMutableStore, FsTranslationsManager>;

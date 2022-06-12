@@ -31,8 +31,6 @@ pub fn tinker_internal(
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     Error,
 > {
-    let target = dir.join(".perseus/builder");
-
     // Tinkering message
     let tk_msg = format!(
         "{} {} Running plugin tinkers",
@@ -43,16 +41,17 @@ pub fn tinker_internal(
     // We make sure to add them at the top (other spinners may have already been instantiated)
     let tk_spinner = spinners.insert(0, ProgressBar::new_spinner());
     let tk_spinner = cfg_spinner(tk_spinner, &tk_msg);
-    let tk_target = target;
+    let tk_target = dir;
     let tk_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} run --bin perseus-tinker",
+                "{} run",
                 env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
             )],
             &tk_target,
             &tk_spinner,
-            &tk_msg
+            &tk_msg,
+            "tinker"
         )?);
 
         Ok(0)

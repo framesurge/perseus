@@ -1,0 +1,364 @@
+perseus-example-basic v0.4.0-beta.1 (/home/arctic_hen7/Coding/Projects/perseus/examples/core/basic)
+├── perseus v0.4.0-beta.1 (/home/arctic_hen7/Coding/Projects/perseus/packages/perseus)
+│   ├── async-trait v0.1.52 (proc-macro)
+│   │   ├── proc-macro2 v1.0.36
+│   │   │   └── unicode-xid v0.2.2
+│   │   ├── quote v1.0.15
+│   │   │   └── proc-macro2 v1.0.36 (*)
+│   │   └── syn v1.0.86
+│   │       ├── proc-macro2 v1.0.36 (*)
+│   │       ├── quote v1.0.15 (*)
+│   │       └── unicode-xid v0.2.2
+│   ├── chrono v0.4.19
+│   │   ├── libc v0.2.117
+│   │   ├── num-integer v0.1.44
+│   │   │   └── num-traits v0.2.14
+│   │   │       [build-dependencies]
+│   │   │       └── autocfg v1.1.0
+│   │   │   [build-dependencies]
+│   │   │   └── autocfg v1.1.0
+│   │   ├── num-traits v0.2.14 (*)
+│   │   └── time v0.1.43
+│   │       └── libc v0.2.117
+│   ├── fmterr v0.1.1
+│   ├── fs_extra v1.2.0
+│   ├── futures v0.3.21
+│   │   ├── futures-channel v0.3.21
+│   │   │   ├── futures-core v0.3.21
+│   │   │   └── futures-sink v0.3.21
+│   │   ├── futures-core v0.3.21
+│   │   ├── futures-executor v0.3.21
+│   │   │   ├── futures-core v0.3.21
+│   │   │   ├── futures-task v0.3.21
+│   │   │   └── futures-util v0.3.21
+│   │   │       ├── futures-channel v0.3.21 (*)
+│   │   │       ├── futures-core v0.3.21
+│   │   │       ├── futures-io v0.3.21
+│   │   │       ├── futures-macro v0.3.21 (proc-macro)
+│   │   │       │   ├── proc-macro2 v1.0.36 (*)
+│   │   │       │   ├── quote v1.0.15 (*)
+│   │   │       │   └── syn v1.0.86 (*)
+│   │   │       ├── futures-sink v0.3.21
+│   │   │       ├── futures-task v0.3.21
+│   │   │       ├── memchr v2.4.1
+│   │   │       ├── pin-project-lite v0.2.8
+│   │   │       ├── pin-utils v0.1.0
+│   │   │       └── slab v0.4.5
+│   │   ├── futures-io v0.3.21
+│   │   ├── futures-sink v0.3.21
+│   │   ├── futures-task v0.3.21
+│   │   └── futures-util v0.3.21 (*)
+│   ├── http v0.2.6
+│   │   ├── bytes v1.1.0
+│   │   ├── fnv v1.0.7
+│   │   └── itoa v1.0.1
+│   ├── perseus-macro v0.4.0-beta.1 (proc-macro) (/home/arctic_hen7/Coding/Projects/perseus/packages/perseus-macro)
+│   │   ├── darling v0.13.1
+│   │   │   ├── darling_core v0.13.1
+│   │   │   │   ├── fnv v1.0.7
+│   │   │   │   ├── ident_case v1.0.1
+│   │   │   │   ├── proc-macro2 v1.0.36 (*)
+│   │   │   │   ├── quote v1.0.15 (*)
+│   │   │   │   ├── strsim v0.10.0
+│   │   │   │   └── syn v1.0.86 (*)
+│   │   │   └── darling_macro v0.13.1 (proc-macro)
+│   │   │       ├── darling_core v0.13.1 (*)
+│   │   │       ├── quote v1.0.15 (*)
+│   │   │       └── syn v1.0.86 (*)
+│   │   ├── proc-macro2 v1.0.36 (*)
+│   │   ├── quote v1.0.15 (*)
+│   │   ├── regex v1.5.4
+│   │   │   ├── aho-corasick v0.7.18
+│   │   │   │   └── memchr v2.4.1
+│   │   │   ├── memchr v2.4.1
+│   │   │   └── regex-syntax v0.6.25
+│   │   ├── serde_json v1.0.79
+│   │   │   ├── itoa v1.0.1
+│   │   │   ├── ryu v1.0.9
+│   │   │   └── serde v1.0.136
+│   │   │       └── serde_derive v1.0.136 (proc-macro)
+│   │   │           ├── proc-macro2 v1.0.36 (*)
+│   │   │           ├── quote v1.0.15 (*)
+│   │   │           └── syn v1.0.86 (*)
+│   │   ├── sycamore-reactive v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae)
+│   │   │   ├── ahash v0.7.6
+│   │   │   │   ├── getrandom v0.2.4
+│   │   │   │   │   ├── cfg-if v1.0.0
+│   │   │   │   │   └── libc v0.2.117
+│   │   │   │   └── once_cell v1.10.0
+│   │   │   │   [build-dependencies]
+│   │   │   │   └── version_check v0.9.4
+│   │   │   ├── bumpalo v3.9.1
+│   │   │   ├── indexmap v1.8.1
+│   │   │   │   └── hashbrown v0.11.2
+│   │   │   │   [build-dependencies]
+│   │   │   │   └── autocfg v1.1.0
+│   │   │   ├── slotmap v1.0.6
+│   │   │   │   [build-dependencies]
+│   │   │   │   └── version_check v0.9.4
+│   │   │   └── smallvec v1.8.0
+│   │   └── syn v1.0.86 (*)
+│   ├── regex v1.5.4 (*)
+│   ├── serde v1.0.136 (*)
+│   ├── serde_json v1.0.79 (*)
+│   ├── sycamore v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae)
+│   │   ├── ahash v0.7.6 (*)
+│   │   ├── html-escape v0.2.11
+│   │   │   └── utf8-width v0.1.5
+│   │   ├── indexmap v1.8.1 (*)
+│   │   ├── js-sys v0.3.57
+│   │   │   └── wasm-bindgen v0.2.80
+│   │   │       ├── cfg-if v1.0.0
+│   │   │       └── wasm-bindgen-macro v0.2.80 (proc-macro)
+│   │   │           ├── quote v1.0.15 (*)
+│   │   │           └── wasm-bindgen-macro-support v0.2.80
+│   │   │               ├── proc-macro2 v1.0.36 (*)
+│   │   │               ├── quote v1.0.15 (*)
+│   │   │               ├── syn v1.0.86 (*)
+│   │   │               ├── wasm-bindgen-backend v0.2.80
+│   │   │               │   ├── bumpalo v3.9.1
+│   │   │               │   ├── lazy_static v1.4.0
+│   │   │               │   ├── log v0.4.14
+│   │   │               │   │   └── cfg-if v1.0.0
+│   │   │               │   ├── proc-macro2 v1.0.36 (*)
+│   │   │               │   ├── quote v1.0.15 (*)
+│   │   │               │   ├── syn v1.0.86 (*)
+│   │   │               │   └── wasm-bindgen-shared v0.2.80
+│   │   │               └── wasm-bindgen-shared v0.2.80
+│   │   ├── once_cell v1.10.0
+│   │   ├── paste v1.0.6 (proc-macro)
+│   │   ├── sycamore-core v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae)
+│   │   │   ├── ahash v0.7.6 (*)
+│   │   │   └── sycamore-reactive v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+│   │   ├── sycamore-macro v0.8.0-beta.6 (proc-macro) (https://github.com/arctic-hen7/sycamore#2e9d62ae)
+│   │   │   ├── once_cell v1.10.0
+│   │   │   ├── proc-macro2 v1.0.36 (*)
+│   │   │   ├── quote v1.0.15 (*)
+│   │   │   └── syn v1.0.86 (*)
+│   │   ├── sycamore-reactive v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+│   │   ├── sycamore-web v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae)
+│   │   │   ├── html-escape v0.2.11 (*)
+│   │   │   ├── indexmap v1.8.1 (*)
+│   │   │   ├── js-sys v0.3.57 (*)
+│   │   │   ├── once_cell v1.10.0
+│   │   │   ├── sycamore-core v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+│   │   │   ├── sycamore-reactive v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+│   │   │   ├── wasm-bindgen v0.2.80 (*)
+│   │   │   └── web-sys v0.3.57
+│   │   │       ├── js-sys v0.3.57 (*)
+│   │   │       └── wasm-bindgen v0.2.80 (*)
+│   │   ├── wasm-bindgen v0.2.80 (*)
+│   │   └── web-sys v0.3.57 (*)
+│   ├── sycamore-futures v0.8.0-beta.6
+│   │   ├── futures v0.3.21 (*)
+│   │   ├── sycamore-reactive v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+│   │   └── tokio v1.17.0
+│   │       ├── bytes v1.1.0
+│   │       ├── libc v0.2.117
+│   │       ├── memchr v2.4.1
+│   │       ├── mio v0.8.0
+│   │       │   ├── libc v0.2.117
+│   │       │   └── log v0.4.14 (*)
+│   │       ├── num_cpus v1.13.1
+│   │       │   └── libc v0.2.117
+│   │       ├── pin-project-lite v0.2.8
+│   │       ├── socket2 v0.4.4
+│   │       │   └── libc v0.2.117
+│   │       └── tokio-macros v1.7.0 (proc-macro)
+│   │           ├── proc-macro2 v1.0.36 (*)
+│   │           ├── quote v1.0.15 (*)
+│   │           └── syn v1.0.86 (*)
+│   ├── sycamore-router v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae)
+│   │   ├── sycamore v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+│   │   ├── sycamore-router-macro v0.8.0-beta.6 (proc-macro) (https://github.com/arctic-hen7/sycamore#2e9d62ae)
+│   │   │   ├── nom v7.1.0
+│   │   │   │   ├── memchr v2.4.1
+│   │   │   │   └── minimal-lexical v0.2.1
+│   │   │   │   [build-dependencies]
+│   │   │   │   └── version_check v0.9.4
+│   │   │   ├── proc-macro2 v1.0.36 (*)
+│   │   │   ├── quote v1.0.15 (*)
+│   │   │   ├── syn v1.0.86 (*)
+│   │   │   └── unicode-xid v0.2.2
+│   │   ├── wasm-bindgen v0.2.80 (*)
+│   │   └── web-sys v0.3.57 (*)
+│   ├── thiserror v1.0.30
+│   │   └── thiserror-impl v1.0.30 (proc-macro)
+│   │       ├── proc-macro2 v1.0.36 (*)
+│   │       ├── quote v1.0.15 (*)
+│   │       └── syn v1.0.86 (*)
+│   ├── tokio v1.17.0 (*)
+│   └── urlencoding v2.1.0
+├── perseus-warp v0.4.0-beta.1 (/home/arctic_hen7/Coding/Projects/perseus/packages/perseus-warp)
+│   ├── fmterr v0.1.1
+│   ├── futures v0.3.21 (*)
+│   ├── perseus v0.4.0-beta.1 (/home/arctic_hen7/Coding/Projects/perseus/packages/perseus) (*)
+│   ├── serde v1.0.136 (*)
+│   ├── serde_json v1.0.79 (*)
+│   ├── sycamore v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+│   ├── thiserror v1.0.30 (*)
+│   ├── tokio v1.17.0 (*)
+│   ├── urlencoding v2.1.0
+│   └── warp-fix-171 v0.3.2
+│       ├── bytes v1.1.0
+│       ├── futures-channel v0.3.21 (*)
+│       ├── futures-util v0.3.21 (*)
+│       ├── headers v0.3.7
+│       │   ├── base64 v0.13.0
+│       │   ├── bitflags v1.3.2
+│       │   ├── bytes v1.1.0
+│       │   ├── headers-core v0.2.0
+│       │   │   └── http v0.2.6 (*)
+│       │   ├── http v0.2.6 (*)
+│       │   ├── httpdate v1.0.2
+│       │   ├── mime v0.3.16
+│       │   └── sha-1 v0.10.0
+│       │       ├── cfg-if v1.0.0
+│       │       ├── cpufeatures v0.2.1
+│       │       └── digest v0.10.2
+│       │           ├── block-buffer v0.10.2
+│       │           │   └── generic-array v0.14.5
+│       │           │       └── typenum v1.15.0
+│       │           │       [build-dependencies]
+│       │           │       └── version_check v0.9.4
+│       │           └── crypto-common v0.1.2
+│       │               └── generic-array v0.14.5 (*)
+│       ├── http v0.2.6 (*)
+│       ├── hyper v0.14.17
+│       │   ├── bytes v1.1.0
+│       │   ├── futures-channel v0.3.21 (*)
+│       │   ├── futures-core v0.3.21
+│       │   ├── futures-util v0.3.21 (*)
+│       │   ├── h2 v0.3.11
+│       │   │   ├── bytes v1.1.0
+│       │   │   ├── fnv v1.0.7
+│       │   │   ├── futures-core v0.3.21
+│       │   │   ├── futures-sink v0.3.21
+│       │   │   ├── futures-util v0.3.21 (*)
+│       │   │   ├── http v0.2.6 (*)
+│       │   │   ├── indexmap v1.8.1 (*)
+│       │   │   ├── slab v0.4.5
+│       │   │   ├── tokio v1.17.0 (*)
+│       │   │   ├── tokio-util v0.6.9
+│       │   │   │   ├── bytes v1.1.0
+│       │   │   │   ├── futures-core v0.3.21
+│       │   │   │   ├── futures-sink v0.3.21
+│       │   │   │   ├── log v0.4.14 (*)
+│       │   │   │   ├── pin-project-lite v0.2.8
+│       │   │   │   └── tokio v1.17.0 (*)
+│       │   │   └── tracing v0.1.30
+│       │   │       ├── cfg-if v1.0.0
+│       │   │       ├── log v0.4.14 (*)
+│       │   │       ├── pin-project-lite v0.2.8
+│       │   │       └── tracing-core v0.1.22
+│       │   │           └── lazy_static v1.4.0
+│       │   ├── http v0.2.6 (*)
+│       │   ├── http-body v0.4.4
+│       │   │   ├── bytes v1.1.0
+│       │   │   ├── http v0.2.6 (*)
+│       │   │   └── pin-project-lite v0.2.8
+│       │   ├── httparse v1.6.0
+│       │   ├── httpdate v1.0.2
+│       │   ├── itoa v1.0.1
+│       │   ├── pin-project-lite v0.2.8
+│       │   ├── socket2 v0.4.4 (*)
+│       │   ├── tokio v1.17.0 (*)
+│       │   ├── tower-service v0.3.1
+│       │   ├── tracing v0.1.30 (*)
+│       │   └── want v0.3.0
+│       │       ├── log v0.4.14 (*)
+│       │       └── try-lock v0.2.3
+│       ├── log v0.4.14 (*)
+│       ├── mime v0.3.16
+│       ├── mime_guess v2.0.3
+│       │   ├── mime v0.3.16
+│       │   └── unicase v2.6.0
+│       │       [build-dependencies]
+│       │       └── version_check v0.9.4
+│       │   [build-dependencies]
+│       │   └── unicase v2.6.0 (*)
+│       ├── multipart v0.18.0
+│       │   ├── buf_redux v0.8.4
+│       │   │   ├── memchr v2.4.1
+│       │   │   └── safemem v0.3.3
+│       │   ├── httparse v1.6.0
+│       │   ├── log v0.4.14 (*)
+│       │   ├── mime v0.3.16
+│       │   ├── mime_guess v2.0.3 (*)
+│       │   ├── quick-error v1.2.3
+│       │   ├── rand v0.8.5
+│       │   │   ├── libc v0.2.117
+│       │   │   ├── rand_chacha v0.3.1
+│       │   │   │   ├── ppv-lite86 v0.2.16
+│       │   │   │   └── rand_core v0.6.3
+│       │   │   │       └── getrandom v0.2.4 (*)
+│       │   │   └── rand_core v0.6.3 (*)
+│       │   ├── safemem v0.3.3
+│       │   ├── tempfile v3.3.0
+│       │   │   ├── cfg-if v1.0.0
+│       │   │   ├── fastrand v1.7.0
+│       │   │   ├── libc v0.2.117
+│       │   │   └── remove_dir_all v0.5.3
+│       │   └── twoway v0.1.8
+│       │       └── memchr v2.4.1
+│       ├── percent-encoding v2.1.0
+│       ├── pin-project v1.0.10
+│       │   └── pin-project-internal v1.0.10 (proc-macro)
+│       │       ├── proc-macro2 v1.0.36 (*)
+│       │       ├── quote v1.0.15 (*)
+│       │       └── syn v1.0.86 (*)
+│       ├── scoped-tls v1.0.0
+│       ├── serde v1.0.136 (*)
+│       ├── serde_json v1.0.79 (*)
+│       ├── serde_urlencoded v0.7.1
+│       │   ├── form_urlencoded v1.0.1
+│       │   │   ├── matches v0.1.9
+│       │   │   └── percent-encoding v2.1.0
+│       │   ├── itoa v1.0.1
+│       │   ├── ryu v1.0.9
+│       │   └── serde v1.0.136 (*)
+│       ├── tokio v1.17.0 (*)
+│       ├── tokio-stream v0.1.8
+│       │   ├── futures-core v0.3.21
+│       │   ├── pin-project-lite v0.2.8
+│       │   └── tokio v1.17.0 (*)
+│       ├── tokio-tungstenite v0.15.0
+│       │   ├── futures-util v0.3.21 (*)
+│       │   ├── log v0.4.14 (*)
+│       │   ├── pin-project v1.0.10 (*)
+│       │   ├── tokio v1.17.0 (*)
+│       │   └── tungstenite v0.14.0
+│       │       ├── base64 v0.13.0
+│       │       ├── byteorder v1.4.3
+│       │       ├── bytes v1.1.0
+│       │       ├── http v0.2.6 (*)
+│       │       ├── httparse v1.6.0
+│       │       ├── log v0.4.14 (*)
+│       │       ├── rand v0.8.5 (*)
+│       │       ├── sha-1 v0.9.8
+│       │       │   ├── block-buffer v0.9.0
+│       │       │   │   └── generic-array v0.14.5 (*)
+│       │       │   ├── cfg-if v1.0.0
+│       │       │   ├── cpufeatures v0.2.1
+│       │       │   ├── digest v0.9.0
+│       │       │   │   └── generic-array v0.14.5 (*)
+│       │       │   └── opaque-debug v0.3.0
+│       │       ├── thiserror v1.0.30 (*)
+│       │       ├── url v2.2.2
+│       │       │   ├── form_urlencoded v1.0.1 (*)
+│       │       │   ├── idna v0.2.3
+│       │       │   │   ├── matches v0.1.9
+│       │       │   │   ├── unicode-bidi v0.3.7
+│       │       │   │   └── unicode-normalization v0.1.19
+│       │       │   │       └── tinyvec v1.5.1
+│       │       │   │           └── tinyvec_macros v0.1.0
+│       │       │   ├── matches v0.1.9
+│       │       │   └── percent-encoding v2.1.0
+│       │       └── utf-8 v0.7.6
+│       ├── tokio-util v0.6.9 (*)
+│       ├── tower-service v0.3.1
+│       └── tracing v0.1.30 (*)
+├── serde v1.0.136 (*)
+├── serde_json v1.0.79 (*)
+├── sycamore v0.8.0-beta.6 (https://github.com/arctic-hen7/sycamore#2e9d62ae) (*)
+└── tokio v1.17.0 (*)

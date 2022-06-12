@@ -2,7 +2,7 @@ use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::i18n::ClientTranslationsManager;
 use crate::router::{RouteVerdict, RouterLoadState, RouterState};
-use crate::server::PageData;
+use crate::PageData;
 use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;

@@ -4,14 +4,11 @@ use fmterr::fmt_err;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use perseus_cli::parse::{ExportOpts, ServeOpts, SnoopSubcommand};
 use perseus_cli::{
-    build, check_env, delete_artifacts, delete_bad_dir, deploy, eject, export, has_ejected,
+    build, check_env, delete_artifacts, deploy, export,
     parse::{Opts, Subcommand},
-    prepare, serve, serve_exported, tinker,
+    serve, serve_exported, tinker,
 };
-use perseus_cli::{
-    errors::*, export_error_page, order_reload, run_reload_server, snoop_build, snoop_server,
-    snoop_wasm_build,
-};
+use perseus_cli::{delete_dist, errors::*, export_error_page, order_reload, run_reload_server, snoop_build, snoop_server, snoop_wasm_build};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -39,7 +36,7 @@ async fn real_main() -> i32 {
         Err(err) => {
             eprintln!(
                 "{}",
-                fmt_err(&PrepError::CurrentDirUnavailable { source: err })
+                fmt_err(&Error::CurrentDirUnavailable { source: err })
             );
             return 1;
         }
@@ -50,14 +47,7 @@ async fn real_main() -> i32 {
         Ok(exit_code) => exit_code,
         // If something failed, we print the error to `stderr` and return a failure exit code
         Err(err) => {
-            let should_cause_deletion = err_should_cause_deletion(&err);
             eprintln!("{}", fmt_err(&err));
-            // Check if the error needs us to delete a partially-formed '.perseus/' directory
-            if should_cause_deletion {
-                if let Err(err) = delete_bad_dir(dir) {
-                    eprintln!("{}", fmt_err(&err));
-                }
-            }
             1
         }
     }
@@ -210,10 +200,6 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 }
 
 async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
-    // If we're not cleaning up artifacts, create them if needed
-    if !matches!(opts.subcmd, Subcommand::Clean(_)) {
-        prepare(dir.clone(), &opts.engine)?;
-    }
     let exit_code = match opts.subcmd {
         Subcommand::Build(build_opts) => {
             // Delete old build artifacts
@@ -253,21 +239,8 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             let (exit_code, _server_path) = serve(dir, test_opts)?;
             exit_code
         }
-        Subcommand::Clean(clean_opts) => {
-            if clean_opts.dist {
-                // The user only wants to remove distribution artifacts
-                // We don't delete `render_conf.json` because it's literally impossible for that to be the source of a problem right now
-                delete_artifacts(dir.clone(), "static")?;
-                delete_artifacts(dir.clone(), "pkg")?;
-                delete_artifacts(dir, "exported")?;
-            } else {
-                // This command deletes the `.perseus/` directory completely, which musn't happen if the user has ejected
-                if has_ejected(dir.clone()) && !clean_opts.force {
-                    return Err(EjectionError::CleanAfterEject.into());
-                }
-                // Just delete the '.perseus/' directory directly, as we'd do in a corruption
-                delete_bad_dir(dir)?;
-            }
+        Subcommand::Clean => {
+            delete_dist(dir)?;
             0
         }
         Subcommand::Deploy(deploy_opts) => {
@@ -276,21 +249,11 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             delete_artifacts(dir.clone(), "pkg")?;
             deploy(dir, deploy_opts)?
         }
-        Subcommand::Eject => {
-            eject(dir)?;
-            0
-        }
         Subcommand::Tinker(tinker_opts) => {
-            // We shouldn't run arbitrary plugin code designed to alter the engine if the user has made their own changes after ejecting
-            if has_ejected(dir.clone()) && !tinker_opts.force {
-                return Err(EjectionError::TinkerAfterEject.into());
-            }
             // Unless we've been told not to, we start with a blank slate
             // This will remove old tinkerings and eliminate any possible corruptions (which are very likely with tinkering!)
             if !tinker_opts.no_clean {
-                delete_bad_dir(dir.clone())?;
-                // Recreate the '.perseus/' directory
-                prepare(dir.clone(), &opts.engine)?;
+                delete_dist(dir.clone())?;
             }
             tinker(dir)?
         }
@@ -300,10 +263,6 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             SnoopSubcommand::Serve(snoop_serve_opts) => snoop_server(dir, snoop_serve_opts)?,
         },
         Subcommand::ExportErrorPage(opts) => export_error_page(dir, opts)?,
-        Subcommand::Prep => {
-            // The `.perseus/` directory has already been set up in the preliminaries, so we don't need to do anything here
-            0
-        }
     };
     Ok(exit_code)
 }

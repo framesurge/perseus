@@ -39,9 +39,6 @@ futures = "0.3"
 tokio-stream = "0.1"
 ureq = "2"
 
-[build-dependencies]
-fs_extra = "1"
-
 [lib]
 name = "perseus_cli"
 

@@ -1,5 +1,6 @@
 #![allow(missing_docs)]
 
+#[cfg(not(target_arch = "wasm32"))]
 use crate::i18n::TranslationsManagerError;
 use thiserror::Error;
 
@@ -8,15 +9,16 @@ use thiserror::Error;
 pub enum Error {
     #[error(transparent)]
     ClientError(#[from] ClientError),
+    #[cfg(not(target_arch = "wasm32"))]
     #[error(transparent)]
     ServerError(#[from] ServerError),
-    #[cfg(feature = "builder")]
+    #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
     #[error(transparent)]
     EngineError(#[from] EngineError),
 }
 
 /// Errors that can occur in the server-side engine system (responsible for building the app).
-#[cfg(feature = "builder")]
+#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
 #[derive(Error, Debug)]
 pub enum EngineError {
     // Many of the build/export processes return these more generic errors
@@ -75,6 +77,7 @@ pub enum ClientError {
 }
 
 /// Errors that can occur in the build process or while the server is running.
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Error, Debug)]
 pub enum ServerError {
     #[error("render function '{fn_name}' in template '{template_name}' failed (cause: {cause:?})")]
@@ -101,6 +104,7 @@ pub enum ServerError {
     ServeError(#[from] ServeError),
 }
 /// Converts a server error into an HTTP status code.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn err_to_status_code(err: &ServerError) -> u16 {
     match err {
         ServerError::ServeError(ServeError::PageNotFound { .. }) => 404,
@@ -125,6 +129,7 @@ pub enum GlobalStateError {
 }
 
 /// Errors that can occur while reading from or writing to a mutable or immutable store.
+// We do need this on the client to complete some things
 #[derive(Error, Debug)]
 pub enum StoreError {
     #[error("asset '{name}' not found in store")]
@@ -164,6 +169,7 @@ pub enum FetchError {
 }
 
 /// Errors that can occur while building an app.
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Error, Debug)]
 pub enum BuildError {
     #[error("template '{template_name}' is missing feature '{feature_name}' (required due to its properties)")]
@@ -189,6 +195,7 @@ pub enum BuildError {
 }
 
 /// Errors that can occur while exporting an app to static files.
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Error, Debug)]
 pub enum ExportError {
     #[error("template '{template_name}' can't be exported because it depends on strategies that can't be run at build-time (only build state and build paths can be use din exportable templates)")]
@@ -204,6 +211,7 @@ pub enum ServeError {
     PageNotFound { path: String },
     #[error("both build and request states were defined for a template when only one or fewer were expected (should it be able to amalgamate states?)")]
     BothStatesDefined,
+    #[cfg(not(target_arch = "wasm32"))]
     #[error("couldn't parse revalidation datetime (try cleaning all assets)")]
     BadRevalidate {
         #[from]

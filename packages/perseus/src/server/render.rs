@@ -1,4 +1,4 @@
-use super::PageData;
+use crate::PageData;
 use crate::errors::*;
 use crate::i18n::TranslationsManager;
 use crate::stores::{ImmutableStore, MutableStore};

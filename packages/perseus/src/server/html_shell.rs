@@ -1,5 +1,5 @@
 use crate::error_pages::ErrorPageData;
-use crate::server::PageData;
+use crate::PageData;
 use std::collections::HashMap;
 use std::{env, fmt};
 

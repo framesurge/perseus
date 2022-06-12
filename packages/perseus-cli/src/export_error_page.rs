@@ -9,12 +9,13 @@ pub fn export_error_page(dir: PathBuf, opts: ExportErrorPageOpts) -> Result<i32,
     let target = dir.join(".perseus/builder");
     run_cmd_directly(
         format!(
-            "{} run --bin perseus-error-page-exporter {} {}",
+            "{} run {} {}",
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
             // These are mandatory
             opts.code,
-            opts.output
+            opts.output,
         ),
         &target,
+        "export_error_page"
     )
 }
