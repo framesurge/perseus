@@ -38,18 +38,6 @@ macro_rules! copy_file {
 
 /// Finalizes the export by copying assets. This is very different from the finalization process of normal building.
 pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
-    // Move the `pkg/` directory into `dist/pkg/` as usual
-    let pkg_dir = target.join("dist/pkg");
-    if pkg_dir.exists() {
-        if let Err(err) = fs::remove_dir_all(&pkg_dir) {
-            return Err(ExecutionError::MovePkgDirFailed { source: err }.into());
-        }
-    }
-    // The `fs::rename()` function will fail on Windows if the destination already exists, so this should work (we've just deleted it as per https://github.com/rust-lang/rust/issues/31301#issuecomment-177117325)
-    if let Err(err) = fs::rename(target.join("pkg"), target.join("dist/pkg")) {
-        return Err(ExecutionError::MovePkgDirFailed { source: err }.into());
-    }
-
     // Copy files over (the directory structure should already exist from exporting the pages)
     copy_file!(
         "dist/pkg/perseus_engine.js",
@@ -178,7 +166,7 @@ pub fn export_internal(
     let wb_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} build --out-dir dist/pkg --target web {}",
+                "{} build --out-dir dist/pkg --out-name perseus_engine --target web {}",
                 env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
                 if is_release { "--release" } else { "--dev" }
             )],

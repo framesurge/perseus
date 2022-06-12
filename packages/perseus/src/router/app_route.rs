@@ -33,10 +33,14 @@ use sycamore_router::Route;
 
 /// The Perseus route system, which implements Sycamore `Route`, but adds additional data for Perseus' processing system.
 pub struct PerseusRoute<G: Html> {
-    verdict: RouteVerdict<G>,
-    render_cfg: HashMap<String, String>,
-    templates: TemplateMap<G>,
-    locales: Locales,
+    /// The current route verdict. The initialization value of this is completely irrelevant (it will be overriden immediately by the internal routing logic).
+    pub verdict: RouteVerdict<G>,
+    /// The app's render configuration.
+    pub render_cfg: HashMap<String, String>,
+    /// The templates the app is using.
+    pub templates: TemplateMap<G>,
+    /// The app's i18n configuration.
+    pub locales: Locales,
 }
 // Sycamore would only use this if we were processing dynamic routes, which we're not
 // In other words, it's fine that these values would break everything if they were used, they're just compiler appeasement

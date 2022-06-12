@@ -21,7 +21,7 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
 pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, ExecutionError> {
     run_cmd_directly(
         format!(
-            "{} build --out-dir dist/pkg --target web {}",
+            "{} build --out-dir dist/pkg --out-name perseus_engine --target web {}",
             env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
             if opts.profiling {
                 "--profiling"

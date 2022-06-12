@@ -135,6 +135,8 @@ fn run_server(
     // Manually run the generated binary (invoking in the right directory context for good measure if it ever needs it in future)
     let child = Command::new(&server_exec_path)
         .current_dir(&dir)
+        // This needs to be provided in development, but not in production
+        .env("PERSEUS_ENGINE_OPERATION", "serve")
         // We should be able to access outputs in case there's an error
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

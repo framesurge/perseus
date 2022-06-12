@@ -3,13 +3,24 @@ use std::env;
 /// Determines the engine operation to be performed by examining environment variables (set automatically by the CLI as appropriate).
 pub fn get_op() -> Option<EngineOperation> {
     let var = env::var("PERSEUS_ENGINE_OPERATION").ok()?;
+
     match var.as_str() {
         "serve" => Some(EngineOperation::Serve),
         "build" => Some(EngineOperation::Build),
         "export" => Some(EngineOperation::Export),
         "export_error_page" => Some(EngineOperation::ExportErrorPage),
         "tinker" => Some(EngineOperation::Tinker),
-        _ => None,
+        _ => {
+            // The only typical use of a release-built binary is as a server, in which case we shouldn't need to specify this environment variable
+            // So, in production, we take the server as the default
+            // If a user wants a builder though, they can just set the environment variable
+            // TODO Document this!
+            if cfg!(debug_assertions) {
+                None
+            } else {
+                Some(EngineOperation::Serve)
+            }
+        },
     }
 }
 

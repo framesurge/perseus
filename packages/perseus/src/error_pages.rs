@@ -116,6 +116,28 @@ impl ErrorPages<HydrateNode> {
         container: &Element,
     ) {
         let template_fn = self.get_template_fn(status);
+        let hydrate_view = template_fn(cx, url.to_string(), status, err.to_string(), translator);
+        // TODO Now convert that `HydrateNode` to a `DomNode`
+        let dom_view = hydrate_view;
+        // Render that to the given container
+        sycamore::hydrate_to(
+            |_| dom_view,
+            container,
+        );
+    }
+    /// Renders the appropriate error page to the given DOM container. This is implemented on `HydrateNode` to avoid having to have two `Html` type parameters everywhere
+    /// (one for templates and one for error pages).
+    // TODO Convert from a `HydrateNode` to a `DomNode`
+    pub fn render_page(
+        &self,
+        cx: Scope,
+        url: &str,
+        status: u16,
+        err: &str,
+        translator: Option<Rc<Translator>>,
+        container: &Element,
+    ) {
+        let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::hydrate_to(
             |_| template_fn(cx, url.to_string(), status, err.to_string(), translator),

@@ -2,8 +2,9 @@ use crate::{
     checkpoint,
     internal::router::{perseus_router, PerseusRouterProps},
     plugins::PluginAction,
+    shell::get_render_cfg,
+    templates::TemplateNodeType
 };
-use sycamore::web::DomNode;
 use wasm_bindgen::JsValue;
 
 use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
@@ -13,7 +14,7 @@ use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 ///
 /// This is entirely engine-agnostic, using only the properties from the given `PerseusApp`.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
-    app: PerseusAppBase<DomNode, M, T>,
+    app: PerseusAppBase<TemplateNodeType, M, T>,
 ) -> Result<(), JsValue> {
     let plugins = app.get_plugins();
 
@@ -41,6 +42,8 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     let router_props = PerseusRouterProps {
         locales: app.get_locales(),
         error_pages: app.get_error_pages(),
+        templates: app.get_templates_map(),
+        render_cfg: get_render_cfg().expect("render configuration invalid or not injected")
     };
 
     // This top-level context is what we use for everything, allowing page state to be registered and stored for the lifetime of the app

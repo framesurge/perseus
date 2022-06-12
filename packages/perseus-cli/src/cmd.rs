@@ -31,7 +31,7 @@ pub fn run_cmd(
     // This will NOT pipe output/errors to the console
     let output = Command::new(shell_exec)
         .args([shell_param, &cmd])
-        .env("PERSEUS_BUILDER_OPERATION", op)
+        .env("PERSEUS_ENGINE_OPERATION", op)
         .current_dir(dir)
         .output()
         .map_err(|err| ExecutionError::CmdExecFailed { cmd, source: err })?;
@@ -121,7 +121,7 @@ pub fn run_cmd_directly(cmd: String, dir: &Path, op: &str) -> Result<i32, Execut
     let output = Command::new(shell_exec)
         .args([shell_param, &cmd])
         .current_dir(dir)
-        .env("PERSEUS_BUILDER_OPERATION", op)
+        .env("PERSEUS_ENGINE_OPERATION", op)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()

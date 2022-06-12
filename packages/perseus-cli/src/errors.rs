@@ -20,8 +20,6 @@ pub enum Error {
     #[error(transparent)]
     ExecutionError(#[from] ExecutionError),
     #[error(transparent)]
-    EjectionError(#[from] EjectionError),
-    #[error(transparent)]
     ExportError(#[from] ExportError),
     #[error(transparent)]
     DeployError(#[from] DeployError),
@@ -55,11 +53,6 @@ pub enum ExecutionError {
         #[source]
         source: std::io::Error,
     },
-    #[error("couldn't move `.perseus/pkg/` to `.perseus/dist/pkg/` (run `perseus clean` if this persists)")]
-    MovePkgDirFailed {
-        #[source]
-        source: std::io::Error,
-    },
     #[error("failed to wait on thread (please report this as a bug if it persists)")]
     ThreadWaitFailed,
     #[error("value in `PORT` environment variable couldn't be parsed as a number")]
@@ -67,27 +60,6 @@ pub enum ExecutionError {
         #[source]
         source: std::num::ParseIntError,
     },
-}
-
-/// Errors that can occur while ejecting or as a result of doing so.
-#[derive(Error, Debug)]
-pub enum EjectionError {
-    #[error("couldn't remove perseus subcrates from gitignore for ejection")]
-    GitignoreUpdateFailed {
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("line `.perseus/` to remove not found in `.gitignore`")]
-    GitignoreLineNotPresent,
-    #[error("couldn't write ejection declaration file (`.perseus/.ejected`), please try again")]
-    DeclarationWriteFailed {
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("can't clean after ejection unless `--force` is provided (maybe you meant to use `--dist`?)")]
-    CleanAfterEject,
-    #[error("can't tinker after ejection unless `--force` is provided (ejecting and using plugins can be problematic depending on the plugins used)")]
-    TinkerAfterEject,
 }
 
 /// Errors that can occur while running `perseus export`.

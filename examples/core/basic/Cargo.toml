@@ -15,7 +15,6 @@ serde_json = "1"
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 fantoccini = "0.17"
 
-# New Perseus metadata begins here
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
@@ -30,4 +29,4 @@ crate-type = [ "cdylib", "rlib" ]
 
 [[bin]]
 name = "perseus-example-basic"
-path = "src/main.rs"
+path = "src/lib.rs"

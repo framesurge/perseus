@@ -246,7 +246,7 @@ pub struct ShellProps<'a> {
     /// A *client-side* translations manager to use (this manages caching translations).
     pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     /// The error pages, for use if something fails.
-    pub error_pages: Rc<ErrorPages<DomNode>>,
+    pub error_pages: Rc<ErrorPages<TemplateNodeType>>,
     /// The container responsible for the initial render from the server (non-interactive, this may need to be wiped).
     pub initial_container: Element,
     /// The container for reactive content.
