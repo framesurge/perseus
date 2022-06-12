@@ -46,6 +46,7 @@ mod export;
 mod i18n;
 mod init;
 mod macros;
+mod page_data;
 mod router;
 #[cfg(not(target_arch = "wasm32"))]
 mod server;
@@ -54,7 +55,6 @@ mod shell;
 mod template;
 mod translator;
 mod utils;
-mod page_data;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
@@ -76,13 +76,13 @@ pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we 
 
 // Items that should be available at the root (this should be nearly everything used in a typical Perseus app)
 pub use crate::error_pages::ErrorPages;
-pub use crate::page_data::PageData;
 pub use crate::errors::{ErrorCause, GenericErrorWithCause};
+pub use crate::page_data::PageData;
 pub use crate::plugins::{Plugin, PluginAction, Plugins};
 #[cfg(target_arch = "wasm32")]
 pub use crate::shell::checkpoint;
 #[cfg(not(target_arch = "wasm32"))]
-pub use crate::template::{States, HeadFn};
+pub use crate::template::{HeadFn, States};
 pub use crate::template::{RenderFnResult, RenderFnResultWithCause, Template};
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::utils::{cache_fallible_res, cache_res};
@@ -138,10 +138,10 @@ pub mod internal {
     pub mod export {
         pub use crate::export::*;
     }
-    #[cfg(not(target_arch = "wasm32"))]
-    pub use crate::utils::get_path_prefix_server;
     #[cfg(target_arch = "wasm32")]
     pub use crate::utils::get_path_prefix_client;
+    #[cfg(not(target_arch = "wasm32"))]
+    pub use crate::utils::get_path_prefix_server;
     /// Internal utilities for logging. These are just re-exports so that users don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
     #[cfg(target_arch = "wasm32")]
     pub mod log {

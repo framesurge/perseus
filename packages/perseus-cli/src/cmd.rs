@@ -82,7 +82,7 @@ pub fn run_stage(
     target: &Path,
     spinner: &ProgressBar,
     message: &str,
-    op: &str
+    op: &str,
 ) -> Result<(String, String, i32), ExecutionError> {
     let mut last_output = (String::new(), String::new());
     // Run the commands

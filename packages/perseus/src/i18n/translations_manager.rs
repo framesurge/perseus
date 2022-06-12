@@ -26,13 +26,13 @@ pub enum TranslationsManagerError {
 
 use crate::translator::Translator;
 #[cfg(not(target_arch = "wasm32"))]
+use futures::future::join_all;
+#[cfg(not(target_arch = "wasm32"))]
 use std::collections::HashMap;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::fs::File;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::io::AsyncReadExt;
-#[cfg(not(target_arch = "wasm32"))]
-use futures::future::join_all;
 
 /// A trait for systems that manage where to put translations. At simplest, we'll just write them to static files, but they might also
 /// be stored in a CMS. It is **strongly** advised that any implementations use some form of caching, guided by `FsTranslationsManager`.
@@ -233,7 +233,7 @@ impl TranslationsManager for FsTranslationsManager {
     #[cfg(target_arch = "wasm32")]
     async fn get_translator_for_locale(
         &self,
-        _locale: String
+        _locale: String,
     ) -> Result<Translator, TranslationsManagerError> {
         Ok(crate::internal::i18n::DummyTranslator::new(String::new(), String::new()).unwrap())
     }

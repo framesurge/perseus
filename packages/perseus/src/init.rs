@@ -1,9 +1,9 @@
 use crate::plugins::PluginAction;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::{get_render_cfg, HtmlShell};
+use crate::stores::ImmutableStore;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::get_path_prefix_server;
-use crate::stores::ImmutableStore;
 use crate::{
     i18n::{Locales, TranslationsManager},
     state::GlobalStateCreator,
@@ -125,7 +125,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     static_dir: String,
     // We need this on the client-side to account for the unused type parameters
     #[cfg(target_arch = "wasm32")]
-    _marker: PhantomData<(M, T)>
+    _marker: PhantomData<(M, T)>,
 }
 
 // The usual implementation in which the default mutable store is used
@@ -176,7 +176,7 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
                     .locales
                     .get_all()
                     .iter()
-                // We have a `&&String` at this point, hence the double clone
+                    // We have a `&&String` at this point, hence the double clone
                     .cloned()
                     .cloned()
                     .collect();
@@ -190,7 +190,6 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
                 self.translations_manager = Tm::Dummy(FsTranslationsManager::new_dummy());
             }
         }
-
 
         self
     }
@@ -245,7 +244,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             #[cfg(not(target_arch = "wasm32"))]
             static_dir: "./static".to_string(),
             #[cfg(target_arch = "wasm32")]
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
     /// Internal function for Wasm initialization. This should never be called by the user!
@@ -267,7 +266,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             plugins: Rc::new(Plugins::new()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
@@ -282,7 +281,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_mut)]
     pub fn static_dir(mut self, val: &str) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
-        { self.static_dir = val.to_string(); }
+        {
+            self.static_dir = val.to_string();
+        }
         self
     }
     /// Sets all the app's templates. This takes a vector of boxed functions that return templates.
@@ -305,7 +306,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_mut)]
     pub fn global_state_creator(mut self, val: GlobalStateCreator) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
-        { self.global_state_creator = val; }
+        {
+            self.global_state_creator = val;
+        }
         self
     }
     /// Sets the locales information for the app. The first argument is the default locale (used as a fallback for users with no locale preferences set in their browsers), and
@@ -340,7 +343,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_mut)]
     pub fn translations_manager(mut self, val: impl Future<Output = T> + 'static) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
-        { self.translations_manager = Tm::Full(Box::pin(val)); }
+        {
+            self.translations_manager = Tm::Full(Box::pin(val));
+        }
         self
     }
     /// Explicitly disables internationalization. You shouldn't ever need to call this, as it's the default, but you may want to if you're writing middleware that doesn't support i18n.
@@ -352,7 +357,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         };
         // All translations manager must implement this function, which is designed for this exact purpose
         #[cfg(not(target_arch = "wasm32"))]
-        { self.translations_manager = Tm::Dummy(T::new_dummy()); }
+        {
+            self.translations_manager = Tm::Dummy(T::new_dummy());
+        }
         self
     }
     /// Sets all the app's static aliases. This takes a map of URLs (e.g. `/file`) to resource paths, relative to the project directory (e.g. `style.css`).
@@ -360,7 +367,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_mut)]
     pub fn static_aliases(mut self, val: HashMap<String, String>) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
-        { self.static_aliases = val; }
+        {
+            self.static_aliases = val;
+        }
         self
     }
     /// Adds a single static alias (convenience function). This takes a URL path (e.g. `/file`) followed by a path to a resource (which must be within the project directory, e.g. `style.css`).
@@ -384,7 +393,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_mut)]
     pub fn mutable_store(mut self, val: M) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
-        { self.mutable_store = val; }
+        {
+            self.mutable_store = val;
+        }
         self
     }
     /// Sets the immutable store for the app to use. You should almost never need to change this unless you're not working with the CLI.
@@ -392,7 +403,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_mut)]
     pub fn immutable_store(mut self, val: ImmutableStore) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
-        { self.immutable_store = val; }
+        {
+            self.immutable_store = val;
+        }
         self
     }
     /// Sets the index view as a string. This should be used if you're using an `index.html` file or the like.
@@ -723,8 +736,8 @@ pub fn PerseusRoot<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-use crate::stores::FsMutableStore;
 use crate::i18n::FsTranslationsManager;
+use crate::stores::FsMutableStore;
 
 /// An alias for the usual kind of Perseus app, which uses the filesystem-based mutable store and translations manager.
 pub type PerseusApp<G> = PerseusAppBase<G, FsMutableStore, FsTranslationsManager>;

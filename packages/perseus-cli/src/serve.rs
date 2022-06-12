@@ -61,17 +61,17 @@ fn build_server(
     let sb_target = dir.clone();
     let sb_thread = spawn_thread(move || {
         let (stdout, _stderr) = handle_exit_code!(run_stage(
-                vec![&format!(
-                    // This sets Cargo to tell us everything, including the executable path to the server
-                    "{} build --message-format json {}",
-                    env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-                    if is_release { "--release" } else { "" },
-                )],
-                &sb_target,
-                &sb_spinner,
-                &sb_msg,
-                "" // The server will be built if we build for the server-side (builder and server are currently one for Cargo)
-            )?);
+            vec![&format!(
+                // This sets Cargo to tell us everything, including the executable path to the server
+                "{} build --message-format json {}",
+                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                if is_release { "--release" } else { "" },
+            )],
+            &sb_target,
+            &sb_spinner,
+            &sb_msg,
+            "" // The server will be built if we build for the server-side (builder and server are currently one for Cargo)
+        )?);
 
         let msgs: Vec<&str> = stdout.trim().split('\n').collect();
         // If we got to here, the exit code was 0 and everything should've worked

@@ -8,7 +8,10 @@ use perseus_cli::{
     parse::{Opts, Subcommand},
     serve, serve_exported, tinker,
 };
-use perseus_cli::{delete_dist, errors::*, export_error_page, order_reload, run_reload_server, snoop_build, snoop_server, snoop_wasm_build};
+use perseus_cli::{
+    delete_dist, errors::*, export_error_page, order_reload, run_reload_server, snoop_build,
+    snoop_server, snoop_wasm_build,
+};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -34,10 +37,7 @@ async fn real_main() -> i32 {
     let dir = match dir {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!(
-                "{}",
-                fmt_err(&Error::CurrentDirUnavailable { source: err })
-            );
+            eprintln!("{}", fmt_err(&Error::CurrentDirUnavailable { source: err }));
             return 1;
         }
     };

@@ -3,7 +3,7 @@ use crate::{
     internal::router::{perseus_router, PerseusRouterProps},
     plugins::PluginAction,
     shell::get_render_cfg,
-    templates::TemplateNodeType
+    templates::TemplateNodeType,
 };
 use wasm_bindgen::JsValue;
 
@@ -43,7 +43,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         locales: app.get_locales(),
         error_pages: app.get_error_pages(),
         templates: app.get_templates_map(),
-        render_cfg: get_render_cfg().expect("render configuration invalid or not injected")
+        render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
     };
 
     // This top-level context is what we use for everything, allowing page state to be registered and stored for the lifetime of the app

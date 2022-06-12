@@ -6,7 +6,6 @@ use std::path::PathBuf;
 
 /// Exports a single error page for the given HTTP status code to the given location.
 pub fn export_error_page(dir: PathBuf, opts: ExportErrorPageOpts) -> Result<i32, ExecutionError> {
-    let target = dir.join(".perseus/builder");
     run_cmd_directly(
         format!(
             "{} run {} {}",
@@ -15,7 +14,7 @@ pub fn export_error_page(dir: PathBuf, opts: ExportErrorPageOpts) -> Result<i32,
             opts.code,
             opts.output,
         ),
-        &target,
-        "export_error_page"
+        &dir,
+        "export_error_page",
     )
 }

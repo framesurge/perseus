@@ -1,10 +1,10 @@
 // This file contains logic to define how templates are rendered
 
+#[cfg(not(target_arch = "wasm32"))]
+use super::default_headers;
 use super::PageProps;
 #[cfg(not(target_arch = "wasm32"))]
 use super::{RenderCtx, States};
-#[cfg(not(target_arch = "wasm32"))]
-use super::default_headers;
 use crate::errors::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::make_async_trait;
@@ -153,7 +153,7 @@ impl<G: Html> std::fmt::Debug for Template<G> {
             .field("template", &"TemplateFn")
             .field("head", &"HeadFn")
             .field("set_headers", &"SetHeadersFn")
-        // TODO Server-specific stuff
+            // TODO Server-specific stuff
             .finish()
     }
 }

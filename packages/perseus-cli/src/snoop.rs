@@ -13,7 +13,7 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
         ),
         &dir,
-        "build"
+        "build",
     )
 }
 
@@ -30,7 +30,7 @@ pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, Execut
             }
         ),
         &dir,
-        "" // Not a builder command
+        "", // Not a builder command
     )
 }
 
@@ -46,6 +46,6 @@ pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, Execution
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
         ),
         &dir,
-        "serve" // Unlike the `serve` command, we're both building and running here, so we provide the operation
+        "serve", // Unlike the `serve` command, we're both building and running here, so we provide the operation
     )
 }

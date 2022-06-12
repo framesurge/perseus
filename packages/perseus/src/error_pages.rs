@@ -1,9 +1,9 @@
 use crate::translator::Translator;
 use crate::Html;
-#[cfg(target_arch = "wasm32")]
-use crate::{DomNode, HydrateNode};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::SsrNode;
+#[cfg(target_arch = "wasm32")]
+use crate::{DomNode, HydrateNode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -120,10 +120,7 @@ impl ErrorPages<HydrateNode> {
         // TODO Now convert that `HydrateNode` to a `DomNode`
         let dom_view = hydrate_view;
         // Render that to the given container
-        sycamore::hydrate_to(
-            |_| dom_view,
-            container,
-        );
+        sycamore::hydrate_to(|_| dom_view, container);
     }
     /// Renders the appropriate error page to the given DOM container. This is implemented on `HydrateNode` to avoid having to have two `Html` type parameters everywhere
     /// (one for templates and one for error pages).

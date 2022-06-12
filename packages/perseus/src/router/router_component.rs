@@ -7,12 +7,12 @@ use crate::{
         router::{PerseusRoute, RouteInfo, RouteVerdict},
         shell::{app_shell, get_initial_state, InitialState, ShellProps},
     },
-    templates::{RenderCtx, RouterLoadState, RouterState, TemplateNodeType, TemplateMap},
+    templates::{RenderCtx, RouterLoadState, RouterState, TemplateMap, TemplateNodeType},
     DomNode, ErrorPages, Html,
 };
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::collections::HashMap;
+use std::rc::Rc;
 use sycamore::{
     prelude::{component, create_effect, create_signal, view, NodeRef, ReadSignal, Scope, View},
     Prop,
@@ -160,7 +160,7 @@ pub fn perseus_router<G: Html>(
         verdict: RouteVerdict::NotFound,
         templates,
         render_cfg,
-        locales: locales.clone()
+        locales: locales.clone(),
     };
 
     // Get the root that the server will have injected initial load content into
