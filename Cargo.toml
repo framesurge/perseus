@@ -11,6 +11,7 @@ members = [
     # "examples/core/basic/.perseus/server",
     # "examples/core/basic/.perseus/builder"
 ]
+resolver = "2"
 
 [patch.crates-io]
 sycamore = { git = "https://github.com/arctic-hen7/sycamore" }
