@@ -58,9 +58,9 @@ pub fn get_props<M: MutableStore, T: TranslationsManager>(
         .before_serve
         .run((), plugins.get_plugin_data());
 
-    let static_dir_path = app.get_static_dir().to_string();
+    let static_dir_path = app.get_static_dir();
 
-    let app_root = app.get_root().to_string();
+    let app_root = app.get_root();
     let immutable_store = app.get_immutable_store();
     let index_view_str = app.get_index_view_str();
     // By the time this binary is being run, the app has already been built be the CLI (hopefully!), so we can depend on access to the render config

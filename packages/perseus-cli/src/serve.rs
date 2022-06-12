@@ -58,7 +58,7 @@ fn build_server(
     // We deliberately insert the spinner at the end of the list
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
-    let sb_target = dir.clone();
+    let sb_target = dir;
     let sb_thread = spawn_thread(move || {
         let (stdout, _stderr) = handle_exit_code!(run_stage(
             vec![&format!(

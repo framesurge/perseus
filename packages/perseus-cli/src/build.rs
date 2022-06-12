@@ -113,7 +113,7 @@ pub fn build_internal(
 pub fn build(dir: PathBuf, opts: BuildOpts) -> Result<i32, ExecutionError> {
     let spinners = MultiProgress::new();
 
-    let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 2, opts.release)?;
+    let (sg_thread, wb_thread) = build_internal(dir, &spinners, 2, opts.release)?;
     let sg_res = sg_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;

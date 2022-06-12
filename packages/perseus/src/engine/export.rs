@@ -150,7 +150,7 @@ fn copy_static_aliases(
             if let Err(err) = copy_dir(&from, &to, &CopyOptions::new()) {
                 let err = EngineError::CopyStaticAliasDirErr {
                     source: err,
-                    to: to.to_string(),
+                    to,
                     from: path.to_string(),
                 };
                 let err = Rc::new(err);
@@ -164,7 +164,7 @@ fn copy_static_aliases(
         } else if let Err(err) = fs::copy(&from, &to) {
             let err = EngineError::CopyStaticAliasFileError {
                 source: err,
-                to: to.to_string(),
+                to,
                 from: path.to_string(),
             };
             let err = Rc::new(err);
