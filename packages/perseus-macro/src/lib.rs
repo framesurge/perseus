@@ -225,22 +225,24 @@ pub fn make_rx(args: TokenStream, input: TokenStream) -> TokenStream {
     rx_state::make_rx_impl(parsed, name).into()
 }
 
-// /// Marks the annotated code as only to be run as part of the engine (the server, the builder, the exporter, etc.). This resolves to a
-// /// target-gate that makes the annotated code run only on targets that are not `wasm32`.
-// #[proc_macro_attribute]
-// pub fn engine(_args: TokenStream, input: TokenStream) -> TokenStream {
-//     quote! {
-//         #[cfg(not(target_arch = "wasm32"))]
-//         #input
-//     }.into()
-// }
+/// Marks the annotated code as only to be run as part of the engine (the server, the builder, the exporter, etc.). This resolves to a
+/// target-gate that makes the annotated code run only on targets that are not `wasm32`.
+#[proc_macro_attribute]
+pub fn engine(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_2: proc_macro2::TokenStream = input.into();
+    quote! {
+        #[cfg(not(target_arch = "wasm32"))]
+        #input_2
+    }.into()
+}
 
-// /// Marks the annotated code as only to be run in the browser. This is the opposite of (and mutually exclusive with) `#[engine]`. This
-// /// resolves to a target-gate that makes the annotated code run only on targets that are `wasm32`.
-// #[proc_macro_attribute]
-// pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
-//     quote! {
-//         #[cfg(target_arch = "wasm32")]
-//         #input
-//     }.into()
-// }
+/// Marks the annotated code as only to be run in the browser. This is the opposite of (and mutually exclusive with) `#[engine]`. This
+/// resolves to a target-gate that makes the annotated code run only on targets that are `wasm32`.
+#[proc_macro_attribute]
+pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_2: proc_macro2::TokenStream = input.into();
+    quote! {
+        #[cfg(target_arch = "wasm32")]
+        #input_2
+    }.into()
+}
