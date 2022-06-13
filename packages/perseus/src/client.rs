@@ -13,9 +13,12 @@ use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 /// Runs the app in the browser on the client-side. This is designed to be executed in a function annotated with `#[wasm_bindgen]`.
 ///
 /// This is entirely engine-agnostic, using only the properties from the given `PerseusApp`.
+///
+/// For consistency with `run_dflt_engine`, this takes a function that returns the `PerseusApp`.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
-    app: PerseusAppBase<TemplateNodeType, M, T>,
+    app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
 ) -> Result<(), JsValue> {
+    let app = app();
     let plugins = app.get_plugins();
 
     checkpoint("begin");

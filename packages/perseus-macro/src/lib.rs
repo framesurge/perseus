@@ -21,7 +21,8 @@ mod test;
 
 use darling::FromMeta;
 use proc_macro::TokenStream;
-use syn::ItemStruct;
+use quote::quote;
+use syn::{ItemStruct, Path};
 
 /// Automatically serializes/deserializes properties for a template. Perseus handles your templates' properties as `String`s under the
 /// hood for both simplicity and to avoid bundle size increases from excessive monomorphization. This macro aims to prevent the need for
@@ -98,14 +99,55 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
     test::test_impl(parsed, args).into()
 }
 
-/// Marks the given function as the entrypoint into your app. You should only use this once in the `lib.rs` file of your project.
+/// Marks the given function as the universal entrypoint into your app. This is designed for simple use-cases, and the annotated function should return
+/// a `PerseusApp`. This will expand into separate `main()` functions for both the browser and engine sides.
 ///
-/// Internally, this just normalizes the function's name so that Perseus can find it easily.
+/// This should take an argument for the function that will produce your server. In most apps using this macro (which is designed for simple use-cases),
+/// this will just be something like `perseus_warp::dflt_server` (with `perseus-warp` as a dependency with the `dflt-server` feature enabled).
+///
+/// Note that the `dflt-engine` and `client-helpers` features must be enabled on `perseus` for this to work. (These are enabled by default.)
+///
+/// Note further that you'll need to have `wasm-bindgen` as a dependency to use this.
 #[proc_macro_attribute]
-pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn main(args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as entrypoint::MainFn);
+    let args = syn::parse_macro_input!(args as Path);
+
+    entrypoint::main_impl(parsed, args).into()
+}
+
+/// Marks the given function as the browser entrypoint into your app. This is designed for more complex apps that need to manually distinguish between
+/// the engine and browser entrypoints.
+///
+/// If you just want to run some simple customizations, you should probably use `perseus::run_client` to use the default client logic after you've made your
+/// modifications. `perseus::ClientReturn` should be your return type no matter what.
+///
+/// Note that any generics on the annotated function will not be preserved. You should put the `PerseusApp` generator in a separate function.
+///
+/// Note further that you'll need to have `wasm-bindgen` as a dependency to use this.
+#[proc_macro_attribute]
+pub fn browser_main(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as entrypoint::MainFn);
 
-    entrypoint::main_impl(parsed).into()
+    entrypoint::browser_main_impl(parsed).into()
+}
+
+/// Marks the given function as the engine entrypoint into your app. This is designed for more complex apps that need to manually distinguish between
+/// the engine and browser entrypoints.
+///
+/// If you just want to run some simple customizations, you should probably use `perseus::run_dflt_engine` with `perseus::builder::get_op` to use the default client logic
+/// after you've made your modifications. You'll also want to return an exit code from this function (use `std::process:exit(..)`).
+///
+/// Note that the `dflt-engine` and `client-helpers` features must be enabled on `perseus` for this to work. (These are enabled by default.)
+///
+/// Note further that you'll need to have `tokio` as a dependency to use this.
+///
+/// Finally, note that any generics on the annotated function will not be preserved. You should put the `PerseusApp` generator in a separate function.
+#[proc_macro_attribute]
+pub fn engine_main(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as entrypoint::EngineMainFn);
+
+    entrypoint::engine_main_impl(parsed).into()
 }
 
 /// Processes the given `struct` to create a reactive version by wrapping each field in a `Signal`. This will generate a new `struct` with the given name and implement a `.make_rx()`
@@ -182,3 +224,23 @@ pub fn make_rx(args: TokenStream, input: TokenStream) -> TokenStream {
 
     rx_state::make_rx_impl(parsed, name).into()
 }
+
+// /// Marks the annotated code as only to be run as part of the engine (the server, the builder, the exporter, etc.). This resolves to a
+// /// target-gate that makes the annotated code run only on targets that are not `wasm32`.
+// #[proc_macro_attribute]
+// pub fn engine(_args: TokenStream, input: TokenStream) -> TokenStream {
+//     quote! {
+//         #[cfg(not(target_arch = "wasm32"))]
+//         #input
+//     }.into()
+// }
+
+// /// Marks the annotated code as only to be run in the browser. This is the opposite of (and mutually exclusive with) `#[engine]`. This
+// /// resolves to a target-gate that makes the annotated code run only on targets that are `wasm32`.
+// #[proc_macro_attribute]
+// pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
+//     quote! {
+//         #[cfg(target_arch = "wasm32")]
+//         #input
+//     }.into()
+// }

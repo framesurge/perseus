@@ -10,8 +10,6 @@ use perseus::{
 
 /// Creates and starts the default Perseus server using Actix Web. This should be run in a `main()` function annotated with `#[tokio::main]` (which requires the `macros` and
 /// `rt-multi-thread` features on the `tokio` dependency).
-///
-/// Note that this takes a function that generates your `PerseusApp`, which is due to significant lifetime and thread constraints within Actix.
 pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     app: impl Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 ) {

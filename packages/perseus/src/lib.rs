@@ -68,7 +68,7 @@ pub use sycamore_futures::spawn_local_scoped;
 pub type Request = HttpRequest<()>;
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
 pub use client::{run_client, ClientReturn};
-pub use perseus_macro::{autoserde, head, main, make_rx, template, template_rx, test};
+pub use perseus_macro::{autoserde, head, main, make_rx, template, template_rx, test, browser_main, engine_main};
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?
 

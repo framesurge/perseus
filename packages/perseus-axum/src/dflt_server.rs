@@ -10,11 +10,11 @@ use std::net::SocketAddr;
 
 /// Creates and starts the default Perseus server with Axum. This should be run in a `main` function annotated with `#[tokio::main]` (which requires the `macros` and
 /// `rt-multi-thread` features on the `tokio` dependency).
-pub async fn dflt_server(
-    app: PerseusAppBase<SsrNode, impl MutableStore + 'static, impl TranslationsManager + 'static>,
+pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+    app: impl Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 ) {
     get_standalone_and_act();
-    let props = get_props(app);
+    let props = get_props(app());
     let (host, port) = get_host_and_port();
     let addr: SocketAddr = format!("{}:{}", host, port)
         .parse()

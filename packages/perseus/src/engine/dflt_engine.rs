@@ -16,20 +16,26 @@ use std::env;
 /// to the binary invocation. If this is not the desired behavior, you should handle the `EngineOperation::ExportErrorPage` case manually.
 ///
 /// This returns an exit code, which should be returned from the process. Any hanlded errors will be printed to the console.
-pub async fn run_dflt_engine<M: MutableStore, T: TranslationsManager, F: Future<Output = ()>>(
+pub async fn run_dflt_engine<M, T, F, A>(
     op: EngineOperation,
-    app: PerseusAppBase<SsrNode, M, T>,
-    serve_fn: impl Fn(PerseusAppBase<SsrNode, M, T>) -> F,
-) -> i32 {
+    app: A,
+    serve_fn: impl Fn(A) -> F,
+) -> i32
+where
+    M: MutableStore,
+    T: TranslationsManager,
+    F: Future<Output = ()>,
+    A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone
+{
     match op {
-        EngineOperation::Build => match super::engine_build(app).await {
+        EngineOperation::Build => match super::engine_build(app()).await {
             Ok(_) => 0,
             Err(err) => {
                 eprintln!("{}", fmt_err(&*err));
                 1
             }
         },
-        EngineOperation::Export => match super::engine_export(app).await {
+        EngineOperation::Export => match super::engine_export(app()).await {
             Ok(_) => 0,
             Err(err) => {
                 eprintln!("{}", fmt_err(&*err));
@@ -63,7 +69,7 @@ pub async fn run_dflt_engine<M: MutableStore, T: TranslationsManager, F: Future<
                     return 1;
                 }
             };
-            match super::engine_export_error_page(app, code, output).await {
+            match super::engine_export_error_page(app(), code, output).await {
                 Ok(_) => 0,
                 Err(err) => {
                     eprintln!("{}", fmt_err(&*err));
@@ -77,7 +83,7 @@ pub async fn run_dflt_engine<M: MutableStore, T: TranslationsManager, F: Future<
         }
         EngineOperation::Tinker => {
             // This is infallible (though plugins could panic)
-            super::engine_tinker(app);
+            super::engine_tinker(app());
             0
         }
     }
