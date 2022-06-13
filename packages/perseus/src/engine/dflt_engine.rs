@@ -6,6 +6,20 @@ use fmterr::fmt_err;
 use futures::Future;
 use std::env;
 
+/// A wrapper around `run_dflt_engine` for apps that only use exporting, and so don't need to bring in a server integration. This is designed to avoid extra
+/// dependencies. If `perseus serve` is called on an app using this, it will `panic!` after building everything.
+pub async fn run_dflt_engine_export_only<M, T, A>(op: EngineOperation, app: A) -> i32
+where
+    M: MutableStore,
+    T: TranslationsManager,
+    A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
+{
+    let serve_fn = |_app: A| async {
+        panic!("`run_dflt_engine_export_only` cannot run a server; you should use `run_dflt_engine` instead and import a server integration (e.g. `perseus-warp`)")
+    };
+    run_dflt_engine(op, app, serve_fn).await
+}
+
 /// A convenience function that automatically runs the necessary engine operation based on the given directive. This provides almost no options for customization, and is
 /// usually elided by a macro. More advanced use-cases should bypass this and call the functions this calls manually, with their own configurations.
 ///
@@ -15,7 +29,7 @@ use std::env;
 /// If the action is to export a single error page, the HTTP status code of the error page to export and the output will be read as the first and second arguments
 /// to the binary invocation. If this is not the desired behavior, you should handle the `EngineOperation::ExportErrorPage` case manually.
 ///
-/// This returns an exit code, which should be returned from the process. Any hanlded errors will be printed to the console.
+/// This returns an exit code, which should be returned from the process. Any handled errors will be printed to the console.
 pub async fn run_dflt_engine<M, T, F, A>(
     op: EngineOperation,
     app: A,
@@ -25,7 +39,7 @@ where
     M: MutableStore,
     T: TranslationsManager,
     F: Future<Output = ()>,
-    A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone
+    A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 {
     match op {
         EngineOperation::Build => match super::engine_build(app()).await {

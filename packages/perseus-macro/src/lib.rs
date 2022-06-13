@@ -233,7 +233,8 @@ pub fn engine(_args: TokenStream, input: TokenStream) -> TokenStream {
     quote! {
         #[cfg(not(target_arch = "wasm32"))]
         #input_2
-    }.into()
+    }
+    .into()
 }
 
 /// Marks the annotated code as only to be run in the browser. This is the opposite of (and mutually exclusive with) `#[engine]`. This
@@ -244,5 +245,6 @@ pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
     quote! {
         #[cfg(target_arch = "wasm32")]
         #input_2
-    }.into()
+    }
+    .into()
 }
