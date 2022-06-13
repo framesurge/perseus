@@ -17,7 +17,7 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 sycamore = { version = "=0.8.0-beta.6", features = [ "ssr" ] }
 sycamore-router = "=0.8.0-beta.6"
 sycamore-futures = "=0.8.0-beta.6"
-perseus-macro = { path = "../perseus-macro", version = "0.4.0-beta.1" }
+perseus-macro = { path = "../perseus-macro", version = "0.4.0-beta.1", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
@@ -48,8 +48,10 @@ wasm-bindgen-futures = "0.4"
 [features]
 # Live reloading will only take effect in development, and won't impact production
 # BUG This adds 1.9kB to the production bundle (that's without size optimizations though)
-default = [ "live-reload", "hsr", "builder", "client-helpers" ]
+default = [ "live-reload", "hsr", "builder", "client-helpers", "macros" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
+# This feature adds support for a number of macros that will make your life MUCH easier (read: use this unless you have very specific needs or are completely insane)
+macros = [ "perseus-macro" ]
 # This feature makes tinker-only plugins be registered (this flag is enabled internally in the engine)
 tinker-plugins = []
 # This feature enables code required only in the builder systems on the server-side.
