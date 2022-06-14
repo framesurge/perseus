@@ -183,7 +183,8 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
 
         // The user's function (which gets the `PerseusApp`)
         #(#attrs)*
-        fn __perseus_simple_main #generics() -> #return_type {
+        #[doc(hidden)]
+        pub fn __perseus_simple_main #generics() -> #return_type {
             #block
         }
     };
