@@ -45,8 +45,9 @@ pub fn tinker_internal(
     let tk_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} run",
+                "{} run {}",
                 env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
             )],
             &tk_target,
             &tk_spinner,

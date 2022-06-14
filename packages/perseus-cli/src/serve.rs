@@ -63,9 +63,10 @@ fn build_server(
         let (stdout, _stderr) = handle_exit_code!(run_stage(
             vec![&format!(
                 // This sets Cargo to tell us everything, including the executable path to the server
-                "{} build --message-format json {}",
+                "{} build --message-format json {} {}",
                 env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
                 if is_release { "--release" } else { "" },
+                env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
             )],
             &sb_target,
             &sb_spinner,
