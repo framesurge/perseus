@@ -11,7 +11,7 @@ Of course, a much simpler way of doing the above would be to make the database n
 
 </details>
 
-Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](/docs/ejecting), which can be brittle, because you'll have to redo everything every time there's a major update. This is NOT the recommended approach for setting up your backend!
+Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](:reference/ejecting), which can be brittle, because you'll have to redo everything every time there's a major update. This is NOT the recommended approach for setting up your backend!
 
 Instead, it's recommended that you create a server separate from Perseus that you control completely. You might do this with [Actix Web](https://actix.rs) or similar software. You could even set up serverless functions on a platform like [AWS Lambda](https://aws.amazon.com/lambda), which can reduce operation costs.
 
@@ -27,7 +27,7 @@ Here's an example of both approaches (taken from [here](https://github.com/arcti
 
 ### Build-Time
 
-In the above example, we fetch the server's IP address at build-time from <https://api.ipify.org> using [`ureq`](https://docs.rs/ureq), a simple (and blocking) HTTP client. Note that Perseus gives you access to a full Tokio `1.x` runtime at build time, so you can easily use a non-blocking library like [`reqwest`](https://docs.rs/reqwest), which will be faster if you're making a lot of network requests at build-time. However, for simplicity's sake, this example uses `ureq`.
+In the above example, we fetch the server's IP address at build-time from <https://api.ipify.org> using [`reqwest`](https://docs.rs/reqwest), a simple HTTP client. Note that Perseus gives you access to a full Tokio `1.x` runtime at build time, meaning asynchronous clients like this can easily be used.
 
 One problem of fetching data at build-time though, in any framework, is that you have to fetch it again every time you rebuild your app, which slows down the build process and thus slows down your development cycle. To alleviate this, Perseus provides two helper functions, `cache_res` and `cache_fallible_res` (used for functions that return a `Result`) that can be used to wrap any asynchronous code that runs on the server-side (e.g. at build-time, request-time, etc.). The first time they run, these will just run your code, but then they'll cache the result to a file in `.perseus/`, which can be used in all subsequent requests, making your long-running code (typically network request code, but you could even put machine learning stuff in them in theory...) run almost instantaneously. Of course, sometimes you'll need to re-run that asynchronous code if you change something, which yo ucan do trivially by changing the second argument from `false` to `true`, which will override the cache and always re-run the given code.
 

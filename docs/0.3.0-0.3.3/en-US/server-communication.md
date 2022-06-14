@@ -13,7 +13,7 @@ Of course, a much simpler way of doing the above would be to make the database n
 
 ## The Perseus Server
 
-Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](/docs/ejecting), which can be brittle, because you'll have to redo everything every time there's a major update.
+Perseus has an inbuilt server that serves your app and its data, and this can be extended by your own code. However, this requires [ejecting](:ejecting), which can be brittle, because you'll have to redo everything every time there's a major update.
 
 ## Your Own Server
 
