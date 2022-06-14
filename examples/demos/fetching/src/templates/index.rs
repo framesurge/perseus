@@ -18,6 +18,7 @@ pub fn index_page<'a, G: Html>(
     // This will only run in the browser
     // `reqwasm` wraps browser-specific APIs, so we don't want it running on the server
     // If the browser IP has already been fetched (e.g. if we've come here for the second time in the same session), we won't bother re-fetching
+    #[cfg(target_arch = "wasm32")] // Because we only have `reqwasm` on the client-side, we make sure this is only *compiled* in the browser as well
     if G::IS_BROWSER && browser_ip.get().is_none() {
         // Spawn a `Future` on this thread to fetch the data (`spawn_local` is re-exported from `wasm-bindgen-futures`)
         // Don't worry, this doesn't need to be sent to JavaScript for execution
@@ -62,8 +63,6 @@ pub async fn get_build_state(
     _locale: String,
 ) -> RenderFnResultWithCause<IndexPageState> {
     // We'll cache the result with `try_cache_res`, which means we only make the request once, and future builds will use the cached result (speeds up development)
-    // Currently, target gating isn't fully sorted out in the latest version, so, because `reqwest` is only available on the server-side, we have to note that (in future, this won't be necessary)
-    #[cfg(not(target_arch = "wasm32"))]
     let body = perseus::cache_fallible_res(
         "ipify",
         || async {
@@ -74,9 +73,6 @@ pub async fn get_build_state(
         false,
     )
     .await?;
-    // To be clear, this will never ever run, we just need it in the current version to appease the compiler (soon, this will be totally unnecessary)
-    #[cfg(target_arch = "wasm32")]
-    let body = "".to_string();
 
     Ok(IndexPageState {
         server_ip: body,
