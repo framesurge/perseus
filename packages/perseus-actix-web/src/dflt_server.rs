@@ -32,4 +32,5 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
         .expect("Couldn't bind to given address. Maybe something is already running on the selected port?")
         .run()
         .await
+        .expect("Server failed.") // TODO Improve error message here
 }
