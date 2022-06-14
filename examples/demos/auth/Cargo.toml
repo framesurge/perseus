@@ -11,5 +11,21 @@ perseus = { path = "../../../packages/perseus", features = [] }
 sycamore = "=0.8.0-beta.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
+perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
 # We need the `HtmlDocument` feature to be able to use cookies (which this example does)
 web-sys = { version = "0.3", features = [ "Storage" ] }
+
+[lib]
+name = "lib"
+path = "src/lib.rs"
+crate-type = [ "cdylib", "rlib" ]
+
+[[bin]]
+name = "perseus-example-auth"
+path = "src/lib.rs"

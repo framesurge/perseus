@@ -48,7 +48,7 @@ wasm-bindgen-futures = "0.4"
 [features]
 # Live reloading will only take effect in development, and won't impact production
 # BUG This adds 1.9kB to the production bundle (that's without size optimizations though)
-default = [ "live-reload", "hsr", "builder", "client-helpers", "macros" ]
+default = [ "live-reload", "hsr", "builder", "client-helpers", "macros", "dflt-engine" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 # This feature adds support for a number of macros that will make your life MUCH easier (read: use this unless you have very specific needs or are completely insane)
 macros = [ "perseus-macro" ]
