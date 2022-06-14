@@ -192,6 +192,44 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
     output
 }
 
+pub fn main_export_impl(input: MainFn) -> TokenStream {
+    let MainFn {
+        block,
+        generics,
+        attrs,
+        return_type,
+    } = input;
+
+    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    let output = quote! {
+        // The engine-specific `main` function
+        #[cfg(not(target_arch = "wasm32"))]
+        #[tokio::main]
+        async fn main() {
+            // Get the operation we're supposed to run (serve, build, export, etc.) from an environment variable
+            let op = ::perseus::builder::get_op().unwrap();
+            let exit_code = ::perseus::builder::run_dflt_engine_export_only(op, __perseus_simple_main).await;
+            std::process::exit(exit_code);
+        }
+
+        // The browser-specific `main` function
+        #[cfg(target_arch = "wasm32")]
+        #[wasm_bindgen::prelude::wasm_bindgen]
+        pub fn main() -> ::perseus::ClientReturn {
+            ::perseus::run_client(__perseus_simple_main)
+        }
+
+        // The user's function (which gets the `PerseusApp`)
+        #(#attrs)*
+        #[doc(hidden)]
+        pub fn __perseus_simple_main #generics() -> #return_type {
+            #block
+        }
+    };
+
+    output
+}
+
 pub fn browser_main_impl(input: MainFn) -> TokenStream {
     let MainFn {
         block,

@@ -116,6 +116,16 @@ pub fn main(args: TokenStream, input: TokenStream) -> TokenStream {
     entrypoint::main_impl(parsed, args).into()
 }
 
+/// This is identical to `#[main]`, except it doesn't require a server integration, because it sets your app up for exporting only. This is useful for
+/// apps not using server-requiring features (like incremental static generation and revalidation) that want to avoid bringing in another dependency on
+/// the server-side.
+#[proc_macro_attribute]
+pub fn main_export(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as entrypoint::MainFn);
+
+    entrypoint::main_export_impl(parsed).into()
+}
+
 /// Marks the given function as the browser entrypoint into your app. This is designed for more complex apps that need to manually distinguish between
 /// the engine and browser entrypoints.
 ///
