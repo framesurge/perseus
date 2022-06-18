@@ -51,8 +51,8 @@ RUN perseus clean && perseus prep
 
 # specify deps in app config
 RUN sed -i "\
-  s|^\(perseus =\).*$|\1 ${PERSEUS_VERSION}|g; \
-  s|^\(perseus-size-opt =\).*$|\1 ${PERSEUS_SIZE_OPT_VERSION}|g;" \
+  s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
+  s|^\(perseus-size-opt =\).*$|\1 \"${PERSEUS_SIZE_OPT_VERSION}\"|g;" \
   ./Cargo.toml && cat ./Cargo.toml
 
 # modify lib.rs
@@ -83,7 +83,7 @@ RUN perseus deploy
 # go back to app dir
 WORKDIR /app
 
-# download and unpack esbuild
+# download, unpack, and verify install of esbuild
 RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
@@ -97,7 +97,7 @@ RUN ./package/bin/esbuild ./simple/pkg/dist/pkg/perseus_engine.js \
   --allow-overwrite \
   && ls -lha ./simple/pkg/dist/pkg
 
-# download and unpack binaryen
+# download, unpack, and verify install of binaryen
 RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
   https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
   && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
@@ -170,12 +170,10 @@ RUN sed -i "\
   ./Cargo.toml && cat ./Cargo.toml
 
 # modify and prepend lib.rs
-RUN printf '%s\n' \
-  "#[global_allocator]" \
-  "static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;" \
-  | cat - ./src/lib.rs > ./src/lib.rs.tmp \
-  && mv ./src/lib.rs.tmp ./src/lib.rs \
-  && cat ./src/lib.rs
+RUN sed -i "1i \
+  #[global_allocator]\n\
+  static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;" \
+  ./src/lib.rs && cat ./src/lib.rs
 
 # clean, prep and eject app
 RUN perseus clean && perseus prep && perseus eject
@@ -198,7 +196,7 @@ RUN perseus deploy
 # go back to app dir
 WORKDIR /app
 
-# download and unpack esbuild
+# download, unpack, and verify install of esbuild
 RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar xf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
@@ -212,7 +210,7 @@ RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js \
   --allow-overwrite \
   && ls -lha ./tiny/pkg/dist/pkg
 
-# download and unpack binaryen
+# download, unpack and verify install of binaryen
 RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
   https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
   && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
