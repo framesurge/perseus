@@ -235,6 +235,6 @@ impl TranslationsManager for FsTranslationsManager {
         &self,
         _locale: String,
     ) -> Result<Translator, TranslationsManagerError> {
-        Ok(crate::internal::i18n::DummyTranslator::new(String::new(), String::new()).unwrap())
+        Ok(crate::internal::i18n::Translator::new(String::new(), String::new()).unwrap())
     }
 }
