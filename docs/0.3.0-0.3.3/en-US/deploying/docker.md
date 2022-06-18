@@ -37,7 +37,8 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl -L https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/main | tar -xz --strip=2 perseus-size-opt-main/examples/simple
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/main \
+  | tar -xz --strip=2 perseus-size-opt-main/examples/simple
 
 # go to src dir
 WORKDIR /app/simple
@@ -78,7 +79,11 @@ RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   && ./package/bin/esbuild --version
 
 # run esbuild against bundle.js
-RUN ./package/bin/esbuild ./simple/pkg/dist/pkg/perseus_engine.js --minify --target=es6 --outfile=./simple/pkg/dist/pkg/perseus_engine.js --allow-overwrite \
+RUN ./package/bin/esbuild ./simple/pkg/dist/pkg/perseus_engine.js \
+  --minify \
+  --target=es6 \
+  --outfile=./simple/pkg/dist/pkg/perseus_engine.js \
+  --allow-overwrite \
   && ls -lha ./simple/pkg/dist/pkg
 
 # download and unpack binaryen
@@ -88,7 +93,9 @@ RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
   && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
 
 # run wasm-opt against bundle.wasm
-RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt -Os ./simple/pkg/dist/pkg/perseus_engine_bg.wasm -o ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
+RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt \
+  -Os ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
+  -o ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
   && ls -lha ./simple/pkg/dist/pkg
 
 # prepare deployment image
@@ -136,7 +143,8 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
+  | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
 
 # go to src dir
 WORKDIR /app/tiny
@@ -184,7 +192,11 @@ RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   && ./package/bin/esbuild --version
 
 # run esbuild against bundle.js
-RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js --minify --target=es6 --outfile=./tiny/pkg/dist/pkg/perseus_engine.js --allow-overwrite \
+RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js \
+  --minify \
+  --target=es6 \
+  --outfile=./tiny/pkg/dist/pkg/perseus_engine.js \
+  --allow-overwrite \
   && ls -lha ./tiny/pkg/dist/pkg
 
 # download and unpack binaryen
@@ -194,7 +206,9 @@ RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
   && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
 
 # run wasm-opt against bundle.wasm
-RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt -Os ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm -o ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
+RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt \
+  -Os ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
+  -o ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
   && ls -lha ./tiny/pkg/dist/pkg
 
 # prepare deployment image
