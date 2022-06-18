@@ -72,8 +72,9 @@ RUN perseus deploy
 WORKDIR /app
 
 # download and unpack esbuild
-RUN curl -O https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
-  && tar xf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
+  https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+  && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
   && ./package/bin/esbuild --version
 
 # run esbuild against bundle.js
@@ -81,8 +82,9 @@ RUN ./package/bin/esbuild ./simple/pkg/dist/pkg/perseus_engine.js --minify --tar
   && ls -lha ./simple/pkg/dist/pkg
 
 # download and unpack binaryen
-RUN wget -nv https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
-  && tar xf binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
+  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
   && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
 
 # run wasm-opt against bundle.wasm
@@ -176,7 +178,8 @@ RUN perseus deploy
 WORKDIR /app
 
 # download and unpack esbuild
-RUN curl -O https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
+  https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar xf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && ./package/bin/esbuild --version
 
@@ -185,8 +188,9 @@ RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js --minify --targe
   && ls -lha ./tiny/pkg/dist/pkg
 
 # download and unpack binaryen
-RUN wget -nv https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
-  && tar xf binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
+  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
   && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
 
 # run wasm-opt against bundle.wasm
