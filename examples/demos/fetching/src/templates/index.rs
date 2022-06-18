@@ -58,7 +58,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template(index_page)
 }
 
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(
     _path: String,
     _locale: String,

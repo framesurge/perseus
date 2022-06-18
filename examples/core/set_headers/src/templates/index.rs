@@ -31,7 +31,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .set_headers_fn(set_headers)
 }
 
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         greeting: "Hello World!".to_string(),
@@ -40,7 +40,7 @@ pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWi
 
 // For legacy reasons, this takes an `Option<T>`, but, if you're generating state, it will always be here
 // In v0.4.0, this will be updated to take just your page's state (if it has any)
-#[perseus::autoserde(set_headers)]
+#[perseus::set_headers]
 pub fn set_headers(state: Option<PageState>) -> HeaderMap {
     let mut map = HeaderMap::new();
     map.insert(

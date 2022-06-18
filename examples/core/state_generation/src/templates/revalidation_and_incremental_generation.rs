@@ -35,13 +35,14 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // This will get the system time when the app was built
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         time: format!("{:?}", std::time::SystemTime::now()),
     })
 }
 
+#[perseus::build_paths]
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
 }

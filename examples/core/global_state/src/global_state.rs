@@ -9,7 +9,7 @@ pub struct AppState {
     pub test: String,
 }
 
-#[perseus::autoserde(global_build_state)]
+#[perseus::global_build_state]
 pub async fn get_build_state() -> RenderFnResult<AppState> {
     Ok(AppState {
         test: "Hello World!".to_string(),

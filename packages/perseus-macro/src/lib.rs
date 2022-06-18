@@ -11,10 +11,10 @@ This is the API documentation for the `perseus-macro` package, which manages Per
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
 */
 
-mod autoserde;
 mod entrypoint;
 mod head;
 mod rx_state;
+mod state_fns;
 mod template;
 mod template_rx;
 mod test;
@@ -22,30 +22,61 @@ mod test;
 use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::quote;
+use state_fns::StateFnType;
 use syn::{ItemStruct, Path};
 
-/// Automatically serializes/deserializes properties for a template. Perseus handles your templates' properties as `String`s under the
-/// hood for both simplicity and to avoid bundle size increases from excessive monomorphization. This macro aims to prevent the need for
-/// manually serializing and deserializing everything! This takes the type of function that it's working on, which must be one of the
-/// following:
-///
-/// - `build_state` (serializes return type)
-/// - `request_state` (serializes return type)
-/// - `set_headers` (deserializes parameter)
-/// - `amalgamate_states` (serializes return type, you'll still need to deserializes from `States` manually)
+/// Annotates functions used for generating state at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for build state functions.
 #[proc_macro_attribute]
-pub fn autoserde(args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as autoserde::AutoserdeFn);
-    let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
-    // Parse macro arguments with `darling`
-    let args = match autoserde::AutoserdeArgs::from_list(&attr_args) {
-        Ok(v) => v,
-        Err(e) => {
-            return TokenStream::from(e.write_errors());
-        }
-    };
+pub fn build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
 
-    autoserde::autoserde_impl(parsed, args).into()
+    state_fns::state_fn_impl(parsed, StateFnType::BuildState).into()
+}
+
+/// Annotates functions used for generating paths at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for build paths functions.
+#[proc_macro_attribute]
+pub fn build_paths(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::BuildPaths).into()
+}
+
+/// Annotates functions used for generating global state at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for global build state functions.
+#[proc_macro_attribute]
+pub fn global_build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::GlobalBuildState).into()
+}
+
+/// Annotates functions used for generating state at request time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for request state functions.
+#[proc_macro_attribute]
+pub fn request_state(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::RequestState).into()
+}
+
+/// Annotates functions used for generating state at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for build state functions.
+#[proc_macro_attribute]
+pub fn set_headers(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::SetHeaders).into()
+}
+
+/// Annotates functions used for amlagamating build-time and request-time states to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for state amalgamation functions.
+#[proc_macro_attribute]
+pub fn amalgamate_states(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::AmalgamateStates).into()
 }
 
 /// Labels a Sycamore component as a Perseus template, turning it into something that can be easily inserted into the `.template()`

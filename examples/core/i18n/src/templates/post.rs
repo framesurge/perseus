@@ -31,7 +31,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template(post_page)
 }
 
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_static_props(
     path: String,
     _locale: String,
