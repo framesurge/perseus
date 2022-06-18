@@ -139,7 +139,7 @@ RUN apt update \
   lsb-release
 
 # vars
-ENV PERSEUS_VERSION=0.3.5 \
+ENV PERSEUS_VERSION=0.3.3 \
   WEE_ALLOC_VERSION=0.4 \
   ESBUILD_VERSION=0.14.7 \
   BINARYEN_VERSION=104
@@ -172,7 +172,7 @@ RUN sed -i "\
 # modify and prepend lib.rs
 RUN sed -i "1i \
   #[global_allocator]\n\
-  static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;" \
+  static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;\n" \
   ./src/lib.rs && cat ./src/lib.rs
 
 # clean, prep and eject app
