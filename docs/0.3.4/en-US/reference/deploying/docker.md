@@ -15,8 +15,11 @@ FROM rust:1.57-slim AS build
 
 # install build dependencies
 RUN apt update \
-  && apt install -y --no-install-recommends lsb-release apt-transport-https \
-  build-essential curl wget
+  && apt -y install --no-install-recommends \
+  apt-transport-https \
+  build-essential \
+  curl \
+  lsb-release
 
 # vars
 ENV PERSEUS_VERSION=0.3.5 \
@@ -34,7 +37,8 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/main | tar -xz --strip=2 perseus-size-opt-main/examples/simple
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/main \
+  | tar -xz --strip=2 perseus-size-opt-main/examples/simple
 
 # go to src dir
 WORKDIR /app/simple
@@ -46,13 +50,24 @@ RUN cargo install perseus-cli --version $PERSEUS_VERSION
 RUN perseus clean && perseus prep
 
 # specify deps in app config
-RUN sed -i s"/perseus = .*/perseus = \"${PERSEUS_VERSION}\"/" ./Cargo.toml \
-  && sed -i s"/perseus-size-opt = .*/perseus-size-opt = \"${PERSEUS_SIZE_OPT_VERSION}\"/" ./Cargo.toml \
-  && cat ./Cargo.toml
+RUN sed -i "\
+  s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
+  s|^\(perseus-size-opt =\).*$|\1 \"${PERSEUS_SIZE_OPT_VERSION}\"|g;" \
+  ./Cargo.toml && cat ./Cargo.toml
 
 # modify lib.rs
-RUN sed -i s'/SizeOpts::default()/SizeOpts { wee_alloc: true, lto: true, opt_level: "s".to_string(), codegen_units: 1, enable_fluent_bundle_patch: false, }/' ./src/lib.rs \
-  && cat ./src/lib.rs
+RUN sed -i "\
+  s|\(\.plugin\)(\(perseus_size_opt,\) SizeOpts::default())$|\n\
+  \1(\n\
+    \2\n\
+    SizeOpts {\n\
+      wee_alloc: true,\n\
+      lto: true,\n\
+      opt_level: \"s\".to_string(),\n\
+      codegen_units: 1,\n\
+      enable_fluent_bundle_patch: false,\n\
+    }\n\
+  )|" ./src/lib.rs && cat ./src/lib.rs
 
 # run plugin(s) to adjust app
 RUN perseus tinker \
@@ -68,22 +83,30 @@ RUN perseus deploy
 # go back to app dir
 WORKDIR /app
 
-# download and unpack esbuild
-RUN curl -O https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
-  && tar xf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+# download, unpack, and verify install of esbuild
+RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
+  https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+  && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
   && ./package/bin/esbuild --version
 
 # run esbuild against bundle.js
-RUN ./package/bin/esbuild ./simple/pkg/dist/pkg/perseus_engine.js --minify --target=es6 --outfile=./simple/pkg/dist/pkg/perseus_engine.js --allow-overwrite \
+RUN ./package/bin/esbuild ./simple/pkg/dist/pkg/perseus_engine.js \
+  --minify \
+  --target=es6 \
+  --outfile=./simple/pkg/dist/pkg/perseus_engine.js \
+  --allow-overwrite \
   && ls -lha ./simple/pkg/dist/pkg
 
-# download and unpack binaryen
-RUN wget -nv https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
-  && tar xf binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+# download, unpack, and verify install of binaryen
+RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
+  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
   && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
 
 # run wasm-opt against bundle.wasm
-RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt -Os ./simple/pkg/dist/pkg/perseus_engine_bg.wasm -o ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
+RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt \
+  -Os ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
+  -o ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
   && ls -lha ./simple/pkg/dist/pkg
 
 # prepare deployment image
@@ -109,8 +132,11 @@ FROM rust:1.57-slim AS build
 
 # install build dependencies
 RUN apt update \
-  && apt install -y --no-install-recommends lsb-release apt-transport-https \
-  build-essential curl wget
+  && apt -y install --no-install-recommends \
+  apt-transport-https \
+  build-essential \
+  curl \
+  lsb-release
 
 # vars
 ENV PERSEUS_VERSION=0.3.5 \
@@ -128,7 +154,8 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
+  | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
 
 # go to src dir
 WORKDIR /app/tiny
@@ -137,27 +164,27 @@ WORKDIR /app/tiny
 RUN cargo install perseus-cli --version $PERSEUS_VERSION
 
 # specify deps in app config
-RUN sed -i s"/perseus = .*/perseus = \"${PERSEUS_VERSION}\"/" ./Cargo.toml \
-  && sed -i "/\[dependencies\]/a wee_alloc = \"${WEE_ALLOC_VERSION}\"" ./Cargo.toml \
-  && cat ./Cargo.toml
+RUN sed -i "\
+  s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
+  s|^\(\[dependencies\]\)$|\1\n wee_alloc = \"${WEE_ALLOC_VERSION}\"|g;" \
+  ./Cargo.toml && cat ./Cargo.toml
 
 # modify and prepend lib.rs
-RUN echo '#[global_allocator] \n\
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT; \n\
-' | cat - ./src/lib.rs > ./src/lib.rs.tmp \
-  && mv ./src/lib.rs.tmp ./src/lib.rs \
-  && cat ./src/lib.rs
+RUN sed -i "1i \
+  #[global_allocator]\n\
+  static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;\n" \
+  ./src/lib.rs && cat ./src/lib.rs
 
 # clean, prep and eject app
 RUN perseus clean && perseus prep && perseus eject
 
 # adjust and append perseus config
-RUN sed -i s"/perseus = .*/perseus = \"${PERSEUS_VERSION}\"/" .perseus/Cargo.toml \
-  && echo ' \n\n\
-[profile.release] \n\
-codegen-units = 1 \n\
-opt-level = "s" \n\
-lto = true ' >> .perseus/Cargo.toml \
+RUN sed -i "s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g" .perseus/Cargo.toml \
+  && printf '%s\n' \
+  "[profile.release]" \
+  "codegen-units = 1" \
+  "opt-level = \"s\"" \
+  "lto = true" >> .perseus/Cargo.toml \
   && cat .perseus/Cargo.toml
 
 # single-threaded perseus CLI mode required for low memory environments
@@ -169,22 +196,30 @@ RUN perseus deploy
 # go back to app dir
 WORKDIR /app
 
-# download and unpack esbuild
-RUN curl -O https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+# download, unpack, and verify install of esbuild
+RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
+  https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar xf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && ./package/bin/esbuild --version
 
 # run esbuild against bundle.js
-RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js --minify --target=es6 --outfile=./tiny/pkg/dist/pkg/perseus_engine.js --allow-overwrite \
+RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js \
+  --minify \
+  --target=es6 \
+  --outfile=./tiny/pkg/dist/pkg/perseus_engine.js \
+  --allow-overwrite \
   && ls -lha ./tiny/pkg/dist/pkg
 
-# download and unpack binaryen
-RUN wget -nv https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
-  && tar xf binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+# download, unpack and verify install of binaryen
+RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
+  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
   && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
 
 # run wasm-opt against bundle.wasm
-RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt -Os ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm -o ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
+RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt \
+  -Os ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
+  -o ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
   && ls -lha ./tiny/pkg/dist/pkg
 
 # prepare deployment image
@@ -210,8 +245,11 @@ FROM rust:1.57-slim AS build
 
 # install build dependencies
 RUN apt update \
-  && apt install -y --no-install-recommends lsb-release apt-transport-https \
-  build-essential curl
+  && apt -y install --no-install-recommends \
+  apt-transport-https \
+  build-essential \
+  curl \
+  lsb-release
 
 # vars
 ENV PERSEUS_BRANCH=main
@@ -229,7 +267,7 @@ RUN cargo install wasm-pack
 RUN cargo install bonnie
 
 # retrieve the branch dir
-RUN curl https://codeload.github.com/arctic-hen7/perseus/tar.gz/${PERSEUS_BRANCH} | tar -xz
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/${PERSEUS_BRANCH} | tar -xz
 
 # go to branch dir
 WORKDIR /app/perseus-${PERSEUS_BRANCH}
