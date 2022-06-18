@@ -1,0 +1,18 @@
+[package]
+name = "perseus-integration"
+version = "0.4.0-beta.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+perseus-actix-web = { path = "../perseus-actix-web", features = [ "dflt-server" ], optional = true }
+perseus-warp = { path = "../perseus-warp", features = [ "dflt-server" ], optional = true }
+perseus-axum = { path = "../perseus-axum", features = [ "dflt-server" ], optional = true }
+
+[features]
+default = [ "warp" ]
+
+actix-web = [ "perseus-actix-web" ]
+warp = [ "perseus-warp" ]
+axum = [ "perseus-axum" ]

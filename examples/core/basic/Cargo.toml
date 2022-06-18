@@ -16,7 +16,8 @@ fantoccini = "0.17"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
-perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
+# This is an internal convenience crate that exposes all integrations through features for testing
+perseus-integration = { path = "../../../packages/perseus-integration", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"

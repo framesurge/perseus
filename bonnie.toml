@@ -1,4 +1,5 @@
 version="0.3.2"
+env_files = [ ".env" ]
 
 [scripts]
 setup.cmd.generic = [
@@ -40,17 +41,19 @@ dev.subcommands.export-serve-deploy-relative.cmd.targets.windows = [
 dev.subcommands.export-serve-deploy-relative.args = [ "category", "example" ]
 dev.subcommands.export-serve-deploy-relative.desc = "deploys (exported) and serves the given example at a relative local path"
 
+# TODO Make this not set the integration feature unless a certain file in the example calls for it
 dev.subcommands.example.cmd.generic = [
     "cd packages/perseus-cli",
     # Point this live version of the CLI at the given example
-    "TEST_EXAMPLE=../../examples/%category/%example cargo run -- %%"
+    "TEST_EXAMPLE=../../examples/%category/%example PERSEUS_CARGO_ARGS=\"--features \"perseus-integration/%EXAMPLE_INTEGRATION\"\" cargo run -- %%"
 ]
 dev.subcommands.example.cmd.targets.windows = [
     "cd packages\\perseus-cli",
     # Point this live version of the CLI at the given example
-    "powershell -Command { $env:TEST_EXAMPLE=\"..\\..\\examples\\%category\\%example\"; cargo run -- %% }"
+    "powershell -Command { $env:TEST_EXAMPLE=\"..\\..\\examples\\%category\\%example\"; $end:PERSEUS_CARGO_ARGS=\"--features \"perseus-integration/%EXAMPLE_INTEGRATION\"\"; cargo run -- %% }"
 ]
 dev.subcommands.example.args = [ "category", "example" ]
+dev.subcommands.example.env_vars = [ "EXAMPLE_INTEGRATION" ] # This will be set automatically to Warp by `.env` unless overridden
 dev.subcommands.example.desc = "runs the given example using a live version of the cli"
 
 site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\""
