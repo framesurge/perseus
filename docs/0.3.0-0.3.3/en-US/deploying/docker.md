@@ -50,13 +50,24 @@ RUN cargo install perseus-cli --version $PERSEUS_VERSION
 RUN perseus clean && perseus prep
 
 # specify deps in app config
-RUN sed -i s"/perseus = .*/perseus = \"${PERSEUS_VERSION}\"/" ./Cargo.toml \
-  && sed -i s"/perseus-size-opt = .*/perseus-size-opt = \"${PERSEUS_SIZE_OPT_VERSION}\"/" ./Cargo.toml \
-  && cat ./Cargo.toml
+RUN sed -i "\
+  s|^\(perseus =\).*$|\1 ${PERSEUS_VERSION}|g; \
+  s|^\(perseus-size-opt =\).*$|\1 ${PERSEUS_SIZE_OPT_VERSION}|g;" \
+  ./Cargo.toml && cat ./Cargo.toml
 
 # modify lib.rs
-RUN sed -i s'/SizeOpts::default()/SizeOpts { wee_alloc: true, lto: true, opt_level: "s".to_string(), codegen_units: 1, enable_fluent_bundle_patch: false, }/' ./src/lib.rs \
-  && cat ./src/lib.rs
+RUN sed -i "\
+  s|\(\.plugin\)(\(perseus_size_opt,\) SizeOpts::default())$|\n\
+  \1(\n\
+    \2\n\
+    SizeOpts {\n\
+      wee_alloc: true,\n\
+      lto: true,\n\
+      opt_level: \"s\".to_string(),\n\
+      codegen_units: 1,\n\
+      enable_fluent_bundle_patch: false,\n\
+    }\n\
+  )|" ./src/lib.rs && cat ./src/lib.rs
 
 # run plugin(s) to adjust app
 RUN perseus tinker \
@@ -153,14 +164,16 @@ WORKDIR /app/tiny
 RUN cargo install perseus-cli --version $PERSEUS_VERSION
 
 # specify deps in app config
-RUN sed -i s"/perseus = .*/perseus = \"${PERSEUS_VERSION}\"/" ./Cargo.toml \
-  && sed -i "/\[dependencies\]/a wee_alloc = \"${WEE_ALLOC_VERSION}\"" ./Cargo.toml \
-  && cat ./Cargo.toml
+RUN sed -i "\
+  s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
+  s|^\(\[dependencies\]\)$|\1\n wee_alloc = \"${WEE_ALLOC_VERSION}\"|g;" \
+  ./Cargo.toml && cat ./Cargo.toml
 
 # modify and prepend lib.rs
-RUN echo '#[global_allocator] \n\
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT; \n\
-' | cat - ./src/lib.rs > ./src/lib.rs.tmp \
+RUN printf '%s\n' \
+  "#[global_allocator]" \
+  "static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;" \
+  | cat - ./src/lib.rs > ./src/lib.rs.tmp \
   && mv ./src/lib.rs.tmp ./src/lib.rs \
   && cat ./src/lib.rs
 
@@ -168,12 +181,12 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT; \n\
 RUN perseus clean && perseus prep && perseus eject
 
 # adjust and append perseus config
-RUN sed -i s"/perseus = .*/perseus = \"${PERSEUS_VERSION}\"/" .perseus/Cargo.toml \
-  && echo ' \n\n\
-[profile.release] \n\
-codegen-units = 1 \n\
-opt-level = "s" \n\
-lto = true ' >> .perseus/Cargo.toml \
+RUN sed -i "s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g" .perseus/Cargo.toml \
+  && printf '%s\n' \
+  "[profile.release]" \
+  "codegen-units = 1" \
+  "opt-level = \"s\"" \
+  "lto = true" >> .perseus/Cargo.toml \
   && cat .perseus/Cargo.toml
 
 # single-threaded perseus CLI mode required for low memory environments
