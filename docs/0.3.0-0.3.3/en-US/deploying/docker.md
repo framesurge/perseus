@@ -37,7 +37,7 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/main | tar -xz --strip=2 perseus-size-opt-main/examples/simple
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/main | tar -xz --strip=2 perseus-size-opt-main/examples/simple
 
 # go to src dir
 WORKDIR /app/simple
@@ -134,7 +134,7 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
 
 # go to src dir
 WORKDIR /app/tiny
@@ -238,7 +238,7 @@ RUN cargo install wasm-pack
 RUN cargo install bonnie
 
 # retrieve the branch dir
-RUN curl https://codeload.github.com/arctic-hen7/perseus/tar.gz/${PERSEUS_BRANCH} | tar -xz
+RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/${PERSEUS_BRANCH} | tar -xz
 
 # go to branch dir
 WORKDIR /app/perseus-${PERSEUS_BRANCH}
