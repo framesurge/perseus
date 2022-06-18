@@ -15,8 +15,11 @@ FROM rust:1.57-slim AS build
 
 # install build dependencies
 RUN apt update \
-  && apt install -y --no-install-recommends lsb-release apt-transport-https \
-  build-essential curl wget
+  && apt -y install --no-install-recommends \
+  apt-transport-https \
+  build-essential \
+  curl \
+  lsb-release
 
 # vars
 ENV PERSEUS_VERSION=0.3.3 \
@@ -109,8 +112,11 @@ FROM rust:1.57-slim AS build
 
 # install build dependencies
 RUN apt update \
-  && apt install -y --no-install-recommends lsb-release apt-transport-https \
-  build-essential curl wget
+  && apt -y install --no-install-recommends \
+  apt-transport-https \
+  build-essential \
+  curl \
+  lsb-release
 
 # vars
 ENV PERSEUS_VERSION=0.3.5 \
@@ -210,8 +216,11 @@ FROM rust:1.57-slim AS build
 
 # install build dependencies
 RUN apt update \
-  && apt install -y --no-install-recommends lsb-release apt-transport-https \
-  build-essential curl
+  && apt -y install --no-install-recommends \
+  apt-transport-https \
+  build-essential \
+  curl \
+  lsb-release
 
 # vars
 ENV PERSEUS_BRANCH=main
