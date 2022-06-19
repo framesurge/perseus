@@ -3,17 +3,11 @@ env_files = [ ".env" ]
 
 [scripts]
 setup.cmd.generic = [
-    "mkdir -p examples/core/basic/.perseus/dist",
-    "mkdir -p examples/core/basic/.perseus/dist/static",
-    "mkdir -p examples/core/basic/.perseus/dist/exported",
     "cargo build",
     "npm i --prefix ./website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.cmd.targets.windows = [
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist",
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist\\static",
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist\\exported",
     "cargo build",
     "npm i --prefix ./website",
     "Write-Host \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
@@ -153,16 +147,6 @@ check.cmd = [
 ]
 check.desc = "checks code for formatting errors and the like"
 
-ci-prep.cmd.generic = [
-    "mkdir -p examples/core/basic/.perseus/dist",
-    "mkdir -p examples/core/basic/.perseus/dist/static",
-]
-ci-prep.cmd.targets.windows = [
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist",
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\static",
-]
-ci-prep.desc = "creates empty directories to preserve the file structure that testing expects"
-
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
@@ -210,7 +194,7 @@ release.desc = "creates a new project release and pushes it to github (cargo ver
 
 # --- COMMANDS FOLLOWING THIS POINT ARE LINUX-ONLY ---
 
-replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or \\( -name \"*.md\" -not  -name \"*.proj.md\" \\) \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/core/basic/.perseus/*\" -not -path \"./examples/core/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
+replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or \\( -name \"*.md\" -not  -name \"*.proj.md\" \\) \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
 replace-versions.args = [ "old_version", "new_version" ]
 replace-versions.desc = "replaces an old version number with a new one in all relevant files (Linux only)"
 
@@ -223,7 +207,7 @@ publish.cmd = [
     "cd ../perseus",
     "cargo publish %%",
     "cd ../perseus-cli",
-    "cargo publish --allow-dirty %%", # Without this flag, `.perseus` will be a problem because it's not in Git
+    "cargo publish %%",
     # We delay this so that `crates.io` can have time to host the core
     "cd ../perseus-actix-web",
     "cargo publish %%",
