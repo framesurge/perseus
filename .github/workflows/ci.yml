@@ -12,7 +12,7 @@ jobs:
         steps:
             - uses: actions/checkout@v2
             - run: cargo install bonnie
-            - run: bonnie ci-prep
+            - run: rustup target add wasm32-unknown-unknown
             - name: Run checks
               run: bonnie check
     test:
@@ -64,6 +64,5 @@ jobs:
             - run: sudo apt install firefox firefox-geckodriver
             - name: Run Firefox WebDriver
               run: geckodriver &
-            - run: bonnie ci-prep
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }} --headless
