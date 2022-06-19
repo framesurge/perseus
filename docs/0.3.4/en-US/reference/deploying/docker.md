@@ -57,7 +57,7 @@ WORKDIR /app/simple
 # install perseus-cli
 RUN cargo install perseus-cli --version $PERSEUS_VERSION
 
-# specify metadata and deps in app config
+# specify deps in app config
 RUN sed -i "\
   s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
   s|^\(perseus-size-opt =\).*$|\1 \"${PERSEUS_SIZE_OPT_VERSION}\"|g;" \
@@ -298,14 +298,14 @@ WORKDIR /app/perseus-${PERSEUS_BRANCH}
 RUN bonnie setup
 
 # clean app
-RUN bonnie dev examples comprehensive tiny clean
+RUN bonnie dev example comprehensive tiny clean
 
 # single-threaded perseus CLI mode required for low memory environments
 #ENV PERSEUS_CLI_SEQUENTIAL=true
 
 # deploy app
 RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
-  && bonnie dev examples comprehensive tiny deploy
+  && bonnie dev example comprehensive tiny deploy
 
 # move branch dir
 RUN mv /app/perseus-${PERSEUS_BRANCH} /app/perseus-branch

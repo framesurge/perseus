@@ -57,7 +57,7 @@ WORKDIR /app/simple
 # install perseus-cli
 RUN cargo install perseus-cli --version $PERSEUS_VERSION
 
-# specify metadata and deps in app config
+# specify deps in app config
 RUN sed -i "\
   s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
   s|^\(perseus-size-opt =\).*$|\1 \"${PERSEUS_SIZE_OPT_VERSION}\"|g;" \
