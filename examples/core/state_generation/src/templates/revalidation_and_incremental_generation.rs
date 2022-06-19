@@ -28,7 +28,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         // load this page. For that reason, this should NOT do long-running work, as requests will be delayed. If both this
         // and `revaldiate_after()` are provided, this logic will only run when `revalidate_after()` tells Perseus
         // that it should revalidate.
-        .should_revalidate_fn(|| async { Ok(true) })
+        .should_revalidate_fn(should_revalidate)
         .build_state_fn(get_build_state)
         .build_paths_fn(get_build_paths)
         .incremental_generation()
@@ -45,4 +45,12 @@ pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWi
 #[perseus::build_paths]
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
+}
+
+// This will run every time `.revalidate_after()` permits the page to be revalidated
+// This acts as a secondary check, and can perform arbitrary logic to check if we should actually revalidate a page
+#[perseus::should_revalidate]
+pub async fn should_revalidate() -> RenderFnResultWithCause<bool> {
+    // For simplicity's sake, this will always say we should revalidate, but you could amke this check any condition
+    Ok(true)
 }

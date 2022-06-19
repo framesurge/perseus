@@ -36,6 +36,7 @@ pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWi
 
 // This will run every time `.revalidate_after()` permits the page to be revalidated
 // This acts as a secondary check, and can perform arbitrary logic to check if we should actually revalidate a page
+#[perseus::should_revalidate]
 pub async fn should_revalidate() -> RenderFnResultWithCause<bool> {
     // For simplicity's sake, this will always say we should revalidate, but you could amke this check any condition
     Ok(true)

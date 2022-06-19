@@ -90,6 +90,7 @@ pub enum StateFnType {
     SetHeaders,
     AmalgamateStates,
     GlobalBuildState,
+    ShouldRevalidate,
 }
 
 // We just use a single implementation function for ease, but there's a separate macro for each type of state function
@@ -214,6 +215,18 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
                 let build_state = #name().await;
                 let build_state_with_str = build_state.map(|val| ::serde_json::to_string(&val).unwrap());
                 build_state_with_str
+            }
+        },
+        // This one only exists to appease the server-side/client-side division
+        StateFnType::ShouldRevalidate => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            // This normal version is identical to the user's (we know it won't have any arguments, and we know its return type)
+            // We use the user's return type to prevent unused imports warnings in their code
+            #[cfg(not(target_arch = "wasm32"))]
+            #vis async fn #name() -> #return_type {
+                #block
             }
         },
     }

@@ -71,8 +71,8 @@ pub use client::{run_client, ClientReturn};
 #[cfg(feature = "macros")]
 pub use perseus_macro::{
     amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
-    global_build_state, head, main, main_export, make_rx, request_state, set_headers, template,
-    template_rx, test,
+    global_build_state, head, main, main_export, make_rx, request_state, set_headers,
+    should_revalidate, template, template_rx, test,
 };
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?

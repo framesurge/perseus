@@ -70,13 +70,22 @@ pub fn set_headers(_args: TokenStream, input: TokenStream) -> TokenStream {
     state_fns::state_fn_impl(parsed, StateFnType::SetHeaders).into()
 }
 
-/// Annotates functions used for amlagamating build-time and request-time states to support automatic serialization/deserialization of app state and
+/// Annotates functions used for amalgamating build-time and request-time states to support automatic serialization/deserialization of app state and
 /// client/server division. This supersedes the old `autoserde` macro for state amalgamation functions.
 #[proc_macro_attribute]
 pub fn amalgamate_states(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
 
     state_fns::state_fn_impl(parsed, StateFnType::AmalgamateStates).into()
+}
+
+/// Annotates functions used for checking if a template should revalidate and request-time states to support automatic serialization/deserialization
+/// of app state and client/server division. This supersedes the old `autoserde` macro for revalidation determination functions.
+#[proc_macro_attribute]
+pub fn should_revalidate(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::ShouldRevalidate).into()
 }
 
 /// Labels a Sycamore component as a Perseus template, turning it into something that can be easily inserted into the `.template()`
