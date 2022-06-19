@@ -199,7 +199,7 @@ WORKDIR /app
 # download, unpack, and verify install of esbuild
 RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
-  && tar xf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+  && tar -xzf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && ./package/bin/esbuild --version
 
 # run esbuild against bundle.js
