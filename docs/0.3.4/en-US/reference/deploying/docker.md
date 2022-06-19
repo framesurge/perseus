@@ -220,10 +220,11 @@ WORKDIR /app
 RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
-  && ./package/bin/esbuild --version
+  && ln -s $(pwd)/package/bin/esbuild /usr/bin/esbuild \
+  && esbuild --version
 
 # run esbuild against bundle.js
-RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js \
+RUN esbuild ./tiny/pkg/dist/pkg/perseus_engine.js \
   --minify \
   --target=es6 \
   --outfile=./tiny/pkg/dist/pkg/perseus_engine.js \

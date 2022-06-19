@@ -166,7 +166,14 @@ RUN cargo install wasm-pack
 # retrieve the src dir
 RUN curl -L \
   https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
-  | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
+  | tar -xz --strip=3 perseus-${PERSEUS_VERSION}/examples/comprehensive/tiny
+
+# download, unpack and verify install of binaryen
+RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
+  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
+  && ln -s $(pwd)/binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt /usr/bin/wasm-opt \
+  && wasm-opt --version
 
 # go to src dir
 WORKDIR /app/tiny
@@ -192,6 +199,7 @@ RUN perseus clean && perseus prep && perseus eject
 # adjust and append perseus config
 RUN sed -i "s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g" .perseus/Cargo.toml \
   && printf '%s\n' \
+  "" "" \
   "[profile.release]" \
   "codegen-units = 1" \
   "opt-level = \"s\"" \
@@ -201,8 +209,9 @@ RUN sed -i "s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g" .perseus/Cargo.toml
 # single-threaded perseus CLI mode required for low memory environments
 #ENV PERSEUS_CLI_SEQUENTIAL=true
 
-# deploy app
-RUN perseus deploy
+# export variables required by wasm-bindgen and deploy app
+RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
+  && perseus deploy
 
 # go back to app dir
 WORKDIR /app
@@ -210,25 +219,20 @@ WORKDIR /app
 # download, unpack, and verify install of esbuild
 RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
-  && tar -xzf esbuild-linux-64-${ESBUILD_VERSION}.tgz \
-  && ./package/bin/esbuild --version
+  && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
+  && ln -s $(pwd)/package/bin/esbuild /usr/bin/esbuild \
+  && esbuild --version
 
 # run esbuild against bundle.js
-RUN ./package/bin/esbuild ./tiny/pkg/dist/pkg/perseus_engine.js \
+RUN esbuild ./tiny/pkg/dist/pkg/perseus_engine.js \
   --minify \
   --target=es6 \
   --outfile=./tiny/pkg/dist/pkg/perseus_engine.js \
   --allow-overwrite \
   && ls -lha ./tiny/pkg/dist/pkg
 
-# download, unpack and verify install of binaryen
-RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
-  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
-  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
-  && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
-
 # run wasm-opt against bundle.wasm
-RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt \
+RUN wasm-opt \
   -Os ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
   -o ./tiny/pkg/dist/pkg/perseus_engine_bg.wasm \
   && ls -lha ./tiny/pkg/dist/pkg
