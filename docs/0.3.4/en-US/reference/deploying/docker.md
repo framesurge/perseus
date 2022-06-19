@@ -266,6 +266,8 @@ RUN apt update \
   curl \
   libssl-dev \
   lsb-release \
+  nodejs \
+  npm \
   openssl \
   pkg-config
 
@@ -296,16 +298,14 @@ WORKDIR /app/perseus-${PERSEUS_BRANCH}
 RUN bonnie setup
 
 # clean app
-RUN bonnie dev example tiny clean
-
-# go to the branch dir
-WORKDIR /app/perseus-${PERSEUS_BRANCH}
+RUN bonnie dev examples comprehensive tiny clean
 
 # single-threaded perseus CLI mode required for low memory environments
 #ENV PERSEUS_CLI_SEQUENTIAL=true
 
 # deploy app
-RUN bonnie dev example tiny deploy
+RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
+  && bonnie dev examples comprehensive tiny deploy
 
 # move branch dir
 RUN mv /app/perseus-${PERSEUS_BRANCH} /app/perseus-branch
@@ -315,7 +315,7 @@ FROM debian:stable-slim
 
 WORKDIR /app
 
-COPY --from=build /app/perseus-branch/examples/tiny/pkg /app/
+COPY --from=build /app/perseus-branch/examples/comprehensive/tiny/pkg /app/
 
 ENV HOST=0.0.0.0
 
