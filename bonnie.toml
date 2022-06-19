@@ -159,7 +159,10 @@ test.cmd = [
     "bonnie test example-all-integrations core global_state --headless",
     "bonnie test example-all-integrations core idb_freezing --headless",
     "bonnie test example-all-integrations core router_state --headless",
-    "bonnie test example-all-integrations core rx_state --headless"
+    "bonnie test example-all-integrations core rx_state --headless",
+    "bonnie test example-all-integrations core index_view --headless",
+    "bonnie test example-all-integrations core set_headers --headless",
+    "bonnie test example-all-integrations core static_content --headless"
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
