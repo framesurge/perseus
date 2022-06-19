@@ -49,6 +49,7 @@ pub async fn get_static_props(
     }) // This `?` declares the default, that the server is the cause of the error
 }
 
+#[perseus::build_paths]
 pub async fn get_static_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec![
         "".to_string(),
