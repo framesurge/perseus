@@ -19,7 +19,10 @@ RUN apt update \
   apt-transport-https \
   build-essential \
   curl \
-  lsb-release
+  libssl-dev \
+  lsb-release \
+  openssl \
+  pkg-config
 
 # vars
 ENV PERSEUS_VERSION=0.3.3 \
@@ -37,8 +40,16 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl -L https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/main \
-  | tar -xz --strip=2 perseus-size-opt-main/examples/simple
+RUN curl -L \
+  https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
+  | tar -xz --strip=2 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple
+
+# download, unpack, and verify install of binaryen
+RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
+  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
+  && ln -s $(pwd)/binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt /usr/bin/wasm-opt \
+  && wasm-opt --version
 
 # go to src dir
 WORKDIR /app/simple
@@ -46,10 +57,7 @@ WORKDIR /app/simple
 # install perseus-cli
 RUN cargo install perseus-cli --version $PERSEUS_VERSION
 
-# clean and prep app
-RUN perseus clean && perseus prep
-
-# specify deps in app config
+# specify metadata and deps in app config
 RUN sed -i "\
   s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
   s|^\(perseus-size-opt =\).*$|\1 \"${PERSEUS_SIZE_OPT_VERSION}\"|g;" \
@@ -69,6 +77,9 @@ RUN sed -i "\
     }\n\
   )|" ./src/lib.rs && cat ./src/lib.rs
 
+# clean and prep app
+RUN perseus clean && perseus prep
+
 # run plugin(s) to adjust app
 RUN perseus tinker \
   && cat .perseus/Cargo.toml \
@@ -77,8 +88,9 @@ RUN perseus tinker \
 # single-threaded perseus CLI mode required for low memory environments
 #ENV PERSEUS_CLI_SEQUENTIAL=true
 
-# deploy app
-RUN perseus deploy
+# export variables required by wasm-bindgen and deploy app
+RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
+  && perseus deploy
 
 # go back to app dir
 WORKDIR /app
@@ -87,24 +99,19 @@ WORKDIR /app
 RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
-  && ./package/bin/esbuild --version
+  && ln -s $(pwd)/package/bin/esbuild /usr/bin/esbuild \
+  && esbuild --version
 
 # run esbuild against bundle.js
-RUN ./package/bin/esbuild ./simple/pkg/dist/pkg/perseus_engine.js \
+RUN esbuild ./simple/pkg/dist/pkg/perseus_engine.js \
   --minify \
   --target=es6 \
   --outfile=./simple/pkg/dist/pkg/perseus_engine.js \
   --allow-overwrite \
   && ls -lha ./simple/pkg/dist/pkg
 
-# download, unpack, and verify install of binaryen
-RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
-  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
-  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
-  && ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt --version
-
 # run wasm-opt against bundle.wasm
-RUN ./binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt \
+RUN wasm-opt \
   -Os ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
   -o ./simple/pkg/dist/pkg/perseus_engine_bg.wasm \
   && ls -lha ./simple/pkg/dist/pkg
@@ -136,7 +143,10 @@ RUN apt update \
   apt-transport-https \
   build-essential \
   curl \
-  lsb-release
+  libssl-dev \
+  lsb-release \
+  openssl \
+  pkg-config
 
 # vars
 ENV PERSEUS_VERSION=0.3.3 \
@@ -154,7 +164,8 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
+RUN curl -L \
+  https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
   | tar -xz --strip=2 perseus-${PERSEUS_VERSION}/examples/tiny
 
 # go to src dir
@@ -249,7 +260,10 @@ RUN apt update \
   apt-transport-https \
   build-essential \
   curl \
-  lsb-release
+  libssl-dev \
+  lsb-release \
+  openssl \
+  pkg-config
 
 # vars
 ENV PERSEUS_BRANCH=main
@@ -267,7 +281,9 @@ RUN cargo install wasm-pack
 RUN cargo install bonnie
 
 # retrieve the branch dir
-RUN curl -L https://codeload.github.com/arctic-hen7/perseus/tar.gz/${PERSEUS_BRANCH} | tar -xz
+RUN curl -L \
+  https://codeload.github.com/arctic-hen7/perseus/tar.gz/${PERSEUS_BRANCH} \
+  | tar -xz
 
 # go to branch dir
 WORKDIR /app/perseus-${PERSEUS_BRANCH}
