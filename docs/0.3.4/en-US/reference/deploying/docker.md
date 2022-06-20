@@ -272,7 +272,9 @@ RUN apt update \
   pkg-config
 
 # vars
-ENV PERSEUS_BRANCH=main
+ENV PERSEUS_STABLE_VERSION=0.3.5 \
+  SYCAMORE_STABLE_VERSION=0.7.1 \
+  PERSEUS_BRANCH=main
 
 # prepare root project dir
 WORKDIR /app
@@ -294,16 +296,29 @@ RUN curl -L \
 # go to branch dir
 WORKDIR /app/perseus-${PERSEUS_BRANCH}
 
+# NOTE:
+#
+# Use of PERSEUS_STABLE_VERSION and SYCAMORE_STABLE_VERSION
+# might be necessary to make adjustments to Cargo.toml before
+# attempting to setup, clean, prep, tinker, and deploy the
+# branch.
+
 # install perseus-cli from branch
 RUN bonnie setup
 
 # clean app
 RUN bonnie dev example comprehensive tiny clean
 
+# prep app
+RUN bonnie dev example comprehensive tiny prep
+
+# run plugin(s) to adjust app
+RUN bonnie dev example comprehensive tiny tinker
+
 # single-threaded perseus CLI mode required for low memory environments
 #ENV PERSEUS_CLI_SEQUENTIAL=true
 
-# deploy app
+# serve app
 RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
   && bonnie dev example comprehensive tiny deploy
 
