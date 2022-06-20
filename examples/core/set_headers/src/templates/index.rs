@@ -1,7 +1,4 @@
-use perseus::{
-    http::header::{HeaderMap, HeaderName},
-    Html, RenderFnResultWithCause, Template,
-};
+use perseus::{Html, RenderFnResultWithCause, Template};
 use sycamore::prelude::{view, Scope, SsrNode, View};
 
 #[perseus::make_rx(PageStateRx)]
@@ -40,8 +37,12 @@ pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWi
 
 // For legacy reasons, this takes an `Option<T>`, but, if you're generating state, it will always be here
 // In v0.4.0, this will be updated to take just your page's state (if it has any)
+// Unfortunately, this return type does have to be fully qualified, or you have to import it with a server-only target-gate
 #[perseus::set_headers]
-pub fn set_headers(state: Option<PageState>) -> HeaderMap {
+pub fn set_headers(state: Option<PageState>) -> perseus::http::header::HeaderMap {
+    // These imports are only available on the server-side, which this function is automatically gated to
+    use perseus::http::header::{HeaderMap, HeaderName};
+
     let mut map = HeaderMap::new();
     map.insert(
         HeaderName::from_lowercase(b"x-greeting").unwrap(),
