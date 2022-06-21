@@ -40,12 +40,12 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl -L \
+RUN curl -L# \
   https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
   | tar -xz --strip=2 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple
 
 # download, unpack, and verify install of binaryen
-RUN curl -Lo binaryen-${BINARYEN_VERSION}.tar.gz \
+RUN curl -L#o binaryen-${BINARYEN_VERSION}.tar.gz \
   https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
   && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
   && ln -s $(pwd)/binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt /usr/bin/wasm-opt \
@@ -57,10 +57,10 @@ WORKDIR /app/simple
 # install perseus-cli
 RUN cargo install perseus-cli --version $PERSEUS_VERSION
 
-# specify deps in app config
+# specify precise versions for deps in app config
 RUN sed -i "\
-  s|^\(perseus =\).*$|\1 \"${PERSEUS_VERSION}\"|g; \
-  s|^\(perseus-size-opt =\).*$|\1 \"${PERSEUS_SIZE_OPT_VERSION}\"|g;" \
+  s|^\(perseus =\).*$|\1 \"=${PERSEUS_VERSION}\"|g; \
+  s|^\(perseus-size-opt =\).*$|\1 \"=${PERSEUS_SIZE_OPT_VERSION}\"|g;" \
   ./Cargo.toml && cat ./Cargo.toml
 
 # modify lib.rs
@@ -76,6 +76,10 @@ RUN sed -i "\
       enable_fluent_bundle_patch: false,\n\
     }\n\
   )|" ./src/lib.rs && cat ./src/lib.rs
+
+# update dependencies to required versions
+RUN cargo update -p perseus --precise ${PERSEUS_VERSION} \
+  && cargo update -p perseus-size-opt --precise ${PERSEUS_SIZE_OPT_VERSION}
 
 # clean and prep app
 RUN perseus clean && perseus prep
@@ -96,7 +100,7 @@ RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
 WORKDIR /app
 
 # download, unpack, and verify install of esbuild
-RUN curl -Lo esbuild-${ESBUILD_VERSION}.tar.gz \
+RUN curl -L#o esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
   && ln -s $(pwd)/package/bin/esbuild /usr/bin/esbuild \
