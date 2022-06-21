@@ -40,12 +40,12 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install wasm-pack
 
 # retrieve the src dir
-RUN curl -sL# \
+RUN curl -L# \
   https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
   | tar -xz --strip=2 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple
 
 # download, unpack, and verify install of binaryen
-RUN curl -sL#o binaryen-${BINARYEN_VERSION}.tar.gz \
+RUN curl -L#o binaryen-${BINARYEN_VERSION}.tar.gz \
   https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
   && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
   && ln -s $(pwd)/binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt /usr/bin/wasm-opt \
@@ -100,7 +100,7 @@ RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
 WORKDIR /app
 
 # download, unpack, and verify install of esbuild
-RUN curl -sL#o esbuild-${ESBUILD_VERSION}.tar.gz \
+RUN curl -L#o esbuild-${ESBUILD_VERSION}.tar.gz \
   https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
   && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
   && ln -s $(pwd)/package/bin/esbuild /usr/bin/esbuild \
