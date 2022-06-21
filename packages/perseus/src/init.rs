@@ -701,22 +701,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             } else if path.starts_with("../") {
                 // Anything outside this directory is a security risk as well
                 panic!("it's a security risk to include paths outside the current directory in `static_aliases` ('{}')", path);
-            } else if path.starts_with("./") {
-                // `./` -> `../` (moving to execution from `.perseus/`)
-                // But if we're operating standalone, it stays the same
-                if cfg!(feature = "standalone") {
-                    path.to_string()
-                } else {
-                    format!(".{}", path)
-                }
             } else {
-                // Anything else gets a `../` prepended
-                // But if we're operating standalone, it stays the same
-                if cfg!(feature = "standalone") {
-                    path.to_string()
-                } else {
-                    format!("../{}", path)
-                }
+                path.to_string()
             };
 
             scoped_static_aliases.insert(url, new_path);
