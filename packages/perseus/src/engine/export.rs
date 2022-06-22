@@ -1,53 +1,47 @@
-use fmterr::fmt_err;
+use crate::build::{build_app, BuildProps};
+use crate::errors::ServerError;
+use crate::export::{export_app, ExportProps};
+use crate::{internal::get_path_prefix_server, PerseusApp, PluginAction, Plugins, SsrNode};
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
-use perseus::{
-    internal::{
-        build::{build_app, BuildProps},
-        export::{export_app, ExportProps},
-        get_path_prefix_server,
-    },
-    PerseusApp, PluginAction, SsrNode,
-};
-use perseus_engine as app;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::rc::Rc;
 
-#[tokio::main]
-async fn main() {
-    let exit_code = real_main().await;
-    std::process::exit(exit_code)
-}
+use crate::errors::*;
+use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 
-async fn real_main() -> i32 {
-    // We want to be working in the root of `.perseus/`
-    std::env::set_current_dir("../").unwrap();
-    let app = app::main::<SsrNode>();
-
+/// Exports the app to static files, given a `PerseusApp`. This is engine-agnostic, using the `exported` subfolder in the immutable store as a destination directory. By default
+/// this will end up at `dist/exported/` (customizable through `PerseusApp`).
+///
+/// Note that this expects to be run in the root of the project.
+pub async fn export<M: MutableStore, T: TranslationsManager>(
+    app: PerseusAppBase<SsrNode, M, T>,
+) -> Result<(), Rc<EngineError>> {
     let plugins = app.get_plugins();
+    let static_aliases = app.get_static_aliases();
+    // This won't have any trailing slashes (they're stripped by the immutable store initializer)
+    let dest = format!("{}/exported", app.get_immutable_store().get_path());
+    let static_dir = app.get_static_dir();
 
-    // Building and exporting must be sequential, but that can be done in parallel with static directory/alias copying
-    let exit_code = build_and_export().await;
-    if exit_code != 0 {
-        return exit_code;
-    }
+    build_and_export(app).await?;
     // After that's done, we can do two copy operations in parallel at least
-    let exit_code_1 = tokio::task::spawn_blocking(copy_static_dir);
-    let exit_code_2 = tokio::task::spawn_blocking(copy_static_aliases);
-    // These errors come from any panics in the threads, which should be propagated up to a panic in the main thread in this case
-    exit_code_1.await.unwrap();
-    exit_code_2.await.unwrap();
+    copy_static_aliases(&plugins, &static_aliases, &dest)?;
+    copy_static_dir(&plugins, &static_dir, &dest)?;
 
     plugins
         .functional_actions
         .export_actions
         .after_successful_export
         .run((), plugins.get_plugin_data());
-    println!("Static exporting successfully completed!");
-    0
+
+    Ok(())
 }
 
-async fn build_and_export() -> i32 {
-    let app = app::main::<SsrNode>();
+/// Performs the building and exporting processes using the given app. This is fully engine-agnostic, using only the data provided in the given `PerseusApp`.
+async fn build_and_export<M: MutableStore, T: TranslationsManager>(
+    app: PerseusAppBase<SsrNode, M, T>,
+) -> Result<(), Rc<EngineError>> {
     let plugins = app.get_plugins();
 
     plugins
@@ -65,14 +59,13 @@ async fn build_and_export() -> i32 {
     let global_state = match gsc.get_build_state().await {
         Ok(global_state) => global_state,
         Err(err) => {
-            let err_msg = fmt_err(&err);
+            let err: Rc<EngineError> = Rc::new(ServerError::GlobalStateError(err).into());
             plugins
                 .functional_actions
                 .export_actions
                 .after_failed_global_state_creation
-                .run(err, plugins.get_plugin_data());
-            eprintln!("{}", err_msg);
-            return 1;
+                .run(err.clone(), plugins.get_plugin_data());
+            return Err(err);
         }
     };
     let templates_map = app.get_templates_map();
@@ -94,14 +87,13 @@ async fn build_and_export() -> i32 {
     })
     .await;
     if let Err(err) = build_res {
-        let err_msg = fmt_err(&err);
+        let err: Rc<EngineError> = Rc::new(err.into());
         plugins
             .functional_actions
             .export_actions
             .after_failed_build
-            .run(err, plugins.get_plugin_data());
-        eprintln!("{}", err_msg);
-        return 1;
+            .run(err.clone(), plugins.get_plugin_data());
+        return Err(err);
     }
     plugins
         .functional_actions
@@ -124,84 +116,100 @@ async fn build_and_export() -> i32 {
     })
     .await;
     if let Err(err) = export_res {
-        let err_msg = fmt_err(&err);
+        let err: Rc<EngineError> = Rc::new(err.into());
         plugins
             .functional_actions
             .export_actions
             .after_failed_export
-            .run(err, plugins.get_plugin_data());
-        eprintln!("{}", err_msg);
-        return 1;
+            .run(err.clone(), plugins.get_plugin_data());
+        return Err(err);
     }
 
-    0
+    Ok(())
 }
 
-fn copy_static_dir() -> i32 {
-    let app = app::main::<SsrNode>();
-    let plugins = app.get_plugins();
+/// Copies the static aliases into a distribution directory at `dest` (no trailing `/`). This should be the root of the destination directory for the exported files.
+/// Because this provides a customizable destination, it is fully engine-agnostic.
+///
+/// The error type here is a tuple of the location the asset was copied from, the location it was copied to, and the error in that process (which could be from `io` or
+/// `fs_extra`).
+fn copy_static_aliases(
+    plugins: &Plugins<SsrNode>,
+    static_aliases: &HashMap<String, String>,
+    dest: &str,
+) -> Result<(), Rc<EngineError>> {
     // Loop through any static aliases and copy them in too
     // Unlike with the server, these could override pages!
     // We'll copy from the alias to the path (it could be a directory or a file)
     // Remember: `alias` has a leading `/`!
-    for (alias, path) in app.get_static_aliases() {
+    for (alias, path) in static_aliases {
         let from = PathBuf::from(path);
-        let to = format!("dist/exported{}", alias);
+        let to = format!("{}{}", dest, alias);
 
         if from.is_dir() {
             if let Err(err) = copy_dir(&from, &to, &CopyOptions::new()) {
-                let err_msg = format!(
-                    "couldn't copy static alias directory from '{}' to '{}': '{}'",
-                    from.to_str().map(|s| s.to_string()).unwrap(),
+                let err = EngineError::CopyStaticAliasDirErr {
+                    source: err,
                     to,
-                    fmt_err(&err)
-                );
+                    from: path.to_string(),
+                };
+                let err = Rc::new(err);
                 plugins
                     .functional_actions
                     .export_actions
                     .after_failed_static_alias_dir_copy
-                    .run(err.to_string(), plugins.get_plugin_data());
-                eprintln!("{}", err_msg);
-                return 1;
+                    .run(err.clone(), plugins.get_plugin_data());
+                return Err(err);
             }
         } else if let Err(err) = fs::copy(&from, &to) {
-            let err_msg = format!(
-                "couldn't copy static alias file from '{}' to '{}': '{}'",
-                from.to_str().map(|s| s.to_string()).unwrap(),
+            let err = EngineError::CopyStaticAliasFileError {
+                source: err,
                 to,
-                fmt_err(&err)
-            );
+                from: path.to_string(),
+            };
+            let err = Rc::new(err);
             plugins
                 .functional_actions
                 .export_actions
                 .after_failed_static_alias_file_copy
-                .run(err, plugins.get_plugin_data());
-            eprintln!("{}", err_msg);
-            return 1;
+                .run(err.clone(), plugins.get_plugin_data());
+            return Err(err);
         }
     }
 
-    0
+    Ok(())
 }
 
-fn copy_static_aliases() -> i32 {
-    let app = app::main::<SsrNode>();
-    let plugins = app.get_plugins();
+/// Copies the directory containing static data to be put in `/.perseus/static/` (URL). This takes in both the location of the static directory and the destination
+/// directory for exported files.
+fn copy_static_dir(
+    plugins: &Plugins<SsrNode>,
+    static_dir_raw: &str,
+    dest: &str,
+) -> Result<(), Rc<EngineError>> {
     // Copy the `static` directory into the export package if it exists
     // If the user wants extra, they can use static aliases, plugins are unnecessary here
-    let static_dir = PathBuf::from("../static");
+    let static_dir = PathBuf::from(static_dir_raw);
     if static_dir.exists() {
-        if let Err(err) = copy_dir(&static_dir, "dist/exported/.perseus/", &CopyOptions::new()) {
-            let err_msg = format!("couldn't copy static directory: '{}'", fmt_err(&err));
+        if let Err(err) = copy_dir(
+            &static_dir,
+            format!("{}/.perseus/", dest),
+            &CopyOptions::new(),
+        ) {
+            let err = EngineError::CopyStaticDirError {
+                source: err,
+                path: static_dir_raw.to_string(),
+                dest: dest.to_string(),
+            };
+            let err = Rc::new(err);
             plugins
                 .functional_actions
                 .export_actions
                 .after_failed_static_copy
-                .run(err.to_string(), plugins.get_plugin_data());
-            eprintln!("{}", err_msg);
-            return 1;
+                .run(err.clone(), plugins.get_plugin_data());
+            return Err(err);
         }
     }
 
-    0
+    Ok(())
 }

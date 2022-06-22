@@ -34,7 +34,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // We'll take in the path here, which will consist of the template name `incremental_generation` followed by the spcific path we're building for (as exported from `get_build_paths`)
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
     // This path is illegal, and can't be rendered
     // Because we're using incremental generation, we could gte literally anything as the `path`
@@ -57,6 +57,7 @@ pub async fn get_build_state(path: String, _locale: String) -> RenderFnResultWit
 // Note that everything you export from here will be prefixed with `<template-name>/` when it becomes a URL in your app
 //
 // Note also that there's almost no point in using build paths without build state, as every page would come out exactly the same (unless you differentiated them on the client...)
+#[perseus::build_paths]
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
 }

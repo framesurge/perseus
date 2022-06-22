@@ -1,6 +1,5 @@
 use crate::errors::*;
 use crate::router::{RouterLoadState, RouterState};
-#[cfg(all(feature = "live-reload", debug_assertions))]
 use crate::state::{
     AnyFreeze, Freeze, FrozenApp, GlobalState, MakeRx, MakeUnrx, PageStateStore, ThawPrefs,
 };

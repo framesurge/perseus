@@ -11,40 +11,81 @@ This is the API documentation for the `perseus-macro` package, which manages Per
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
 */
 
-mod autoserde;
 mod entrypoint;
 mod head;
 mod rx_state;
+mod state_fns;
 mod template;
 mod template_rx;
 mod test;
 
 use darling::FromMeta;
 use proc_macro::TokenStream;
-use syn::ItemStruct;
+use quote::quote;
+use state_fns::StateFnType;
+use syn::{ItemStruct, Path};
 
-/// Automatically serializes/deserializes properties for a template. Perseus handles your templates' properties as `String`s under the
-/// hood for both simplicity and to avoid bundle size increases from excessive monomorphization. This macro aims to prevent the need for
-/// manually serializing and deserializing everything! This takes the type of function that it's working on, which must be one of the
-/// following:
-///
-/// - `build_state` (serializes return type)
-/// - `request_state` (serializes return type)
-/// - `set_headers` (deserializes parameter)
-/// - `amalgamate_states` (serializes return type, you'll still need to deserializes from `States` manually)
+/// Annotates functions used for generating state at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for build state functions.
 #[proc_macro_attribute]
-pub fn autoserde(args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as autoserde::AutoserdeFn);
-    let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
-    // Parse macro arguments with `darling`
-    let args = match autoserde::AutoserdeArgs::from_list(&attr_args) {
-        Ok(v) => v,
-        Err(e) => {
-            return TokenStream::from(e.write_errors());
-        }
-    };
+pub fn build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
 
-    autoserde::autoserde_impl(parsed, args).into()
+    state_fns::state_fn_impl(parsed, StateFnType::BuildState).into()
+}
+
+/// Annotates functions used for generating paths at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for build paths functions.
+#[proc_macro_attribute]
+pub fn build_paths(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::BuildPaths).into()
+}
+
+/// Annotates functions used for generating global state at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for global build state functions.
+#[proc_macro_attribute]
+pub fn global_build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::GlobalBuildState).into()
+}
+
+/// Annotates functions used for generating state at request time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for request state functions.
+#[proc_macro_attribute]
+pub fn request_state(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::RequestState).into()
+}
+
+/// Annotates functions used for generating state at build time to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for build state functions.
+#[proc_macro_attribute]
+pub fn set_headers(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::SetHeaders).into()
+}
+
+/// Annotates functions used for amalgamating build-time and request-time states to support automatic serialization/deserialization of app state and
+/// client/server division. This supersedes the old `autoserde` macro for state amalgamation functions.
+#[proc_macro_attribute]
+pub fn amalgamate_states(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::AmalgamateStates).into()
+}
+
+/// Annotates functions used for checking if a template should revalidate and request-time states to support automatic serialization/deserialization
+/// of app state and client/server division. This supersedes the old `autoserde` macro for revalidation determination functions.
+#[proc_macro_attribute]
+pub fn should_revalidate(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
+
+    state_fns::state_fn_impl(parsed, StateFnType::ShouldRevalidate).into()
 }
 
 /// Labels a Sycamore component as a Perseus template, turning it into something that can be easily inserted into the `.template()`
@@ -98,14 +139,65 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
     test::test_impl(parsed, args).into()
 }
 
-/// Marks the given function as the entrypoint into your app. You should only use this once in the `lib.rs` file of your project.
+/// Marks the given function as the universal entrypoint into your app. This is designed for simple use-cases, and the annotated function should return
+/// a `PerseusApp`. This will expand into separate `main()` functions for both the browser and engine sides.
 ///
-/// Internally, this just normalizes the function's name so that Perseus can find it easily.
+/// This should take an argument for the function that will produce your server. In most apps using this macro (which is designed for simple use-cases),
+/// this will just be something like `perseus_warp::dflt_server` (with `perseus-warp` as a dependency with the `dflt-server` feature enabled).
+///
+/// Note that the `dflt-engine` and `client-helpers` features must be enabled on `perseus` for this to work. (These are enabled by default.)
+///
+/// Note further that you'll need to have `wasm-bindgen` as a dependency to use this.
 #[proc_macro_attribute]
-pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn main(args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as entrypoint::MainFn);
+    let args = syn::parse_macro_input!(args as Path);
+
+    entrypoint::main_impl(parsed, args).into()
+}
+
+/// This is identical to `#[main]`, except it doesn't require a server integration, because it sets your app up for exporting only. This is useful for
+/// apps not using server-requiring features (like incremental static generation and revalidation) that want to avoid bringing in another dependency on
+/// the server-side.
+#[proc_macro_attribute]
+pub fn main_export(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as entrypoint::MainFn);
 
-    entrypoint::main_impl(parsed).into()
+    entrypoint::main_export_impl(parsed).into()
+}
+
+/// Marks the given function as the browser entrypoint into your app. This is designed for more complex apps that need to manually distinguish between
+/// the engine and browser entrypoints.
+///
+/// If you just want to run some simple customizations, you should probably use `perseus::run_client` to use the default client logic after you've made your
+/// modifications. `perseus::ClientReturn` should be your return type no matter what.
+///
+/// Note that any generics on the annotated function will not be preserved. You should put the `PerseusApp` generator in a separate function.
+///
+/// Note further that you'll need to have `wasm-bindgen` as a dependency to use this.
+#[proc_macro_attribute]
+pub fn browser_main(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as entrypoint::MainFn);
+
+    entrypoint::browser_main_impl(parsed).into()
+}
+
+/// Marks the given function as the engine entrypoint into your app. This is designed for more complex apps that need to manually distinguish between
+/// the engine and browser entrypoints.
+///
+/// If you just want to run some simple customizations, you should probably use `perseus::run_dflt_engine` with `perseus::builder::get_op` to use the default client logic
+/// after you've made your modifications. You'll also want to return an exit code from this function (use `std::process:exit(..)`).
+///
+/// Note that the `dflt-engine` and `client-helpers` features must be enabled on `perseus` for this to work. (These are enabled by default.)
+///
+/// Note further that you'll need to have `tokio` as a dependency to use this.
+///
+/// Finally, note that any generics on the annotated function will not be preserved. You should put the `PerseusApp` generator in a separate function.
+#[proc_macro_attribute]
+pub fn engine_main(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as entrypoint::EngineMainFn);
+
+    entrypoint::engine_main_impl(parsed).into()
 }
 
 /// Processes the given `struct` to create a reactive version by wrapping each field in a `Signal`. This will generate a new `struct` with the given name and implement a `.make_rx()`
@@ -181,4 +273,28 @@ pub fn make_rx(args: TokenStream, input: TokenStream) -> TokenStream {
     let name = syn::parse_macro_input!(args as syn::Ident);
 
     rx_state::make_rx_impl(parsed, name).into()
+}
+
+/// Marks the annotated code as only to be run as part of the engine (the server, the builder, the exporter, etc.). This resolves to a
+/// target-gate that makes the annotated code run only on targets that are not `wasm32`.
+#[proc_macro_attribute]
+pub fn engine(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_2: proc_macro2::TokenStream = input.into();
+    quote! {
+        #[cfg(not(target_arch = "wasm32"))]
+        #input_2
+    }
+    .into()
+}
+
+/// Marks the annotated code as only to be run in the browser. This is the opposite of (and mutually exclusive with) `#[engine]`. This
+/// resolves to a target-gate that makes the annotated code run only on targets that are `wasm32`.
+#[proc_macro_attribute]
+pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_2: proc_macro2::TokenStream = input.into();
+    quote! {
+        #[cfg(target_arch = "wasm32")]
+        #input_2
+    }
+    .into()
 }

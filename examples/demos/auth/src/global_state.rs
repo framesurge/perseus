@@ -5,7 +5,7 @@ pub fn get_global_state_creator() -> GlobalStateCreator {
     GlobalStateCreator::new().build_state_fn(get_build_state)
 }
 
-#[perseus::autoserde(global_build_state)]
+#[perseus::global_build_state]
 pub async fn get_build_state() -> RenderFnResult<AppState> {
     Ok(AppState {
         // We explicitly tell the first page that no login state has been checked yet
@@ -44,9 +44,9 @@ pub struct AuthData {
 }
 // We implement a custom function on the reactive version of the global state here (hence the `.get()`s and `.set()`s, all the fields become `Signal`s)
 // There's no point in implementing it on the unreactive version, since this will only be called from within the browser, in which we have a reactive version
+#[cfg(target_arch = "wasm32")] // These functions all use `web_sys`, and so won't work on the server-side
 impl<'a> AuthDataRx<'a> {
     /// Checks whether or not the user is logged in and modifies the internal state accordingly. If this has already been run, it won't do anything (aka. it will only run if it's `Server`)
-    #[cfg(target_arch = "wasm32")] // This just avoids an unused function warning (since we have to gate the `.update()` call)
     pub fn detect_state(&self) {
         // If we've checked the login status before, then we should assume the status hasn't changed (we'd change this in a login/logout page)
         if let LoginState::Yes | LoginState::No = *self.state.get() {

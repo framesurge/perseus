@@ -21,7 +21,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 
 // We're told the path we're generating for (useless unless we're using build paths as well) and the locale (which will be `xx-XX` if we're not using i18n)
 // Note that this function is asynchronous, so we can do work like fetching from a server or the like here (see the `demo/fetching` example)
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         greeting: "Hello World!".to_string(),

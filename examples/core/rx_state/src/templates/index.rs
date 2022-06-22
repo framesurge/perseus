@@ -31,7 +31,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .build_state_fn(get_build_state)
 }
 
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(
     _path: String,
     _locale: String,

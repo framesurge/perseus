@@ -15,4 +15,19 @@ urlencoding = "2.1"
 
 [dev-dependencies]
 fantoccini = "0.17"
-tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
+perseus-integration = { path = "../../../packages/perseus-integration", default-features = false }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+
+[lib]
+name = "lib"
+path = "src/lib.rs"
+crate-type = [ "cdylib", "rlib" ]
+
+[[bin]]
+name = "perseus-example-i18n"
+path = "src/lib.rs"

@@ -1,4 +1,5 @@
-use darling::FromMeta;
+// This file contains all the macros that supersede `autoserde`
+
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
@@ -7,24 +8,8 @@ use syn::{
     Result, ReturnType, Type, Visibility,
 };
 
-/// The arguments that the `autoserde` annotation takes.
-// TODO prevent the user from providing more than one of these
-#[derive(Debug, FromMeta, PartialEq, Eq)]
-pub struct AutoserdeArgs {
-    #[darling(default)]
-    build_state: bool,
-    #[darling(default)]
-    request_state: bool,
-    #[darling(default)]
-    set_headers: bool,
-    #[darling(default)]
-    amalgamate_states: bool,
-    #[darling(default)]
-    global_build_state: bool,
-}
-
 /// A function that can be wrapped in the Perseus test sub-harness.
-pub struct AutoserdeFn {
+pub struct StateFn {
     /// The body of the function.
     pub block: Box<Block>,
     /// The arguments that the function takes. We don't need to modify these because we wrap them with a functin that does serializing/
@@ -41,7 +26,7 @@ pub struct AutoserdeFn {
     /// Any generics the function takes (shouldn't be any, but it's possible).
     pub generics: Generics,
 }
-impl Parse for AutoserdeFn {
+impl Parse for StateFn {
     fn parse(input: ParseStream) -> Result<Self> {
         let parsed: Item = input.parse()?;
 
@@ -97,8 +82,20 @@ impl Parse for AutoserdeFn {
     }
 }
 
-pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream {
-    let AutoserdeFn {
+/// The different types of state functions.
+pub enum StateFnType {
+    BuildState,
+    BuildPaths,
+    RequestState,
+    SetHeaders,
+    AmalgamateStates,
+    GlobalBuildState,
+    ShouldRevalidate,
+}
+
+// We just use a single implementation function for ease, but there's a separate macro for each type of state function
+pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
+    let StateFn {
         block,
         args,
         generics,
@@ -108,9 +105,12 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
         return_type,
     } = input;
 
-    if fn_type.build_state {
-        // This will always be asynchronous
-        quote! {
+    match fn_type {
+        StateFnType::BuildState => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis async fn #name(path: ::std::string::String, locale: ::std::string::String) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
@@ -125,10 +125,24 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 let build_state_with_str = build_state.map(|val| ::serde_json::to_string(&val).unwrap());
                 build_state_with_str
             }
-        }
-    } else if fn_type.request_state {
-        // This will always be asynchronous
-        quote! {
+        },
+        // This one only exists to appease the server-side/client-side division
+        StateFnType::BuildPaths => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            // This normal version is identical to the user's (we know it won't have any arguments, and we know its return type)
+            // We use the user's return type to prevent unused imports warnings in their code
+            #[cfg(not(target_arch = "wasm32"))]
+            #vis async fn #name() -> #return_type {
+                #block
+            }
+        },
+        StateFnType::RequestState => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, req: ::perseus::Request) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
@@ -143,10 +157,13 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 let req_state_with_str = req_state.map(|val| ::serde_json::to_string(&val).unwrap());
                 req_state_with_str
             }
-        }
-    } else if fn_type.set_headers {
-        // This will always be synchronous
-        quote! {
+        },
+        // Always synchronous
+        StateFnType::SetHeaders => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
                 // The user's function
                 // We can assume the return type to be `HeaderMap`
@@ -158,10 +175,13 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 let props_de = props.map(|val| ::serde_json::from_str(&val).unwrap());
                 #name(props_de)
             }
-        }
-    } else if fn_type.amalgamate_states {
-        // This will always be synchronous
-        quote! {
+        },
+        // Always synchronous
+        StateFnType::AmalgamateStates => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis fn #name(states: ::perseus::States) -> ::perseus::RenderFnResultWithCause<::std::option::Option<::std::string::String>> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<Option<CustomTemplatePropsType>>`
@@ -176,9 +196,12 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 let amalgamated_state_with_str = amalgamated_state.map(|val| val.map(|val| ::serde_json::to_string(&val).unwrap()));
                 amalgamated_state_with_str
             }
-        }
-    } else if fn_type.global_build_state {
-        quote! {
+        },
+        StateFnType::GlobalBuildState => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis async fn #name() -> ::perseus::RenderFnResult<::std::string::String> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomGlobalStateType>`
@@ -193,10 +216,18 @@ pub fn autoserde_impl(input: AutoserdeFn, fn_type: AutoserdeArgs) -> TokenStream
                 let build_state_with_str = build_state.map(|val| ::serde_json::to_string(&val).unwrap());
                 build_state_with_str
             }
-        }
-    } else {
-        quote! {
-            compile_error!("function type not supported, must be one of: `build_state`, `request_state`, `set_headers`, `amalgamate_states`, or `global_build_state`")
-        }
+        },
+        // This one only exists to appease the server-side/client-side division
+        StateFnType::ShouldRevalidate => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            // This normal version is identical to the user's (we know it won't have any arguments, and we know its return type)
+            // We use the user's return type to prevent unused imports warnings in their code
+            #[cfg(not(target_arch = "wasm32"))]
+            #vis async fn #name() -> #return_type {
+                #block
+            }
+        },
     }
 }

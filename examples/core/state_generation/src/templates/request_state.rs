@@ -1,4 +1,6 @@
-use perseus::{RenderFnResultWithCause, Request, Template};
+#[cfg(not(target_arch = "wasm32"))]
+use perseus::Request;
+use perseus::{RenderFnResultWithCause, Template};
 use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
@@ -23,7 +25,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template(request_state_page)
 }
 
-#[perseus::autoserde(request_state)]
+#[perseus::request_state]
 pub async fn get_request_state(
     _path: String,
     _locale: String,

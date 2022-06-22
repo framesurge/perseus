@@ -1,5 +1,5 @@
 use crate::error_pages::ErrorPageData;
-use crate::server::PageData;
+use crate::PageData;
 use std::collections::HashMap;
 use std::{env, fmt};
 
@@ -68,7 +68,7 @@ impl HtmlShell {
         #[cfg(not(feature = "wasm2js"))]
         let load_wasm_bundle = format!(
             r#"
-        import init, {{ run }} from "{path_prefix}/.perseus/bundle.js";
+        import init, {{ main as run }} from "{path_prefix}/.perseus/bundle.js";
         async function main() {{
             await init("{path_prefix}/.perseus/bundle.wasm");
             run();
@@ -80,7 +80,7 @@ impl HtmlShell {
         #[cfg(feature = "wasm2js")]
         let load_wasm_bundle = format!(
             r#"
-        import init, {{ run }} from "{path_prefix}/.perseus/bundle.js";
+        import init, {{ main as run }} from "{path_prefix}/.perseus/bundle.js";
         async function main() {{
             await init("{path_prefix}/.perseus/bundle.wasm.js");
             run();

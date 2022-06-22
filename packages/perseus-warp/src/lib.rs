@@ -9,6 +9,8 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 
 mod conv_req;
+#[cfg(feature = "dflt-server")]
+mod dflt_server;
 mod initial_load;
 mod page_data;
 mod perseus_routes;
@@ -16,4 +18,6 @@ mod static_content;
 mod translations;
 
 pub use crate::perseus_routes::perseus_routes;
+#[cfg(feature = "dflt-server")]
+pub use dflt_server::dflt_server;
 pub use perseus::internal::serve::ServerOptions;

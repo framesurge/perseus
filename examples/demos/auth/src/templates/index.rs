@@ -21,6 +21,7 @@ fn index_view<'a, G: Html>(cx: Scope<'a>, _: (), AppStateRx { auth }: AppStateRx
                     view! { cx,
                             h1 { (format!("Welcome back, {}!", &username)) }
                             button(on:click =  |_| {
+                                #[cfg(target_arch = "wasm32")]
                                 auth.logout();
                             }) { "Logout" }
                     }
@@ -30,6 +31,7 @@ fn index_view<'a, G: Html>(cx: Scope<'a>, _: (), AppStateRx { auth }: AppStateRx
                     h1 { "Welcome, stranger!" }
                     input(bind:value = entered_username, placeholder = "Username")
                     button(on:click = |_| {
+                        #[cfg(target_arch = "wasm32")]
                         auth.login(&entered_username.get())
                     }) { "Login" }
                 },

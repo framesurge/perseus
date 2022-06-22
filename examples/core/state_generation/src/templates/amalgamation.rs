@@ -1,4 +1,6 @@
-use perseus::{RenderFnResultWithCause, Request, States, Template};
+use perseus::{RenderFnResultWithCause, Template};
+#[cfg(not(target_arch = "wasm32"))]
+use perseus::{Request, States};
 use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
@@ -23,7 +25,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template(amalgamation_page)
 }
 
-#[perseus::autoserde(amalgamate_states)]
+#[perseus::amalgamate_states]
 pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<PageState>> {
     // We know they'll both be defined, and Perseus currently has to provide both as serialized strings
     let build_state = serde_json::from_str::<PageState>(&states.build_state.unwrap())?;
@@ -37,14 +39,14 @@ pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<PageS
     }))
 }
 
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         message: "Hello from the build process!".to_string(),
     })
 }
 
-#[perseus::autoserde(request_state)]
+#[perseus::request_state]
 pub async fn get_request_state(
     _path: String,
     _locale: String,

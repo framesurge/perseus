@@ -1,7 +1,7 @@
-use perseus::{Html, PerseusApp, Template, ErrorPages};
+use perseus::{ErrorPages, Html, PerseusApp, Template};
 use sycamore::view;
 
-#[perseus::main]
+#[perseus::main(perseus_integration::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(|| {

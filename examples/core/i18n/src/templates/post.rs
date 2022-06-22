@@ -31,7 +31,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template(post_page)
 }
 
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_static_props(
     path: String,
     _locale: String,
@@ -49,6 +49,7 @@ pub async fn get_static_props(
     }) // This `?` declares the default, that the server is the cause of the error
 }
 
+#[perseus::build_paths]
 pub async fn get_static_paths() -> RenderFnResult<Vec<String>> {
     Ok(vec![
         "".to_string(),

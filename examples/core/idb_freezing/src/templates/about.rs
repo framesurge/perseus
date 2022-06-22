@@ -1,4 +1,3 @@
-use perseus::state::{Freeze, IdbFrozenStateStore};
 use perseus::{Html, Template};
 use sycamore::prelude::*;
 
@@ -8,6 +7,9 @@ use crate::global_state::*;
 pub fn about_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a>) -> View<G> {
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());
+    // It's faster to get this only once and rely on reactivity
+    // But it's unused when this runs on the server-side because of the target-gate below
+    #[allow(unused_variables)]
     let render_ctx = perseus::get_render_ctx!(cx);
 
     view! { cx,
@@ -18,9 +20,11 @@ pub fn about_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a
         br()
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
-        button(id = "freeze_button", on:click = move |_|
+        button(id = "freeze_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
+            #[cfg(target_arch = "wasm32")]
             perseus::spawn_local_scoped(cx, async move {
+                use perseus::state::{IdbFrozenStateStore, Freeze};
                 // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
                 let frozen_state = render_ctx.freeze();
                 let idb_store = match IdbFrozenStateStore::new().await {
@@ -35,7 +39,7 @@ pub fn about_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a
                     Err(_) => freeze_status.set("Error.".to_string())
                 };
             })
-        ) { "Freeze to IndexedDB" }
+        }) { "Freeze to IndexedDB" }
         p { (freeze_status.get()) }
     }
 }

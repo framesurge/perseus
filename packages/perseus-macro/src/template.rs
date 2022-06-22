@@ -162,7 +162,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     #block
                 }
 
-                #component_name(cx, ())
+                #component_name(cx)
             }
         }
     }

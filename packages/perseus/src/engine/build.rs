@@ -1,20 +1,18 @@
-use fmterr::fmt_err;
-use perseus::{
-    internal::build::{build_app, BuildProps},
-    PluginAction, SsrNode,
+use crate::build::{build_app, BuildProps};
+use crate::{
+    errors::{EngineError, ServerError},
+    i18n::TranslationsManager,
+    stores::MutableStore,
+    PerseusAppBase, PluginAction, SsrNode,
 };
-use perseus_engine as app;
+use std::rc::Rc;
 
-#[tokio::main]
-async fn main() {
-    let exit_code = real_main().await;
-    std::process::exit(exit_code)
-}
-
-async fn real_main() -> i32 {
-    // We want to be working in the root of `.perseus/`
-    std::env::set_current_dir("../").unwrap();
-    let app = app::main::<SsrNode>();
+/// Builds the app, calling all necessary plugin opportunities. This works solely with the properties provided in the given `PerseusApp`, so this is entirely engine-agnostic.
+///
+/// Note that this expects to be run in the root of the project.
+pub async fn build<M: MutableStore, T: TranslationsManager>(
+    app: PerseusAppBase<SsrNode, M, T>,
+) -> Result<(), Rc<EngineError>> {
     let plugins = app.get_plugins();
 
     plugins
@@ -31,14 +29,13 @@ async fn real_main() -> i32 {
     let global_state = match gsc.get_build_state().await {
         Ok(global_state) => global_state,
         Err(err) => {
-            let err_msg = fmt_err(&err);
+            let err: Rc<EngineError> = Rc::new(ServerError::GlobalStateError(err).into());
             plugins
                 .functional_actions
                 .build_actions
                 .after_failed_global_state_creation
-                .run(err, plugins.get_plugin_data());
-            eprintln!("{}", err_msg);
-            return 1;
+                .run(err.clone(), plugins.get_plugin_data());
+            return Err(err);
         }
     };
 
@@ -60,21 +57,21 @@ async fn real_main() -> i32 {
     })
     .await;
     if let Err(err) = res {
-        let err_msg = fmt_err(&err);
+        let err: Rc<EngineError> = Rc::new(err.into());
         plugins
             .functional_actions
             .build_actions
             .after_failed_build
-            .run(err, plugins.get_plugin_data());
-        eprintln!("{}", err_msg);
-        1
+            .run(err.clone(), plugins.get_plugin_data());
+
+        Err(err)
     } else {
         plugins
             .functional_actions
             .build_actions
             .after_successful_build
             .run((), plugins.get_plugin_data());
-        println!("Static generation successfully completed!");
-        0
+
+        Ok(())
     }
 }

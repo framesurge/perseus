@@ -7,16 +7,17 @@ use crate::{
         router::{PerseusRoute, RouteInfo, RouteVerdict},
         shell::{app_shell, get_initial_state, InitialState, ShellProps},
     },
-    templates::{RenderCtx, RouterLoadState, RouterState, TemplateNodeType},
+    templates::{RenderCtx, RouterLoadState, RouterState, TemplateMap, TemplateNodeType},
     DomNode, ErrorPages, Html,
 };
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
     prelude::{component, create_effect, create_signal, view, NodeRef, ReadSignal, Scope, View},
     Prop,
 };
-use sycamore_router::{HistoryIntegration, Router};
+use sycamore_router::{HistoryIntegration, RouterBase};
 use web_sys::Element;
 
 // We don't want to bring in a styling library, so we do this the old-fashioned way!
@@ -43,7 +44,7 @@ struct OnRouteChangeProps<'a, G: Html> {
     container_rx: NodeRef<G>,
     router_state: RouterState,
     translations_manager: Rc<RefCell<ClientTranslationsManager>>,
-    error_pages: Rc<ErrorPages<DomNode>>,
+    error_pages: Rc<ErrorPages<TemplateNodeType>>,
     initial_container: Option<Element>,
 }
 
@@ -130,9 +131,13 @@ fn on_route_change<G: Html>(
 #[derive(Debug, Prop)]
 pub struct PerseusRouterProps {
     /// The error pages the app is using.
-    pub error_pages: ErrorPages<DomNode>,
+    pub error_pages: ErrorPages<TemplateNodeType>,
     /// The locales settings the app is using.
     pub locales: Locales,
+    /// The templates the app is using.
+    pub templates: TemplateMap<TemplateNodeType>,
+    /// The render configuration of the app (which lays out routing information, among other things).
+    pub render_cfg: HashMap<String, String>,
 }
 
 /// The Perseus router. This is used internally in the Perseus engine, and you shouldn't need to access this directly unless
@@ -141,13 +146,23 @@ pub struct PerseusRouterProps {
 /// Note: this deliberately has a snake case name, and should be called directly with `cx` as the first argument, allowing the `AppRoute` generic
 /// creates with `create_app_root!` to be provided easily. That given `cx` property will be used for all context registration in the app.
 #[component]
-pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'static>(
+pub fn perseus_router<G: Html>(
     cx: Scope,
     PerseusRouterProps {
         error_pages,
         locales,
+        templates,
+        render_cfg,
     }: PerseusRouterProps,
 ) -> View<G> {
+    // Create a `Route` to pass through Sycamore with the information we need
+    let route = PerseusRoute {
+        verdict: RouteVerdict::NotFound,
+        templates,
+        render_cfg,
+        locales: locales.clone(),
+    };
+
     // Get the root that the server will have injected initial load content into
     // This will be moved into a reactive `<div>` by the app shell
     // This is an `Option<Element>` until we know we aren't doing locale detection (in which case it wouldn't exist)
@@ -263,9 +278,11 @@ pub fn perseus_router<G: Html, AppRoute: PerseusRoute<TemplateNodeType> + 'stati
     crate::state::connect_to_reload_server(live_reload_indicator.clone());
 
     view! { cx,
-        Router {
+        // This is a lower-level version of `Router` that lets us provide a `Route` with the data we want
+        RouterBase {
             integration: HistoryIntegration::new(),
-            view: move |cx, route: &ReadSignal<AppRoute>| {
+            route,
+            view: move |cx, route: &ReadSignal<PerseusRoute<TemplateNodeType>>| {
                 // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
                 // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
                 create_effect(cx, move || {

@@ -34,14 +34,23 @@ pub mod state;
 /// Utilities for working with immutable and mutable stores. You can learn more about these in the book.
 pub mod stores;
 
+#[cfg(not(target_arch = "wasm32"))]
 mod build;
+#[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
+mod client;
+#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+mod engine;
 mod error_pages;
+#[cfg(not(target_arch = "wasm32"))]
 mod export;
 mod i18n;
 mod init;
 mod macros;
+mod page_data;
 mod router;
+#[cfg(not(target_arch = "wasm32"))]
 mod server;
+#[cfg(target_arch = "wasm32")]
 mod shell;
 mod template;
 mod translator;
@@ -49,12 +58,22 @@ mod utils;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
+#[cfg(not(target_arch = "wasm32"))]
 pub use http;
+#[cfg(not(target_arch = "wasm32"))]
 pub use http::Request as HttpRequest;
 pub use sycamore_futures::spawn_local_scoped;
 /// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
+#[cfg(not(target_arch = "wasm32"))]
 pub type Request = HttpRequest<()>;
-pub use perseus_macro::{autoserde, head, main, make_rx, template, template_rx, test};
+#[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
+pub use client::{run_client, ClientReturn};
+#[cfg(feature = "macros")]
+pub use perseus_macro::{
+    amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
+    global_build_state, head, main, main_export, make_rx, request_state, set_headers,
+    should_revalidate, template, template_rx, test,
+};
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?
 
@@ -63,9 +82,14 @@ pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we 
 // Items that should be available at the root (this should be nearly everything used in a typical Perseus app)
 pub use crate::error_pages::ErrorPages;
 pub use crate::errors::{ErrorCause, GenericErrorWithCause};
+pub use crate::page_data::PageData;
 pub use crate::plugins::{Plugin, PluginAction, Plugins};
+#[cfg(target_arch = "wasm32")]
 pub use crate::shell::checkpoint;
-pub use crate::template::{HeadFn, RenderFnResult, RenderFnResultWithCause, States, Template};
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::template::{HeadFn, States};
+pub use crate::template::{RenderFnResult, RenderFnResultWithCause, Template};
+#[cfg(not(target_arch = "wasm32"))]
 pub use crate::utils::{cache_fallible_res, cache_res};
 // Everything in the `init.rs` file should be available at the top-level for convenience
 pub use crate::init::*;
@@ -74,6 +98,11 @@ pub mod templates {
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};
     pub use crate::router::{RouterLoadState, RouterState};
     pub use crate::template::*;
+}
+/// Utilities for building an app.
+#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+pub mod builder {
+    pub use crate::engine::*;
 }
 /// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
 /// engines.
@@ -87,6 +116,7 @@ pub mod internal {
     }
     /// Internal utilities for working with the serving process. These will be useful for building integrations for hosting Perseus
     /// on different platforms.
+    #[cfg(not(target_arch = "wasm32"))]
     pub mod serve {
         pub use crate::server::*;
     }
@@ -99,19 +129,26 @@ pub mod internal {
         pub use crate::error_pages::*;
     }
     /// Internal utilities for working with the app shell.
+    #[cfg(target_arch = "wasm32")]
     pub mod shell {
         pub use crate::shell::*;
     }
-    /// Internal utilities for building.
+    /// Internal utilities for building apps at a very low level.
+    #[cfg(not(target_arch = "wasm32"))]
     pub mod build {
         pub use crate::build::*;
     }
-    /// Internal utilities for exporting.
+    /// Internal utilities for exporting apps at a very low level.
+    #[cfg(not(target_arch = "wasm32"))]
     pub mod export {
         pub use crate::export::*;
     }
-    pub use crate::utils::{get_path_prefix_client, get_path_prefix_server};
+    #[cfg(target_arch = "wasm32")]
+    pub use crate::utils::get_path_prefix_client;
+    #[cfg(not(target_arch = "wasm32"))]
+    pub use crate::utils::get_path_prefix_server;
     /// Internal utilities for logging. These are just re-exports so that users don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
+    #[cfg(target_arch = "wasm32")]
     pub mod log {
         pub use wasm_bindgen::JsValue;
         pub use web_sys::console::log_1 as log_js_value;

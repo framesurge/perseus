@@ -1,4 +1,6 @@
+#[cfg(not(target_arch = "wasm32"))]
 use crate::errors::*;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::{
     fs::{create_dir_all, File},
     io::{AsyncReadExt, AsyncWriteExt},
@@ -11,14 +13,28 @@ use tokio::{
 /// Note: the `.write()` methods on this implementation will create any missing parent directories automatically.
 #[derive(Clone, Debug)]
 pub struct ImmutableStore {
+    #[cfg(not(target_arch = "wasm32"))]
     root_path: String,
 }
 impl ImmutableStore {
-    /// Creates a new immutable store. You should provide a path like `dist/` here.
+    /// Creates a new immutable store. You should provide a path like `dist` here. Note that any trailing slashes will be automatically stripped.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(root_path: String) -> Self {
+        let root_path = root_path
+            .strip_prefix('/')
+            .unwrap_or(&root_path)
+            .to_string();
         Self { root_path }
     }
+    /// Gets the filesystem path used for this immutable store.
+    ///
+    /// This is designed to be used in particular by the engine to work out where to put static assets and the like when exporting.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn get_path(&self) -> &str {
+        &self.root_path
+    }
     /// Reads the given asset from the filesystem asynchronously.
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn read(&self, name: &str) -> Result<String, StoreError> {
         let asset_path = format!("{}/{}", self.root_path, name);
         let mut file = File::open(&asset_path)
@@ -51,6 +67,7 @@ impl ImmutableStore {
     }
     /// Writes the given asset to the filesystem asynchronously. This must only be used at build-time, and must not be changed
     /// afterward.
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn write(&self, name: &str, content: &str) -> Result<(), StoreError> {
         let asset_path = format!("{}/{}", self.root_path, name);
         let mut dir_tree: Vec<&str> = asset_path.split('/').collect();

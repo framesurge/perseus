@@ -19,16 +19,12 @@ pub type GlobalStateCreatorFn = Rc<dyn GlobalStateCreatorFnType + Send + Sync>;
 #[derive(Default, Clone)]
 pub struct GlobalStateCreator {
     /// The function that creates state at build-time. This is roughly equivalent to the *build state* strategy for templates.
+    #[cfg(not(target_arch = "wasm32"))]
     build: Option<GlobalStateCreatorFn>,
 }
 impl std::fmt::Debug for GlobalStateCreator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GlobalStateCreator")
-            .field(
-                "build",
-                &self.build.as_ref().map(|_| "GlobalStateCreatorFn"),
-            )
-            .finish()
+        f.debug_struct("GlobalStateCreator").finish()
     }
 }
 impl GlobalStateCreator {
@@ -37,19 +33,22 @@ impl GlobalStateCreator {
         Self::default()
     }
     /// Adds a function to generate global state at build-time.
-    #[allow(unused_mut)]
-    #[allow(unused_variables)]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn build_state_fn(
         mut self,
         val: impl GlobalStateCreatorFnType + Send + Sync + 'static,
     ) -> Self {
-        #[cfg(feature = "server-side")]
-        {
-            self.build = Some(Rc::new(val));
-        }
+        self.build = Some(Rc::new(val));
         self
     }
+    /// Adds a function to generate global state at build-time.
+    #[cfg(target_arch = "wasm32")]
+    pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Self {
+        self
+    }
+
     /// Gets the global state at build-time. If no function was registered to this, we'll return `None`.
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_build_state(&self) -> Result<Option<String>, GlobalStateError> {
         if let Some(get_server_state) = &self.build {
             let res = get_server_state.call().await;

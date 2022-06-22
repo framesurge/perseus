@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{Attribute, Block, Generics, Item, ItemFn, Result, ReturnType, Type};
+use syn::{Attribute, Block, Generics, Item, ItemFn, Path, Result, ReturnType, Type};
 
 /// A function that can be made into a Perseus app's entrypoint.
 ///
@@ -13,7 +13,7 @@ pub struct MainFn {
     pub attrs: Vec<Attribute>,
     /// The return type of the function.
     pub return_type: Box<Type>,
-    /// Any generics the function takes (shouldn't be any, but it could in theory).
+    /// Any generics the function takes.
     pub generics: Generics,
 }
 impl Parse for MainFn {
@@ -81,7 +81,80 @@ impl Parse for MainFn {
     }
 }
 
-pub fn main_impl(input: MainFn) -> TokenStream {
+/// An async function that can be made into a Perseus app's entrypoint. (Specifically, the engine entrypoint.)
+pub struct EngineMainFn {
+    /// The body of the function.
+    pub block: Box<Block>,
+    /// Any attributes the function uses.
+    pub attrs: Vec<Attribute>,
+    /// Any generics the function takes (shouldn't be any, but it could in theory).
+    pub generics: Generics,
+}
+impl Parse for EngineMainFn {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let parsed: Item = input.parse()?;
+
+        match parsed {
+            Item::Fn(func) => {
+                let ItemFn {
+                    attrs, sig, block, ..
+                } = func;
+                // Validate each part of this function to make sure it fulfills the requirements
+                // Must not be async
+                if sig.asyncness.is_none() {
+                    return Err(syn::Error::new_spanned(
+                        sig.asyncness,
+                        "the engine entrypoint must be async",
+                    ));
+                }
+                // Can't be const
+                if sig.constness.is_some() {
+                    return Err(syn::Error::new_spanned(
+                        sig.constness,
+                        "the entrypoint can't be a const function",
+                    ));
+                }
+                // Can't be external
+                if sig.abi.is_some() {
+                    return Err(syn::Error::new_spanned(
+                        sig.abi,
+                        "the entrypoint can't be an external function",
+                    ));
+                }
+                // Must return something (type checked by the existence of the wrapper code)
+                match sig.output {
+                    ReturnType::Default => (),
+                    ReturnType::Type(_, _) => {
+                        return Err(syn::Error::new_spanned(
+                            sig,
+                            "the engine entrypoint must have no return value",
+                        ))
+                    }
+                };
+                // Must accept no arguments
+                let inputs = sig.inputs;
+                if !inputs.is_empty() {
+                    return Err(syn::Error::new_spanned(
+                        inputs,
+                        "the entrypoint can't take any arguments",
+                    ));
+                }
+
+                Ok(Self {
+                    block,
+                    attrs,
+                    generics: sig.generics,
+                })
+            }
+            item => Err(syn::Error::new_spanned(
+                item,
+                "only funtions can be used as entrypoints",
+            )),
+        }
+    }
+}
+
+pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
     let MainFn {
         block,
         generics,
@@ -89,15 +162,108 @@ pub fn main_impl(input: MainFn) -> TokenStream {
         return_type,
     } = input;
 
-    // We wrap the user's function to noramlize the name for the engine
+    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
     let output = quote! {
-        pub fn __perseus_main<G: ::perseus::Html>() -> #return_type {
-            // The user's function
-            #(#attrs)*
-            fn fn_internal #generics() -> #return_type {
-                #block
-            }
-            fn_internal()
+        // The engine-specific `main` function
+        #[cfg(not(target_arch = "wasm32"))]
+        #[tokio::main]
+        async fn main() {
+            // Get the operation we're supposed to run (serve, build, export, etc.) from an environment variable
+            let op = ::perseus::builder::get_op().unwrap();
+            let exit_code = ::perseus::builder::run_dflt_engine(op, __perseus_simple_main, #server_fn).await;
+            std::process::exit(exit_code);
+        }
+
+        // The browser-specific `main` function
+        #[cfg(target_arch = "wasm32")]
+        #[wasm_bindgen::prelude::wasm_bindgen]
+        pub fn main() -> ::perseus::ClientReturn {
+            ::perseus::run_client(__perseus_simple_main)
+        }
+
+        // The user's function (which gets the `PerseusApp`)
+        #(#attrs)*
+        #[doc(hidden)]
+        pub fn __perseus_simple_main #generics() -> #return_type {
+            #block
+        }
+    };
+
+    output
+}
+
+pub fn main_export_impl(input: MainFn) -> TokenStream {
+    let MainFn {
+        block,
+        generics,
+        attrs,
+        return_type,
+    } = input;
+
+    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    let output = quote! {
+        // The engine-specific `main` function
+        #[cfg(not(target_arch = "wasm32"))]
+        #[tokio::main]
+        async fn main() {
+            // Get the operation we're supposed to run (serve, build, export, etc.) from an environment variable
+            let op = ::perseus::builder::get_op().unwrap();
+            let exit_code = ::perseus::builder::run_dflt_engine_export_only(op, __perseus_simple_main).await;
+            std::process::exit(exit_code);
+        }
+
+        // The browser-specific `main` function
+        #[cfg(target_arch = "wasm32")]
+        #[wasm_bindgen::prelude::wasm_bindgen]
+        pub fn main() -> ::perseus::ClientReturn {
+            ::perseus::run_client(__perseus_simple_main)
+        }
+
+        // The user's function (which gets the `PerseusApp`)
+        #(#attrs)*
+        #[doc(hidden)]
+        pub fn __perseus_simple_main #generics() -> #return_type {
+            #block
+        }
+    };
+
+    output
+}
+
+pub fn browser_main_impl(input: MainFn) -> TokenStream {
+    let MainFn {
+        block,
+        attrs,
+        return_type,
+        ..
+    } = input;
+
+    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    let output = quote! {
+        // The browser-specific `main` function
+        // This absolutely MUST be called `main`, otherwise the hardcodes Wasm importer will fail (and then interactivity is gone completely with a really weird error message)
+        #[cfg(target_arch = "wasm32")]
+        #[wasm_bindgen::prelude::wasm_bindgen]
+        #(#attrs)*
+        pub fn main() -> #return_type {
+            #block
+        }
+    };
+
+    output
+}
+
+pub fn engine_main_impl(input: EngineMainFn) -> TokenStream {
+    let EngineMainFn { block, attrs, .. } = input;
+
+    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    let output = quote! {
+        // The engine-specific `main` function
+        #[cfg(not(target_arch = "wasm32"))]
+        #[tokio::main]
+        #(#attrs)*
+        async fn main() {
+            #block
         }
     };
 

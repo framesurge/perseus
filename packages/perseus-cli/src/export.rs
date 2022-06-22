@@ -38,18 +38,6 @@ macro_rules! copy_file {
 
 /// Finalizes the export by copying assets. This is very different from the finalization process of normal building.
 pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
-    // Move the `pkg/` directory into `dist/pkg/` as usual
-    let pkg_dir = target.join("dist/pkg");
-    if pkg_dir.exists() {
-        if let Err(err) = fs::remove_dir_all(&pkg_dir) {
-            return Err(ExecutionError::MovePkgDirFailed { source: err }.into());
-        }
-    }
-    // The `fs::rename()` function will fail on Windows if the destination already exists, so this should work (we've just deleted it as per https://github.com/rust-lang/rust/issues/31301#issuecomment-177117325)
-    if let Err(err) = fs::rename(target.join("pkg"), target.join("dist/pkg")) {
-        return Err(ExecutionError::MovePkgDirFailed { source: err }.into());
-    }
-
     // Copy files over (the directory structure should already exist from exporting the pages)
     copy_file!(
         "dist/pkg/perseus_engine.js",
@@ -139,8 +127,6 @@ pub fn export_internal(
     ),
     ExportError,
 > {
-    let target = dir.join(".perseus");
-
     // Exporting pages message
     let ep_msg = format!(
         "{} {} Exporting your app's pages",
@@ -158,20 +144,22 @@ pub fn export_internal(
     // We make sure to add them at the top (the server spinner may have already been instantiated)
     let ep_spinner = spinners.insert(0, ProgressBar::new_spinner());
     let ep_spinner = cfg_spinner(ep_spinner, &ep_msg);
-    let ep_target = target.join("builder");
+    let ep_target = dir.clone();
     let wb_spinner = spinners.insert(1, ProgressBar::new_spinner());
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
-    let wb_target = target;
+    let wb_target = dir;
     let ep_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} run --bin perseus-exporter {}",
+                "{} run {} {}",
                 env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-                if is_release { "--release" } else { "" }
+                if is_release { "--release" } else { "" },
+                env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
             )],
             &ep_target,
             &ep_spinner,
-            &ep_msg
+            &ep_msg,
+            "export"
         )?);
 
         Ok(0)
@@ -179,13 +167,15 @@ pub fn export_internal(
     let wb_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
-                "{} build --target web {}",
+                "{} build --out-dir dist/pkg --out-name perseus_engine --target web {} {}",
                 env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
-                if is_release { "--release" } else { "--dev" }
+                if is_release { "--release" } else { "--dev" },
+                env::var("PERSEUS_WASM_PACK_ARGS").unwrap_or_else(|_| String::new())
             )],
             &wb_target,
             &wb_spinner,
-            &wb_msg
+            &wb_msg,
+            "" // Not a builder command
         )?);
 
         Ok(0)
@@ -216,7 +206,7 @@ pub fn export(dir: PathBuf, opts: ExportOpts) -> Result<i32, ExportError> {
     }
 
     // And now we can run the finalization stage
-    finalize_export(&dir.join(".perseus"))?;
+    finalize_export(&dir)?;
 
     // We've handled errors in the component threads, so the exit code is now zero
     Ok(0)

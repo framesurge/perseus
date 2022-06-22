@@ -1,6 +1,6 @@
-use crate::build::{build_internal, finalize};
+use crate::build::build_internal;
 use crate::cmd::{cfg_spinner, run_stage};
-use crate::parse::{Integration, ServeOpts};
+use crate::parse::ServeOpts;
 use crate::thread::{spawn_thread, ThreadHandle};
 use crate::{errors::*, order_reload};
 use console::{style, Emoji};
@@ -36,24 +36,14 @@ fn build_server(
     did_build: bool,
     exec: Arc<Mutex<String>>,
     is_release: bool,
-    is_standalone: bool,
-    integration: Integration,
 ) -> Result<
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     ExecutionError,
 > {
-    // If we're using the Actix Web integration, warn that it's unstable
-    // A similar warning is emitted for snooping on it
-    // TODO Remove this once Actix Web v4.0.0 goes stable
-    if integration == Integration::ActixWeb {
-        println!("WARNING: The Actix Web integration uses a beta version of Actix Web, and is considered unstable. It is not recommended for production usage.")
-    }
-
     let num_steps = match did_build {
         true => 4,
         false => 2,
     };
-    let target = dir.join(".perseus/server");
 
     // Server building message
     let sb_msg = format!(
@@ -68,27 +58,21 @@ fn build_server(
     // We deliberately insert the spinner at the end of the list
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
-    let sb_target = target;
+    let sb_target = dir;
     let sb_thread = spawn_thread(move || {
         let (stdout, _stderr) = handle_exit_code!(run_stage(
-                vec![&format!(
-                    // This sets Cargo to tell us everything, including the executable path to the server
-                    "{} build --message-format json --features integration-{} {} --no-default-features {}",
-                    env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-                    // Enable the appropriate integration
-                    integration.to_string(),
-                    // We'll also handle whether or not it's standalone because that goes under the `--features` flag
-                    if is_standalone {
-                        "--features standalone"
-                    } else {
-                        ""
-                    },
-                    if is_release { "--release" } else { "" },
-                )],
-                &sb_target,
-                &sb_spinner,
-                &sb_msg
-            )?);
+            vec![&format!(
+                // This sets Cargo to tell us everything, including the executable path to the server
+                "{} build --message-format json {} {}",
+                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                if is_release { "--release" } else { "" },
+                env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
+            )],
+            &sb_target,
+            &sb_spinner,
+            &sb_msg,
+            "" // The server will be built if we build for the server-side (builder and server are currently one for Cargo)
+        )?);
 
         let msgs: Vec<&str> = stdout.trim().split('\n').collect();
         // If we got to here, the exit code was 0 and everything should've worked
@@ -134,7 +118,6 @@ fn run_server(
     dir: PathBuf,
     did_build: bool,
 ) -> Result<i32, ExecutionError> {
-    let target = dir.join(".perseus/server");
     let num_steps = match did_build {
         true => 4,
         false => 2,
@@ -152,7 +135,9 @@ fn run_server(
 
     // Manually run the generated binary (invoking in the right directory context for good measure if it ever needs it in future)
     let child = Command::new(&server_exec_path)
-        .current_dir(target)
+        .current_dir(&dir)
+        // This needs to be provided in development, but not in production
+        .env("PERSEUS_ENGINE_OPERATION", "serve")
         // We should be able to access outputs in case there's an error
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -213,8 +198,6 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         did_build,
         Arc::clone(&exec),
         opts.release,
-        opts.standalone,
-        opts.integration,
     )?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {
@@ -239,11 +222,6 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         return Ok((sb_res, None));
     }
 
-    // And now we can run the finalization stage (only if `--no-build` wasn't specified)
-    if did_build {
-        finalize(&dir.join(".perseus"))?;
-    }
-
     // Order any connected browsers to reload
     order_reload();
 
@@ -254,7 +232,7 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
     } else {
         // The user doesn't want to run the server, so we'll give them the executable path instead
         let exec_str = (*exec.lock().unwrap()).to_string();
-        println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable in `.perseus/server/`.\n{}", &exec_str);
+        println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable from the root of the project.\n{}", &exec_str);
         Ok((0, Some(exec_str)))
     }
 }

@@ -30,14 +30,14 @@ fn real_main() -> i32 {
     let shell_param = "-command";
 
     let exec_name = {
-        // This is intended to be run from the root of the project
+        // This is intended to be run from the root of the project (which this script always will be because of Bonnie's requirements)
         let output = Command::new(shell_exec)
             .args([shell_param, &format!(
-                "bonnie dev example {category} {example} test --no-run --integration {integration}",
+                "bonnie dev example {category} {example} test --no-run",
                 category=&category,
                 example=&example,
-                integration=&integration
             )])
+            .env("EXAMPLE_INTEGRATION", &integration)
             .output()
             .expect("couldn't build tests (command execution failed)");
         let exit_code = match output.status.code() {
@@ -57,11 +57,13 @@ fn real_main() -> i32 {
     };
 
     // Run the server from that executable in the background
-    // This has to be run from the correct execution context (inside the `.perseus/server/` directory for teh target example)
+    // This has to be run from the correct execution context (inside the root of the target example)
     let mut server = Command::new(exec_name)
-        .current_dir(&format!("examples/{}/{}/.perseus/server", &category, &example))
+        .current_dir(&format!("examples/{}/{}", &category, &example))
         // Tell the server we're in testing mode
         .env("PERSEUS_TESTING", "true")
+        // We're in dev mode, so we have to tell the binary what to do
+        .env("PERSEUS_ENGINE_OPERATION", "serve")
         .spawn()
         .expect("couldn't start test server (command execution failed)");
 
@@ -69,8 +71,8 @@ fn real_main() -> i32 {
     let exit_code = {
         let output = Command::new(shell_exec)
             .current_dir(&format!("examples/{}/{}", &category, &example))
-            .args([shell_param, "cargo test -- --test-threads 1"])
             // TODO Confirm that this syntax works on Windows
+            .args([shell_param, &format!("cargo test --features 'perseus-integration/{}' -- --test-threads 1", &integration)])
             .envs(if is_headless {
                 vec![("PERSEUS_RUN_WASM_TESTS", "true"), ("PERSEUS_RUN_WASM_TESTS_HEADLESS", "true")]
             } else {

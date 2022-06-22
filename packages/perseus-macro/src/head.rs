@@ -134,6 +134,10 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
     if arg.is_some() {
         // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
         quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
@@ -151,6 +155,10 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
     } else {
         // There are no arguments
         quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
             #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that

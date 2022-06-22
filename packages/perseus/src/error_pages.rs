@@ -1,11 +1,16 @@
 use crate::translator::Translator;
-use crate::{DomNode, Html, HydrateNode, SsrNode};
+use crate::Html;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::SsrNode;
+#[cfg(target_arch = "wasm32")]
+use crate::{DomNode, HydrateNode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::Scope;
 use sycamore::view;
 use sycamore::view::View;
+#[cfg(target_arch = "wasm32")]
 use web_sys::Element;
 
 /// The callback to a template the user must provide for error pages. This is passed the status code, the error message, the URL of the
@@ -77,6 +82,7 @@ impl<G: Html> ErrorPages<G> {
     //     template_fn(cx, url.to_string(), status, err.to_string(), translator)
     // }
 }
+#[cfg(target_arch = "wasm32")]
 impl ErrorPages<DomNode> {
     /// Renders the appropriate error page to the given DOM container.
     pub fn render_page(
@@ -96,10 +102,30 @@ impl ErrorPages<DomNode> {
         );
     }
 }
+#[cfg(target_arch = "wasm32")]
 impl ErrorPages<HydrateNode> {
     /// Hydrates the appropriate error page to the given DOM container. This is used for when an error page is rendered by the server
     /// and then needs interactivity.
     pub fn hydrate_page(
+        &self,
+        cx: Scope,
+        url: &str,
+        status: u16,
+        err: &str,
+        translator: Option<Rc<Translator>>,
+        container: &Element,
+    ) {
+        let template_fn = self.get_template_fn(status);
+        let hydrate_view = template_fn(cx, url.to_string(), status, err.to_string(), translator);
+        // TODO Now convert that `HydrateNode` to a `DomNode`
+        let dom_view = hydrate_view;
+        // Render that to the given container
+        sycamore::hydrate_to(|_| dom_view, container);
+    }
+    /// Renders the appropriate error page to the given DOM container. This is implemented on `HydrateNode` to avoid having to have two `Html` type parameters everywhere
+    /// (one for templates and one for error pages).
+    // TODO Convert from a `HydrateNode` to a `DomNode`
+    pub fn render_page(
         &self,
         cx: Scope,
         url: &str,
@@ -116,6 +142,7 @@ impl ErrorPages<HydrateNode> {
         );
     }
 }
+#[cfg(not(target_arch = "wasm32"))]
 impl ErrorPages<SsrNode> {
     /// Renders the error page to a string. This should then be hydrated on the client-side. No reactive scope is provided to this function, it uses an internal one.
     pub fn render_to_string(

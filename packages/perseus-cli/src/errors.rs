@@ -5,23 +5,6 @@ use thiserror::Error;
 /// All errors that can be returned by the CLI.
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error(transparent)]
-    PrepError(#[from] PrepError),
-    #[error(transparent)]
-    ExecutionError(#[from] ExecutionError),
-    #[error(transparent)]
-    EjectionError(#[from] EjectionError),
-    #[error(transparent)]
-    ExportError(#[from] ExportError),
-    #[error(transparent)]
-    DeployError(#[from] DeployError),
-    #[error(transparent)]
-    WatchError(#[from] WatchError),
-}
-
-/// Errors that can occur while preparing.
-#[derive(Error, Debug)]
-pub enum PrepError {
     #[error("prerequisite command execution failed for prerequisite '{cmd}' (set '{env_var}' to another location if you've installed it elsewhere)")]
     PrereqNotPresent {
         cmd: String,
@@ -34,62 +17,14 @@ pub enum PrepError {
         #[source]
         source: std::io::Error,
     },
-    #[error("couldn't extract internal subcrates to '{target_dir:?}' (do you have the necessary permissions?)")]
-    ExtractionFailed {
-        target_dir: Option<String>,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("updating gitignore to ignore `.perseus/` failed (`.perseus/` has been automatically deleted)")]
-    GitignoreUpdateFailed {
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("couldn't update internal manifest file at '{target_dir:?}' (`.perseus/` has been automatically deleted)")]
-    ManifestUpdateFailed {
-        target_dir: Option<String>,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("couldn't get `Cargo.toml` for your project (have you run `cargo init` yet?)")]
-    GetUserManifestFailed {
-        #[source]
-        source: cargo_toml::Error,
-    },
-    #[error(
-        "your project's `Cargo.toml` doesn't have a `[package]` section (package name is required)"
-    )]
-    MalformedUserManifest,
-    #[error("couldn't remove corrupted `.perseus/` directory as required by previous error (please delete `.perseus/` manually)")]
-    RemoveBadDirFailed {
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("fetching the custom engine failed")]
-    GetEngineFailed {
-        #[source]
-        source: ExecutionError,
-    },
-    #[error("fetching the custom engine returned non-zero exit code ({exit_code})")]
-    GetEngineNonZeroExitCode { exit_code: i32 },
-    #[error("couldn't remove git internals at '{target_dir:?}' for custom engine")]
-    RemoveEngineGitFailed {
-        target_dir: Option<String>,
-        #[source]
-        source: std::io::Error,
-    },
-}
-/// Checks if the given error should cause the CLI to delete the '.perseus/' folder so the user doesn't have something incomplete.
-/// When deleting the directory, it should only be deleted if it exists, if not don't worry. If it does and deletion fails, fail like hell.
-pub fn err_should_cause_deletion(err: &Error) -> bool {
-    matches!(
-        err,
-        Error::PrepError(
-            PrepError::ExtractionFailed { .. }
-                | PrepError::GitignoreUpdateFailed { .. }
-                | PrepError::ManifestUpdateFailed { .. }
-        )
-    )
+    #[error(transparent)]
+    ExecutionError(#[from] ExecutionError),
+    #[error(transparent)]
+    ExportError(#[from] ExportError),
+    #[error(transparent)]
+    DeployError(#[from] DeployError),
+    #[error(transparent)]
+    WatchError(#[from] WatchError),
 }
 
 /// Errors that can occur while attempting to execute a Perseus app with `build`/`serve` (export errors are separate).
@@ -118,11 +53,6 @@ pub enum ExecutionError {
         #[source]
         source: std::io::Error,
     },
-    #[error("couldn't move `.perseus/pkg/` to `.perseus/dist/pkg/` (run `perseus clean` if this persists)")]
-    MovePkgDirFailed {
-        #[source]
-        source: std::io::Error,
-    },
     #[error("failed to wait on thread (please report this as a bug if it persists)")]
     ThreadWaitFailed,
     #[error("value in `PORT` environment variable couldn't be parsed as a number")]
@@ -130,27 +60,6 @@ pub enum ExecutionError {
         #[source]
         source: std::num::ParseIntError,
     },
-}
-
-/// Errors that can occur while ejecting or as a result of doing so.
-#[derive(Error, Debug)]
-pub enum EjectionError {
-    #[error("couldn't remove perseus subcrates from gitignore for ejection")]
-    GitignoreUpdateFailed {
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("line `.perseus/` to remove not found in `.gitignore`")]
-    GitignoreLineNotPresent,
-    #[error("couldn't write ejection declaration file (`.perseus/.ejected`), please try again")]
-    DeclarationWriteFailed {
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("can't clean after ejection unless `--force` is provided (maybe you meant to use `--dist`?)")]
-    CleanAfterEject,
-    #[error("can't tinker after ejection unless `--force` is provided (ejecting and using plugins can be problematic depending on the plugins used)")]
-    TinkerAfterEject,
 }
 
 /// Errors that can occur while running `perseus export`.

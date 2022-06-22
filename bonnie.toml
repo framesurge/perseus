@@ -1,18 +1,13 @@
 version="0.3.2"
+env_files = [ ".env" ]
 
 [scripts]
 setup.cmd.generic = [
-    "mkdir -p examples/core/basic/.perseus/dist",
-    "mkdir -p examples/core/basic/.perseus/dist/static",
-    "mkdir -p examples/core/basic/.perseus/dist/exported",
     "cargo build",
     "npm i --prefix ./website",
     "echo \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
 ]
 setup.cmd.targets.windows = [
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist",
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist\\static",
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist\\exported",
     "cargo build",
     "npm i --prefix ./website",
     "Write-Host \"\n\nThe Perseus repository is ready for local development! Type 'bonnie help' to see the available commands you can run here. Also, please ensure that you have 'npx' available and that you've installed 'tailwindcss', `concurrently`, `serve` and 'browser-sync' ('npm i -g tailwindcss concurrently serve browser-sync') if you'll be working with the website or running `bonnie dev export-serve ...`.\""
@@ -40,17 +35,19 @@ dev.subcommands.export-serve-deploy-relative.cmd.targets.windows = [
 dev.subcommands.export-serve-deploy-relative.args = [ "category", "example" ]
 dev.subcommands.export-serve-deploy-relative.desc = "deploys (exported) and serves the given example at a relative local path"
 
+# TODO Make this not set the integration feature unless a certain file in the example calls for it
 dev.subcommands.example.cmd.generic = [
     "cd packages/perseus-cli",
     # Point this live version of the CLI at the given example
-    "TEST_EXAMPLE=../../examples/%category/%example cargo run -- %%"
+    "TEST_EXAMPLE=../../examples/%category/%example PERSEUS_CARGO_ARGS=\"--features \"perseus-integration/%EXAMPLE_INTEGRATION\"\" cargo run -- %%"
 ]
 dev.subcommands.example.cmd.targets.windows = [
     "cd packages\\perseus-cli",
     # Point this live version of the CLI at the given example
-    "powershell -Command { $env:TEST_EXAMPLE=\"..\\..\\examples\\%category\\%example\"; cargo run -- %% }"
+    "powershell -Command { $env:TEST_EXAMPLE=\"..\\..\\examples\\%category\\%example\"; $end:PERSEUS_CARGO_ARGS=\"--features \"perseus-integration/%EXAMPLE_INTEGRATION\"\"; cargo run -- %% }"
 ]
 dev.subcommands.example.args = [ "category", "example" ]
+dev.subcommands.example.env_vars = [ "EXAMPLE_INTEGRATION" ] # This will be set automatically to Warp by `.env` unless overridden
 dev.subcommands.example.desc = "runs the given example using a live version of the cli"
 
 site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\""
@@ -143,19 +140,12 @@ site.subcommands.run.desc = "runs the website without watching for changes"
 check.cmd = [
     "cargo check --all",
     "cargo fmt --all -- --check",
-    "cargo clippy --all"
+    "cargo clippy --all",
+    # We also have to check the `perseus` package in particular on Wasm (the examples are handled by the E2E tests)
+    "cd packages/perseus",
+    "cargo check --target wasm32-unknown-unknown"
 ]
 check.desc = "checks code for formatting errors and the like"
-
-ci-prep.cmd.generic = [
-    "mkdir -p examples/core/basic/.perseus/dist",
-    "mkdir -p examples/core/basic/.perseus/dist/static",
-]
-ci-prep.cmd.targets.windows = [
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\dist",
-    "New-Item -Force -ItemType directory -Path examples\\core\\basic\\.perseus\\static",
-]
-ci-prep.desc = "creates empty directories to preserve the file structure that testing expects"
 
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
@@ -169,7 +159,10 @@ test.cmd = [
     "bonnie test example-all-integrations core global_state --headless",
     "bonnie test example-all-integrations core idb_freezing --headless",
     "bonnie test example-all-integrations core router_state --headless",
-    "bonnie test example-all-integrations core rx_state --headless"
+    "bonnie test example-all-integrations core rx_state --headless",
+    "bonnie test example-all-integrations core index_view --headless",
+    "bonnie test example-all-integrations core set_headers --headless",
+    "bonnie test example-all-integrations core static_content --headless"
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"
@@ -204,7 +197,7 @@ release.desc = "creates a new project release and pushes it to github (cargo ver
 
 # --- COMMANDS FOLLOWING THIS POINT ARE LINUX-ONLY ---
 
-replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or \\( -name \"*.md\" -not  -name \"*.proj.md\" \\) \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" -not -path \"*.perseus*\" -or \\( -name \"*Cargo.toml\" -path \"./examples/core/basic/.perseus/*\" -not -path \"./examples/core/basic/.perseus/dist/*\" \\) \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
+replace-versions.cmd = "find . \\( \\( -name \"*Cargo.toml\" -or -name \"*Cargo.toml.example\" -or \\( -name \"*.md\" -not  -name \"*.proj.md\" \\) \\) -not -name \"CHANGELOG.md\" -not -path \"./target/*\" -not -path \"./website/*\" \\) -exec sed -i -e 's/%old_version/%new_version/g' {} \\;"
 replace-versions.args = [ "old_version", "new_version" ]
 replace-versions.desc = "replaces an old version number with a new one in all relevant files (Linux only)"
 
@@ -217,7 +210,7 @@ publish.cmd = [
     "cd ../perseus",
     "cargo publish %%",
     "cd ../perseus-cli",
-    "cargo publish --allow-dirty %%", # Without this flag, `.perseus` will be a problem because it's not in Git
+    "cargo publish %%",
     # We delay this so that `crates.io` can have time to host the core
     "cd ../perseus-actix-web",
     "cargo publish %%",
