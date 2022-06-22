@@ -1,4 +1,6 @@
-use perseus::{RenderFnResultWithCause, Request, States, Template};
+use perseus::{RenderFnResultWithCause, Template};
+#[cfg(not(target_arch = "wasm32"))]
+use perseus::{Request, States};
 use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
