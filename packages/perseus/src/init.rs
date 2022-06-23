@@ -24,7 +24,7 @@ use sycamore::{
 };
 
 /// The default index view, because some simple apps won't need anything fancy here. The user should be able to provide the smallest possible amount of information for their app to work.
-static DFLT_INDEX_VIEW: &str = r#"<!DOCTYPE html>
+static DFLT_INDEX_VIEW: &str = r#"
 <html>
     <head>
         <meta charset="UTF-8" />
