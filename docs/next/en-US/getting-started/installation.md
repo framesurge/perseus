@@ -33,7 +33,7 @@ In that file, add the following underneath the `[dependencies]` line:
 
 ```
 perseus = { version = "=0.4.0-beta.1", features = [ "hydrate" ] }
-sycamore = "=0.8.0-beta.6"
+sycamore = "=0.8.0-beta.7"
 ```
 
 *Note: we install Sycamore as well because that's how you write views in Perseus, it's useless without it! We've also used the `=[version]` syntax here to pin our app to a specific beta version of Sycamore, otherwise Cargo will politely update it automatically when a new version comes out. Normally, that's very nice of it, but, when we're working with beta versions (which won't be for much longer, hopefully!), a new version could break your code, so it's best to deliberately update when you decide to.*
