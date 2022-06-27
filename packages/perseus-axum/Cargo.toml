@@ -1,6 +1,6 @@
 [package]
 name = "perseus-axum"
-version = "0.3.5"
+version = "0.4.0-beta.2"
 edition = "2021"
 description = "An integration that makes the Perseus frontend framework easy to use with Axum."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
