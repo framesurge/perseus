@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.2](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.1...v0.4.0-beta.2) (2022-06-27)
+
+
+### ⚠ BREAKING CHANGES
+
+*     Changed multiple APIs for functional plugin actions related to the builder (they all take the new EngineError type now)
+    Restructured exports related to engine functionality (this will get progressively worse as this PR develops!)
+    Removed the HOST and PORT environment variables for configuring the server (these are replaced with PERSEUS_HOST and PERSEUS_PORT)
+    Substantially refactored exports from Perseus
+    Divided client-side and server-side exports (many functions will now need to be target-gated)
+    Replaced #[autoserde(...)] macro with macros for each state function (#[build_state], #[build_paths], etc.)
+    The #[build_paths] macro must now be applied to all build paths functions (for client/server functionality division)
+    #[perseus::main] now takes an argument as the default server to use (server integrations should now be imported and used)
+    Made state functions automatically target-gated as #[cfg(not(feature = "wasm32"))]
+    The #[should_revalidate] macro must now be applied to all revalidation determination functions (for client/server functionality division)
+
+### Features
+
+* add axum integration ([#146](https://github.com/arctic-hen7/perseus/issues/146)) ([dbe8207](https://github.com/arctic-hen7/perseus/commit/dbe8207eaac86e32fedacc0816c0b1a48512709d)), closes [#137](https://github.com/arctic-hen7/perseus/issues/137) [#137](https://github.com/arctic-hen7/perseus/issues/137)
+* removed `.perseus/` ([#151](https://github.com/arctic-hen7/perseus/issues/151)) ([14f415a](https://github.com/arctic-hen7/perseus/commit/14f415a5610fd065966aede20365649595c59104))
+* updated fetching example for async reqwest ([ea98465](https://github.com/arctic-hen7/perseus/commit/ea984651a3e648dedbcba4891bcb88e4061ec689))
+
+
+### Bug Fixes
+
+* fixed uncaught syntax error ([3cc247b](https://github.com/arctic-hen7/perseus/commit/3cc247bc3eb1ea7bfeddece62eae5b9678877496))
+* removed extra doctype declaration ([7e7b2c4](https://github.com/arctic-hen7/perseus/commit/7e7b2c4bd2185f3ed73b9754da2a6cdc87ccdd41)), closes [#154](https://github.com/arctic-hen7/perseus/issues/154)
+
+
+### Code Refactorings
+
+* added error pages to `tiny` example ([4c6d1cf](https://github.com/arctic-hen7/perseus/commit/4c6d1cf54af6205372994d068efd5a1240e8492e)), closes [#153](https://github.com/arctic-hen7/perseus/issues/153)
+
+
+### Documentation Changes
+
+* create based scaffold for new docs ([39e7c83](https://github.com/arctic-hen7/perseus/commit/39e7c83b24b92d6df9c2c4e112afd95ec5211b59))
+* fixed misnomer in second app tutorial ([873562c](https://github.com/arctic-hen7/perseus/commit/873562c5f8a6b404ab2e5359b269312a197ccbc7)), closes [#147](https://github.com/arctic-hen7/perseus/issues/147)
+* fixed some broken links ([5a0e107](https://github.com/arctic-hen7/perseus/commit/5a0e10739d7f3b878a07f447524b50a0a8f1cb87)), closes [#149](https://github.com/arctic-hen7/perseus/issues/149)
+* removed erroneous code example in hello world tutorial ([51f2b2f](https://github.com/arctic-hen7/perseus/commit/51f2b2f00e56336b3a4f0c35757c5083150841c8))
+* updated server communication docs ([c4c7ed2](https://github.com/arctic-hen7/perseus/commit/c4c7ed2fdbfef24d1c794d31c88e71d6c54d3248))
+* updated tiny example in readme ([3642a4b](https://github.com/arctic-hen7/perseus/commit/3642a4bde7c2a52ea7743359f7998af1100abced))
+
 ## [0.4.0-beta.1](https://github.com/arctic-hen7/perseus/compare/v0.3.5...v0.4.0-beta.1) (2022-05-30)
 
 

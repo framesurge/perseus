@@ -32,7 +32,7 @@ You'll notice in there a file called `Cargo.toml`, which is the manifest of any 
 In that file, add the following underneath the `[dependencies]` line:
 
 ```
-perseus = { version = "=0.4.0-beta.1", features = [ "hydrate" ] }
+perseus = { version = "=0.4.0-beta.2", features = [ "hydrate" ] }
 sycamore = "=0.8.0-beta.7"
 ```
 

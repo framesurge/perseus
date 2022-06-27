@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.4.0-beta.1" }
+perseus = { path = "../perseus", version = "0.4.0-beta.2" }
 axum = "0.5"
 tower = "0.4"
 tower-http = { version = "0.3", features = [ "fs" ] }
