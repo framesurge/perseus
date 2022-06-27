@@ -1,8 +1,10 @@
 # What is Perseus?
 
-If you're familiar with [NextJS](https://nextjs.org), Perseus is that for Wasm. If you're familiar with [SvelteKit](https://kit.svelte.dev), it's that for [Sycamore](https://github.com/sycamore-rs/sycamore).
+Perseus is a framework for building extremely fast web apps in Rust, with a focus on the state of your app, enabling dynamic server-side state generation, request-time state alteration, time or logic-based state revalidation, and even freezing your entire app's state and thawing it later!
 
-If none of that makes any sense, this is the section for you! If you're not in the mood for a lecture, there's a TL;DR at the bottom of this page!
+To most people though, none of that will make any sense, and that's the reason these docs exist! If you're familiar with [NextJS](https://nextjs.org), Perseus is like that for Rust. If you're familiar with [SvelteKit](https://kit.svelte.dev), it's that for [Sycamore](https://github.com/sycamore-rs/sycamore). If you're still scratching your head, read on!
+
+*Note: If you're not in the mood for a lecture, there's a TL;DR at the bottom of this page!*
 
 ### Rust web development
 
@@ -58,6 +60,16 @@ Perseus supports SSR _and_ SSG out of the box, along with the ability to use bot
 
 To our knowledge, the only other framework in the world right now that supports this feature set is [NextJS](https://nextjs.org) (with growing competition from [GatsbyJS](https://www.gatsbyjs.com)), which only works with JavaScript. Perseus goes above and beyond this for Wasm by supporting whole new combinations of rendering options not previously available, allowing you to create optimized websites and web apps extremely efficiently.
 
+## What about all that state stuff?
+
+At the beginning, we mentioned that Perseus is state-focused, which might seem a little cryptic. In Perseus, your app's *state* is the input to a template, which creates a page. This is all Perseus-specific jargon, so we'll simplify for now: imagine you've got a documentation website, like this one, and you want to have many pages of documentation that all have the same basic layout, but that just change their content between each page. With most frameworks, you can just write this code once, and then plug in all your content from a filesystem, database, etc., and then have all your final pages just generated. Perseus can do this too, and we call the code you write a *template*, which creates *pages*. The stuff that differentiates one documentation page from another is a bit of information that contains the documentation page's title, content, author, etc. In other words, *template + state = page*. Don't worry if you're not completely getting this yet, it's a little complex, and we'll explain it in much more detail later with some real code.
+
+Perseus focuses on that idea of *state* though, and allows you to generate it in all sorts of different ways. For instance, you might want to get all that documentation content from a database when you build your app. But, that database might change pretty often, so every 24 hours or so you might want to check if a page has an update, and then rebuild it while your app's still running. Perseus makes this a breeze. Or, you might have millions of pages of documentation that take a long time to build, so you might only want to build a page the first time it's requested, and then keep it cached for future users. Perseus makes that literally one line of code. And what if you want to support your site in many different languages? You supply the translations, we'll supply the infrastructure to integrate them seamlessly into your website with around four lines of code.
+
+What's more, Perseus makes all state reactive on the client-side, which means you can do something like this. Let's say you've got a form on your site, and you generate some default values for that form at build-time (in a few microseconds). you can set your site up easily so that any changes to the fields of the form by the user will update that state for them, and Perseus will persist it *automatically* even if they go to another page of your site. With around ten more lines of code, you can set Perseus up to cache your entire app's state, for all pages, and store it as a string (in the user's browser, in a database, anywhere!). When a user comes back, that state can be thawed out and placed right back into their browser. So yes, a user can have their progress in a form saved automatically for months with around ten lines of code from you.
+
+And if none of that appeals, it's all entirely optional anyway! Perseus is still lightning fast and a brilliant tool for creating fantastic websites and apps without it!
+
 ## How fast is it?
 
 [Benchmarks show](https://rawgit.com/krausest/js-framework-benchmark/master/webdriver-ts-results/table.html) that [Sycamore](https://sycamore-rs.netlify.app) is slightly faster than [Svelte](https://svelte.dev) in places, one of the fastest JS frameworks ever. Perseus uses it and [Actix Web](https://actix.rs) or [Warp](https://github.com/seanmonstar/warp) (either is supported), some of the fastest web servers in the world. Essentially, Perseus is built on the fastest tech and is itself made to be fast.
@@ -80,9 +92,10 @@ Perseus aims to be more convenient than any other Rust web framework by taking a
 Basically, here's your workflow:
 
 1. Create a new project.
-2. Define your app in around 12 lines of code and some listing.
+2. Define your app in around 12 lines of code.
 3. Code your amazing app.
-4. Run `perseus serve`.
+4. Run `perseus export -sw` or `perseus serve -w`.
+5. Change some code and watch your app live update in the browser, restoring the previous state (if you're working on a long form, what you've typed can be saved automatically, even as you change the code).
 
 ## How stable is it?
 
@@ -97,3 +110,4 @@ If all that was way too long, here's a quick summary of what Perseus does and wh
 -   JS is slow and a bit of a mess, [Wasm](https://webassembly.org) lets you run most programing languages, like Rust, in the browser, and is really fast
 -   Doing web development without reactivity is really annoying, so [Sycamore](https://sycamore-rs.netlify.app) is great
 -   Perseus lets you render your app on the server, making the client's experience _really_ fast, and adds a ton of features to make that possible, convenient, and productive (even for really complicated apps)
+- Managing complex app state is made easy with Perseus, and it supports saving state to allow users to immediately return to exactly where they were (automatically!)

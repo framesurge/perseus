@@ -7,7 +7,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .template(|| {
             Template::new("index").template(|cx, _| {
                 view! { cx,
-                        p { "Hello World!" }
+                    p { "Hello World!" }
                 }
             })
         })
