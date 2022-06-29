@@ -1,31 +1,30 @@
+use perseus::internal::i18n::Translator;
 use perseus::link;
-use perseus::templates::RenderCtx;
-use sycamore::context::use_context;
+use perseus::navigate;
 use sycamore::prelude::*;
-use sycamore_router::navigate;
 
 /// Turns the features of Perseus into an actual list.
-pub fn get_features_list<G: GenericNode>() -> View<G> {
+pub fn get_features_list<G: GenericNode>(cx: Scope) -> View<G> {
     let features = get_features();
     View::new_fragment(
         features.iter().map(move |feat| {
             let Feature { id_base, link } = feat.clone();
             let name_id = format!("feature-{}.name", &id_base);
             let desc_id = format!("feature-{}.desc", &id_base);
-            view! {
+            view! { cx,
                 li(class = "inline-block align-top") {
                     div(
                         class = "text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm",
                         on:click = move |_| {
-                            navigate(&link!(&link))
+                            navigate(&link!(&link, cx))
                         }
                     ) {
                         p(class = "text-2xl xs:text-3xl sm:text-4xl") { ({
-                            let translator = use_context::<RenderCtx>().translator;
+                            let translator = use_context::<Signal<Translator>>(cx).get_untracked();
                             translator.translate(&name_id, None)
                         }) }
                         p(class = "text-gray-100") { ({
-                            let translator = use_context::<RenderCtx>().translator;
+                            let translator = use_context::<Signal<Translator>>(cx).get_untracked();
                             translator.translate(&desc_id, None)
                         }) }
                     }

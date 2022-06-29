@@ -19,7 +19,7 @@ pub struct DocsPageProps {
 
 #[perseus::template(DocsPage)]
 #[component(DocsPage<G>)]
-pub fn docs_page(props: DocsPageProps) -> View<G> {
+pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
     // These come pre-translated for the current locale
     // Note that all the docs files have a title emblazoned at the top already, so we only need the title in the `<head>`
     let DocsPageProps {
@@ -30,10 +30,10 @@ pub fn docs_page(props: DocsPageProps) -> View<G> {
         current_version,
         ..
     } = props;
-    view! {
+    view! { cx,
         DocsContainer(DocsContainerProps {
             docs_links: sidebar_content,
-            children: view! {
+            children: view! { cx,
                 div(class = "markdown", dangerously_set_inner_html = &content)
             },
             status,
@@ -51,9 +51,9 @@ pub fn docs_page(props: DocsPageProps) -> View<G> {
 }
 
 #[perseus::head]
-pub fn head(props: DocsPageProps) -> View<SsrNode> {
-    view! {
-        title { (format!("{} | {}", props.title, t!("docs-title-base"))) }
+pub fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
+    view! { cx,
+        title { (format!("{} | {}", props.title, t!("docs-title-base", cx))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/prism.css")

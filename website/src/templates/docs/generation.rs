@@ -45,12 +45,12 @@ pub enum DocsVersionStatus {
 }
 impl DocsVersionStatus {
     /// Renders the docs status to a Sycamore template for display.
-    pub fn render<G: GenericNode>(&self) -> View<G> {
+    pub fn render<G: GenericNode>(&self, cx: Scope) -> View<G> {
         match &self {
             // No message should be displayed if it's the correct version
-            Self::Stable => view! {},
+            Self::Stable => View::empty(),
             Self::Outdated => {
-                view! {
+                view! { cx,
                     div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -58,13 +58,13 @@ impl DocsVersionStatus {
                                 style = "fill: #f87171;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.outdated"))
+                            p(dangerously_set_inner_html = &t!("docs-status.outdated", cx))
                         }
                     }
                 }
             }
             Self::Beta => {
-                view! {
+                view! { cx,
                     div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -72,13 +72,13 @@ impl DocsVersionStatus {
                                 style = "fill: #fcd34d;",
                                 dangerously_set_inner_html = WARNING_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.beta"))
+                            p(dangerously_set_inner_html = &t!("docs-status.beta", cx))
                         }
                     }
                 }
             }
             Self::Next => {
-                view! {
+                view! { cx,
                     div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -86,7 +86,7 @@ impl DocsVersionStatus {
                                 style = "fill: #fb923c;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.next"))
+                            p(dangerously_set_inner_html = &t!("docs-status.next", cx))
                         }
                     }
                 }
@@ -104,7 +104,7 @@ pub struct DocsManifest {
     pub history_map: HashMap<String, String>,
 }
 
-#[perseus::autoserde(build_state)]
+#[perseus::build_state]
 pub async fn get_build_state(
     path: String,
     locale: String,
@@ -320,6 +320,7 @@ pub async fn get_build_state(
     Ok(props)
 }
 
+#[perseus::build_paths]
 pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     // We start off by rendering the `/docs` page itself as an alias
     let mut paths = vec!["".to_string()];

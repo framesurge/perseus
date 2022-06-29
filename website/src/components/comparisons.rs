@@ -1,6 +1,7 @@
 use perseus::Html;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::view;
+use sycamore::prelude::Scope;
 use sycamore::prelude::View;
 
 /// A comparison for the comparisons table. Perseus itself also has an entry here. Note that any changes to the properties measured here
@@ -46,25 +47,25 @@ impl FeatureSupport {
 }
 
 /// Renders a Lighthouse score to have a text color. If it's 100, then we use the appropriate emoji.
-pub fn render_lighthouse_score<G: Html>(score: u8) -> View<G> {
+pub fn render_lighthouse_score<G: Html>(cx: Scope, score: u8) -> View<G> {
     if score == 100 {
-        view! {
+        view! { cx,
             "💯"
         }
     } else if score >= 90 {
-        view! {
+        view! { cx,
             span(class = "text-green-500") {
                 (score)
             }
         }
     } else if score >= 50 {
-        view! {
+        view! { cx,
             span(class = "text-amber-500") {
                 (score)
             }
         }
     } else {
-        view! {
+        view! { cx,
             span(class = "text-red-500") {
                 (score)
             }

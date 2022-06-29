@@ -5,16 +5,16 @@ use sycamore::prelude::*;
 pub static COPYRIGHT_YEARS: &str = "2021";
 
 #[component(NavLinks<G>)]
-pub fn nav_links() -> View<G> {
-    view! {
+pub fn NavLinks<G: Html>(cx: Scope) -> View<G> {
+    view! { cx,
         li(class = "m-3 p-1") {
-            a(href = link!("/docs"), class = "px-2") { (t!("navlinks.docs")) }
+            a(href = link!("/docs", cx), class = "px-2") { (t!("navlinks.docs", cx)) }
         }
         li(class = "m-3 p-1") {
-            a(href = link!("/comparisons"), class = "px-2") { (t!("navlinks.comparisons")) }
+            a(href = link!("/comparisons", cx), class = "px-2") { (t!("navlinks.comparisons", cx)) }
         }
         li(class = "m-3 p-1") {
-            a(href = link!("/plugins"), class = "px-2") { (t!("navlinks.plugins")) }
+            a(href = link!("/plugins", cx), class = "px-2") { (t!("navlinks.plugins", cx)) }
         }
     }
 }
@@ -25,18 +25,18 @@ pub struct ContainerProps<G: Html> {
 }
 
 #[component(Container<G>)]
-pub fn container(props: ContainerProps<G>) -> View<G> {
+pub fn Container<G: Html>(cx: Scope, props: ContainerProps<G>) -> View<G> {
     let title = props.title.clone();
-    let menu_open = Signal::new(false);
+    let menu_open = create_signal(cx, false);
     // We need to verbatim copy the value because of how it's used in Sycamore's reactivity system
-    let menu_open_2 = create_memo(cloned!((menu_open) => move || *menu_open.get()));
-    let toggle_menu = cloned!((menu_open) => move |_| menu_open.set(!*menu_open.get()));
+    let menu_open_2 = create_memo(cx, || *menu_open.get());
+    let toggle_menu = |_| menu_open.set(!*menu_open.get());
 
-    view! {
+    view! { cx,
         // TODO click-away events
         header(class = "shadow-md sm:p-2 w-full bg-white dark:text-white dark:bg-navy mb-20") {
             div(class = "flex justify-between") {
-                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl", href = link!("/")) {
+                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl", href = link!("/", cx)) {
                     (title)
                 }
                 // The button for opening/closing the hamburger menu on mobile
@@ -90,7 +90,7 @@ pub fn container(props: ContainerProps<G>) -> View<G> {
             p(class = "dark:text-white mx-5 text-center") {
                 span(dangerously_set_inner_html = &t!("footer.copyright", {
                     "years": COPYRIGHT_YEARS
-                }))
+                }, cx))
             }
         }
     }

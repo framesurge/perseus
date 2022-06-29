@@ -1,11 +1,27 @@
 use crate::components::container::NavLinks;
 use crate::components::container::COPYRIGHT_YEARS;
 use crate::templates::docs::generation::{DocsManifest, DocsVersionStatus};
-use perseus::{link, t};
-use sycamore::context::use_context;
+use perseus::internal::i18n::Translator;
+use perseus::{link, navigate};
 use sycamore::prelude::*;
-use sycamore_router::navigate;
 use wasm_bindgen::JsCast;
+
+macro_rules! t {
+    // When there are no arguments to interpolate
+    ($id:expr, $cx:expr) => {
+        perseus::internal::i18n::t_macro_backend($id, $cx)
+    };
+    // When there are arguments to interpolate
+    ($id:expr, {
+        $($key:literal = $value:expr),+
+    }, $cx:expr) => {{
+        let mut args = perseus::internal::i18n::TranslationArgs::new();
+        $(
+            args.set($key, $value);
+        )+
+        perseus::internal::i18n::t_macro_backend_with_args($id, args, $cx)
+    }};
+}
 
 #[derive(Clone)]
 struct DocsVersionSwitcherProps {
@@ -13,24 +29,38 @@ struct DocsVersionSwitcherProps {
     current_version: String,
 }
 #[component(DocsVersionSwitcher<G>)]
-fn docs_version_switcher(props: DocsVersionSwitcherProps) -> View<G> {
-    let manifest = props.manifest.clone();
-    let manifest_2 = manifest.clone();
-    let current_version = props.current_version;
-    let current_version_2 = current_version.clone();
-    let current_version_3 = current_version.clone();
-    let current_version_4 = current_version.clone();
-    let stable_version = manifest.stable.clone();
-    let stable_version_2 = stable_version.clone();
-    let stable_version_3 = stable_version.clone();
+fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> View<G> {
     // We'll fill this in from the reactive scope
     // Astonishingly, this actually works...
-    let locale = Signal::new(String::new());
-    let locale_2 = locale.clone();
+    let locale = create_signal(cx, String::new());
 
-    view! {
+    let current_version = create_ref(cx, props.current_version.to_string());
+    let stable_version = create_ref(cx, props.manifest.stable.to_string());
+
+    let beta_versions = View::new_fragment(
+        props.manifest.beta.into_iter().map(|version| {
+            let version = create_ref(cx, version);
+            view! { cx,
+                    option(value = &version, selected = current_version == version) { (t!("docs-version-switcher.beta", {
+                        "version" = version.to_string()
+                    }, cx)) }
+            }
+        }).collect()
+    );
+    let old_versions = View::new_fragment(
+        props.manifest.outdated.into_iter().map(|version| {
+            let version = create_ref(cx, version);
+            view! { cx,
+                    option(value = version, selected = current_version == version) { (t!("docs-version-switcher.outdated", {
+                        "version" = version.to_string()
+                    }, cx)) }
+            }
+        }).collect()
+    );
+
+    view! { cx,
         ({
-            locale.set(use_context::<perseus::templates::RenderCtx>().translator.get_locale());
+            locale.set(use_context::<Signal<Translator>>(cx).get_untracked().get_locale());
             View::empty()
         })
 
@@ -42,44 +72,20 @@ fn docs_version_switcher(props: DocsVersionSwitcherProps) -> View<G> {
                 let new_version = target.value();
                 // This isn't a reactive scope, so we can't use `link!` here
                 // The base path will be included by HTML automatically
-                let link = format!("{}/docs/{}/intro", *locale_2.get(), new_version);
+                let link = format!("{}/docs/{}/intro", *locale.get(), new_version);
                 navigate(&link);
             }
         ) {
             option(value = "next", selected = current_version == "next") {
-                (t!("docs-version-switcher.next"))
+                (t!("docs-version-switcher.next", cx))
             }
-            (View::new_fragment(
-                manifest.beta.iter().map(cloned!((current_version_2) => move |version| {
-                    let version = version.clone();
-                    let version_2 = version.clone();
-                    let version_3 = version.clone();
-                    let current_version = current_version_2.to_string();
-                    view! {
-                        option(value = version, selected = current_version == version_2) { (t!("docs-version-switcher.beta", {
-                            "version": version_3.as_str()
-                        })) }
-                    }
-                })).collect()
-            ))
-            option(value = stable_version, selected = current_version_3 == stable_version_2) {
+            (beta_versions)
+            option(value = stable_version, selected = current_version == stable_version) {
                 (t!("docs-version-switcher.stable", {
-                    "version": stable_version_3.as_str()
-                }))
+                    "version" = stable_version.to_string()
+                }, cx))
             }
-            (View::new_fragment(
-                manifest_2.outdated.iter().map(cloned!((current_version_4) => move |version| {
-                    let version = version.clone();
-                    let version_2 = version.clone();
-                    let version_3 = version.clone();
-                    let current_version = current_version_4.to_string();
-                    view! {
-                        option(value = version, selected = current_version == version_2) { (t!("docs-version-switcher.outdated", {
-                            "version": version_3.as_str()
-                        })) }
-                    }
-                })).collect()
-            ))
+            (old_versions)
         }
     }
 }
@@ -94,7 +100,7 @@ pub struct DocsContainerProps<G: GenericNode> {
 }
 
 #[component(DocsContainer<G>)]
-pub fn docs_container(props: DocsContainerProps<G>) -> View<G> {
+pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G> {
     let docs_links = props.docs_links.clone();
     let docs_links_2 = docs_links.clone();
     let status = props.status.clone();
@@ -104,18 +110,15 @@ pub fn docs_container(props: DocsContainerProps<G>) -> View<G> {
     };
     let docs_version_switcher_props_2 = docs_version_switcher_props.clone();
 
-    let menu_open = Signal::new(false);
-    // We need to verbatim copy the value because of how it's used in Sycamore's reactivity system
-    let menu_open_2 = create_memo(cloned!((menu_open) => move || *menu_open.get()));
-    let menu_open_3 = create_memo(cloned!((menu_open) => move || *menu_open.get()));
-    let toggle_menu = cloned!((menu_open) => move |_| menu_open.set(!*menu_open.get()));
+    let menu_open = create_signal(cx, false);
+    let toggle_menu = |_| menu_open.set(!*menu_open.get());
 
-    view! {
+    view! { cx,
         // TODO click-away events
         header(class = "shadow-md sm:p-2 w-full bg-white dark:text-white dark:bg-navy mb-20") {
             div(class = "flex justify-between") {
-                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl", href = link!("/")) {
-                    (t!("perseus"))
+                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl", href = link!("/", cx)) {
+                    (t!("perseus", cx))
                 }
                 // The button for opening/closing the hamburger menu on mobile
                 // This is done by a Tailwind module
@@ -148,7 +151,7 @@ pub fn docs_container(props: DocsContainerProps<G>) -> View<G> {
                 id = "mobile_nav_menu",
                 class = format!(
                     "md:hidden w-full text-center justify-center overflow-y-scroll {}",
-                    if *menu_open_2.get() {
+                    if *menu_open.get() {
                         "flex flex-col"
                     } else {
                         "hidden"
@@ -171,7 +174,7 @@ pub fn docs_container(props: DocsContainerProps<G>) -> View<G> {
         div(
             class = format!(
                 "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 overflow-y-auto {}",
-                if !*menu_open_3.get() {
+                if !*menu_open.get() {
                     "flex"
                 } else {
                     "hidden"
@@ -193,7 +196,7 @@ pub fn docs_container(props: DocsContainerProps<G>) -> View<G> {
                 div(class = "h-full flex w-full") {
                     // These styles were meticulously arrived at through pure trial and error...
                     div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
-                        (status.render())
+                        (status.render(cx))
                         main(class = "text-black dark:text-white") {
                             (props.children.clone())
                         }
@@ -204,8 +207,8 @@ pub fn docs_container(props: DocsContainerProps<G>) -> View<G> {
         footer(class = "w-full flex justify-center py-5 bg-gray-100 dark:bg-navy-deep") {
             p(class = "dark:text-white mx-5 text-center") {
                 span(dangerously_set_inner_html = &t!("footer.copyright", {
-                    "years": COPYRIGHT_YEARS
-                }))
+                    "years" = COPYRIGHT_YEARS
+                }, cx))
             }
         }
     }
