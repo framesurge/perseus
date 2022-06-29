@@ -60,7 +60,8 @@ macro_rules! t {
     };
     // When there are arguments to interpolate
     ($id:expr, {
-        $($key:literal: $value:expr),+
+        // NOTE Using a colon here leads to literally impossible to solve cast errors based on compiler misinterpretations
+        $($key:literal = $value:expr),+
     }, $cx:expr) => {{
         let mut args = $crate::internal::i18n::TranslationArgs::new();
         $(

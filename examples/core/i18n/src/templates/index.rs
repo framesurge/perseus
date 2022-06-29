@@ -7,7 +7,7 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
 
     view! { cx,
         p { (t!("hello", {
-            "user": username
+            "user" = username
         }, cx)) }
         a(href = link!("/about", cx)) { "About" }
     }
