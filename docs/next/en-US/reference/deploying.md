@@ -40,3 +40,5 @@ To make this work, you should also add the following to your `Cargo.toml` under 
 ```toml
 wee_alloc = "0.4"
 ```
+
+You can find more information about optimizing Wasm bundle sizes [here](https://rustwasm.github.io/book/reference/code-size.html#optimizing-builds-for-code-size).
