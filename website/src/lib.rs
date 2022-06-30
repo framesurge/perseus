@@ -1,3 +1,7 @@
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 mod components;
 mod error_pages;
 mod templates;

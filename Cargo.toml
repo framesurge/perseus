@@ -13,11 +13,7 @@ members = [
 ]
 resolver = "2"
 
-# [patch.crates-io]
-# sycamore = { git = "https://github.com/arctic-hen7/sycamore" }
-# sycamore-router = { git = "https://github.com/arctic-hen7/sycamore" }
-# sycamore-router-macro = { git = "https://github.com/arctic-hen7/sycamore" }
-# sycamore-macro = { git = "https://github.com/arctic-hen7/sycamore" }
-# sycamore-core = { git = "https://github.com/arctic-hen7/sycamore" }
-# sycamore-reactive = { git = "https://github.com/arctic-hen7/sycamore" }
-# sycamore-web = { git = "https://github.com/arctic-hen7/sycamore" }
+[profile.release]
+lto = true
+opt-level = "s"
+codegen-units = 1

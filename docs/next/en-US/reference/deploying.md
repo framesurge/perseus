@@ -14,4 +14,29 @@ With JavaScript, you can 'chunk' your app into many different files that are loa
 
 If you're getting into real strife with your bundle sizes though, you can, theoretically, split out your app into multiple components by literally building different parts of your website as different apps. This should be an absolute last resort though, and we have never come across an app that was big enough to need this. (Remember that Perseus will still give your users a page very quickly, it's just the interactivity that might take a little longer --- as in a few milliseconds longer.)
 
-However, there are some easy things you can do to make your Wasm bundles much smaller. TODO
+However, there are some easy things you can do to make your Wasm bundles much smaller. The first are applied in `Cargo.toml` to the release profile, which allows you to tweak compilation settings in release-mode (used in `perseus deploy`). (Note: if your app is inside a workspace, this has to go at the root of the workspace.)
+
+```toml
+[profile.release]
+lto = true
+opt-level = "z"
+codegen-units = 1
+```
+
+The first of these lets LLVM inline and prune functions more aggressively, leading to `perseus deploy` taking longer, but producing a faster and smaller app. The second is Cargo's optimization level, which is usually set to 3 for release builds, optimizing aggressively for speed. However, on the web, we get better 'speed' out of smaller sizes as explained above, so we optimize aggressively for size (note that sometimes optimizing normally for size with `s` can actually be better, so you should try both). The third of these is another one that makes compilation take (much) longer with `perseus deploy`, but that decrease speed by letting LLVM basically do more work.
+
+If you're only ever going to export your app, this is fine, but, if you ever use a server, then this will be a problem, as these size-focused optimizations will apply to your server too, slowing everything down again! Unfortunately, Cargo doesn't yet support [target-specific profiles](https://github.com/rust-lang/cargo/issues/4897), so we need to hack our way around this. TODO
+
+The next thing you can do is switch to `wee_alloc`, an alternative allocator designed for the web that produces less efficient, but smaller bundles. Again though, that lower efficiency is barely noticeable, while every kilobyte you can shave off the bundle's size leads to a notably faster load speed. Importantly, you still want to retain that efficiency on the server, so it's very important to only use `wee_alloc` on the browser-side, which you can do by adding the following to the very top of your `lib.rs`:
+
+```rust
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+```
+
+To make this work, you should also add the following to your `Cargo.toml` under the `[target.'cfg(target_arch = "wasm32")'.dependencies]` section (for browser-only dependencies):
+
+```toml
+wee_alloc = "0.4"
+```
