@@ -7,6 +7,7 @@ use perseus::{t, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use sycamore::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
 use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
@@ -116,7 +117,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                                             p { (plugin.description) }
                                         }
                                     }
-                                } // plugin_renderer
+                                }
                             }
                         }
                     }
@@ -149,7 +150,7 @@ async fn get_build_state(
     // This is the root page, so we want a list of plugins and a small amount of information about each
     // This directory loop is relative to `.perseus/`
     let mut plugins = Vec::new();
-    for entry in WalkDir::new(&format!("../plugins/{}", locale)) {
+    for entry in WalkDir::new(&format!("plugins/{}", locale)) {
         let entry = entry?;
         let path = entry.path();
         // Ignore any empty directories or the like

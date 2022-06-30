@@ -2,15 +2,18 @@ use crate::templates::docs::get_file_at_version::get_file_at_version;
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::{internal::get_path_prefix_server, t, RenderFnResult, RenderFnResultWithCause};
+use perseus::{t, RenderFnResult, RenderFnResultWithCause};
+#[cfg(not(target_arch = "wasm32"))]
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use sycamore::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
 use walkdir::WalkDir;
 
+#[cfg(not(target_arch = "wasm32"))] // This is a generation helper
 pub fn parse_md_to_html(markdown: &str) -> String {
     let mut opts = Options::empty();
     opts.insert(Options::ENABLE_STRIKETHROUGH);
@@ -26,7 +29,7 @@ pub fn parse_md_to_html(markdown: &str) -> String {
 lazy_static! {
     /// The latest version of the documentation. This will need to be updated as the docs are from the `docs/stable.txt` file.
     static ref DOCS_MANIFEST: DocsManifest = {
-        let contents = fs::read_to_string("../../docs/manifest.json").unwrap();
+        let contents = fs::read_to_string("../docs/manifest.json").unwrap();
         serde_json::from_str(&contents).unwrap()
     };
 }
@@ -109,6 +112,8 @@ pub async fn get_build_state(
     path: String,
     locale: String,
 ) -> RenderFnResultWithCause<DocsPageProps> {
+    use perseus::internal::get_path_prefix_server;
+
     let path_vec: Vec<&str> = path.split('/').collect();
     // Localize the path again to what it'll be on the filesystem
     // TODO get Perseus to pass in props from build paths for ease of use?
@@ -151,7 +156,7 @@ pub async fn get_build_state(
             ),
         )
     };
-    let fs_path = format!("../../{}.md", fs_path);
+    let fs_path = format!("../{}.md", fs_path);
     // Read that file
     let contents = fs::read_to_string(&fs_path)?;
 
@@ -175,8 +180,8 @@ pub async fn get_build_state(
                 // If we're on the `next` version, read from the filesystem directly
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents = if version == "next" {
-                    // Add a `../../` to the front so that it's relative from `.perseus/`, where we are now
-                    let path = format!("../../{}", &incl_path);
+                    // Add a `../` to the front so that it's relative from the website root, where we are now
+                    let path = format!("../{}", &incl_path);
                     match fs::read_to_string(&path) {
                         Ok(contents) => contents,
                         // If there's an error (which there will be after any major refactor), we'll tell the user which file couldn't be found
@@ -193,7 +198,7 @@ pub async fn get_build_state(
                         None => panic!("docs version '{}' not present in history map", version),
                     };
                     // We want the path relative to the root of the project directory (where the Git repo is)
-                    get_file_at_version(incl_path, history_point, PathBuf::from("../../"))?
+                    get_file_at_version(incl_path, history_point, PathBuf::from("../"))?
                 };
                 // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
@@ -217,7 +222,7 @@ pub async fn get_build_state(
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents_full = if version == "next" {
                     // Add a `../../` to the front so that it's relative from `.perseus/`, where we are now
-                    let path = format!("../../{}", &incl_path);
+                    let path = format!("../{}", &incl_path);
                     match fs::read_to_string(&path) {
                         Ok(contents) => contents,
                         // If there's an error (which there will be after any major refactor), we'll tell the user which file couldn't be found
@@ -234,7 +239,7 @@ pub async fn get_build_state(
                         None => panic!("docs version '{}' not present in history map", version),
                     };
                     // We want the path relative to the root of the project directory (where the Git repo is)
-                    get_file_at_version(incl_path, history_point, PathBuf::from("../../"))?
+                    get_file_at_version(incl_path, history_point, PathBuf::from("../"))?
                 };
                 // Get the specific lines wanted
                 let incl_contents_lines = match incl_contents_full
@@ -285,7 +290,7 @@ pub async fn get_build_state(
         .unwrap();
 
     // Get the sidebar from `SUMMARY.md`
-    let sidebar_fs_path = format!("../../docs/{}/{}/SUMMARY.md", &version, &locale);
+    let sidebar_fs_path = format!("../docs/{}/{}/SUMMARY.md", &version, &locale);
     let sidebar_contents = fs::read_to_string(&sidebar_fs_path)?;
     // Replace all links in that file with localized equivalents with versions as well (with the base path added)
     // That means unversioned paths will redirect to the appropriate stable version
@@ -325,7 +330,7 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
     // We start off by rendering the `/docs` page itself as an alias
     let mut paths = vec!["".to_string()];
     // Get the `docs/` directory (relative to `.perseus/`)
-    let docs_dir = PathBuf::from("../../docs");
+    let docs_dir = PathBuf::from("../docs");
     // Loop through it
     for entry in WalkDir::new(docs_dir) {
         let entry = entry?;
@@ -333,10 +338,10 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
         // Ignore any empty directories or the like
         if path.is_file() {
             // This should all pass, there are no non-Unicode filenames in the docs (and i18n titles are handled outside filenames)
-            // Also, all these are relative, which means we can safely strip away the `../../docs/`
+            // Also, all these are relative, which means we can safely strip away the `../docs/`
             // We also remove the file extensions (which are all `.md`)
             let path_str = path.to_str().unwrap().replace(".md", "");
-            let path_str = path_str.strip_prefix("../../docs/").unwrap();
+            let path_str = path_str.strip_prefix("../docs/").unwrap();
             // Only proceed for paths in the default locale (`en-US`), which we'll use to generate paths
             // Also disallow any of the `SUMMARY.md` files at this point (the extension has been stripped)
             // Also disallow the manifest file

@@ -7,22 +7,16 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use sycamore::prelude::*;
-use walkdir::WalkDir;
 
-struct ComparisonRowProps {
+struct ComparisonRowProps<'a> {
     perseus_val: String,
-    comparison_val: String,
+    comparison_val: &'a ReadSignal<String>,
     name: String,
 }
 #[component(ComparisonRow<G>)]
-fn ComparisonRow<G: Html>(cx: Scope, props: ComparisonRowProps) -> View<G> {
-    let ComparisonRowProps {
-        perseus_val,
-        comparison_val,
-        name,
-    } = props;
-    let name_2 = name.clone();
+fn ComparisonRow<'a, G: Html>(cx: Scope<'a>, props: ComparisonRowProps<'a>) -> View<G> {
     let show_details = create_signal(cx, false);
+    let name = create_ref(cx, props.name);
 
     view! { cx,
         tr {
@@ -47,16 +41,16 @@ fn ComparisonRow<G: Html>(cx: Scope, props: ComparisonRowProps) -> View<G> {
                         }
                     )
                 ) {
-                    (t!(&format!("comparisons-table-details.{}", name_2), cx))
+                    (t!(&format!("comparisons-table-details.{}", name), cx))
                 }
             }
             td(class = "p-1 py-2 text-xs xs:text-base") {
-                (perseus_val)
+                (props.perseus_val)
             }
             // The only thing that could overflow is the comparison language (everything else is tested)
             // Anything longer than 15 characters will overflow (by testing on smallest supported screen -- iPhone 5)
             td(class = "p-1 py-2 text-xs xs:text-base break-words xs:break-normal") {
-                (comparison_val)
+                (props.comparison_val.get())
             }
         }
     }
@@ -90,6 +84,26 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
     let show_details_homepage_lighthouse_desktop = create_signal(cx, false);
     let show_details_homepage_lighthouse_mobile = create_signal(cx, false);
 
+    // We now need to deconstruct the comparison with memos (actual pain)
+    // Otherwise, the props passed through to the row component aren't considered reactive
+    let comparison_language = create_memo(cx, || comparison.get().language.to_string());
+    let comparison_supports_ssg = create_memo(cx, || comparison.get().supports_ssg.render());
+    let comparison_supports_ssr = create_memo(cx, || comparison.get().supports_ssr.render());
+    let comparison_supports_ssr_ssg_same_page =
+        create_memo(cx, || comparison.get().supports_ssr_ssg_same_page.render());
+    let comparison_supports_i18n = create_memo(cx, || comparison.get().supports_i18n.render());
+    let comparison_supports_incremental =
+        create_memo(cx, || comparison.get().supports_incremental.render());
+    let comparison_supports_revalidation =
+        create_memo(cx, || comparison.get().supports_revalidation.render());
+    let comparison_inbuilt_cli = create_memo(cx, || comparison.get().inbuilt_cli.render());
+    let comparison_inbuilt_routing = create_memo(cx, || comparison.get().inbuilt_routing.render());
+    let comparison_supports_shell = create_memo(cx, || comparison.get().supports_shell.render());
+    let comparison_supports_deployment =
+        create_memo(cx, || comparison.get().supports_deployment.render());
+    let comparison_supports_exporting =
+        create_memo(cx, || comparison.get().supports_exporting.render());
+
     view! { cx,
         table(class = "w-full overflow-x-scroll table-fixed border-collapse") {
             thead(class = "mt-4 text-white bg-indigo-500 rounded-xl") {
@@ -109,62 +123,62 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                 // Then two cells, one Perseus, and the for the comparison
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_language,
-                    comparison_val: comparison.get().language.to_string(),
+                    comparison_val: comparison_language,
                     name: "language".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_ssg.render(),
-                    comparison_val: comparison.get().supports_ssg.render(),
+                    comparison_val: comparison_supports_ssg,
                     name: "supports_ssg".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_ssr.render(),
-                    comparison_val: comparison.get().supports_ssr.render(),
+                    comparison_val: comparison_supports_ssr,
                     name: "supports_ssr".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_ssr_ssg_same_page.render(),
-                    comparison_val: comparison.get().supports_ssr_ssg_same_page.render(),
+                    comparison_val: comparison_supports_ssr_ssg_same_page,
                     name: "supports_ssr_ssg_same_page".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_i18n.render(),
-                    comparison_val: comparison.get().supports_i18n.render(),
+                    comparison_val: comparison_supports_i18n,
                     name: "supports_i18n".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_incremental.render(),
-                    comparison_val: comparison.get().supports_incremental.render(),
+                    comparison_val: comparison_supports_incremental,
                     name: "supports_incremental".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_revalidation.render(),
-                    comparison_val: comparison.get().supports_revalidation.render(),
+                    comparison_val: comparison_supports_revalidation,
                     name: "supports_revalidation".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_inbuilt_cli.render(),
-                    comparison_val: comparison.get().inbuilt_cli.render(),
+                    comparison_val: comparison_inbuilt_cli,
                     name: "inbuilt_cli".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_inbuilt_routing.render(),
-                    comparison_val: comparison.get().inbuilt_routing.render(),
+                    comparison_val: comparison_inbuilt_routing,
                     name: "inbuilt_routing".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_shell.render(),
-                    comparison_val: comparison.get().supports_shell.render(),
+                    comparison_val: comparison_supports_shell,
                     name: "supports_shell".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_deployment.render(),
-                    comparison_val: comparison.get().supports_deployment.render(),
+                    comparison_val: comparison_supports_deployment,
                     name: "supports_deployment".to_string()
                 })
                 ComparisonRow(ComparisonRowProps {
                     perseus_val: perseus_supports_exporting.render(),
-                    comparison_val: comparison.get().supports_exporting.render(),
+                    comparison_val: comparison_supports_exporting,
                     name: "supports_exporting".to_string()
                 })
                 // These last two get special rendering for text colors and possible emoji
@@ -347,14 +361,16 @@ pub async fn get_build_state(
     _path: String,
     _locale: String,
 ) -> RenderFnResultWithCause<ComparisonsPageProps> {
+    use walkdir::WalkDir;
+
     // Get all the comparisons from JSON
     // This includes the special properties for Perseus itself
     let mut perseus_comparison: Option<Comparison> = None;
     let mut comparisons: HashMap<String, Comparison> = HashMap::new();
 
-    // Get the `comparisons/` directory in `website` (relative to `.perseus/`)
+    // Get the `comparisons/` directory in `website`
     // This can have any file structure we want for organization, we just want the files
-    let comparisons_dir = PathBuf::from("../comparisons");
+    let comparisons_dir = PathBuf::from("comparisons");
     // Loop through it
     for entry in WalkDir::new(comparisons_dir) {
         let entry = entry?;

@@ -3,7 +3,7 @@
 With a basic directory scaffold all set up, it's time to get into the nitty-gritty of building a Perseus app. Somewhat humorously, the hardest part to wrap your head around as a beginner is probably going to be the `Cargo.toml` we're about to set up. For now, make it look like the following.
 
 ```toml
-{{#include ../../../examples/comprehensive/tiny/Cargo.toml.example}
+{{#include ../../../examples/comprehensive/tiny/Cargo.toml.example}}
 ```
 
 <details>
@@ -34,7 +34,7 @@ So, to summarize, there's a bunch of weird stuff in `Cargo.toml` for every Perse
 Next, we can get on with the app's actual code! Head over to `src/lib.rs` and put the following inside:
 
 ```rust
-{{#include ../../../examples/comprehensive/tiny/src/lib.rs}
+{{#include ../../../examples/comprehensive/tiny/src/lib.rs}}
 ```
 
 This is your entire first app! Note that most Perseus app's won't actually look like this, we've condensed everything into 17 lines of code for simplicity.
