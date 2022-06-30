@@ -7,16 +7,17 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### ⚠ BREAKING CHANGES
 
-*     Changed multiple APIs for functional plugin actions related to the builder (they all take the new EngineError type now)
-    Restructured exports related to engine functionality (this will get progressively worse as this PR develops!)
-    Removed the HOST and PORT environment variables for configuring the server (these are replaced with PERSEUS_HOST and PERSEUS_PORT)
-    Substantially refactored exports from Perseus
-    Divided client-side and server-side exports (many functions will now need to be target-gated)
-    Replaced #[autoserde(...)] macro with macros for each state function (#[build_state], #[build_paths], etc.)
-    The #[build_paths] macro must now be applied to all build paths functions (for client/server functionality division)
-    #[perseus::main] now takes an argument as the default server to use (server integrations should now be imported and used)
-    Made state functions automatically target-gated as #[cfg(not(feature = "wasm32"))]
-    The #[should_revalidate] macro must now be applied to all revalidation determination functions (for client/server functionality division)
+*    Changed multiple APIs for functional plugin actions related to the builder (they all take the new EngineError type now)
+*    Restructured exports related to engine functionality (this will get progressively worse as this PR develops!)
+*    Removed the HOST and PORT environment variables for configuring the server (these are replaced with `PERSEUS_HOST` and `PERSEUS_PORT`)
+*    Substantially refactored exports from Perseus
+*    Divided client-side and server-side exports (many functions will now need to be target-gated)
+*    Replaced `#[autoserde(...)]` macro with macros for each state function (`#[build_state]`, `#[build_paths]`, etc.)
+*    The #[build_paths] macro must now be applied to all build paths functions (for client/server functionality division)
+*    #[perseus::main] now takes an argument as the default server to use (server integrations should now be imported and used)
+*    Made state functions automatically target-gated as `#[cfg(not(feature = "wasm32"))]`
+*    The `#[should_revalidate]` macro must now be applied to all revalidation determination functions (for client/server functionality division)
+*    WARNING: any filesystem paths in app building are now relative to the root of the app, not `.perseus/` (may require changes)
 
 ### Features
 
