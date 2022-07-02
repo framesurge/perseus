@@ -1,22 +1,27 @@
 {
     "0.1.x": {
         "state": "outdated",
-        "git": "v0.1.4"
+        "git": "v0.1.4",
+        "docs_rs": "0.1"
     },
     "0.2.x": {
         "state": "outdated",
-        "git": "v0.2.3"
+        "git": "v0.2.3",
+        "docs_rs": "0.2"
     },
     "0.3.0-0.3.3": {
         "state": "outdated",
-        "git": "v0.3.3"
+        "git": "v0.3.3",
+        "docs_rs": "0.3.3"
     },
     "0.3.4": {
         "state": "stable",
-        "git": "eccf137032fbe8e6507be9e9317edc16e7576a4f"
+        "git": "eccf137032fbe8e6507be9e9317edc16e7576a4f",
+        "docs_rs": "0.3"
     },
     "0.4.x": {
         "state": "beta",
-        "git": "HEAD"
+        "git": "HEAD",
+        "docs_rs": "0.4.0-beta"
     }
 }

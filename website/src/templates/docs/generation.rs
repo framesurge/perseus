@@ -102,23 +102,21 @@ impl DocsVersionStatus {
 }
 /// Information about the current state of the documentation, including which versions are outdated and the like.
 pub type DocsManifest = HashMap<String, VersionManifest>;
-// pub struct DocsManifest {
-//     pub stable: String,
-//     pub outdated: Vec<String>,
-//     pub beta: Vec<String>,
-//     /// A map of versions to points in the Git version history.
-//     pub history_map: HashMap<String, String>,
-// }
 
 /// Information about a single version in the documentation manifest.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
 pub struct VersionManifest {
+    /// The state of this version.
     pub state: VersionState,
+    /// The location in the Git history to get examples from for this version.
     pub git: String,
+    /// The version to use on docs.rs for this version. This will be interpolated into all docs.rs links
+    /// in this version's docs.
+    pub docs_rs: String,
 }
 /// The possible states a version can be in. Note that there can only be one stable version at a time, and that the special `next`
 /// version is not accounted for here.
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd)]
 #[serde(rename_all = "snake_case")]
 pub enum VersionState {
     /// The version is outdated, and should no longer be used if possible.
@@ -344,7 +342,21 @@ pub async fn get_build_state(
 
     // Parse any links to docs.rs (of the form `[`Error`](=enum.Error@perseus)`, where `perseus` is the package name)
     // Versions are interpolated automatically
-    let docs_rs_version = "latest";
+    let docs_rs_version = if version == "next" {
+        // Unfortunately, `latest` doesn't take account of beta versions, so we use either the latest beta version or the stable version
+        let mut beta_versions = BETA_VERSIONS.values().collect::<Vec<&VersionManifest>>();
+        beta_versions.sort_by(|a, b| b.partial_cmp(a).unwrap());
+        if beta_versions.is_empty() {
+            get_stable_version(&DOCS_MANIFEST).1.docs_rs
+        } else {
+            beta_versions[0].docs_rs.to_string()
+        }
+    } else {
+        match &DOCS_MANIFEST.get(version) {
+            Some(version) => version.docs_rs.to_string(),
+            None => panic!("docs version '{}' not present in manifest", version),
+        }
+    };
     let contents = Regex::new(r#"\]\(=(?P<path>.*?)@(?P<pkg>.*?)\)"#)
         .unwrap()
         .replace_all(
