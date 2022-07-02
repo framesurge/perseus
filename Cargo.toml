@@ -13,7 +13,7 @@ members = [
 ]
 resolver = "2"
 
-[profile.release]
-lto = true
-opt-level = "s"
-codegen-units = 1
+# [profile.release]
+# lto = true
+# opt-level = "s"
+# codegen-units = 1

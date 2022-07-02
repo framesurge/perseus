@@ -9,11 +9,12 @@ use std::path::PathBuf;
 pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
     run_cmd_directly(
         format!(
-            "{} run",
-            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string())
+            "{} run {}",
+            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+            env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        "build",
+        vec![("PERSEUS_ENGINE_OPERATION", "build")],
     )
 }
 
@@ -21,16 +22,17 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
 pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, ExecutionError> {
     run_cmd_directly(
         format!(
-            "{} build --out-dir dist/pkg --out-name perseus_engine --target web {}",
+            "{} build --out-dir dist/pkg --out-name perseus_engine --target web {} {}",
             env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
             if opts.profiling {
                 "--profiling"
             } else {
                 "--dev"
-            }
+            },
+            env::var("PERSEUS_WASM_PACK_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        "", // Not a builder command
+        vec![],
     )
 }
 
@@ -42,10 +44,11 @@ pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, Execution
 
     run_cmd_directly(
         format!(
-            "{} run",
+            "{} run {}",
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+            env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        "serve", // Unlike the `serve` command, we're both building and running here, so we provide the operation
+        vec![("PERSEUS_ENGINE_OPERATION", "serve")], // Unlike the `serve` command, we're both building and running here, so we provide the operation
     )
 }

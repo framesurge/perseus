@@ -14,8 +14,7 @@ pub static FAILURE: Emoji<'_, '_> = Emoji("❌", "failed!");
 pub fn run_cmd(
     cmd: String,
     dir: &Path,
-    // This is only relevant for builder-related commands, but since that's most things, we may as well (it's only an env var)
-    op: &str,
+    envs: Vec<(&str, &str)>,
     pre_dump: impl Fn(),
 ) -> Result<(String, String, i32), ExecutionError> {
     // We run the command in a shell so that NPM/Yarn binaries can be recognized (see #5)
@@ -31,7 +30,7 @@ pub fn run_cmd(
     // This will NOT pipe output/errors to the console
     let output = Command::new(shell_exec)
         .args([shell_param, &cmd])
-        .env("PERSEUS_ENGINE_OPERATION", op)
+        .envs(envs)
         .current_dir(dir)
         .output()
         .map_err(|err| ExecutionError::CmdExecFailed { cmd, source: err })?;
@@ -82,13 +81,13 @@ pub fn run_stage(
     target: &Path,
     spinner: &ProgressBar,
     message: &str,
-    op: &str,
+    envs: Vec<(&str, &str)>,
 ) -> Result<(String, String, i32), ExecutionError> {
     let mut last_output = (String::new(), String::new());
     // Run the commands
     for cmd in cmds {
         // We make sure all commands run in the target directory ('.perseus/' itself)
-        let (stdout, stderr, exit_code) = run_cmd(cmd.to_string(), target, op, || {
+        let (stdout, stderr, exit_code) = run_cmd(cmd.to_string(), target, envs.to_vec(), || {
             // This stage has failed
             fail_spinner(spinner, message);
         })?;
@@ -107,7 +106,11 @@ pub fn run_stage(
 
 /// Runs a command directly, piping its output and errors to the streams of this program. This allows the user to investigate the innards of
 /// Perseus, or just see their own `dbg!` calls. This will return the exit code of the command, which should be passed through to this program.
-pub fn run_cmd_directly(cmd: String, dir: &Path, op: &str) -> Result<i32, ExecutionError> {
+pub fn run_cmd_directly(
+    cmd: String,
+    dir: &Path,
+    envs: Vec<(&str, &str)>,
+) -> Result<i32, ExecutionError> {
     // The shell configurations for Windows and Unix
     #[cfg(unix)]
     let shell_exec = "sh";
@@ -121,7 +124,7 @@ pub fn run_cmd_directly(cmd: String, dir: &Path, op: &str) -> Result<i32, Execut
     let output = Command::new(shell_exec)
         .args([shell_param, &cmd])
         .current_dir(dir)
-        .env("PERSEUS_ENGINE_OPERATION", op)
+        .envs(envs)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()

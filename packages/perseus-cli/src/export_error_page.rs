@@ -8,7 +8,7 @@ use std::path::PathBuf;
 pub fn export_error_page(dir: PathBuf, opts: ExportErrorPageOpts) -> Result<i32, ExecutionError> {
     run_cmd_directly(
         format!(
-            "{} {} run {} {}",
+            "{} run {} -- {} {}",
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
             env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new()),
             // These are mandatory
@@ -16,6 +16,6 @@ pub fn export_error_page(dir: PathBuf, opts: ExportErrorPageOpts) -> Result<i32,
             opts.output,
         ),
         &dir,
-        "export_error_page",
+        vec![("PERSEUS_ENGINE_OPERATION", "export_error_page")],
     )
 }

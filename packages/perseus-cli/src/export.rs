@@ -159,7 +159,7 @@ pub fn export_internal(
             &ep_target,
             &ep_spinner,
             &ep_msg,
-            "export"
+            vec![("PERSEUS_ENGINE_OPERATION", "export")]
         )?);
 
         Ok(0)
@@ -175,7 +175,7 @@ pub fn export_internal(
             &wb_target,
             &wb_spinner,
             &wb_msg,
-            "" // Not a builder command
+            vec![]
         )?);
 
         Ok(0)

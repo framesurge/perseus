@@ -71,7 +71,7 @@ fn build_server(
             &sb_target,
             &sb_spinner,
             &sb_msg,
-            "" // The server will be built if we build for the server-side (builder and server are currently one for Cargo)
+            vec![]
         )?);
 
         let msgs: Vec<&str> = stdout.trim().split('\n').collect();

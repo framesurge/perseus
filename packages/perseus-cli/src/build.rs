@@ -67,6 +67,14 @@ pub fn build_internal(
         BUILDING
     );
 
+    // Prepare the optimization flags for the Wasm build (only used in release mode)
+    let wasm_opt_flags = if is_release {
+        env::var("PERSEUS_WASM_RELEASE_RUSTFLAGS")
+            .unwrap_or_else(|_| "-C opt-level=z -C codegen-units=1".to_string())
+    } else {
+        String::new()
+    };
+
     // We parallelize the first two spinners (static generation and Wasm building)
     // We make sure to add them at the top (the server spinner may have already been instantiated)
     let sg_spinner = spinners.insert(0, ProgressBar::new_spinner());
@@ -86,7 +94,7 @@ pub fn build_internal(
             &sg_dir,
             &sg_spinner,
             &sg_msg,
-            "build"
+            vec![("PERSEUS_ENGINE_OPERATION", "build")]
         )?);
 
         Ok(0)
@@ -102,7 +110,11 @@ pub fn build_internal(
             &wb_dir,
             &wb_spinner,
             &wb_msg,
-            "" // Not a builder command
+            if is_release {
+                vec![("RUSTFLAGS", &wasm_opt_flags)]
+            } else {
+                vec![]
+            }
         )?);
 
         Ok(0)

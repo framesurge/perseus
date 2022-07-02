@@ -52,7 +52,7 @@ pub fn tinker_internal(
             &tk_target,
             &tk_spinner,
             &tk_msg,
-            "tinker"
+            vec![("PERSEUS_ENGINE_OPERATION", "tinker")]
         )?);
 
         Ok(0)
