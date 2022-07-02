@@ -25,13 +25,16 @@ pub fn parse_md_to_html(markdown: &str) -> String {
     html_contents
 }
 
-// By using a lazy static, we won't read from the filesystem in client-side code
+// By using a lazy static, we won't read from the filesystem in client-side code (because these variables are never requested on the client-side)
 lazy_static! {
-    /// The latest version of the documentation. This will need to be updated as the docs are from the `docs/stable.txt` file.
+    /// The current documentation manifest, which contains details on all versions of Perseus.
     static ref DOCS_MANIFEST: DocsManifest = {
         let contents = fs::read_to_string("../docs/manifest.json").unwrap();
         serde_json::from_str(&contents).unwrap()
     };
+    static ref STABLE_VERSION_NAME: String = get_stable_version(&DOCS_MANIFEST).0;
+    static ref OUTDATED_VERSIONS: HashMap<String, VersionManifest> = get_outdated_versions(&DOCS_MANIFEST);
+    static ref BETA_VERSIONS: HashMap<String, VersionManifest> = get_beta_versions(&DOCS_MANIFEST);
 }
 
 /// The stability of a version of the docs, which governs what kind of warning will be displayed.
@@ -98,13 +101,70 @@ impl DocsVersionStatus {
     }
 }
 /// Information about the current state of the documentation, including which versions are outdated and the like.
+pub type DocsManifest = HashMap<String, VersionManifest>;
+// pub struct DocsManifest {
+//     pub stable: String,
+//     pub outdated: Vec<String>,
+//     pub beta: Vec<String>,
+//     /// A map of versions to points in the Git version history.
+//     pub history_map: HashMap<String, String>,
+// }
+
+/// Information about a single version in the documentation manifest.
 #[derive(Serialize, Deserialize, Clone)]
-pub struct DocsManifest {
-    pub stable: String,
-    pub outdated: Vec<String>,
-    pub beta: Vec<String>,
-    /// A map of versions to points in the Git version history.
-    pub history_map: HashMap<String, String>,
+pub struct VersionManifest {
+    pub state: VersionState,
+    pub git: String,
+}
+/// The possible states a version can be in. Note that there can only be one stable version at a time, and that the special `next`
+/// version is not accounted for here.
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum VersionState {
+    /// The version is outdated, and should no longer be used if possible.
+    Outdated,
+    /// The version is currently stable.
+    Stable,
+    /// The version is currently released, but in a beta form.
+    Beta,
+}
+
+/// Gets the latest stable version of the docs from the given manifest. This returns the version's name and metadata.
+pub fn get_stable_version(manifest: &DocsManifest) -> (String, VersionManifest) {
+    let mut stable: Option<(String, VersionManifest)> = None;
+    for (name, details) in manifest.iter() {
+        if details.state == VersionState::Stable {
+            stable = Some((name.clone(), details.clone()));
+            break;
+        }
+    }
+    if let Some(stable) = stable {
+        stable
+    } else {
+        panic!("no stable version set for docs");
+    }
+}
+/// Gets the outdated versions of the docs from the given manifest. This returns a `HashMap` of their names to their manifests.
+pub fn get_outdated_versions(manifest: &DocsManifest) -> HashMap<String, VersionManifest> {
+    let mut versions = HashMap::new();
+    for (name, details) in manifest.iter() {
+        if details.state == VersionState::Outdated {
+            versions.insert(name.clone(), details.clone());
+        }
+    }
+
+    versions
+}
+/// Gets the beta versions of the docs from the given manifest. This returns a `HashMap` of their names to their manifests.
+pub fn get_beta_versions(manifest: &DocsManifest) -> HashMap<String, VersionManifest> {
+    let mut versions = HashMap::new();
+    for (name, details) in manifest.iter() {
+        if details.state == VersionState::Beta {
+            versions.insert(name.clone(), details.clone());
+        }
+    }
+
+    versions
 }
 
 #[perseus::build_state]
@@ -113,6 +173,7 @@ pub async fn get_build_state(
     locale: String,
 ) -> RenderFnResultWithCause<DocsPageProps> {
     use perseus::internal::get_path_prefix_server;
+    use regex::Regex;
 
     let path_vec: Vec<&str> = path.split('/').collect();
     // Localize the path again to what it'll be on the filesystem
@@ -122,11 +183,11 @@ pub async fn get_build_state(
     // If the path is just `/docs` though, we'll render the introduction page for the stable version
     let (version, fs_path): (&str, String) = if path == "docs" {
         (
-            &DOCS_MANIFEST.stable,
+            STABLE_VERSION_NAME.as_str(),
             format!(
                 "{}/{}/{}/{}",
                 path_vec[0], // `docs`
-                &DOCS_MANIFEST.stable,
+                STABLE_VERSION_NAME.as_str(),
                 &locale,
                 "intro"
             ),
@@ -145,12 +206,12 @@ pub async fn get_build_state(
         )
     } else {
         (
-            &DOCS_MANIFEST.stable,
+            STABLE_VERSION_NAME.as_str(),
             // If it doesn't have a version, we'll inject the latest stable one
             format!(
                 "{}/{}/{}/{}",
                 path_vec[0], // `docs`
-                &DOCS_MANIFEST.stable,
+                STABLE_VERSION_NAME.as_str(),
                 &locale,
                 path_vec[1..].join("/") // The rest of the path
             ),
@@ -192,10 +253,10 @@ pub async fn get_build_state(
                     }
                 } else {
                     // Get the corresponding history point for this version
-                    let history_point = DOCS_MANIFEST.history_map.get(version);
-                    let history_point = match history_point {
-                        Some(history_point) => history_point,
-                        None => panic!("docs version '{}' not present in history map", version),
+                    let version_manifest = DOCS_MANIFEST.get(version);
+                    let history_point = match version_manifest {
+                        Some(version_manifest) => &version_manifest.git,
+                        None => panic!("docs version '{}' not present in manifest", version),
                     };
                     // We want the path relative to the root of the project directory (where the Git repo is)
                     get_file_at_version(incl_path, history_point, PathBuf::from("../"))?
@@ -233,10 +294,10 @@ pub async fn get_build_state(
                     }
                 } else {
                     // Get the corresponding history point for this version
-                    let history_point = DOCS_MANIFEST.history_map.get(version);
-                    let history_point = match history_point {
-                        Some(history_point) => history_point,
-                        None => panic!("docs version '{}' not present in history map", version),
+                    let version_manifest = DOCS_MANIFEST.get(version);
+                    let history_point = match version_manifest {
+                        Some(version_manifest) => &version_manifest.git,
+                        None => panic!("docs version '{}' not present in manifest", version),
                     };
                     // We want the path relative to the root of the project directory (where the Git repo is)
                     get_file_at_version(incl_path, history_point, PathBuf::from("../"))?
@@ -281,6 +342,19 @@ pub async fn get_build_state(
         ),
     );
 
+    // Parse any links to docs.rs (of the form `[`Error`](=enum.Error@perseus)`, where `perseus` is the package name)
+    // Versions are interpolated automatically
+    let docs_rs_version = "latest";
+    let contents = Regex::new(r#"\]\(=(?P<path>.*?)@(?P<pkg>.*?)\)"#)
+        .unwrap()
+        .replace_all(
+            &contents,
+            format!(
+                "](https://docs.rs/${{pkg}}/{}/${{pkg}}/${{path}}.html)",
+                docs_rs_version
+            ),
+        );
+
     // Parse the file to HTML
     let html_contents = parse_md_to_html(&contents);
     // Get the title from the first line of the contents, stripping the initial `#`
@@ -303,11 +377,11 @@ pub async fn get_build_state(
     // Work out the status of this page
     let status = if version == "next" {
         DocsVersionStatus::Next
-    } else if DOCS_MANIFEST.outdated.iter().any(|v| v == version) {
+    } else if OUTDATED_VERSIONS.keys().any(|v| v == version) {
         DocsVersionStatus::Outdated
-    } else if DOCS_MANIFEST.beta.iter().any(|v| v == version) {
+    } else if BETA_VERSIONS.keys().any(|v| v == version) {
         DocsVersionStatus::Beta
-    } else if DOCS_MANIFEST.stable == version {
+    } else if STABLE_VERSION_NAME.as_str() == version {
         DocsVersionStatus::Stable
     } else {
         panic!("version '{}' isn't listed in the docs manifest", version)
@@ -355,9 +429,9 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
                 paths.push(path_str.clone());
                 // If it's for the latest stable version though, we should also render it without that prefix
                 // That way the latest stable verison is always at the docs without a version prefix (which I think is more sensible than having the unreleased version there)
-                if path_str.starts_with(&DOCS_MANIFEST.stable) {
+                if path_str.starts_with(STABLE_VERSION_NAME.as_str()) {
                     let unprefixed_path_str = path_str
-                        .strip_prefix(&format!("{}/", &DOCS_MANIFEST.stable))
+                        .strip_prefix(&format!("{}/", STABLE_VERSION_NAME.as_str()))
                         .unwrap();
                     paths.push(unprefixed_path_str.to_string());
                 }

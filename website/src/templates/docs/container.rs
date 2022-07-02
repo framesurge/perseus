@@ -1,6 +1,8 @@
 use crate::components::container::NavLinks;
 use crate::components::container::COPYRIGHT_YEARS;
-use crate::templates::docs::generation::{DocsManifest, DocsVersionStatus};
+use crate::templates::docs::generation::{
+    get_beta_versions, get_outdated_versions, get_stable_version, DocsManifest, DocsVersionStatus,
+};
 use perseus::internal::i18n::Translator;
 use perseus::{link, navigate};
 use sycamore::prelude::*;
@@ -35,28 +37,42 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
     let locale = create_signal(cx, String::new());
 
     let current_version = create_ref(cx, props.current_version.to_string());
-    let stable_version = create_ref(cx, props.manifest.stable.to_string());
+    let stable_version = create_ref(cx, get_stable_version(&props.manifest).0);
 
-    let beta_versions = View::new_fragment(
-        props.manifest.beta.into_iter().map(|version| {
-            let version = create_ref(cx, version);
-            view! { cx,
-                    option(value = &version, selected = current_version == version) { (t!("docs-version-switcher.beta", {
-                        "version" = version.to_string()
-                    }, cx)) }
-            }
-        }).collect()
-    );
-    let old_versions = View::new_fragment(
-        props.manifest.outdated.into_iter().map(|version| {
-            let version = create_ref(cx, version);
-            view! { cx,
-                    option(value = version, selected = current_version == version) { (t!("docs-version-switcher.outdated", {
-                        "version" = version.to_string()
-                    }, cx)) }
-            }
-        }).collect()
-    );
+    let beta_versions = View::new_fragment({
+        let mut versions = get_beta_versions(&props.manifest)
+            .into_keys()
+            .collect::<Vec<String>>();
+        versions.sort_by(|a, b| b.partial_cmp(a).unwrap());
+        versions
+            .into_iter()
+            .map(|version| {
+                let version = create_ref(cx, version);
+                view! { cx,
+                        option(value = &version, selected = current_version == version) { (t!("docs-version-switcher.beta", {
+                            "version" = version.to_string()
+                        }, cx)) }
+                }
+            })
+            .collect()
+    });
+    let old_versions = View::new_fragment({
+        let mut versions = get_outdated_versions(&props.manifest)
+            .into_keys()
+            .collect::<Vec<String>>();
+        versions.sort_by(|a, b| b.partial_cmp(a).unwrap());
+        versions
+            .into_iter()
+            .map(|version| {
+                let version = create_ref(cx, version);
+                view! { cx,
+                        option(value = version, selected = current_version == version) { (t!("docs-version-switcher.outdated", {
+                            "version" = version.to_string()
+                        }, cx)) }
+                }
+            })
+            .collect()
+    });
 
     view! { cx,
         ({

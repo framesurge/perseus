@@ -26,6 +26,7 @@ wasm-bindgen = "0.2"
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 walkdir = "2"
 pulldown-cmark = "0.8"
+regex = "1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wee_alloc = "0.4"
