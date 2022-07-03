@@ -110,8 +110,7 @@ COPY --from=esbuild /esbuild/bin/esbuild /usr/bin/
 WORKDIR /app
 
 # Run all required commands to build and deploy the project.
-RUN . /etc/profile \
-  && ./usr/local/cargo/env \
+RUN . /etc/profile && . /usr/local/cargo/env \
   && curl -L# \
   https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
   | tar -xz --strip-components=3 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple \
@@ -141,22 +140,25 @@ RUN . /etc/profile \
   && cat .perseus/Cargo.toml \
   && cat ./src/lib.rs \
   && ( \
-    parse_file() { \
+    parse_file() \{ \
       local file_path="./.perseus/src/lib.rs" \
       local line_num=1 \
-      while IFS= read -r line; do \
-        if [ ! -z "$( sed "${line_num}q;d" | grep -e 'clippy' )" ]; then \
-          break; \
+      while IFS= read -r line \
+      do \
+        if [ ! -z "$( sed "${line_num}q;d" ${file_path} | grep -e 'clippy' )" ] \
+        then \
+          break \
         fi \
-        line_num = $(( $line_num + 1 )) \
+        line_num=$(( $line_num + 1 )) \
       done < $file_path \
-      if [ $line_num -ne 1 ]; then \
+      if [ $line_num -ne 1 ] \
+      then \
         awk -i inplace \
         -v line_num=$line_num \
         -v inner_attr="$( sed "${line_num}q;d" ${file_path} )" \
         'NR==1 { print inner_attr } NR!=line_num { print }' $file_path \
       fi \
-    } \
+    \} \
     parse_file \
   ) \
   && export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
