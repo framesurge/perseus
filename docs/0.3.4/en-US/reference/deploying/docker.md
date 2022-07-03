@@ -14,11 +14,13 @@ Before proceeding with this section, you should be familiar with Docker's [multi
 FROM rust:1.57-slim AS build
 
 # Install build dependencies.
-RUN apt update \
-  && apt -y install --no-install-recommends \
+RUN apt-get update \
+  && apt-get -y install --no-install-recommends \
   apt-transport-https \
   build-essential \
   curl \
+  gawk \
+  git \
   libssl-dev \
   lsb-release \
   openssl \
@@ -31,7 +33,8 @@ ENV PERSEUS_VERSION=0.3.5 \
   BINARYEN_VERSION=104 \
   ESBUILD_VERSION=0.14.7 \
   WASM_PACK_VERSION=0.10.3 \
-  RUST_RELEASE_CHANNEL=stable
+  RUST_RELEASE_CHANNEL=stable \
+  CARGO_NET_GIT_FETCH_WITH_CLI=true
 
 # Work from the root of the project.
 WORKDIR /app
@@ -109,7 +112,9 @@ RUN perseus tinker \
   && cat ./src/lib.rs
 
 # Patch `clippy` inner attribute syntax error in `lib.rs` (if found).
-RUN sed -i "s|\(#\)!\(\[allow(clippy::unused_unit)\]\)|\1\2|;" ./.perseus/src/lib.rs
+RUN awk -i inplace \
+  -v inner_attr="$(sed '3q;d' ./.perseus/src/lib.rs)" \
+  'NR==1 { print inner_attr } NR!=3 { print }' ./.perseus/src/lib.rs
 
 # Single-threaded perseus CLI mode required for low memory environments.
 # ENV PERSEUS_CLI_SEQUENTIAL=true
