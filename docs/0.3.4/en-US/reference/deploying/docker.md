@@ -11,7 +11,7 @@ Before proceeding with this section, you should be familiar with Docker's [multi
 
 ```dockerfile
 # Pull base image.
-FROM rust:1.57-slim AS build
+FROM rust:1.57-slim AS base
 
 # Export environment variables.
 ENV PERSEUS_VERSION=0.3.5 \
