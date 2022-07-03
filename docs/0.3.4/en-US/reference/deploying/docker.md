@@ -45,7 +45,7 @@ RUN apt-get update \
 # Create a build stage for `perseus-cli` that we can run in parallel.
 FROM base as perseus
 
-# Work from the desired install path for `perseus-cli`.
+# Work from the chosen install path for `perseus-cli`.
 WORKDIR /perseus
 
 # Install crate `perseus-cli` into the work path.
@@ -55,7 +55,7 @@ RUN cargo install perseus-cli --version $PERSEUS_VERSION \
 # Create a build stage for `wasm-pack` that we can run in parallel.
 FROM base as wasm-pack
 
-# Work from the install path for `wasm-pack`.
+# Work from the chosen install path for `wasm-pack`.
 WORKDIR /wasm-pack
 
 # Install crate `wasm-pack` into the work path.
@@ -65,7 +65,7 @@ RUN cargo install wasm-pack --version $WASM_PACK_VERSION \
 # Create a build stage for `binaryen` we can run in parallel.
 FROM base as binaryen
 
-# Work from the install path for `binaryen`.
+# Work from the chosen install path for `binaryen`.
 WORKDIR /binaryen
 
 # Download, extract, and remove compressed tar of `binaryen`.
@@ -80,7 +80,7 @@ RUN curl -L#o binaryen-${BINARYEN_VERSION}.tar.gz \
 # Create a build stage for `esbuild` we can run in parallel.
 FROM base as esbuild
 
-# Work from the install path for `esbuild`.
+# Work from the chosen install path for `esbuild`.
 WORKDIR /esbuild
 
 # Download, extract, and remove compressed tar of `esbuild`.
@@ -98,8 +98,10 @@ FROM base as builder
 # Copy the tools we previously prepared in parallel.
 COPY --from=perseus /perseus/perseus /usr/bin/
 COPY --from=wasm-pack /wasm-pack/wasm-pack /usr/bin/
-COPY --from=binaryen /binaryen/ /binaryen/
-COPY --from=esbuild /esbuild/ /esbuild/
+COPY --from=binaryen /binaryen/bin/ /usr/bin/
+COPY --from=binaryen /binaryen/include/ /usr/include/
+COPY --from=binaryen /binaryen/lib/ /usr/lib/
+COPY --from=esbuild /esbuild/bin/esbuild /usr/bin/
 
 # Single-threaded perseus CLI mode required for low memory environments.
 # ENV PERSEUS_CLI_SEQUENTIAL=true
@@ -108,8 +110,8 @@ COPY --from=esbuild /esbuild/ /esbuild/
 WORKDIR /app
 
 # Run all required commands to build and deploy the project.
-RUN ln -s /binaryen/bin/wasm-opt /usr/bin/wasm-opt \
-  && ln -s /esbuild/bin/esbuild /usr/bin/esbuild \
+RUN . /etc/profile \
+  && ./usr/local/cargo/env \
   && curl -L# \
   https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
   | tar -xz --strip-components=3 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple \
@@ -138,9 +140,25 @@ RUN ln -s /binaryen/bin/wasm-opt /usr/bin/wasm-opt \
   && perseus tinker \
   && cat .perseus/Cargo.toml \
   && cat ./src/lib.rs \
-  && awk -i inplace \
-  -v inner_attr="$(sed '3q;d' ./.perseus/src/lib.rs)" \
-  'NR==1 { print inner_attr } NR!=3 { print }' ./.perseus/src/lib.rs \
+  && ( \
+    parse_file() { \
+      local file_path="./.perseus/src/lib.rs" \
+      local line_num=1 \
+      while IFS= read -r line; do \
+        if [ ! -z "$( sed "${line_num}q;d" | grep -e 'clippy' )" ]; then \
+          break; \
+        fi \
+        line_num = $(( $line_num + 1 )) \
+      done < $file_path \
+      if [ $line_num -ne 1 ]; then \
+        awk -i inplace \
+        -v line_num=$line_num \
+        -v inner_attr="$( sed "${line_num}q;d" ${file_path} )" \
+        'NR==1 { print inner_attr } NR!=line_num { print }' $file_path \
+      fi \
+    } \
+    parse_file \
+  ) \
   && export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
   && perseus deploy \
   && esbuild ./pkg/dist/pkg/perseus_engine.js \
