@@ -13,19 +13,6 @@ Before proceeding with this section, you should be familiar with Docker's [multi
 # Pull base image.
 FROM rust:1.57-slim AS build
 
-# Install build dependencies.
-RUN apt-get update \
-  && apt-get -y install --no-install-recommends \
-  apt-transport-https \
-  build-essential \
-  curl \
-  gawk \
-  git \
-  libssl-dev \
-  lsb-release \
-  openssl \
-  pkg-config
-
 # Export environment variables.
 ENV PERSEUS_VERSION=0.3.5 \
   PERSEUS_SIZE_OPT_VERSION=0.1.7 \
@@ -38,6 +25,19 @@ ENV PERSEUS_VERSION=0.3.5 \
 
 # Work from the root of the project.
 WORKDIR /app
+
+# Install build dependencies.
+RUN apt-get update \
+  && apt-get -y install --no-install-recommends \
+  apt-transport-https \
+  build-essential \
+  curl \
+  gawk \
+  git \
+  libssl-dev \
+  lsb-release \
+  openssl \
+  pkg-config
 
 # Perform the following steps:
 # - Install latest `rust` from `stable` release channel.
