@@ -37,13 +37,8 @@ RUN apt-get update \
   libssl-dev \
   lsb-release \
   openssl \
-  pkg-config
-
-# Perform the following steps:
-# - Install latest `rust` from `stable` release channel.
-# - Set `rust:stable` as default toolchain.
-# - Download the target for `wasm`.
-RUN rustup install $RUST_RELEASE_CHANNEL \
+  pkg-config \
+  && rustup install $RUST_RELEASE_CHANNEL \
   && rustup default $RUST_RELEASE_CHANNEL \
   && rustup target add wasm32-unknown-unknown
 
