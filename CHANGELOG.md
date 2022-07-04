@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.3](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.2...v0.4.0-beta.3) (2022-07-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* Made custom servers take `ServerProps` and `(String,
+u16)` for the host and port.
+* Changed delimiter in `t!` macro variable interpolation
+from `:` to `=` to solve compiler misinterpretation errors
+
+### Features
+
+* made custom servers easier and added example ([d450a81](https://github.com/arctic-hen7/perseus/commit/d450a81435a8eaf4d37e806ce57624a511ae38c5))
+* **website:** added auto-versioning to docs.rs shorthand links ([e727121](https://github.com/arctic-hen7/perseus/commit/e727121bc08be004a8bf4e9c29409c4244ce1a8b))
+* **website:** added shorthand for docs.rs links ([ee379a1](https://github.com/arctic-hen7/perseus/commit/ee379a1baa38c9be00c06db7ff431cfe61f58ffb))
+* added size optimizations support into cli ([b083173](https://github.com/arctic-hen7/perseus/commit/b083173033298784443eee2a9d398eac7b879d02))
+
+
+### Bug Fixes
+
+* fixed actix web integration ([6b538d3](https://github.com/arctic-hen7/perseus/commit/6b538d3d058e17cbef490e3c4ab7844d84a771ff))
+* fixed cast issues with `t!` interpolation ([2cae13a](https://github.com/arctic-hen7/perseus/commit/2cae13a08af5918a7b5fa40f6cb928b7fb7c5ecf))
+* fixed data setup for actix web integration ([6a129a1](https://github.com/arctic-hen7/perseus/commit/6a129a1342619701b8600017693f078f98240e04))
+* fixed live reloading ([1b924af](https://github.com/arctic-hen7/perseus/commit/1b924af0ade5abe13b8fec1b4ecd766b0871c5ed))
+* fixed size optimizations on website ([4e320c8](https://github.com/arctic-hen7/perseus/commit/4e320c892934610cf46951cb56792513187528aa))
+* fixed up website ([946e326](https://github.com/arctic-hen7/perseus/commit/946e3265e389eca3842a1322753a0013b8945b21))
+* removed bad default feature from actix integration ([4612e01](https://github.com/arctic-hen7/perseus/commit/4612e015aa4059c0fc8e88c35b6777038c252d9c))
+* **website:** added opts back ([4b25d46](https://github.com/arctic-hen7/perseus/commit/4b25d469ce2b2c32c3586113fb79082aa8ab8f95))
+* **website:** fixed latest stable version warning link ([a32f1ee](https://github.com/arctic-hen7/perseus/commit/a32f1ee67d70d1dee9c974e26ad731238997a0b5))
+* **website:** updated `opt-level` to `z` ([2b49591](https://github.com/arctic-hen7/perseus/commit/2b49591eb049d81c6cbd5a29af3bf380e5aa074d))
+
+
+### Documentation Changes
+
+* added live reloading/hsr docs ([bd8a702](https://github.com/arctic-hen7/perseus/commit/bd8a70287a92a34b95d7213ff55207027edb2d99))
+* clarified `perseus-integration` crate purpose ([73dc11a](https://github.com/arctic-hen7/perseus/commit/73dc11afe31f676d4a4d13f3eb24e7df0d4c57b4))
+* clarified items in changelog ([2d0cc1b](https://github.com/arctic-hen7/perseus/commit/2d0cc1b090c0161df3e2768405e12201a506abe6))
+* copied `next` to `0.4.x` for improved UX ([3fd6834](https://github.com/arctic-hen7/perseus/commit/3fd683426fa38e53028349044f7d5903d0005cd9))
+* updated optimizations docs ([51ad962](https://github.com/arctic-hen7/perseus/commit/51ad962cc7161657b856d2058765dd3ecc18f750))
+* wrote some sections of the docs ([c7a9f09](https://github.com/arctic-hen7/perseus/commit/c7a9f0995a51eb325f4949fa8fbcca16f6c22e93))
+
 ## [0.4.0-beta.2](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.1...v0.4.0-beta.2) (2022-06-27)
 
 

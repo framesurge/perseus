@@ -4,8 +4,8 @@ Perseus v0.4.x added several breaking changes, along with a full migration to Sy
 
 **Warning:** Perseus v0.4.x is still in beta, so there may still be several bugs! Additionally, both the Sycamore and Perseus APIs are potentially subject to significant changes during the beta period, so you may be making major changes to your app quite often.
 
-1. Update your `Cargo.toml` dependencies for `perseus` to `0.4.0-beta.2`.
-2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.4.0-beta.2`.
+1. Update your `Cargo.toml` dependencies for `perseus` to `0.4.0-beta.3`.
+2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.4.0-beta.3`.
 3. Run `perseus clean` to remove the old `.perseus/` directory.
 4. Update your view code for Sycamore's new version (mostly including adding a `cx` parameter as the first argument of every function that returns a `View<G>`).
 
