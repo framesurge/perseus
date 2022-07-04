@@ -56,6 +56,8 @@ jobs:
                       type: core
                     - name: index_view
                       type: core
+                    - name: custom_server
+                      type: core
         steps:
             - uses: actions/checkout@v2
             - run: cargo install bonnie wasm-pack rust-script

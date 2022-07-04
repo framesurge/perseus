@@ -67,12 +67,21 @@ fn real_main() -> i32 {
         .spawn()
         .expect("couldn't start test server (command execution failed)");
 
+    // Check if this example is locked to a single integration (in which case we shouldn't apply the user's integration setting)
+    let integration_locked = std::fs::metadata(format!("examples/{}/{}/.integration_locked", &category, &example)).is_ok();
+    let cargo_features = if integration_locked {
+        println!("The given example is locked to a specific integration. The provided integration may not be used.");
+        String::new()
+    } else {
+        format!("--features 'perseus-integration/{}'", &integration)
+    };
+
     // We want to get an exit code from actually running the tests (which interact with the server we're running in the background), which we'll return from this process
     let exit_code = {
         let output = Command::new(shell_exec)
             .current_dir(&format!("examples/{}/{}", &category, &example))
             // TODO Confirm that this syntax works on Windows
-            .args([shell_param, &format!("cargo test --features 'perseus-integration/{}' -- --test-threads 1", &integration)])
+            .args([shell_param, &format!("cargo test {} -- --test-threads 1", &cargo_features)])
             .envs(if is_headless {
                 vec![("PERSEUS_RUN_WASM_TESTS", "true"), ("PERSEUS_RUN_WASM_TESTS_HEADLESS", "true")]
             } else {

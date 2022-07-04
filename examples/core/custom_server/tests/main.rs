@@ -8,14 +8,10 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
 
-    // The greeting was passed through using build state
     wait_for_checkpoint!("initial_state_present", 0, c);
     wait_for_checkpoint!("page_visible", 0, c);
     let greeting = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(greeting, "Hello World!");
-    // For some reason, retrieving the inner HTML or text of a `<title>` doens't work
-    let title = c.find(Locator::Css("title")).await?.html(false).await?;
-    assert!(title.contains("Index Page"));
 
     // Go to `/about`
     c.find(Locator::Id("about-link")).await?.click().await?;
@@ -26,11 +22,18 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // Make sure the hardcoded text there exists
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(text, "About.");
-    let title = c.find(Locator::Css("title")).await?.html(false).await?;
-    assert!(title.contains("About Page"));
     // Make sure we get initial state if we refresh
     c.refresh().await?;
     wait_for_checkpoint!("initial_state_present", 0, c);
+
+    // Check the API routes (we test with a server)
+    // The echo route should echo back everything we give it
+    c.goto("http://localhost:8080/api/echo/test").await?;
+    let text = c.find(Locator::Css("pre")).await?.text().await?;
+    assert_eq!(text, "test");
+    c.goto("http://localhost:8080/api/echo/blah").await?;
+    let text = c.find(Locator::Css("pre")).await?.text().await?;
+    assert_eq!(text, "blah");
 
     Ok(())
 }
