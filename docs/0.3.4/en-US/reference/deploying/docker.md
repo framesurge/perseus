@@ -166,7 +166,7 @@ RUN . /etc/profile && . /usr/local/cargo/env \
   && perseus deploy \
   && esbuild ./pkg/dist/pkg/perseus_engine.js \
   --minify \
-  --target=esnext \
+  --target=es6 \
   --outfile=./pkg/dist/pkg/perseus_engine.js \
   --allow-overwrite \
   && ls -lha ./pkg/dist/pkg \
