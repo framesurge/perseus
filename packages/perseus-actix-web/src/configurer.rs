@@ -10,19 +10,18 @@ use perseus::{
     },
     stores::MutableStore,
 };
-use std::rc::Rc;
 
-async fn js_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
+async fn js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.js_bundle)
 }
-async fn wasm_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
+async fn wasm_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.wasm_bundle)
 }
-async fn wasm_js_bundle(opts: web::Data<Rc<ServerOptions>>) -> std::io::Result<NamedFile> {
+async fn wasm_js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
     NamedFile::open(&opts.wasm_js_bundle)
 }
 async fn static_alias(
-    opts: web::Data<Rc<ServerOptions>>,
+    opts: web::Data<ServerOptions>,
     req: HttpRequest,
 ) -> std::io::Result<NamedFile> {
     let filename = opts.static_aliases.get(req.path());
