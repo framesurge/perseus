@@ -7,3 +7,5 @@ There's also a `.base/` folder that contains a template that new examples should
 Each of the examples here are fully self-contained Perseus apps, though they use relative path dependencies to the bleeding edge versions of the Perseus packages in this repository. They're also designed to be used with the local, bleeding-edge version of the CLI, which can be invoked by running `bonnie dev example <category> <example> <cli-command>`, where `<cli-command>` is any series of arguments you'd provide to the usual Perseus CLI.
 
 If any of these examples don't work, please [open an issue](https://github.com/arctic-hen7/perseus/issues/choose) and let us know!
+
+*Note: by default, all examples are assumed to use the `perseus-integration` helper crate, which allows testing them with all integrations. If this is not the case, add a `.integration_locked` file to the root of the example.*

@@ -134,10 +134,10 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             for entry in std::fs::read_dir(".")
                 .map_err(|err| WatchError::ReadCurrentDirFailed { source: err })?
             {
-                // We want to exclude `target/` and `.perseus/`, otherwise we should watch everything
+                // We want to exclude `target/` and `dist`, otherwise we should watch everything
                 let entry = entry.map_err(|err| WatchError::ReadDirEntryFailed { source: err })?;
                 let name = entry.file_name();
-                if name != "target" && name != ".perseus" && name != ".git" {
+                if name != "target" && name != "dist" && name != ".git" {
                     watcher
                         .watch(&entry.path(), RecursiveMode::Recursive)
                         .map_err(|err| WatchError::WatchFileFailed {

@@ -1,7 +1,9 @@
 // This file contains functions exclusive to the default engine systems
 
-use super::EngineOperation;
-use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase, SsrNode};
+use super::{get_host_and_port, get_props, EngineOperation};
+use crate::{
+    i18n::TranslationsManager, server::ServerProps, stores::MutableStore, PerseusAppBase, SsrNode,
+};
 use fmterr::fmt_err;
 use futures::Future;
 use std::env;
@@ -14,7 +16,7 @@ where
     T: TranslationsManager,
     A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 {
-    let serve_fn = |_app: A| async {
+    let serve_fn = |_, _| async {
         panic!("`run_dflt_engine_export_only` cannot run a server; you should use `run_dflt_engine` instead and import a server integration (e.g. `perseus-warp`)")
     };
     run_dflt_engine(op, app, serve_fn).await
@@ -33,7 +35,7 @@ where
 pub async fn run_dflt_engine<M, T, F, A>(
     op: EngineOperation,
     app: A,
-    serve_fn: impl Fn(A) -> F,
+    serve_fn: impl Fn(ServerProps<M, T>, (String, u16)) -> F,
 ) -> i32
 where
     M: MutableStore,
@@ -92,7 +94,11 @@ where
             }
         }
         EngineOperation::Serve => {
-            serve_fn(app).await;
+            // To reduce friction for default servers and user-made servers, we automatically do the boilerplate that all servers would have to do
+            let props = get_props(app());
+            // This returns a `(String, u16)` of the host and port for maximum compatibility
+            let addr = get_host_and_port();
+            serve_fn(props, addr).await;
             0
         }
         EngineOperation::Tinker => {

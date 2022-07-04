@@ -15,22 +15,6 @@ use sycamore::web::SsrNode;
 
 // Note: the default servers for integrations are now stored in the crates of those integrations
 
-/// Determines whether or not we're operating in standalone mode, and acts accordingly. This MUST be executed in the parent thread, as it switches the current directory.
-pub fn get_standalone_and_act() -> bool {
-    // So we don't have to define a different `FsConfigManager` just for the server, we shift the execution context to the same level as everything else
-    // The server has to be a separate crate because otherwise the dependencies don't work with Wasm bundling
-    // If we're not running as a standalone binary, assume we're running in dev mode at the root of the user's project
-    if cfg!(feature = "standalone") {
-        // If we are running as a standalone binary, we have no idea where we're being executed from (#63), so we should set the working directory to be the same as the binary location
-        let binary_loc = env::current_exe().unwrap();
-        let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close to sanity
-        env::set_current_dir(binary_dir).unwrap();
-        true
-    } else {
-        false
-    }
-}
-
 /// Gets the host and port to serve on based on environment variables, which are universally used for configuration regardless of engine.
 pub fn get_host_and_port() -> (String, u16) {
     // We have to use two sets of environment variables until v0.4.0

@@ -2,28 +2,23 @@ use crate::configurer;
 use actix_web::{App, HttpServer};
 use futures::executor::block_on;
 use perseus::{
-    builder::{get_host_and_port, get_props, get_standalone_and_act},
-    internal::i18n::TranslationsManager,
-    stores::MutableStore,
+    internal::i18n::TranslationsManager, internal::serve::ServerProps, stores::MutableStore,
     PerseusAppBase, SsrNode,
 };
 
 /// Creates and starts the default Perseus server using Actix Web. This should be run in a `main()` function annotated with `#[tokio::main]` (which requires the `macros` and
 /// `rt-multi-thread` features on the `tokio` dependency).
 pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
-    app: impl Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
+    props: ServerProps<M, T>,
+    (host, port): (String, u16),
 ) {
-    get_standalone_and_act();
-    let (host, port) = get_host_and_port();
-
+    // TODO Fix issues here
     HttpServer::new(move ||
         App::new()
             .configure(
                 block_on(
                     configurer(
-                        get_props(
-                            app()
-                        )
+                        props
                     )
                 )
             )

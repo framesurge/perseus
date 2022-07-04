@@ -34,6 +34,6 @@ pub async fn get_build_state(
     _locale: String,
 ) -> RenderFnResultWithCause<IndexPageState> {
     Ok(IndexPageState {
-        greeting: "Hello World!".to_string(),
+        greeting: "Hello Worlds!".to_string(),
     })
 }
