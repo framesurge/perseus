@@ -137,30 +137,31 @@ RUN . /etc/profile && . /usr/local/cargo/env \
   && perseus clean \
   && perseus prep \
   && perseus tinker \
-  && cat .perseus/Cargo.toml \
+  && cat ./.perseus/Cargo.toml \
   && cat ./src/lib.rs \
-  && ( \
-    parse_file() \{ \
-      local file_path="./.perseus/src/lib.rs" \
-      local line_num=1 \
-      while IFS= read -r line \
-      do \
-        if [ ! -z "$( sed "${line_num}q;d" ${file_path} | grep -e 'clippy' )" ] \
-        then \
-          break \
-        fi \
-        line_num=$(( $line_num + 1 )) \
-      done < $file_path \
-      if [ $line_num -ne 1 ] \
-      then \
-        awk -i inplace \
-        -v line_num=$line_num \
-        -v inner_attr="$( sed "${line_num}q;d" ${file_path} )" \
-        'NR==1 { print inner_attr } NR!=line_num { print }' $file_path \
-      fi \
-    \} \
-    parse_file \
-  ) \
+  && printf '%s\n' \
+  '#!/bin/sh' \
+  'parse_file () {' \
+  '  local file_path=./.perseus/src/lib.rs' \
+  '  local line_num=1' \
+  '  while IFS= read -r lib_line' \
+  '  do' \
+  '    if [ ! -z $( echo ${lib_line} | cut -d " " -f 1 | grep -e "clippy" ) ]' \
+  '    then' \
+  '      break' \
+  '    fi' \
+  '    line_num=$(( $line_num + 1 ))' \
+  '  done < $file_path' \
+  '  if [ $line_num -ne 1 ]' \
+  '  then' \
+  '    awk -i inplace '"\\" \
+  '    -v line_num=$line_num '"\\" \
+  '    -v inner_attr=$( sed "${line_num}q;d" $file_path | cut -d " " -f 1 ) '"\\" \
+  '    "NR==1 { print inner_attr } NR!=line_num { print }" $file_path' \
+  '  fi' \
+  '}' \
+  'parse_file' > ./parse_file.sh \
+  && chmod +x ./parse_file.sh && . ./parse_file.sh && rm -f ./parse_file.sh \
   && export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
   && perseus deploy \
   && esbuild ./pkg/dist/pkg/perseus_engine.js \
