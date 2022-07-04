@@ -1,4 +1,4 @@
-# Migrating from v0.4.x
+# Migrating from v0.3.x
 
 Perseus v0.4.x added several breaking changes, along with a full migration to Sycamore v0.8.x, which requires some rewriting of your view code, most of which is covered on the [Sycamore website](https://sycamore-rs.netlify.app).
 
