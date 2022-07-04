@@ -1,3 +1,4 @@
+use futures::channel::oneshot::Sender;
 use sycamore::prelude::RcSignal;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket};
@@ -6,7 +7,10 @@ use web_sys::{ErrorEvent, MessageEvent, WebSocket};
 /// we don't have access to the render context for freezing and thawing).
 ///
 /// We need to use an `RcSignal` here due to the requirements of closure wrapping (lifetime scopes do not work there).
-pub(crate) fn connect_to_reload_server(live_reload_indicator: RcSignal<bool>) {
+pub(crate) fn connect_to_reload_server(live_reload_tx: Sender<()>) {
+    // We have to do this to assert that it's only used once, allowing us to use it in the `Closure::wrap()` (see https://github.com/rustwasm/wasm-bindgen/issues/1269#issuecomment-465184149)
+    let mut live_reload_tx = Some(live_reload_tx);
+
     // Get the host and port
     let host = get_window_var("__PERSEUS_RELOAD_SERVER_HOST");
     let port = get_window_var("__PERSEUS_RELOAD_SERVER_PORT");
@@ -30,7 +34,10 @@ pub(crate) fn connect_to_reload_server(live_reload_indicator: RcSignal<bool>) {
         log("Reloading...");
         // Signal the rest of the code that we need to reload (and potentially freeze state if HSR is enabled)
         // Amazingly, the reactive scope isn't interrupted and this actually works!
-        live_reload_indicator.set(!*live_reload_indicator.get_untracked());
+        match live_reload_tx.take() {
+            Some(tx) => { tx.send(()); },
+            None => log("Reload sender already invoked. It's likely that multiple reload events have occurred in too rapid succession. If the page does not reload in a matter of seconds, you should manually reload.")
+        }
     }) as Box<dyn FnMut(MessageEvent)>);
     ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
     // To keep the closure alive, we need to forget about it

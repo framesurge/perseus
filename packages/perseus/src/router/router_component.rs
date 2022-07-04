@@ -187,12 +187,6 @@ pub fn perseus_router<G: Html>(
     // TODO Replace passing a router state around with getting it out of context instead in the shell
     let router_state = &render_ctx.router; // We need this for interfacing with the router though
 
-    // If we're using live reload, get an indicator so that our listening to the WebSocket at the top-level (where we don't have the render context that we need for freezing/thawing)
-    // can signal the templates to perform freezing/thawing
-    // It doesn't matter what the initial value is, this is just a flip-flop
-    #[cfg(all(feature = "live-reload", debug_assertions))]
-    let live_reload_indicator = &render_ctx.live_reload_indicator;
-
     // Create a derived state for the route announcement
     // We do this with an effect because we only want to update in some cases (when the new page is actually loaded)
     // We also need to know if it's the first page (because we don't want to announce that, screen readers will get that one right)
@@ -270,12 +264,49 @@ pub fn perseus_router<G: Html>(
         on_route_change(verdict.clone(), orcp_clone.clone());
     });
 
-    // TODO State thawing in HSR (TODO 99% sure I've done this...)
-    // If live reloading is enabled, connect to the server now
-    // This doesn't actually perform any reloading or the like, it just signals places that have access to the render context to do so (because we need that for state freezing/thawing)
-    // We're only cloning an `RcSignal` here, so that's okay (we need it owned for closure stuff)
+    // This section handles live reloading and HSR freezing
+    // We used to haev an indicator shared to the macros, but that's no longer used
     #[cfg(all(feature = "live-reload", debug_assertions))]
-    crate::state::connect_to_reload_server(live_reload_indicator.clone());
+    {
+        use crate::state::Freeze;
+        // Set up a oneshot channel that we can use to communicate with the WS system
+        // Unfortunately, we can't share senders/receivers around without bringing in another crate
+        // And, Sycamore's `RcSignal` doesn't like being put into a `Closure::wrap()` one bit
+        let (live_reload_tx, mut live_reload_rx) = futures::channel::oneshot::channel();
+        crate::spawn_local_scoped(cx, async move {
+            match live_reload_rx.await {
+                // This will trigger only once, and then can't be used again
+                // That shouldn't be a problem, because we'll reload immediately
+                Ok(_) => {
+                    #[cfg(all(feature = "hsr"))]
+                    {
+                        let frozen_state = render_ctx.freeze();
+                        crate::state::hsr_freeze(frozen_state).await;
+                    }
+                    crate::state::force_reload();
+                    // We shouldn't ever get here unless there was an error, the entire page will be fully reloaded
+                }
+                _ => (),
+            }
+        });
+
+        // If live reloading is enabled, connect to the server now
+        // This doesn't actually perform any reloading or the like, it just signals places that have access to the render context to do so (because we need that for state freezing/thawing)
+        crate::state::connect_to_reload_server(live_reload_tx);
+    }
+
+    // This handles HSR thawing
+    #[cfg(all(feature = "hsr", debug_assertions))]
+    {
+        crate::spawn_local_scoped(cx, async move {
+            // We need to make sure we don't run this more than once, because that would lead to a loop
+            // It also shouldn't run on any pages after the initial load
+            if render_ctx.is_first.get() {
+                render_ctx.is_first.set(false);
+                crate::state::hsr_thaw(&render_ctx).await;
+            }
+        });
+    };
 
     view! { cx,
         // This is a lower-level version of `Router` that lets us provide a `Route` with the data we want
