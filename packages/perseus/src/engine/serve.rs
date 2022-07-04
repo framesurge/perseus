@@ -6,6 +6,7 @@ use crate::PerseusAppBase;
 use futures::executor::block_on;
 use std::env;
 use std::fs;
+use std::sync::Arc;
 use sycamore::web::SsrNode;
 
 // TODO Can we unify the two modes of server execution now?
@@ -67,7 +68,7 @@ pub fn get_props<M: MutableStore, T: TranslationsManager>(
         locales: app.get_locales(),
         root_id: app_root,
         snippets: "dist/pkg/snippets".to_string(),
-        error_pages: app.get_error_pages(),
+        error_pages: Arc::new(app.get_error_pages()),
         // This will be available directly at `/.perseus/static`
         static_dir: if fs::metadata(&static_dir_path).is_ok() {
             Some(static_dir_path)

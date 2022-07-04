@@ -3,7 +3,6 @@ use actix_web::{App, HttpServer};
 use futures::executor::block_on;
 use perseus::{
     internal::i18n::TranslationsManager, internal::serve::ServerProps, stores::MutableStore,
-    PerseusAppBase, SsrNode,
 };
 
 /// Creates and starts the default Perseus server using Actix Web. This should be run in a `main()` function annotated with `#[tokio::main]` (which requires the `macros` and
@@ -18,7 +17,7 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
             .configure(
                 block_on(
                     configurer(
-                        props
+                        props.clone()
                     )
                 )
             )

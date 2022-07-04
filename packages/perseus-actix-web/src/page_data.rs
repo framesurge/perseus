@@ -10,7 +10,6 @@ use perseus::{
     stores::{ImmutableStore, MutableStore},
 };
 use serde::Deserialize;
-use std::rc::Rc;
 
 #[derive(Deserialize)]
 pub struct PageDataReq {
@@ -22,7 +21,7 @@ pub struct PageDataReq {
 #[allow(clippy::too_many_arguments)]
 pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
-    opts: web::Data<Rc<ServerOptions>>,
+    opts: web::Data<ServerOptions>,
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,

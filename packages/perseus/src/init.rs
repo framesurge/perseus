@@ -16,6 +16,8 @@ use futures::Future;
 use std::marker::PhantomData;
 #[cfg(not(target_arch = "wasm32"))]
 use std::pin::Pin;
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::Arc;
 use std::{collections::HashMap, rc::Rc};
 use sycamore::prelude::Scope;
 use sycamore::{
@@ -97,8 +99,9 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The app's error pages.
     error_pages: ErrorPagesGetter<G>,
     /// The global state creator for the app.
+    // This is wrapped in an `Arc` so we can pass it around on the engine-side (which is solely for Actix's benefit...)
     #[cfg(not(target_arch = "wasm32"))]
-    global_state_creator: GlobalStateCreator,
+    global_state_creator: Arc<GlobalStateCreator>,
     /// The internationalization information for the app.
     locales: Locales,
     /// The static aliases the app serves.
@@ -221,7 +224,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // We do offer default error pages, but they'll panic if they're called for production building
             error_pages: ErrorPagesGetter(Box::new(ErrorPages::default)),
             #[cfg(not(target_arch = "wasm32"))]
-            global_state_creator: GlobalStateCreator::default(),
+            global_state_creator: Arc::new(GlobalStateCreator::default()),
             // By default, we'll disable i18n (as much as I may want more websites to support more languages...)
             locales: Locales {
                 default: "xx-XX".to_string(),
@@ -307,7 +310,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     pub fn global_state_creator(mut self, val: GlobalStateCreator) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            self.global_state_creator = val;
+            self.global_state_creator = Arc::new(val);
         }
         self
     }
@@ -623,7 +626,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Gets the global state creator. This can't be directly modified by plugins because of reactive type complexities.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_global_state_creator(&self) -> GlobalStateCreator {
+    pub fn get_global_state_creator(&self) -> Arc<GlobalStateCreator> {
         self.global_state_creator.clone()
     }
     /// Gets the locales information.

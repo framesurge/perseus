@@ -6,12 +6,13 @@ use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::ArcTemplateMap;
 use crate::SsrNode;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use super::HtmlShell;
 
 /// The options for setting up all server integrations. This should be literally constructed, as nothing is optional. If integrations need further properties,
-/// they should expose their own options in addition to these. These should be accessed through an `Arc`/`Rc` for integration developers.
-#[derive(Debug)]
+/// they should expose their own options in addition to these.
+#[derive(Debug, Clone)]
 pub struct ServerOptions {
     /// The location on the filesystem of your JavaScript bundle.
     pub js_bundle: String,
@@ -32,7 +33,7 @@ pub struct ServerOptions {
     /// The location of the JS interop snippets to be served as static files.
     pub snippets: String,
     /// The error pages for the app. These will be server-rendered if an initial load fails.
-    pub error_pages: ErrorPages<SsrNode>,
+    pub error_pages: Arc<ErrorPages<SsrNode>>,
     /// The directory to serve static content from, which will be mapped to `/.perseus/static`in the browser.
     pub static_dir: Option<String>,
     /// A map of URLs to act as aliases for certain static resources. These are particularly designed for things like a site manifest or
@@ -41,7 +42,7 @@ pub struct ServerOptions {
 }
 
 /// The full set of properties that all server integrations take.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ServerProps<M: MutableStore, T: TranslationsManager> {
     /// The options for setting up the server.
     pub opts: ServerOptions,
@@ -52,5 +53,5 @@ pub struct ServerProps<M: MutableStore, T: TranslationsManager> {
     /// A translations manager to use.
     pub translations_manager: T,
     /// The global state creator. This is used to avoid issues with `async` and cloning in Actix Web.
-    pub global_state_creator: GlobalStateCreator,
+    pub global_state_creator: Arc<GlobalStateCreator>,
 }

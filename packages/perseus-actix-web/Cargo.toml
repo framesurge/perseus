@@ -28,5 +28,6 @@ futures = "0.3"
 sycamore = { version = "=0.8.0-beta.7", features = ["ssr"] }
 
 [features]
+default = [ "dflt-server" ]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
 dflt-server = [ "perseus/builder" ]

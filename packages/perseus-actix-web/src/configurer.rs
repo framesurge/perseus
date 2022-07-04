@@ -45,7 +45,6 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         global_state_creator,
     }: ServerProps<M, T>,
 ) -> impl FnOnce(&mut actix_web::web::ServiceConfig) {
-    let opts = Rc::new(opts); // TODO Find a more efficient way of doing this
     let render_cfg = get_render_cfg(&immutable_store)
         .await
         .expect("Couldn't get render configuration!");
