@@ -1,0 +1,4 @@
+[toolchain]
+channel = "stable" # This is only for CI, it's recommended to use `rustup override set nightly` for this directory to keep yourself sane on compile-times
+components = [ "rustfmt", "clippy" ]
+targets = [ "x86_64-unknown-linux-musl" ]
