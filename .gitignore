@@ -3,3 +3,6 @@ Cargo.lock
 pkg/
 .tribble/
 .idea/
+
+target_wasm/
+dist/

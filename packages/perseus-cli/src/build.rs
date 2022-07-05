@@ -111,9 +111,12 @@ pub fn build_internal(
             &wb_spinner,
             &wb_msg,
             if is_release {
-                vec![("RUSTFLAGS", &wasm_opt_flags)]
+                vec![
+                    ("CARGO_TARGET_DIR", "target_wasm"),
+                    ("RUSTFLAGS", &wasm_opt_flags),
+                ]
             } else {
-                vec![]
+                vec![("CARGO_TARGET_DIR", "target_wasm")]
             }
         )?);
 

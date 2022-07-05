@@ -175,7 +175,7 @@ pub fn export_internal(
             &wb_target,
             &wb_spinner,
             &wb_msg,
-            vec![]
+            vec![("CARGO_TARGET_DIR", "target_wasm")]
         )?);
 
         Ok(0)

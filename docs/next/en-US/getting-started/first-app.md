@@ -62,8 +62,9 @@ The last thing to note is the `ErrorPages`, which are an innovation of Perseus t
 
 With that all out of the way, add the following to `.gitignore`:
 
-```
+```gitignore
 dist/
+target_wasm
 ```
 
 That just tells Git not to pay any attention to the build artifacts that Perseus is about to create. Now run this command:
