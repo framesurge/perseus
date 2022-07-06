@@ -13,9 +13,11 @@ use sycamore::view::View;
 #[cfg(target_arch = "wasm32")]
 use web_sys::Element;
 
-/// The callback to a template the user must provide for error pages. This is passed the status code, the error message, the URL of the
-/// problematic asset, and a translator if one is available . Many error pages are generated when a translator is not available or
-/// couldn't be instantiated, so you'll need to rely on symbols or the like in these cases.
+/// The callback to a template the user must provide for error pages. This is
+/// passed the status code, the error message, the URL of the problematic asset,
+/// and a translator if one is available . Many error pages are generated when a
+/// translator is not available or couldn't be instantiated, so you'll need to
+/// rely on symbols or the like in these cases.
 pub type ErrorPageTemplate<G> =
     Box<dyn Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
 
@@ -42,7 +44,8 @@ impl<G: Html> ErrorPages<G> {
             fallback: Box::new(fallback),
         }
     }
-    /// Adds a new page for the given status code. If a page was already defined for the given code, it will be updated by the mechanics of
+    /// Adds a new page for the given status code. If a page was already defined
+    /// for the given code, it will be updated by the mechanics of
     /// the internal `HashMap`.
     pub fn add_page(
         &mut self,
@@ -54,8 +57,10 @@ impl<G: Html> ErrorPages<G> {
     ) {
         self.status_pages.insert(status, Box::new(page));
     }
-    /// Adds a new page for the given status code. If a page was already defined for the given code, it will be updated by the mechanics of
-    /// the internal `HashMap`. This differs from `.add_page()` in that it takes an `Rc`, which is useful for plugins.
+    /// Adds a new page for the given status code. If a page was already defined
+    /// for the given code, it will be updated by the mechanics of
+    /// the internal `HashMap`. This differs from `.add_page()` in that it takes
+    /// an `Rc`, which is useful for plugins.
     pub fn add_page_rc(&mut self, status: u16, page: ErrorPageTemplate<G>) {
         self.status_pages.insert(status, page);
     }
@@ -104,8 +109,9 @@ impl ErrorPages<DomNode> {
 }
 #[cfg(target_arch = "wasm32")]
 impl ErrorPages<HydrateNode> {
-    /// Hydrates the appropriate error page to the given DOM container. This is used for when an error page is rendered by the server
-    /// and then needs interactivity.
+    /// Hydrates the appropriate error page to the given DOM container. This is
+    /// used for when an error page is rendered by the server and then needs
+    /// interactivity.
     pub fn hydrate_page(
         &self,
         cx: Scope,
@@ -122,8 +128,9 @@ impl ErrorPages<HydrateNode> {
         // Render that to the given container
         sycamore::hydrate_to(|_| dom_view, container);
     }
-    /// Renders the appropriate error page to the given DOM container. This is implemented on `HydrateNode` to avoid having to have two `Html` type parameters everywhere
-    /// (one for templates and one for error pages).
+    /// Renders the appropriate error page to the given DOM container. This is
+    /// implemented on `HydrateNode` to avoid having to have two `Html` type
+    /// parameters everywhere (one for templates and one for error pages).
     // TODO Convert from a `HydrateNode` to a `DomNode`
     pub fn render_page(
         &self,
@@ -144,7 +151,9 @@ impl ErrorPages<HydrateNode> {
 }
 #[cfg(not(target_arch = "wasm32"))]
 impl ErrorPages<SsrNode> {
-    /// Renders the error page to a string. This should then be hydrated on the client-side. No reactive scope is provided to this function, it uses an internal one.
+    /// Renders the error page to a string. This should then be hydrated on the
+    /// client-side. No reactive scope is provided to this function, it uses an
+    /// internal one.
     pub fn render_to_string(
         &self,
         url: &str,
@@ -158,8 +167,9 @@ impl ErrorPages<SsrNode> {
             template_fn(cx, url.to_string(), status, err.to_string(), translator)
         })
     }
-    /// Renders the error page to a string, using the given reactive scope. Note that this function is not used internally, and `.render_to_string()` should cover all uses. This is included for
-    /// completeness.
+    /// Renders the error page to a string, using the given reactive scope. Note
+    /// that this function is not used internally, and `.render_to_string()`
+    /// should cover all uses. This is included for completeness.
     pub fn render_to_string_scoped(
         &self,
         cx: Scope,
@@ -175,7 +185,8 @@ impl ErrorPages<SsrNode> {
         })
     }
 }
-// We provide default error pages to speed up development, but they have to be added before moving to production (or we'll `panic!`)
+// We provide default error pages to speed up development, but they have to be
+// added before moving to production (or we'll `panic!`)
 impl<G: Html> Default for ErrorPages<G> {
     #[cfg(debug_assertions)]
     fn default() -> Self {
@@ -199,8 +210,8 @@ impl<G: Html> Default for ErrorPages<G> {
     }
 }
 
-/// A representation of an error page, particularly for storage in transit so that server-side rendered error pages can be hydrated on
-/// the client-side.
+/// A representation of an error page, particularly for storage in transit so
+/// that server-side rendered error pages can be hydrated on the client-side.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ErrorPageData {
     /// The URL for the error.

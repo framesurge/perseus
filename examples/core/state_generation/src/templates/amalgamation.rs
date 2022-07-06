@@ -27,7 +27,8 @@ pub fn get_template<G: Html>() -> Template<G> {
 
 #[perseus::amalgamate_states]
 pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<PageState>> {
-    // We know they'll both be defined, and Perseus currently has to provide both as serialized strings
+    // We know they'll both be defined, and Perseus currently has to provide both as
+    // serialized strings
     let build_state = serde_json::from_str::<PageState>(&states.build_state.unwrap())?;
     let req_state = serde_json::from_str::<PageState>(&states.request_state.unwrap())?;
 

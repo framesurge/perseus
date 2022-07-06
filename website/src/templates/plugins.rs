@@ -1,5 +1,6 @@
-// The structure of the `plugins` directory is to have a subdirectory for each locale, and then a list of plugins inside
-// Note that the same plugins must be defined for every locale
+// The structure of the `plugins` directory is to have a subdirectory for each
+// locale, and then a list of plugins inside Note that the same plugins must be
+// defined for every locale
 
 use crate::components::container::{Container, ContainerProps};
 use crate::components::trusted_svg::TRUSTED_SVG;
@@ -31,12 +32,13 @@ macro_rules! t {
 
 #[derive(Serialize, Deserialize)]
 struct PluginsPageProps {
-    /// The list of plugins with minimal details. These will be displayed in cards on the
-    /// index page.
+    /// The list of plugins with minimal details. These will be displayed in
+    /// cards on the index page.
     plugins: Vec<PluginDetails>,
 }
-/// The minimal amount of details for a plugin, which will be displayed in a card on the
-/// root page. This is a subset of `PluginDetails` (except for the `slug`). This needs to be `Eq` for Sycamore's keyed list diffing algorithm.
+/// The minimal amount of details for a plugin, which will be displayed in a
+/// card on the root page. This is a subset of `PluginDetails` (except for the
+/// `slug`). This needs to be `Eq` for Sycamore's keyed list diffing algorithm.
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct PluginDetails {
     /// The plugins's name.
@@ -45,10 +47,13 @@ struct PluginDetails {
     description: String,
     /// The author of the plugin.
     author: String,
-    /// Whether or not the plugin is trusted by the Perseus development team. Note that this is just a superficial measure, and it does not indicate
-    /// security, audit status, or anything else of the like. It should NOT be relied on when deciding whether or not a plugin is secure!
+    /// Whether or not the plugin is trusted by the Perseus development team.
+    /// Note that this is just a superficial measure, and it does not indicate
+    /// security, audit status, or anything else of the like. It should NOT be
+    /// relied on when deciding whether or not a plugin is secure!
     trusted: bool,
-    /// The plugin's home URL, which the plugins registry will redirect the user to. This avoids developers having to update documentation in many places
+    /// The plugin's home URL, which the plugins registry will redirect the user
+    /// to. This avoids developers having to update documentation in many places
     /// or ask for the website to be rebuilt every time their READMEs change.
     url: String,
 }
@@ -147,8 +152,8 @@ async fn get_build_state(
     _path: String,
     locale: String,
 ) -> RenderFnResultWithCause<PluginsPageProps> {
-    // This is the root page, so we want a list of plugins and a small amount of information about each
-    // This directory loop is relative to `.perseus/`
+    // This is the root page, so we want a list of plugins and a small amount of
+    // information about each This directory loop is relative to `.perseus/`
     let mut plugins = Vec::new();
     for entry in WalkDir::new(&format!("plugins/{}", locale)) {
         let entry = entry?;

@@ -8,8 +8,10 @@ use fmterr::fmt_err;
 use futures::Future;
 use std::env;
 
-/// A wrapper around `run_dflt_engine` for apps that only use exporting, and so don't need to bring in a server integration. This is designed to avoid extra
-/// dependencies. If `perseus serve` is called on an app using this, it will `panic!` after building everything.
+/// A wrapper around `run_dflt_engine` for apps that only use exporting, and so
+/// don't need to bring in a server integration. This is designed to avoid extra
+/// dependencies. If `perseus serve` is called on an app using this, it will
+/// `panic!` after building everything.
 pub async fn run_dflt_engine_export_only<M, T, A>(op: EngineOperation, app: A) -> i32
 where
     M: MutableStore,
@@ -22,16 +24,25 @@ where
     run_dflt_engine(op, app, serve_fn).await
 }
 
-/// A convenience function that automatically runs the necessary engine operation based on the given directive. This provides almost no options for customization, and is
-/// usually elided by a macro. More advanced use-cases should bypass this and call the functions this calls manually, with their own configurations.
+/// A convenience function that automatically runs the necessary engine
+/// operation based on the given directive. This provides almost no options for
+/// customization, and is usually elided by a macro. More advanced use-cases
+/// should bypass this and call the functions this calls manually, with their
+/// own configurations.
 ///
-/// The third argument to this is a function to produce a server. In simple cases, this will be the `dflt_server` export from your server integration of choice (which is
-/// assumed to use a Tokio 1.x runtime). This function must be infallible (any errors should be panics, as they *will* be treated as unrecoverable).
+/// The third argument to this is a function to produce a server. In simple
+/// cases, this will be the `dflt_server` export from your server integration of
+/// choice (which is assumed to use a Tokio 1.x runtime). This function must be
+/// infallible (any errors should be panics, as they *will* be treated as
+/// unrecoverable).
 ///
-/// If the action is to export a single error page, the HTTP status code of the error page to export and the output will be read as the first and second arguments
-/// to the binary invocation. If this is not the desired behavior, you should handle the `EngineOperation::ExportErrorPage` case manually.
+/// If the action is to export a single error page, the HTTP status code of the
+/// error page to export and the output will be read as the first and second
+/// arguments to the binary invocation. If this is not the desired behavior, you
+/// should handle the `EngineOperation::ExportErrorPage` case manually.
 ///
-/// This returns an exit code, which should be returned from the process. Any handled errors will be printed to the console.
+/// This returns an exit code, which should be returned from the process. Any
+/// handled errors will be printed to the console.
 pub async fn run_dflt_engine<M, T, F, A>(
     op: EngineOperation,
     app: A,
@@ -60,7 +71,8 @@ where
         },
         EngineOperation::ExportErrorPage => {
             // Get the HTTP status code to build from the arguments to this executable
-            // We print errors directly here because we can, and because this behavior is unique to the default engine
+            // We print errors directly here because we can, and because this behavior is
+            // unique to the default engine
             let args = env::args().collect::<Vec<String>>();
             let code = match args.get(1) {
                 Some(arg) => {
@@ -94,7 +106,8 @@ where
             }
         }
         EngineOperation::Serve => {
-            // To reduce friction for default servers and user-made servers, we automatically do the boilerplate that all servers would have to do
+            // To reduce friction for default servers and user-made servers, we
+            // automatically do the boilerplate that all servers would have to do
             let props = get_props(app());
             // This returns a `(String, u16)` of the host and port for maximum compatibility
             let addr = get_host_and_port();

@@ -11,8 +11,9 @@ use perseus::{internal::i18n::TranslationsManager, stores::MutableStore};
 use std::sync::Arc;
 use warp::Filter;
 
-/// The routes for Perseus. These will configure an existing Warp instance to run Perseus, and should be provided after any other routes, as they include a wildcard
-/// route.
+/// The routes for Perseus. These will configure an existing Warp instance to
+/// run Perseus, and should be provided after any other routes, as they include
+/// a wildcard route.
 pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     ServerProps {
         opts,
@@ -44,8 +45,9 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(warp::fs::file(opts.wasm_js_bundle.clone()));
     // Handle JS interop snippets (which need to be served as separate files)
     let snippets = warp::path!(".perseus" / "snippets").and(warp::fs::dir(opts.snippets.clone()));
-    // Handle static content in the user-set directories (this will all be under `/.perseus/static`)
-    // We only set this if the user is using a static content directory
+    // Handle static content in the user-set directories (this will all be under
+    // `/.perseus/static`) We only set this if the user is using a static
+    // content directory
     let static_dir_path = Arc::new(opts.static_dir.clone());
     let static_dir_path_filter = warp::any().map(move || static_dir_path.clone());
     let static_dir = warp::path!(".perseus" / "static" / ..)
@@ -112,7 +114,8 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(global_state)
         .then(initial_load_handler);
 
-    // Now put all those routes together in the final thing (the user will add this to an existing Warp server)
+    // Now put all those routes together in the final thing (the user will add this
+    // to an existing Warp server)
     js_bundle
         .or(wasm_bundle)
         .or(wasm_js_bundle)

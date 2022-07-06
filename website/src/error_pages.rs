@@ -1,7 +1,8 @@
 use perseus::{ErrorPages, Html};
 use sycamore::view;
 
-// This site will be exported statically, so we only have control over 404 pages for broken links in the site itself
+// This site will be exported statically, so we only have control over 404 pages
+// for broken links in the site itself
 pub fn get_error_pages<G: Html>() -> ErrorPages<G> {
     let mut error_pages = ErrorPages::new(|cx, url, status, err, _| {
         view! { cx,

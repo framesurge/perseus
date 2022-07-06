@@ -9,17 +9,23 @@ use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 pub const FLUENT_TRANSLATOR_FILE_EXT: &str = "ftl";
 
 /// Manages translations on the client-side for a single locale using Mozilla's [Fluent](https://projectfluent.org/) syntax. This
-/// should generally be placed into an `Rc<T>` and referred to by every template in an app. You do NOT want to be cloning potentially
-/// thousands of translations!
+/// should generally be placed into an `Rc<T>` and referred to by every template
+/// in an app. You do NOT want to be cloning potentially thousands of
+/// translations!
 ///
-/// Fluent supports compound messages, with many variants, which can specified here using the form `[id].[variant]` in a translation ID,
-/// as a `.` is not valid in an ID anyway, and so can be used as a delimiter. More than one dot will result in an error.
+/// Fluent supports compound messages, with many variants, which can specified
+/// here using the form `[id].[variant]` in a translation ID, as a `.` is not
+/// valid in an ID anyway, and so can be used as a delimiter. More than one dot
+/// will result in an error.
 ///
-/// Note that this uses the concurrent version of `FluentBundle` to support server-side usage.
+/// Note that this uses the concurrent version of `FluentBundle` to support
+/// server-side usage.
 #[derive(Clone)]
 pub struct FluentTranslator {
-    /// Stores the internal Fluent data for translating. This bundle directly owns its attached resources (translations). This uses an `Arc<T>` to allow cloning, and so
-    /// the broader translator should be cloned as sparingly as possible to minimize overhead.
+    /// Stores the internal Fluent data for translating. This bundle directly
+    /// owns its attached resources (translations). This uses an `Arc<T>` to
+    /// allow cloning, and so the broader translator should be cloned as
+    /// sparingly as possible to minimize overhead.
     bundle: Arc<FluentBundle<FluentResource, IntlLangMemoizer>>,
     /// The locale for which translations are being managed by this instance.
     locale: String,
@@ -32,7 +38,8 @@ impl std::fmt::Debug for FluentTranslator {
     }
 }
 impl FluentTranslator {
-    /// Creates a new translator for a given locale, passing in translations in FTL syntax form.
+    /// Creates a new translator for a given locale, passing in translations in
+    /// FTL syntax form.
     pub fn new(locale: String, ftl_string: String) -> Result<Self, TranslatorError> {
         let resource = FluentResource::try_new(ftl_string)
             // If this errors, we get it still and a vector of errors (wtf.)
@@ -66,7 +73,8 @@ impl FluentTranslator {
 
         Ok(Self { bundle, locale })
     }
-    /// Gets the path to the given URL in whatever locale the instance is configured for. This also applies the path prefix.
+    /// Gets the path to the given URL in whatever locale the instance is
+    /// configured for. This also applies the path prefix.
     pub fn url(&self, url: &str) -> String {
         format!("{}{}", self.locale, url)
     }
@@ -74,11 +82,14 @@ impl FluentTranslator {
     pub fn get_locale(&self) -> String {
         self.locale.clone()
     }
-    /// Translates the given ID. This additionally takes any arguments that should be interpolated. If your i18n system also has variants,
+    /// Translates the given ID. This additionally takes any arguments that
+    /// should be interpolated. If your i18n system also has variants,
     /// they should be specified somehow in the ID.
     /// # Panics
-    /// This will `panic!` if any errors occur while trying to prepare the given ID. Therefore, this method should only be used for
-    /// hardcoded IDs that can be confirmed as valid. If you need to parse arbitrary IDs, use `.translate_checked()` instead.
+    /// This will `panic!` if any errors occur while trying to prepare the given
+    /// ID. Therefore, this method should only be used for hardcoded IDs
+    /// that can be confirmed as valid. If you need to parse arbitrary IDs, use
+    /// `.translate_checked()` instead.
     pub fn translate(&self, id: &str, args: Option<FluentArgs>) -> String {
         let translation_res = self.translate_checked(id, args);
         match translation_res {
@@ -86,8 +97,9 @@ impl FluentTranslator {
             Err(_) => panic!("translation id '{}' not found for locale '{}' (if you're not hardcoding the id, use `.translate_checked()` instead)", id, self.locale)
         }
     }
-    /// Translates the given ID, returning graceful errors. This additionally takes any arguments that should be interpolated. If your
-    /// i18n system also has variants, they should be specified somehow in the ID.
+    /// Translates the given ID, returning graceful errors. This additionally
+    /// takes any arguments that should be interpolated. If your i18n system
+    /// also has variants, they should be specified somehow in the ID.
     pub fn translate_checked(
         &self,
         id: &str,
@@ -99,8 +111,9 @@ impl FluentTranslator {
         let id_str = id_vec[0].to_string();
         let variant = id_vec.get(1);
 
-        // This is the message in the Fluent system, an unformatted translation (still needs variables etc.)
-        // This may also be compound, which means it has multiple variants
+        // This is the message in the Fluent system, an unformatted translation (still
+        // needs variables etc.) This may also be compound, which means it has
+        // multiple variants
         let msg = self.bundle.get_message(&id_str);
         let msg = match msg {
             Some(msg) => msg,
@@ -125,7 +138,8 @@ impl FluentTranslator {
             // Compound, many variants, one should be specified
             if let Some(variant) = variant {
                 for attr in msg.attributes() {
-                    // Once we find the requested variant, we don't need to continue (they should all be unique)
+                    // Once we find the requested variant, we don't need to continue (they should
+                    // all be unique)
                     if &attr.id() == variant {
                         translation = Some(self.bundle.format_pattern(
                             attr.value(),
@@ -171,7 +185,8 @@ impl FluentTranslator {
     }
 }
 
-/// An alias for `FluentArgs`. This is a workaround until conditional compilation of expressions is supported, which will simplify this
+/// An alias for `FluentArgs`. This is a workaround until conditional
+/// compilation of expressions is supported, which will simplify this
 /// system significantly.
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
@@ -183,7 +198,8 @@ pub fn t_macro_backend(id: &str, cx: Scope) -> String {
     let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();
     translator.translate(id, None)
 }
-/// The internal Fluent backend for the `t!` macro, when it's used with arguments.
+/// The internal Fluent backend for the `t!` macro, when it's used with
+/// arguments.
 #[doc(hidden)]
 pub fn t_macro_backend_with_args(id: &str, args: FluentArgs, cx: Scope) -> String {
     let translator = use_context::<Signal<super::Translator>>(cx).get_untracked();

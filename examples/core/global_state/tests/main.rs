@@ -20,8 +20,8 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         .await?;
     assert_eq!(greeting.text().await?, "Hello World! Extra text.");
 
-    // Go to the about page and make sure the changed greeting is reflected there too
-    // This tests that the global state is accessible from all pages
+    // Go to the about page and make sure the changed greeting is reflected there
+    // too This tests that the global state is accessible from all pages
     c.find(Locator::Id("about-link")).await?.click().await?;
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080/about"));

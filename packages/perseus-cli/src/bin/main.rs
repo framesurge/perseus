@@ -30,7 +30,8 @@ async fn main() {
     std::process::exit(exit_code)
 }
 
-// This manages error handling and returns a definite exit code to terminate with
+// This manages error handling and returns a definite exit code to terminate
+// with
 async fn real_main() -> i32 {
     // Get the working directory
     let dir = env::current_dir();
@@ -61,10 +62,12 @@ enum Event {
     Terminate,
 }
 
-// This performs the actual logic, separated for deduplication of error handling and destructor control
-// This returns the exit code of the executed command, which we should return from the process itself
-// This prints warnings using the `writeln!` macro, which allows the parsing of `stdout` in production or a vector in testing
-// If at any point a warning can't be printed, the program will panic
+// This performs the actual logic, separated for deduplication of error handling
+// and destructor control This returns the exit code of the executed command,
+// which we should return from the process itself This prints warnings using the
+// `writeln!` macro, which allows the parsing of `stdout` in production or a
+// vector in testing If at any point a warning can't be printed, the program
+// will panic
 async fn core(dir: PathBuf) -> Result<i32, Error> {
     // Get `stdout` so we can write warnings appropriately
     let stdout = &mut std::io::stdout();
@@ -77,14 +80,17 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
     // Parse the CLI options with `clap`
     let opts = Opts::parse();
     // Check the user's environment to make sure they have prerequisites
-    // We do this after any help pages or version numbers have been parsed for snappiness
+    // We do this after any help pages or version numbers have been parsed for
+    // snappiness
     check_env()?;
 
     // Check if this process is allowed to watch for changes
     // This will be set to `true` if this is a child process
-    // The CLI will actually spawn another version of itself if we're watching for changes
-    // The reason for this is to avoid having to manage handlers for multiple threads and other child processes
-    // After several days of attempting, this is the only feasible solution (short of a full rewrite of the CLI)
+    // The CLI will actually spawn another version of itself if we're watching for
+    // changes The reason for this is to avoid having to manage handlers for
+    // multiple threads and other child processes After several days of
+    // attempting, this is the only feasible solution (short of a full rewrite of
+    // the CLI)
     let watch_allowed = env::var("PERSEUS_WATCHING_PROHIBITED").is_err();
     // Check if the user wants to watch for changes
     match &opts.subcmd {
@@ -94,8 +100,9 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
         {
             let (tx_term, rx) = channel();
             let tx_fs = tx_term.clone();
-            // Set the handler for termination events (more than just SIGINT) on all platforms
-            // We do this before anything else so that, if it fails, we don't have servers left open
+            // Set the handler for termination events (more than just SIGINT) on all
+            // platforms We do this before anything else so that, if it fails,
+            // we don't have servers left open
             ctrlc::set_handler(move || {
                 tx_term
                     .send(Event::Terminate)
@@ -112,21 +119,24 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             }
 
             // Find out where this binary is
-            // SECURITY: If the CLI were installed with root privileges, it would be possible to create a hard link to the
-            // binary, execute through that, and then replace it with a malicious binary before we got here which would
-            // allow privilege escalation. See https://vulners.com/securityvulns/SECURITYVULNS:DOC:22183.
+            // SECURITY: If the CLI were installed with root privileges, it would be
+            // possible to create a hard link to the binary, execute through
+            // that, and then replace it with a malicious binary before we got here which
+            // would allow privilege escalation. See https://vulners.com/securityvulns/SECURITYVULNS:DOC:22183.
             // TODO Drop root privileges at startup
             let bin_name =
                 env::current_exe().map_err(|err| WatchError::GetSelfPathFailed { source: err })?;
             // Get the arguments to provide
             // These are the same, but we'll disallow watching with an environment variable
             let mut args = env::args().collect::<Vec<String>>();
-            // We'll remove the first element of the arguments (binary name, but less reliable)
+            // We'll remove the first element of the arguments (binary name, but less
+            // reliable)
             args.remove(0);
 
             // Set up a watcher
             let mut watcher = recommended_watcher(move |_| {
-                // If this fails, the watcher channel was completely disconnected, which should never happen (it's in a loop)
+                // If this fails, the watcher channel was completely disconnected, which should
+                // never happen (it's in a loop)
                 tx_fs.send(Event::Reload).unwrap();
             })
             .map_err(|err| WatchError::WatcherSetupFailed { source: err })?;
@@ -149,8 +159,8 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
             // This will store the handle to the child process
             // This will be updated every time we re-create the process
-            // We spawn it as a process group, whcih means signals go to grandchild processes as well, which means hot reloading
-            // can actually work!
+            // We spawn it as a process group, whcih means signals go to grandchild
+            // processes as well, which means hot reloading can actually work!
             let mut child = Command::new(&bin_name);
             let child = child
                 .args(&args)
@@ -167,7 +177,8 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                     Ok(Event::Reload) => {
                         // Kill the current child process
                         // This will return an error if the child has already exited, which is fine
-                        // This gracefully kills the process in the sense that it kills it and all its children
+                        // This gracefully kills the process in the sense that it kills it and all
+                        // its children
                         let _ = child.kill();
                         // Restart it
                         let mut child_l = Command::new(&bin_name);
@@ -183,7 +194,8 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                     }
                     Ok(Event::Terminate) => {
                         // This means the user is trying to stop the process
-                        // We have to manually terminate the process group, because it's a process *group*
+                        // We have to manually terminate the process group, because it's a process
+                        // *group*
                         let _ = child.kill();
                         // From here, we can let the prgoram terminate naturally
                         break Ok(0);
@@ -251,7 +263,8 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
         }
         Subcommand::Tinker(tinker_opts) => {
             // Unless we've been told not to, we start with a blank slate
-            // This will remove old tinkerings and eliminate any possible corruptions (which are very likely with tinkering!)
+            // This will remove old tinkerings and eliminate any possible corruptions (which
+            // are very likely with tinkering!)
             if !tinker_opts.no_clean {
                 delete_dist(dir.clone())?;
             }

@@ -34,10 +34,12 @@ pub fn get_features_list<G: GenericNode>(cx: Scope) -> View<G> {
     )
 }
 
-/// A representation of a Perseus feature for listing. This uses translation IDs instead of verbatim text.
+/// A representation of a Perseus feature for listing. This uses translation IDs
+/// instead of verbatim text.
 #[derive(Clone)]
 pub struct Feature {
-    /// The base of the translation ID, which is expected to have `.name` and `.desc` variants.
+    /// The base of the translation ID, which is expected to have `.name` and
+    /// `.desc` variants.
     pub id_base: String,
     pub link: String,
 }

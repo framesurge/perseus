@@ -11,7 +11,8 @@ pub struct HeadFn {
     pub block: Box<Block>,
     /// The argument for the reactive scope.
     pub cx_arg: FnArg,
-    /// The possible single argument for custom properties, or there might be no arguments.
+    /// The possible single argument for custom properties, or there might be no
+    /// arguments.
     pub arg: Option<FnArg>,
     /// The visibility of the function.
     pub vis: Visibility,
@@ -21,7 +22,8 @@ pub struct HeadFn {
     pub name: Ident,
     /// The return type of the function.
     pub return_type: Box<Type>,
-    /// Any generics the function takes (should be one for the Sycamore `GenericNode`).
+    /// Any generics the function takes (should be one for the Sycamore
+    /// `GenericNode`).
     pub generics: Generics,
 }
 impl Parse for HeadFn {
@@ -129,10 +131,12 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
         return_type,
     } = input;
 
-    // We create a wrapper function that can be easily provided to `.head()` that does deserialization automatically if needed
-    // This is dependent on what arguments the template takes
+    // We create a wrapper function that can be easily provided to `.head()` that
+    // does deserialization automatically if needed This is dependent on what
+    // arguments the template takes
     if arg.is_some() {
-        // There's an argument that will be provided as a `String`, so the wrapper will deserialize it
+        // There's an argument that will be provided as a `String`, so the wrapper will
+        // deserialize it
         quote! {
             // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
             #[cfg(target_arch = "wasm32")]

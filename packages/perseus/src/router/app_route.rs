@@ -3,9 +3,10 @@ use crate::{i18n::Locales, templates::TemplateMap, Html};
 use std::collections::HashMap;
 use sycamore_router::Route;
 
-// /// Creates an app-specific routing `struct`. Sycamore expects an `enum` to do this, so we create a `struct` that behaves similarly. If
-// /// we don't do this, we can't get the information necessary for routing into the `enum` at all (context and global variables don't suit
-// /// this particular case).
+// /// Creates an app-specific routing `struct`. Sycamore expects an `enum` to
+// do this, so we create a `struct` that behaves similarly. If /// we don't do
+// this, we can't get the information necessary for routing into the `enum` at
+// all (context and global variables don't suit /// this particular case).
 // #[macro_export]
 // macro_rules! create_app_route {
 //     {
@@ -14,26 +15,30 @@ use sycamore_router::Route;
 //         templates => $templates:expr,
 //         locales => $locales:expr
 //     } => {
-//         /// The route type for the app, with all routing logic inbuilt through the generation macro.
-//         #[derive(::std::clone::Clone)]
-//         struct $name<G: $crate::Html>($crate::internal::router::RouteVerdict<G>);
-//         impl<G: $crate::Html> $crate::internal::router::PerseusRoute<G> for $name<G> {
-//             fn get_verdict(&self) -> &$crate::internal::router::RouteVerdict<G> {
-//                 &self.0
+//         /// The route type for the app, with all routing logic inbuilt
+// through the generation macro.         #[derive(::std::clone::Clone)]
+//         struct $name<G:
+// $crate::Html>($crate::internal::router::RouteVerdict<G>);         impl<G:
+// $crate::Html> $crate::internal::router::PerseusRoute<G> for $name<G> {
+//             fn get_verdict(&self) ->
+// &$crate::internal::router::RouteVerdict<G> {                 &self.0
 //             }
 //         }
 //         impl<G: $crate::Html> ::sycamore_router::Route for $name<G> {
 //             fn match_route(path: &[&str]) -> Self {
-//                 let verdict = $crate::internal::router::match_route(path, $render_cfg, $templates, $locales);
-//                 Self(verdict)
+//                 let verdict = $crate::internal::router::match_route(path,
+// $render_cfg, $templates, $locales);                 Self(verdict)
 //             }
 //         }
 //     };
 // }
 
-/// The Perseus route system, which implements Sycamore `Route`, but adds additional data for Perseus' processing system.
+/// The Perseus route system, which implements Sycamore `Route`, but adds
+/// additional data for Perseus' processing system.
 pub struct PerseusRoute<G: Html> {
-    /// The current route verdict. The initialization value of this is completely irrelevant (it will be overriden immediately by the internal routing logic).
+    /// The current route verdict. The initialization value of this is
+    /// completely irrelevant (it will be overriden immediately by the internal
+    /// routing logic).
     pub verdict: RouteVerdict<G>,
     /// The app's render configuration.
     pub render_cfg: HashMap<String, String>,
@@ -42,8 +47,9 @@ pub struct PerseusRoute<G: Html> {
     /// The app's i18n configuration.
     pub locales: Locales,
 }
-// Sycamore would only use this if we were processing dynamic routes, which we're not
-// In other words, it's fine that these values would break everything if they were used, they're just compiler appeasement
+// Sycamore would only use this if we were processing dynamic routes, which
+// we're not In other words, it's fine that these values would break everything
+// if they were used, they're just compiler appeasement
 impl<G: Html> Default for PerseusRoute<G> {
     fn default() -> Self {
         Self {

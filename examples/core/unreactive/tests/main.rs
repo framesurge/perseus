@@ -13,7 +13,8 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     wait_for_checkpoint!("page_visible", 0, c);
     let greeting = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(greeting, "Hello World!");
-    // For some reason, retrieving the inner HTML or text of a `<title>` doens't work
+    // For some reason, retrieving the inner HTML or text of a `<title>` doens't
+    // work
     let title = c.find(Locator::Css("title")).await?.html(false).await?;
     assert!(title.contains("Index Page"));
 

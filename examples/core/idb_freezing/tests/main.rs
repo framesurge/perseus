@@ -32,7 +32,8 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.find(Locator::Id("about-link")).await?.click().await?;
     c.current_url().await?;
     wait_for_checkpoint!("page_visible", 1, c);
-    // Now press the freeze button (this will save to IDB, so we don't have to worry about saving the output and typing it in later)
+    // Now press the freeze button (this will save to IDB, so we don't have to worry
+    // about saving the output and typing it in later)
     c.find(Locator::Id("freeze_button")).await?.click().await?;
 
     // Reload the app so that we can use the thawed state from scratch

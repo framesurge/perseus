@@ -9,7 +9,8 @@ use crate::Request;
 use crate::SsrNode;
 use chrono::{DateTime, Utc};
 
-/// Gets the path with the locale, returning it without if i18n isn't being used.
+/// Gets the path with the locale, returning it without if i18n isn't being
+/// used.
 fn get_path_with_locale(path_without_locale: &str, translator: &Translator) -> String {
     let locale = translator.get_locale();
     match locale.as_str() {
@@ -18,8 +19,9 @@ fn get_path_with_locale(path_without_locale: &str, translator: &Translator) -> S
     }
 }
 
-/// Renders a template that uses state generated at build-time. This can't be used for pages that revalidate because their data are
-/// stored in a mutable store.
+/// Renders a template that uses state generated at build-time. This can't be
+/// used for pages that revalidate because their data are stored in a mutable
+/// store.
 async fn render_build_state(
     path_encoded: &str,
     immutable_store: &ImmutableStore,
@@ -42,7 +44,8 @@ async fn render_build_state(
 
     Ok((html, head, state))
 }
-/// Renders a template that uses state generated at build-time. This is specifically for page that revalidate, because they store data
+/// Renders a template that uses state generated at build-time. This is
+/// specifically for page that revalidate, because they store data
 /// in the mutable store.
 async fn render_build_state_for_mutable(
     path_encoded: &str,
@@ -66,8 +69,10 @@ async fn render_build_state_for_mutable(
 
     Ok((html, head, state))
 }
-/// Renders a template that generated its state at request-time. Note that revalidation and incremental generation have no impact on
-/// SSR-rendered pages. This does everything at request-time, and so doesn't need a mutable or immutable store.
+/// Renders a template that generated its state at request-time. Note that
+/// revalidation and incremental generation have no impact on SSR-rendered
+/// pages. This does everything at request-time, and so doesn't need a mutable
+/// or immutable store.
 async fn render_request_state(
     template: &Template<SsrNode>,
     translator: &Translator,
@@ -76,7 +81,8 @@ async fn render_request_state(
     req: Request,
 ) -> Result<(String, String, Option<String>), ServerError> {
     let path_with_locale = get_path_with_locale(path, translator);
-    // Generate the initial state (this may generate an error, but there's no file that can't exist)
+    // Generate the initial state (this may generate an error, but there's no file
+    // that can't exist)
     let state = Some(
         template
             .get_request_state(path.to_string(), translator.get_locale(), req)
@@ -96,9 +102,11 @@ async fn render_request_state(
 
     Ok((html, head, state))
 }
-/// Checks if a template that uses incremental generation has already been cached. If the template was prerendered by *build paths*,
-/// then it will have already been matched because those are declared verbatim in the render configuration. Therefore, this function
-/// only searches for pages that have been cached later, which means it needs a mutable store.
+/// Checks if a template that uses incremental generation has already been
+/// cached. If the template was prerendered by *build paths*, then it will have
+/// already been matched because those are declared verbatim in the render
+/// configuration. Therefore, this function only searches for pages that have
+/// been cached later, which means it needs a mutable store.
 async fn get_incremental_cached(
     path_encoded: &str,
     mutable_store: &impl MutableStore,
@@ -107,7 +115,8 @@ async fn get_incremental_cached(
         .read(&format!("static/{}.html", path_encoded))
         .await;
 
-    // We should only treat it as cached if it can be accessed and if we aren't in development (when everything should constantly reload)
+    // We should only treat it as cached if it can be accessed and if we aren't in
+    // development (when everything should constantly reload)
     match html_res {
         Ok(html) if !cfg!(debug_assertions) => {
             // If the HTML exists, the head must as well
@@ -120,15 +129,16 @@ async fn get_incremental_cached(
         Ok(_) | Err(_) => None,
     }
 }
-/// Checks if a template should revalidate by time. All revalidation timestamps are stored in a mutable store, so that's what this
-/// function uses.
+/// Checks if a template should revalidate by time. All revalidation timestamps
+/// are stored in a mutable store, so that's what this function uses.
 async fn should_revalidate(
     template: &Template<SsrNode>,
     path_encoded: &str,
     mutable_store: &impl MutableStore,
 ) -> Result<bool, ServerError> {
     let mut should_revalidate = false;
-    // If it revalidates after a certain period of time, we needd to check that BEFORE the custom logic
+    // If it revalidates after a certain period of time, we needd to check that
+    // BEFORE the custom logic
     if template.revalidates_with_time() {
         // Get the time when it should revalidate (RFC 3339)
         // This will be updated, so it's in a mutable store
@@ -156,8 +166,9 @@ async fn should_revalidate(
     }
     Ok(should_revalidate)
 }
-/// Revalidates a template. All information about templates that revalidate (timestamp, content, head, and state) is stored in a
-/// mutable store, so that's what this function uses.
+/// Revalidates a template. All information about templates that revalidate
+/// (timestamp, content, head, and state) is stored in a mutable store, so
+/// that's what this function uses.
 async fn revalidate(
     template: &Template<SsrNode>,
     translator: &Translator,
@@ -167,7 +178,8 @@ async fn revalidate(
     mutable_store: &impl MutableStore,
 ) -> Result<(String, String, Option<String>), ServerError> {
     let path_with_locale = get_path_with_locale(path, translator);
-    // We need to regenerate and cache this page for future usage (until the next revalidation)
+    // We need to regenerate and cache this page for future usage (until the next
+    // revalidation)
     let state = Some(
         template
             .get_build_state(
@@ -187,10 +199,12 @@ async fn revalidate(
     });
     let head = template.render_head_str(page_props, translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
-    // We don't need to worry about revalidation that operates by logic, that's request-time only
+    // We don't need to worry about revalidation that operates by logic, that's
+    // request-time only
     if template.revalidates_with_time() {
-        // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not from the previous one
-        // So if you're revalidating many pages weekly, they will NOT revalidate simultaneously, even if they're all queried thus
+        // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not
+        // from the previous one So if you're revalidating many pages weekly,
+        // they will NOT revalidate simultaneously, even if they're all queried thus
         let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
         mutable_store
             .write(
@@ -222,7 +236,9 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
     pub raw_path: &'a str,
     /// The locale to render for.
     pub locale: &'a str,
-    /// Whether or not the page was matched on a template using incremental generation that didn't prerender it with build paths (these use the mutable store).
+    /// Whether or not the page was matched on a template using incremental
+    /// generation that didn't prerender it with build paths (these use the
+    /// mutable store).
     pub was_incremental_match: bool,
     /// The request data.
     pub req: Request,
@@ -236,9 +252,12 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
     pub translations_manager: &'a T,
 }
 
-/// Internal logic behind `get_page`. The only differences are that this takes a full template rather than just a template name, which
-/// can avoid an unnecessary lookup if you already know the template in full (e.g. initial load server-side routing). Because this
-/// handles templates with potentially revalidation and incremental generation, it uses both mutable and immutable stores.
+/// Internal logic behind `get_page`. The only differences are that this takes a
+/// full template rather than just a template name, which can avoid an
+/// unnecessary lookup if you already know the template in full (e.g. initial
+/// load server-side routing). Because this handles templates with potentially
+/// revalidation and incremental generation, it uses both mutable and immutable
+/// stores.
 // TODO possible further optimizations on this for futures?
 pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     GetPageProps {
@@ -263,11 +282,13 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     if path.is_empty() {
         path = "index";
     }
-    // Remove `/` from the path by encoding it as a URL (that's what we store) and add the locale
+    // Remove `/` from the path by encoding it as a URL (that's what we store) and
+    // add the locale
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path));
     let path_with_locale = get_path_with_locale(path, &translator);
 
-    // Only a single string of HTML is needed, and it will be overridden if necessary (priorities system)
+    // Only a single string of HTML is needed, and it will be overridden if
+    // necessary (priorities system)
     let mut html = String::new();
     // The same applies for the document metadata
     let mut head = String::new();
@@ -276,10 +297,12 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
 
     // Handle build state (which might use revalidation or incremental)
     if template.uses_build_state() || template.is_basic() {
-        // If the template uses incremental generation, that is its own contained process
+        // If the template uses incremental generation, that is its own contained
+        // process
         if template.uses_incremental() && was_incremental_match {
-            // This template uses incremental generation, and this page was built and cached at runtime in the mutable store
-            // Get the cached content if it exists (otherwise `None`)
+            // This template uses incremental generation, and this page was built and cached
+            // at runtime in the mutable store Get the cached content if it
+            // exists (otherwise `None`)
             let html_and_head_opt = get_incremental_cached(&path_encoded, mutable_store).await;
             match html_and_head_opt {
                 // It's cached
@@ -295,14 +318,16 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                             mutable_store,
                         )
                         .await?;
-                        // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                        // Build-time generated HTML is the lowest priority, so we'll only set it if
+                        // nothing else already has
                         if html.is_empty() {
                             html = html_val;
                             head = head_val;
                         }
                         states.build_state = state;
                     } else {
-                        // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                        // Build-time generated HTML is the lowest priority, so we'll only set it if
+                        // nothing else already has
                         if html.is_empty() {
                             html = html_val;
                             head = head_val;
@@ -337,13 +362,15 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     });
                     let head_val = template.render_head_str(page_props, &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes
-                    // We don't need to worry about revalidation that operates by logic, that's request-time only
-                    // Obviously we don't need to revalidate now, we just created it
+                    // We don't need to worry about revalidation that operates by logic, that's
+                    // request-time only Obviously we don't need to revalidate
+                    // now, we just created it
                     if template.revalidates_with_time() {
                         let datetime_to_revalidate =
                             decode_time_str(&template.get_revalidate_interval().unwrap())?;
                         // Write that to a static file, we'll update it every time we revalidate
-                        // Note that this runs for every path generated, so it's fully usable with ISR
+                        // Note that this runs for every path generated, so it's fully usable with
+                        // ISR
                         mutable_store
                             .write(
                                 &format!("static/{}.revld.txt", path_encoded),
@@ -367,7 +394,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                         .await?;
 
                     states.build_state = state;
-                    // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                    // Build-time generated HTML is the lowest priority, so we'll only set it if
+                    // nothing else already has
                     if html.is_empty() {
                         html = html_val;
                         head = head_val;
@@ -375,7 +403,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 }
             }
         } else {
-            // If we're here, incremental generation is either not used or it's irrelevant because the page was rendered in the immutable store at build time
+            // If we're here, incremental generation is either not used or it's irrelevant
+            // because the page was rendered in the immutable store at build time
 
             // Handle if we need to revalidate
             // It'll be in the mutable store if we do
@@ -389,7 +418,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     mutable_store,
                 )
                 .await?;
-                // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                // Build-time generated HTML is the lowest priority, so we'll only set it if
+                // nothing else already has
                 if html.is_empty() {
                     html = html_val;
                     head = head_val;
@@ -400,17 +430,20 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 // Nonetheless, its data will be the mutable store
                 let (html_val, head_val, state) =
                     render_build_state_for_mutable(&path_encoded, mutable_store).await?;
-                // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                // Build-time generated HTML is the lowest priority, so we'll only set it if
+                // nothing else already has
                 if html.is_empty() {
                     html = html_val;
                     head = head_val;
                 }
                 states.build_state = state;
             } else {
-                // If we don't need to revalidate and this isn't an incrementally generated template, everything is immutable
+                // If we don't need to revalidate and this isn't an incrementally generated
+                // template, everything is immutable
                 let (html_val, head_val, state) =
                     render_build_state(&path_encoded, immutable_store).await?;
-                // Build-time generated HTML is the lowest priority, so we'll only set it if nothing else already has
+                // Build-time generated HTML is the lowest priority, so we'll only set it if
+                // nothing else already has
                 if html.is_empty() {
                     html = html_val;
                     head = head_val;
@@ -423,7 +456,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     if template.uses_request_state() {
         let (html_val, head_val, state) =
             render_request_state(template, &translator, path, global_state, req).await?;
-        // Request-time HTML always overrides anything generated at build-time or incrementally (this has more information)
+        // Request-time HTML always overrides anything generated at build-time or
+        // incrementally (this has more information)
         html = html_val;
         head = head_val;
         states.request_state = state;
@@ -432,8 +466,10 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     // Amalgamate the states
     // If the user has defined custom logic for this, we'll defer to that
     // Otherwise we go as with HTML, request trumps build
-    // Of course, if only one state was defined, we'll just use that regardless (so `None` prioritization is impossible)
-    // If this is the case, the build content will still be served, and then it's up to the client to hydrate it with the new amalgamated state
+    // Of course, if only one state was defined, we'll just use that regardless (so
+    // `None` prioritization is impossible) If this is the case, the build
+    // content will still be served, and then it's up to the client to hydrate it
+    // with the new amalgamated state
     let state = if !states.both_defined() {
         states.get_defined()?
     } else if template.can_amalgamate_states() {
@@ -452,8 +488,10 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     Ok(res)
 }
 
-/// Gets the HTML/JSON data for the given page path. This will call SSG/SSR/etc., whatever is needed for that page. Note that HTML
-/// generated at request-time will **always** replace anything generated at build-time, incrementally, revalidated, etc.
+/// Gets the HTML/JSON data for the given page path. This will call
+/// SSG/SSR/etc., whatever is needed for that page. Note that HTML generated at
+/// request-time will **always** replace anything generated at build-time,
+/// incrementally, revalidated, etc.
 #[allow(clippy::too_many_arguments)]
 pub async fn get_page<M: MutableStore, T: TranslationsManager>(
     props: GetPageProps<'_, M, T>,
@@ -469,7 +507,8 @@ pub async fn get_page<M: MutableStore, T: TranslationsManager>(
     let template = templates.get(template_name);
     let template = match template {
         Some(template) => template,
-        // This shouldn't happen because the client should already have performed checks against the render config, but it's handled anyway
+        // This shouldn't happen because the client should already have performed checks against the
+        // render config, but it's handled anyway
         None => {
             return Err(ServeError::PageNotFound {
                 path: path.to_string(),

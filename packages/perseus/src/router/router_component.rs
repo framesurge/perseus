@@ -20,9 +20,9 @@ use sycamore::{
 use sycamore_router::{HistoryIntegration, RouterBase};
 use web_sys::Element;
 
-// We don't want to bring in a styling library, so we do this the old-fashioned way!
-// We're particualrly comprehensive with these because the user could *potentially* stuff things up with global rules
-// https://medium.com/@jessebeach/beware-smushed-off-screen-accessible-text-5952a4c2cbfe
+// We don't want to bring in a styling library, so we do this the old-fashioned
+// way! We're particualrly comprehensive with these because the user could
+// *potentially* stuff things up with global rules https://medium.com/@jessebeach/beware-smushed-off-screen-accessible-text-5952a4c2cbfe
 const ROUTE_ANNOUNCER_STYLES: &str = r#"
     margin: 0;
     padding: 0;
@@ -36,7 +36,8 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
     word-wrap: normal;
 "#;
 
-/// The properties that `on_route_change` takes. See the shell properties for the details for most of these.
+/// The properties that `on_route_change` takes. See the shell properties for
+/// the details for most of these.
 #[derive(Clone)]
 struct OnRouteChangeProps<'a, G: Html> {
     cx: Scope<'a>,
@@ -48,7 +49,8 @@ struct OnRouteChangeProps<'a, G: Html> {
     initial_container: Option<Element>,
 }
 
-/// The function that runs when a route change takes place. This can also be run at any time to force the current page to reload.
+/// The function that runs when a route change takes place. This can also be run
+/// at any time to force the current page to reload.
 fn on_route_change<G: Html>(
     verdict: RouteVerdict<TemplateNodeType>,
     OnRouteChangeProps {
@@ -67,8 +69,9 @@ fn on_route_change<G: Html>(
             .unchecked_into::<web_sys::Element>();
         checkpoint("router_entry");
         match &verdict {
-            // Perseus' custom routing system is tightly coupled to the template system, and returns exactly what we need for the app shell!
-            // If a non-404 error occurred, it will be handled in the app shell
+            // Perseus' custom routing system is tightly coupled to the template system, and returns
+            // exactly what we need for the app shell! If a non-404 error occurred, it
+            // will be handled in the app shell
             RouteVerdict::Found(RouteInfo {
                 path,
                 template,
@@ -90,20 +93,23 @@ fn on_route_change<G: Html>(
                 })
                 .await
             }
-            // If the user is using i18n, then they'll want to detect the locale on any paths missing a locale
-            // Those all go to the same system that redirects to the appropriate locale
-            // Note that `container` doesn't exist for this scenario
+            // If the user is using i18n, then they'll want to detect the locale on any paths
+            // missing a locale Those all go to the same system that redirects to the
+            // appropriate locale Note that `container` doesn't exist for this scenario
             RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
             // To get a translator here, we'd have to go async and dangerously check the URL
-            // If this is an initial load, there'll already be an error message, so we should only proceed if the declaration is not `error`
-            // BUG If we have an error in a subsequent load, the error message appears below the current page...
+            // If this is an initial load, there'll already be an error message, so we should only
+            // proceed if the declaration is not `error` BUG If we have an error in a
+            // subsequent load, the error message appears below the current page...
             RouteVerdict::NotFound => {
                 checkpoint("not_found");
                 if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state()
                 {
                     let initial_container = initial_container.unwrap();
-                    // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
-                    // If we're not hydrating, there's no point in moving anything over, we'll just fully re-render
+                    // We need to move the server-rendered content from its current container to the
+                    // reactive container (otherwise Sycamore can't work with it properly)
+                    // If we're not hydrating, there's no point in moving anything over, we'll just
+                    // fully re-render
                     #[cfg(feature = "hydrate")]
                     {
                         let initial_html = initial_container.inner_html();
@@ -115,10 +121,12 @@ fn on_route_change<G: Html>(
                         .set_attribute("style", "display: none;")
                         .unwrap();
                     // Hydrate the error pages
-                    // Right now, we don't provide translators to any error pages that have come from the server
+                    // Right now, we don't provide translators to any error pages that have come
+                    // from the server
                     error_pages.render_page(cx, &url, status, &err, None, &container_rx_elem);
                 } else {
-                    // This is an error from navigating within the app (probably the dev mistyped a link...), so we'll clear the page
+                    // This is an error from navigating within the app (probably the dev mistyped a
+                    // link...), so we'll clear the page
                     container_rx_elem.set_inner_html("");
                     error_pages.render_page(cx, "", 404, "not found", None, &container_rx_elem);
                 }
@@ -136,15 +144,20 @@ pub struct PerseusRouterProps {
     pub locales: Locales,
     /// The templates the app is using.
     pub templates: TemplateMap<TemplateNodeType>,
-    /// The render configuration of the app (which lays out routing information, among other things).
+    /// The render configuration of the app (which lays out routing information,
+    /// among other things).
     pub render_cfg: HashMap<String, String>,
 }
 
-/// The Perseus router. This is used internally in the Perseus engine, and you shouldn't need to access this directly unless
-/// you're building a custom engine. Note that this actually encompasses your entire app, and takes no child properties.
+/// The Perseus router. This is used internally in the Perseus engine, and you
+/// shouldn't need to access this directly unless you're building a custom
+/// engine. Note that this actually encompasses your entire app, and takes no
+/// child properties.
 ///
-/// Note: this deliberately has a snake case name, and should be called directly with `cx` as the first argument, allowing the `AppRoute` generic
-/// creates with `create_app_root!` to be provided easily. That given `cx` property will be used for all context registration in the app.
+/// Note: this deliberately has a snake case name, and should be called directly
+/// with `cx` as the first argument, allowing the `AppRoute` generic
+/// creates with `create_app_root!` to be provided easily. That given `cx`
+/// property will be used for all context registration in the app.
 #[component]
 pub fn perseus_router<G: Html>(
     cx: Scope,
@@ -165,14 +178,16 @@ pub fn perseus_router<G: Html>(
 
     // Get the root that the server will have injected initial load content into
     // This will be moved into a reactive `<div>` by the app shell
-    // This is an `Option<Element>` until we know we aren't doing locale detection (in which case it wouldn't exist)
+    // This is an `Option<Element>` until we know we aren't doing locale detection
+    // (in which case it wouldn't exist)
     let initial_container = web_sys::window()
         .unwrap()
         .document()
         .unwrap()
         .query_selector("#__perseus_content_initial")
         .unwrap();
-    // And create a node reference that we can use as a handle to the reactive verison
+    // And create a node reference that we can use as a handle to the reactive
+    // verison
     let container_rx = NodeRef::new();
 
     let translations_manager = Rc::new(RefCell::new(ClientTranslationsManager::new(&locales)));
@@ -181,29 +196,39 @@ pub fn perseus_router<G: Html>(
     // Get the error pages in an `Rc` so we aren't creating hundreds of them
     let error_pages = Rc::new(error_pages);
 
-    // Now create an instance of `RenderCtx`, which we'll insert into context and use everywhere throughout the app
+    // Now create an instance of `RenderCtx`, which we'll insert into context and
+    // use everywhere throughout the app
     let render_ctx = RenderCtx::default().set_ctx(cx);
 
-    // TODO Replace passing a router state around with getting it out of context instead in the shell
+    // TODO Replace passing a router state around with getting it out of context
+    // instead in the shell
     let router_state = &render_ctx.router; // We need this for interfacing with the router though
 
     // Create a derived state for the route announcement
-    // We do this with an effect because we only want to update in some cases (when the new page is actually loaded)
-    // We also need to know if it's the first page (because we don't want to announce that, screen readers will get that one right)
+    // We do this with an effect because we only want to update in some cases (when
+    // the new page is actually loaded) We also need to know if it's the first
+    // page (because we don't want to announce that, screen readers will get that
+    // one right)
     let route_announcement = create_signal(cx, String::new());
-    let mut is_first_page = true; // This is different from the first page load (this is the first page as a whole)
+    let mut is_first_page = true; // This is different from the first page load (this is the first page as a
+                                  // whole)
     let load_state = router_state.get_load_state_rc();
     create_effect(cx, move || {
         if let RouterLoadState::Loaded { path, .. } = &*load_state.get() {
             if is_first_page {
-                // This is the first load event, so the next one will be for a new page (or at least something that we should announce, if this page reloads then the content will change, that would be from thawing)
+                // This is the first load event, so the next one will be for a new page (or at
+                // least something that we should announce, if this page reloads then the
+                // content will change, that would be from thawing)
                 is_first_page = false;
             } else {
                 // TODO Validate approach with reloading
-                // A new page has just been loaded and is interactive (this event only fires after all rendering and hydration is complete)
-                // Set the announcer to announce the title, falling back to the first `h1`, and then falling back again to the path
+                // A new page has just been loaded and is interactive (this event only fires
+                // after all rendering and hydration is complete)
+                // Set the announcer to announce the title, falling back to the first `h1`, and
+                // then falling back again to the path
                 let document = web_sys::window().unwrap().document().unwrap();
-                // If the content of the provided element is empty, this will transform it into `None`
+                // If the content of the provided element is empty, this will transform it into
+                // `None`
                 let make_empty_none = |val: Element| {
                     let val = val.inner_html();
                     if val.is_empty() {
@@ -253,7 +278,8 @@ pub fn perseus_router<G: Html>(
     create_effect(cx, move || {
         router_state.reload_commander.track();
         // Get the route verdict and re-run the function we use on route changes
-        // This has to be untracked, otherwise we get an infinite loop that will actually break client browsers (I had to manually kill Firefox...)
+        // This has to be untracked, otherwise we get an infinite loop that will
+        // actually break client browsers (I had to manually kill Firefox...)
         // TODO Investigate how the heck this actually caused an infinite loop...
         let verdict = router_state.get_last_verdict();
         let verdict = match &verdict {
@@ -270,8 +296,9 @@ pub fn perseus_router<G: Html>(
     {
         use crate::state::Freeze;
         // Set up a oneshot channel that we can use to communicate with the WS system
-        // Unfortunately, we can't share senders/receivers around without bringing in another crate
-        // And, Sycamore's `RcSignal` doesn't like being put into a `Closure::wrap()` one bit
+        // Unfortunately, we can't share senders/receivers around without bringing in
+        // another crate And, Sycamore's `RcSignal` doesn't like being put into
+        // a `Closure::wrap()` one bit
         let (live_reload_tx, mut live_reload_rx) = futures::channel::oneshot::channel();
         crate::spawn_local_scoped(cx, async move {
             match live_reload_rx.await {
@@ -284,14 +311,17 @@ pub fn perseus_router<G: Html>(
                         crate::state::hsr_freeze(frozen_state).await;
                     }
                     crate::state::force_reload();
-                    // We shouldn't ever get here unless there was an error, the entire page will be fully reloaded
+                    // We shouldn't ever get here unless there was an error, the
+                    // entire page will be fully reloaded
                 }
                 _ => (),
             }
         });
 
         // If live reloading is enabled, connect to the server now
-        // This doesn't actually perform any reloading or the like, it just signals places that have access to the render context to do so (because we need that for state freezing/thawing)
+        // This doesn't actually perform any reloading or the like, it just signals
+        // places that have access to the render context to do so (because we need that
+        // for state freezing/thawing)
         crate::state::connect_to_reload_server(live_reload_tx);
     }
 
@@ -299,8 +329,9 @@ pub fn perseus_router<G: Html>(
     #[cfg(all(feature = "hsr", debug_assertions))]
     {
         crate::spawn_local_scoped(cx, async move {
-            // We need to make sure we don't run this more than once, because that would lead to a loop
-            // It also shouldn't run on any pages after the initial load
+            // We need to make sure we don't run this more than once, because that would
+            // lead to a loop It also shouldn't run on any pages after the
+            // initial load
             if render_ctx.is_first.get() {
                 render_ctx.is_first.set(false);
                 crate::state::hsr_thaw(&render_ctx).await;

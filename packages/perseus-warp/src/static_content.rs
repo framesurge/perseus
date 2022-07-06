@@ -37,20 +37,21 @@ pub async fn serve_file(path: String) -> Result<File, Rejection> {
     file_reply(arc_path, conds).await
 }
 
-// /// Serves the file provided through the filter. This returns an error because we assume that the file is supposed to exist at this point (this is used for static
-// /// aliases).
+// /// Serves the file provided through the filter. This returns an error
+// because we assume that the file is supposed to exist at this point (this is
+// used for static /// aliases).
 // pub async fn serve_file(path: String) -> Result<Response, Rejection> {
 //     match TkFile::open(path).await {
 //         Ok(file) => {
-//             let metadata = file.metadata().await.map_err(|e| warp::reject::not_found())?;
-//             let stream = file_stream(file, metadata);
-//             let res = Response::new(Body::wrap_stream(stream));
+//             let metadata = file.metadata().await.map_err(|e|
+// warp::reject::not_found())?;             let stream = file_stream(file,
+// metadata);             let res = Response::new(Body::wrap_stream(stream));
 
 //             Ok(res)
 //         },
-//         // If a static alias can't be found, we'll act as if it doesn't exist and proceed to the next handler
-//         Err(_) => Err(warp::reject::not_found())
-//     }
+//         // If a static alias can't be found, we'll act as if it doesn't exist
+// and proceed to the next handler         Err(_) =>
+// Err(warp::reject::not_found())     }
 // }
 
 // // The default chunk size for streaming a file (taken from Warp's internals)
@@ -63,8 +64,8 @@ pub async fn serve_file(path: String) -> Result<File, Rejection> {
 // }
 // #[cfg(not(unix))]
 // fn get_buf_size(_metadata: Metadata) -> usize {
-//     DFLT_BUF_SIZE // On Windows, we don't have a blocksize function based on the metadata
-// }
+//     DFLT_BUF_SIZE // On Windows, we don't have a blocksize function based on
+// the metadata }
 
 // /// Reserves more space in a buffer if needed
 // fn reserve_if_needed(buf: &mut BytesMut, cap: usize) {
@@ -73,9 +74,9 @@ pub async fn serve_file(path: String) -> Result<File, Rejection> {
 //     }
 // }
 
-// fn file_stream(mut file: TkFile, metadata: Metadata) -> impl Stream<Item = Result<Bytes, std::io::Error>> + Send {
-//     let buf_size = get_buf_size(metadata);
-//     let stream = file.seek(SeekFrom::Start(0));
+// fn file_stream(mut file: TkFile, metadata: Metadata) -> impl Stream<Item =
+// Result<Bytes, std::io::Error>> + Send {     let buf_size =
+// get_buf_size(metadata);     let stream = file.seek(SeekFrom::Start(0));
 
 //     let mut buf = BytesMut::new();
 //     reserve_if_needed(&mut buf, buf_size);

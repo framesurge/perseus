@@ -25,22 +25,30 @@ use sycamore::prelude::{Scope, View};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
 
-/// A generic error type that can be adapted for any errors the user may want to return from a render function. `.into()` can be used
-/// to convert most error types into this without further hassle. Otherwise, use `Box::new()` on the type.
+/// A generic error type that can be adapted for any errors the user may want to
+/// return from a render function. `.into()` can be used to convert most error
+/// types into this without further hassle. Otherwise, use `Box::new()` on the
+/// type.
 pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
-/// A generic error type that can be adapted for any errors the user may want to return from a render function, as with `RenderFnResult<T>`.
-/// However, this also includes a mandatory statement of causation for any errors, which assigns blame for them to either the client
-/// or the server. In cases where this is ambiguous, this allows returning accurate HTTP status codes.
+/// A generic error type that can be adapted for any errors the user may want to
+/// return from a render function, as with `RenderFnResult<T>`. However, this
+/// also includes a mandatory statement of causation for any errors, which
+/// assigns blame for them to either the client or the server. In cases where
+/// this is ambiguous, this allows returning accurate HTTP status codes.
 ///
-/// Note that you can automatically convert from your error type into this with `.into()` or `?`, which will blame the server for the
-/// error by default and return a *500 Internal Server Error* HTTP status code. Otherwise, you'll need to manually instantiate `ErrorWithCause`
-/// and return that as the error type.
+/// Note that you can automatically convert from your error type into this with
+/// `.into()` or `?`, which will blame the server for the error by default and
+/// return a *500 Internal Server Error* HTTP status code. Otherwise, you'll
+/// need to manually instantiate `ErrorWithCause` and return that as the error
+/// type.
 pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
-// A series of asynchronous closure traits that prevent the user from having to pin their functions
+// A series of asynchronous closure traits that prevent the user from having to
+// pin their functions
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(GetBuildPathsFnType, RenderFnResult<Vec<String>>);
-// The build state strategy needs an error cause if it's invoked from incremental
+// The build state strategy needs an error cause if it's invoked from
+// incremental
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GetBuildStateFnType,
@@ -60,13 +68,15 @@ make_async_trait!(
 make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
 
 // A series of closure types that should not be typed out more than once
-/// The type of functions that are given a state and render a page. If you've defined state for your page, it's safe to `.unwrap()` the
-/// given `Option` inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be made available through Sycamore's
-/// [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
+/// The type of functions that are given a state and render a page. If you've
+/// defined state for your page, it's safe to `.unwrap()` the given `Option`
+/// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
+/// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
 pub type TemplateFn<G> = Box<dyn Fn(Scope, PageProps) -> View<G> + Send + Sync>;
-/// A type alias for the function that modifies the document head. This is just a template function that will always be server-side
-/// rendered in function (it may be rendered on the client, but it will always be used to create an HTML string, rather than a reactive
-/// template).
+/// A type alias for the function that modifies the document head. This is just
+/// a template function that will always be server-side rendered in function (it
+/// may be rendered on the client, but it will always be used to create an HTML
+/// string, rather than a reactive template).
 #[cfg(not(target_arch = "wasm32"))]
 pub type HeadFn = TemplateFn<SsrNode>;
 #[cfg(not(target_arch = "wasm32"))]
@@ -89,60 +99,92 @@ pub type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType + Send + Sync>;
 pub type AmalgamateStatesFn =
     Box<dyn Fn(States) -> RenderFnResultWithCause<Option<String>> + Send + Sync>;
 
-/// This allows the specification of all the template templates in an app and how to render them. If no rendering logic is provided at all,
-/// the template will be prerendered at build-time with no state. All closures are stored on the heap to avoid hellish lifetime specification.
-/// All properties for templates are passed around as strings to avoid type maps and other horrible things, this only adds one extra
-/// deserialization call at build time. This only actually owns a two `String`s and a `bool`.
+/// This allows the specification of all the template templates in an app and
+/// how to render them. If no rendering logic is provided at all, the template
+/// will be prerendered at build-time with no state. All closures are stored on
+/// the heap to avoid hellish lifetime specification. All properties for
+/// templates are passed around as strings to avoid type maps and other horrible
+/// things, this only adds one extra deserialization call at build time. This
+/// only actually owns a two `String`s and a `bool`.
 pub struct Template<G: Html> {
-    /// The path to the root of the template. Any build paths will be inserted under this.
+    /// The path to the root of the template. Any build paths will be inserted
+    /// under this.
     path: String,
-    /// A function that will render your template. This will be provided the rendered properties, and will be used whenever your template needs
-    /// to be prerendered in some way. This should be very similar to the function that hydrates your template on the client side.
-    /// This will be executed inside `sycamore::render_to_string`, and should return a `Template<SsrNode>`. This takes an `Option<Props>`
-    /// because otherwise efficient typing is almost impossible for templates without any properties (solutions welcome in PRs!).
+    /// A function that will render your template. This will be provided the
+    /// rendered properties, and will be used whenever your template needs
+    /// to be prerendered in some way. This should be very similar to the
+    /// function that hydrates your template on the client side.
+    /// This will be executed inside `sycamore::render_to_string`, and should
+    /// return a `Template<SsrNode>`. This takes an `Option<Props>`
+    /// because otherwise efficient typing is almost impossible for templates
+    /// without any properties (solutions welcome in PRs!).
     template: TemplateFn<G>,
-    /// A function that will be used to populate the document's `<head>` with metadata such as the title. This will be passed state in
-    /// the same way as `template`, but will always be rendered to a string, whcih will then be interpolated directly into the `<head>`,
+    /// A function that will be used to populate the document's `<head>` with
+    /// metadata such as the title. This will be passed state in
+    /// the same way as `template`, but will always be rendered to a string,
+    /// whcih will then be interpolated directly into the `<head>`,
     /// so reactivity here will not work!
     #[cfg(not(target_arch = "wasm32"))]
     head: TemplateFn<SsrNode>,
-    /// A function to be run when the server returns an HTTP response. This should return headers for said response, given the template's
-    /// state. The most common use-case of this is to add cache control that respects revalidation. This will only be run on successful
-    /// responses, and does have the power to override existing headers. By default, this will create sensible cache control headers.
+    /// A function to be run when the server returns an HTTP response. This
+    /// should return headers for said response, given the template's state.
+    /// The most common use-case of this is to add cache control that respects
+    /// revalidation. This will only be run on successful responses, and
+    /// does have the power to override existing headers. By default, this will
+    /// create sensible cache control headers.
     #[cfg(not(target_arch = "wasm32"))]
     set_headers: SetHeadersFn,
-    /// A function that gets the paths to render for at built-time. This is equivalent to `get_static_paths` in NextJS. If
-    /// `incremental_generation` is `true`, more paths can be rendered at request time on top of these.
+    /// A function that gets the paths to render for at built-time. This is
+    /// equivalent to `get_static_paths` in NextJS. If
+    /// `incremental_generation` is `true`, more paths can be rendered at
+    /// request time on top of these.
     #[cfg(not(target_arch = "wasm32"))]
     get_build_paths: Option<GetBuildPathsFn>,
-    /// Defines whether or not any new paths that match this template will be prerendered and cached in production. This allows you to
-    /// have potentially billions of templates and retain a super-fast build process. The first user will have an ever-so-slightly slower
-    /// experience, and everyone else gets the beneftis afterwards. This requires `get_build_paths`. Note that the template root will NOT
-    /// be rendered on demand, and must be explicitly defined if it's wanted. It can uuse a different template.
+    /// Defines whether or not any new paths that match this template will be
+    /// prerendered and cached in production. This allows you to
+    /// have potentially billions of templates and retain a super-fast build
+    /// process. The first user will have an ever-so-slightly slower
+    /// experience, and everyone else gets the beneftis afterwards. This
+    /// requires `get_build_paths`. Note that the template root will NOT
+    /// be rendered on demand, and must be explicitly defined if it's wanted. It
+    /// can uuse a different template.
     #[cfg(not(target_arch = "wasm32"))]
     incremental_generation: bool,
-    /// A function that gets the initial state to use to prerender the template at build time. This will be passed the path of the template, and
-    /// will be run for any sub-paths. This is equivalent to `get_static_props` in NextJS.
+    /// A function that gets the initial state to use to prerender the template
+    /// at build time. This will be passed the path of the template, and
+    /// will be run for any sub-paths. This is equivalent to `get_static_props`
+    /// in NextJS.
     #[cfg(not(target_arch = "wasm32"))]
     get_build_state: Option<GetBuildStateFn>,
-    /// A function that will run on every request to generate a state for that request. This allows server-side-rendering. This is equivalent
-    /// to `get_server_side_props` in NextJS. This can be used with `get_build_state`, though custom amalgamation logic must be provided.
+    /// A function that will run on every request to generate a state for that
+    /// request. This allows server-side-rendering. This is equivalent
+    /// to `get_server_side_props` in NextJS. This can be used with
+    /// `get_build_state`, though custom amalgamation logic must be provided.
     #[cfg(not(target_arch = "wasm32"))]
     get_request_state: Option<GetRequestStateFn>,
-    /// A function to be run on every request to check if a template prerendered at build-time should be prerendered again. This is equivalent
-    /// to revalidation after a time in NextJS, with the improvement of custom logic. If used with `revalidate_after`, this function will
-    /// only be run after that time period. This function will not be parsed anything specific to the request that invoked it.
+    /// A function to be run on every request to check if a template prerendered
+    /// at build-time should be prerendered again. This is equivalent
+    /// to revalidation after a time in NextJS, with the improvement of custom
+    /// logic. If used with `revalidate_after`, this function will
+    /// only be run after that time period. This function will not be parsed
+    /// anything specific to the request that invoked it.
     #[cfg(not(target_arch = "wasm32"))]
     should_revalidate: Option<ShouldRevalidateFn>,
-    /// A length of time after which to prerender the template again. This is equivalent to revalidating in NextJS. This should specify a
-    /// string interval to revalidate after. That will be converted into a datetime to wait for, which will be updated after every revalidation.
-    /// Note that, if this is used with incremental generation, the counter will only start after the first render (meaning if you expect
-    /// a weekly re-rendering cycle for all pages, they'd likely all be out of sync, you'd need to manually implement that with
+    /// A length of time after which to prerender the template again. This is
+    /// equivalent to revalidating in NextJS. This should specify a
+    /// string interval to revalidate after. That will be converted into a
+    /// datetime to wait for, which will be updated after every revalidation.
+    /// Note that, if this is used with incremental generation, the counter will
+    /// only start after the first render (meaning if you expect
+    /// a weekly re-rendering cycle for all pages, they'd likely all be out of
+    /// sync, you'd need to manually implement that with
     /// `should_revalidate`).
     #[cfg(not(target_arch = "wasm32"))]
     revalidate_after: Option<String>,
-    /// Custom logic to amalgamate potentially different states generated at build and request time. This is only necessary if your template
-    /// uses both `build_state` and `request_state`. If not specified and both are generated, request state will be prioritized.
+    /// Custom logic to amalgamate potentially different states generated at
+    /// build and request time. This is only necessary if your template uses
+    /// both `build_state` and `request_state`. If not specified and both are
+    /// generated, request state will be prioritized.
     #[cfg(not(target_arch = "wasm32"))]
     amalgamate_states: Option<AmalgamateStatesFn>,
 }
@@ -187,7 +229,8 @@ impl<G: Html> Template<G> {
     }
 
     // Render executors
-    /// Executes the user-given function that renders the template on the client-side ONLY. This takes in an extsing global state.
+    /// Executes the user-given function that renders the template on the
+    /// client-side ONLY. This takes in an extsing global state.
     #[cfg(target_arch = "wasm32")]
     #[allow(clippy::too_many_arguments)]
     pub fn render_for_template_client<'a>(
@@ -196,13 +239,16 @@ impl<G: Html> Template<G> {
         cx: Scope<'a>,
         translator: &Translator,
     ) -> View<G> {
-        // The router component has already set up all the elements of context needed by the rest of the system, we can get on with rendering the template
-        // All we have to do is provide the translator, replacing whatever is present
+        // The router component has already set up all the elements of context needed by
+        // the rest of the system, we can get on with rendering the template All
+        // we have to do is provide the translator, replacing whatever is present
         provide_context_signal_replace(cx, translator.clone());
 
         (self.template)(cx, props)
     }
-    /// Executes the user-given function that renders the template on the server-side ONLY. This automatically initializes an isolated global state.
+    /// Executes the user-given function that renders the template on the
+    /// server-side ONLY. This automatically initializes an isolated global
+    /// state.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn render_for_template_server<'a>(
         &self,
@@ -210,7 +256,8 @@ impl<G: Html> Template<G> {
         cx: Scope<'a>,
         translator: &Translator,
     ) -> View<G> {
-        // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
+        // The context we have here has no context elements set on it, so we set all the
+        // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
         let _ = RenderCtx::default().set_ctx(cx);
         // And now provide a translator separately
@@ -218,12 +265,15 @@ impl<G: Html> Template<G> {
 
         (self.template)(cx, props)
     }
-    /// Executes the user-given function that renders the document `<head>`, returning a string to be interpolated manually.
-    /// Reactivity in this function will not take effect due to this string rendering. Note that this function will provide a translator context.
+    /// Executes the user-given function that renders the document `<head>`,
+    /// returning a string to be interpolated manually. Reactivity in this
+    /// function will not take effect due to this string rendering. Note that
+    /// this function will provide a translator context.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
         sycamore::render_to_string(|cx| {
-            // The context we have here has no context elements set on it, so we set all the defaults (job of the router component on the client-side)
+            // The context we have here has no context elements set on it, so we set all the
+            // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             let _ = RenderCtx::default().set_ctx(cx);
             // And now provide a translator separately
@@ -254,9 +304,11 @@ impl<G: Html> Template<G> {
             .into())
         }
     }
-    /// Gets the initial state for a template. This needs to be passed the full path of the template, which may be one of those generated by
-    /// `.get_build_paths()`. This also needs the locale being rendered to so that more compelx applications like custom documentation
-    /// systems can be enabled.
+    /// Gets the initial state for a template. This needs to be passed the full
+    /// path of the template, which may be one of those generated by
+    /// `.get_build_paths()`. This also needs the locale being rendered to so
+    /// that more compelx applications like custom documentation systems can
+    /// be enabled.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_build_state(
         &self,
@@ -282,9 +334,12 @@ impl<G: Html> Template<G> {
             .into())
         }
     }
-    /// Gets the request-time state for a template. This is equivalent to SSR, and will not be performed at build-time. Unlike
-    /// `.get_build_paths()` though, this will be passed information about the request that triggered the render. Errors here can be caused
-    /// by either the server or the client, so the user must specify an [`ErrorCause`]. This is also passed the locale being rendered to.
+    /// Gets the request-time state for a template. This is equivalent to SSR,
+    /// and will not be performed at build-time. Unlike `.get_build_paths()`
+    /// though, this will be passed information about the request that triggered
+    /// the render. Errors here can be caused by either the server or the
+    /// client, so the user must specify an [`ErrorCause`]. This is also passed
+    /// the locale being rendered to.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_request_state(
         &self,
@@ -311,7 +366,8 @@ impl<G: Html> Template<G> {
             .into())
         }
     }
-    /// Amalagmates given request and build states. Errors here can be caused by either the server or the client, so the user must specify
+    /// Amalagmates given request and build states. Errors here can be caused by
+    /// either the server or the client, so the user must specify
     /// an [`ErrorCause`].
     #[cfg(not(target_arch = "wasm32"))]
     pub fn amalgamate_states(&self, states: States) -> Result<Option<String>, ServerError> {
@@ -334,8 +390,10 @@ impl<G: Html> Template<G> {
             .into())
         }
     }
-    /// Checks, by the user's custom logic, if this template should revalidate. This function isn't presently parsed anything, but has
-    /// network access etc., and can really do whatever it likes. Errors here can be caused by either the server or the client, so the
+    /// Checks, by the user's custom logic, if this template should revalidate.
+    /// This function isn't presently parsed anything, but has
+    /// network access etc., and can really do whatever it likes. Errors here
+    /// can be caused by either the server or the client, so the
     /// user must specify an [`ErrorCause`].
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn should_revalidate(&self) -> Result<bool, ServerError> {
@@ -358,15 +416,17 @@ impl<G: Html> Template<G> {
             .into())
         }
     }
-    /// Gets the template's headers for the given state. These will be inserted into any successful HTTP responses for this template,
-    /// and they have the power to override.
+    /// Gets the template's headers for the given state. These will be inserted
+    /// into any successful HTTP responses for this template, and they have
+    /// the power to override.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_headers(&self, state: Option<String>) -> HeaderMap {
         (self.set_headers)(state)
     }
 
     // Value getters
-    /// Gets the path of the template. This is the root path under which any generated pages will be served. In the simplest case, there will
+    /// Gets the path of the template. This is the root path under which any
+    /// generated pages will be served. In the simplest case, there will
     /// only be one page rendered, and it will occupy that root position.
     pub fn get_path(&self) -> String {
         self.path.clone()
@@ -383,17 +443,20 @@ impl<G: Html> Template<G> {
     pub fn revalidates(&self) -> bool {
         self.should_revalidate.is_some() || self.revalidate_after.is_some()
     }
-    /// Checks if this template can revalidate existing prerendered templates after a given time.
+    /// Checks if this template can revalidate existing prerendered templates
+    /// after a given time.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn revalidates_with_time(&self) -> bool {
         self.revalidate_after.is_some()
     }
-    /// Checks if this template can revalidate existing prerendered templates based on some given logic.
+    /// Checks if this template can revalidate existing prerendered templates
+    /// based on some given logic.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn revalidates_with_logic(&self) -> bool {
         self.should_revalidate.is_some()
     }
-    /// Checks if this template can render more templates beyond those paths it explicitly defines.
+    /// Checks if this template can render more templates beyond those paths it
+    /// explicitly defines.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn uses_incremental(&self) -> bool {
         self.incremental_generation
@@ -413,12 +476,14 @@ impl<G: Html> Template<G> {
     pub fn uses_build_state(&self) -> bool {
         self.get_build_state.is_some()
     }
-    /// Checks if this template has custom logic to amalgamate build and reqquest states if both are generated.
+    /// Checks if this template has custom logic to amalgamate build and
+    /// reqquest states if both are generated.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn can_amalgamate_states(&self) -> bool {
         self.amalgamate_states.is_some()
     }
-    /// Checks if this template defines no rendering logic whatsoever. Such templates will be rendered using SSG. Basic templates can
+    /// Checks if this template defines no rendering logic whatsoever. Such
+    /// templates will be rendered using SSG. Basic templates can
     /// still modify headers.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn is_basic(&self) -> bool {
@@ -430,9 +495,11 @@ impl<G: Html> Template<G> {
     }
 
     // Builder setters
-    // The server-only ones have a different version for Wasm that takes in an empty function (this means we don't have to bring in function types, and therefore we
-    // can avoid bringing in the whole `http` module --- a very significant saving!)
-    // The macros handle the creation of empty functions to make user's lives easier
+    // The server-only ones have a different version for Wasm that takes in an empty
+    // function (this means we don't have to bring in function types, and therefore
+    // we can avoid bringing in the whole `http` module --- a very significant
+    // saving!) The macros handle the creation of empty functions to make user's
+    // lives easier
     /// Sets the template rendering function to use.
     pub fn template(
         mut self,
@@ -458,7 +525,8 @@ impl<G: Html> Template<G> {
         self
     }
 
-    /// Sets the function to set headers. This will override Perseus' inbuilt header defaults.
+    /// Sets the function to set headers. This will override Perseus' inbuilt
+    /// header defaults.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn set_headers_fn(
         mut self,
@@ -467,7 +535,8 @@ impl<G: Html> Template<G> {
         self.set_headers = Box::new(val);
         self
     }
-    /// Sets the function to set headers. This will override Perseus' inbuilt header defaults.
+    /// Sets the function to set headers. This will override Perseus' inbuilt
+    /// header defaults.
     #[cfg(target_arch = "wasm32")]
     pub fn set_headers_fn(self, _val: impl Fn() + 'static) -> Template<G> {
         self
@@ -530,7 +599,8 @@ impl<G: Html> Template<G> {
         self
     }
 
-    /// Enables the *revalidation* strategy (logic variant) with the given function.
+    /// Enables the *revalidation* strategy (logic variant) with the given
+    /// function.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn should_revalidate_fn(
         mut self,
@@ -539,21 +609,22 @@ impl<G: Html> Template<G> {
         self.should_revalidate = Some(Box::new(val));
         self
     }
-    /// Enables the *revalidation* strategy (logic variant) with the given function.
+    /// Enables the *revalidation* strategy (logic variant) with the given
+    /// function.
     #[cfg(target_arch = "wasm32")]
     pub fn should_revalidate_fn(self, _val: impl Fn() + 'static) -> Template<G> {
         self
     }
 
-    /// Enables the *revalidation* strategy (time variant). This takes a time string of a form like `1w` for one week. More details are available
-    /// [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
+    /// Enables the *revalidation* strategy (time variant). This takes a time
+    /// string of a form like `1w` for one week. More details are available [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
     #[cfg(not(target_arch = "wasm32"))]
     pub fn revalidate_after(mut self, val: String) -> Template<G> {
         self.revalidate_after = Some(val);
         self
     }
-    /// Enables the *revalidation* strategy (time variant). This takes a time string of a form like `1w` for one week. More details are available
-    /// [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
+    /// Enables the *revalidation* strategy (time variant). This takes a time
+    /// string of a form like `1w` for one week. More details are available [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
     #[cfg(target_arch = "wasm32")]
     pub fn revalidate_after(self, _val: String) -> Template<G> {
         self
@@ -575,7 +646,8 @@ impl<G: Html> Template<G> {
     }
 }
 
-// The engine needs to know whether or not to use hydration, this is how we pass those feature settings through
+// The engine needs to know whether or not to use hydration, this is how we pass
+// those feature settings through
 #[cfg(not(feature = "hydrate"))]
 #[doc(hidden)]
 pub type TemplateNodeType = sycamore::prelude::DomNode;
@@ -583,8 +655,9 @@ pub type TemplateNodeType = sycamore::prelude::DomNode;
 #[doc(hidden)]
 pub type TemplateNodeType = sycamore::prelude::HydrateNode;
 
-/// Checks if we're on the server or the client. This must be run inside a reactive scope (e.g. a `template!` or `create_effect`),
-/// because it uses Sycamore context.
+/// Checks if we're on the server or the client. This must be run inside a
+/// reactive scope (e.g. a `template!` or `create_effect`), because it uses
+/// Sycamore context.
 // TODO (0.4.0) Remove this altogether
 #[macro_export]
 #[deprecated(since = "0.3.1", note = "use `G::IS_BROWSER` instead")]

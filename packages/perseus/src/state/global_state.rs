@@ -8,17 +8,20 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 make_async_trait!(GlobalStateCreatorFnType, RenderFnResult<String>);
-/// The type of functions that generate global state. These will generate a `String` for their custom global state type.
+/// The type of functions that generate global state. These will generate a
+/// `String` for their custom global state type.
 pub type GlobalStateCreatorFn = Box<dyn GlobalStateCreatorFnType + Send + Sync>;
 
-/// A creator for global state. This stores user-provided functions that will be invoked to generate global state on the client
-/// and the server.
+/// A creator for global state. This stores user-provided functions that will be
+/// invoked to generate global state on the client and the server.
 ///
-/// The primary purpose of this is to allow the generation of top-level app state on the server and the client. Notably,
-/// this can also be interacted with by plugins.
+/// The primary purpose of this is to allow the generation of top-level app
+/// state on the server and the client. Notably, this can also be interacted
+/// with by plugins.
 #[derive(Default)]
 pub struct GlobalStateCreator {
-    /// The function that creates state at build-time. This is roughly equivalent to the *build state* strategy for templates.
+    /// The function that creates state at build-time. This is roughly
+    /// equivalent to the *build state* strategy for templates.
     #[cfg(not(target_arch = "wasm32"))]
     build: Option<GlobalStateCreatorFn>,
 }
@@ -47,7 +50,8 @@ impl GlobalStateCreator {
         self
     }
 
-    /// Gets the global state at build-time. If no function was registered to this, we'll return `None`.
+    /// Gets the global state at build-time. If no function was registered to
+    /// this, we'll return `None`.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_build_state(&self) -> Result<Option<String>, GlobalStateError> {
         if let Some(get_server_state) = &self.build {

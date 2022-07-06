@@ -9,15 +9,18 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::Message;
 use warp::Filter;
 
-/// A representation of the clients to the server. These are only the clients that will be told about reloads, any user
-/// can command a reload over the HTTP endpoint (unauthenticated because this is a development server).
+/// A representation of the clients to the server. These are only the clients
+/// that will be told about reloads, any user can command a reload over the HTTP
+/// endpoint (unauthenticated because this is a development server).
 type Clients = Arc<RwLock<HashMap<usize, UnboundedSender<Message>>>>;
 
-/// A simple counter that can be incremented from anywhere. This will be used as the source of the next user ID. This is an atomic
-/// `usize` for maximum platofrm portability (see the Rust docs on atomic primtives).
+/// A simple counter that can be incremented from anywhere. This will be used as
+/// the source of the next user ID. This is an atomic `usize` for maximum
+/// platofrm portability (see the Rust docs on atomic primtives).
 static NEXT_UID: AtomicUsize = AtomicUsize::new(0);
 
-/// Runs the reload server, which is used to instruct the browser on when to reload for updates.
+/// Runs the reload server, which is used to instruct the browser on when to
+/// reload for updates.
 pub async fn run_reload_server() {
     let (host, port) = get_reload_server_host_and_port();
 
@@ -39,7 +42,8 @@ pub async fn run_reload_server() {
         .then(|clients: Clients| async move {
             // Iterate through all the clients and tell them all to reload
             for (_id, tx) in clients.read().await.iter() {
-                // We don't care if this fails, that means the client has disconnected and the disconnection code will be running
+                // We don't care if this fails, that means the client has disconnected and the
+                // disconnection code will be running
                 let _ = tx.send(Message::text("reload"));
             }
 
@@ -59,7 +63,8 @@ pub async fn run_reload_server() {
                 let (tx, rx) = unbounded_channel();
                 let mut rx = UnboundedReceiverStream::new(rx);
                 tokio::task::spawn(async move {
-                    // Whenever a message come sin on that intermediary channel, we'll just relay it to the client
+                    // Whenever a message come sin on that intermediary channel, we'll just relay it
+                    // to the client
                     while let Some(message) = rx.next().await {
                         let _ = ws_tx.send(message).await;
                     }
@@ -68,8 +73,9 @@ pub async fn run_reload_server() {
                 // Save the sender and their intermediary channel
                 clients.write().await.insert(id, tx);
 
-                // Because we don't accept messages from listening clients, we'll just hold a loop until the client disconnects
-                // Then, this will become `None` and we'll move on
+                // Because we don't accept messages from listening clients, we'll just hold a
+                // loop until the client disconnects Then, this will become
+                // `None` and we'll move on
                 while ws_rx.next().await.is_some() {
                     continue;
                 }
@@ -84,14 +90,16 @@ pub async fn run_reload_server() {
     warp::serve(routes).run(addr).await
 }
 
-/// Orders all connected browsers to reload themselves. This spawns a blocking task through Tokio under the hood. Note that
-/// this will only do anything if `PERSEUS_USE_RELOAD_SERVER` is set to `true`.
+/// Orders all connected browsers to reload themselves. This spawns a blocking
+/// task through Tokio under the hood. Note that this will only do anything if
+/// `PERSEUS_USE_RELOAD_SERVER` is set to `true`.
 pub fn order_reload() {
     if env::var("PERSEUS_USE_RELOAD_SERVER").is_ok() {
         let (host, port) = get_reload_server_host_and_port();
 
         tokio::task::spawn_blocking(move || {
-            // We don't care if this fails because we have no guarnatees that the server is actually up
+            // We don't care if this fails because we have no guarnatees that the server is
+            // actually up
             let _ = ureq::get(&format!("http://{}:{}/send", host, port)).call();
         });
     }

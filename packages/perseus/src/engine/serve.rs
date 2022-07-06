@@ -12,11 +12,14 @@ use sycamore::web::SsrNode;
 // TODO Can we unify the two modes of server execution now?
 // This server executable can be run in two modes:
 //      dev: at the root of the project, works with that file structure
-//      prod: as a standalone executable with a `dist/` directory as a sibling (also present with the dev file structure)
+//      prod: as a standalone executable with a `dist/` directory as a sibling
+// (also present with the dev file structure)
 
-// Note: the default servers for integrations are now stored in the crates of those integrations
+// Note: the default servers for integrations are now stored in the crates of
+// those integrations
 
-/// Gets the host and port to serve on based on environment variables, which are universally used for configuration regardless of engine.
+/// Gets the host and port to serve on based on environment variables, which are
+/// universally used for configuration regardless of engine.
 pub fn get_host_and_port() -> (String, u16) {
     // We have to use two sets of environment variables until v0.4.0
     let host = env::var("PERSEUS_HOST");
@@ -31,7 +34,8 @@ pub fn get_host_and_port() -> (String, u16) {
     (host, port)
 }
 
-/// Gets the properties to pass to the server, invoking plugin opportunities as necessary. This is entirely engine-agnostic.
+/// Gets the properties to pass to the server, invoking plugin opportunities as
+/// necessary. This is entirely engine-agnostic.
 pub fn get_props<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
 ) -> ServerProps<M, T> {
@@ -48,7 +52,8 @@ pub fn get_props<M: MutableStore, T: TranslationsManager>(
     let app_root = app.get_root();
     let immutable_store = app.get_immutable_store();
     let index_view_str = app.get_index_view_str();
-    // By the time this binary is being run, the app has already been built be the CLI (hopefully!), so we can depend on access to the render config
+    // By the time this binary is being run, the app has already been built be the
+    // CLI (hopefully!), so we can depend on access to the render config
     let index_view = block_on(PerseusAppBase::<SsrNode, M, T>::get_html_shell(
         index_view_str,
         &app_root,
@@ -57,12 +62,14 @@ pub fn get_props<M: MutableStore, T: TranslationsManager>(
     ));
 
     let opts = ServerOptions {
-        // We don't support setting some attributes from `wasm-pack` through plugins/`PerseusApp` because that would require CLI changes as well (a job for an alternative engine)
+        // We don't support setting some attributes from `wasm-pack` through plugins/`PerseusApp`
+        // because that would require CLI changes as well (a job for an alternative engine)
         html_shell: index_view,
         js_bundle: "dist/pkg/perseus_engine.js".to_string(),
         // Our crate has the same name, so this will be predictable
         wasm_bundle: "dist/pkg/perseus_engine_bg.wasm".to_string(),
-        // This probably won't exist, but on the off chance that the user needs to support older browsers, we'll provide it anyway
+        // This probably won't exist, but on the off chance that the user needs to support older
+        // browsers, we'll provide it anyway
         wasm_js_bundle: "dist/pkg/perseus_engine_bg.wasm.js".to_string(),
         templates_map: app.get_atomic_templates_map(),
         locales: app.get_locales(),

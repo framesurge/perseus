@@ -3,7 +3,8 @@ use crate::PageData;
 use std::collections::HashMap;
 use std::{env, fmt};
 
-/// Escapes special characters in page data that might interfere with JavaScript processing.
+/// Escapes special characters in page data that might interfere with JavaScript
+/// processing.
 fn escape_page_data(data: &str) -> String {
     data.to_string()
         // We escape any backslashes to prevent their interfering with JSON delimiters
@@ -14,7 +15,9 @@ fn escape_page_data(data: &str) -> String {
         .replace(r#"${"#, r#"\${"#)
 }
 
-/// The shell used to interpolate the Perseus app into, including associated scripts and content defined by the user, components of the Perseus core, and plugins.
+/// The shell used to interpolate the Perseus app into, including associated
+/// scripts and content defined by the user, components of the Perseus core, and
+/// plugins.
 #[derive(Clone, Debug)]
 pub struct HtmlShell {
     /// The actual shell content, on whcih interpolations will be performed.
@@ -23,15 +26,19 @@ pub struct HtmlShell {
     pub head_before_boundary: Vec<String>,
     /// Scripts to be inserted before the interpolation boundary.
     pub scripts_before_boundary: Vec<String>,
-    /// Additional contents of the head after the interpolation boundary. These will be wiped out after a page transition.
+    /// Additional contents of the head after the interpolation boundary. These
+    /// will be wiped out after a page transition.
     pub head_after_boundary: Vec<String>,
-    /// Scripts to be interpolated after the interpolation bounary. These will be wiped out after a page transition.
+    /// Scripts to be interpolated after the interpolation bounary. These will
+    /// be wiped out after a page transition.
     pub scripts_after_boundary: Vec<String>,
     /// Content to be interpolated into the body of the shell.
     pub content: String,
-    /// Code to be inserted into the shell before the Perseus contents of the page. This is designed to be modified by plugins.
+    /// Code to be inserted into the shell before the Perseus contents of the
+    /// page. This is designed to be modified by plugins.
     pub before_content: Vec<String>,
-    /// Code to be inserted into the shell after the Perseus contents of the page. This is designed to be modified by plugins.
+    /// Code to be inserted into the shell after the Perseus contents of the
+    /// page. This is designed to be modified by plugins.
     pub after_content: Vec<String>,
     /// The ID of the element into which we'll interpolate content.
     root_id: String,
@@ -40,7 +47,8 @@ pub struct HtmlShell {
     path_prefix: String,
 }
 impl HtmlShell {
-    /// Initializes the HTML shell by interpolating necessary scripts into it and adding the render configuration.
+    /// Initializes the HTML shell by interpolating necessary scripts into it
+    /// and adding the render configuration.
     pub fn new(
         shell: String,
         root_id: &str,
@@ -53,18 +61,22 @@ impl HtmlShell {
         // Define the render config as a global variable
         let render_cfg = format!(
             "window.__PERSEUS_RENDER_CFG = '{render_cfg}';",
-            // It's safe to assume that something we just deserialized will serialize again in this case
+            // It's safe to assume that something we just deserialized will serialize again in this
+            // case
             render_cfg = serde_json::to_string(render_cfg).unwrap()
         );
         scripts_before_boundary.push(render_cfg);
 
-        // Inject a global variable to identify whether we are testing (picked up by app shell to trigger helper DOM events)
+        // Inject a global variable to identify whether we are testing (picked up by app
+        // shell to trigger helper DOM events)
         if env::var("PERSEUS_TESTING").is_ok() {
             scripts_before_boundary.push("window.__PERSEUS_TESTING = true;".into());
         }
 
-        // Define the script that will load the Wasm bundle (inlined to avoid unnecessary extra requests)
-        // If we're using the `wasm2js` feature, this will try to load a JS version instead (expected to be at `/.perseus/bundle.wasm.js`)
+        // Define the script that will load the Wasm bundle (inlined to avoid
+        // unnecessary extra requests) If we're using the `wasm2js` feature,
+        // this will try to load a JS version instead (expected to be at
+        // `/.perseus/bundle.wasm.js`)
         #[cfg(not(feature = "wasm2js"))]
         let load_wasm_bundle = format!(
             r#"
@@ -91,9 +103,11 @@ impl HtmlShell {
         );
         scripts_before_boundary.push(load_wasm_bundle);
 
-        // If we're in development, pass through the host/port of the reload server if we're using it
-        // We'll depend on the `PERSEUS_USE_RELOAD_SERVER` environment variable here, which is set by the CLI's controller process, not the user
-        // That way, we won't do this if the reload server doesn't exist
+        // If we're in development, pass through the host/port of the reload server if
+        // we're using it We'll depend on the `PERSEUS_USE_RELOAD_SERVER`
+        // environment variable here, which is set by the CLI's controller process, not
+        // the user That way, we won't do this if the reload server doesn't
+        // exist
         #[cfg(debug_assertions)]
         if env::var("PERSEUS_USE_RELOAD_SERVER").is_ok() {
             let host =
@@ -106,9 +120,9 @@ impl HtmlShell {
                 .push(format!("window.__PERSEUS_RELOAD_SERVER_PORT = '{}'", port));
         }
 
-        // Add in the `<base>` element at the very top so that it applies to everything in the HTML shell
-        // Otherwise any stylesheets loaded before it won't work properly
-        // We add a trailing `/` to the base URL (https://stackoverflow.com/a/26043021)
+        // Add in the `<base>` element at the very top so that it applies to everything
+        // in the HTML shell Otherwise any stylesheets loaded before it won't
+        // work properly We add a trailing `/` to the base URL (https://stackoverflow.com/a/26043021)
         // Note that it's already had any pre-existing ones stripped away
         let base = format!(r#"<base href="{}/" />"#, path_prefix);
         head_before_boundary.push(base);
@@ -129,9 +143,10 @@ impl HtmlShell {
 
     /// Interpolates page data and global state into the shell.
     pub fn page_data(mut self, page_data: &PageData, global_state: &Option<String>) -> Self {
-        // Interpolate a global variable of the state so the app shell doesn't have to make any more trips
-        // The app shell will unset this after usage so it doesn't contaminate later non-initial loads
-        // Error pages (above) will set this to `error`
+        // Interpolate a global variable of the state so the app shell doesn't have to
+        // make any more trips The app shell will unset this after usage so it
+        // doesn't contaminate later non-initial loads Error pages (above) will
+        // set this to `error`
         let initial_state = if let Some(state) = &page_data.state {
             escape_page_data(state)
         } else {
@@ -143,13 +158,17 @@ impl HtmlShell {
             "None".to_string()
         };
 
-        // We put this at the very end of the head (after the delimiter comment) because it doesn't matter if it's expunged on subsequent loads
+        // We put this at the very end of the head (after the delimiter comment) because
+        // it doesn't matter if it's expunged on subsequent loads
         let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`;", initial_state);
         self.scripts_after_boundary.push(initial_state);
-        // But we'll need the global state as a variable until a template accesses it, so we'll keep it around (even though it should actually instantiate validly and not need this after the initial load)
+        // But we'll need the global state as a variable until a template accesses it,
+        // so we'll keep it around (even though it should actually instantiate validly
+        // and not need this after the initial load)
         let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
         self.scripts_before_boundary.push(global_state);
-        // Interpolate the document `<head>` (this should of course be removed between page loads)
+        // Interpolate the document `<head>` (this should of course be removed between
+        // page loads)
         self.head_after_boundary.push((&page_data.head).into());
         // And set the content
         self.content = (&page_data.content).into();
@@ -157,16 +176,23 @@ impl HtmlShell {
         self
     }
 
-    /// Interpolates a fallback for locale redirection pages such that, even if JavaScript is disabled, the user will still be redirected to the default locale.
-    /// From there, Perseus' inbuilt progressive enhancement can occur, but without this a user directed to an unlocalized page with JS disabled would see a
-    /// blank screen, which is terrible UX. Note that this also includes a fallback for if JS is enabled but Wasm is disabled. Note that the redirect URL
-    /// is expected to be generated with a path prefix inbuilt.
+    /// Interpolates a fallback for locale redirection pages such that, even if
+    /// JavaScript is disabled, the user will still be redirected to the default
+    /// locale. From there, Perseus' inbuilt progressive enhancement can
+    /// occur, but without this a user directed to an unlocalized page with JS
+    /// disabled would see a blank screen, which is terrible UX. Note that
+    /// this also includes a fallback for if JS is enabled but Wasm is disabled.
+    /// Note that the redirect URL is expected to be generated with a path
+    /// prefix inbuilt.
     ///
-    /// This also adds a `__perseus_initial_state` `<div>` in case it's needed (for Wasm redirections).
+    /// This also adds a `__perseus_initial_state` `<div>` in case it's needed
+    /// (for Wasm redirections).
     ///
-    /// Further, this will preload the Wasm binary, making redirection snappier (but initial load slower), a tradeoff that generally improves UX.
+    /// Further, this will preload the Wasm binary, making redirection snappier
+    /// (but initial load slower), a tradeoff that generally improves UX.
     pub fn locale_redirection_fallback(mut self, redirect_url: &str) -> Self {
-        // This will be used if JavaScript is completely disabled (it's then the site's responsibility to show a further message)
+        // This will be used if JavaScript is completely disabled (it's then the site's
+        // responsibility to show a further message)
         let dumb_redirect = format!(
             r#"<noscript>
         <meta http-equiv="refresh" content="0; url={}" />
@@ -174,8 +200,8 @@ impl HtmlShell {
             redirect_url
         );
 
-        // This will be used if JS is enabled, but Wasm is disabled or not supported (it's then the site's responsibility to show a further message)
-        // Wasm support detector courtesy https://stackoverflow.com/a/47880734
+        // This will be used if JS is enabled, but Wasm is disabled or not supported
+        // (it's then the site's responsibility to show a further message) Wasm support detector courtesy https://stackoverflow.com/a/47880734
         let js_redirect = format!(
             r#"
         function wasmSupported() {{
@@ -203,10 +229,12 @@ impl HtmlShell {
         #[cfg(feature = "preload-wasm-on-redirect")]
         {
             // Interpolate a preload of the Wasm bundle
-            // This forces the browser to get the bundle before loading the page, which makes the time users spend on a blank screen much shorter
-            // We have no leading `/` here because of the `<base>` interpolation
-            // Note that this has to come before the code that actually loads the Wasm bundle
-            // The aim of this is to make the time loading increase so that the time blanking decreases
+            // This forces the browser to get the bundle before loading the page, which
+            // makes the time users spend on a blank screen much shorter We have
+            // no leading `/` here because of the `<base>` interpolation
+            // Note that this has to come before the code that actually loads the Wasm
+            // bundle The aim of this is to make the time loading increase so
+            // that the time blanking decreases
             let wasm_preload = format!(
                 r#"<link rel="preload" href="{path_prefix}/.perseus/bundle.wasm" as="fetch" />"#,
                 path_prefix = self.path_prefix
@@ -231,11 +259,14 @@ impl HtmlShell {
     }
 }
 // This code actually interpolates everything in the correct places
-// Because of the way these string interpolations work, there MUST NOT be hydration IDs on the `<head>` or `<body>` tags, or Perseus will break in very unexpected ways
+// Because of the way these string interpolations work, there MUST NOT be
+// hydration IDs on the `<head>` or `<body>` tags, or Perseus will break in very
+// unexpected ways
 impl fmt::Display for HtmlShell {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let head_start = self.head_before_boundary.join("\n");
-        // We also inject a delimiter comment that will be used to wall off the constant document head from the interpolated document head
+        // We also inject a delimiter comment that will be used to wall off the constant
+        // document head from the interpolated document head
         let head_end = format!(
             r#"
             <script type="module">{scripts_before_boundary}</script>
@@ -264,7 +295,8 @@ impl fmt::Display for HtmlShell {
         let html_to_replace_double = format!("<div id=\"{}\">", self.root_id);
         let html_to_replace_single = format!("<div id='{}'>", self.root_id);
         let html_replacement = format!(
-            // We give the content a specific ID so that it can be deleted if an error page needs to be rendered on the client-side
+            // We give the content a specific ID so that it can be deleted if an error page needs
+            // to be rendered on the client-side
             r#"{}<div id="__perseus_content_initial" class="__perseus_content">{}</div>"#,
             &html_to_replace_double, self.content,
         );

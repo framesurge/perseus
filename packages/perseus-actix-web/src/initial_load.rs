@@ -18,7 +18,8 @@ use perseus::{
 use std::collections::HashMap;
 use std::rc::Rc;
 
-/// Builds on the internal Perseus primitives to provide a utility function that returns an `HttpResponse` automatically.
+/// Builds on the internal Perseus primitives to provide a utility function that
+/// returns an `HttpResponse` automatically.
 fn return_error_page(
     url: &str,
     status: u16,
@@ -34,8 +35,8 @@ fn return_error_page(
         .body(html)
 }
 
-/// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
-/// the app shell.
+/// The handler for calls to any actual pages (first-time visits), which will
+/// render the appropriate HTML and then interpolate it into the app shell.
 #[allow(clippy::too_many_arguments)]
 pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
@@ -51,7 +52,8 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     let error_pages = &opts.error_pages;
     let path = req.path();
     let path_slice = get_path_slice(path);
-    // Create a closure to make returning error pages easier (most have the same data)
+    // Create a closure to make returning error pages easier (most have the same
+    // data)
     let html_err = |status: u16, err: &str| {
         return return_error_page(path, status, err, None, error_pages, html_shell.get_ref());
     };
@@ -67,7 +69,8 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             locale,
             was_incremental_match,
         }) => {
-            // We need to turn the Actix Web request into one acceptable for Perseus (uses `http` internally)
+            // We need to turn the Actix Web request into one acceptable for Perseus (uses
+            // `http` internally)
             let http_req = convert_req(&req);
             let http_req = match http_req {
                 Ok(http_req) => http_req,
@@ -114,10 +117,12 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
 
             http_res.body(final_html)
         }
-        // For locale detection, we don't know the user's locale, so there's not much we can do except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
+        // For locale detection, we don't know the user's locale, so there's not much we can do
+        // except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
         RouteVerdictAtomic::LocaleDetection(path) => {
             // We use a `302 Found` status code to indicate a redirect
-            // We 'should' generate a `Location` field for the redirect, but it's not RFC-mandated, so we can use the app shell
+            // We 'should' generate a `Location` field for the redirect, but it's not
+            // RFC-mandated, so we can use the app shell
             HttpResponse::Found().content_type("text/html").body(
                 html_shell
                     .get_ref()

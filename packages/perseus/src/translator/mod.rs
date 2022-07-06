@@ -1,4 +1,5 @@
-/// Errors for translators. These are separate so new translators can easily be created in a modular fashion.
+/// Errors for translators. These are separate so new translators can easily be
+/// created in a modular fashion.
 pub mod errors;
 
 // We export each translator by name
@@ -51,7 +52,8 @@ pub use DummyTranslator as Translator;
 #[cfg(all(not(feature = "translator-fluent")))]
 pub use DUMMY_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
-/// Translates the given ID conveniently, taking arguments for interpolation as required.
+/// Translates the given ID conveniently, taking arguments for interpolation as
+/// required.
 #[macro_export]
 macro_rules! t {
     // When there are no arguments to interpolate

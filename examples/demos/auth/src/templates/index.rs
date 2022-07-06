@@ -5,11 +5,15 @@ use sycamore::prelude::*;
 #[perseus::template_rx]
 fn index_view<'a, G: Html>(cx: Scope<'a>, _: (), AppStateRx { auth }: AppStateRx<'a>) -> View<G> {
     let AuthDataRx { state, username } = auth;
-    // This isn't part of our data model because it's only used here to pass to the login function
+    // This isn't part of our data model because it's only used here to pass to the
+    // login function
     let entered_username = create_signal(cx, String::new());
 
-    // We have to trigger this from outside the `create_memo`, and we should only be interacting with storage APIs in the browser (otherwise this would be called on the server too)
-    // This will only cause a block on the first load, because this function just returns straight away if the state is already known
+    // We have to trigger this from outside the `create_memo`, and we should only be
+    // interacting with storage APIs in the browser (otherwise this would be called
+    // on the server too) This will only cause a block on the first load,
+    // because this function just returns straight away if the state is already
+    // known
     #[cfg(target_arch = "wasm32")]
     auth.detect_state();
 

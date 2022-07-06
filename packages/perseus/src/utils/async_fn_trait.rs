@@ -1,11 +1,12 @@
 use futures::Future;
 use std::pin::Pin;
 
-/// A generic return type for asynchronous functions that we need to store in a struct.
+/// A generic return type for asynchronous functions that we need to store in a
+/// struct.
 pub type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
 
-/// Creates traits that prevent users from having to pin their functions' return types. We can't make a generic one until desugared function
-/// types are stabilized (https://github.com/rust-lang/rust/issues/29625).
+/// Creates traits that prevent users from having to pin their functions' return
+/// types. We can't make a generic one until desugared function types are stabilized (https://github.com/rust-lang/rust/issues/29625).
 #[macro_export]
 #[doc(hidden)]
 macro_rules! make_async_trait {

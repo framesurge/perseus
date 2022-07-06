@@ -11,10 +11,12 @@ use futures::future::try_join_all;
 use std::collections::HashMap;
 use sycamore::prelude::SsrNode;
 
-/// Builds a template, writing static data as appropriate. This should be used as part of a larger build process. This returns both a list
-/// of the extracted render options for this template (needed at request time), a list of pages that it explicitly generated, and a boolean
-/// as to whether or not it only generated a single page to occupy the template's root path (`true` unless using using build-time path
-/// generation).
+/// Builds a template, writing static data as appropriate. This should be used
+/// as part of a larger build process. This returns both a list of the extracted
+/// render options for this template (needed at request time), a list of pages
+/// that it explicitly generated, and a boolean as to whether or not it only
+/// generated a single page to occupy the template's root path (`true` unless
+/// using using build-time path generation).
 pub async fn build_template(
     template: &Template<SsrNode>,
     translator: &Translator,
@@ -25,7 +27,8 @@ pub async fn build_template(
     let mut single_page = false;
     let template_path = template.get_path();
 
-    // If we're exporting, ensure that all the template's strategies are export-safe (not requiring a server)
+    // If we're exporting, ensure that all the template's strategies are export-safe
+    // (not requiring a server)
     if exporting
         && (template.revalidates() ||
         template.uses_incremental() ||
@@ -40,7 +43,8 @@ pub async fn build_template(
     }
 
     // Handle static path generation
-    // Because we iterate over the paths, we need a base path if we're not generating custom ones (that'll be overriden if needed)
+    // Because we iterate over the paths, we need a base path if we're not
+    // generating custom ones (that'll be overriden if needed)
     let paths = match template.uses_build_paths() {
         true => template
             .get_build_paths()
@@ -60,7 +64,8 @@ pub async fn build_template(
     };
 
     // Iterate through the paths to generate initial states if needed
-    // Note that build paths pages on incrementally generable pages will use the immutable store
+    // Note that build paths pages on incrementally generable pages will use the
+    // immutable store
     let mut futs = Vec::new();
     for path in paths.iter() {
         let fut = gen_state_for_path(
@@ -77,7 +82,8 @@ pub async fn build_template(
     Ok((paths, single_page))
 }
 
-/// Generates state for a single page within a template. This is broken out into a separate function for concurrency.
+/// Generates state for a single page within a template. This is broken out into
+/// a separate function for concurrency.
 async fn gen_state_for_path(
     path: &str,
     template: &Template<SsrNode>,
@@ -86,7 +92,8 @@ async fn gen_state_for_path(
     global_state: &Option<String>,
 ) -> Result<(), ServerError> {
     let template_path = template.get_path();
-    // If needed, we'll contruct a full path that's URL encoded so we can easily save it as a file
+    // If needed, we'll contruct a full path that's URL encoded so we can easily
+    // save it as a file
     let full_path_without_locale = match template.uses_build_paths() {
         true => format!("{}/{}", &template_path, path),
         // We don't want to concatenate the name twice if we don't have to
@@ -97,15 +104,17 @@ async fn gen_state_for_path(
         Some(stripped) => stripped.to_string(),
         None => full_path_without_locale,
     };
-    // Add the current locale to the front of that and dencode it as a URL so we can store a flat series of files
-    // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
+    // Add the current locale to the front of that and dencode it as a URL so we can
+    // store a flat series of files BUG: insanely nested paths won't work
+    // whatsoever if the filename is too long, maybe hash instead?
     let full_path_encoded = format!(
         "{}-{}",
         translator.get_locale(),
         urlencoding::encode(&full_path_without_locale)
     );
     // And we'll need the full path with the locale for the `PageProps`
-    // If it's `xx-XX`, we should just have it without the locale (this may be interacted with by users)
+    // If it's `xx-XX`, we should just have it without the locale (this may be
+    // interacted with by users)
     let locale = translator.get_locale();
     let full_path_with_locale = match locale.as_str() {
         "xx-XX" => full_path_without_locale.clone(),
@@ -114,9 +123,11 @@ async fn gen_state_for_path(
 
     // Handle static initial state generation
     // We'll only write a static state if one is explicitly generated
-    // If the template revalidates, use a mutable store, otherwise use an immutable one
+    // If the template revalidates, use a mutable store, otherwise use an immutable
+    // one
     if template.uses_build_state() && template.revalidates() {
-        // We pass in the path to get a state (including the template path for consistency with the incremental logic)
+        // We pass in the path to get a state (including the template path for
+        // consistency with the incremental logic)
         let initial_state = template
             .get_build_state(full_path_without_locale.clone(), translator.get_locale())
             .await?;
@@ -142,7 +153,8 @@ async fn gen_state_for_path(
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)
             .await?;
         // Prerender the document `<head>` with that state
-        // If the page also uses request state, amalgamation will be applied as for the normal content
+        // If the page also uses request state, amalgamation will be applied as for the
+        // normal content
         let head_str = template.render_head_str(page_props, translator);
         mutable_store
             .write(
@@ -151,7 +163,8 @@ async fn gen_state_for_path(
             )
             .await?;
     } else if template.uses_build_state() {
-        // We pass in the path to get a state (including the template path for consistency with the incremental logic)
+        // We pass in the path to get a state (including the template path for
+        // consistency with the incremental logic)
         let initial_state = template
             .get_build_state(full_path_without_locale.clone(), translator.get_locale())
             .await?;
@@ -177,7 +190,8 @@ async fn gen_state_for_path(
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)
             .await?;
         // Prerender the document `<head>` with that state
-        // If the page also uses request state, amalgamation will be applied as for the normal content
+        // If the page also uses request state, amalgamation will be applied as for the
+        // normal content
         let head_str = template.render_head_str(page_props, translator);
         immutable_store
             .write(
@@ -188,12 +202,14 @@ async fn gen_state_for_path(
     }
 
     // Handle revalidation, we need to parse any given time strings into datetimes
-    // We don't need to worry about revalidation that operates by logic, that's request-time only
+    // We don't need to worry about revalidation that operates by logic, that's
+    // request-time only
     if template.revalidates_with_time() {
         let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
         // Write that to a static file, we'll update it every time we revalidate
         // Note that this runs for every path generated, so it's fully usable with ISR
-        // Yes, there's a different revalidation schedule for each locale, but that means we don't have to rebuild every locale simultaneously
+        // Yes, there's a different revalidation schedule for each locale, but that
+        // means we don't have to rebuild every locale simultaneously
         mutable_store
             .write(
                 &format!("static/{}.revld.txt", full_path_encoded),
@@ -202,11 +218,14 @@ async fn gen_state_for_path(
             .await?;
     }
 
-    // Note that SSR has already been handled by checking for `.uses_request_state()` above, we don't need to do any rendering here
-    // If a template only uses SSR, it won't get prerendered at build time whatsoever
+    // Note that SSR has already been handled by checking for
+    // `.uses_request_state()` above, we don't need to do any rendering here
+    // If a template only uses SSR, it won't get prerendered at build time
+    // whatsoever
 
     // If the template is very basic, prerender without any state
-    // It's safe to add a property to the render options here because `.is_basic()` will only return true if path generation is not being used (or anything else)
+    // It's safe to add a property to the render options here because `.is_basic()`
+    // will only return true if path generation is not being used (or anything else)
     if template.is_basic() {
         // Assemble the page properties
         let page_props = PageProps {
@@ -233,7 +252,8 @@ async fn gen_state_for_path(
     Ok(())
 }
 
-/// Builds all pages within a template and compiles its component of the render configuration.
+/// Builds all pages within a template and compiles its component of the render
+/// configuration.
 pub async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: &Translator,
@@ -253,7 +273,8 @@ pub async fn build_template_and_get_cfg(
         exporting,
     )
     .await?;
-    // If the template represents a single page itself, we don't need any concatenation
+    // If the template represents a single page itself, we don't need any
+    // concatenation
     if single_page {
         render_cfg.insert(template_root_path.clone(), template_root_path.clone());
     } else {
@@ -267,8 +288,8 @@ pub async fn build_template_and_get_cfg(
             };
             render_cfg.insert(path, template_root_path.clone());
         }
-        // Now if the page uses ISR, add an explicit `/*` in there after the template root path
-        // Incremental rendering requires build-time path generation
+        // Now if the page uses ISR, add an explicit `/*` in there after the template
+        // root path Incremental rendering requires build-time path generation
         if is_incremental {
             render_cfg.insert(
                 format!("{}/*", &template_root_path),
@@ -280,8 +301,10 @@ pub async fn build_template_and_get_cfg(
     Ok(render_cfg)
 }
 
-/// Runs the build process of building many different templates for a single locale. If you're not using i18n, provide a `Translator::empty()`
-/// for this. You should only build the most commonly used locales here (the rest should be built on demand).
+/// Runs the build process of building many different templates for a single
+/// locale. If you're not using i18n, provide a `Translator::empty()`
+/// for this. You should only build the most commonly used locales here (the
+/// rest should be built on demand).
 pub async fn build_templates_for_locale(
     templates: &TemplateMap<SsrNode>,
     translator: &Translator,
@@ -289,7 +312,8 @@ pub async fn build_templates_for_locale(
     global_state: &Option<String>,
     exporting: bool,
 ) -> Result<(), ServerError> {
-    // The render configuration stores a list of pages to the root paths of their templates
+    // The render configuration stores a list of pages to the root paths of their
+    // templates
     let mut render_cfg = HashMap::new();
     // Create each of the templates
     let mut futs = Vec::new();
@@ -356,12 +380,14 @@ pub struct BuildProps<'a, M: MutableStore, T: TranslationsManager> {
     pub translations_manager: &'a T,
     /// A stringified global state.
     pub global_state: &'a Option<String>,
-    /// Whether or not we're exporting after this build (changes behavior slightly).
+    /// Whether or not we're exporting after this build (changes behavior
+    /// slightly).
     pub exporting: bool,
 }
 
-/// Runs the build process of building many templates for the given locales data, building directly for all supported locales. This is
-/// fine because of how ridiculously fast builds are.
+/// Runs the build process of building many templates for the given locales
+/// data, building directly for all supported locales. This is fine because of
+/// how ridiculously fast builds are.
 pub async fn build_app<M: MutableStore, T: TranslationsManager>(
     BuildProps {
         templates,

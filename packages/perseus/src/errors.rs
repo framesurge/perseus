@@ -17,7 +17,8 @@ pub enum Error {
     EngineError(#[from] EngineError),
 }
 
-/// Errors that can occur in the server-side engine system (responsible for building the app).
+/// Errors that can occur in the server-side engine system (responsible for
+/// building the app).
 #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
 #[derive(Error, Debug)]
 pub enum EngineError {
@@ -68,7 +69,8 @@ pub enum ClientError {
         #[source]
         source: serde_json::Error,
     },
-    // If the user is using the template macros, this should never be emitted because we can ensure that the generated state is valid
+    // If the user is using the template macros, this should never be emitted because we can
+    // ensure that the generated state is valid
     #[error("tried to deserialize invalid state")]
     StateInvalid {
         #[source]
@@ -86,7 +88,8 @@ pub enum ServerError {
         fn_name: String,
         template_name: String,
         cause: ErrorCause,
-        // This will be triggered by the user's custom render functions, which should be able to have any error type
+        // This will be triggered by the user's custom render functions, which should be able to
+        // have any error type
         #[source]
         source: Box<dyn std::error::Error + Send + Sync>,
     },
@@ -128,7 +131,8 @@ pub enum GlobalStateError {
     },
 }
 
-/// Errors that can occur while reading from or writing to a mutable or immutable store.
+/// Errors that can occur while reading from or writing to a mutable or
+/// immutable store.
 // We do need this on the client to complete some things
 #[derive(Error, Debug)]
 pub enum StoreError {
@@ -219,17 +223,20 @@ pub enum ServeError {
     },
 }
 
-/// Defines who caused an ambiguous error message so we can reliably create an HTTP status code. Specific status codes may be provided
-/// in either case, or the defaults (400 for client, 500 for server) will be used.
+/// Defines who caused an ambiguous error message so we can reliably create an
+/// HTTP status code. Specific status codes may be provided in either case, or
+/// the defaults (400 for client, 500 for server) will be used.
 #[derive(Debug)]
 pub enum ErrorCause {
     Client(Option<u16>),
     Server(Option<u16>),
 }
 
-/// An error that has an attached cause that blames either the client or the server for its occurrence. You can convert any error
-/// into this with `.into()` or `?`, which will set the cause to the server by default, resulting in a *500 Internal Server Error*
-/// HTTP status code. If this isn't what you want, you'll need to initialize this explicitly.
+/// An error that has an attached cause that blames either the client or the
+/// server for its occurrence. You can convert any error into this with
+/// `.into()` or `?`, which will set the cause to the server by default,
+/// resulting in a *500 Internal Server Error* HTTP status code. If this isn't
+/// what you want, you'll need to initialize this explicitly.
 #[derive(Debug)]
 pub struct GenericErrorWithCause {
     /// The underlying error.
@@ -237,7 +244,8 @@ pub struct GenericErrorWithCause {
     /// The cause of the error.
     pub cause: ErrorCause,
 }
-// We should be able to convert any error into this easily (e.g. with `?`) with the default being to blame the server
+// We should be able to convert any error into this easily (e.g. with `?`) with
+// the default being to blame the server
 impl<E: std::error::Error + Send + Sync + 'static> From<E> for GenericErrorWithCause {
     fn from(error: E) -> Self {
         Self {
@@ -247,15 +255,21 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for GenericErrorWithC
     }
 }
 
-/// Creates a new `GenericErrorWithCause` efficiently. This allows you to explicitly return errors from anything that returns
-/// `RenderFnResultWithCause`, which includes both an error and a statement of whether the server or the client is responsible. With
-/// this macro, you can use any of the following syntaxes (substituting `"error!"` for any error that can be converted with `.into()`
-/// into a `Box<dyn std::error::Error>`):
+/// Creates a new `GenericErrorWithCause` efficiently. This allows you to
+/// explicitly return errors from anything that returns
+/// `RenderFnResultWithCause`, which includes both an error and a statement of
+/// whether the server or the client is responsible. With this macro, you can
+/// use any of the following syntaxes (substituting `"error!"` for any error
+/// that can be converted with `.into()` into a `Box<dyn std::error::Error>`):
 ///
-/// - `blame_err!(client, "error!")` -- an error that's the client's fault, with the default HTTP status code (400, a generic client error)
-/// - `blame_err!(server, "error!")` -- an error that's the server's fault, with the default HTTP status code (500, a generic server error)
-/// - `blame_err!(client, 404, "error!")` -- an error that's the client's fault, with a custom HTTP status code (404 in this example)
-/// - `blame_err!(server, 501, "error!")` -- an error that's the server's fault, with a custom HTTP status code (501 in this example)
+/// - `blame_err!(client, "error!")` -- an error that's the client's fault, with
+///   the default HTTP status code (400, a generic client error)
+/// - `blame_err!(server, "error!")` -- an error that's the server's fault, with
+///   the default HTTP status code (500, a generic server error)
+/// - `blame_err!(client, 404, "error!")` -- an error that's the client's fault,
+///   with a custom HTTP status code (404 in this example)
+/// - `blame_err!(server, 501, "error!")` -- an error that's the server's fault,
+///   with a custom HTTP status code (501 in this example)
 ///
 /// Note that this macro will automatically `return` the error it creates.
 #[macro_export]

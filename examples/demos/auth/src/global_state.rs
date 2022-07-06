@@ -24,7 +24,8 @@ pub struct AppState {
 }
 
 /// The possible login states, including one for the server.
-// A better structure might have `Yes` have an attached `AuthData` and use this as the top-level element, but then we'd have to implement `MakeRx`/`MakeUnrx` manually on this (`make_rx`
+// A better structure might have `Yes` have an attached `AuthData` and use this as the top-level
+// element, but then we'd have to implement `MakeRx`/`MakeUnrx` manually on this (`make_rx`
 // can't handle `enum`s)
 #[derive(Clone, Serialize, Deserialize)]
 pub enum LoginState {
@@ -34,7 +35,8 @@ pub enum LoginState {
 }
 
 /// Authentication data for the app.
-// In a real app, you might store privileges here, or user preferences, etc. (all the things you'd need to have available constantly and everwhere)
+// In a real app, you might store privileges here, or user preferences, etc. (all the things you'd
+// need to have available constantly and everwhere)
 #[perseus::make_rx(AuthDataRx)]
 pub struct AuthData {
     /// The actual login status.
@@ -42,22 +44,31 @@ pub struct AuthData {
     /// The user's username.
     pub username: String,
 }
-// We implement a custom function on the reactive version of the global state here (hence the `.get()`s and `.set()`s, all the fields become `Signal`s)
-// There's no point in implementing it on the unreactive version, since this will only be called from within the browser, in which we have a reactive version
+// We implement a custom function on the reactive version of the global state
+// here (hence the `.get()`s and `.set()`s, all the fields become `Signal`s)
+// There's no point in implementing it on the unreactive version, since this
+// will only be called from within the browser, in which we have a reactive
+// version
 #[cfg(target_arch = "wasm32")] // These functions all use `web_sys`, and so won't work on the server-side
 impl<'a> AuthDataRx<'a> {
-    /// Checks whether or not the user is logged in and modifies the internal state accordingly. If this has already been run, it won't do anything (aka. it will only run if it's `Server`)
+    /// Checks whether or not the user is logged in and modifies the internal
+    /// state accordingly. If this has already been run, it won't do anything
+    /// (aka. it will only run if it's `Server`)
     pub fn detect_state(&self) {
-        // If we've checked the login status before, then we should assume the status hasn't changed (we'd change this in a login/logout page)
+        // If we've checked the login status before, then we should assume the status
+        // hasn't changed (we'd change this in a login/logout page)
         if let LoginState::Yes | LoginState::No = *self.state.get() {
             return;
         }
 
-        // See the docs page on authentication to learn how to put something *secure* here
-        // This example is NOT production-safe, and would result in absolutely terrible security!!!
+        // See the docs page on authentication to learn how to put something *secure*
+        // here This example is NOT production-safe, and would result in
+        // absolutely terrible security!!!
 
-        // All we're doing in here is checking for the existence of a storage entry that contains a username (any attacker could trivially fake this)
-        // Note that this storage API may be inaccessible, which we completely ignore here for simplicity
+        // All we're doing in here is checking for the existence of a storage entry that
+        // contains a username (any attacker could trivially fake this)
+        // Note that this storage API may be inaccessible, which we completely ignore
+        // here for simplicity
         let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
         let auth_token = storage.get("username").unwrap(); // This is a `Result<Option<T>, E>`
 

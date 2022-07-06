@@ -9,12 +9,16 @@ use wasm_bindgen::JsValue;
 
 use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 
-/// The entrypoint into the app itself. This will be compiled to Wasm and actually executed, rendering the rest of the app.
-/// Runs the app in the browser on the client-side. This is designed to be executed in a function annotated with `#[wasm_bindgen]`.
+/// The entrypoint into the app itself. This will be compiled to Wasm and
+/// actually executed, rendering the rest of the app. Runs the app in the
+/// browser on the client-side. This is designed to be executed in a function
+/// annotated with `#[wasm_bindgen]`.
 ///
-/// This is entirely engine-agnostic, using only the properties from the given `PerseusApp`.
+/// This is entirely engine-agnostic, using only the properties from the given
+/// `PerseusApp`.
 ///
-/// For consistency with `run_dflt_engine`, this takes a function that returns the `PerseusApp`.
+/// For consistency with `run_dflt_engine`, this takes a function that returns
+/// the `PerseusApp`.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
     app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
 ) -> Result<(), JsValue> {
@@ -49,11 +53,13 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
     };
 
-    // This top-level context is what we use for everything, allowing page state to be registered and stored for the lifetime of the app
+    // This top-level context is what we use for everything, allowing page state to
+    // be registered and stored for the lifetime of the app
     sycamore::render_to(move |cx| perseus_router(cx, router_props), &root);
 
     Ok(())
 }
 
-/// A convenience type wrapper for the type returned by nearly all client-side entrypoints.
+/// A convenience type wrapper for the type returned by nearly all client-side
+/// entrypoints.
 pub type ClientReturn = Result<(), JsValue>;

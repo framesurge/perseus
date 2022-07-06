@@ -14,7 +14,9 @@ use syn::{
 pub struct TemplateFn {
     /// The body of the function.
     pub block: Box<Block>,
-    /// The arguments for custom properties and a global state, both of which are optional. (But global state needs custom properties, which can be a dummy `struct`.)
+    /// The arguments for custom properties and a global state, both of which
+    /// are optional. (But global state needs custom properties, which can be a
+    /// dummy `struct`.)
     pub args: Vec<FnArg>,
     /// The visibility of the function.
     pub vis: Visibility,
@@ -24,7 +26,8 @@ pub struct TemplateFn {
     pub name: Ident,
     /// The return type of the function.
     pub return_type: Box<Type>,
-    /// Any generics the function takes (should be one for the Sycamore `GenericNode`).
+    /// Any generics the function takes (should be one for the Sycamore
+    /// `GenericNode`).
     pub generics: Generics,
 }
 impl Parse for TemplateFn {
@@ -102,16 +105,19 @@ impl Parse for TemplateFn {
     }
 }
 
-/// Converts the user-given name of a final reactive `struct` into the intermediary name used for the one we'll interface with. This will remove any associated lifetimes
-/// because we want just the type name. This will leave generics intact though.
+/// Converts the user-given name of a final reactive `struct` into the
+/// intermediary name used for the one we'll interface with. This will remove
+/// any associated lifetimes because we want just the type name. This will leave
+/// generics intact though.
 fn make_mid(ty: &Type) -> Type {
     // Don't run any transformation if this is the unit type
     match ty {
         Type::Tuple(TypeTuple { elems, .. }) if elems.is_empty() => ty.clone(),
         _ => {
             let ty_str = ty.to_token_stream().to_string();
-            // Remove any lifetimes from the type (anything in angular brackets beginning with `'`)
-            // This regex just removes any lifetimes next to generics or on their own, allowing for the whitespace Syn seems to insert
+            // Remove any lifetimes from the type (anything in angular brackets beginning
+            // with `'`) This regex just removes any lifetimes next to generics
+            // or on their own, allowing for the whitespace Syn seems to insert
             let ty_str = Regex::new(r#"(('.*?) |<\s*('[^, ]*?)\s*>)"#)
                 .unwrap()
                 .replace_all(&ty_str, "");
@@ -136,28 +142,34 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
 
     let component_name = Ident::new(&(name.to_string() + "_component"), Span::call_site());
 
-    // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
-    // This is dependent on what arguments the template takes
+    // We create a wrapper function that can be easily provided to `.template()`
+    // that does deserialization automatically if needed This is dependent on
+    // what arguments the template takes
     if fn_args.len() == 3 {
         // Get the argument for the reactive scope
         let cx_arg = &fn_args[0];
-        // There's an argument for page properties that needs to have state extracted, so the wrapper will deserialize it
-        // We'll also make it reactive and add it to the page state store
+        // There's an argument for page properties that needs to have state extracted,
+        // so the wrapper will deserialize it We'll also make it reactive and
+        // add it to the page state store
         let state_arg = &fn_args[1];
         let rx_props_ty = match state_arg {
             FnArg::Typed(PatType { ty, .. }) => make_mid(&**ty),
             FnArg::Receiver(_) => unreachable!(),
         };
-        // There's also a second argument for the global state, which we'll deserialize and make global if it's not already (aka. if any other pages have loaded before this one)
-        // Sycamore won't let us have more than one argument to a component though, so we sneakily extract it and literally construct it as a variable (this should be fine?)
+        // There's also a second argument for the global state, which we'll deserialize
+        // and make global if it's not already (aka. if any other pages have loaded
+        // before this one) Sycamore won't let us have more than one argument to
+        // a component though, so we sneakily extract it and literally construct it as a
+        // variable (this should be fine?)
         let global_state_arg = &fn_args[2];
         let (global_state_arg_pat, global_state_rx) = match global_state_arg {
             FnArg::Typed(PatType { pat, ty, .. }) => (pat, make_mid(&**ty)),
             FnArg::Receiver(_) => unreachable!(),
         };
         let name_string = name.to_string();
-        // Handle the case in which the template is just using global state and the first argument is the unit type
-        // That's represented for Syn as a typle with no elements
+        // Handle the case in which the template is just using global state and the
+        // first argument is the unit type That's represented for Syn as a typle
+        // with no elements
         match rx_props_ty {
             // This template takes dummy state and global state
             Type::Tuple(TypeTuple { elems, .. }) if elems.is_empty() => quote! {
@@ -247,8 +259,9 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     } else if fn_args.len() == 2 {
         // Get the argument for the reactive scope
         let cx_arg = &fn_args[0];
-        // There's an argument for page properties that needs to have state extracted, so the wrapper will deserialize it
-        // We'll also make it reactive and add it to the page state store
+        // There's an argument for page properties that needs to have state extracted,
+        // so the wrapper will deserialize it We'll also make it reactive and
+        // add it to the page state store
         let arg = &fn_args[1];
         let rx_props_ty = match arg {
             FnArg::Typed(PatType { ty, .. }) => make_mid(&**ty),

@@ -16,7 +16,9 @@ use perseus::{
 use serde::Deserialize;
 use std::sync::Arc;
 
-// Note: this is the same as for the Actix Web integration, but other frameworks may handle parsing query parameters differntly, so this shouldn't be integrated into the core library
+// Note: this is the same as for the Actix Web integration, but other frameworks
+// may handle parsing query parameters differntly, so this shouldn't be
+// integrated into the core library
 #[derive(Deserialize)]
 pub struct PageDataReq {
     pub template_name: String,
@@ -25,12 +27,14 @@ pub struct PageDataReq {
 
 #[allow(clippy::too_many_arguments)] // Because of how Axum extractors work, we don't exactly have a choice
 pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
-    Path(path_parts): Path<Vec<String>>, // From this, we can extract the locale and the path tail (the page path, which *does* have slashes)
+    Path(path_parts): Path<Vec<String>>, /* From this, we can extract the locale and the path
+                                          * tail (the page path, which *does* have slashes) */
     Query(PageDataReq {
         template_name,
         was_incremental_match,
     }): Query<PageDataReq>,
-    // This works without any conversion because Axum allows us to directly get an `http::Request` out!
+    // This works without any conversion because Axum allows us to directly get an `http::Request`
+    // out!
     http_req: perseus::http::Request<Body>,
     opts: Arc<ServerOptions>,
     immutable_store: Arc<ImmutableStore>,
@@ -51,14 +55,16 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     let templates = &opts.templates_map;
     // Check if the locale is supported
     if opts.locales.is_supported(locale) {
-        // Warp doesn't let us specify that all paths should end in `.json`, so we'll manually strip that
+        // Warp doesn't let us specify that all paths should end in `.json`, so we'll
+        // manually strip that
         let path = path.strip_suffix(".json").unwrap();
         // Get the template to use
         let template = templates.get(&template_name);
         let template = match template {
             Some(template) => template,
             None => {
-                // We know the template has been pre-routed and should exist, so any failure here is a 500
+                // We know the template has been pre-routed and should exist, so any failure
+                // here is a 500
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     HeaderMap::new(),
@@ -66,7 +72,8 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
                 );
             }
         };
-        // Convert the request into one palatable for Perseus (which doesn't have the body attached)
+        // Convert the request into one palatable for Perseus (which doesn't have the
+        // body attached)
         let http_req = Request::from_parts(http_req.into_parts().0, ());
         let page_data = get_page_for_template(
             GetPageProps::<M, T> {

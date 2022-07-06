@@ -3,7 +3,8 @@ use sycamore::prelude::{view, Scope, SsrNode, View};
 
 use crate::global_state::*; // See the index page for why we need this
 
-// This template needs global state, but doesn't have any state of its own, so the first argument is the unit type `()` (which the macro will detect)
+// This template needs global state, but doesn't have any state of its own, so
+// the first argument is the unit type `()` (which the macro will detect)
 #[perseus::template_rx]
 pub fn about_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a>) -> View<G> {
     view! { cx,

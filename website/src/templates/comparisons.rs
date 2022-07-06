@@ -85,7 +85,8 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
     let show_details_homepage_lighthouse_mobile = create_signal(cx, false);
 
     // We now need to deconstruct the comparison with memos (actual pain)
-    // Otherwise, the props passed through to the row component aren't considered reactive
+    // Otherwise, the props passed through to the row component aren't considered
+    // reactive
     let comparison_language = create_memo(cx, || comparison.get().language.to_string());
     let comparison_supports_ssg = create_memo(cx, || comparison.get().supports_ssg.render());
     let comparison_supports_ssr = create_memo(cx, || comparison.get().supports_ssr.render());
@@ -369,7 +370,8 @@ pub async fn get_build_state(
     let mut comparisons: HashMap<String, Comparison> = HashMap::new();
 
     // Get the `comparisons/` directory in `website`
-    // This can have any file structure we want for organization, we just want the files
+    // This can have any file structure we want for organization, we just want the
+    // files
     let comparisons_dir = PathBuf::from("comparisons");
     // Loop through it
     for entry in WalkDir::new(comparisons_dir) {
@@ -382,7 +384,8 @@ pub async fn get_build_state(
             // Get the JSON contents and parse them as a comparison
             let contents = fs::read_to_string(&path)?;
             let comparison = serde_json::from_str::<Comparison>(&contents)?;
-            // If the file is `perseus.json`, we'll add this to a special variable, otherwise it gets added to the generic map
+            // If the file is `perseus.json`, we'll add this to a special variable,
+            // otherwise it gets added to the generic map
             if path_str.ends_with("perseus.json") {
                 perseus_comparison = Some(comparison);
             } else {

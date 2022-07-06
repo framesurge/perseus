@@ -8,7 +8,8 @@ use sycamore::prelude::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct DocsPageProps {
-    // We don't need to use translation IDs here because the docs are i18ned at the filesystem level
+    // We don't need to use translation IDs here because the docs are i18ned at the filesystem
+    // level
     pub title: String,
     pub content: String,
     pub sidebar_content: String,
@@ -21,7 +22,8 @@ pub struct DocsPageProps {
 #[component(DocsPage<G>)]
 pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
     // These come pre-translated for the current locale
-    // Note that all the docs files have a title emblazoned at the top already, so we only need the title in the `<head>`
+    // Note that all the docs files have a title emblazoned at the top already, so
+    // we only need the title in the `<head>`
     let DocsPageProps {
         content,
         sidebar_content,

@@ -7,7 +7,9 @@ use crate::{
 };
 use std::rc::Rc;
 
-/// Builds the app, calling all necessary plugin opportunities. This works solely with the properties provided in the given `PerseusApp`, so this is entirely engine-agnostic.
+/// Builds the app, calling all necessary plugin opportunities. This works
+/// solely with the properties provided in the given `PerseusApp`, so this is
+/// entirely engine-agnostic.
 ///
 /// Note that this expects to be run in the root of the project.
 pub async fn build<M: MutableStore, T: TranslationsManager>(
@@ -40,7 +42,8 @@ pub async fn build<M: MutableStore, T: TranslationsManager>(
     };
 
     // Build the site for all the common locales (done in parallel)
-    // All these parameters can be modified by `PerseusApp` and plugins, so there's no point in having a plugin opportunity here
+    // All these parameters can be modified by `PerseusApp` and plugins, so there's
+    // no point in having a plugin opportunity here
     let templates_map = app.get_templates_map();
 
     // We have to get the translations manager last, because it consumes everything

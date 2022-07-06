@@ -1,8 +1,9 @@
 use std::env;
 use std::thread::{self, JoinHandle};
 
-/// Spawns a new thread with the given code, or executes it directly if the environment variable `PERSEUS_CLI_SEQUENTIAL` is set to
-/// any valid (Unicode) value. Multithreading is the default.
+/// Spawns a new thread with the given code, or executes it directly if the
+/// environment variable `PERSEUS_CLI_SEQUENTIAL` is set to any valid (Unicode)
+/// value. Multithreading is the default.
 pub fn spawn_thread<F, T>(f: F) -> ThreadHandle<F, T>
 where
     F: FnOnce() -> T,
@@ -24,8 +25,10 @@ where
     }
 }
 
-/// An abstraction over a `JoinHandle` in a multithreaded case, or just a similar interface that will immediately return if otherwise.
-/// This allows the interfaces for multithreading and single-threading to be basically identical.
+/// An abstraction over a `JoinHandle` in a multithreaded case, or just a
+/// similar interface that will immediately return if otherwise. This allows the
+/// interfaces for multithreading and single-threading to be basically
+/// identical.
 pub struct ThreadHandle<F, T>
 where
     F: FnOnce() -> T,
@@ -43,7 +46,8 @@ where
     F: Send + 'static,
     T: Send + 'static,
 {
-    /// Waits for the 'thread' to complete, properly if it's multithreaded, or by direct execution if it's single-threaded.
+    /// Waits for the 'thread' to complete, properly if it's multithreaded, or
+    /// by direct execution if it's single-threaded.
     pub fn join(
         self,
     ) -> Result<T, std::boxed::Box<(dyn std::any::Any + std::marker::Send + 'static)>> {

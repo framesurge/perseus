@@ -25,7 +25,8 @@ pub fn parse_md_to_html(markdown: &str) -> String {
     html_contents
 }
 
-// By using a lazy static, we won't read from the filesystem in client-side code (because these variables are never requested on the client-side)
+// By using a lazy static, we won't read from the filesystem in client-side code
+// (because these variables are never requested on the client-side)
 lazy_static! {
     /// The current documentation manifest, which contains details on all versions of Perseus.
     static ref DOCS_MANIFEST: DocsManifest = {
@@ -37,16 +38,19 @@ lazy_static! {
     static ref BETA_VERSIONS: HashMap<String, VersionManifest> = get_beta_versions(&DOCS_MANIFEST);
 }
 
-/// The stability of a version of the docs, which governs what kind of warning will be displayed.
+/// The stability of a version of the docs, which governs what kind of warning
+/// will be displayed.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DocsVersionStatus {
     /// This version is stable, and no warning is needed.
     Stable,
     /// This version is outdated, and the latest stable version is attached.
     Outdated,
-    /// This version is released, but in beta, and the latest stable version is attached.
+    /// This version is released, but in beta, and the latest stable version is
+    /// attached.
     Beta,
-    /// This documentation is for the unreleased next version, and the latest stable version is attached.
+    /// This documentation is for the unreleased next version, and the latest
+    /// stable version is attached.
     Next,
 }
 impl DocsVersionStatus {
@@ -100,7 +104,8 @@ impl DocsVersionStatus {
         }
     }
 }
-/// Information about the current state of the documentation, including which versions are outdated and the like.
+/// Information about the current state of the documentation, including which
+/// versions are outdated and the like.
 pub type DocsManifest = HashMap<String, VersionManifest>;
 
 /// Information about a single version in the documentation manifest.
@@ -110,12 +115,13 @@ pub struct VersionManifest {
     pub state: VersionState,
     /// The location in the Git history to get examples from for this version.
     pub git: String,
-    /// The version to use on docs.rs for this version. This will be interpolated into all docs.rs links
-    /// in this version's docs.
+    /// The version to use on docs.rs for this version. This will be
+    /// interpolated into all docs.rs links in this version's docs.
     pub docs_rs: String,
 }
-/// The possible states a version can be in. Note that there can only be one stable version at a time, and that the special `next`
-/// version is not accounted for here.
+/// The possible states a version can be in. Note that there can only be one
+/// stable version at a time, and that the special `next` version is not
+/// accounted for here.
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd)]
 #[serde(rename_all = "snake_case")]
 pub enum VersionState {
@@ -127,7 +133,8 @@ pub enum VersionState {
     Beta,
 }
 
-/// Gets the latest stable version of the docs from the given manifest. This returns the version's name and metadata.
+/// Gets the latest stable version of the docs from the given manifest. This
+/// returns the version's name and metadata.
 pub fn get_stable_version(manifest: &DocsManifest) -> (String, VersionManifest) {
     let mut stable: Option<(String, VersionManifest)> = None;
     for (name, details) in manifest.iter() {
@@ -142,7 +149,8 @@ pub fn get_stable_version(manifest: &DocsManifest) -> (String, VersionManifest) 
         panic!("no stable version set for docs");
     }
 }
-/// Gets the outdated versions of the docs from the given manifest. This returns a `HashMap` of their names to their manifests.
+/// Gets the outdated versions of the docs from the given manifest. This returns
+/// a `HashMap` of their names to their manifests.
 pub fn get_outdated_versions(manifest: &DocsManifest) -> HashMap<String, VersionManifest> {
     let mut versions = HashMap::new();
     for (name, details) in manifest.iter() {
@@ -153,7 +161,8 @@ pub fn get_outdated_versions(manifest: &DocsManifest) -> HashMap<String, Version
 
     versions
 }
-/// Gets the beta versions of the docs from the given manifest. This returns a `HashMap` of their names to their manifests.
+/// Gets the beta versions of the docs from the given manifest. This returns a
+/// `HashMap` of their names to their manifests.
 pub fn get_beta_versions(manifest: &DocsManifest) -> HashMap<String, VersionManifest> {
     let mut versions = HashMap::new();
     for (name, details) in manifest.iter() {
@@ -176,9 +185,10 @@ pub async fn get_build_state(
     let path_vec: Vec<&str> = path.split('/').collect();
     // Localize the path again to what it'll be on the filesystem
     // TODO get Perseus to pass in props from build paths for ease of use?
-    // We'll do that differently if it doesn't have a version in front of it, which would be the second part containing two dots
-    // Or it could be `next`
-    // If the path is just `/docs` though, we'll render the introduction page for the stable version
+    // We'll do that differently if it doesn't have a version in front of it, which
+    // would be the second part containing two dots Or it could be `next`
+    // If the path is just `/docs` though, we'll render the introduction page for
+    // the stable version
     let (version, fs_path): (&str, String) = if path == "docs" {
         (
             STABLE_VERSION_NAME.as_str(),
@@ -191,7 +201,8 @@ pub async fn get_build_state(
             ),
         )
     } else if path_vec[1].split('.').count() >= 3 || path_vec[1] == "next" {
-        // This conditional depends on checking for a semantic version number in the URL (e.g. `0.3.x`, `0.3.0-v0.3.2`)
+        // This conditional depends on checking for a semantic version number in the URL
+        // (e.g. `0.3.x`, `0.3.0-v0.3.2`)
         (
             path_vec[1],
             format!(
@@ -232,18 +243,21 @@ pub async fn get_build_state(
                     .unwrap()
                     .strip_suffix("}}")
                     .unwrap();
-                // All the files here are in `docs/`, and they'll be including from outside there, so strip away any `../`s
+                // All the files here are in `docs/`, and they'll be including from outside
+                // there, so strip away any `../`s
                 while let Some(new_path) = incl_path.strip_prefix("../") {
                     incl_path = new_path;
                 }
                 // If we're on the `next` version, read from the filesystem directly
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents = if version == "next" {
-                    // Add a `../` to the front so that it's relative from the website root, where we are now
+                    // Add a `../` to the front so that it's relative from the website root, where
+                    // we are now
                     let path = format!("../{}", &incl_path);
                     match fs::read_to_string(&path) {
                         Ok(contents) => contents,
-                        // If there's an error (which there will be after any major refactor), we'll tell the user which file couldn't be found
+                        // If there's an error (which there will be after any major refactor), we'll
+                        // tell the user which file couldn't be found
                         Err(err) => {
                             eprintln!("File not found: {} in page {}.", &path, &fs_path);
                             return Err(err.into());
@@ -256,10 +270,12 @@ pub async fn get_build_state(
                         Some(version_manifest) => &version_manifest.git,
                         None => panic!("docs version '{}' not present in manifest", version),
                     };
-                    // We want the path relative to the root of the project directory (where the Git repo is)
+                    // We want the path relative to the root of the project directory (where the Git
+                    // repo is)
                     get_file_at_version(incl_path, history_point, PathBuf::from("../"))?
                 };
-                // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
+                // Now replace the whole directive (trimmed though to preserve any whitespace)
+                // with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
             } else if line.starts_with("{{#lines_include ") && line.ends_with("}}") {
                 // Strip the directive to get the path of the file we're including
@@ -268,7 +284,8 @@ pub async fn get_build_state(
                     .unwrap()
                     .strip_suffix("}}")
                     .unwrap();
-                // All the files here are in `docs/`, and they'll be including from outside there, so strip away any `../`s
+                // All the files here are in `docs/`, and they'll be including from outside
+                // there, so strip away any `../`s
                 while let Some(new_path) = incl_path_with_lines_suffix.strip_prefix("../") {
                     incl_path_with_lines_suffix = new_path;
                 }
@@ -280,11 +297,13 @@ pub async fn get_build_state(
                 // If we're on the `next` version, read from the filesystem directly
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
                 let incl_contents_full = if version == "next" {
-                    // Add a `../../` to the front so that it's relative from `.perseus/`, where we are now
+                    // Add a `../../` to the front so that it's relative from `.perseus/`, where we
+                    // are now
                     let path = format!("../{}", &incl_path);
                     match fs::read_to_string(&path) {
                         Ok(contents) => contents,
-                        // If there's an error (which there will be after any major refactor), we'll tell the user which file couldn't be found
+                        // If there's an error (which there will be after any major refactor), we'll
+                        // tell the user which file couldn't be found
                         Err(err) => {
                             eprintln!("File not found: {} in page {}.", &path, &fs_path);
                             return Err(err.into());
@@ -297,7 +316,8 @@ pub async fn get_build_state(
                         Some(version_manifest) => &version_manifest.git,
                         None => panic!("docs version '{}' not present in manifest", version),
                     };
-                    // We want the path relative to the root of the project directory (where the Git repo is)
+                    // We want the path relative to the root of the project directory (where the Git
+                    // repo is)
                     get_file_at_version(incl_path, history_point, PathBuf::from("../"))?
                 };
                 // Get the specific lines wanted
@@ -318,7 +338,8 @@ pub async fn get_build_state(
                         panic!("file couldn't be included from lines");
                     }
                 };
-                // Now replace the whole directive (trimmed though to preserve any whitespace) with the file's contents
+                // Now replace the whole directive (trimmed though to preserve any whitespace)
+                // with the file's contents
                 contents_with_incls = contents_with_incls.replace(&line, &incl_contents_lines);
             }
         }
@@ -329,7 +350,8 @@ pub async fn get_build_state(
 
     // Parse any relative links to other pages in the docs
     // We add the base path, the locale, and the docs version
-    // We use the special token `:` to denote these (e.g. `[static exporting](:exporting)`)
+    // We use the special token `:` to denote these (e.g. `[static
+    // exporting](:exporting)`)
     let contents = contents.replace(
         "](:",
         &format!(
@@ -340,10 +362,12 @@ pub async fn get_build_state(
         ),
     );
 
-    // Parse any links to docs.rs (of the form `[`Error`](=enum.Error@perseus)`, where `perseus` is the package name)
-    // Versions are interpolated automatically
+    // Parse any links to docs.rs (of the form `[`Error`](=enum.Error@perseus)`,
+    // where `perseus` is the package name) Versions are interpolated
+    // automatically
     let docs_rs_version = if version == "next" {
-        // Unfortunately, `latest` doesn't take account of beta versions, so we use either the latest beta version or the stable version
+        // Unfortunately, `latest` doesn't take account of beta versions, so we use
+        // either the latest beta version or the stable version
         let mut beta_versions = BETA_VERSIONS.values().collect::<Vec<&VersionManifest>>();
         beta_versions.sort_by(|a, b| b.partial_cmp(a).unwrap());
         if beta_versions.is_empty() {
@@ -370,7 +394,8 @@ pub async fn get_build_state(
     // Parse the file to HTML
     let html_contents = parse_md_to_html(&contents);
     // Get the title from the first line of the contents, stripping the initial `#`
-    // This is brittle, but surprisingly quite reliable as long as documentation files have headings
+    // This is brittle, but surprisingly quite reliable as long as documentation
+    // files have headings
     let title = contents.lines().collect::<Vec<&str>>()[0]
         .strip_prefix("# ")
         .unwrap();
@@ -378,8 +403,9 @@ pub async fn get_build_state(
     // Get the sidebar from `SUMMARY.md`
     let sidebar_fs_path = format!("../docs/{}/{}/SUMMARY.md", &version, &locale);
     let sidebar_contents = fs::read_to_string(&sidebar_fs_path)?;
-    // Replace all links in that file with localized equivalents with versions as well (with the base path added)
-    // That means unversioned paths will redirect to the appropriate stable version
+    // Replace all links in that file with localized equivalents with versions as
+    // well (with the base path added) That means unversioned paths will
+    // redirect to the appropriate stable version
     let sidebar_contents = sidebar_contents.replace(
         "/docs",
         &format!("{}/{}/docs/{}", get_path_prefix_server(), &locale, &version),
@@ -423,14 +449,16 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
         let path = entry.path();
         // Ignore any empty directories or the like
         if path.is_file() {
-            // This should all pass, there are no non-Unicode filenames in the docs (and i18n titles are handled outside filenames)
-            // Also, all these are relative, which means we can safely strip away the `../docs/`
+            // This should all pass, there are no non-Unicode filenames in the docs (and
+            // i18n titles are handled outside filenames) Also, all these are
+            // relative, which means we can safely strip away the `../docs/`
             // We also remove the file extensions (which are all `.md`)
             let path_str = path.to_str().unwrap().replace(".md", "");
             let path_str = path_str.strip_prefix("../docs/").unwrap();
-            // Only proceed for paths in the default locale (`en-US`), which we'll use to generate paths
-            // Also disallow any of the `SUMMARY.md` files at this point (the extension has been stripped)
-            // Also disallow the manifest file
+            // Only proceed for paths in the default locale (`en-US`), which we'll use to
+            // generate paths Also disallow any of the `SUMMARY.md` files at
+            // this point (the extension has been stripped) Also disallow the
+            // manifest file
             if path_str.contains("en-US/")
                 && !path_str.ends_with("SUMMARY")
                 && !path_str.ends_with("manifest.json")
@@ -439,8 +467,10 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
                 let path_str = path_str.replace("en-US/", "");
                 // This path should be rendered!
                 paths.push(path_str.clone());
-                // If it's for the latest stable version though, we should also render it without that prefix
-                // That way the latest stable verison is always at the docs without a version prefix (which I think is more sensible than having the unreleased version there)
+                // If it's for the latest stable version though, we should also render it
+                // without that prefix That way the latest stable verison is
+                // always at the docs without a version prefix (which I think is more sensible
+                // than having the unreleased version there)
                 if path_str.starts_with(STABLE_VERSION_NAME.as_str()) {
                     let unprefixed_path_str = path_str
                         .strip_prefix(&format!("{}/", STABLE_VERSION_NAME.as_str()))

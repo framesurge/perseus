@@ -23,7 +23,9 @@ pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
                 |_, plugin_data| {
                     if let Some(plugin_data) = plugin_data.downcast_ref::<TestPluginData>() {
                         let about_page_greeting = plugin_data.about_page_greeting.to_string();
-                        // Note that this doesn't work with hydration, but a full template does (there's some difference there that causes a hydration ID overlap for some reason)
+                        // Note that this doesn't work with hydration, but a full template does
+                        // (there's some difference there that causes a hydration ID overlap for
+                        // some reason)
                         vec![Template::new("about").template(
                             move |cx, _| sycamore::view! { cx,  p { (about_page_greeting) } },
                         )]
@@ -34,7 +36,8 @@ pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
             );
             actions.tinker.register_plugin("test-plugin", |_, _| {
                 println!("{:?}", std::env::current_dir().unwrap());
-                // This is completely pointless, but demonstrates how plugin dependencies can blow up binary sizes if they aren't made tinker-only plugins
+                // This is completely pointless, but demonstrates how plugin dependencies can
+                // blow up binary sizes if they aren't made tinker-only plugins
                 let test = "[package]\nname = \"test\"";
                 let parsed: toml::Value = toml::from_str(test).unwrap();
                 println!("{}", toml::to_string(&parsed).unwrap());

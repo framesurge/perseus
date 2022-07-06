@@ -22,8 +22,9 @@ macro_rules! handle_exit_code {
     };
 }
 
-/// An internal macro for copying files into the export package. The `from` and `to` that this accepts should be extensions of the
-/// `target`, and they'll be `.join()`ed on.
+/// An internal macro for copying files into the export package. The `from` and
+/// `to` that this accepts should be extensions of the `target`, and they'll be
+/// `.join()`ed on.
 macro_rules! copy_file {
     ($from:expr, $to:expr, $target:expr) => {
         if let Err(err) = fs::copy($target.join($from), $target.join($to)) {
@@ -36,9 +37,11 @@ macro_rules! copy_file {
     };
 }
 
-/// Finalizes the export by copying assets. This is very different from the finalization process of normal building.
+/// Finalizes the export by copying assets. This is very different from the
+/// finalization process of normal building.
 pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
-    // Copy files over (the directory structure should already exist from exporting the pages)
+    // Copy files over (the directory structure should already exist from exporting
+    // the pages)
     copy_file!(
         "dist/pkg/perseus_engine.js",
         "dist/exported/.perseus/bundle.js",
@@ -49,8 +52,9 @@ pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
         "dist/exported/.perseus/bundle.wasm",
         target
     );
-    // Copy any JS snippets over (if the directory doesn't exist though, don't do anything)
-    // This takes a target of the `dist/` directory, and then extends on that
+    // Copy any JS snippets over (if the directory doesn't exist though, don't do
+    // anything) This takes a target of the `dist/` directory, and then extends
+    // on that
     fn copy_snippets(ext: &str, parent: &Path) -> Result<(), ExportError> {
         // We read from the parent directory (`.perseus`), extended with `ext`
         if let Ok(snippets) = fs::read_dir(&parent.join(ext)) {
@@ -67,14 +71,16 @@ pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
                 };
                 // Recurse on any directories and copy any files
                 if path.is_dir() {
-                    // We continue to pass on the parent, but we add the filename of this directory to the extension
+                    // We continue to pass on the parent, but we add the filename of this directory
+                    // to the extension
                     copy_snippets(
                         &format!("{}/{}", ext, path.file_name().unwrap().to_str().unwrap()),
                         parent,
                     )?;
                 } else {
                     // `ext` holds the folder structure of this file, which we'll preserve
-                    // We must remove the prefix though (which is hardcoded in the initial invocation of this function)
+                    // We must remove the prefix though (which is hardcoded in the initial
+                    // invocation of this function)
                     let dir_tree = ext.strip_prefix("dist/pkg/snippets").unwrap();
                     // This is to avoid `//`
                     let dir_tree = if dir_tree.is_empty() {
@@ -111,9 +117,11 @@ pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
     Ok(())
 }
 
-/// Actually exports the user's code, program arguments having been interpreted. This needs to know how many steps there are in total
-/// because the serving logic also uses it. This also takes a `MultiProgress` to interact with so it can be used truly atomically.
-/// This returns handles for waiting on the component threads so we can use it composably.
+/// Actually exports the user's code, program arguments having been interpreted.
+/// This needs to know how many steps there are in total because the serving
+/// logic also uses it. This also takes a `MultiProgress` to interact with so it
+/// can be used truly atomically. This returns handles for waiting on the
+/// component threads so we can use it composably.
 #[allow(clippy::type_complexity)]
 pub fn export_internal(
     dir: PathBuf,
@@ -141,7 +149,8 @@ pub fn export_internal(
     );
 
     // We parallelize the first two spinners (static generation and Wasm building)
-    // We make sure to add them at the top (the server spinner may have already been instantiated)
+    // We make sure to add them at the top (the server spinner may have already been
+    // instantiated)
     let ep_spinner = spinners.insert(0, ProgressBar::new_spinner());
     let ep_spinner = cfg_spinner(ep_spinner, &ep_msg);
     let ep_target = dir.clone();
@@ -184,7 +193,8 @@ pub fn export_internal(
     Ok((ep_thread, wb_thread))
 }
 
-/// Builds the subcrates to get a directory that we can serve. Returns an exit code.
+/// Builds the subcrates to get a directory that we can serve. Returns an exit
+/// code.
 pub fn export(dir: PathBuf, opts: ExportOpts) -> Result<i32, ExportError> {
     let spinners = MultiProgress::new();
     // We'll add another not-quite-spinner if we're serving

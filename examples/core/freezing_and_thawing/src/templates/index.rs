@@ -15,7 +15,8 @@ pub fn index_page<'a, G: Html>(
     state: IndexPropsRx<'a>,
     global_state: AppStateRx<'a>,
 ) -> View<G> {
-    // This is not part of our data model, we do NOT want the frozen app synchronized as part of our page's state, it should be separate
+    // This is not part of our data model, we do NOT want the frozen app
+    // synchronized as part of our page's state, it should be separate
     let frozen_app = create_signal(cx, String::new());
     let render_ctx = perseus::get_render_ctx!(cx);
 

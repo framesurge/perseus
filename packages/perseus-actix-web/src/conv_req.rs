@@ -14,7 +14,8 @@ pub fn convert_req(raw: &actix_web::HttpRequest) -> Result<Request, Error> {
         .method(raw.method())
         .version(raw.version())
         // We always use an empty body because, in a Perseus request, only the URI matters
-        // Any custom data should therefore be sent in headers (if you're doing that, consider a dedicated API)
+        // Any custom data should therefore be sent in headers (if you're doing that, consider a
+        // dedicated API)
         .body(())
         .map_err(|err| Error::RequestConversionFailed { source: err })
 }

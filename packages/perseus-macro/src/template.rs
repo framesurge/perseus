@@ -9,7 +9,8 @@ use syn::{
 pub struct TemplateFn {
     /// The body of the function.
     pub block: Box<Block>,
-    /// The arguments to the function. One is mandatory for the reactive scope, and then there can be an optional state type.
+    /// The arguments to the function. One is mandatory for the reactive scope,
+    /// and then there can be an optional state type.
     pub args: Vec<FnArg>,
     /// The visibility of the function.
     pub vis: Visibility,
@@ -19,7 +20,8 @@ pub struct TemplateFn {
     pub name: Ident,
     /// The return type of the function.
     pub return_type: Box<Type>,
-    /// Any generics the function takes (should be one for the Sycamore `GenericNode`).
+    /// Any generics the function takes (should be one for the Sycamore
+    /// `GenericNode`).
     pub generics: Generics,
 }
 impl Parse for TemplateFn {
@@ -111,10 +113,12 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
 
     let component_name = Ident::new(&(name.to_string() + "_component"), Span::call_site());
 
-    // We create a wrapper function that can be easily provided to `.template()` that does deserialization automatically if needed
-    // This is dependent on what arguments the template takes
+    // We create a wrapper function that can be easily provided to `.template()`
+    // that does deserialization automatically if needed This is dependent on
+    // what arguments the template takes
     if args.len() == 2 {
-        // There's an argument that will be provided as a `String`, so the wrapper will deserialize it (also the reactive state)
+        // There's an argument that will be provided as a `String`, so the wrapper will
+        // deserialize it (also the reactive state)
         let cx_arg = &args[0];
         let arg = &args[1];
 

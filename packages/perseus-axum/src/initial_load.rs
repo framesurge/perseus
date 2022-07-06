@@ -20,7 +20,8 @@ use perseus::{
 };
 use std::{collections::HashMap, rc::Rc, sync::Arc};
 
-/// Builds on the internal Perseus primitives to provide a utility function that returns a `Response` automatically.
+/// Builds on the internal Perseus primitives to provide a utility function that
+/// returns a `Response` automatically.
 fn return_error_page(
     url: &str,
     status: u16,
@@ -38,8 +39,8 @@ fn return_error_page(
     )
 }
 
-/// The handler for calls to any actual pages (first-time visits), which will render the appropriate HTML and then interpolate it into
-/// the app shell.
+/// The handler for calls to any actual pages (first-time visits), which will
+/// render the appropriate HTML and then interpolate it into the app shell.
 #[allow(clippy::too_many_arguments)] // As for `page_data_handler`, we don't have a choice
 pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     http_req: perseus::http::Request<Body>,
@@ -57,7 +58,8 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
     let path_slice = get_path_slice(&path);
-    // Create a closure to make returning error pages easier (most have the same data)
+    // Create a closure to make returning error pages easier (most have the same
+    // data)
     let html_err = |status: u16, err: &str| {
         return return_error_page(&path, status, err, None, error_pages, html_shell.as_ref());
     };
@@ -111,10 +113,12 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
 
             (StatusCode::OK, header_map, Html(final_html))
         }
-        // For locale detection, we don't know the user's locale, so there's not much we can do except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
+        // For locale detection, we don't know the user's locale, so there's not much we can do
+        // except send down the app shell, which will do the rest and fetch from `.perseus/page/...`
         RouteVerdictAtomic::LocaleDetection(path) => {
             // We use a `302 Found` status code to indicate a redirect
-            // We 'should' generate a `Location` field for the redirect, but it's not RFC-mandated, so we can use the app shell
+            // We 'should' generate a `Location` field for the redirect, but it's not
+            // RFC-mandated, so we can use the app shell
             (
                 StatusCode::FOUND,
                 HeaderMap::new(),

@@ -4,8 +4,9 @@ use sycamore::prelude::view;
 use sycamore::prelude::Scope;
 use sycamore::prelude::View;
 
-/// A comparison for the comparisons table. Perseus itself also has an entry here. Note that any changes to the properties measured here
-/// must also be reflected in the rendering code, which generates a title row independently.
+/// A comparison for the comparisons table. Perseus itself also has an entry
+/// here. Note that any changes to the properties measured here must also be
+/// reflected in the rendering code, which generates a title row independently.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Comparison {
     // We deliberately preserve order so that Perseus always comes first
@@ -46,7 +47,8 @@ impl FeatureSupport {
     }
 }
 
-/// Renders a Lighthouse score to have a text color. If it's 100, then we use the appropriate emoji.
+/// Renders a Lighthouse score to have a text color. If it's 100, then we use
+/// the appropriate emoji.
 pub fn render_lighthouse_score<G: Html>(cx: Scope, score: u8) -> View<G> {
     if score == 100 {
         view! { cx,

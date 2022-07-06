@@ -7,8 +7,8 @@ use crate::{plugins::PluginAction, PerseusAppBase, SsrNode};
 pub fn tinker(app: PerseusAppBase<SsrNode, impl MutableStore, impl TranslationsManager>) {
     let plugins = app.get_plugins();
     // Run all the tinker actions
-    // Note: this is deliberately synchronous, tinker actions that need a multithreaded async runtime should probably
-    // be making their own engines!
+    // Note: this is deliberately synchronous, tinker actions that need a
+    // multithreaded async runtime should probably be making their own engines!
     plugins
         .functional_actions
         .tinker

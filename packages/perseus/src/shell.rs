@@ -16,7 +16,8 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Element, Request, RequestInit, RequestMode, Response};
 
-/// Fetches the given resource. This should NOT be used by end users, but it's required by the CLI.
+/// Fetches the given resource. This should NOT be used by end users, but it's
+/// required by the CLI.
 #[doc(hidden)]
 pub async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
     let js_err_handler = |err: JsValue| ClientError::Js(format!("{:?}", err));
@@ -32,7 +33,8 @@ pub async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
         .map_err(js_err_handler)?;
     // Turn that into a proper response object
     let res: Response = res_value.dyn_into().unwrap();
-    // If the status is 404, we should return that the request worked but no file existed
+    // If the status is 404, we should return that the request worked but no file
+    // existed
     if res.status() == 404 {
         return Ok(None);
     }
@@ -40,7 +42,8 @@ pub async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
     let body_promise = res.text().map_err(js_err_handler)?;
     let body = JsFuture::from(body_promise).await.map_err(js_err_handler)?;
 
-    // Convert that into a string (this will be `None` if it wasn't a string in the JS)
+    // Convert that into a string (this will be `None` if it wasn't a string in the
+    // JS)
     let body_str = body.as_string();
     let body_str = match body_str {
         Some(body_str) => body_str,
@@ -64,8 +67,10 @@ pub async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
     }
 }
 
-/// Gets the render configuration from the JS global variable `__PERSEUS_RENDER_CFG`, which should be inlined by the server. This will
-/// return `None` on any error (not found, serialization failed, etc.), which should reasonably lead to a `panic!` in the caller.
+/// Gets the render configuration from the JS global variable
+/// `__PERSEUS_RENDER_CFG`, which should be inlined by the server. This will
+/// return `None` on any error (not found, serialization failed, etc.), which
+/// should reasonably lead to a `panic!` in the caller.
 pub fn get_render_cfg() -> Option<HashMap<String, String>> {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_RENDER_CFG");
     let js_obj = match val_opt {
@@ -85,8 +90,9 @@ pub fn get_render_cfg() -> Option<HashMap<String, String>> {
     Some(render_cfg)
 }
 
-/// Gets the initial state injected by the server, if there was any. This is used to differentiate initial loads from subsequent ones,
-/// which have different log chains to prevent double-trips (a common SPA problem).
+/// Gets the initial state injected by the server, if there was any. This is
+/// used to differentiate initial loads from subsequent ones, which have
+/// different log chains to prevent double-trips (a common SPA problem).
 pub fn get_initial_state() -> InitialState {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_INITIAL_STATE");
     let js_obj = match val_opt {
@@ -98,12 +104,13 @@ pub fn get_initial_state() -> InitialState {
         Some(state_str) => state_str,
         None => return InitialState::NotPresent,
     };
-    // On the server-side, we encode a `None` value directly (otherwise it will be some convoluted stringified JSON)
+    // On the server-side, we encode a `None` value directly (otherwise it will be
+    // some convoluted stringified JSON)
     if state_str == "None" {
         InitialState::Present(None)
     } else if state_str.starts_with("error-") {
-        // We strip the prefix and escape any tab/newline control characters (inserted by `fmterr`)
-        // Any others are user-inserted, and this is documented
+        // We strip the prefix and escape any tab/newline control characters (inserted
+        // by `fmterr`) Any others are user-inserted, and this is documented
         let err_page_data_str = state_str
             .strip_prefix("error-")
             .unwrap()
@@ -125,7 +132,9 @@ pub fn get_initial_state() -> InitialState {
     }
 }
 
-/// Gets the global state injected by the server, if there was any. If there are errors in this, we can return `None` and not worry about it, they'll be handled by the initial state.
+/// Gets the global state injected by the server, if there was any. If there are
+/// errors in this, we can return `None` and not worry about it, they'll be
+/// handled by the initial state.
 pub fn get_global_state() -> Option<String> {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_GLOBAL_STATE");
     let js_obj = match val_opt {
@@ -137,27 +146,36 @@ pub fn get_global_state() -> Option<String> {
         Some(state_str) => state_str,
         None => return None,
     };
-    // On the server-side, we encode a `None` value directly (otherwise it will be some convoluted stringified JSON)
+    // On the server-side, we encode a `None` value directly (otherwise it will be
+    // some convoluted stringified JSON)
     match state_str.as_str() {
         "None" => None,
         state_str => Some(state_str.to_string()),
     }
 }
 
-/// Marks a checkpoint in the code and alerts any tests that it's been reached by creating an element that represents it. The preferred
-/// solution would be emitting a DOM event, but the WebDriver specification currently doesn't support waiting on those (go figure). This
-/// will only create a custom element if the `__PERSEUS_TESTING` JS global variable is set to `true`.
+/// Marks a checkpoint in the code and alerts any tests that it's been reached
+/// by creating an element that represents it. The preferred solution would be
+/// emitting a DOM event, but the WebDriver specification currently doesn't
+/// support waiting on those (go figure). This will only create a custom element
+/// if the `__PERSEUS_TESTING` JS global variable is set to `true`.
 ///
-/// This adds a `<div id="__perseus_checkpoint-<event-name>" />` to the `<div id="__perseus_checkpoints"></div>` element, creating the
-/// latter if it doesn't exist. Each checkpoint must have a unique name, and if the same checkpoint is executed twice, it'll be added
-/// with a `-<number>` after it, starting from `0`. In this way, we have a functional checkpoints queue for signalling to test code!
-/// Note that the checkpoint queue is NOT cleared on subsequent loads.
+/// This adds a `<div id="__perseus_checkpoint-<event-name>" />` to the `<div
+/// id="__perseus_checkpoints"></div>` element, creating the latter if it
+/// doesn't exist. Each checkpoint must have a unique name, and if the same
+/// checkpoint is executed twice, it'll be added with a `-<number>` after it,
+/// starting from `0`. In this way, we have a functional checkpoints queue for
+/// signalling to test code! Note that the checkpoint queue is NOT cleared on
+/// subsequent loads.
 ///
-/// Note: this is not just for internal usage, it's highly recommended that you use this for your own checkpoints as well! Just make
-/// sure your tests don't conflict with any internal Perseus checkpoint names (preferably prefix yours with `custom-` or the like, as
-/// Perseus' checkpoints may change at any time, but won't ever use that namespace).
+/// Note: this is not just for internal usage, it's highly recommended that you
+/// use this for your own checkpoints as well! Just make sure your tests don't
+/// conflict with any internal Perseus checkpoint names (preferably prefix yours
+/// with `custom-` or the like, as Perseus' checkpoints may change at any time,
+/// but won't ever use that namespace).
 ///
-/// WARNING: your checkpoint names must not include hyphens! This will result in a `panic!`.
+/// WARNING: your checkpoint names must not include hyphens! This will result in
+/// a `panic!`.
 pub fn checkpoint(name: &str) {
     if name.contains('-') {
         panic!("checkpoint must not contain hyphens, use underscores instead (hyphens are used as an internal delimiter)");
@@ -178,7 +196,8 @@ pub fn checkpoint(name: &str) {
     }
 
     // If we're here, we're testing
-    // We dispatch a console warning to reduce the likelihood of literal 'testing in prod'
+    // We dispatch a console warning to reduce the likelihood of literal 'testing in
+    // prod'
     crate::web_log!("Perseus is in testing mode. If you're an end-user and seeing this message, please report this as a bug to the website owners!");
     // Create a custom element that can be waited for by the WebDriver
     // This will be removed by the next checkpoint
@@ -201,7 +220,8 @@ pub fn checkpoint(name: &str) {
     };
 
     // Get the number of checkpoints that already exist with the same ID
-    // We prevent having to worry about checkpoints whose names are subsets of others by using the hyphen as a delimiter
+    // We prevent having to worry about checkpoints whose names are subsets of
+    // others by using the hyphen as a delimiter
     let num_checkpoints = document
         .query_selector_all(&format!("[id^=__perseus_checkpoint-{}-]", name))
         .unwrap()
@@ -215,49 +235,60 @@ pub fn checkpoint(name: &str) {
     container.append_with_node_1(&checkpoint).unwrap();
 }
 
-/// A representation of whether or not the initial state was present. If it was, it could be `None` (some templates take no state), and
-/// if not, then this isn't an initial load, and we need to request the page from the server. It could also be an error that the server
-/// has rendered.
+/// A representation of whether or not the initial state was present. If it was,
+/// it could be `None` (some templates take no state), and if not, then this
+/// isn't an initial load, and we need to request the page from the server. It
+/// could also be an error that the server has rendered.
 #[derive(Debug)]
 pub enum InitialState {
     /// A non-error initial state has been injected.
     Present(Option<String>),
     /// An initial state ahs been injected that indicates an error.
     Error(ErrorPageData),
-    /// No initial state has been injected (or if it has, it's been deliberately unset).
+    /// No initial state has been injected (or if it has, it's been deliberately
+    /// unset).
     NotPresent,
 }
 
-/// Properties for the app shell. These should be constructed literally when working with the app shell.
+/// Properties for the app shell. These should be constructed literally when
+/// working with the app shell.
 // #[derive(Debug)]
 pub struct ShellProps<'a> {
     /// The app's reactive scope.
     pub cx: Scope<'a>,
-    /// The path we're rendering for (not the template path, the full path, though parsed a little).
+    /// The path we're rendering for (not the template path, the full path,
+    /// though parsed a little).
     pub path: String,
     /// The template to render for.
     pub template: Rc<Template<TemplateNodeType>>,
-    /// Whether or not the router returned an incremental match (if this page exists on a template using incremental generation and it wasn't defined at build time).
+    /// Whether or not the router returned an incremental match (if this page
+    /// exists on a template using incremental generation and it wasn't defined
+    /// at build time).
     pub was_incremental_match: bool,
     /// The locale we're rendering in.
     pub locale: String,
     /// The router state.
     pub router_state: RouterState,
-    /// A *client-side* translations manager to use (this manages caching translations).
+    /// A *client-side* translations manager to use (this manages caching
+    /// translations).
     pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
     /// The error pages, for use if something fails.
     pub error_pages: Rc<ErrorPages<TemplateNodeType>>,
-    /// The container responsible for the initial render from the server (non-interactive, this may need to be wiped).
+    /// The container responsible for the initial render from the server
+    /// (non-interactive, this may need to be wiped).
     pub initial_container: Element,
     /// The container for reactive content.
     pub container_rx_elem: Element,
-    /// The current route verdict. This will be stored in context so that it can be used for possible reloads. Eventually,
-    /// this will be made obsolete when Sycamore supports this natively.
+    /// The current route verdict. This will be stored in context so that it can
+    /// be used for possible reloads. Eventually, this will be made obsolete
+    /// when Sycamore supports this natively.
     pub route_verdict: RouteVerdict<TemplateNodeType>,
 }
 
-/// Fetches the information for the given page and renders it. This should be provided the actual path of the page to render (not just the
-/// broader template). Asynchronous Wasm is handled here, because only a few cases need it.
+/// Fetches the information for the given page and renders it. This should be
+/// provided the actual path of the page to render (not just the
+/// broader template). Asynchronous Wasm is handled here, because only a few
+/// cases need it.
 // TODO handle exceptions higher up
 pub async fn app_shell(
     ShellProps {
@@ -286,25 +317,31 @@ pub async fn app_shell(
     });
     router_state.set_last_verdict(route_verdict.clone());
     // Get the global state if possible (we'll want this in all cases except errors)
-    // If this is a subsequent load, the template macro will have already set up the global state, and it will ignore whatever we naively give it (so we'll give it `None`)
+    // If this is a subsequent load, the template macro will have already set up the
+    // global state, and it will ignore whatever we naively give it (so we'll give
+    // it `None`)
     let global_state = get_global_state();
     // Check if this was an initial load and we already have the state
     let initial_state = get_initial_state();
     match initial_state {
-        // If we do have an initial state, then we have everything we need for immediate hydration (no double trips)
-        // The state is here, and the HTML has already been injected for us (including head metadata)
+        // If we do have an initial state, then we have everything we need for immediate hydration
+        // (no double trips) The state is here, and the HTML has already been injected for
+        // us (including head metadata)
         InitialState::Present(state) => {
             checkpoint("initial_state_present");
             // Unset the initial state variable so we perform subsequent renders correctly
             // This monstrosity is needed until `web-sys` adds a `.set()` method on `Window`
-            // We don't do this for the global state because it should hang around uninitialized until a template wants it (if we remove it before then, we're stuffed)
+            // We don't do this for the global state because it should hang around
+            // uninitialized until a template wants it (if we remove it before then, we're
+            // stuffed)
             Reflect::set(
                 &JsValue::from(web_sys::window().unwrap()),
                 &JsValue::from("__PERSEUS_INITIAL_STATE"),
                 &JsValue::undefined(),
             )
             .unwrap();
-            // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
+            // We need to move the server-rendered content from its current container to the
+            // reactive container (otherwise Sycamore can't work with it properly)
             let initial_html = initial_container.inner_html();
             container_rx_elem.set_inner_html(&initial_html);
             initial_container.set_inner_html("");
@@ -316,14 +353,16 @@ pub async fn app_shell(
 
             // Now that the user can see something, we can get the translator
             let mut translations_manager_mut = translations_manager.borrow_mut();
-            // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
+            // This gets an `Rc<Translator>` that references the translations manager,
+            // meaning no cloning of translations
             let translator = translations_manager_mut
                 .get_translator_for_locale(&locale)
                 .await;
             let translator = match translator {
                 Ok(translator) => translator,
                 Err(err) => {
-                    // Directly eliminate the HTML sent in from the server before we render an error page
+                    // Directly eliminate the HTML sent in from the server before we render an error
+                    // page
                     container_rx_elem.set_inner_html("");
                     match &err {
                         // These errors happen because we couldn't get a translator, so they certainly don't get one
@@ -338,7 +377,8 @@ pub async fn app_shell(
 
             let path = template.get_path();
             // Hydrate that static code using the acquired state
-            // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+            // BUG (Sycamore): this will double-render if the component is just text (no
+            // nodes)
             let page_props = PageProps {
                 path: path_with_locale.clone(),
                 state,
@@ -366,11 +406,13 @@ pub async fn app_shell(
                 path: path_with_locale,
             });
         }
-        // If we have no initial state, we should proceed as usual, fetching the content and state from the server
+        // If we have no initial state, we should proceed as usual, fetching the content and state
+        // from the server
         InitialState::NotPresent => {
             checkpoint("initial_state_not_present");
             // If we're getting data about the index page, explicitly set it to that
-            // This can be handled by the Perseus server (and is), but not by static exporting
+            // This can be handled by the Perseus server (and is), but not by static
+            // exporting
             let path = match path.is_empty() {
                 true => "index".to_string(),
                 false => path,
@@ -384,7 +426,8 @@ pub async fn app_shell(
                 template.get_path(),
                 was_incremental_match
             );
-            // If this doesn't exist, then it's a 404 (we went here by explicit navigation, but it may be an unservable ISR page or the like)
+            // If this doesn't exist, then it's a 404 (we went here by explicit navigation,
+            // but it may be an unservable ISR page or the like)
             let page_data_str = fetch(&asset_url).await;
             match page_data_str {
                 Ok(page_data_str) => match page_data_str {
@@ -394,7 +437,8 @@ pub async fn app_shell(
                         match page_data {
                             Ok(page_data) => {
                                 // We have the page data ready, render everything
-                                // Interpolate the HTML directly into the document (we'll hydrate it later)
+                                // Interpolate the HTML directly into the document (we'll hydrate it
+                                // later)
                                 container_rx_elem.set_inner_html(&page_data.content);
                                 // Interpolate the metadata directly into the document's `<head>`
                                 // Get the current head
@@ -406,8 +450,11 @@ pub async fn app_shell(
                                     .unwrap()
                                     .unwrap();
                                 let head_html = head_elem.inner_html();
-                                // We'll assume that there's already previously interpolated head in addition to the hardcoded stuff, but it will be separated by the server-injected delimiter comment
-                                // Thus, we replace the stuff after that delimiter comment with the new head
+                                // We'll assume that there's already previously interpolated head in
+                                // addition to the hardcoded stuff, but it will be separated by the
+                                // server-injected delimiter comment
+                                // Thus, we replace the stuff after that delimiter comment with the
+                                // new head
                                 let head_parts: Vec<&str> = head_html
                                     .split("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->")
                                     .collect();
@@ -421,7 +468,8 @@ pub async fn app_shell(
                                 // Now that the user can see something, we can get the translator
                                 let mut translations_manager_mut =
                                     translations_manager.borrow_mut();
-                                // This gets an `Rc<Translator>` that references the translations manager, meaning no cloning of translations
+                                // This gets an `Rc<Translator>` that references the translations
+                                // manager, meaning no cloning of translations
                                 let translator = translations_manager_mut
                                     .get_translator_for_locale(&locale)
                                     .await;
@@ -438,7 +486,8 @@ pub async fn app_shell(
                                 };
 
                                 // Hydrate that static code using the acquired state
-                                // BUG (Sycamore): this will double-render if the component is just text (no nodes)
+                                // BUG (Sycamore): this will double-render if the component is just
+                                // text (no nodes)
                                 let page_props = PageProps {
                                     path: path_with_locale.clone(),
                                     state: page_data.state,
@@ -447,7 +496,8 @@ pub async fn app_shell(
                                 let template_name = template.get_path();
                                 #[cfg(not(feature = "hydrate"))]
                                 {
-                                    // If we aren't hydrating, we'll have to delete everything and re-render
+                                    // If we aren't hydrating, we'll have to delete everything and
+                                    // re-render
                                     container_rx_elem.set_inner_html("");
                                     sycamore::render_to(
                                         move |_| {
@@ -500,8 +550,10 @@ pub async fn app_shell(
         // Nothing should be done if an error was sent down
         InitialState::Error(ErrorPageData { url, status, err }) => {
             checkpoint("initial_state_error");
-            // We need to move the server-rendered content from its current container to the reactive container (otherwise Sycamore can't work with it properly)
-            // If we're not hydrating, there's no point in moving anything over, we'll just fully re-render
+            // We need to move the server-rendered content from its current container to the
+            // reactive container (otherwise Sycamore can't work with it properly)
+            // If we're not hydrating, there's no point in moving anything over, we'll just
+            // fully re-render
             #[cfg(feature = "hydrate")]
             {
                 let initial_html = initial_container.inner_html();
@@ -513,8 +565,10 @@ pub async fn app_shell(
                 .set_attribute("style", "display: none;")
                 .unwrap();
             // Hydrate the currently static error page
-            // Right now, we don't provide translators to any error pages that have come from the server
-            // We render this rather than hydrating because otherwise we'd need a `HydrateNode` at the plugins level, which is way too inefficient
+            // Right now, we don't provide translators to any error pages that have come
+            // from the server We render this rather than hydrating because
+            // otherwise we'd need a `HydrateNode` at the plugins level, which is way too
+            // inefficient
             #[cfg(not(feature = "hydrate"))]
             container_rx_elem.set_inner_html("");
             error_pages.render_page(cx, &url, status, &err, None, &container_rx_elem);

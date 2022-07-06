@@ -1,6 +1,7 @@
 use crate::errors::*;
 
-/// Represents all the different states that can be generated for a single template, allowing amalgamation logic to be run with the knowledge
+/// Represents all the different states that can be generated for a single
+/// template, allowing amalgamation logic to be run with the knowledge
 /// of what did what (rather than blindly working on a vector).
 #[derive(Default, Debug)]
 pub struct States {
@@ -18,7 +19,8 @@ impl States {
     pub fn both_defined(&self) -> bool {
         self.build_state.is_some() && self.request_state.is_some()
     }
-    /// Gets the only defined state if only one is defined. If no states are defined, this will just return `None`. If both are defined,
+    /// Gets the only defined state if only one is defined. If no states are
+    /// defined, this will just return `None`. If both are defined,
     /// this will return an error.
     pub fn get_defined(&self) -> Result<Option<String>, ServeError> {
         if self.both_defined() {

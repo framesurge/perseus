@@ -13,7 +13,8 @@ mod freeze_idb;
 #[cfg(all(feature = "idb-freezing", target_arch = "wasm32"))]
 pub use freeze_idb::*; // TODO Be specific here
 
-// We'll allow live reloading (of which HSR is a subset) if it's feature-enabled and we're in development mode
+// We'll allow live reloading (of which HSR is a subset) if it's feature-enabled
+// and we're in development mode
 #[cfg(all(feature = "live-reload", debug_assertions, target_arch = "wasm32"))]
 mod live_reload;
 #[cfg(all(feature = "live-reload", debug_assertions, target_arch = "wasm32"))]

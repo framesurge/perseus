@@ -11,8 +11,10 @@ use std::rc::Rc;
 use crate::errors::*;
 use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 
-/// Exports the app to static files, given a `PerseusApp`. This is engine-agnostic, using the `exported` subfolder in the immutable store as a destination directory. By default
-/// this will end up at `dist/exported/` (customizable through `PerseusApp`).
+/// Exports the app to static files, given a `PerseusApp`. This is
+/// engine-agnostic, using the `exported` subfolder in the immutable store as a
+/// destination directory. By default this will end up at `dist/exported/`
+/// (customizable through `PerseusApp`).
 ///
 /// Note that this expects to be run in the root of the project.
 pub async fn export<M: MutableStore, T: TranslationsManager>(
@@ -20,7 +22,8 @@ pub async fn export<M: MutableStore, T: TranslationsManager>(
 ) -> Result<(), Rc<EngineError>> {
     let plugins = app.get_plugins();
     let static_aliases = app.get_static_aliases();
-    // This won't have any trailing slashes (they're stripped by the immutable store initializer)
+    // This won't have any trailing slashes (they're stripped by the immutable store
+    // initializer)
     let dest = format!("{}/exported", app.get_immutable_store().get_path());
     let static_dir = app.get_static_dir();
 
@@ -38,7 +41,9 @@ pub async fn export<M: MutableStore, T: TranslationsManager>(
     Ok(())
 }
 
-/// Performs the building and exporting processes using the given app. This is fully engine-agnostic, using only the data provided in the given `PerseusApp`.
+/// Performs the building and exporting processes using the given app. This is
+/// fully engine-agnostic, using only the data provided in the given
+/// `PerseusApp`.
 async fn build_and_export<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
 ) -> Result<(), Rc<EngineError>> {
@@ -74,8 +79,9 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
     // This consumes `self`, so we get it finally
     let translations_manager = app.get_translations_manager().await;
 
-    // Build the site for all the common locales (done in parallel), denying any non-exportable features
-    // We need to build and generate those artifacts before we can proceed on to exporting
+    // Build the site for all the common locales (done in parallel), denying any
+    // non-exportable features We need to build and generate those artifacts
+    // before we can proceed on to exporting
     let build_res = build_app(BuildProps {
         templates: &templates_map,
         locales: &locales,
@@ -100,8 +106,10 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
         .export_actions
         .after_successful_build
         .run((), plugins.get_plugin_data());
-    // The app has now been built, so we can safely instantiate the HTML shell (which needs access to the render config, generated in the above build step)
-    // It doesn't matter if the type parameters here are wrong, this function doesn't use them
+    // The app has now been built, so we can safely instantiate the HTML shell
+    // (which needs access to the render config, generated in the above build step)
+    // It doesn't matter if the type parameters here are wrong, this function
+    // doesn't use them
     let index_view =
         PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins).await;
     // Turn the build artifacts into self-contained static files
@@ -128,11 +136,14 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
     Ok(())
 }
 
-/// Copies the static aliases into a distribution directory at `dest` (no trailing `/`). This should be the root of the destination directory for the exported files.
-/// Because this provides a customizable destination, it is fully engine-agnostic.
+/// Copies the static aliases into a distribution directory at `dest` (no
+/// trailing `/`). This should be the root of the destination directory for the
+/// exported files. Because this provides a customizable destination, it is
+/// fully engine-agnostic.
 ///
-/// The error type here is a tuple of the location the asset was copied from, the location it was copied to, and the error in that process (which could be from `io` or
-/// `fs_extra`).
+/// The error type here is a tuple of the location the asset was copied from,
+/// the location it was copied to, and the error in that process (which could be
+/// from `io` or `fs_extra`).
 fn copy_static_aliases(
     plugins: &Plugins<SsrNode>,
     static_aliases: &HashMap<String, String>,
@@ -180,15 +191,17 @@ fn copy_static_aliases(
     Ok(())
 }
 
-/// Copies the directory containing static data to be put in `/.perseus/static/` (URL). This takes in both the location of the static directory and the destination
-/// directory for exported files.
+/// Copies the directory containing static data to be put in `/.perseus/static/`
+/// (URL). This takes in both the location of the static directory and the
+/// destination directory for exported files.
 fn copy_static_dir(
     plugins: &Plugins<SsrNode>,
     static_dir_raw: &str,
     dest: &str,
 ) -> Result<(), Rc<EngineError>> {
     // Copy the `static` directory into the export package if it exists
-    // If the user wants extra, they can use static aliases, plugins are unnecessary here
+    // If the user wants extra, they can use static aliases, plugins are unnecessary
+    // here
     let static_dir = PathBuf::from(static_dir_raw);
     if static_dir.exists() {
         if let Err(err) = copy_dir(

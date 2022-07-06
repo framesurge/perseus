@@ -28,7 +28,8 @@ pub struct ContainerProps<G: Html> {
 pub fn Container<G: Html>(cx: Scope, props: ContainerProps<G>) -> View<G> {
     let title = props.title.clone();
     let menu_open = create_signal(cx, false);
-    // We need to verbatim copy the value because of how it's used in Sycamore's reactivity system
+    // We need to verbatim copy the value because of how it's used in Sycamore's
+    // reactivity system
     let menu_open_2 = create_memo(cx, || *menu_open.get());
     let toggle_menu = |_| menu_open.set(!*menu_open.get());
 

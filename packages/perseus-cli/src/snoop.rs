@@ -4,8 +4,9 @@ use crate::parse::{SnoopServeOpts, SnoopWasmOpts};
 use std::env;
 use std::path::PathBuf;
 
-/// Runs static generation processes directly so the user can see detailed logs. This is commonly used for allowing users to see `dbg!` and
-/// the like in their builder functions.
+/// Runs static generation processes directly so the user can see detailed logs.
+/// This is commonly used for allowing users to see `dbg!` and the like in their
+/// builder functions.
 pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
     run_cmd_directly(
         format!(
@@ -18,7 +19,8 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
     )
 }
 
-/// Runs the commands to build the user's app to Wasm directly so they can see detailed logs.
+/// Runs the commands to build the user's app to Wasm directly so they can see
+/// detailed logs.
 pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, ExecutionError> {
     run_cmd_directly(
         format!(
@@ -36,7 +38,8 @@ pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, Execut
     )
 }
 
-/// Runs the commands to run the server directly so the user can see detailed logs.
+/// Runs the commands to run the server directly so the user can see detailed
+/// logs.
 pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, ExecutionError> {
     // Set the environment variables for the host and port
     env::set_var("PERSEUS_HOST", opts.host);
@@ -49,6 +52,8 @@ pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, Execution
             env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        vec![("PERSEUS_ENGINE_OPERATION", "serve")], // Unlike the `serve` command, we're both building and running here, so we provide the operation
+        vec![("PERSEUS_ENGINE_OPERATION", "serve")], /* Unlike the `serve` command, we're both
+                                                      * building and running here, so we provide
+                                                      * the operation */
     )
 }

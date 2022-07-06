@@ -13,8 +13,8 @@ use perseus::{internal::i18n::TranslationsManager, stores::MutableStore};
 use std::sync::Arc;
 use tower_http::services::{ServeDir, ServeFile};
 
-/// Gets the `Router` needed to configure an existing Axum app for Perseus, and should be provided after any other routes, as they include a wildcard
-/// route.
+/// Gets the `Router` needed to configure an existing Axum app for Perseus, and
+/// should be provided after any other routes, as they include a wildcard route.
 pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     ServerProps {
         opts,
@@ -96,7 +96,8 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     }
     // Now add support for serving static aliases
     for (url, static_path) in static_aliases.iter() {
-        // Note that `static_path` is already relative to the right place (`.perseus/server/`)
+        // Note that `static_path` is already relative to the right place
+        // (`.perseus/server/`)
         router = router.route(
             url, // This comes with a leading forward slash!
             get_service(ServeFile::new(static_path)).handle_error(handle_fs_error),

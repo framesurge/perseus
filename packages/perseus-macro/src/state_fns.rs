@@ -12,7 +12,8 @@ use syn::{
 pub struct StateFn {
     /// The body of the function.
     pub block: Box<Block>,
-    /// The arguments that the function takes. We don't need to modify these because we wrap them with a functin that does serializing/
+    /// The arguments that the function takes. We don't need to modify these
+    /// because we wrap them with a functin that does serializing/
     /// deserializing.
     pub args: Punctuated<FnArg, Comma>,
     /// The visibility of the function.
@@ -93,7 +94,8 @@ pub enum StateFnType {
     ShouldRevalidate,
 }
 
-// We just use a single implementation function for ease, but there's a separate macro for each type of state function
+// We just use a single implementation function for ease, but there's a separate
+// macro for each type of state function
 pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
     let StateFn {
         block,

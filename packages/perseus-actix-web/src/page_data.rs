@@ -17,7 +17,8 @@ pub struct PageDataReq {
     pub was_incremental_match: bool,
 }
 
-/// The handler for calls to `.perseus/page/*`. This will manage returning errors and the like.
+/// The handler for calls to `.perseus/page/*`. This will manage returning
+/// errors and the like.
 #[allow(clippy::too_many_arguments)]
 pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     req: HttpRequest,
@@ -37,7 +38,8 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     // Check if the locale is supported
     if opts.locales.is_supported(locale) {
         let path = req.match_info().query("filename");
-        // We need to turn the Actix Web request into one acceptable for Perseus (uses `http` internally)
+        // We need to turn the Actix Web request into one acceptable for Perseus (uses
+        // `http` internally)
         let http_req = convert_req(&req);
         let http_req = match http_req {
             Ok(http_req) => http_req,
@@ -51,7 +53,8 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
         let template = match template {
             Some(template) => template,
             None => {
-                // We know the template has been pre-routed and should exist, so any failure here is a 500
+                // We know the template has been pre-routed and should exist, so any failure
+                // here is a 500
                 return HttpResponse::InternalServerError().body("template not found".to_string());
             }
         };

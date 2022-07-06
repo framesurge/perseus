@@ -28,7 +28,8 @@ pub struct TestFn {
     pub name: Ident,
     /// The return type of the function.
     pub return_type: Box<Type>,
-    /// Any generics the function takes (shouldn't be any, but it could in theory).
+    /// Any generics the function takes (shouldn't be any, but it could in
+    /// theory).
     pub generics: Generics,
 }
 impl Parse for TestFn {
@@ -126,7 +127,8 @@ pub fn test_impl(input: TestFn, args: TestArgs) -> TokenStream {
         return_type,
     } = input;
 
-    // Get the WebDriver URL to use from the macro arguments, or use a sensible default
+    // Get the WebDriver URL to use from the macro arguments, or use a sensible
+    // default
     let webdriver_url = args
         .webdriver_url
         .unwrap_or_else(|| "http://localhost:4444".to_string());

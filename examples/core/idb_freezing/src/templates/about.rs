@@ -8,7 +8,8 @@ pub fn about_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());
     // It's faster to get this only once and rely on reactivity
-    // But it's unused when this runs on the server-side because of the target-gate below
+    // But it's unused when this runs on the server-side because of the target-gate
+    // below
     #[allow(unused_variables)]
     let render_ctx = perseus::get_render_ctx!(cx);
 

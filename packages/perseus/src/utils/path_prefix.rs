@@ -1,6 +1,7 @@
-/// Gets the path prefix to apply on the server. This uses the `PERSEUS_BASE_PATH` environment variable, which avoids hardcoding
-/// something as changeable as this into the final binary. Hence however, that variable must be the same as what's set in `<base>` (done
-/// automatically).
+/// Gets the path prefix to apply on the server. This uses the
+/// `PERSEUS_BASE_PATH` environment variable, which avoids hardcoding
+/// something as changeable as this into the final binary. Hence however, that
+/// variable must be the same as what's set in `<base>` (done automatically).
 /// Trailing forward slashes will be trimmed automatically.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn get_path_prefix_server() -> String {
@@ -13,8 +14,9 @@ pub fn get_path_prefix_server() -> String {
         .to_string()
 }
 
-/// Gets the path prefix to apply in the browser. This uses the HTML `<base>` element, which would be required anyway to make Sycamore's
-/// router co-operate with a relative path hosting.
+/// Gets the path prefix to apply in the browser. This uses the HTML `<base>`
+/// element, which would be required anyway to make Sycamore's router co-operate
+/// with a relative path hosting.
 #[cfg(target_arch = "wasm32")]
 pub fn get_path_prefix_client() -> String {
     use wasm_bindgen::JsCast;

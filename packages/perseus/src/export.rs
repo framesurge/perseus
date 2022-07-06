@@ -54,9 +54,10 @@ pub struct ExportProps<'a, T: TranslationsManager> {
     pub global_state: &'a Option<String>,
 }
 
-/// Exports your app to static files, which can be served from anywhere, without needing a server. This assumes that the app has already
-/// been built, and that no templates are using non-static features (which can be ensured by passing `true` as the last parameter to
-/// `build_app`).
+/// Exports your app to static files, which can be served from anywhere, without
+/// needing a server. This assumes that the app has already been built, and that
+/// no templates are using non-static features (which can be ensured by passing
+/// `true` as the last parameter to `build_app`).
 pub async fn export_app<T: TranslationsManager>(
     ExportProps {
         templates,
@@ -68,7 +69,8 @@ pub async fn export_app<T: TranslationsManager>(
         global_state,
     }: ExportProps<'_, T>,
 ) -> Result<(), ServerError> {
-    // The render configuration acts as a guide here, it tells us exactly what we need to iterate over (no request-side pages!)
+    // The render configuration acts as a guide here, it tells us exactly what we
+    // need to iterate over (no request-side pages!)
     let render_cfg = get_render_cfg(immutable_store).await?;
 
     // We can do literally everything concurrently here
@@ -97,12 +99,14 @@ pub async fn export_app<T: TranslationsManager>(
 
     try_join(try_join_all(export_futs), try_join_all(translations_futs)).await?;
 
-    // Copying in bundles from the filesystem is left to the CLI command for exporting, so we're done!
+    // Copying in bundles from the filesystem is left to the CLI command for
+    // exporting, so we're done!
 
     Ok(())
 }
 
-/// Creates a translation file for exporting. This is broken out for concurrency.
+/// Creates a translation file for exporting. This is broken out for
+/// concurrency.
 pub async fn create_translation_file(
     locale: &str,
     immutable_store: &ImmutableStore,
@@ -134,10 +138,13 @@ pub async fn export_path(
     global_state: &Option<String>,
 ) -> Result<(), ServerError> {
     // We need the encoded path to reference flattened build artifacts
-    // But we don't create a flattened system with exporting, everything is properly created in a directory structure
+    // But we don't create a flattened system with exporting, everything is properly
+    // created in a directory structure
     let path_encoded = urlencoding::encode(&path).to_string();
-    // All initial load pages should be written into their own folders, which prevents a situation of a template root page outside the directory for the rest of that template's pages (see #73)
-    // The `.html` file extension is added when this variable is used (for contrast to the `.json`s)
+    // All initial load pages should be written into their own folders, which
+    // prevents a situation of a template root page outside the directory for the
+    // rest of that template's pages (see #73) The `.html` file extension is
+    // added when this variable is used (for contrast to the `.json`s)
     let initial_load_path = if path.ends_with("index") {
         // However, if it's already an index page, we dont want `index/index.html`
         path.to_string()
@@ -158,7 +165,8 @@ pub async fn export_path(
     };
     // Create a locale detection file for it if we're using i18n
     // These just send the app shell, which will perform a redirect as necessary
-    // Notably, these also include fallback redirectors if either Wasm or JS is disabled (or both)
+    // Notably, these also include fallback redirectors if either Wasm or JS is
+    // disabled (or both)
     if locales.using_i18n {
         immutable_store
             .write(
@@ -173,7 +181,8 @@ pub async fn export_path(
             )
             .await?;
     }
-    // Check if that template uses build state (in which case it should have a JSON file)
+    // Check if that template uses build state (in which case it should have a JSON
+    // file)
     let has_state = template.uses_build_state();
     if locales.using_i18n {
         // Loop through all the app's locales
@@ -185,7 +194,8 @@ pub async fn export_path(
             )
             .await?;
             // Create a full HTML file from those that can be served for initial loads
-            // The build process writes these with a dummy default locale even though we're not using i18n
+            // The build process writes these with a dummy default locale even though we're
+            // not using i18n
             let full_html = html_shell
                 .clone()
                 .page_data(&page_data, global_state)
@@ -197,7 +207,8 @@ pub async fn export_path(
                 )
                 .await?;
 
-            // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
+            // Serialize the page data to JSON and write it as a partial (fetched by the app
+            // shell for subsequent loads)
             let partial = serde_json::to_string(&page_data).unwrap();
             immutable_store
                 .write(
@@ -214,17 +225,20 @@ pub async fn export_path(
         )
         .await?;
         // Create a full HTML file from those that can be served for initial loads
-        // The build process writes these with a dummy default locale even though we're not using i18n
+        // The build process writes these with a dummy default locale even though we're
+        // not using i18n
         let full_html = html_shell
             .clone()
             .page_data(&page_data, global_state)
             .to_string();
-        // We don't add an extension because this will be queried directly by the browser
+        // We don't add an extension because this will be queried directly by the
+        // browser
         immutable_store
             .write(&format!("exported/{}.html", initial_load_path), &full_html)
             .await?;
 
-        // Serialize the page data to JSON and write it as a partial (fetched by the app shell for subsequent loads)
+        // Serialize the page data to JSON and write it as a partial (fetched by the app
+        // shell for subsequent loads)
         let partial = serde_json::to_string(&page_data).unwrap();
         immutable_store
             .write(

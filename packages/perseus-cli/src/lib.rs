@@ -48,8 +48,8 @@ pub use serve_exported::serve_exported;
 pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};
 pub use tinker::tinker;
 
-/// Deletes the entire `dist/` directory. Nicely, because there are no Cargo artifacts in there,
-/// running this won't slow down future runs at all.
+/// Deletes the entire `dist/` directory. Nicely, because there are no Cargo
+/// artifacts in there, running this won't slow down future runs at all.
 pub fn delete_dist(dir: PathBuf) -> Result<(), ExecutionError> {
     let target = dir.join("dist");
     if target.exists() {
@@ -64,7 +64,8 @@ pub fn delete_dist(dir: PathBuf) -> Result<(), ExecutionError> {
     Ok(())
 }
 
-/// Deletes build artifacts in `dist/static` or `dist/pkg` and replaces the directory.
+/// Deletes build artifacts in `dist/static` or `dist/pkg` and replaces the
+/// directory.
 pub fn delete_artifacts(dir: PathBuf, dir_to_remove: &str) -> Result<(), ExecutionError> {
     let mut target = dir;
     target.extend(["dist", dir_to_remove]);
@@ -78,7 +79,8 @@ pub fn delete_artifacts(dir: PathBuf, dir_to_remove: &str) -> Result<(), Executi
         }
     }
     // No matter what, it's gone now, so recreate it
-    // We also create parent directories because that's an issue for some reason in Docker (see #69)
+    // We also create parent directories because that's an issue for some reason in
+    // Docker (see #69)
     if let Err(err) = fs::create_dir_all(&target) {
         return Err(ExecutionError::RemoveArtifactsFailed {
             target: target.to_str().map(|s| s.to_string()),

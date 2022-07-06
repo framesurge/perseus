@@ -6,18 +6,22 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
 };
 
-/// An immutable storage system. This wraps filesystem calls in a sensible asynchronous API, allowing abstraction of the base path
-/// to a distribution directory or the like. Perseus uses this to store assts created at build time that won't change, which is
-/// anything not involved in the *revalidation* or *incremental generation* strategies.
+/// An immutable storage system. This wraps filesystem calls in a sensible
+/// asynchronous API, allowing abstraction of the base path to a distribution
+/// directory or the like. Perseus uses this to store assts created at build
+/// time that won't change, which is anything not involved in the *revalidation*
+/// or *incremental generation* strategies.
 ///
-/// Note: the `.write()` methods on this implementation will create any missing parent directories automatically.
+/// Note: the `.write()` methods on this implementation will create any missing
+/// parent directories automatically.
 #[derive(Clone, Debug)]
 pub struct ImmutableStore {
     #[cfg(not(target_arch = "wasm32"))]
     root_path: String,
 }
 impl ImmutableStore {
-    /// Creates a new immutable store. You should provide a path like `dist` here. Note that any trailing slashes will be automatically stripped.
+    /// Creates a new immutable store. You should provide a path like `dist`
+    /// here. Note that any trailing slashes will be automatically stripped.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn new(root_path: String) -> Self {
         let root_path = root_path
@@ -28,7 +32,8 @@ impl ImmutableStore {
     }
     /// Gets the filesystem path used for this immutable store.
     ///
-    /// This is designed to be used in particular by the engine to work out where to put static assets and the like when exporting.
+    /// This is designed to be used in particular by the engine to work out
+    /// where to put static assets and the like when exporting.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_path(&self) -> &str {
         &self.root_path
@@ -65,8 +70,8 @@ impl ImmutableStore {
             }),
         }
     }
-    /// Writes the given asset to the filesystem asynchronously. This must only be used at build-time, and must not be changed
-    /// afterward.
+    /// Writes the given asset to the filesystem asynchronously. This must only
+    /// be used at build-time, and must not be changed afterward.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn write(&self, name: &str, content: &str) -> Result<(), StoreError> {
         let asset_path = format!("{}/{}", self.root_path, name);

@@ -3,27 +3,39 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-/// A container for page state in Perseus. This is designed as a context store, in which one of each type can be stored. Therefore, it acts very similarly to Sycamore's context system,
-/// though it's specifically designed for each page to store one reactive properties object. In theory, you could interact with this entirely independently of Perseus' state interface,
-/// though this isn't recommended.
+/// A container for page state in Perseus. This is designed as a context store,
+/// in which one of each type can be stored. Therefore, it acts very similarly
+/// to Sycamore's context system, though it's specifically designed for each
+/// page to store one reactive properties object. In theory, you could interact
+/// with this entirely independently of Perseus' state interface, though this
+/// isn't recommended.
 ///
-/// Note that the same pages in different locales will have different entries here. If you need to store state for a page across locales, you should use the global state system instead. For apps
-/// not using i18n, the page URL will not include any locale.
+/// Note that the same pages in different locales will have different entries
+/// here. If you need to store state for a page across locales, you should use
+/// the global state system instead. For apps not using i18n, the page URL will
+/// not include any locale.
 #[derive(Default, Clone)]
 pub struct PageStateStore {
-    /// A map of type IDs to anything, allowing one storage of each type (each type is intended to a properties `struct` for a template). Entries must be `Clone`able because we assume them
-    /// to be `Signal`s or `struct`s composed of `Signal`s.
-    // Technically, this should be `Any + Clone`, but that's not possible without something like `dyn_clone`, and we don't need it because we can restrict on the methods instead!
+    /// A map of type IDs to anything, allowing one storage of each type (each
+    /// type is intended to a properties `struct` for a template). Entries must
+    /// be `Clone`able because we assume them to be `Signal`s or `struct`s
+    /// composed of `Signal`s.
+    // Technically, this should be `Any + Clone`, but that's not possible without something like
+    // `dyn_clone`, and we don't need it because we can restrict on the methods instead!
     map: Rc<RefCell<HashMap<String, Box<dyn AnyFreeze>>>>,
 }
 impl PageStateStore {
-    /// Gets an element out of the state by its type and URL. If the element stored for the given URL doesn't match the provided type, `None` will be returned.
+    /// Gets an element out of the state by its type and URL. If the element
+    /// stored for the given URL doesn't match the provided type, `None` will be
+    /// returned.
     pub fn get<T: AnyFreeze + Clone>(&self, url: &str) -> Option<T> {
         let map = self.map.borrow();
         map.get(url)
             .and_then(|val| val.as_any().downcast_ref::<T>().map(|val| (*val).clone()))
     }
-    /// Adds a new element to the state by its URL. Any existing element with the same URL will be silently overriden (use `.contains()` to check first if needed).
+    /// Adds a new element to the state by its URL. Any existing element with
+    /// the same URL will be silently overriden (use `.contains()` to check
+    /// first if needed).
     pub fn add<T: AnyFreeze + Clone>(&self, url: &str, val: T) {
         let mut map = self.map.borrow_mut();
         map.insert(url.to_string(), Box::new(val));
@@ -34,7 +46,8 @@ impl PageStateStore {
     }
 }
 impl PageStateStore {
-    /// Freezes the component entries into a new `HashMap` of `String`s to avoid extra layers of deserialization.
+    /// Freezes the component entries into a new `HashMap` of `String`s to avoid
+    /// extra layers of deserialization.
     // TODO Avoid literally cloning all the page states here if possible
     pub fn freeze_to_hash_map(&self) -> HashMap<String, String> {
         let map = self.map.borrow();

@@ -46,7 +46,8 @@ pub async fn get_static_props(
     Ok(PostPageState {
         title: title.to_string(),
         content,
-    }) // This `?` declares the default, that the server is the cause of the error
+    }) // This `?` declares the default, that the server is the cause of the
+       // error
 }
 
 #[perseus::build_paths]

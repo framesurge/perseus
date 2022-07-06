@@ -31,16 +31,18 @@ macro_rules! handle_exit_code {
 //         }
 //     }
 //     // The `fs::rename()` function will fail on Windows if the destination already exists, so this should work (we've just deleted it as per https://github.com/rust-lang/rust/issues/31301#issuecomment-177117325)
-//     if let Err(err) = fs::rename(target.join("pkg"), target.join("dist/pkg")) {
-//         return Err(ExecutionError::MovePkgDirFailed { source: err });
+//     if let Err(err) = fs::rename(target.join("pkg"), target.join("dist/pkg"))
+// {         return Err(ExecutionError::MovePkgDirFailed { source: err });
 //     }
 
 //     Ok(())
 // }
 
-/// Actually builds the user's code, program arguments having been interpreted. This needs to know how many steps there are in total
-/// because the serving logic also uses it. This also takes a `MultiProgress` to interact with so it can be used truly atomically.
-/// This returns handles for waiting on the component threads so we can use it composably.
+/// Actually builds the user's code, program arguments having been interpreted.
+/// This needs to know how many steps there are in total because the serving
+/// logic also uses it. This also takes a `MultiProgress` to interact with so it
+/// can be used truly atomically. This returns handles for waiting on the
+/// component threads so we can use it composably.
 #[allow(clippy::type_complexity)]
 pub fn build_internal(
     dir: PathBuf,
@@ -76,7 +78,8 @@ pub fn build_internal(
     };
 
     // We parallelize the first two spinners (static generation and Wasm building)
-    // We make sure to add them at the top (the server spinner may have already been instantiated)
+    // We make sure to add them at the top (the server spinner may have already been
+    // instantiated)
     let sg_spinner = spinners.insert(0, ProgressBar::new_spinner());
     let sg_spinner = cfg_spinner(sg_spinner, &sg_msg);
     let sg_dir = dir.clone();
@@ -104,7 +107,7 @@ pub fn build_internal(
             vec![&format!(
                 "{} build --out-dir dist/pkg --out-name perseus_engine --target web {} {}",
                 env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
-                if is_release { "--release" } else { "--dev" }, // If we don't supply `--dev`, another profile will be used
+                if is_release { "--release" } else { "--dev" }, /* If we don't supply `--dev`, another profile will be used */
                 env::var("PERSEUS_WASM_PACK_ARGS").unwrap_or_else(|_| String::new())
             )],
             &wb_dir,
@@ -126,7 +129,8 @@ pub fn build_internal(
     Ok((sg_thread, wb_thread))
 }
 
-/// Builds the subcrates to get a directory that we can serve. Returns an exit code.
+/// Builds the subcrates to get a directory that we can serve. Returns an exit
+/// code.
 pub fn build(dir: PathBuf, opts: BuildOpts) -> Result<i32, ExecutionError> {
     let spinners = MultiProgress::new();
 

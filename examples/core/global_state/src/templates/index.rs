@@ -1,9 +1,11 @@
 use perseus::{Html, Template};
 use sycamore::prelude::{view, Scope, SsrNode, View};
 
-use crate::global_state::*; // This is necessary because Perseus generates an invisible intermediary `struct` that the template needs access to
+use crate::global_state::*; // This is necessary because Perseus generates an invisible intermediary
+                            // `struct` that the template needs access to
 
-// This template needs global state, but doesn't have any state of its own, so the first argument is the unit type `()` (which the macro will detect)
+// This template needs global state, but doesn't have any state of its own, so
+// the first argument is the unit type `()` (which the macro will detect)
 #[perseus::template_rx]
 pub fn index_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a>) -> View<G> {
     view! { cx,

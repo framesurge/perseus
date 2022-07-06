@@ -10,7 +10,8 @@ pub async fn translations_handler<T: TranslationsManager>(
 ) -> (StatusCode, String) {
     // Check if the locale is supported
     if opts.locales.is_supported(&locale) {
-        // We know that the locale is supported, so any failure to get translations is a 500
+        // We know that the locale is supported, so any failure to get translations is a
+        // 500
         let translations = translations_manager
             .get_translations_str_for_locale(locale.to_string())
             .await;

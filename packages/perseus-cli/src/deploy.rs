@@ -7,9 +7,11 @@ use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use std::fs;
 use std::path::PathBuf;
 
-/// Deploys the user's app to the `pkg/` directory (can be changed with `-o/--output`). This will build everything for release and then
-/// put it all together in one folder that can be conveniently uploaded to a server, file host, etc. This can return any kind of error
-/// because deploying involves working with other subcommands.
+/// Deploys the user's app to the `pkg/` directory (can be changed with
+/// `-o/--output`). This will build everything for release and then put it all
+/// together in one folder that can be conveniently uploaded to a server, file
+/// host, etc. This can return any kind of error because deploying involves
+/// working with other subcommands.
 pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
     // Fork at whether we're using static exporting or not
     let exit_code = if opts.export_static {
@@ -21,8 +23,9 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
     Ok(exit_code)
 }
 
-/// Deploys the user's app in its entirety, with a bundled server. This can return any kind of error because deploying involves working
-/// with other subcommands.
+/// Deploys the user's app in its entirety, with a bundled server. This can
+/// return any kind of error because deploying involves working with other
+/// subcommands.
 fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
     // Build everything for production, not running the server
     let (serve_exit_code, server_path) = serve(
@@ -33,7 +36,8 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
             release: true,
             standalone: true,
             watch: false,
-            // These have no impact if `no_run` is `true` (which it is), so we can use the defaults here
+            // These have no impact if `no_run` is `true` (which it is), so we can use the defaults
+            // here
             host: "127.0.0.1".to_string(),
             port: 8080,
         },
@@ -115,8 +119,8 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
     }
 }
 
-/// Uses static exporting to deploy the user's app. This can return any kind of error because deploying involves working with other
-/// subcommands.
+/// Uses static exporting to deploy the user's app. This can return any kind of
+/// error because deploying involves working with other subcommands.
 fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
     // Export the app to `.perseus/exported`, using release mode
     let export_exit_code = export(
@@ -153,8 +157,8 @@ fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
         }
         .into());
     }
-    // Now read the contents of the export directory so that we can copy each asset in individually
-    // That avoids a `pkg/exported/` situation
+    // Now read the contents of the export directory so that we can copy each asset
+    // in individually That avoids a `pkg/exported/` situation
     let items = fs::read_dir(&from);
     let items: Vec<PathBuf> = match items {
         Ok(items) => {

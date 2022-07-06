@@ -26,10 +26,12 @@ macro_rules! handle_exit_code {
     }};
 }
 
-/// Builds the server for the app, program arguments having been interpreted. This needs to know if we've built as part of this process
-/// so it can show an accurate progress count. This also takes a `MultiProgress` so it can be used truly atomically (which will have
-/// build spinners already on it if necessary). This also takes a `Mutex<String>` to inform the caller of the path of the server
-/// executable.
+/// Builds the server for the app, program arguments having been interpreted.
+/// This needs to know if we've built as part of this process so it can show an
+/// accurate progress count. This also takes a `MultiProgress` so it can be used
+/// truly atomically (which will have build spinners already on it if
+/// necessary). This also takes a `Mutex<String>` to inform the caller of the
+/// path of the server executable.
 fn build_server(
     dir: PathBuf,
     spinners: &MultiProgress,
@@ -54,15 +56,17 @@ fn build_server(
         BUILDING_SERVER
     );
 
-    // We'll parallelize the building of the server with any build commands that are currently running
-    // We deliberately insert the spinner at the end of the list
+    // We'll parallelize the building of the server with any build commands that are
+    // currently running We deliberately insert the spinner at the end of the
+    // list
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = dir;
     let sb_thread = spawn_thread(move || {
         let (stdout, _stderr) = handle_exit_code!(run_stage(
             vec![&format!(
-                // This sets Cargo to tell us everything, including the executable path to the server
+                // This sets Cargo to tell us everything, including the executable path to the
+                // server
                 "{} build --message-format json {} {}",
                 env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
                 if is_release { "--release" } else { "" },
@@ -76,7 +80,8 @@ fn build_server(
 
         let msgs: Vec<&str> = stdout.trim().split('\n').collect();
         // If we got to here, the exit code was 0 and everything should've worked
-        // The last message will just tell us that the build finished, the second-last one will tell us the executable path
+        // The last message will just tell us that the build finished, the second-last
+        // one will tell us the executable path
         let msg = msgs.get(msgs.len() - 2);
         let msg = match msg {
             // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
@@ -111,8 +116,8 @@ fn build_server(
     Ok(sb_thread)
 }
 
-/// Runs the server at the given path, handling any errors therewith. This will likely be a black hole until the user manually terminates
-/// the process.
+/// Runs the server at the given path, handling any errors therewith. This will
+/// likely be a black hole until the user manually terminates the process.
 fn run_server(
     exec: Arc<Mutex<String>>,
     dir: PathBuf,
@@ -133,7 +138,8 @@ fn run_server(
     }
     let server_exec_path = (*exec_val).to_string();
 
-    // Manually run the generated binary (invoking in the right directory context for good measure if it ever needs it in future)
+    // Manually run the generated binary (invoking in the right directory context
+    // for good measure if it ever needs it in future)
     let child = Command::new(&server_exec_path)
         .current_dir(&dir)
         // This needs to be provided in development, but not in production
@@ -146,7 +152,8 @@ fn run_server(
             cmd: server_exec_path,
             source: err,
         })?;
-    // Figure out what host/port the app will be live on (these have been set by the system)
+    // Figure out what host/port the app will be live on (these have been set by the
+    // system)
     let host = env::var("PERSEUS_HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("PERSEUS_PORT")
         .unwrap_or_else(|_| "8080".to_string())
@@ -161,16 +168,21 @@ fn run_server(
         port=port
     );
 
-    // Wait on the child process to finish (which it shouldn't unless there's an error), then perform error handling
+    // Wait on the child process to finish (which it shouldn't unless there's an
+    // error), then perform error handling
     let output = child.wait_with_output().unwrap();
     let exit_code = match output.status.code() {
         Some(exit_code) => exit_code,         // If we have an exit code, use it
-        None if output.status.success() => 0, // If we don't, but we know the command succeeded, return 0 (success code)
-        None => 1, // If we don't know an exit code but we know that the command failed, return 1 (general error code)
+        None if output.status.success() => 0, /* If we don't, but we know the command succeeded,
+                                                * return 0 (success code) */
+        None => 1, /* If we don't know an exit code but we know that the command failed, return 1
+                    * (general error code) */
     };
-    // Print `stderr` and stdout` only if there's something therein and the exit code is non-zero
+    // Print `stderr` and stdout` only if there's something therein and the exit
+    // code is non-zero
     if !output.stderr.is_empty() && exit_code != 0 {
-        // We don't print any failure message other than the actual error right now (see if people want something else?)
+        // We don't print any failure message other than the actual error right now (see
+        // if people want something else?)
         std::io::stderr().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Ok(1);
@@ -179,8 +191,9 @@ fn run_server(
     Ok(0)
 }
 
-/// Builds the subcrates to get a directory that we can serve and then serves it. If possible, this will return the path to the server
-/// executable so that it can be used in deployment.
+/// Builds the subcrates to get a directory that we can serve and then serves
+/// it. If possible, this will return the path to the server executable so that
+/// it can be used in deployment.
 pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), ExecutionError> {
     // Set the environment variables for the host and port
     env::set_var("PERSEUS_HOST", opts.host);
@@ -191,7 +204,8 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
     let should_run = !opts.no_run;
     // We need to have a way of knowing what the executable path to the server is
     let exec = Arc::new(Mutex::new(String::new()));
-    // We can begin building the server in a thread without having to deal with the rest of the build stage yet
+    // We can begin building the server in a thread without having to deal with the
+    // rest of the build stage yet
     let sb_thread = build_server(
         dir.clone(),
         &spinners,
@@ -230,7 +244,8 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         let exit_code = run_server(Arc::clone(&exec), dir, did_build)?;
         Ok((exit_code, None))
     } else {
-        // The user doesn't want to run the server, so we'll give them the executable path instead
+        // The user doesn't want to run the server, so we'll give them the executable
+        // path instead
         let exec_str = (*exec.lock().unwrap()).to_string();
         println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable from the root of the project.\n{}", &exec_str);
         Ok((0, Some(exec_str)))

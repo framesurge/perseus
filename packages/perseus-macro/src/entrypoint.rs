@@ -5,7 +5,9 @@ use syn::{Attribute, Block, Generics, Item, ItemFn, Path, Result, ReturnType, Ty
 
 /// A function that can be made into a Perseus app's entrypoint.
 ///
-/// The signature of this function is extremely restrictive. It takes one generic for the `Html` backend to target, and produces an instance of `PerseusApp`.
+/// The signature of this function is extremely restrictive. It takes one
+/// generic for the `Html` backend to target, and produces an instance of
+/// `PerseusApp`.
 pub struct MainFn {
     /// The body of the function.
     pub block: Box<Block>,
@@ -81,13 +83,15 @@ impl Parse for MainFn {
     }
 }
 
-/// An async function that can be made into a Perseus app's entrypoint. (Specifically, the engine entrypoint.)
+/// An async function that can be made into a Perseus app's entrypoint.
+/// (Specifically, the engine entrypoint.)
 pub struct EngineMainFn {
     /// The body of the function.
     pub block: Box<Block>,
     /// Any attributes the function uses.
     pub attrs: Vec<Attribute>,
-    /// Any generics the function takes (shouldn't be any, but it could in theory).
+    /// Any generics the function takes (shouldn't be any, but it could in
+    /// theory).
     pub generics: Generics,
 }
 impl Parse for EngineMainFn {
@@ -162,7 +166,8 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
         return_type,
     } = input;
 
-    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    // We split the user's function out into one for the browser and one for the
+    // engine (all based around the default engine)
     let output = quote! {
         // The engine-specific `main` function
         #[cfg(not(target_arch = "wasm32"))]
@@ -200,7 +205,8 @@ pub fn main_export_impl(input: MainFn) -> TokenStream {
         return_type,
     } = input;
 
-    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    // We split the user's function out into one for the browser and one for the
+    // engine (all based around the default engine)
     let output = quote! {
         // The engine-specific `main` function
         #[cfg(not(target_arch = "wasm32"))]
@@ -238,7 +244,8 @@ pub fn browser_main_impl(input: MainFn) -> TokenStream {
         ..
     } = input;
 
-    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    // We split the user's function out into one for the browser and one for the
+    // engine (all based around the default engine)
     let output = quote! {
         // The browser-specific `main` function
         // This absolutely MUST be called `main`, otherwise the hardcodes Wasm importer will fail (and then interactivity is gone completely with a really weird error message)
@@ -256,7 +263,8 @@ pub fn browser_main_impl(input: MainFn) -> TokenStream {
 pub fn engine_main_impl(input: EngineMainFn) -> TokenStream {
     let EngineMainFn { block, attrs, .. } = input;
 
-    // We split the user's function out into one for the browser and one for the engine (all based around the default engine)
+    // We split the user's function out into one for the browser and one for the
+    // engine (all based around the default engine)
     let output = quote! {
         // The engine-specific `main` function
         #[cfg(not(target_arch = "wasm32"))]

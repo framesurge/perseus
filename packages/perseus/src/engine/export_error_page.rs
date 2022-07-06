@@ -4,12 +4,14 @@ use crate::{
 };
 use std::{fs, rc::Rc};
 
-/// Exports a single error page for the given HTTP status code to the given output location. If the status code doesn't exist or isn't handled, then the fallback page will be
-/// exported.
+/// Exports a single error page for the given HTTP status code to the given
+/// output location. If the status code doesn't exist or isn't handled, then the
+/// fallback page will be exported.
 ///
 /// This expects to run in the root of the project.
 ///
-/// This can only return IO errors from failures to write to the given output location. (Wrapped in an `Rc` so they can be sent to plugins as well.)
+/// This can only return IO errors from failures to write to the given output
+/// location. (Wrapped in an `Rc` so they can be sent to plugins as well.)
 pub async fn export_error_page(
     app: PerseusAppBase<SsrNode, impl MutableStore, impl TranslationsManager>,
     code: u16,
@@ -22,8 +24,9 @@ pub async fn export_error_page(
     let index_view_str = app.get_index_view_str();
     let root_id = app.get_root();
     let immutable_store = app.get_immutable_store();
-    // We assume the app has already been built before running this (so the render config must be available)
-    // It doesn't matter if the type parameters here are wrong, this function doesn't use them
+    // We assume the app has already been built before running this (so the render
+    // config must be available) It doesn't matter if the type parameters here
+    // are wrong, this function doesn't use them
     let html_shell =
         PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins).await;
 

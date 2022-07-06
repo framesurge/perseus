@@ -5,21 +5,27 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
 };
 
-/// A trait for mutable stores. This is abstracted away so that users can implement a non-filesystem mutable store, which is useful
-/// for read-only filesystem environments, as on many modern hosting providers. See the book for further details on this subject.
+/// A trait for mutable stores. This is abstracted away so that users can
+/// implement a non-filesystem mutable store, which is useful for read-only
+/// filesystem environments, as on many modern hosting providers. See the book
+/// for further details on this subject.
 #[async_trait::async_trait]
 pub trait MutableStore: std::fmt::Debug + Clone + Send + Sync {
     /// Reads data from the named asset.
     async fn read(&self, name: &str) -> Result<String, StoreError>;
-    /// Writes data to the named asset. This will create a new asset if one doesn't exist already.
+    /// Writes data to the named asset. This will create a new asset if one
+    /// doesn't exist already.
     async fn write(&self, name: &str, content: &str) -> Result<(), StoreError>;
 }
 
-/// The default mutable store, which simply uses the filesystem. This is suitable for development and production environments with
-/// writable filesystems (in which it's advised), but this is of course not usable on production read-only filesystems, and another
-/// implementation of `MutableStore` should be preferred.
+/// The default mutable store, which simply uses the filesystem. This is
+/// suitable for development and production environments with
+/// writable filesystems (in which it's advised), but this is of course not
+/// usable on production read-only filesystems, and another implementation of
+/// `MutableStore` should be preferred.
 ///
-/// Note: the `.write()` methods on this implementation will create any missing parent directories automatically.
+/// Note: the `.write()` methods on this implementation will create any missing
+/// parent directories automatically.
 #[derive(Clone, Debug)]
 pub struct FsMutableStore {
     #[cfg(not(target_arch = "wasm32"))]
@@ -27,8 +33,10 @@ pub struct FsMutableStore {
 }
 #[cfg(not(target_arch = "wasm32"))]
 impl FsMutableStore {
-    /// Creates a new filesystem configuration manager. You should provide a path like `dist/mutable` here. Make sure that this is
-    /// not the same path as the immutable store, as this will cause potentially problematic overlap between the two systems.
+    /// Creates a new filesystem configuration manager. You should provide a
+    /// path like `dist/mutable` here. Make sure that this is not the same
+    /// path as the immutable store, as this will cause potentially problematic
+    /// overlap between the two systems.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn new(root_path: String) -> Self {
         Self { root_path }

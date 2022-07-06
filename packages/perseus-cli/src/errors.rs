@@ -27,7 +27,8 @@ pub enum Error {
     WatchError(#[from] WatchError),
 }
 
-/// Errors that can occur while attempting to execute a Perseus app with `build`/`serve` (export errors are separate).
+/// Errors that can occur while attempting to execute a Perseus app with
+/// `build`/`serve` (export errors are separate).
 #[derive(Error, Debug)]
 pub enum ExecutionError {
     #[error("couldn't execute command '{cmd}' (this doesn't mean it threw an error, it means it couldn't be run at all)")]

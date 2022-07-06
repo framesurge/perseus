@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-/// Gets a `HashMap` of the given templates by their paths for serving. This should be manually wrapped for the pages your app provides
-/// for convenience.
+/// Gets a `HashMap` of the given templates by their paths for serving. This
+/// should be manually wrapped for the pages your app provides for convenience.
 #[macro_export]
 macro_rules! get_templates_map {
     [
@@ -24,8 +24,8 @@ macro_rules! get_templates_map {
     };
 }
 
-/// Gets a `HashMap` of the given templates by their paths for serving. This should be manually wrapped for the pages your app provides
-/// for convenience.
+/// Gets a `HashMap` of the given templates by their paths for serving. This
+/// should be manually wrapped for the pages your app provides for convenience.
 ///
 /// This is the thread-safe version, which should only be used on the server.
 #[macro_export]
@@ -47,7 +47,11 @@ macro_rules! get_templates_map_atomic {
     };
 }
 
-/// A type alias for a `HashMap` of `Template`s. This uses `Rc`s to make the `Template`s cloneable. In server-side multithreading, `ArcTemplateMap` should be used instead.
+/// A type alias for a `HashMap` of `Template`s. This uses `Rc`s to make the
+/// `Template`s cloneable. In server-side multithreading, `ArcTemplateMap`
+/// should be used instead.
 pub type TemplateMap<G> = HashMap<String, Rc<Template<G>>>;
-/// A type alias for a `HashMap` of `Template`s that uses `Arc`s for thread-safety. If you don't need to share templates between threads, use `TemplateMap` instead.
+/// A type alias for a `HashMap` of `Template`s that uses `Arc`s for
+/// thread-safety. If you don't need to share templates between threads, use
+/// `TemplateMap` instead.
 pub type ArcTemplateMap<G> = HashMap<String, Arc<Template<G>>>;

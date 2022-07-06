@@ -39,7 +39,8 @@ async fn build_paths(c: &mut Client) -> Result<(), fantoccini::error::CmdError> 
     Ok(())
 }
 
-// This tests build state, build paths, and incremental generation simultaneously
+// This tests build state, build paths, and incremental generation
+// simultaneously
 #[perseus::test]
 async fn incremental_generation(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     async fn test_incremental_generation(
@@ -93,7 +94,8 @@ async fn request_state(c: &mut Client) -> Result<(), fantoccini::error::CmdError
     c.goto("http://localhost:8080/request_state").await?;
     wait_for_checkpoint!("initial_state_present", 0, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
-    // Unfortunately, we can't easily make the headless browser set the necessary headers to allow Perseus to actually get the IP address
+    // Unfortunately, we can't easily make the headless browser set the necessary
+    // headers to allow Perseus to actually get the IP address
     assert!(text.contains("hidden from view"));
 
     Ok(())
@@ -105,7 +107,8 @@ async fn revalidation(c: &mut Client) -> Result<(), fantoccini::error::CmdError>
     c.goto("http://localhost:8080/revalidation").await?;
     wait_for_checkpoint!("initial_state_present", 0, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
-    // We'll wait for five seconds, then reload the page and expect the content to be different
+    // We'll wait for five seconds, then reload the page and expect the content to
+    // be different
     std::thread::sleep(std::time::Duration::from_secs(5));
     c.refresh().await?;
     wait_for_checkpoint!("router_entry", 0, c);
@@ -128,7 +131,8 @@ async fn revalidation_and_incremental_generation(
         .await?;
         wait_for_checkpoint!("initial_state_present", 0, c);
         let text = c.find(Locator::Css("p")).await?.text().await?;
-        // We'll wait for five seconds, then reload the page and expect the content to be different
+        // We'll wait for five seconds, then reload the page and expect the content to
+        // be different
         std::thread::sleep(std::time::Duration::from_secs(5));
         c.refresh().await?;
         wait_for_checkpoint!("router_entry", 0, c);

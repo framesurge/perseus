@@ -31,7 +31,8 @@ pub mod errors;
 pub mod plugins;
 /// Utilities for working with Perseus' state platform.
 pub mod state;
-/// Utilities for working with immutable and mutable stores. You can learn more about these in the book.
+/// Utilities for working with immutable and mutable stores. You can learn more
+/// about these in the book.
 pub mod stores;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -63,7 +64,8 @@ pub use http;
 #[cfg(not(target_arch = "wasm32"))]
 pub use http::Request as HttpRequest;
 pub use sycamore_futures::spawn_local_scoped;
-/// All HTTP requests use empty bodies for simplicity of passing them around. They'll never need payloads (value in path requested).
+/// All HTTP requests use empty bodies for simplicity of passing them around.
+/// They'll never need payloads (value in path requested).
 #[cfg(not(target_arch = "wasm32"))]
 pub type Request = HttpRequest<()>;
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
@@ -79,7 +81,8 @@ pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we 
 
 // TODO Restructure everything here (needs to stay the same until v0.4.0 though)
 
-// Items that should be available at the root (this should be nearly everything used in a typical Perseus app)
+// Items that should be available at the root (this should be nearly everything
+// used in a typical Perseus app)
 pub use crate::error_pages::ErrorPages;
 pub use crate::errors::{ErrorCause, GenericErrorWithCause};
 pub use crate::page_data::PageData;
@@ -91,9 +94,11 @@ pub use crate::template::{HeadFn, States};
 pub use crate::template::{RenderFnResult, RenderFnResultWithCause, Template};
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::utils::{cache_fallible_res, cache_res};
-// Everything in the `init.rs` file should be available at the top-level for convenience
+// Everything in the `init.rs` file should be available at the top-level for
+// convenience
 pub use crate::init::*;
-/// Utilities for developing templates, particularly including return types for various rendering strategies.
+/// Utilities for developing templates, particularly including return types for
+/// various rendering strategies.
 pub mod templates {
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};
     pub use crate::router::{RouterLoadState, RouterState};
@@ -104,8 +109,8 @@ pub mod templates {
 pub mod builder {
     pub use crate::engine::*;
 }
-/// A series of exports that should be unnecessary for nearly all uses of Perseus. These are used principally in developing alternative
-/// engines.
+/// A series of exports that should be unnecessary for nearly all uses of
+/// Perseus. These are used principally in developing alternative engines.
 pub mod internal {
     /// Internal utilities for working with internationalization.
     pub mod i18n {
@@ -114,8 +119,9 @@ pub mod internal {
         pub use crate::macros::DFLT_TRANSLATIONS_DIR;
         pub use crate::translator::*;
     }
-    /// Internal utilities for working with the serving process. These will be useful for building integrations for hosting Perseus
-    /// on different platforms.
+    /// Internal utilities for working with the serving process. These will be
+    /// useful for building integrations for hosting Perseus on different
+    /// platforms.
     #[cfg(not(target_arch = "wasm32"))]
     pub mod serve {
         pub use crate::server::*;
@@ -147,7 +153,8 @@ pub mod internal {
     pub use crate::utils::get_path_prefix_client;
     #[cfg(not(target_arch = "wasm32"))]
     pub use crate::utils::get_path_prefix_server;
-    /// Internal utilities for logging. These are just re-exports so that users don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
+    /// Internal utilities for logging. These are just re-exports so that users
+    /// don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
     #[cfg(target_arch = "wasm32")]
     pub mod log {
         pub use wasm_bindgen::JsValue;

@@ -12,7 +12,9 @@ use std::sync::Arc;
 use warp::http::Response;
 use warp::path::Tail;
 
-// Note: this is the same as for the Actix Web integration, but other frameworks may handle parsing query parameters differntly, so this shouldn't be integrated into the core library
+// Note: this is the same as for the Actix Web integration, but other frameworks
+// may handle parsing query parameters differntly, so this shouldn't be
+// integrated into the core library
 #[derive(Deserialize)]
 pub struct PageDataReq {
     pub template_name: String,
@@ -37,14 +39,16 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     let templates = &opts.templates_map;
     // Check if the locale is supported
     if opts.locales.is_supported(&locale) {
-        // Warp doesn't let us specify that all paths should end in `.json`, so we'll manually strip that
+        // Warp doesn't let us specify that all paths should end in `.json`, so we'll
+        // manually strip that
         let path = path.as_str().strip_suffix(".json").unwrap();
         // Get the template to use
         let template = templates.get(&template_name);
         let template = match template {
             Some(template) => template,
             None => {
-                // We know the template has been pre-routed and should exist, so any failure here is a 500
+                // We know the template has been pre-routed and should exist, so any failure
+                // here is a 500
                 return Response::builder()
                     .status(500)
                     .body("template not found".to_string())

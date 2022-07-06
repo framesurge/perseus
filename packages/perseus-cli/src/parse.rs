@@ -3,9 +3,11 @@
 use crate::PERSEUS_VERSION;
 use clap::Parser;
 
-// The documentation for the `Opts` struct will appear in the help page, hence the lack of puncutation and the lowercasing in places
+// The documentation for the `Opts` struct will appear in the help page, hence
+// the lack of puncutation and the lowercasing in places
 
-/// The command-line interface for Perseus, a super-fast WebAssembly frontend development framework!
+/// The command-line interface for Perseus, a super-fast WebAssembly frontend
+/// development framework!
 #[derive(Parser)]
 #[clap(version = PERSEUS_VERSION)]
 // #[clap(setting = AppSettings::ColoredHelp)]
@@ -26,7 +28,8 @@ pub enum Subcommand {
     Clean,
     Deploy(DeployOpts),
     Tinker(TinkerOpts),
-    /// Runs one of the underlying commands that builds your app, allowing you to see more detailed logs
+    /// Runs one of the underlying commands that builds your app, allowing you
+    /// to see more detailed logs
     #[clap(subcommand)]
     Snoop(SnoopSubcommand),
 }
@@ -52,7 +55,8 @@ pub struct ExportOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
-    /// Watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
+    /// Watch the files in your working directory for changes (exluding
+    /// `target/` and `.perseus/`)
     #[clap(short, long)]
     pub watch: bool,
 }
@@ -64,10 +68,12 @@ pub struct ExportErrorPageOpts {
     #[clap(short, long)]
     pub output: String,
 }
-/// Serves your app (set the `$HOST` and `$PORT` environment variables to change the location it's served at)
+/// Serves your app (set the `$HOST` and `$PORT` environment variables to change
+/// the location it's served at)
 #[derive(Parser, Clone)]
 pub struct ServeOpts {
-    /// Don't run the final binary, but print its location instead as the last line of output
+    /// Don't run the final binary, but print its location instead as the last
+    /// line of output
     #[clap(long)]
     pub no_run: bool,
     /// Only build the server, and use the results of a previous `perseus build`
@@ -76,10 +82,12 @@ pub struct ServeOpts {
     /// Build and serve for production
     #[clap(long)]
     pub release: bool,
-    /// Make the final binary standalone (this is used in `perseus deploy` only, don't manually invoke it unless you have a good reason!)
+    /// Make the final binary standalone (this is used in `perseus deploy` only,
+    /// don't manually invoke it unless you have a good reason!)
     #[clap(long)]
     pub standalone: bool,
-    /// Watch the files in your working directory for changes (exluding `target/` and `.perseus/`)
+    /// Watch the files in your working directory for changes (exluding
+    /// `target/` and `.perseus/`)
     #[clap(short, long)]
     pub watch: bool,
     /// Where to host your exported app
@@ -99,7 +107,8 @@ pub struct DeployOpts {
     #[clap(short, long)]
     pub export_static: bool,
 }
-/// Runs the `tinker` action of plugins, which lets them modify the Perseus engine
+/// Runs the `tinker` action of plugins, which lets them modify the Perseus
+/// engine
 #[derive(Parser)]
 pub struct TinkerOpts {
     /// Don't remove and recreate the `dist/` directory
@@ -109,7 +118,8 @@ pub struct TinkerOpts {
 
 #[derive(Parser)]
 pub enum SnoopSubcommand {
-    /// Snoops on the static generation process (this will let you see `dbg!` calls and the like)
+    /// Snoops on the static generation process (this will let you see `dbg!`
+    /// calls and the like)
     Build,
     /// Snoops on the Wasm building process (mostly for debugging errors)
     WasmBuild(SnoopWasmOpts),
