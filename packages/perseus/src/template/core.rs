@@ -31,7 +31,7 @@ use sycamore::utils::hydrate::with_no_hydration_context;
 /// type.
 pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 /// A generic error type that can be adapted for any errors the user may want to
-/// return from a render function, as with `RenderFnResult<T>`. However, this
+/// return from a render function, as with [`RenderFnResult<T>`]. However, this
 /// also includes a mandatory statement of causation for any errors, which
 /// assigns blame for them to either the client or the server. In cases where
 /// this is ambiguous, this allows returning accurate HTTP status codes.
@@ -39,8 +39,8 @@ pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + 
 /// Note that you can automatically convert from your error type into this with
 /// `.into()` or `?`, which will blame the server for the error by default and
 /// return a *500 Internal Server Error* HTTP status code. Otherwise, you'll
-/// need to manually instantiate `ErrorWithCause` and return that as the error
-/// type.
+/// need to manually instantiate [`GenericErrorWithCause`] and return that as the error
+/// type. Alternatively, you could use [`blame_err!`].
 pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
 // A series of asynchronous closure traits that prevent the user from having to
@@ -99,13 +99,20 @@ pub type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType + Send + Sync>;
 pub type AmalgamateStatesFn =
     Box<dyn Fn(States) -> RenderFnResultWithCause<Option<String>> + Send + Sync>;
 
-/// This allows the specification of all the template templates in an app and
-/// how to render them. If no rendering logic is provided at all, the template
-/// will be prerendered at build-time with no state. All closures are stored on
-/// the heap to avoid hellish lifetime specification. All properties for
-/// templates are passed around as strings to avoid type maps and other horrible
-/// things, this only adds one extra deserialization call at build time. This
-/// only actually owns a two `String`s and a `bool`.
+/// A single template in an app. Each template is comprised of a Sycamore view,
+/// a state type, and some functions involved with generating that state. Pages
+/// can then be generated from particular states. For instance, a single `docs`
+/// template could have a state `struct` that stores a title and some content,
+/// which could then render as many pages as desired.
+///
+/// You can read more about the templates system [here](https://arctic-hen7.github.io/perseus/en-US/docs/next/core-principles).
+///
+/// Note that all template states are passed around as `String`s to avoid
+/// type maps and other inefficiencies, since they need to be transmitted over
+/// the network anyway. As such, this `struct` is entirely state-agnostic,
+/// since all the state-relevant functions merely return `String`s. The
+/// various proc macros used to annotate such functions (e.g. `#[perseus::build_state]`)
+/// perform serialization/deserialization automatically for convenience.
 pub struct Template<G: Html> {
     /// The path to the root of the template. Any build paths will be inserted
     /// under this.
@@ -134,8 +141,7 @@ pub struct Template<G: Html> {
     /// create sensible cache control headers.
     #[cfg(not(target_arch = "wasm32"))]
     set_headers: SetHeadersFn,
-    /// A function that gets the paths to render for at built-time. This is
-    /// equivalent to `get_static_paths` in NextJS. If
+    /// A function that gets the paths to render for at built-time. If
     /// `incremental_generation` is `true`, more paths can be rendered at
     /// request time on top of these.
     #[cfg(not(target_arch = "wasm32"))]
@@ -152,26 +158,21 @@ pub struct Template<G: Html> {
     incremental_generation: bool,
     /// A function that gets the initial state to use to prerender the template
     /// at build time. This will be passed the path of the template, and
-    /// will be run for any sub-paths. This is equivalent to `get_static_props`
-    /// in NextJS.
+    /// will be run for any sub-paths.
     #[cfg(not(target_arch = "wasm32"))]
     get_build_state: Option<GetBuildStateFn>,
     /// A function that will run on every request to generate a state for that
-    /// request. This allows server-side-rendering. This is equivalent
-    /// to `get_server_side_props` in NextJS. This can be used with
+    /// request. This allows server-side-rendering. This can be used with
     /// `get_build_state`, though custom amalgamation logic must be provided.
     #[cfg(not(target_arch = "wasm32"))]
     get_request_state: Option<GetRequestStateFn>,
     /// A function to be run on every request to check if a template prerendered
-    /// at build-time should be prerendered again. This is equivalent
-    /// to revalidation after a time in NextJS, with the improvement of custom
-    /// logic. If used with `revalidate_after`, this function will
+    /// at build-time should be prerendered again. If used with `revalidate_after`, this function will
     /// only be run after that time period. This function will not be parsed
     /// anything specific to the request that invoked it.
     #[cfg(not(target_arch = "wasm32"))]
     should_revalidate: Option<ShouldRevalidateFn>,
-    /// A length of time after which to prerender the template again. This is
-    /// equivalent to revalidating in NextJS. This should specify a
+    /// A length of time after which to prerender the template again. This should specify a
     /// string interval to revalidate after. That will be converted into a
     /// datetime to wait for, which will be updated after every revalidation.
     /// Note that, if this is used with incremental generation, the counter will
@@ -200,7 +201,8 @@ impl<G: Html> std::fmt::Debug for Template<G> {
     }
 }
 impl<G: Html> Template<G> {
-    /// Creates a new template definition.
+    /// Creates a new [`Template`]. By default, this has absolutely no
+    /// associated data. If rendered, it would result in a blank screen.
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
@@ -230,7 +232,7 @@ impl<G: Html> Template<G> {
 
     // Render executors
     /// Executes the user-given function that renders the template on the
-    /// client-side ONLY. This takes in an extsing global state.
+    /// client-side ONLY. This takes in an existing global state.
     #[cfg(target_arch = "wasm32")]
     #[allow(clippy::too_many_arguments)]
     pub fn render_for_template_client<'a>(
@@ -500,7 +502,10 @@ impl<G: Html> Template<G> {
     // we can avoid bringing in the whole `http` module --- a very significant
     // saving!) The macros handle the creation of empty functions to make user's
     // lives easier
-    /// Sets the template rendering function to use.
+    /// Sets the template rendering function to use. This function might take in
+    /// some state (use the `#[perseus::template_rx]` macro for serialization
+    /// convenience) and/or some global state, and then it must return a
+    /// Sycamore [`View`].
     pub fn template(
         mut self,
         val: impl Fn(Scope, PageProps) -> View<G> + Send + Sync + 'static,
@@ -509,7 +514,9 @@ impl<G: Html> Template<G> {
         self
     }
 
-    /// Sets the document head rendering function to use.
+    /// Sets the document `<head>` rendering function to use. The [`View`] produced
+    /// by this will only be rendered on the engine-side, and will *not* be
+    /// reactive (since it only contains metadata).
     #[cfg(not(target_arch = "wasm32"))]
     pub fn head(
         mut self,
@@ -519,7 +526,9 @@ impl<G: Html> Template<G> {
         self.head = Box::new(val);
         self
     }
-    /// Sets the document head rendering function to use.
+     /// Sets the document `<head>` rendering function to use. The [`View`] produced
+    /// by this will only be rendered on the engine-side, and will *not* be
+    /// reactive (since it only contains metadata).
     #[cfg(target_arch = "wasm32")]
     pub fn head(self, _val: impl Fn() + 'static) -> Template<G> {
         self
@@ -617,20 +626,39 @@ impl<G: Html> Template<G> {
     }
 
     /// Enables the *revalidation* strategy (time variant). This takes a time
-    /// string of a form like `1w` for one week. More details are available [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
+    /// string of a form like `1w` for one week.
+    ///
+    ///    - s: second,
+    ///    - m: minute,
+    ///    - h: hour,
+    ///    - d: day,
+    ///    - w: week,
+    ///    - M: month (30 days used here, 12M ≠ 1y!),
+    ///    - y: year (365 days always, leap years ignored, if you want them add them as days)
     #[cfg(not(target_arch = "wasm32"))]
     pub fn revalidate_after(mut self, val: String) -> Template<G> {
         self.revalidate_after = Some(val);
         self
     }
     /// Enables the *revalidation* strategy (time variant). This takes a time
-    /// string of a form like `1w` for one week. More details are available [in the book](https://arctic-hen7.github.io/perseus/strategies/revalidation.html#time-syntax).
+    /// string of a form like `1w` for one week.
+    ///
+    ///    - s: second,
+    ///    - m: minute,
+    ///    - h: hour,
+    ///    - d: day,
+    ///    - w: week,
+    ///    - M: month (30 days used here, 12M ≠ 1y!),
+    ///    - y: year (365 days always, leap years ignored, if you want them add them as days)
     #[cfg(target_arch = "wasm32")]
     pub fn revalidate_after(self, _val: String) -> Template<G> {
         self
     }
 
-    /// Enables state amalgamation with the given function.
+    /// Enables state amalgamation with the given function. State amalgamation allows you to have one template
+    /// generate state at both build time and request time. The function you provide here is responsible for
+    /// rationalizing the two into one single state to be sent to the client, and this will be run just after
+    /// the request state function completes. See [`States`] for further details.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn amalgamate_states_fn(
         mut self,
@@ -639,7 +667,10 @@ impl<G: Html> Template<G> {
         self.amalgamate_states = Some(Box::new(val));
         self
     }
-    /// Enables state amalgamation with the given function.
+    /// Enables state amalgamation with the given function. State amalgamation allows you to have one template
+    /// generate state at both build time and request time. The function you provide here is responsible for
+    /// rationalizing the two into one single state to be sent to the client, and this will be run just after
+    /// the request state function completes. See [`States`] for further details.
     #[cfg(target_arch = "wasm32")]
     pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Template<G> {
         self
@@ -656,7 +687,7 @@ pub type TemplateNodeType = sycamore::prelude::DomNode;
 pub type TemplateNodeType = sycamore::prelude::HydrateNode;
 
 /// Checks if we're on the server or the client. This must be run inside a
-/// reactive scope (e.g. a `template!` or `create_effect`), because it uses
+/// reactive scope (e.g. a `view!` or `create_effect`), because it uses
 /// Sycamore context.
 // TODO (0.4.0) Remove this altogether
 #[macro_export]

@@ -93,12 +93,9 @@ where
     }
 }
 
-/// The options for constructing a Perseus app. These encompass all the
-/// information Perseus needs to know to create your app. Every Perseus app
-/// using the engine must export one of these.
-///
-/// Note that this is an interim storage point, it's not depended on by any part
-/// of the core logic, and therefore custom engines can entirely ignore this.
+/// The options for constructing a Perseus app. This `struct` will tie
+/// together all your code, declaring to Perseus where your templates,
+/// error pages, static content, etc. are.
 #[derive(Debug)]
 pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
@@ -157,8 +154,8 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
 // because things are completely generic there
 impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
     /// Creates a new instance of a Perseus app using the default
-    /// filesystem-based mutable store. For most apps, this will be sufficient.
-    /// Note that this initializes the translations manager as a dummy, and
+    /// filesystem-based mutable store (see [`FsMutableStore`]). For most apps, this will be sufficient.
+    /// Note that this initializes the translations manager as a dummy (see [`FsTranslationsManager`]), and
     /// adds no templates or error pages.
     ///
     /// In development, you can get away with defining no error pages, but
@@ -174,8 +171,8 @@ impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
         Self::new_with_mutable_store(FsMutableStore::new("./dist/mutable".to_string()))
     }
     /// Creates a new instance of a Perseus app using the default
-    /// filesystem-based mutable store. For most apps, this will be sufficient.
-    /// Note that this initializes the translations manager as a dummy, and
+    /// filesystem-based mutable store (see [`FsMutableStore`]). For most apps, this will be sufficient.
+    /// Note that this initializes the translations manager as a dummy (see [`FsTranslationsManager`]), and
     /// adds no templates or error pages.
     ///
     /// In development, you can get away with defining no error pages, but
@@ -195,8 +192,8 @@ impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
 // automatically for them
 impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
     /// The same as `.locales_and_translations_manager()`, but this accepts a
-    /// literal `Locales` `struct`, which means this can be used when you're
-    /// using `FsTranslationsManager` but when you don't know if your app is
+    /// literal [`Locales`] `struct`, which means this can be used when you're
+    /// using [`FsTranslationsManager`] but when you don't know if your app is
     /// using i18n or not (almost always middleware).
     pub fn locales_lit_and_translations_manager(mut self, locales: Locales) -> Self {
         #[cfg(not(target_arch = "wasm32"))]
@@ -233,7 +230,7 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
         self
     }
     /// Sets the internationalization information for an app using the default
-    /// translations manager (`FsTranslationsManager`). This handles locale
+    /// translations manager ([`FsTranslationsManager`]). This handles locale
     /// caching and the like automatically for you, though you could
     /// alternatively use `.locales()` and `.translations_manager()`
     /// independently to customize various behaviors. This takes the same
@@ -260,7 +257,8 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
 // manager
 impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Creates a new instance of a Perseus app, with the default options and a
-    /// custom mutable store.
+    /// customizable [`MutableStore`], using the default dummy [`FsTranslationsManager`]
+    /// by default (though this can be changed).
     #[allow(unused_variables)]
     pub fn new_with_mutable_store(mutable_store: M) -> Self {
         Self {
@@ -302,6 +300,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Internal function for Wasm initialization. This should never be called
     /// by the user!
     #[cfg(target_arch = "wasm32")]
+    #[doc(hidden)]
     fn new_wasm() -> Self {
         Self {
             root: "root".to_string(),
@@ -328,12 +327,18 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
     // Setters (these all consume `self`)
     /// Sets the HTML ID of the `<div>` element at which to insert Perseus.
+    /// In your index view, this should use [`PerseusRoot`].
+    ///
+    /// *Note:* if you're using string HTML, the `<div>` with this ID MUST look
+    /// *exactly* like this: `<div id="some-id-here"></div>`, spacing and
+    /// all!
     pub fn root(mut self, val: &str) -> Self {
         self.root = val.to_string();
         self
     }
     /// Sets the location of the directory storing static assets to be hosted
-    /// under the URL `/.perseus/static/`.
+    /// under the URL `/.perseus/static/`. By default, this is `static/` at
+    /// the root of your project.
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn static_dir(mut self, val: &str) -> Self {
@@ -345,22 +350,27 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Sets all the app's templates. This takes a vector of boxed functions
     /// that return templates.
+    ///
+    /// Usually, it's preferred to run `.template()` once for each template,
+    /// rather than manually constructing this more inconvenient type.
     pub fn templates(mut self, val: Vec<Box<dyn Fn() -> Template<G>>>) -> Self {
         self.template_getters.0 = val;
         self
     }
     /// Adds a single new template to the app (convenience function). This takes
-    /// a function that returns a template.
+    /// a *function that returns a template* (for internal reasons).
+    ///
+    /// See [`Template`] for further details.
     pub fn template(mut self, val: impl Fn() -> Template<G> + 'static) -> Self {
         self.template_getters.0.push(Box::new(val));
         self
     }
-    /// Sets the app's error pages.
+    /// Sets the app's error pages. See [`ErrorPages`] for further details.
     pub fn error_pages(mut self, val: impl Fn() -> ErrorPages<G> + 'static) -> Self {
         self.error_pages = ErrorPagesGetter(Box::new(val));
         self
     }
-    /// Sets the app's global state creator.
+    /// Sets the app's [`GlobalStateCreator`].
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn global_state_creator(mut self, val: GlobalStateCreator) -> Self {
@@ -376,7 +386,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// supported.
     ///
     /// Note that this does not update the translations manager, which must be
-    /// done separately (if you're using `FsTranslationsManager`, the default,
+    /// done separately (if you're using [`FsTranslationsManager`], the default,
     /// you can use `.locales_and_translations_manager()` to set both at
     /// once).
     ///
@@ -393,7 +403,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         };
         self
     }
-    /// Sets the locales information directly based on an instance of `Locales`.
+    /// Sets the locales information directly based on an instance of [`Locales`].
     /// Usually, end users will use `.locales()` instead for a friendlier
     /// interface.
     pub fn locales_lit(mut self, val: Locales) -> Self {
@@ -401,15 +411,15 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self
     }
     /// Sets the translations manager. If you're using the default translations
-    /// manager (`FsTranslationsManager`), you can use
+    /// manager ([`FsTranslationsManager`]), you can use
     /// `.locales_and_translations_manager()` to set this automatically
     /// based on the locales information. This takes a `Future<Output = T>`,
     /// where `T` is your translations manager's type.
     ///
     /// The reason that this takes a `Future` is to avoid the use of `.await` in
     /// your app definition code, which must be synchronous due to constraints
-    /// of Perseus' client-side systems. When your code is run on the
-    /// server, the `Future` will be `.await`ed on, but on Wasm, it will be
+    /// of Perseus' browser-side systems. When your code is run on the
+    /// server, the `Future` will be `.await`ed on, but in Wasm, it will be
     /// discarded and ignored, since the translations manager isn't needed in
     /// Wasm.
     ///
@@ -444,7 +454,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Sets all the app's static aliases. This takes a map of URLs (e.g.
     /// `/file`) to resource paths, relative to the project directory (e.g.
-    /// `style.css`).
+    /// `style.css`). Generally, calling `.static_alias()` many times is
+    /// preferred.
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn static_aliases(mut self, val: HashMap<String, String>) -> Self {
@@ -454,8 +465,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
         self
     }
-    /// Adds a single static alias (convenience function). This takes a URL path
-    /// (e.g. `/file`) followed by a path to a resource (which must be within
+    /// Adds a single static alias. This takes a URL path (e.g. `/file`) followed by a path to a resource (which must be within
     /// the project directory, e.g. `style.css`).
     #[allow(unused_variables)]
     #[allow(unused_mut)]
@@ -466,12 +476,13 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .insert(url.to_string(), resource.to_string());
         self
     }
-    /// Sets the plugins that the app will use.
+    /// Sets the plugins that the app will use. See [`Plugins`] for
+    /// further details.
     pub fn plugins(mut self, val: Plugins<G>) -> Self {
         self.plugins = Rc::new(val);
         self
     }
-    /// Sets the mutable store for the app to use, which you would change for
+    /// Sets the [`MutableStore`] for the app to use, which you would change for
     /// some production server environments if you wanted to store build
     /// artifacts that can change at runtime in a place other than on the
     /// filesystem (created for serverless functions specifically).
@@ -484,7 +495,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
         self
     }
-    /// Sets the immutable store for the app to use. You should almost never
+    /// Sets the [`ImmutableStore`] for the app to use. You should almost never
     /// need to change this unless you're not working with the CLI.
     #[allow(unused_variables)]
     #[allow(unused_mut)]
@@ -550,7 +561,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// this into `::get_html_shell()` to do that).
     ///
     /// Note that this automatically adds `<!DOCTYPE html>` to the start of the
-    /// HTMl shell produced, which can only be overriden with a control plugin
+    /// HTML shell produced, which can only be overriden with a control plugin
     /// (though you should really never do this in Perseus, which targets
     /// HTML on the web).
     #[cfg(not(target_arch = "wasm32"))]
@@ -715,7 +726,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         map
     }
-    /// Gets the error pages used in the app. This returns an `Rc`.
+    /// Gets the [`ErrorPages`] used in the app. This returns an `Rc`.
     pub fn get_error_pages(&self) -> ErrorPages<G> {
         let mut error_pages = (self.error_pages.0)();
         let extra_error_pages = self
@@ -732,7 +743,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         error_pages
     }
-    /// Gets the global state creator. This can't be directly modified by
+    /// Gets the [`GlobalStateCreator`]. This can't be directly modified by
     /// plugins because of reactive type complexities.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_global_state_creator(&self) -> Arc<GlobalStateCreator> {
@@ -748,7 +759,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run(locales.clone(), self.plugins.get_plugin_data())
             .unwrap_or(locales)
     }
-    /// Gets the server-side translations manager. Like the mutable store, this
+    /// Gets the server-side [`TranslationsManager`]. Like the mutable store, this
     /// can't be modified by plugins due to trait complexities.
     ///
     /// This involves evaluating the future stored for the translations manager,
@@ -760,7 +771,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             Tm::Full(tm) => tm.await,
         }
     }
-    /// Gets the immutable store.
+    /// Gets the [`ImmutableStore`].
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_immutable_store(&self) -> ImmutableStore {
         let immutable_store = self.immutable_store.clone();
@@ -771,7 +782,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run(immutable_store.clone(), self.plugins.get_plugin_data())
             .unwrap_or(immutable_store)
     }
-    /// Gets the mutable store. This can't be modified by plugins due to trait
+    /// Gets the [`MutableStore`]. This can't be modified by plugins due to trait
     /// complexities, so plugins should instead expose a function that the user
     /// can use to manually set it.
     #[cfg(not(target_arch = "wasm32"))]
@@ -838,7 +849,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 }
 
 /// The component that represents the entrypoint at which Perseus will inject
-/// itself. You can use this with the `.index_view()` method of `PerseusApp` to
+/// itself. You can use this with the `.index_view()` method of [`PerseusAppBase`] to
 /// avoid having to create the entrypoint `<div>` manually.
 #[component]
 #[allow(non_snake_case)]
@@ -852,13 +863,13 @@ use crate::i18n::FsTranslationsManager;
 use crate::stores::FsMutableStore;
 
 /// An alias for the usual kind of Perseus app, which uses the filesystem-based
-/// mutable store and translations manager.
+/// mutable store and translations manager. See [`PerseusAppBase`] for details.
 pub type PerseusApp<G> = PerseusAppBase<G, FsMutableStore, FsTranslationsManager>;
-/// An alias for a Perseus app that uses a custom mutable store type.
+/// An alias for a Perseus app that uses a custom mutable store type. See [`PerseusAppBase`] for details.
 pub type PerseusAppWithMutableStore<G, M> = PerseusAppBase<G, M, FsTranslationsManager>;
-/// An alias for a Perseus app that uses a custom translations manager type.
+/// An alias for a Perseus app that uses a custom translations manager type. See [`PerseusAppBase`] for details.
 pub type PerseusAppWithTranslationsManager<G, T> = PerseusAppBase<G, FsMutableStore, T>;
 /// An alias for a fully customizable Perseus app that can accept a custom
 /// mutable store and a custom translations manager. Alternatively, you could
-/// just use `PerseusAppBase` directly.
+/// just use [`PerseusAppBase`] directly.
 pub type PerseusAppWithMutableStoreAndTranslationsManager<G, M, T> = PerseusAppBase<G, M, T>;

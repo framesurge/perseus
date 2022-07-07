@@ -255,9 +255,8 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for GenericErrorWithC
     }
 }
 
-/// Creates a new `GenericErrorWithCause` efficiently. This allows you to
-/// explicitly return errors from anything that returns
-/// `RenderFnResultWithCause`, which includes both an error and a statement of
+/// Creates a new [`GenericErrorWithCause` (the error type behind [`RenderFnResultWithCause`]) efficiently. This allows you to
+/// explicitly return errors from any state-generation functions, including both an error and a statement of
 /// whether the server or the client is responsible. With this macro, you can
 /// use any of the following syntaxes (substituting `"error!"` for any error
 /// that can be converted with `.into()` into a `Box<dyn std::error::Error>`):

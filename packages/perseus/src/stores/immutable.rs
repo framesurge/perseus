@@ -6,14 +6,16 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
 };
 
-/// An immutable storage system. This wraps filesystem calls in a sensible
-/// asynchronous API, allowing abstraction of the base path to a distribution
-/// directory or the like. Perseus uses this to store assts created at build
-/// time that won't change, which is anything not involved in the *revalidation*
-/// or *incremental generation* strategies.
+/// An immutable storage system used by Perseus' engine to store build artifacts
+/// and the like, which will then be used by the server or the export process. By default,
+/// this is set to a path inside the `dist/` folder at the root of your project,
+/// which you should only change if you have special requirements, as the CLI
+/// expects the default paths to be used, with no option for customization yet.
 ///
-/// Note: the `.write()` methods on this implementation will create any missing
-/// parent directories automatically.
+/// Note that this is only used for immutable data, which can be read-only in production,
+/// meaning there are no consequences of using this on a read-only production filesystem
+/// (e.g. in a serverless function). Data that do need to change use a [`MutableStore`](super::MutableStore)
+/// instead.
 #[derive(Clone, Debug)]
 pub struct ImmutableStore {
     #[cfg(not(target_arch = "wasm32"))]
@@ -71,7 +73,8 @@ impl ImmutableStore {
         }
     }
     /// Writes the given asset to the filesystem asynchronously. This must only
-    /// be used at build-time, and must not be changed afterward.
+    /// be used at build-time, and must not be changed afterward. Note that this
+    /// will automatically create any missing parent directories.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn write(&self, name: &str, content: &str) -> Result<(), StoreError> {
         let asset_path = format!("{}/{}", self.root_path, name);
