@@ -4,10 +4,8 @@ use crate::translations::translations;
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest};
 use perseus::{
-    internal::{
-        i18n::TranslationsManager,
-        serve::{get_render_cfg, ServerOptions, ServerProps},
-    },
+    i18n::TranslationsManager,
+    server::{get_render_cfg, ServerOptions, ServerProps},
     stores::MutableStore,
 };
 

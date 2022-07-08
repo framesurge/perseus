@@ -6,10 +6,8 @@ use axum::{
 use fmterr::fmt_err;
 use perseus::{
     errors::err_to_status_code,
-    internal::{
-        i18n::TranslationsManager,
-        serve::{get_page_for_template, GetPageProps, ServerOptions},
-    },
+    i18n::TranslationsManager,
+    server::{get_page_for_template, GetPageProps, ServerOptions},
     stores::{ImmutableStore, MutableStore},
     Request,
 };

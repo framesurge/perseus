@@ -1,9 +1,7 @@
 use crate::configurer;
 use actix_web::{App, HttpServer};
 use futures::executor::block_on;
-use perseus::{
-    internal::i18n::TranslationsManager, internal::serve::ServerProps, stores::MutableStore,
-};
+use perseus::{i18n::TranslationsManager, server::ServerProps, stores::MutableStore};
 
 /// Creates and starts the default Perseus server using Actix Web. This should
 /// be run in a `main()` function annotated with `#[tokio::main]` (which

@@ -10,7 +10,7 @@ use wasm_bindgen::JsValue;
 /// excluded from search engines (they don't show anything until redirected).
 /// This is guided by [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt), but is not yet fully compliant (only supports `xx-XX` form locales).
 /// Note that this bypasses Sycamore's routing logic and triggers a full reload.
-pub fn detect_locale(url: String, locales: &Locales) {
+pub(crate) fn detect_locale(url: String, locales: &Locales) {
     // If nothing matches, we'll use the default locale
     let mut locale = locales.default.clone();
 

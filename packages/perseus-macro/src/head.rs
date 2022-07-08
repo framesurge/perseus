@@ -142,7 +142,7 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
             #[cfg(target_arch = "wasm32")]
             #vis fn #name() {}
             #[cfg(not(target_arch = "wasm32"))]
-            #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
+            #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::template::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*
@@ -163,7 +163,7 @@ pub fn head_impl(input: HeadFn) -> TokenStream {
             #[cfg(target_arch = "wasm32")]
             #vis fn #name() {}
             #[cfg(not(target_arch = "wasm32"))]
-            #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
+            #vis fn #name(cx: ::sycamore::prelude::Scope, props: ::perseus::template::PageProps) -> ::sycamore::prelude::View<::sycamore::prelude::SsrNode> {
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
                 #(#attrs)*

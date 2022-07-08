@@ -29,4 +29,4 @@ closure = "0.3"
 
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
-dflt-server = [ "perseus/builder" ]
+dflt-server = []

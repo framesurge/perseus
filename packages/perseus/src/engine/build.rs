@@ -2,8 +2,9 @@ use crate::build::{build_app, BuildProps};
 use crate::{
     errors::{EngineError, ServerError},
     i18n::TranslationsManager,
+    plugins::PluginAction,
     stores::MutableStore,
-    PerseusAppBase, PluginAction, SsrNode,
+    PerseusAppBase, SsrNode,
 };
 use std::rc::Rc;
 

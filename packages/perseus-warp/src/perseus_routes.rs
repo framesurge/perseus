@@ -6,8 +6,8 @@ use crate::{
     static_content::{serve_file, static_aliases_filter},
     translations::translations_handler,
 };
-use perseus::internal::serve::{get_render_cfg, ServerProps};
-use perseus::{internal::i18n::TranslationsManager, stores::MutableStore};
+use perseus::server::{get_render_cfg, ServerProps};
+use perseus::{i18n::TranslationsManager, stores::MutableStore};
 use std::sync::Arc;
 use warp::Filter;
 

@@ -1,4 +1,3 @@
-use crate::plugins::PluginAction;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
@@ -6,10 +5,11 @@ use crate::stores::ImmutableStore;
 use crate::utils::get_path_prefix_server;
 use crate::{
     i18n::{Locales, TranslationsManager},
+    plugins::{PluginAction, Plugins},
     state::GlobalStateCreator,
     stores::MutableStore,
-    templates::TemplateMap,
-    ErrorPages, Html, Plugins, SsrNode, Template,
+    template::TemplateMap,
+    ErrorPages, Html, SsrNode, Template,
 };
 use futures::Future;
 #[cfg(target_arch = "wasm32")]
@@ -154,8 +154,9 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
 // because things are completely generic there
 impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
     /// Creates a new instance of a Perseus app using the default
-    /// filesystem-based mutable store (see [`FsMutableStore`]). For most apps, this will be sufficient.
-    /// Note that this initializes the translations manager as a dummy (see [`FsTranslationsManager`]), and
+    /// filesystem-based mutable store (see [`FsMutableStore`]). For most apps,
+    /// this will be sufficient. Note that this initializes the translations
+    /// manager as a dummy (see [`FsTranslationsManager`]), and
     /// adds no templates or error pages.
     ///
     /// In development, you can get away with defining no error pages, but
@@ -171,8 +172,9 @@ impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
         Self::new_with_mutable_store(FsMutableStore::new("./dist/mutable".to_string()))
     }
     /// Creates a new instance of a Perseus app using the default
-    /// filesystem-based mutable store (see [`FsMutableStore`]). For most apps, this will be sufficient.
-    /// Note that this initializes the translations manager as a dummy (see [`FsTranslationsManager`]), and
+    /// filesystem-based mutable store (see [`FsMutableStore`]). For most apps,
+    /// this will be sufficient. Note that this initializes the translations
+    /// manager as a dummy (see [`FsTranslationsManager`]), and
     /// adds no templates or error pages.
     ///
     /// In development, you can get away with defining no error pages, but
@@ -217,9 +219,9 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
                     .cloned()
                     .collect();
                 let tm_fut = FsTranslationsManager::new(
-                    crate::internal::i18n::DFLT_TRANSLATIONS_DIR.to_string(),
+                    crate::i18n::DFLT_TRANSLATIONS_DIR.to_string(),
                     all_locales,
-                    crate::internal::i18n::TRANSLATOR_FILE_EXT.to_string(),
+                    crate::i18n::TRANSLATOR_FILE_EXT.to_string(),
                 );
                 self.translations_manager = Tm::Full(Box::pin(tm_fut));
             } else {
@@ -257,8 +259,8 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
 // manager
 impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Creates a new instance of a Perseus app, with the default options and a
-    /// customizable [`MutableStore`], using the default dummy [`FsTranslationsManager`]
-    /// by default (though this can be changed).
+    /// customizable [`MutableStore`], using the default dummy
+    /// [`FsTranslationsManager`] by default (though this can be changed).
     #[allow(unused_variables)]
     pub fn new_with_mutable_store(mutable_store: M) -> Self {
         Self {
@@ -403,9 +405,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         };
         self
     }
-    /// Sets the locales information directly based on an instance of [`Locales`].
-    /// Usually, end users will use `.locales()` instead for a friendlier
-    /// interface.
+    /// Sets the locales information directly based on an instance of
+    /// [`Locales`]. Usually, end users will use `.locales()` instead for a
+    /// friendlier interface.
     pub fn locales_lit(mut self, val: Locales) -> Self {
         self.locales = val;
         self
@@ -465,8 +467,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
         self
     }
-    /// Adds a single static alias. This takes a URL path (e.g. `/file`) followed by a path to a resource (which must be within
-    /// the project directory, e.g. `style.css`).
+    /// Adds a single static alias. This takes a URL path (e.g. `/file`)
+    /// followed by a path to a resource (which must be within the project
+    /// directory, e.g. `style.css`).
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn static_alias(mut self, url: &str, resource: &str) -> Self {
@@ -700,7 +703,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Gets the templates in an `Arc`-based `HashMap` for concurrent access.
     /// This should only be relevant on the server-side.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_templates_map(&self) -> crate::templates::ArcTemplateMap<G> {
+    pub fn get_atomic_templates_map(&self) -> crate::template::ArcTemplateMap<G> {
         let mut map = HashMap::new();
 
         // Now add the templates the user provided
@@ -759,8 +762,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run(locales.clone(), self.plugins.get_plugin_data())
             .unwrap_or(locales)
     }
-    /// Gets the server-side [`TranslationsManager`]. Like the mutable store, this
-    /// can't be modified by plugins due to trait complexities.
+    /// Gets the server-side [`TranslationsManager`]. Like the mutable store,
+    /// this can't be modified by plugins due to trait complexities.
     ///
     /// This involves evaluating the future stored for the translations manager,
     /// and so this consumes `self`.
@@ -782,9 +785,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run(immutable_store.clone(), self.plugins.get_plugin_data())
             .unwrap_or(immutable_store)
     }
-    /// Gets the [`MutableStore`]. This can't be modified by plugins due to trait
-    /// complexities, so plugins should instead expose a function that the user
-    /// can use to manually set it.
+    /// Gets the [`MutableStore`]. This can't be modified by plugins due to
+    /// trait complexities, so plugins should instead expose a function that
+    /// the user can use to manually set it.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_mutable_store(&self) -> M {
         self.mutable_store.clone()
@@ -849,8 +852,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 }
 
 /// The component that represents the entrypoint at which Perseus will inject
-/// itself. You can use this with the `.index_view()` method of [`PerseusAppBase`] to
-/// avoid having to create the entrypoint `<div>` manually.
+/// itself. You can use this with the `.index_view()` method of
+/// [`PerseusAppBase`] to avoid having to create the entrypoint `<div>`
+/// manually.
 #[component]
 #[allow(non_snake_case)]
 pub fn PerseusRoot<G: Html>(cx: Scope) -> View<G> {
@@ -865,9 +869,11 @@ use crate::stores::FsMutableStore;
 /// An alias for the usual kind of Perseus app, which uses the filesystem-based
 /// mutable store and translations manager. See [`PerseusAppBase`] for details.
 pub type PerseusApp<G> = PerseusAppBase<G, FsMutableStore, FsTranslationsManager>;
-/// An alias for a Perseus app that uses a custom mutable store type. See [`PerseusAppBase`] for details.
+/// An alias for a Perseus app that uses a custom mutable store type. See
+/// [`PerseusAppBase`] for details.
 pub type PerseusAppWithMutableStore<G, M> = PerseusAppBase<G, M, FsTranslationsManager>;
-/// An alias for a Perseus app that uses a custom translations manager type. See [`PerseusAppBase`] for details.
+/// An alias for a Perseus app that uses a custom translations manager type. See
+/// [`PerseusAppBase`] for details.
 pub type PerseusAppWithTranslationsManager<G, T> = PerseusAppBase<G, FsMutableStore, T>;
 /// An alias for a fully customizable Perseus app that can accept a custom
 /// mutable store and a custom translations manager. Alternatively, you could

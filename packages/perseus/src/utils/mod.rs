@@ -8,7 +8,7 @@ mod log;
 mod path_prefix;
 mod test;
 
-pub use async_fn_trait::AsyncFnReturn;
+pub(crate) use async_fn_trait::AsyncFnReturn;
 #[cfg(not(target_arch = "wasm32"))]
 pub use cache_res::{cache_fallible_res, cache_res};
 pub(crate) use context::provide_context_signal_replace;

@@ -1,8 +1,5 @@
 use crate::perseus_routes;
-use perseus::{
-    internal::{i18n::TranslationsManager, serve::ServerProps},
-    stores::MutableStore,
-};
+use perseus::{i18n::TranslationsManager, server::ServerProps, stores::MutableStore};
 use std::net::SocketAddr;
 
 /// Creates and starts the default Perseus server with Warp. This should be run

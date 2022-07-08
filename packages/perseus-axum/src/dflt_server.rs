@@ -1,7 +1,6 @@
 use crate::get_router;
 use perseus::{
-    internal::i18n::TranslationsManager, internal::serve::ServerProps, stores::MutableStore,
-    PerseusAppBase, SsrNode,
+    i18n::TranslationsManager, server::ServerProps, stores::MutableStore, PerseusAppBase, SsrNode,
 };
 use std::net::SocketAddr;
 

@@ -1,6 +1,6 @@
 use axum::{extract::Path, http::StatusCode};
 use fmterr::fmt_err;
-use perseus::internal::{i18n::TranslationsManager, serve::ServerOptions};
+use perseus::{i18n::TranslationsManager, server::ServerOptions};
 use std::sync::Arc;
 
 pub async fn translations_handler<T: TranslationsManager>(

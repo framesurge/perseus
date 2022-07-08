@@ -1,5 +1,4 @@
 use futures::channel::oneshot::Sender;
-use sycamore::prelude::RcSignal;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{ErrorEvent, MessageEvent, WebSocket};
 
@@ -39,10 +38,9 @@ pub(crate) fn connect_to_reload_server(live_reload_tx: Sender<()>) {
         // so we'll do so
         log("Reloading...");
         // Signal the rest of the code that we need to reload (and potentially freeze
-        // state if HSR is enabled) Amazingly, the reactive scope isn't
-        // interrupted and this actually works!
+        // state if HSR is enabled)
         match live_reload_tx.take() {
-            Some(tx) => { tx.send(()); },
+            Some(tx) => { tx.send(()).unwrap(); },
             None => log("Reload sender already invoked. It's likely that multiple reload events have occurred in too rapid succession. If the page does not reload in a matter of seconds, you should manually reload.")
         }
     }) as Box<dyn FnMut(MessageEvent)>);
@@ -99,7 +97,7 @@ fn log(msg: &str) {
 /// # Panics
 /// This will panic if it was impossible to reload (which would be caused by a
 /// *very* old browser).
-pub fn force_reload() {
+pub(crate) fn force_reload() {
     web_sys::window()
         .unwrap()
         .location()

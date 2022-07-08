@@ -1,7 +1,7 @@
 use actix_web::{web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
-use perseus::internal::i18n::TranslationsManager;
-use perseus::internal::serve::ServerOptions;
+use perseus::i18n::TranslationsManager;
+use perseus::server::ServerOptions;
 
 /// The handler for calls to `.perseus/translations/{locale}`. This will manage
 /// returning errors and the like. THe JSON body returned from this does NOT

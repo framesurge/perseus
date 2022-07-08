@@ -3,7 +3,7 @@ use crate::i18n::{Locales, TranslationsManager};
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
 use crate::template::TemplateMap;
-use crate::{PageData, SsrNode};
+use crate::{page_data::PageData, SsrNode};
 use futures::future::{try_join, try_join_all};
 
 /// Gets the static page data.

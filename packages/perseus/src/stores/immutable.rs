@@ -7,15 +7,16 @@ use tokio::{
 };
 
 /// An immutable storage system used by Perseus' engine to store build artifacts
-/// and the like, which will then be used by the server or the export process. By default,
-/// this is set to a path inside the `dist/` folder at the root of your project,
-/// which you should only change if you have special requirements, as the CLI
-/// expects the default paths to be used, with no option for customization yet.
+/// and the like, which will then be used by the server or the export process.
+/// By default, this is set to a path inside the `dist/` folder at the root of
+/// your project, which you should only change if you have special requirements,
+/// as the CLI expects the default paths to be used, with no option for
+/// customization yet.
 ///
-/// Note that this is only used for immutable data, which can be read-only in production,
-/// meaning there are no consequences of using this on a read-only production filesystem
-/// (e.g. in a serverless function). Data that do need to change use a [`MutableStore`](super::MutableStore)
-/// instead.
+/// Note that this is only used for immutable data, which can be read-only in
+/// production, meaning there are no consequences of using this on a read-only
+/// production filesystem (e.g. in a serverless function). Data that do need to
+/// change use a [`MutableStore`](super::MutableStore) instead.
 #[derive(Clone, Debug)]
 pub struct ImmutableStore {
     #[cfg(not(target_arch = "wasm32"))]

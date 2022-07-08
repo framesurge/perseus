@@ -6,19 +6,20 @@ use tokio::{
 };
 
 /// A trait for implementations of stores that the Perseus engine can use for
-/// mutable data, which may need to be altered while the server is running. In exported
-/// apps, this is irrelevant, since there is no server process to speak of.
-/// This store is used in particular by the revalidation and incremental generation
-/// strategies, which will both update build artifacts for future caching.
-/// By default, [`FsMutableStore`] is used for simplicity and low latency, though
-/// this is only viable in deployments with writable filesystems. Notably, this
-/// precludes usage in serverless functions.
+/// mutable data, which may need to be altered while the server is running. In
+/// exported apps, this is irrelevant, since there is no server process to speak
+/// of. This store is used in particular by the revalidation and incremental
+/// generation strategies, which will both update build artifacts for future
+/// caching. By default, [`FsMutableStore`] is used for simplicity and low
+/// latency, though this is only viable in deployments with writable
+/// filesystems. Notably, this precludes usage in serverless functions.
 ///
-/// However, this is written deliberately as a trait with exposed, isolated error
-/// types (see [`StoreError`]), so that users can write their own implementations
-/// of this. For instance, you could manage mutable artifacts in a database,
-/// though this should be as low-latency as possible, since reads and writes
-/// are required at extremely short-notice as new user requests arrive.
+/// However, this is written deliberately as a trait with exposed, isolated
+/// error types (see [`StoreError`]), so that users can write their own
+/// implementations of this. For instance, you could manage mutable artifacts in
+/// a database, though this should be as low-latency as possible, since reads
+/// and writes are required at extremely short-notice as new user requests
+/// arrive.
 #[async_trait::async_trait]
 pub trait MutableStore: std::fmt::Debug + Clone + Send + Sync {
     /// Reads data from the named asset.
@@ -45,8 +46,8 @@ pub struct FsMutableStore {
 impl FsMutableStore {
     /// Creates a new filesystem configuration manager. You should provide a
     /// path like `dist/mutable` here. Make sure that this is not the same
-    /// path as the [`ImmutableStore`](super::ImmutableStore), as this will cause potentially problematic
-    /// overlap between the two systems.
+    /// path as the [`ImmutableStore`](super::ImmutableStore), as this will
+    /// cause potentially problematic overlap between the two systems.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn new(root_path: String) -> Self {
         Self { root_path }

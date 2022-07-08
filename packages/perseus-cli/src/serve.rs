@@ -173,8 +173,8 @@ fn run_server(
     let output = child.wait_with_output().unwrap();
     let exit_code = match output.status.code() {
         Some(exit_code) => exit_code,         // If we have an exit code, use it
-        None if output.status.success() => 0, /* If we don't, but we know the command succeeded,
-                                                * return 0 (success code) */
+        None if output.status.success() => 0, /* If we don't, but we know the command succeeded, */
+        // return 0 (success code)
         None => 1, /* If we don't know an exit code but we know that the command failed, return 1
                     * (general error code) */
     };

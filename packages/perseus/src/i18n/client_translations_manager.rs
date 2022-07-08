@@ -1,7 +1,7 @@
 use super::Locales;
 use crate::errors::*;
+use crate::i18n::Translator;
 use crate::shell::fetch;
-use crate::translator::Translator;
 use crate::utils::get_path_prefix_client;
 
 /// Manages translations in the app shell. This handles fetching translations
@@ -10,7 +10,7 @@ use crate::utils::get_path_prefix_client;
 /// the server. This optimizes for users viewing many pages in the same locale,
 /// which is by far the most common use of most websites in terms of i18n.
 #[derive(Debug)]
-pub struct ClientTranslationsManager {
+pub(crate) struct ClientTranslationsManager {
     /// The cached translator. If the same locale is requested again, this will
     /// simply be returned.
     cached_translator: Option<Translator>,
@@ -30,10 +30,10 @@ impl ClientTranslationsManager {
     /// internally cached `Translator` if possible, and will otherwise fetch
     /// the translations from the server. This needs mutability because it will
     /// modify its internal cache if necessary.
-    pub async fn get_translator_for_locale(
-        &mut self,
-        locale: &str,
-    ) -> Result<&Translator, ClientError> {
+    pub async fn get_translator_for_locale<'a>(
+        &'a mut self,
+        locale: &'a str,
+    ) -> Result<&'a Translator, ClientError> {
         let path_prefix = get_path_prefix_client();
         // Check if we've already cached
         if self.cached_translator.is_some()

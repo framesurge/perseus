@@ -1,13 +1,12 @@
 use crate::{
     checkpoint,
+    error_pages::ErrorPageData,
     i18n::Locales,
-    internal::{
-        error_pages::ErrorPageData,
-        i18n::{detect_locale, ClientTranslationsManager},
-        router::{PerseusRoute, RouteInfo, RouteVerdict},
-        shell::{app_shell, get_initial_state, InitialState, ShellProps},
-    },
-    templates::{RenderCtx, RouterLoadState, RouterState, TemplateMap, TemplateNodeType},
+    i18n::{detect_locale, ClientTranslationsManager},
+    router::{PerseusRoute, RouteInfo, RouteVerdict},
+    router::{RouterLoadState, RouterState},
+    shell::{app_shell, get_initial_state, InitialState, ShellProps},
+    template::{RenderCtx, TemplateMap, TemplateNodeType},
     DomNode, ErrorPages, Html,
 };
 use std::cell::RefCell;
@@ -137,7 +136,7 @@ fn on_route_change<G: Html>(
 
 /// The properties that the router takes.
 #[derive(Debug, Prop)]
-pub struct PerseusRouterProps {
+pub(crate) struct PerseusRouterProps {
     /// The error pages the app is using.
     pub error_pages: ErrorPages<TemplateNodeType>,
     /// The locales settings the app is using.
@@ -159,7 +158,7 @@ pub struct PerseusRouterProps {
 /// creates with `create_app_root!` to be provided easily. That given `cx`
 /// property will be used for all context registration in the app.
 #[component]
-pub fn perseus_router<G: Html>(
+pub(crate) fn perseus_router<G: Html>(
     cx: Scope,
     PerseusRouterProps {
         error_pages,
@@ -299,7 +298,7 @@ pub fn perseus_router<G: Html>(
         // Unfortunately, we can't share senders/receivers around without bringing in
         // another crate And, Sycamore's `RcSignal` doesn't like being put into
         // a `Closure::wrap()` one bit
-        let (live_reload_tx, mut live_reload_rx) = futures::channel::oneshot::channel();
+        let (live_reload_tx, live_reload_rx) = futures::channel::oneshot::channel();
         crate::spawn_local_scoped(cx, async move {
             match live_reload_rx.await {
                 // This will trigger only once, and then can't be used again

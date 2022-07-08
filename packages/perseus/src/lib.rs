@@ -2,18 +2,15 @@
 /*!
 ## Features
 
-- `translator-fluent` -- enables internationalization using [Fluent](https://projectfluent.org)
-- `hydrate` -- enables Sycamore's *experimental* hydration system (if you experience odd issues, try disabling this)
-- `preload-wasm-on-redirect` -- *experimentally* preloads the Wasm bundle for locale redirections (this only partially works right now)
-- `idb-freezing` -- enables utilities for freezing your app's state to IndexedDB in the browser (see the book)
-- `live-reload` (default) -- enables reloading the browser automatically when you make changes to your app
-- `hsr` (default) -- enables *hot state reloading*, which reloads the state of your app right before you made code changes in development, allowing you to pick up where you left off
-
-The remaining features are used internally by the other Perseus packages, and enabling them manually in your project will very likely wreak havoc unless you seriously know what you're doing!
-
-- `tinker-plugins` -- makes tinker plugins be registered
-- `server-side` -- enables various functions only used on the server-side (minimizes the client-side bundle)
-- `standalone` -- makes Perseus able to be run as a standalone binary by changing some minor internal defaults
+- `translator-fluent` --- enables internationalization using [Fluent](https://projectfluent.org)
+- `macros` (default) --- adds support for macros that will make your life much easier
+- `dflt_engine` (default) --- adds support for the default engine-side mechanics (you would only not want this in extremely niche use-cases)
+- `client_helpers` (default) --- adds useful helpers for managing the browser-side
+- `hydrate` --- enables Sycamore's *experimental* hydration system (if you experience odd issues, try disabling this)
+- `preload-wasm-on-redirect` --- *experimentally* preloads the Wasm bundle for locale redirections (this only partially works right now)
+- `idb-freezing` --- enables utilities for freezing your app's state to IndexedDB in the browser (see the book)
+- `live-reload` (default) --- enables reloading the browser automatically when you make changes to your app
+- `hsr` (default) --- enables *hot state reloading*, which reloads the state of your app right before you made code changes in development, allowing you to pick up where you left off
 
 ## Packages
 
@@ -26,36 +23,43 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![forbid(unsafe_code)]
 #![recursion_limit = "256"] // TODO Do we need this anymore?
 
+/// TODO
+#[cfg(not(target_arch = "wasm32"))]
+pub mod engine;
+/// TODO
+pub mod error_pages;
 pub mod errors;
+/// TODO
+pub mod i18n;
 /// Utilities for working with plugins.
 pub mod plugins;
+/// TODO
+pub mod router;
+/// TODO
+#[cfg(not(target_arch = "wasm32"))]
+pub mod server;
 /// Utilities for working with Perseus' state platform.
 pub mod state;
 /// Utilities for working with immutable and mutable stores. You can learn more
 /// about these in the book.
 pub mod stores;
+/// TODO
+pub mod template;
+/// TODO
+pub mod utils;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod build;
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
 mod client;
-#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
-mod engine;
-mod error_pages;
 #[cfg(not(target_arch = "wasm32"))]
 mod export;
-mod i18n;
 mod init;
 mod macros;
 mod page_data;
-mod router;
-#[cfg(not(target_arch = "wasm32"))]
-mod server;
 #[cfg(target_arch = "wasm32")]
 mod shell;
-mod template;
 mod translator;
-mod utils;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
@@ -68,8 +72,6 @@ pub use sycamore_futures::spawn_local_scoped;
 /// They'll never need payloads (value in path requested).
 #[cfg(not(target_arch = "wasm32"))]
 pub type Request = HttpRequest<()>;
-#[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
-pub use client::{run_client, ClientReturn};
 #[cfg(feature = "macros")]
 pub use perseus_macro::{
     amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
@@ -77,87 +79,37 @@ pub use perseus_macro::{
     should_revalidate, template, template_rx, test,
 };
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
-pub use sycamore_router::{navigate, navigate_replace, Route}; // TODO Should we be exporting `Route` anymore?
+pub use sycamore_router::{navigate, navigate_replace};
 
-// TODO Restructure everything here (needs to stay the same until v0.4.0 though)
-
-// Items that should be available at the root (this should be nearly everything
-// used in a typical Perseus app)
-pub use crate::error_pages::ErrorPages;
-pub use crate::errors::{ErrorCause, GenericErrorWithCause};
-pub use crate::page_data::PageData;
-pub use crate::plugins::{Plugin, PluginAction, Plugins};
+// All the items that should be available at the top-level for convenience
+pub use crate::{
+    error_pages::ErrorPages,
+    errors::{ErrorCause, GenericErrorWithCause},
+    init::*,
+    template::{RenderFnResult, RenderFnResultWithCause, Template},
+};
+// Engine-side only
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::template::States;
+// Browser-side only
 #[cfg(target_arch = "wasm32")]
 pub use crate::shell::checkpoint;
+#[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
+pub use client::{run_client, ClientReturn};
+
+// Internal utilities for lower-level work
+/// TODO
 #[cfg(not(target_arch = "wasm32"))]
-pub use crate::template::{HeadFn, States};
-pub use crate::template::{RenderFnResult, RenderFnResultWithCause, Template};
-#[cfg(not(target_arch = "wasm32"))]
-pub use crate::utils::{cache_fallible_res, cache_res};
-// Everything in the `init.rs` file should be available at the top-level for
-// convenience
-pub use crate::init::*;
-/// Utilities for developing templates, particularly including return types for
-/// various rendering strategies.
-pub mod templates {
-    pub use crate::errors::{ErrorCause, GenericErrorWithCause};
-    pub use crate::router::{RouterLoadState, RouterState};
-    pub use crate::template::*;
-}
-/// Utilities for building an app.
-#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
-pub mod builder {
-    pub use crate::engine::*;
-}
-/// A series of exports that should be unnecessary for nearly all uses of
-/// Perseus. These are used principally in developing alternative engines.
 pub mod internal {
-    /// Internal utilities for working with internationalization.
-    pub mod i18n {
-        pub use crate::i18n::*;
-        #[doc(hidden)]
-        pub use crate::macros::DFLT_TRANSLATIONS_DIR;
-        pub use crate::translator::*;
-    }
-    /// Internal utilities for working with the serving process. These will be
-    /// useful for building integrations for hosting Perseus on different
-    /// platforms.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub mod serve {
-        pub use crate::server::*;
-    }
-    /// Internal utilities for working with the Perseus router.
-    pub mod router {
-        pub use crate::router::*;
-    }
-    /// Internal utilities for working with error pages.
-    pub mod error_pages {
-        pub use crate::error_pages::*;
-    }
-    /// Internal utilities for working with the app shell.
-    #[cfg(target_arch = "wasm32")]
-    pub mod shell {
-        pub use crate::shell::*;
-    }
-    /// Internal utilities for building apps at a very low level.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub mod build {
-        pub use crate::build::*;
-    }
-    /// Internal utilities for exporting apps at a very low level.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub mod export {
-        pub use crate::export::*;
-    }
-    #[cfg(target_arch = "wasm32")]
-    pub use crate::utils::get_path_prefix_client;
-    #[cfg(not(target_arch = "wasm32"))]
-    pub use crate::utils::get_path_prefix_server;
-    /// Internal utilities for logging. These are just re-exports so that users
-    /// don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
-    #[cfg(target_arch = "wasm32")]
-    pub mod log {
-        pub use wasm_bindgen::JsValue;
-        pub use web_sys::console::log_1 as log_js_value;
-    }
+    pub use crate::{build::*, export::*};
 }
+/// Internal utilities for logging. These are just re-exports so that users
+/// don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
+#[cfg(target_arch = "wasm32")]
+#[doc(hidden)]
+pub mod log {
+    pub use wasm_bindgen::JsValue;
+    pub use web_sys::console::log_1 as log_js_value;
+}
+
+// TODO Fix feature flags

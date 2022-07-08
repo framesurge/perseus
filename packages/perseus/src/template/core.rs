@@ -39,8 +39,8 @@ pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + 
 /// Note that you can automatically convert from your error type into this with
 /// `.into()` or `?`, which will blame the server for the error by default and
 /// return a *500 Internal Server Error* HTTP status code. Otherwise, you'll
-/// need to manually instantiate [`GenericErrorWithCause`] and return that as the error
-/// type. Alternatively, you could use [`blame_err!`].
+/// need to manually instantiate [`GenericErrorWithCause`] and return that as
+/// the error type. Alternatively, you could use [`blame_err!`].
 pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
 // A series of asynchronous closure traits that prevent the user from having to
@@ -111,8 +111,9 @@ pub type AmalgamateStatesFn =
 /// type maps and other inefficiencies, since they need to be transmitted over
 /// the network anyway. As such, this `struct` is entirely state-agnostic,
 /// since all the state-relevant functions merely return `String`s. The
-/// various proc macros used to annotate such functions (e.g. `#[perseus::build_state]`)
-/// perform serialization/deserialization automatically for convenience.
+/// various proc macros used to annotate such functions (e.g.
+/// `#[perseus::build_state]`) perform serialization/deserialization
+/// automatically for convenience.
 pub struct Template<G: Html> {
     /// The path to the root of the template. Any build paths will be inserted
     /// under this.
@@ -167,19 +168,20 @@ pub struct Template<G: Html> {
     #[cfg(not(target_arch = "wasm32"))]
     get_request_state: Option<GetRequestStateFn>,
     /// A function to be run on every request to check if a template prerendered
-    /// at build-time should be prerendered again. If used with `revalidate_after`, this function will
-    /// only be run after that time period. This function will not be parsed
-    /// anything specific to the request that invoked it.
+    /// at build-time should be prerendered again. If used with
+    /// `revalidate_after`, this function will only be run after that time
+    /// period. This function will not be parsed anything specific to the
+    /// request that invoked it.
     #[cfg(not(target_arch = "wasm32"))]
     should_revalidate: Option<ShouldRevalidateFn>,
-    /// A length of time after which to prerender the template again. This should specify a
-    /// string interval to revalidate after. That will be converted into a
-    /// datetime to wait for, which will be updated after every revalidation.
-    /// Note that, if this is used with incremental generation, the counter will
-    /// only start after the first render (meaning if you expect
-    /// a weekly re-rendering cycle for all pages, they'd likely all be out of
-    /// sync, you'd need to manually implement that with
-    /// `should_revalidate`).
+    /// A length of time after which to prerender the template again. This
+    /// should specify a string interval to revalidate after. That will be
+    /// converted into a datetime to wait for, which will be updated after
+    /// every revalidation. Note that, if this is used with incremental
+    /// generation, the counter will only start after the first render
+    /// (meaning if you expect a weekly re-rendering cycle for all pages,
+    /// they'd likely all be out of sync, you'd need to manually implement
+    /// that with `should_revalidate`).
     #[cfg(not(target_arch = "wasm32"))]
     revalidate_after: Option<String>,
     /// Custom logic to amalgamate potentially different states generated at
@@ -514,9 +516,9 @@ impl<G: Html> Template<G> {
         self
     }
 
-    /// Sets the document `<head>` rendering function to use. The [`View`] produced
-    /// by this will only be rendered on the engine-side, and will *not* be
-    /// reactive (since it only contains metadata).
+    /// Sets the document `<head>` rendering function to use. The [`View`]
+    /// produced by this will only be rendered on the engine-side, and will
+    /// *not* be reactive (since it only contains metadata).
     #[cfg(not(target_arch = "wasm32"))]
     pub fn head(
         mut self,
@@ -526,9 +528,9 @@ impl<G: Html> Template<G> {
         self.head = Box::new(val);
         self
     }
-     /// Sets the document `<head>` rendering function to use. The [`View`] produced
-    /// by this will only be rendered on the engine-side, and will *not* be
-    /// reactive (since it only contains metadata).
+    /// Sets the document `<head>` rendering function to use. The [`View`]
+    /// produced by this will only be rendered on the engine-side, and will
+    /// *not* be reactive (since it only contains metadata).
     #[cfg(target_arch = "wasm32")]
     pub fn head(self, _val: impl Fn() + 'static) -> Template<G> {
         self
@@ -634,7 +636,8 @@ impl<G: Html> Template<G> {
     ///    - d: day,
     ///    - w: week,
     ///    - M: month (30 days used here, 12M ≠ 1y!),
-    ///    - y: year (365 days always, leap years ignored, if you want them add them as days)
+    ///    - y: year (365 days always, leap years ignored, if you want them add
+    ///      them as days)
     #[cfg(not(target_arch = "wasm32"))]
     pub fn revalidate_after(mut self, val: String) -> Template<G> {
         self.revalidate_after = Some(val);
@@ -649,16 +652,19 @@ impl<G: Html> Template<G> {
     ///    - d: day,
     ///    - w: week,
     ///    - M: month (30 days used here, 12M ≠ 1y!),
-    ///    - y: year (365 days always, leap years ignored, if you want them add them as days)
+    ///    - y: year (365 days always, leap years ignored, if you want them add
+    ///      them as days)
     #[cfg(target_arch = "wasm32")]
     pub fn revalidate_after(self, _val: String) -> Template<G> {
         self
     }
 
-    /// Enables state amalgamation with the given function. State amalgamation allows you to have one template
-    /// generate state at both build time and request time. The function you provide here is responsible for
-    /// rationalizing the two into one single state to be sent to the client, and this will be run just after
-    /// the request state function completes. See [`States`] for further details.
+    /// Enables state amalgamation with the given function. State amalgamation
+    /// allows you to have one template generate state at both build time
+    /// and request time. The function you provide here is responsible for
+    /// rationalizing the two into one single state to be sent to the client,
+    /// and this will be run just after the request state function
+    /// completes. See [`States`] for further details.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn amalgamate_states_fn(
         mut self,
@@ -667,10 +673,12 @@ impl<G: Html> Template<G> {
         self.amalgamate_states = Some(Box::new(val));
         self
     }
-    /// Enables state amalgamation with the given function. State amalgamation allows you to have one template
-    /// generate state at both build time and request time. The function you provide here is responsible for
-    /// rationalizing the two into one single state to be sent to the client, and this will be run just after
-    /// the request state function completes. See [`States`] for further details.
+    /// Enables state amalgamation with the given function. State amalgamation
+    /// allows you to have one template generate state at both build time
+    /// and request time. The function you provide here is responsible for
+    /// rationalizing the two into one single state to be sent to the client,
+    /// and this will be run just after the request state function
+    /// completes. See [`States`] for further details.
     #[cfg(target_arch = "wasm32")]
     pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Template<G> {
         self
@@ -681,10 +689,10 @@ impl<G: Html> Template<G> {
 // those feature settings through
 #[cfg(not(feature = "hydrate"))]
 #[doc(hidden)]
-pub type TemplateNodeType = sycamore::prelude::DomNode;
+pub(crate) type TemplateNodeType = sycamore::prelude::DomNode;
 #[cfg(feature = "hydrate")]
 #[doc(hidden)]
-pub type TemplateNodeType = sycamore::prelude::HydrateNode;
+pub(crate) type TemplateNodeType = sycamore::prelude::HydrateNode;
 
 /// Checks if we're on the server or the client. This must be run inside a
 /// reactive scope (e.g. a `view!` or `create_effect`), because it uses

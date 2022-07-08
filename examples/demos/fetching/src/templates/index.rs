@@ -73,7 +73,7 @@ pub async fn get_build_state(
     // We'll cache the result with `try_cache_res`, which means we only make the
     // request once, and future builds will use the cached result (speeds up
     // development)
-    let body = perseus::cache_fallible_res(
+    let body = perseus::utils::cache_fallible_res(
         "ipify",
         || async {
             // This just gets the IP address of the machine that built the app

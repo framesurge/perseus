@@ -4,8 +4,8 @@
 #[cfg(target_arch = "wasm32")]
 macro_rules! web_log {
     ($format_str:literal $(, $data:expr)*) => {
-        $crate::internal::log::log_js_value(
-            &$crate::internal::log::JsValue::from(
+        $crate::log::log_js_value(
+            &$crate::log::JsValue::from(
                 format!($format_str $(, $data)*)
             )
         );

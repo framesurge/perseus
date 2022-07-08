@@ -2,7 +2,7 @@
 //! regardless of framework. This module aims to provide as many abstractions as
 //! possible to minimize work when maintaining multiple server-framework
 //! integrations. Apart from building your own integrations, you should never
-//! need to use this module.
+//! need to use this module (though some plugins may need types in here).
 
 mod build_error_page;
 mod get_render_cfg;

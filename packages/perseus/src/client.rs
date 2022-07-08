@@ -1,9 +1,9 @@
 use crate::{
     checkpoint,
-    internal::router::{perseus_router, PerseusRouterProps},
     plugins::PluginAction,
+    router::{perseus_router, PerseusRouterProps},
     shell::get_render_cfg,
-    templates::TemplateNodeType,
+    template::TemplateNodeType,
 };
 use wasm_bindgen::JsValue;
 

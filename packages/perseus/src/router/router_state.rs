@@ -1,5 +1,5 @@
 use super::RouteVerdict;
-use crate::templates::TemplateNodeType;
+use crate::template::TemplateNodeType;
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};

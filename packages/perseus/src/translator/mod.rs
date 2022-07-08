@@ -30,7 +30,6 @@ pub use fluent::t_macro_backend;
 #[doc(hidden)]
 pub use fluent::t_macro_backend_with_args;
 #[cfg(feature = "translator-fluent")]
-#[doc(hidden)]
 pub use fluent::TranslationArgs;
 
 #[cfg(all(not(feature = "translator-fluent")))]
@@ -43,7 +42,6 @@ pub use dummy::t_macro_backend;
 #[doc(hidden)]
 pub use dummy::t_macro_backend_with_args;
 #[cfg(all(not(feature = "translator-fluent")))]
-#[doc(hidden)]
 pub use dummy::TranslationArgs;
 
 // If no translators have been specified, we'll use a dummy one
@@ -58,24 +56,24 @@ pub use DUMMY_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 macro_rules! t {
     // When there are no arguments to interpolate
     ($id:expr, $cx:expr) => {
-        $crate::internal::i18n::t_macro_backend($id, $cx)
+        $crate::i18n::t_macro_backend($id, $cx)
     };
     // When there are arguments to interpolate
     ($id:expr, {
         // NOTE Using a colon here leads to literally impossible to solve cast errors based on compiler misinterpretations
         $($key:literal = $value:expr),+
     }, $cx:expr) => {{
-        let mut args = $crate::internal::i18n::TranslationArgs::new();
+        let mut args = $crate::i18n::TranslationArgs::new();
         $(
             args.set($key, $value);
         )+
-        $crate::internal::i18n::t_macro_backend_with_args($id, args, $cx)
+        $crate::i18n::t_macro_backend_with_args($id, args, $cx)
     }};
 }
 /// Gets the link to the given resource in internationalized form conveniently.
 #[macro_export]
 macro_rules! link {
     ($url:expr, $cx:expr) => {
-        $crate::internal::i18n::link_macro_backend($url, $cx)
+        $crate::i18n::link_macro_backend($url, $cx)
     };
 }

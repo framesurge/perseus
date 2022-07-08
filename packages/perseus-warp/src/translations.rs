@@ -1,5 +1,5 @@
 use fmterr::fmt_err;
-use perseus::internal::{i18n::TranslationsManager, serve::ServerOptions};
+use perseus::{i18n::TranslationsManager, server::ServerOptions};
 use std::sync::Arc;
 use warp::http::Response;
 

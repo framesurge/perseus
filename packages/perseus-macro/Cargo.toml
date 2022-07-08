@@ -32,9 +32,3 @@ regex = "1"
 trybuild = { version = "1.0", features = ["diff"] }
 sycamore = "=0.8.0-beta.7"
 serde = { version = "1", features = [ "derive" ] }
-
-[features]
-# Enables live reloading support (which makes the macros listen for live reload events and adjust appropriately). Do NOT enable this here without also enabling it on `perseus`!
-live-reload = []
-# Enables support for HSR (which makes the macros respond to live reload events by freezing and thawing as appropriate). Do NOT enable this here without also enabling is on `perseus`!
-hsr = [ "live-reload" ]

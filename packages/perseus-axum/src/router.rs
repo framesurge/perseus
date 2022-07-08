@@ -8,8 +8,8 @@ use axum::{
     Router,
 };
 use closure::closure;
-use perseus::internal::serve::{get_render_cfg, ServerProps};
-use perseus::{internal::i18n::TranslationsManager, stores::MutableStore};
+use perseus::server::{get_render_cfg, ServerProps};
+use perseus::{i18n::TranslationsManager, stores::MutableStore};
 use std::sync::Arc;
 use tower_http::services::{ServeDir, ServeFile};
 

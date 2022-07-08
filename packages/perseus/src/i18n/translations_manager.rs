@@ -38,7 +38,7 @@ use tokio::io::AsyncReadExt;
 /// A trait for systems that manage where to put translations. At simplest,
 /// we'll just write them to static files, but they might also be stored in a
 /// CMS. It is **strongly** advised that any implementations use some form of
-/// caching, guided by `FsTranslationsManager`.
+/// caching, guided by [`FsTranslationsManager`].
 #[async_trait::async_trait]
 pub trait TranslationsManager: std::fmt::Debug + Clone + Send + Sync {
     /// Gets a translator for the given locale. If i18n is disabled, this should
@@ -259,6 +259,6 @@ impl TranslationsManager for FsTranslationsManager {
         &self,
         _locale: String,
     ) -> Result<Translator, TranslationsManagerError> {
-        Ok(crate::internal::i18n::Translator::new(String::new(), String::new()).unwrap())
+        Ok(crate::i18n::Translator::new(String::new(), String::new()).unwrap())
     }
 }

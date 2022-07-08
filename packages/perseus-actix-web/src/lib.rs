@@ -20,4 +20,4 @@ mod translations;
 pub use crate::configurer::configurer;
 #[cfg(feature = "dflt-server")]
 pub use dflt_server::dflt_server;
-pub use perseus::internal::serve::ServerOptions;
+pub use perseus::server::ServerOptions;

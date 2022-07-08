@@ -3,38 +3,15 @@ mod templates;
 
 use perseus::{Html, PerseusApp};
 
-// pub fn get_app<G: Html>() -> PerseusApp<G> {
-//     PerseusApp::new()
-//         .template(crate::templates::index::get_template)
-//         .template(crate::templates::about::get_template)
-//         .error_pages(crate::error_pages::get_error_pages)
-// }
-
-// #[perseus::engine_main]
-// async fn main() {
-//     use perseus::builder::{get_op, run_dflt_engine};
-
-//     let op = get_op().unwrap();
-//     let exit_code = run_dflt_engine(op, get_app,
-// perseus_warp::dflt_server).await;     std::process::exit(exit_code);
-// }
-
-// #[perseus::browser_main]
-// pub fn main() -> perseus::ClientReturn {
-//     use perseus::run_client;
-
-//     run_client(get_app)
-// }
-
 // Note: we use fully-qualified paths in the types to this function so we don't
 // have to target-gate some more imports
 #[cfg(not(target_arch = "wasm32"))] // We only have access to `warp` etc. on the engine-side, so this function
                                     // should only exist there
 pub async fn dflt_server<
     M: perseus::stores::MutableStore + 'static,
-    T: perseus::internal::i18n::TranslationsManager + 'static,
+    T: perseus::i18n::TranslationsManager + 'static,
 >(
-    props: perseus::internal::serve::ServerProps<M, T>,
+    props: perseus::server::ServerProps<M, T>,
     (host, port): (String, u16),
 ) {
     use perseus_warp::perseus_routes;

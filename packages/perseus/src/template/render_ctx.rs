@@ -390,6 +390,6 @@ impl RenderCtx {
 #[macro_export]
 macro_rules! get_render_ctx {
     ($cx:expr) => {
-        ::perseus::templates::RenderCtx::from_ctx($cx)
+        ::perseus::template::RenderCtx::from_ctx($cx)
     };
 }

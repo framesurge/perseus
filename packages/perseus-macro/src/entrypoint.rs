@@ -174,8 +174,8 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
         #[tokio::main]
         async fn main() {
             // Get the operation we're supposed to run (serve, build, export, etc.) from an environment variable
-            let op = ::perseus::builder::get_op().unwrap();
-            let exit_code = ::perseus::builder::run_dflt_engine(op, __perseus_simple_main, #server_fn).await;
+            let op = ::perseus::engine::get_op().unwrap();
+            let exit_code = ::perseus::engine::run_dflt_engine(op, __perseus_simple_main, #server_fn).await;
             std::process::exit(exit_code);
         }
 
@@ -213,8 +213,8 @@ pub fn main_export_impl(input: MainFn) -> TokenStream {
         #[tokio::main]
         async fn main() {
             // Get the operation we're supposed to run (serve, build, export, etc.) from an environment variable
-            let op = ::perseus::builder::get_op().unwrap();
-            let exit_code = ::perseus::builder::run_dflt_engine_export_only(op, __perseus_simple_main).await;
+            let op = ::perseus::engine::get_op().unwrap();
+            let exit_code = ::perseus::engine::run_dflt_engine_export_only(op, __perseus_simple_main).await;
             std::process::exit(exit_code);
         }
 

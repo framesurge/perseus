@@ -37,12 +37,12 @@ pub fn decode_time_str(time_str: &str) -> Result<String, BuildError> {
                 'h' => Duration::hours(interval_length),
                 'd' => Duration::days(interval_length),
                 'w' => Duration::weeks(interval_length),
-                'M' => Duration::days(interval_length * 30), /* Multiplying the number of months
-                                                               * by 30 days (assumed length of a
-                                                               * month) */
-                'y' => Duration::days(interval_length * 365), /* Multiplying the number of years
-                                                                * by 365 days (assumed length of
-                                                                * a year) */
+                'M' => Duration::days(interval_length * 30), /* Multiplying the number of months */
+                // by 30 days (assumed length of a
+                // month)
+                'y' => Duration::days(interval_length * 365), /* Multiplying the number of years */
+                // by 365 days (assumed length of
+                // a year)
                 c => {
                     return Err(BuildError::InvalidDatetimeIntervalIndicator {
                         indicator: c.to_string(),

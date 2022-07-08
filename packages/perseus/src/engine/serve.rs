@@ -20,7 +20,7 @@ use sycamore::web::SsrNode;
 
 /// Gets the host and port to serve on based on environment variables, which are
 /// universally used for configuration regardless of engine.
-pub fn get_host_and_port() -> (String, u16) {
+pub(crate) fn get_host_and_port() -> (String, u16) {
     // We have to use two sets of environment variables until v0.4.0
     let host = env::var("PERSEUS_HOST");
     let port = env::var("PERSEUS_PORT");
@@ -36,7 +36,7 @@ pub fn get_host_and_port() -> (String, u16) {
 
 /// Gets the properties to pass to the server, invoking plugin opportunities as
 /// necessary. This is entirely engine-agnostic.
-pub fn get_props<M: MutableStore, T: TranslationsManager>(
+pub(crate) fn get_props<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
 ) -> ServerProps<M, T> {
     let plugins = app.get_plugins();

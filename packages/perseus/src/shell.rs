@@ -1,11 +1,11 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::i18n::ClientTranslationsManager;
+use crate::page_data::PageData;
 use crate::router::{RouteVerdict, RouterLoadState, RouterState};
 use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;
-use crate::PageData;
 use fmterr::fmt_err;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -18,8 +18,7 @@ use web_sys::{Element, Request, RequestInit, RequestMode, Response};
 
 /// Fetches the given resource. This should NOT be used by end users, but it's
 /// required by the CLI.
-#[doc(hidden)]
-pub async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
+pub(crate) async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
     let js_err_handler = |err: JsValue| ClientError::Js(format!("{:?}", err));
     let mut opts = RequestInit::new();
     opts.method("GET").mode(RequestMode::Cors);
@@ -71,7 +70,7 @@ pub async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
 /// `__PERSEUS_RENDER_CFG`, which should be inlined by the server. This will
 /// return `None` on any error (not found, serialization failed, etc.), which
 /// should reasonably lead to a `panic!` in the caller.
-pub fn get_render_cfg() -> Option<HashMap<String, String>> {
+pub(crate) fn get_render_cfg() -> Option<HashMap<String, String>> {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_RENDER_CFG");
     let js_obj = match val_opt {
         Some(js_obj) => js_obj,
@@ -93,7 +92,7 @@ pub fn get_render_cfg() -> Option<HashMap<String, String>> {
 /// Gets the initial state injected by the server, if there was any. This is
 /// used to differentiate initial loads from subsequent ones, which have
 /// different log chains to prevent double-trips (a common SPA problem).
-pub fn get_initial_state() -> InitialState {
+pub(crate) fn get_initial_state() -> InitialState {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_INITIAL_STATE");
     let js_obj = match val_opt {
         Some(js_obj) => js_obj,
@@ -135,7 +134,7 @@ pub fn get_initial_state() -> InitialState {
 /// Gets the global state injected by the server, if there was any. If there are
 /// errors in this, we can return `None` and not worry about it, they'll be
 /// handled by the initial state.
-pub fn get_global_state() -> Option<String> {
+pub(crate) fn get_global_state() -> Option<String> {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_GLOBAL_STATE");
     let js_obj = match val_opt {
         Some(js_obj) => js_obj,
@@ -240,7 +239,7 @@ pub fn checkpoint(name: &str) {
 /// isn't an initial load, and we need to request the page from the server. It
 /// could also be an error that the server has rendered.
 #[derive(Debug)]
-pub enum InitialState {
+pub(crate) enum InitialState {
     /// A non-error initial state has been injected.
     Present(Option<String>),
     /// An initial state ahs been injected that indicates an error.
@@ -253,7 +252,7 @@ pub enum InitialState {
 /// Properties for the app shell. These should be constructed literally when
 /// working with the app shell.
 // #[derive(Debug)]
-pub struct ShellProps<'a> {
+pub(crate) struct ShellProps<'a> {
     /// The app's reactive scope.
     pub cx: Scope<'a>,
     /// The path we're rendering for (not the template path, the full path,
@@ -290,7 +289,7 @@ pub struct ShellProps<'a> {
 /// broader template). Asynchronous Wasm is handled here, because only a few
 /// cases need it.
 // TODO handle exceptions higher up
-pub async fn app_shell(
+pub(crate) async fn app_shell(
     ShellProps {
         cx,
         path,

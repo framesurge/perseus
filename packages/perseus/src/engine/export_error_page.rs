@@ -1,6 +1,6 @@
 use crate::{
-    errors::EngineError, i18n::TranslationsManager, internal::serve::build_error_page,
-    stores::MutableStore, PerseusApp, PerseusAppBase, PluginAction, SsrNode,
+    errors::EngineError, i18n::TranslationsManager, plugins::PluginAction,
+    server::build_error_page, stores::MutableStore, PerseusApp, PerseusAppBase, SsrNode,
 };
 use std::{fs, rc::Rc};
 

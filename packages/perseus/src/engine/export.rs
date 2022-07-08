@@ -1,7 +1,11 @@
 use crate::build::{build_app, BuildProps};
 use crate::errors::ServerError;
 use crate::export::{export_app, ExportProps};
-use crate::{internal::get_path_prefix_server, PerseusApp, PluginAction, Plugins, SsrNode};
+use crate::{
+    plugins::{PluginAction, Plugins},
+    utils::get_path_prefix_server,
+    PerseusApp, SsrNode,
+};
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use std::collections::HashMap;
 use std::fs;

@@ -173,7 +173,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         match rx_props_ty {
             // This template takes dummy state and global state
             Type::Tuple(TypeTuple { elems, .. }) if elems.is_empty() => quote! {
-                #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::template::PageProps) -> ::sycamore::prelude::View<G> {
                     use ::perseus::state::MakeRx;
 
                     let render_ctx = ::perseus::get_render_ctx!(cx);
@@ -207,7 +207,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
             },
             // This template takes its own state and global state
             _ => quote! {
-                #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+                #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::template::PageProps) -> ::sycamore::prelude::View<G> {
                     use ::perseus::state::MakeRx;
 
                     let render_ctx = ::perseus::get_render_ctx!(cx).clone();
@@ -269,7 +269,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         };
         let name_string = name.to_string();
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::template::PageProps) -> ::sycamore::prelude::View<G> {
                 use ::perseus::state::MakeRx;
 
                 // The user's function, with Sycamore component annotations and the like preserved
@@ -305,7 +305,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         let cx_arg = &fn_args[0];
         // There are no arguments except for the scope
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::templates::PageProps) -> ::sycamore::prelude::View<G> {
+            #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::template::PageProps) -> ::sycamore::prelude::View<G> {
                 use ::perseus::state::MakeRx;
 
                 // The user's function, with Sycamore component annotations and the like preserved

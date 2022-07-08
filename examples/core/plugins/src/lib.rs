@@ -2,7 +2,7 @@ mod error_pages;
 mod plugin;
 mod templates;
 
-use perseus::{Html, PerseusApp, Plugins};
+use perseus::{plugins::Plugins, Html, PerseusApp};
 
 #[perseus::main(perseus_integration::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {

@@ -1,4 +1,4 @@
-use perseus::{templates::RouterLoadState, Html, Template};
+use perseus::{router::RouterLoadState, Html, Template};
 use sycamore::prelude::{create_memo, view, Scope, View};
 
 #[perseus::template_rx]

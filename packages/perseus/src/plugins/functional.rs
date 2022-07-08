@@ -1,6 +1,6 @@
+use super::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::errors::EngineError;
-use crate::plugins::*;
 use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
@@ -82,13 +82,13 @@ pub struct FunctionalPluginActions<G: Html> {
     /// `PerseusApp`.
     pub settings_actions: FunctionalPluginSettingsActions<G>,
     /// Actions pertaining to the build process.
-    #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub build_actions: FunctionalPluginBuildActions,
     /// Actions pertaining to the export process.
-    #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub export_actions: FunctionalPluginExportActions,
     /// Actions pertaining to the process of exporting an error page.
-    #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub export_error_page_actions: FunctionalPluginExportErrorPageActions,
     /// Actions pertaining to the server.
     pub server_actions: FunctionalPluginServerActions,
@@ -100,11 +100,11 @@ impl<G: Html> Default for FunctionalPluginActions<G> {
         Self {
             tinker: FunctionalPluginAction::default(),
             settings_actions: FunctionalPluginSettingsActions::<G>::default(),
-            #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+            #[cfg(not(target_arch = "wasm32"))]
             build_actions: FunctionalPluginBuildActions::default(),
-            #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+            #[cfg(not(target_arch = "wasm32"))]
             export_actions: FunctionalPluginExportActions::default(),
-            #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+            #[cfg(not(target_arch = "wasm32"))]
             export_error_page_actions: FunctionalPluginExportErrorPageActions::default(),
             server_actions: FunctionalPluginServerActions::default(),
             client_actions: FunctionalPluginClientActions::default(),
@@ -179,7 +179,7 @@ pub struct FunctionalPluginHtmlShellActions {
 /// Functional actions that pertain to the build process. Note that these
 /// actions are not available for the build stage of the export process, and
 /// those should be registered separately.
-#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginBuildActions {
     /// Runs before the build process.
@@ -192,7 +192,7 @@ pub struct FunctionalPluginBuildActions {
     pub after_failed_global_state_creation: FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the export process.
-#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginExportActions {
     /// Runs before the export process.
@@ -222,7 +222,7 @@ pub struct FunctionalPluginExportActions {
     pub after_failed_global_state_creation: FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
-#[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginExportErrorPageActions {
     /// Runs before the process of exporting an error page, providing the HTTP
