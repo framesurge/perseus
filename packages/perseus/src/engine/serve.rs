@@ -9,15 +9,6 @@ use std::fs;
 use std::sync::Arc;
 use sycamore::web::SsrNode;
 
-// TODO Can we unify the two modes of server execution now?
-// This server executable can be run in two modes:
-//      dev: at the root of the project, works with that file structure
-//      prod: as a standalone executable with a `dist/` directory as a sibling
-// (also present with the dev file structure)
-
-// Note: the default servers for integrations are now stored in the crates of
-// those integrations
-
 /// Gets the host and port to serve on based on environment variables, which are
 /// universally used for configuration regardless of engine.
 pub(crate) fn get_host_and_port() -> (String, u16) {

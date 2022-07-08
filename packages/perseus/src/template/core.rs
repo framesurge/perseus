@@ -40,7 +40,8 @@ pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + 
 /// `.into()` or `?`, which will blame the server for the error by default and
 /// return a *500 Internal Server Error* HTTP status code. Otherwise, you'll
 /// need to manually instantiate [`GenericErrorWithCause`] and return that as
-/// the error type. Alternatively, you could use [`blame_err!`].
+/// the error type. Alternatively, you could use
+/// [`blame_err!`](crate::blame_err).
 pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
 // A series of asynchronous closure traits that prevent the user from having to

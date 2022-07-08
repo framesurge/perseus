@@ -2,6 +2,11 @@ use std::env;
 
 /// Determines the engine operation to be performed by examining environment
 /// variables (set automatically by the CLI as appropriate).
+///
+/// *Note:* in production, it would be inconvenient to provide an environment
+/// variable just to get the server to work, so release builds run the server
+/// by default if the relevant environment variable is unset. If the same
+/// situation occurs in development however, `None` will be returned.
 pub fn get_op() -> Option<EngineOperation> {
     let var = match env::var("PERSEUS_ENGINE_OPERATION").ok() {
         Some(var) => var,

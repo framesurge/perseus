@@ -3,6 +3,10 @@ use crate::stores::ImmutableStore;
 use std::collections::HashMap;
 
 /// Gets the configuration of how to render each page using an immutable store.
+///
+/// The render configuration is an internal build artifact stored somewhere like
+/// `dist/`, generated automatically by the build process. The server provides
+/// it automatically to the client to optimize routing.
 pub async fn get_render_cfg(
     immutable_store: &ImmutableStore,
 ) -> Result<HashMap<String, String>, ServerError> {

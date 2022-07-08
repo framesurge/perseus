@@ -15,8 +15,9 @@ pub struct RouterState {
     /// the current page without losing context etc.
     last_verdict: Rc<RefCell<Option<RouteVerdict<TemplateNodeType>>>>,
     /// A flip-flop `RcSignal`. Whenever this is changed, the router will reload
-    /// the current page in the SPA style. As a user, you should rarely ever
-    /// need to do this, but it's used internally in the thawing process.
+    /// the current page in the SPA style (maintaining state). As a user, you
+    /// should rarely ever need to do this, but it's used internally in the
+    /// thawing process.
     pub(crate) reload_commander: RcSignal<bool>,
 }
 impl Default for RouterState {

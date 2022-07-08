@@ -9,8 +9,8 @@ use crate::{
 use std::rc::Rc;
 
 /// Builds the app, calling all necessary plugin opportunities. This works
-/// solely with the properties provided in the given `PerseusApp`, so this is
-/// entirely engine-agnostic.
+/// solely with the properties provided in the given
+/// [`PerseusApp`](crate::PerseusApp), so this is entirely engine-agnostic.
 ///
 /// Note that this expects to be run in the root of the project.
 pub async fn build<M: MutableStore, T: TranslationsManager>(

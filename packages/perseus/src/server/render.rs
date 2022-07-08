@@ -252,8 +252,8 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
     pub translations_manager: &'a T,
 }
 
-/// Internal logic behind `get_page`. The only differences are that this takes a
-/// full template rather than just a template name, which can avoid an
+/// Internal logic behind [`get_page`]. The only differences are that this takes
+/// a full template rather than just a template name, which can avoid an
 /// unnecessary lookup if you already know the template in full (e.g. initial
 /// load server-side routing). Because this handles templates with potentially
 /// revalidation and incremental generation, it uses both mutable and immutable
@@ -492,7 +492,6 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
 /// SSG/SSR/etc., whatever is needed for that page. Note that HTML generated at
 /// request-time will **always** replace anything generated at build-time,
 /// incrementally, revalidated, etc.
-#[allow(clippy::too_many_arguments)]
 pub async fn get_page<M: MutableStore, T: TranslationsManager>(
     props: GetPageProps<'_, M, T>,
     template_name: &str,

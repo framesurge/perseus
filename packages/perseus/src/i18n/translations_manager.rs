@@ -85,14 +85,17 @@ async fn get_translations_str_and_cache(
 }
 
 /// The default translations manager. This will store static files in the
-/// specified location on disk. This should be suitable for nearly all
-/// development and serverful use-cases. Serverless is another matter though
-/// (more development needs to be done). This mandates that translations be
-/// stored as files named as the locale they describe (e.g. 'en-US.ftl',
-/// 'en-US.json', etc.).
+/// specified location on disk, which should be suitable for the majority
+/// of use-cases, though users who want to store translations somewhere
+/// other than on the filesystem should use an alternative implementation.
+/// This mandates that translations be stored as files named as the locale they
+/// describe (e.g. 'en-US.ftl', 'en-US.json', etc.).
 ///
 /// As this is used as the default translations manager by most apps, this also
-/// supports not using i18n at all.
+/// supports not using i18n at all (a dummy translations manager).
+///
+/// Note that this will cache translations upon initialization, meaning
+/// source files cannot be updated while the system is running.
 #[derive(Clone, Debug)]
 pub struct FsTranslationsManager {
     #[cfg(not(target_arch = "wasm32"))]
@@ -118,7 +121,7 @@ pub struct FsTranslationsManager {
 #[cfg(not(target_arch = "wasm32"))]
 impl FsTranslationsManager {
     /// Creates a new filesystem translations manager. You should provide a path
-    /// like `/translations` here. You should also provide the locales you
+    /// like `translations/` here. You should also provide the locales you
     /// want to cache, which will have their translations stored in memory. Any
     /// supported locales not specified here will not be cached, and must
     /// have their translations read from disk on every request. If fetching

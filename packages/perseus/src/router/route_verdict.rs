@@ -21,10 +21,7 @@ pub struct RouteInfo<G: Html> {
     pub locale: String,
 }
 
-/// The possible outcomes of matching a route. This is an alternative
-/// implementation of Sycamore's `Route` trait to enable greater control and
-/// tighter integration of routing with templates. This can only be used if
-/// `Routes` has been defined in context (done automatically by the CLI).
+/// The possible outcomes of matching a route in an app.
 #[derive(Debug, Clone)]
 pub enum RouteVerdict<G: Html> {
     /// The given route was found, and route information is attached.

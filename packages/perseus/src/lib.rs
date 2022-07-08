@@ -23,29 +23,34 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![forbid(unsafe_code)]
 #![recursion_limit = "256"] // TODO Do we need this anymore?
 
-/// TODO
+/// Utilities for working with the engine-side, particularly with regards to
+/// setting up the entrypoint for your app's build/export/server processes.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod engine;
-/// TODO
+/// Utilities surrounding [`ErrorPages`] and their management.
 pub mod error_pages;
 pub mod errors;
-/// TODO
+/// Utilities for internationalization, the process of making your app available
+/// in multiple languages.
 pub mod i18n;
 /// Utilities for working with plugins.
 pub mod plugins;
-/// TODO
+/// Utilities for working with the router. Note that you should only have to use
+/// these when waiting for a page transition in normal use-cases.
 pub mod router;
-/// TODO
+/// Utilities for working with the server. These are fairly low-level, and
+/// are intended for use by those developing new server integrations.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod server;
 /// Utilities for working with Perseus' state platform.
 pub mod state;
-/// Utilities for working with immutable and mutable stores. You can learn more
-/// about these in the book.
+/// Utilities for working with immutable and mutable stores. See
+/// [`ImmutableStore`] and [`MutableStore`] for details.
 pub mod stores;
-/// TODO
+/// Utilities for working with templates and state generation. This is by far
+/// the module you'll procably access the most.
 pub mod template;
-/// TODO
+/// General utilities that may be useful while building Perseus apps.
 pub mod utils;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -111,5 +116,3 @@ pub mod log {
     pub use wasm_bindgen::JsValue;
     pub use web_sys::console::log_1 as log_js_value;
 }
-
-// TODO Fix feature flags

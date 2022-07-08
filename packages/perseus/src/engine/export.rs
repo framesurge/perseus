@@ -15,10 +15,10 @@ use std::rc::Rc;
 use crate::errors::*;
 use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 
-/// Exports the app to static files, given a `PerseusApp`. This is
+/// Exports the app to static files, given a [`PerseusApp`]. This is
 /// engine-agnostic, using the `exported` subfolder in the immutable store as a
 /// destination directory. By default this will end up at `dist/exported/`
-/// (customizable through `PerseusApp`).
+/// (customizable through [`PerseusApp`]).
 ///
 /// Note that this expects to be run in the root of the project.
 pub async fn export<M: MutableStore, T: TranslationsManager>(

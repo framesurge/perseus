@@ -4,7 +4,7 @@ use crate::translator::Translator;
 use crate::SsrNode;
 use std::rc::Rc;
 
-/// Prepares an HTMl error page for the client, with injected markers for
+/// Prepares an HTML error page for the client, with injected markers for
 /// hydration. In the event of an error, this should be returned to the client
 /// (with the appropriate status code) to allow Perseus to hydrate and display
 /// the correct error page. Note that this is only for use in initial loads

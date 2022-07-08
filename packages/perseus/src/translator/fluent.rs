@@ -8,10 +8,10 @@ use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 /// The file extension used by the Fluent translator, which expects FTL files.
 pub const FLUENT_TRANSLATOR_FILE_EXT: &str = "ftl";
 
-/// Manages translations on the client-side for a single locale using Mozilla's [Fluent](https://projectfluent.org/) syntax. This
-/// should generally be placed into an `Rc<T>` and referred to by every template
-/// in an app. You do NOT want to be cloning potentially thousands of
-/// translations!
+/// Manages translations on the client-side for a single locale using Mozilla's [Fluent](https://projectfluent.org/) syntax.
+/// This is safely `Clone`able, and is provided through Sycamore's context
+/// system to every template in your app automatically. Usually, you will
+/// use this only through the [`t!`] and [`link!`] macros.
 ///
 /// Fluent supports compound messages, with many variants, which can specified
 /// here using the form `[id].[variant]` in a translation ID, as a `.` is not

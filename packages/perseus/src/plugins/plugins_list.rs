@@ -5,9 +5,11 @@ use std::collections::HashMap;
 
 type PluginDataMap = HashMap<String, Box<dyn Any + Send>>;
 
-/// A representation of all the plugins used by an app. Due to the sheer number
-/// and compexity of nested fields, this is best transferred in an `Rc`, which
-/// unfortunately results in double indirection for runner functions.
+/// A representation of all the plugins used by an app.
+///
+/// Due to the sheer number and compexity of nested fields, this is best
+/// transferred in an `Rc`, which unfortunately results in double indirection
+/// for runner functions.
 pub struct Plugins<G: Html> {
     /// The functional actions that this plugin takes. This is defined by
     /// default such that all actions are assigned to a default, and so they

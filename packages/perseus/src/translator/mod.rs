@@ -51,7 +51,8 @@ pub use DummyTranslator as Translator;
 pub use DUMMY_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
 /// Translates the given ID conveniently, taking arguments for interpolation as
-/// required.
+/// required. The final argument to any call of this macro must be a Sycamore
+/// reactive scope provided to the relevant Perseus template.
 #[macro_export]
 macro_rules! t {
     // When there are no arguments to interpolate
@@ -71,6 +72,8 @@ macro_rules! t {
     }};
 }
 /// Gets the link to the given resource in internationalized form conveniently.
+/// The final argument to any call of this macro must be a Sycamore reactive
+/// scope provided to the relevant Perseus template.
 #[macro_export]
 macro_rules! link {
     ($url:expr, $cx:expr) => {

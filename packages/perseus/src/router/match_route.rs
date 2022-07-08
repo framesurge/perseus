@@ -54,7 +54,7 @@ macro_rules! get_template_for_path {
 }
 
 /// Determines the template to use for the given path by checking against the
-/// render configuration., also returning whether we matched a simple page or an
+/// render configuration, also returning whether we matched a simple page or an
 /// incrementally-generated one (`true` for incrementally generated). Note that
 /// simple pages include those on incrementally-generated templates that we
 /// pre-rendered with *build paths* at build-time (and are hence in an immutable
@@ -65,6 +65,9 @@ macro_rules! get_template_for_path {
 /// ISR, and we can infer about them based on template root path domains. If
 /// that domain system is violated, this routing algorithm will not behave as
 /// expected whatsoever (as far as routing goes, it's undefined behavior)!
+///
+/// *Note:* in the vast majority of cases, you should never need to use
+/// this function.
 pub fn get_template_for_path<G: Html>(
     raw_path: &str,
     render_cfg: &HashMap<String, String>,
@@ -86,6 +89,9 @@ pub fn get_template_for_path<G: Html>(
 /// Warning: this returns a `&Template<G>` rather than a `Rc<Template<G>>`, and
 /// thus should only be used independently of the rest of Perseus (through
 /// `match_route_atomic`).
+///
+/// *Note:* in the vast majority of cases, you should never need to use
+/// this function.
 pub fn get_template_for_path_atomic<'a, G: Html>(
     raw_path: &str,
     render_cfg: &HashMap<String, String>,
@@ -107,6 +113,9 @@ pub fn get_template_for_path_atomic<'a, G: Html>(
 /// i18n is being used. The path this takes should be raw, it may or may not
 /// have a locale, but should be split into segments by `/`, with empty ones
 /// having been removed.
+///
+/// *Note:* in the vast majority of cases, you should never need to use
+/// this function.
 pub fn match_route<G: Html>(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
@@ -173,6 +182,9 @@ pub fn match_route<G: Html>(
 
 /// A version of `match_route` that accepts an `ArcTemplateMap<G>`. This should
 /// be used in multithreaded situations, like on the server.
+///
+/// *Note:* in the vast majority of cases, you should never need to use
+/// this function.
 pub fn match_route_atomic<'a, G: Html>(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
