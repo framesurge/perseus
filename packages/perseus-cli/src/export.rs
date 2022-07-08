@@ -168,7 +168,10 @@ pub fn export_internal(
             &ep_target,
             &ep_spinner,
             &ep_msg,
-            vec![("PERSEUS_ENGINE_OPERATION", "export")]
+            vec![
+                ("PERSEUS_ENGINE_OPERATION", "export"),
+                ("CARGO_TARGET_DIR", "target_engine")
+            ]
         )?);
 
         Ok(0)

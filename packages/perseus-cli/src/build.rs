@@ -97,7 +97,10 @@ pub fn build_internal(
             &sg_dir,
             &sg_spinner,
             &sg_msg,
-            vec![("PERSEUS_ENGINE_OPERATION", "build")]
+            vec![
+                ("PERSEUS_ENGINE_OPERATION", "build"),
+                ("CARGO_TARGET_DIR", "target_engine")
+            ]
         )?);
 
         Ok(0)

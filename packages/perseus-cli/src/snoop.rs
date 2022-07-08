@@ -15,7 +15,10 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
             env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        vec![("PERSEUS_ENGINE_OPERATION", "build")],
+        vec![
+            ("PERSEUS_ENGINE_OPERATION", "build"),
+            ("CARGO_TARGET_DIR", "target_engine"),
+        ],
     )
 }
 
@@ -34,7 +37,7 @@ pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, Execut
             env::var("PERSEUS_WASM_PACK_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        vec![],
+        vec![("CARGO_TARGET_DIR", "target_wasm")],
     )
 }
 
@@ -52,8 +55,11 @@ pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, Execution
             env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        vec![("PERSEUS_ENGINE_OPERATION", "serve")], /* Unlike the `serve` command, we're both
-                                                      * building and running here, so we provide
-                                                      * the operation */
+        vec![
+            ("PERSEUS_ENGINE_OPERATION", "serve"),
+            ("CARGO_TARGET_DIR", "target_engine"),
+        ], /* Unlike the `serve` command, we're both
+            * building and running here, so we provide
+            * the operation */
     )
 }
