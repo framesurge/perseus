@@ -1,0 +1,70 @@
+name: Benchmarks
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    benchmark:
+        name: Benchmark Wasm bundle sizes
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    # For now, we list all the examples we're testing, but in future this will be automatic
+                    - name: basic
+                      type: core
+                    - name: freezing_and_thawing
+                      type: core
+                    - name: global_state
+                      type: core
+                    - name: i18n
+                      type: core
+                    - name: idb_freezing
+                      type: core
+                    - name: plugins
+                      type: core
+                    - name: router_state
+                      type: core
+                    - name: rx_state
+                      type: core
+                    - name: set_headers
+                      type: core
+                    - name: state_generation
+                      type: core
+                    - name: static_content
+                      type: core
+                    - name: unreactive
+                      type: core
+                    - name: index_view
+                      type: core
+                    - name: custom_server
+                      type: core
+        steps:
+            - uses: actions/checkout@v2
+            - run: cargo install bonnie wasm-pack rust-script
+            - name: Run benchmark for ${{ matrix.name }} in category ${{ matrix.type }}
+            - run: bonnie bench size ${{ matrix.type }} ${{ matrix.name }} | tee output.txt
+            # Download previous benchmark result from cache (if exists)
+            - name: Download previous benchmark data
+            - uses: actions/cache@v1
+              with:
+                path: ./cache
+                key: ${{ runner.os }}-benchmark
+
+            - name: Store benchmark result
+              uses: benchmark-action/github-action-benchmark@v1
+              with:
+                    # What benchmark tool the output.txt came from
+                    tool: "customSmallerIsBetter"
+                    # Where the output from the benchmark tool is stored
+                    output-file-path: output.txt
+                    # Where the previous data file is stored
+                    external-data-json-path: ./cache/benchmark-data.json
+                    # Workflow will fail when an alert happens
+                    fail-on-alert: true
+                    # GitHub API token to make a commit comment
+                    github-token: ${{ secrets.GITHUB_TOKEN }}
+                    alert-threshold: "200%"
+                    comment-on-alert: true
+                    alert-comment-cc-users: '@arctic-hen7' # We need this kind of quoting, `@` is special in YAML
