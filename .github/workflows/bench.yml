@@ -14,32 +14,32 @@ jobs:
                     # For now, we list all the examples we're testing, but in future this will be automatic
                     - name: basic
                       type: core
-                    - name: freezing_and_thawing
-                      type: core
-                    - name: global_state
-                      type: core
-                    - name: i18n
-                      type: core
-                    - name: idb_freezing
-                      type: core
-                    - name: plugins
-                      type: core
-                    - name: router_state
-                      type: core
-                    - name: rx_state
-                      type: core
-                    - name: set_headers
-                      type: core
-                    - name: state_generation
-                      type: core
-                    - name: static_content
-                      type: core
-                    - name: unreactive
-                      type: core
-                    - name: index_view
-                      type: core
-                    - name: custom_server
-                      type: core
+                    # - name: freezing_and_thawing
+                    #   type: core
+                    # - name: global_state
+                    #   type: core
+                    # - name: i18n
+                    #   type: core
+                    # - name: idb_freezing
+                    #   type: core
+                    # - name: plugins
+                    #   type: core
+                    # - name: router_state
+                    #   type: core
+                    # - name: rx_state
+                    #   type: core
+                    # - name: set_headers
+                    #   type: core
+                    # - name: state_generation
+                    #   type: core
+                    # - name: static_content
+                    #   type: core
+                    # - name: unreactive
+                    #   type: core
+                    # - name: index_view
+                    #   type: core
+                    # - name: custom_server
+                    #   type: core
         steps:
             - uses: actions/checkout@v2
             - run: cargo install bonnie wasm-pack rust-script
