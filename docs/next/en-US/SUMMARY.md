@@ -12,6 +12,7 @@
 
 -   [Feature Discovery Terminal](/docs/features)
 -   [Improving Compilation Times](/docs/reference/compilation-times)
+-   [State Generation](/docs/reference/state-generation)
 -   [Live Reloading and HSR](/docs/reference/live-reloading-and-hsr)
 -   [Internationalization](/docs/reference/i18n)
 -   [Hydration](/docs/reference/hydration)
