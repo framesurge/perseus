@@ -30,3 +30,6 @@ crate-type = [ "cdylib", "rlib" ]
 [[bin]]
 name = "perseus-example-basic"
 path = "src/lib.rs"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = [ "-Oz" ]

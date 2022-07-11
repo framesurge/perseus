@@ -66,6 +66,6 @@ jobs:
                     fail-on-alert: true
                     # GitHub API token to make a commit comment
                     github-token: ${{ secrets.GITHUB_TOKEN }}
-                    alert-threshold: "200%"
+                    alert-threshold: "110%"
                     comment-on-alert: true
                     alert-comment-cc-users: '@arctic-hen7' # We need this kind of quoting, `@` is special in YAML
