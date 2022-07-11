@@ -8,9 +8,15 @@ fn main() {
     // This is brittle, but it's only ever called from Bonnie
     let category = &args[1];
     let example = &args[2];
+    let json = &args.get(3);
 
     let size = deploy_opt_plugin(category, example);
-    println!("{size}");
+    // Check if we're supposed to be using JSON
+    let text = match json {
+        Some(param) if *param == "--json" => format!(r#"[{{"name": "Wasm Bundle Size", "unit": "Bytes", "value": "{}"}}]"#, size),
+        _ => size.to_string(),
+    };
+    println!("{text}");
 }
 
 fn deploy_opt_plugin(category: &str, example: &str) -> u64 {

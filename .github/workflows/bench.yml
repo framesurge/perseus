@@ -45,7 +45,7 @@ jobs:
             - uses: actions/checkout@v2
             - run: cargo install bonnie wasm-pack rust-script
             - name: Run benchmark for ${{ matrix.name }} in category ${{ matrix.type }}
-              run: bonnie bench size ${{ matrix.type }} ${{ matrix.name }} | tee output.txt
+              run: bonnie bench size ${{ matrix.type }} ${{ matrix.name }} --json | tee output.txt
             # Download previous benchmark result from cache (if exists)
             - name: Download previous benchmark data
               uses: actions/cache@v1

@@ -40,7 +40,7 @@ dev.subcommands.example.args = [ "category", "example" ]
 dev.subcommands.example.env_vars = [ "EXAMPLE_INTEGRATION" ] # This will be set automatically to Warp by `.env` unless overridden
 dev.subcommands.example.desc = "runs the given example using a live version of the cli"
 
-bench.subcommands.size.cmd = "rust-script scripts/wasm_size_bench.rs %category %example"
+bench.subcommands.size.cmd = "rust-script scripts/wasm_size_bench.rs %category %example %%"
 bench.subcommands.size.args = [ "category", "example" ]
 bench.subcommands.size.desc = "benchmarks the production size of the given example"
 
