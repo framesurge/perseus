@@ -6,7 +6,6 @@ use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::Template;
 use crate::template::{PageProps, TemplateMap};
 use crate::translator::Translator;
-use crate::utils::decode_time_str;
 use futures::future::try_join_all;
 use std::collections::HashMap;
 use sycamore::prelude::SsrNode;
@@ -205,7 +204,10 @@ async fn gen_state_for_path(
     // We don't need to worry about revalidation that operates by logic, that's
     // request-time only
     if template.revalidates_with_time() {
-        let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
+        let datetime_to_revalidate = template
+            .get_revalidate_interval()
+            .unwrap()
+            .compute_timestamp();
         // Write that to a static file, we'll update it every time we revalidate
         // Note that this runs for every path generated, so it's fully usable with ISR
         // Yes, there's a different revalidation schedule for each locale, but that

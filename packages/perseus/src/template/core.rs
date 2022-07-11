@@ -24,6 +24,9 @@ use http::header::HeaderMap;
 use sycamore::prelude::{Scope, View};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
+use crate::utils::ComputedDuration;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Duration;
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error
@@ -175,16 +178,14 @@ pub struct Template<G: Html> {
     /// request that invoked it.
     #[cfg(not(target_arch = "wasm32"))]
     should_revalidate: Option<ShouldRevalidateFn>,
-    /// A length of time after which to prerender the template again. This
-    /// should specify a string interval to revalidate after. That will be
-    /// converted into a datetime to wait for, which will be updated after
-    /// every revalidation. Note that, if this is used with incremental
+    /// A length of time after which to prerender the template again. The given duration will be waited for,
+    /// and the next request after it will lead to a revalidation. Note that, if this is used with incremental
     /// generation, the counter will only start after the first render
     /// (meaning if you expect a weekly re-rendering cycle for all pages,
     /// they'd likely all be out of sync, you'd need to manually implement
     /// that with `should_revalidate`).
     #[cfg(not(target_arch = "wasm32"))]
-    revalidate_after: Option<String>,
+    revalidate_after: Option<ComputedDuration>,
     /// Custom logic to amalgamate potentially different states generated at
     /// build and request time. This is only necessary if your template uses
     /// both `build_state` and `request_state`. If not specified and both are
@@ -438,7 +439,7 @@ impl<G: Html> Template<G> {
     }
     /// Gets the interval after which the template will next revalidate.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_revalidate_interval(&self) -> Option<String> {
+    pub fn get_revalidate_interval(&self) -> Option<ComputedDuration> {
         self.revalidate_after.clone()
     }
 
@@ -640,8 +641,8 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn revalidate_after(mut self, val: String) -> Template<G> {
-        self.revalidate_after = Some(val);
+    pub fn revalidate_after<I: Into<Duration>>(mut self, val: I) -> Template<G> {
+        self.revalidate_after = Some(ComputedDuration::new(val));
         self
     }
     /// Enables the *revalidation* strategy (time variant). This takes a time
@@ -656,7 +657,7 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(target_arch = "wasm32")]
-    pub fn revalidate_after(self, _val: String) -> Template<G> {
+    pub fn revalidate_after<I: Into<Duration>>(self, _val: I) -> Template<G> {
         self
     }
 

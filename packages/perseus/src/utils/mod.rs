@@ -13,5 +13,5 @@ pub(crate) use async_fn_trait::AsyncFnReturn;
 pub use cache_res::{cache_fallible_res, cache_res};
 pub(crate) use context::provide_context_signal_replace;
 #[cfg(not(target_arch = "wasm32"))]
-pub use decode_time_str::decode_time_str;
+pub use decode_time_str::{ComputedDuration, Duration, InvalidDuration};
 pub use path_prefix::*;

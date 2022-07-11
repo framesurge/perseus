@@ -4,7 +4,6 @@ use crate::page_data::PageData;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{PageProps, States, Template, TemplateMap};
 use crate::translator::Translator;
-use crate::utils::decode_time_str;
 use crate::Request;
 use crate::SsrNode;
 use chrono::{DateTime, Utc};
@@ -202,10 +201,12 @@ async fn revalidate(
     // We don't need to worry about revalidation that operates by logic, that's
     // request-time only
     if template.revalidates_with_time() {
-        // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not
-        // from the previous one So if you're revalidating many pages weekly,
-        // they will NOT revalidate simultaneously, even if they're all queried thus
-        let datetime_to_revalidate = decode_time_str(&template.get_revalidate_interval().unwrap())?;
+        // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not from the previous one
+        // So if you're revalidating many pages weekly, they will NOT revalidate simultaneously, even if they're all queried thus
+        let datetime_to_revalidate = template
+            .get_revalidate_interval()
+            .unwrap()
+            .compute_timestamp();
         mutable_store
             .write(
                 &format!("static/{}.revld.txt", path_encoded),
@@ -366,8 +367,10 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     // request-time only Obviously we don't need to revalidate
                     // now, we just created it
                     if template.revalidates_with_time() {
-                        let datetime_to_revalidate =
-                            decode_time_str(&template.get_revalidate_interval().unwrap())?;
+                        let datetime_to_revalidate = template
+                            .get_revalidate_interval()
+                            .unwrap()
+                            .compute_timestamp();
                         // Write that to a static file, we'll update it every time we revalidate
                         // Note that this runs for every path generated, so it's fully usable with
                         // ISR
