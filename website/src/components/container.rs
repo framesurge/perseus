@@ -90,7 +90,7 @@ pub fn Container<G: Html>(cx: Scope, props: ContainerProps<G>) -> View<G> {
         footer(class = "w-full flex justify-center py-5 bg-gray-100 dark:bg-navy-deep") {
             p(class = "dark:text-white mx-5 text-center") {
                 span(dangerously_set_inner_html = &t!("footer.copyright", {
-                    "years": COPYRIGHT_YEARS
+                    "years" = COPYRIGHT_YEARS
                 }, cx))
             }
         }

@@ -13,23 +13,6 @@ use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 
-macro_rules! t {
-    // When there are no arguments to interpolate
-    ($id:expr, $cx:expr) => {
-        perseus::internal::i18n::t_macro_backend($id, $cx)
-    };
-    // When there are arguments to interpolate
-    ($id:expr, {
-        $($key:literal = $value:expr),+
-    }, $cx:expr) => {{
-        let mut args = perseus::internal::i18n::TranslationArgs::new();
-        $(
-            args.set($key, $value);
-        )+
-        perseus::internal::i18n::t_macro_backend_with_args($id, args, $cx)
-    }};
-}
-
 #[derive(Serialize, Deserialize)]
 struct PluginsPageProps {
     /// The list of plugins with minimal details. These will be displayed in

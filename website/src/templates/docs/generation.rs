@@ -109,7 +109,7 @@ impl DocsVersionStatus {
 pub type DocsManifest = HashMap<String, VersionManifest>;
 
 /// Information about a single version in the documentation manifest.
-#[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd, Eq)]
 pub struct VersionManifest {
     /// The state of this version.
     pub state: VersionState,

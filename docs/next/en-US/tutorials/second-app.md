@@ -51,7 +51,7 @@ Let's jump right into the code of this app! We'll start with the index template,
 In `src/templates/index.rs`, dump the following code:
 
 ```rust
-{{#include ../../../examples/core/basic/templates/index.rs}}
+{{#include ../../../examples/core/basic/src/templates/index.rs}}
 ```
 
 This is much more complex than our first app, so let's dive into explanation. Note that the imports at the top of this file will be explained as we go.
@@ -71,7 +71,7 @@ If you really viscerally hate macros though, then you *could* implement the unde
 
 *Note: these macros are progressively becoming less and less important to Perseus. Eventually, we hope to reduce them to the absolute minimum necessary for functionality.*
 
-<details>
+</details>
 
 This function takes two arguments: a Sycamore reactive scope and the reactive version of the state, which both share the same lifetime `'a`. Don't worry though, we won't have to worry about these lifetimes most of the time, Sycamore is very well-designed to make them stay out of our way! They're just there to make things much more ergonomic and speedy. (In older version,s you had to `.clone()` *everything*.)
 
