@@ -11,76 +11,146 @@ Before proceeding with this section, you should be familiar with Docker's [multi
 
 ```dockerfile
 # Pull base image.
-FROM rust:1.57-slim AS build
+FROM rust:1.57-slim AS base
+
+# Define optional command-line build arguments.
+ARG PERSEUS_VERSION \
+  PERSEUS_SIZE_OPT_VERSION \
+  SYCAMORE_VERSION \
+  BINARYEN_VERSION \
+  ESBUILD_VERSION \
+  ESBUILD_TARGET \
+  WASM_PACK_VERSION \
+  RUST_RELEASE_CHANNEL \
+  CARGO_NET_GIT_FETCH_WITH_CLI
+
+# Export environment variables.
+ENV PERSEUS_VERSION=${PERSEUS_VERSION:-0.3.0} \
+  PERSEUS_SIZE_OPT_VERSION=${PERSEUS_SIZE_OPT_VERSION:-0.1.7} \
+  SYCAMORE_VERSION=${SYCAMORE_VERSION:-0.7.1} \
+  BINARYEN_VERSION=${BINARYEN_VERSION:-104} \
+  ESBUILD_VERSION=${ESBUILD_VERSION:-0.14.7} \
+  ESBUILD_TARGET=${ESBUILD_TARGET:-es6} \
+  WASM_PACK_VERSION=${WASM_PACK_VERSION:-0.10.3} \
+  RUST_RELEASE_CHANNEL=${RUST_RELEASE_CHANNEL:-stable} \
+  CARGO_NET_GIT_FETCH_WITH_CLI=${CARGO_NET_GIT_FETCH_WITH_CLI:-false}
+
+# Work from the root of the container.
+WORKDIR /
 
 # Install build dependencies.
-RUN apt update \
-  && apt -y install --no-install-recommends \
+RUN apt-get update \
+  && apt-get -y install --no-install-recommends \
   apt-transport-https \
   build-essential \
   curl \
+  gawk \
+  git \
   libssl-dev \
   lsb-release \
   openssl \
-  pkg-config
+  pkg-config \
+  && rustup install ${RUST_RELEASE_CHANNEL} \
+  && rustup default ${RUST_RELEASE_CHANNEL} \
+  && rustup target add wasm32-unknown-unknown
 
-# Export environment variables.
-ENV PERSEUS_VERSION=0.3.3 \
-  PERSEUS_SIZE_OPT_VERSION=0.1.7 \
-  SYCAMORE_VERSION=0.7.1 \
-  BINARYEN_VERSION=104 \
-  ESBUILD_VERSION=0.14.7 \
-  WASM_PACK_VERSION=0.10.3 \
-  RUST_RELEASE_CHANNEL=stable
+# Create a build stage for `perseus-cli` that we can run in parallel.
+FROM base as perseus
+
+# Work from the chosen install path for `perseus-cli`.
+WORKDIR /perseus
+
+# Install crate `perseus-cli` into the work path.
+RUN cargo install perseus-cli --version $PERSEUS_VERSION \
+  && mv /usr/local/cargo/bin/perseus .
+
+# Create a build stage for `perseus-size-opt` that we can run in parallel.
+FROM base as perseus-size-opt
+
+# Work from the chosen install path for `perseus-size-opt`.
+WORKDIR /perseus-size-opt
+
+# Download and make adjustments to the source of `perseus-size-opt`.
+RUN curl -L# https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
+  | tar -xz --strip-components=1 \
+  && rm -rf ./examples \
+  && sed -i "s|^\(perseus =\).*$|\1 \"=${PERSEUS_VERSION}\"|" ./Cargo.toml \
+  && printf '%s\n' \
+  '#!/bin/sh' \
+  'rm_workspace () {' \
+  '  local a=$( grep -ne "^\[workspace\]$" ./Cargo.toml | grep -Eo "^[^:]+" )' \
+  '  local b=$( grep -ne "^\]$" ./Cargo.toml | grep -Eo "^[^:]+" )' \
+  '  sed -i "${a},${b}d" ./Cargo.toml' \
+  '}' \
+  'rm_workspace' > ./rm_workspace.sh \
+  && chmod +x ./rm_workspace.sh && . ./rm_workspace.sh && rm -f ./rm_workspace.sh
+
+# Create a build stage for `wasm-pack` that we can run in parallel.
+FROM base as wasm-pack
+
+# Work from the chosen install path for `wasm-pack`.
+WORKDIR /wasm-pack
+
+# Install crate `wasm-pack` into the work path.
+RUN cargo install wasm-pack --version $WASM_PACK_VERSION \
+  && mv /usr/local/cargo/bin/wasm-pack .
+
+# Create a build stage for `binaryen` we can run in parallel.
+FROM base as binaryen
+
+# Work from the chosen install path for `binaryen`.
+WORKDIR /binaryen
+
+# Download, extract, and remove compressed tar of `binaryen`.
+RUN curl -L#o binaryen-${BINARYEN_VERSION}.tar.gz \
+  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+  && tar --strip-components=1 -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
+  && rm -f binaryen-${BINARYEN_VERSION}.tar.gz
+
+# Create a build stage for `esbuild` we can run in parallel.
+FROM base as esbuild
+
+# Work from the chosen install path for `esbuild`.
+WORKDIR /esbuild
+
+# Download, extract, and remove compressed tar of `esbuild`.
+RUN curl -L#o esbuild-${ESBUILD_VERSION}.tar.gz \
+  https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
+  && tar --strip-components=1 -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
+  && rm -f esbuild-${ESBUILD_VERSION}.tar.gz
+
+# Create a build stage for building our app.
+FROM base as builder
+
+# Copy the tools we previously prepared in parallel.
+COPY --from=perseus /perseus/perseus /usr/bin/
+COPY --from=perseus-size-opt /perseus-size-opt /perseus-size-opt/
+COPY --from=wasm-pack /wasm-pack/wasm-pack /usr/bin/
+COPY --from=binaryen /binaryen/bin/ /usr/bin/
+COPY --from=binaryen /binaryen/include/ /usr/include/
+COPY --from=binaryen /binaryen/lib/ /usr/lib/
+COPY --from=esbuild /esbuild/bin/esbuild /usr/bin/
+
+# Single-threaded perseus CLI mode required for low memory environments.
+# ENV PERSEUS_CLI_SEQUENTIAL=true
 
 # Work from the root of the project.
 WORKDIR /app
 
-# Perform the following steps:
-# - Install latest `rust` from `stable` release channel.
-# - Set `rust:stable` as default toolchain.
-# - Download the target for `wasm`.
-RUN rustup install $RUST_RELEASE_CHANNEL \
-  && rustup default $RUST_RELEASE_CHANNEL \
-  && rustup target add wasm32-unknown-unknown
-
-# Install crate `perseus-cli`.
-RUN cargo install perseus-cli --version $PERSEUS_VERSION
-
-# Install crate `wasm-pack`.
-RUN cargo install wasm-pack --version $WASM_PACK_VERSION
-
-# Download, unpack, symlink, and verify install of `binaryen`.
-RUN curl -L#o binaryen-${BINARYEN_VERSION}.tar.gz \
-  https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz \
-  && tar -xzf binaryen-${BINARYEN_VERSION}.tar.gz \
-  && ln -s $(pwd)/binaryen-version_${BINARYEN_VERSION}/bin/wasm-opt /usr/bin/wasm-opt \
-  && wasm-opt --version
-
-# Download, unpack, symlink, and verify install of `esbuild`.
-RUN curl -L#o esbuild-${ESBUILD_VERSION}.tar.gz \
-  https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-${ESBUILD_VERSION}.tgz \
-  && tar -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
-  && ln -s $(pwd)/package/bin/esbuild /usr/bin/esbuild \
-  && esbuild --version
-
-# Retrieve the src of the project and remove unnecessary boilerplate.
-RUN curl -L# \
+# Build and deploy our app using the following commands.
+RUN . /etc/profile && . /usr/local/cargo/env \
+  && curl -L# \
+  https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
+  | tar -xz --strip-components=3 perseus-${PERSEUS_VERSION}/examples/tiny \
+  && sed -i "\
+  s|^\(perseus =\).*$|\1 \{ version = \"=${PERSEUS_VERSION}\", features = \[ \"hydrate\" \] \}|; \
+  s|^\(sycamore =\).*$|\1 \"=${SYCAMORE_VERSION}\"|;" ./Cargo.toml \
+  && printf '%s\n' "perseus-size-opt = { path = \"/perseus-size-opt\", version = \"=${PERSEUS_SIZE_OPT_VERSION}\" }" >> ./Cargo.toml \
+  && cat ./Cargo.toml \
+  && curl -L# \
   https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
-  | tar -xz --strip=2 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple
-
-# Work from the src of the project.
-WORKDIR /app/simple
-
-# Specify precise dependency versions in the project's `Cargo.toml` file.
-RUN sed -i "\
-  s|^\(perseus =\).*$|\1 \"=${PERSEUS_VERSION}\"|; \
-  s|^\(perseus-size-opt =\).*$|\1 \"=${PERSEUS_SIZE_OPT_VERSION}\"|; \
-  s|^\(sycamore =\).*$|\1 \"=${SYCAMORE_VERSION}\"|;" \
-  ./Cargo.toml && cat ./Cargo.toml
-
-# Modify the src of the project to implement size optimizations in `lib.rs`.
-RUN sed -i "\
+  | tar -C ./src -xz --strip-components=4 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple/src \
+  && sed -i "\
   s|\(\.plugin\)(\(perseus_size_opt,\) SizeOpts::default())$|\n\
   \1(\n\
     \2\n\
@@ -91,43 +161,46 @@ RUN sed -i "\
       codegen_units: 1,\n\
       enable_fluent_bundle_patch: false,\n\
     }\n\
-  )|" ./src/lib.rs && cat ./src/lib.rs
-
-# Update dependencies to their precise, required versions.
-RUN cargo update -p perseus --precise $PERSEUS_VERSION \
-  && cargo update -p perseus-size-opt --precise $PERSEUS_SIZE_OPT_VERSION \
-  && cargo update -p sycamore --precise $SYCAMORE_VERSION
-
-# Clean any pre-existing generated `./perseus` subdirectory from the project,
-# then prepare the project.
-RUN perseus clean \
-  && perseus prep
-
-# Run plugin(s) to adjust the project prior to deployment.
-RUN perseus tinker \
-  && cat .perseus/Cargo.toml \
-  && cat ./src/lib.rs
-
-# Patch `clippy` inner attribute syntax error in `lib.rs` (if found).
-RUN sed -i "s|\(#\)!\(\[allow(clippy::unused_unit)\]\)|\1\2|;" ./.perseus/src/lib.rs
-
-# Single-threaded perseus CLI mode required for low memory environments.
-# ENV PERSEUS_CLI_SEQUENTIAL=true
-
-# Export environment variables required by `wasm-bindgen` and deploy the app from the project.
-RUN export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
-  && perseus deploy
-
-# Run `esbuild` against `bundle.js` to optimize it into minified format.
-RUN esbuild ./pkg/dist/pkg/perseus_engine.js \
+  )|" ./src/lib.rs && cat ./src/lib.rs \
+  && cargo update -p perseus --precise $PERSEUS_VERSION \
+  && cargo update -p sycamore --precise $SYCAMORE_VERSION \
+  && perseus clean \
+  && perseus prep \
+  && perseus tinker \
+  && cat ./.perseus/Cargo.toml \
+  && cat ./src/lib.rs \
+  && printf '%s\n' \
+  '#!/bin/sh' \
+  'parse_file () {' \
+  '  local file_path=./.perseus/src/lib.rs' \
+  '  local line_num=1' \
+  '  while IFS= read -r lib_line' \
+  '  do' \
+  '    if [ ! -z $( echo ${lib_line} | cut -d " " -f 1 | grep -e "clippy" ) ]' \
+  '    then' \
+  '      break' \
+  '    fi' \
+  '    line_num=$(( $line_num + 1 ))' \
+  '  done < $file_path' \
+  '  if [ $line_num -ne 1 ]' \
+  '  then' \
+  '    awk -i inplace '"\\" \
+  '    -v line_num=$line_num '"\\" \
+  '    -v inner_attr=$( sed "${line_num}q;d" $file_path | cut -d " " -f 1 ) '"\\" \
+  '    "NR==1 { print inner_attr } NR!=line_num { print }" $file_path' \
+  '  fi' \
+  '}' \
+  'parse_file' > ./parse_file.sh \
+  && chmod +x ./parse_file.sh && . ./parse_file.sh && rm -f ./parse_file.sh \
+  && export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig \
+  && perseus deploy \
+  && esbuild ./pkg/dist/pkg/perseus_engine.js \
   --minify \
-  --target=esnext \
+  --target=${ESBUILD_TARGET} \
   --outfile=./pkg/dist/pkg/perseus_engine.js \
   --allow-overwrite \
-  && ls -lha ./pkg/dist/pkg
-
-# Run `wasm-opt` against `bundle.wasm` to optimize it based on bytesize.
-RUN wasm-opt \
+  && ls -lha ./pkg/dist/pkg \
+  && wasm-opt \
   -Os ./pkg/dist/pkg/perseus_engine_bg.wasm \
   -o ./pkg/dist/pkg/perseus_engine_bg.wasm \
   && ls -lha ./pkg/dist/pkg
@@ -139,7 +212,7 @@ FROM debian:stable-slim
 WORKDIR /app
 
 # Copy the app into its chosen install path.
-COPY --from=build /app/simple/pkg /app/
+COPY --from=builder /app/pkg /app/
 
 # Bind the server to `localhost`.
 ENV HOST=0.0.0.0
