@@ -20,5 +20,7 @@
 -   [Plugins](/docs/reference/plugins)
 -   [Deploying](/docs/reference/deploying)
 -   [Architecture Details](/docs/reference/architecture)
+-   [Router](/docs/reference/router)
+-   [Initial vs. Subsequent Loads](/docs/reference/initial_subsequent_loads)
 -   [Migrating from v0.3.x](/docs/reference/migrating)
 -   [Common Pitfalls and Known Bugs](/docs/reference/faq)
