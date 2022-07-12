@@ -57,7 +57,8 @@ impl TryFrom<&str> for Duration {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let mut duration = Self::default();
 
-        // A working variable to store the '123' part of an interval until we reach the indicator and can do the full conversion
+        // A working variable to store the '123' part of an interval until we reach the
+        // indicator and can do the full conversion
         let mut curr_duration_length = String::new();
 
         for c in value.chars() {

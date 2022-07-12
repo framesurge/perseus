@@ -2,8 +2,8 @@
 // generation (because the two work in complex ways together)
 
 use perseus::{RenderFnResult, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, Scope, View};
 use std::time::Duration;
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
 pub struct PageState {

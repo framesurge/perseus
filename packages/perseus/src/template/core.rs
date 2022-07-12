@@ -12,6 +12,7 @@ use crate::translator::Translator;
 use crate::utils::provide_context_signal_replace;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::AsyncFnReturn;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
@@ -22,7 +23,6 @@ use crate::SsrNode;
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::header::HeaderMap;
-#[cfg(not(target_arch = "wasm32"))]
 use std::time::Duration;
 use sycamore::prelude::{Scope, View};
 #[cfg(not(target_arch = "wasm32"))]

@@ -1,6 +1,6 @@
 use perseus::{RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, Scope, View};
 use std::time::Duration;
+use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
 pub struct PageState {
