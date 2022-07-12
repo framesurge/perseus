@@ -93,9 +93,6 @@ pub use crate::{
     init::*,
     template::{RenderFnResult, RenderFnResultWithCause, Template},
 };
-// Engine-side only
-#[cfg(not(target_arch = "wasm32"))]
-pub use crate::template::States;
 // Browser-side only
 #[cfg(target_arch = "wasm32")]
 pub use crate::shell::checkpoint;

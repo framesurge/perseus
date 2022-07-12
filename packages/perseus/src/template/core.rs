@@ -4,7 +4,7 @@
 use super::default_headers;
 use super::PageProps;
 #[cfg(not(target_arch = "wasm32"))]
-use super::{RenderCtx, States};
+use super::RenderCtx;
 use crate::errors::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::make_async_trait;
@@ -12,6 +12,7 @@ use crate::translator::Translator;
 use crate::utils::provide_context_signal_replace;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::AsyncFnReturn;
+use crate::utils::ComputedDuration;
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
@@ -21,12 +22,11 @@ use crate::SsrNode;
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::header::HeaderMap;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Duration;
 use sycamore::prelude::{Scope, View};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
-use crate::utils::ComputedDuration;
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::Duration;
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error
@@ -70,6 +70,15 @@ make_async_trait!(
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
+#[cfg(not(target_arch = "wasm32"))]
+make_async_trait!(
+    AmalgamateStatesFnType,
+    RenderFnResultWithCause<String>,
+    path: String,
+    locale: String,
+    build_state: String,
+    request_state: String
+);
 
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've
@@ -100,8 +109,7 @@ pub type GetRequestStateFn = Box<dyn GetRequestStateFnType + Send + Sync>;
 pub type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType + Send + Sync>;
 /// The type of functions that amalgamate build and request states.
 #[cfg(not(target_arch = "wasm32"))]
-pub type AmalgamateStatesFn =
-    Box<dyn Fn(States) -> RenderFnResultWithCause<Option<String>> + Send + Sync>;
+pub type AmalgamateStatesFn = Box<dyn AmalgamateStatesFnType + Send + Sync>;
 
 /// A single template in an app. Each template is comprised of a Sycamore view,
 /// a state type, and some functions involved with generating that state. Pages
@@ -178,8 +186,9 @@ pub struct Template<G: Html> {
     /// request that invoked it.
     #[cfg(not(target_arch = "wasm32"))]
     should_revalidate: Option<ShouldRevalidateFn>,
-    /// A length of time after which to prerender the template again. The given duration will be waited for,
-    /// and the next request after it will lead to a revalidation. Note that, if this is used with incremental
+    /// A length of time after which to prerender the template again. The given
+    /// duration will be waited for, and the next request after it will lead
+    /// to a revalidation. Note that, if this is used with incremental
     /// generation, the counter will only start after the first render
     /// (meaning if you expect a weekly re-rendering cycle for all pages,
     /// they'd likely all be out of sync, you'd need to manually implement
@@ -375,10 +384,22 @@ impl<G: Html> Template<G> {
     /// Amalagmates given request and build states. Errors here can be caused by
     /// either the server or the client, so the user must specify
     /// an [`ErrorCause`].
+    ///
+    /// This takes a separate build state and request state to ensure there are
+    /// no `None`s for either of the states. This will only be called if both
+    /// states are generated.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn amalgamate_states(&self, states: States) -> Result<Option<String>, ServerError> {
+    pub async fn amalgamate_states(
+        &self,
+        path: String,
+        locale: String,
+        build_state: String,
+        request_state: String,
+    ) -> Result<String, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamate_states {
-            let res = amalgamate_states(states);
+            let res = amalgamate_states
+                .call(path, locale, build_state, request_state)
+                .await;
             match res {
                 Ok(res) => Ok(res),
                 Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
@@ -670,7 +691,7 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn amalgamate_states_fn(
         mut self,
-        val: impl Fn(States) -> RenderFnResultWithCause<Option<String>> + Send + Sync + 'static,
+        val: impl AmalgamateStatesFnType + Send + Sync + 'static,
     ) -> Template<G> {
         self.amalgamate_states = Some(Box::new(val));
         self

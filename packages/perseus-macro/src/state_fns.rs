@@ -184,18 +184,21 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
             #[cfg(target_arch = "wasm32")]
             #vis fn #name() {}
             #[cfg(not(target_arch = "wasm32"))]
-            #vis fn #name(states: ::perseus::States) -> ::perseus::RenderFnResultWithCause<::std::option::Option<::std::string::String>> {
+            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, build_state: ::std::string::String, request_state: ::std::string::String) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<Option<CustomTemplatePropsType>>`
                 #(#attrs)*
-                fn #name #generics(#args) -> #return_type {
+                async fn #name #generics(#args) -> #return_type {
                     #block
                 }
+                // Deserialize both the states if they exist
+                let build_state_de = ::serde_json::from_str(&build_state).unwrap();
+                let request_state_de = ::serde_json::from_str(&request_state).unwrap();
                 // Call the user's function with the usual arguments and then serialize the result to a string
                 // We only serialize the `Ok(Some(_))` outcome, errors are left as-is
                 // We also assume that this will serialize correctly
-                let amalgamated_state = #name(states);
-                let amalgamated_state_with_str = amalgamated_state.map(|val| val.map(|val| ::serde_json::to_string(&val).unwrap()));
+                let amalgamated_state = #name(path, locale, build_state_de, request_state_de).await;
+                let amalgamated_state_with_str = amalgamated_state.map(|val| ::serde_json::to_string(&val).unwrap());
                 amalgamated_state_with_str
             }
         },

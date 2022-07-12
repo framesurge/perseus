@@ -14,5 +14,5 @@ pub(crate) use default_headers::default_headers;
 pub use page_props::PageProps;
 pub use render_ctx::RenderCtx;
 #[cfg(not(target_arch = "wasm32"))]
-pub use states::States;
+pub(crate) use states::States;
 pub use templates_map::{ArcTemplateMap, TemplateMap};

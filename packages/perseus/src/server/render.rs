@@ -21,6 +21,8 @@ fn get_path_with_locale(path_without_locale: &str, translator: &Translator) -> S
 /// Renders a template that uses state generated at build-time. This can't be
 /// used for pages that revalidate because their data are stored in a mutable
 /// store.
+///
+/// This returns a body, head, and state, since all are from stores.
 async fn render_build_state(
     path_encoded: &str,
     immutable_store: &ImmutableStore,
@@ -46,6 +48,8 @@ async fn render_build_state(
 /// Renders a template that uses state generated at build-time. This is
 /// specifically for page that revalidate, because they store data
 /// in the mutable store.
+///
+/// This returns a body, head, and state, since all are from stores.
 async fn render_build_state_for_mutable(
     path_encoded: &str,
     mutable_store: &impl MutableStore,
@@ -72,14 +76,14 @@ async fn render_build_state_for_mutable(
 /// revalidation and incremental generation have no impact on SSR-rendered
 /// pages. This does everything at request-time, and so doesn't need a mutable
 /// or immutable store.
-async fn render_request_state(
+///
+/// As this involves state computation, this only returns the state.
+async fn get_request_state(
     template: &Template<SsrNode>,
     translator: &Translator,
     path: &str,
-    global_state: &Option<String>,
     req: Request,
-) -> Result<(String, String, Option<String>), ServerError> {
-    let path_with_locale = get_path_with_locale(path, translator);
+) -> Result<Option<String>, ServerError> {
     // Generate the initial state (this may generate an error, but there's no file
     // that can't exist)
     let state = Some(
@@ -87,13 +91,43 @@ async fn render_request_state(
             .get_request_state(path.to_string(), translator.get_locale(), req)
             .await?,
     );
+
+    Ok(state)
+}
+/// Renders a template that wants to amalgamate build state with request state.
+/// This does everything at request-time, and so doesn't need a mutable or
+/// immutable store.
+///
+/// As this is always the final item, this returns a body and head along with
+/// the state.
+async fn render_amalgamated_state(
+    template: &Template<SsrNode>,
+    translator: &Translator,
+    path: &str,
+    global_state: &Option<String>,
+    build_state: String,
+    request_state: String,
+) -> Result<(String, String, Option<String>), ServerError> {
+    let path_with_locale = get_path_with_locale(path, translator);
+    // Generate the initial state (this may generate an error, but there's no file
+    // that can't exist)
+    let state = Some(
+        template
+            .amalgamate_states(
+                path.to_string(),
+                translator.get_locale(),
+                build_state,
+                request_state,
+            )
+            .await?,
+    );
+
     // Assemble the page properties
     let page_props = PageProps {
         path: path_with_locale,
         state: state.clone(),
         global_state: global_state.clone(),
     };
-    // Use that to render the static HTML
     let html = sycamore::render_to_string(|cx| {
         template.render_for_template_server(page_props.clone(), cx, translator)
     });
@@ -106,6 +140,8 @@ async fn render_request_state(
 /// already been matched because those are declared verbatim in the render
 /// configuration. Therefore, this function only searches for pages that have
 /// been cached later, which means it needs a mutable store.
+///
+/// This returns a body and a head.
 async fn get_incremental_cached(
     path_encoded: &str,
     mutable_store: &impl MutableStore,
@@ -168,6 +204,9 @@ async fn should_revalidate(
 /// Revalidates a template. All information about templates that revalidate
 /// (timestamp, content, head, and state) is stored in a mutable store, so
 /// that's what this function uses.
+///
+/// Despite this involving state computation, it needs to write a body and
+/// head to the mutable store, so it returns those along with the state.
 async fn revalidate(
     template: &Template<SsrNode>,
     translator: &Translator,
@@ -201,8 +240,9 @@ async fn revalidate(
     // We don't need to worry about revalidation that operates by logic, that's
     // request-time only
     if template.revalidates_with_time() {
-        // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not from the previous one
-        // So if you're revalidating many pages weekly, they will NOT revalidate simultaneously, even if they're all queried thus
+        // IMPORTANT: we set the new revalidation datetime to the interval from NOW, not
+        // from the previous one So if you're revalidating many pages weekly,
+        // they will NOT revalidate simultaneously, even if they're all queried thus
         let datetime_to_revalidate = template
             .get_revalidate_interval()
             .unwrap()
@@ -290,6 +330,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
 
     // Only a single string of HTML is needed, and it will be overridden if
     // necessary (priorities system)
+    // We might set this to something cached, and later override it
     let mut html = String::new();
     // The same applies for the document metadata
     let mut head = String::new();
@@ -319,21 +360,19 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                             mutable_store,
                         )
                         .await?;
-                        // Build-time generated HTML is the lowest priority, so we'll only set it if
-                        // nothing else already has
-                        if html.is_empty() {
-                            html = html_val;
-                            head = head_val;
-                        }
+                        // That revalidation will have returned a body and head, which we can
+                        // provisionally use
+                        html = html_val;
+                        head = head_val;
                         states.build_state = state;
                     } else {
-                        // Build-time generated HTML is the lowest priority, so we'll only set it if
-                        // nothing else already has
-                        if html.is_empty() {
-                            html = html_val;
-                            head = head_val;
-                        }
+                        // That incremental cache check will have returned a body and head, which we
+                        // can provisionally use
+                        html = html_val;
+                        head = head_val;
                         // Get the static JSON (if it exists, but it should)
+                        // THis wouldn't be present if the user had set up incremental generation
+                        // without build state (which would be remarkably silly)
                         states.build_state = match mutable_store
                             .read(&format!("static/{}.json", path_encoded))
                             .await
@@ -347,6 +386,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 // All this uses the mutable store because this will be done at runtime
                 None => {
                     // We need to generate and cache this page for future usage
+                    // Even if we're going to amalgamate later, we still have to perform incremental
+                    // caching, which means a potentially unnecessary page build
                     let state = Some(
                         template
                             .get_build_state(path.to_string(), locale.to_string())
@@ -354,7 +395,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     );
                     // Assemble the page properties
                     let page_props = PageProps {
-                        path: path_with_locale,
+                        path: path_with_locale.clone(),
                         state: state.clone(),
                         global_state: global_state.clone(),
                     };
@@ -397,12 +438,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                         .await?;
 
                     states.build_state = state;
-                    // Build-time generated HTML is the lowest priority, so we'll only set it if
-                    // nothing else already has
-                    if html.is_empty() {
-                        html = html_val;
-                        head = head_val;
-                    }
+                    html = html_val;
+                    head = head_val;
                 }
             }
         } else {
@@ -421,64 +458,107 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     mutable_store,
                 )
                 .await?;
-                // Build-time generated HTML is the lowest priority, so we'll only set it if
-                // nothing else already has
-                if html.is_empty() {
-                    html = html_val;
-                    head = head_val;
-                }
+                // That revalidation will have produced a head and body, which we can
+                // provisionally use
+                html = html_val;
+                head = head_val;
                 states.build_state = state;
             } else if template.revalidates() {
                 // The template does revalidate, but it doesn't need to revalidate now
                 // Nonetheless, its data will be the mutable store
+                // This is just fetching, not computing
                 let (html_val, head_val, state) =
                     render_build_state_for_mutable(&path_encoded, mutable_store).await?;
-                // Build-time generated HTML is the lowest priority, so we'll only set it if
-                // nothing else already has
-                if html.is_empty() {
-                    html = html_val;
-                    head = head_val;
-                }
+                html = html_val;
+                head = head_val;
                 states.build_state = state;
             } else {
                 // If we don't need to revalidate and this isn't an incrementally generated
                 // template, everything is immutable
+                // Again, this just fetches
                 let (html_val, head_val, state) =
                     render_build_state(&path_encoded, immutable_store).await?;
-                // Build-time generated HTML is the lowest priority, so we'll only set it if
-                // nothing else already has
-                if html.is_empty() {
-                    html = html_val;
-                    head = head_val;
-                }
+                html = html_val;
+                head = head_val;
                 states.build_state = state;
             }
         }
     }
     // Handle request state
     if template.uses_request_state() {
-        let (html_val, head_val, state) =
-            render_request_state(template, &translator, path, global_state, req).await?;
-        // Request-time HTML always overrides anything generated at build-time or
-        // incrementally (this has more information)
-        html = html_val;
-        head = head_val;
+        // Because this never needs to write to a file or the like, this just generates
+        // the state We can therefore avoid an unnecessary page build in
+        // templates with state amalgamation If we're using amalgamation, the
+        // page will be built soon If we're not, and there's no build state,
+        // then we still need to build, which we'll do after we've checked for
+        // amalgamation
+        let state = get_request_state(template, &translator, path, req).await?;
         states.request_state = state;
     }
 
     // Amalgamate the states
     // If the user has defined custom logic for this, we'll defer to that
-    // Otherwise we go as with HTML, request trumps build
-    // Of course, if only one state was defined, we'll just use that regardless (so
-    // `None` prioritization is impossible) If this is the case, the build
-    // content will still be served, and then it's up to the client to hydrate it
-    // with the new amalgamated state
-    let state = if !states.both_defined() {
+    // Otherwise, request trumps build
+    // Of course, if only one state was defined, we'll just use that regardless
+    //
+    // If we're not using amalgamation, and only the request state is defined, then
+    // we still need to build the page We don't do that earlier so we can avoid
+    // double-building with amalgamation
+    let state = if !states.both_defined() && template.uses_request_state() {
+        // If we only have one state, and it's from request time, then we need to build
+        // the template with it now
+        let state = states.get_defined()?;
+        // Assemble the page properties
+        let page_props = PageProps {
+            path: path_with_locale,
+            state: state.clone(),
+            global_state: global_state.clone(),
+        };
+        let html_val = sycamore::render_to_string(|cx| {
+            template.render_for_template_server(page_props.clone(), cx, &translator)
+        });
+        let head_val = template.render_head_str(page_props, &translator);
+        html = html_val;
+        head = head_val;
+        state
+    } else if !states.both_defined() {
+        // If we only have one state, and it's not from request time, then we've already
+        // built If there is any state at all, this will be `Some(state)`,
+        // otherwise `None` (if this template doesn't take state)
         states.get_defined()?
     } else if template.can_amalgamate_states() {
-        template.amalgamate_states(states)?
+        // We know that both the states are defined
+        // The HTML is currently built with the wrong state, so we have to update it
+        let (html_val, head_val, state) = render_amalgamated_state(
+            template,
+            &translator,
+            path,
+            global_state,
+            states.build_state.unwrap(),
+            states.request_state.unwrap(),
+        )
+        .await?;
+        html = html_val;
+        head = head_val;
+        state
     } else {
-        states.request_state
+        // We do have multiple states, but there's no resolution function, so we have to
+        // prefer request state That means we have to build the page for it,
+        // since we haven't yet
+        let state = states.request_state;
+        // Assemble the page properties
+        let page_props = PageProps {
+            path: path_with_locale,
+            state: state.clone(),
+            global_state: global_state.clone(),
+        };
+        let html_val = sycamore::render_to_string(|cx| {
+            template.render_for_template_server(page_props.clone(), cx, &translator)
+        });
+        let head_val = template.render_head_str(page_props, &translator);
+        html = html_val;
+        head = head_val;
+        state
     };
 
     // Combine everything into one JSON object

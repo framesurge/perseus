@@ -1,6 +1,6 @@
-use perseus::{RenderFnResultWithCause, Template};
 #[cfg(not(target_arch = "wasm32"))]
-use perseus::{Request, States};
+use perseus::Request;
+use perseus::{RenderFnResultWithCause, Template};
 use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
@@ -26,18 +26,18 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 #[perseus::amalgamate_states]
-pub fn amalgamate_states(states: States) -> RenderFnResultWithCause<Option<PageState>> {
-    // We know they'll both be defined, and Perseus currently has to provide both as
-    // serialized strings
-    let build_state = serde_json::from_str::<PageState>(&states.build_state.unwrap())?;
-    let req_state = serde_json::from_str::<PageState>(&states.request_state.unwrap())?;
-
-    Ok(Some(PageState {
+pub async fn amalgamate_states(
+    _path: String,
+    _locale: String,
+    build_state: PageState,
+    req_state: PageState,
+) -> RenderFnResultWithCause<PageState> {
+    Ok(PageState {
         message: format!(
             "Hello from the amalgamation! (Build says: '{}', server says: '{}'.)",
             build_state.message, req_state.message
         ),
-    }))
+    })
 }
 
 #[perseus::build_state]
