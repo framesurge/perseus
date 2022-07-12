@@ -53,7 +53,7 @@ fn real_main() -> i32 {
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
 
         // Extract the last line of that (the executable name)
-        stdout.lines().last().unwrap().trim().to_string()
+        stdout.lines().last().expect("couldn't get server executable (the build failed)").trim().to_string()
     };
 
     // Run the server from that executable in the background
