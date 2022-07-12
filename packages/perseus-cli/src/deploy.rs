@@ -36,6 +36,7 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
             release: true,
             standalone: true,
             watch: false,
+            custom_watch: Vec::new(),
             // These have no impact if `no_run` is `true` (which it is), so we can use the defaults
             // here
             host: "127.0.0.1".to_string(),
@@ -131,6 +132,7 @@ fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
             host: String::new(),
             port: 0,
             watch: false,
+            custom_watch: Vec::new(),
         },
     )?;
     if export_exit_code != 0 {

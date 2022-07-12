@@ -14,7 +14,7 @@ use perseus_cli::{
 };
 use std::env;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::channel;
 
@@ -94,10 +94,16 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
     let watch_allowed = env::var("PERSEUS_WATCHING_PROHIBITED").is_err();
     // Check if the user wants to watch for changes
     match &opts.subcmd {
-        Subcommand::Export(ExportOpts { watch, .. })
-        | Subcommand::Serve(ServeOpts { watch, .. })
-            if *watch && watch_allowed =>
-        {
+        Subcommand::Export(ExportOpts {
+            watch,
+            custom_watch,
+            ..
+        })
+        | Subcommand::Serve(ServeOpts {
+            watch,
+            custom_watch,
+            ..
+        }) if *watch && watch_allowed => {
             let (tx_term, rx) = channel();
             let tx_fs = tx_term.clone();
             // Set the handler for termination events (more than just SIGINT) on all
@@ -147,7 +153,12 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                 // We want to exclude `target/` and `dist`, otherwise we should watch everything
                 let entry = entry.map_err(|err| WatchError::ReadDirEntryFailed { source: err })?;
                 let name = entry.file_name();
-                if name != "target" && name != "dist" && name != ".git" {
+                if name != "target"
+                    && name != "dist"
+                    && name != ".git"
+                    && name != "target_engine"
+                    && name != "target_wasm"
+                {
                     watcher
                         .watch(&entry.path(), RecursiveMode::Recursive)
                         .map_err(|err| WatchError::WatchFileFailed {
@@ -155,6 +166,17 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                             source: err,
                         })?;
                 }
+            }
+            // Watch any other files/directories the user has nominated
+            for entry in custom_watch.iter() {
+                watcher
+                    // If it's a directory, we'll watch it recursively
+                    // If it's a file, the second parameter here is usefully ignored
+                    .watch(Path::new(entry), RecursiveMode::Recursive)
+                    .map_err(|err| WatchError::WatchFileFailed {
+                        filename: entry.to_string(),
+                        source: err,
+                    })?;
             }
 
             // This will store the handle to the child process

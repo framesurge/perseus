@@ -56,9 +56,13 @@ pub struct ExportOpts {
     #[clap(long, default_value = "8080")]
     pub port: u16,
     /// Watch the files in your working directory for changes (exluding
-    /// `target/` and `.perseus/`)
+    /// `target/` and `dist/`)
     #[clap(short, long)]
     pub watch: bool,
+    /// Marks a specific file/directory to be watched (directories will be
+    /// recursively watched)
+    #[clap(long)]
+    pub custom_watch: Vec<String>,
 }
 /// Exports an error page for the given HTTP status code
 #[derive(Parser, Clone)]
@@ -87,9 +91,13 @@ pub struct ServeOpts {
     #[clap(long)]
     pub standalone: bool,
     /// Watch the files in your working directory for changes (exluding
-    /// `target/` and `.perseus/`)
+    /// `target/` and `dist/`)
     #[clap(short, long)]
     pub watch: bool,
+    /// Marks a specific file/directory to be watched (directories will be
+    /// recursively watched)
+    #[clap(long)]
+    pub custom_watch: Vec<String>,
     /// Where to host your exported app
     #[clap(long, default_value = "127.0.0.1")]
     pub host: String,
