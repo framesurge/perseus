@@ -36,6 +36,8 @@ We could use *request state* to run a function provided to the `.request_state_f
 
 Usefully, a *request state* function is given the [`Request`](=struct.Request@perseus) from the user's request, which allows access to cookies, etc. With that, we can check if the user has our authentication cookie and make sure that it's valid, and then return a `None` for the count (which would now have to be an `Option<u32>`, see the next section) and `false` for a new `authorized` property.
 
+A *request state* function takes three arguments: the path, the locale it's being built for, and the user's request. It then returns a [`RenderFnResultWithCause<State>`](=type.RenderFnResultWithCause@perseus), where `State` is your state type.
+
 ## Amalgamate States
 
 However, there's a problem with the above idea in most frameworks that support build state and request state, or similar principles. You can only usually use one, since otherwise the build state and the request state might generate conflicting states! This is exactly what would happen here: the build state would happily get the count, and the request state would always override this as `None`, authorized or not, and it would set `authorized`, which the build state might always assume to be `true`. Whatever shall we do?
@@ -44,7 +46,7 @@ The answer to this is dead simple: the *state amalgamation* strategy, whjich all
 
 Note though that you won't always need state amalgamation, it's mostly useful for adding this kind of authentication to pages that already have build state, allowing you to get the best optimizations and the best security!
 
-Signature TODO.
+A *state amalgamation* function takes four arguments: the path, the locale it's being built for, the build state, and the request state (both unreactive). It then returns a [`RenderFnResultWithCause<State>`](=type.RenderFnResultWithCause@perseus), where `State` is your state type.
 
 ## Revalidation
 
@@ -56,7 +58,7 @@ Note that you can use both time-based *and* logic-based revalidation on the same
 
 *Note: if you use revalidation on a template with many pages, revalidation will be performed piecemeal, page-by-page, as each is requested.*
 
-Signatures TODO
+A *logic-based revalidation* function (provided to `.should_revalidate.fn()`) takes three arguments: the path, the locale it's being built for, and the user's request. It then returns a `bool`. The reason the build-time/request-time states are not available is due to the structure of the internal render algorithms, and practicalities: anything needed from the request state can be re-derived from the user's request, and the build state can't be used for checking if a page should revalidate, since it's always going to be the same.
 
 ## Incremental Generation
 
