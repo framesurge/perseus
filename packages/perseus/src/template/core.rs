@@ -69,7 +69,13 @@ make_async_trait!(
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
-make_async_trait!(ShouldRevalidateFnType, RenderFnResultWithCause<bool>);
+make_async_trait!(
+    ShouldRevalidateFnType,
+    RenderFnResultWithCause<bool>,
+    path: String,
+    locale: String,
+    req: Request
+);
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     AmalgamateStatesFnType,
@@ -423,9 +429,14 @@ impl<G: Html> Template<G> {
     /// can be caused by either the server or the client, so the
     /// user must specify an [`ErrorCause`].
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn should_revalidate(&self) -> Result<bool, ServerError> {
+    pub async fn should_revalidate(
+        &self,
+        path: String,
+        locale: String,
+        req: Request,
+    ) -> Result<bool, ServerError> {
         if let Some(should_revalidate) = &self.should_revalidate {
-            let res = should_revalidate.call().await;
+            let res = should_revalidate.call(path, locale, req).await;
             match res {
                 Ok(res) => Ok(res),
                 Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {

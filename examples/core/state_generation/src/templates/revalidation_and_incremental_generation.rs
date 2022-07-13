@@ -53,7 +53,11 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
 // revalidated This acts as a secondary check, and can perform arbitrary logic
 // to check if we should actually revalidate a page
 #[perseus::should_revalidate]
-pub async fn should_revalidate() -> RenderFnResultWithCause<bool> {
+pub async fn should_revalidate(
+    _path: String,
+    _locale: String,
+    _req: perseus::Request,
+) -> RenderFnResultWithCause<bool> {
     // For simplicity's sake, this will always say we should revalidate, but you
     // could amke this check any condition
     Ok(true)

@@ -251,7 +251,7 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
             // This normal version is identical to the user's (we know it won't have any arguments, and we know its return type)
             // We use the user's return type to prevent unused imports warnings in their code
             #[cfg(not(target_arch = "wasm32"))]
-            #vis async fn #name() -> #return_type {
+            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, req: ::perseus::Request) -> #return_type {
                 #block
             }
         },

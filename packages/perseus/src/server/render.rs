@@ -8,6 +8,25 @@ use crate::Request;
 use crate::SsrNode;
 use chrono::{DateTime, Utc};
 
+/// Clones a `Request` from its internal parts.
+fn clone_req(raw: &Request) -> Request {
+    let mut builder = Request::builder();
+
+    for (name, val) in raw.headers() {
+        builder = builder.header(name, val);
+    }
+
+    builder
+        .uri(raw.uri())
+        .method(raw.method())
+        .version(raw.version())
+        // We always use an empty body because, in a Perseus request, only the URI matters
+        // Any custom data should therefore be sent in headers (if you're doing that, consider a
+        // dedicated API)
+        .body(())
+        .unwrap() // This should never fail...
+}
+
 /// Gets the path with the locale, returning it without if i18n isn't being
 /// used.
 fn get_path_with_locale(path_without_locale: &str, translator: &Translator) -> String {
@@ -170,6 +189,9 @@ async fn should_revalidate(
     template: &Template<SsrNode>,
     path_encoded: &str,
     mutable_store: &impl MutableStore,
+    translator: &Translator,
+    path: &str,
+    req: Request,
 ) -> Result<bool, ServerError> {
     let mut should_revalidate = false;
     // If it revalidates after a certain period of time, we needd to check that
@@ -197,7 +219,9 @@ async fn should_revalidate(
 
     // Now run the user's custom revalidation logic
     if template.revalidates_with_logic() {
-        should_revalidate = template.should_revalidate().await?;
+        should_revalidate = template
+            .should_revalidate(path.to_string(), translator.get_locale(), req)
+            .await?;
     }
     Ok(should_revalidate)
 }
@@ -299,7 +323,6 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
 /// load server-side routing). Because this handles templates with potentially
 /// revalidation and incremental generation, it uses both mutable and immutable
 /// stores.
-// TODO possible further optimizations on this for futures?
 pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     GetPageProps {
         raw_path,
@@ -313,6 +336,10 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     }: GetPageProps<'_, M, T>,
     template: &Template<SsrNode>,
 ) -> Result<PageData, ServerError> {
+    // Since `Request` is not actually `Clone`able, we hack our way around needing
+    // it twice An `Rc` won't work because of future constraints, and an `Arc`
+    // seems a little unnecessary
+    let req_2 = clone_req(&req);
     // Get a translator for this locale (for sanity we hope the manager is caching)
     let translator = translations_manager
         .get_translator_for_locale(locale.to_string())
@@ -350,7 +377,16 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 // It's cached
                 Some((html_val, head_val)) => {
                     // Check if we need to revalidate
-                    if should_revalidate(template, &path_encoded, mutable_store).await? {
+                    if should_revalidate(
+                        template,
+                        &path_encoded,
+                        mutable_store,
+                        &translator,
+                        path,
+                        req,
+                    )
+                    .await?
+                    {
                         let (html_val, head_val, state) = revalidate(
                             template,
                             &translator,
@@ -448,7 +484,16 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
 
             // Handle if we need to revalidate
             // It'll be in the mutable store if we do
-            if should_revalidate(template, &path_encoded, mutable_store).await? {
+            if should_revalidate(
+                template,
+                &path_encoded,
+                mutable_store,
+                &translator,
+                path,
+                req,
+            )
+            .await?
+            {
                 let (html_val, head_val, state) = revalidate(
                     template,
                     &translator,
@@ -492,7 +537,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         // page will be built soon If we're not, and there's no build state,
         // then we still need to build, which we'll do after we've checked for
         // amalgamation
-        let state = get_request_state(template, &translator, path, req).await?;
+        let state = get_request_state(template, &translator, path, req_2).await?;
         states.request_state = state;
     }
 
