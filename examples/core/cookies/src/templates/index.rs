@@ -1,3 +1,4 @@
+use perseus::utils::cookies::Cookies;
 use perseus::{RenderFnResultWithCause, Request, Template};
 use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 
@@ -7,9 +8,10 @@ pub struct IndexProps {
 }
 
 #[perseus::template_rx]
-pub fn index_page<'a, G: Html>(cx: Scope<'a>, props: IndexPropsRx) -> View<G> {
+pub fn index_page<'a, G: Html>(cx: Scope<'a>, props: IndexPropsRx<'a>) -> View<G> {
+    let cookie_value = props.cookie_value.clone();
     view! { cx,
-        p { (props.cookie_value) }
+        p { (cookie_value) }
     }
 }
 
@@ -28,9 +30,9 @@ pub fn get_template<G: Html>() -> Template<G> {
 pub async fn get_request_state(
     _path: String,
     _locale: String,
-    req: Request,
+    mut req: Request,
 ) -> RenderFnResultWithCause<IndexProps> {
-    let cookie_value = req.get_cookie("test");
+    let cookie_value = req.get_cookie("test").unwrap();
     req.set_cookie("foo", "bar");
     Ok(IndexProps { cookie_value })
 }

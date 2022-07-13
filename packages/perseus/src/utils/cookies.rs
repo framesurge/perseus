@@ -1,8 +1,11 @@
 /// This Modules add support for cookies in the Perseus Request Type
 use crate::Request;
 
-trait Cookies {
+/// Cookies Trait impl for Request type
+pub trait Cookies {
+    /// Get Cookie from cookie header
     fn get_cookie(&self, name: &str) -> Option<String>;
+    /// Set Cookie over Set-Cookie header
     fn set_cookie(&mut self, name: &str, value: &str);
 }
 
