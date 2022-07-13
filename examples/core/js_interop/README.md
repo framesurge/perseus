@@ -1,5 +1,5 @@
-# Basic Example
+# JavaScript Interoperability Example
 
-This is a basic example of Perseus that shows the fundamentals of a slightly more advanced Perseus app. This is considered a core example because it not only contains end-to-end tests for Perseus itself, it's also the site of the development of the default Perseus engine. For that reason, the `.perseus/` directory is checked into Git here, and this is used as the single source of truth for the default engine. The reason for developing it here is to provide the context of an actual usage of Perseus, which makes a number of things easier. Then, some scripts bridge the gap to make the engine integrate into the CLI (you shouldn't have to worry about this when working in the Perseus repo as long as you're using the `bonnie dev example ...` script).
+Unfortunately, not everything can be done with Wasm all the time. If you need to fall back to JavaScript, this example shows you how to do so, by showcasing Perseus' use of `wasm-bindgen` to support arbitrary JS snippets that can be imported as external code.
 
-Note that this example used to be more complex, illustrating features such as setting custom headers and hosting static content, though demonstrations of these have since been moved to independent examples.
+Notably, JS snippets are automatically hosted at `/.perseus/snippets` on your site, but you shouldn't ever need to worry about this, since `wasm-bindgen` will automatically import them. You can find more details about JS and Wasm working together [here](https://rustwasm.github.io/docs/wasm-bindgen/reference/js-snippets.html).
