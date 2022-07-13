@@ -1,1 +1,3 @@
-.perseus/
+dist/
+target_engine/
+target_wasm/
