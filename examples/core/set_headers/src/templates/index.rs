@@ -41,7 +41,7 @@ pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWi
 // to be fully qualified, or you have to import it with a server-only
 // target-gate
 #[perseus::set_headers]
-pub fn set_headers(state: Option<PageState>) -> perseus::http::header::HeaderMap {
+pub fn set_headers(state: PageState) -> perseus::http::header::HeaderMap {
     // These imports are only available on the server-side, which this function is
     // automatically gated to
     use perseus::http::header::{HeaderMap, HeaderName};
@@ -49,7 +49,7 @@ pub fn set_headers(state: Option<PageState>) -> perseus::http::header::HeaderMap
     let mut map = HeaderMap::new();
     map.insert(
         HeaderName::from_lowercase(b"x-greeting").unwrap(),
-        state.unwrap().greeting.parse().unwrap(),
+        state.greeting.parse().unwrap(),
     );
     map
 }

@@ -161,23 +161,44 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
             }
         },
         // Always synchronous
-        StateFnType::SetHeaders => quote! {
-            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
-            #[cfg(target_arch = "wasm32")]
-            #vis fn #name() {}
-            #[cfg(not(target_arch = "wasm32"))]
-            #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
-                // The user's function
-                // We can assume the return type to be `HeaderMap`
-                #(#attrs)*
-                fn #name #generics(#args) -> #return_type {
-                    #block
+        StateFnType::SetHeaders => {
+            if args.len() == 1 {
+                quote! {
+                    // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+                    #[cfg(target_arch = "wasm32")]
+                    #vis fn #name() {}
+                    #[cfg(not(target_arch = "wasm32"))]
+                    #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
+                        // The user's function
+                        // We can assume the return type to be `HeaderMap`
+                        #(#attrs)*
+                        fn #name #generics(#args) -> #return_type {
+                            #block
+                        }
+                        // Deserialize the props and then call the user's function
+                        // Their function is taking state, so this must be defined
+                        let props_de = ::serde_json::from_str(&props.unwrap()).unwrap();
+                        #name(props_de)
+                    }
                 }
-                // Deserialize the props and then call the user's function
-                let props_de = props.map(|val| ::serde_json::from_str(&val).unwrap());
-                #name(props_de)
+            } else {
+                quote! {
+                    // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+                    #[cfg(target_arch = "wasm32")]
+                    #vis fn #name() {}
+                    #[cfg(not(target_arch = "wasm32"))]
+                    #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
+                        // The user's function
+                        // We can assume the return type to be `HeaderMap`
+                        #(#attrs)*
+                        fn #name #generics() -> #return_type {
+                            #block
+                        }
+                        #name()
+                    }
+                }
             }
-        },
+        }
         // Always synchronous
         StateFnType::AmalgamateStates => quote! {
             // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
