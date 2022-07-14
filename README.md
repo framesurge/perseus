@@ -1,6 +1,6 @@
 <h1 align="center">Perseus</h1>
 
-[![Book](https://img.shields.io/badge/Book-arctic--hen7.github.io-informational?style=for-the-badge)](https://arctic-hen7.github.io/perseus)
+[![Book](https://img.shields.io/badge/Book-arctic--hen7.github.io-informational?style=for-the-badge)](https://arctic-hen7.github.io/perseus/en-US/docs)
 [![API Docs](https://img.shields.io/docsrs/perseus?label=API%20Docs&style=for-the-badge)](https://docs.rs/perseus)
 [![Crate Page](https://img.shields.io/crates/v/perseus?style=for-the-badge)](https://crates.io/crates/perseus)
 [![Top Language](https://img.shields.io/github/languages/top/arctic-hen7/perseus?style=for-the-badge)]()
@@ -18,7 +18,7 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 -   🏎 Lighthouse scores of 100 on desktop and over 95 on mobile
 -   ⚡ Support for *hot state reloading* (reload your entire app's state after you make any code changes in development, Perseus is the only framework in the world that can do this, to our knowledge)
 
-## Usage
+## What's it like?
 
 Here's a taste of Perseus (see [the _tiny_ example](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny) for more):
 
@@ -40,13 +40,28 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 
 Check out [the book](https://arctic-hen7.github.io/perseus/en-US/docs) to learn how to turn that into your next app!
 
+## Quick start
+
+If you want to start working with Perseus right away, run the following commands and you'll have a basic app ready in no time! (Or, more accurately, after Cargo compiles everything...)
+
+``` shell
+cargo install perseus-cli --version 0.4.0-beta.3
+perseus new my-app
+cd my-app/
+perseus serve -w
+```
+
+Then, hop over to <http://localhost:8080> and see a placeholder app, in all its glory! If you change some code, that'll automatically update, reloading the browser all by itself. (This rebuilding might take a while though, see [here](https://arctic-hen7.github.io/perseus/en-US/docs/next/reference/compilation-times) for how to speed things up.)
+
+Check out our [getting started tutorial](https://arctic-hen7.github.io/perseus/en-US/docs/next/getting-started/installation) for more, or head over to out [core principles](https://arctic-hen7.github.io/perseus/en-US/docs/next/core-principles) page, which explains the basics of how Perseus works. Enjoy!
+
 ## Aim
 
 Support every major rendering strategy and provide developers the ability to efficiently create super-fast apps with Rust and a fantastic developer experience!
 
 ## Motivation
 
-There is a sore lack of Rust frameworks for frontend development that support more than just SPAs and client-side rendering, and so Perseus was born. We need something like NextJS for Wasm (but why stop there?).
+There is a sore lack of Rust frameworks for frontend development that support more than just SPAs and client-side rendering, and so Perseus was born. We need something like NextJS for Wasm. From there, we started getting interested in a more state-drive approach to web development, and here we are!
 
 ## Contributing
 

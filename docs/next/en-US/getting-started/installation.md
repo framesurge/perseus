@@ -18,26 +18,13 @@ cargo install perseus-cli
 
 This will take a few minutes to download and compile everything. (Note: if you don't have Rust or Cargo yet, see [here](https://rust-lang.org/tools/install) for installation instructions.)
 
-Next up, you should create a new directory for your app and set it up like so:
+Next up, you should set up your new app like so:
 
 ```sh
-cargo new --lib my-app
+perseus new my-app
 cd my-app
 ```
 
-This will create a new directory called `my-app/` in your current directory, set it up for a new Rust project, and then move into that directory. If you want to move this directory somewhere else, you can do that as usual, everything's self-contained.
+This will create a new directory called `my-app/` in your current directory, setting it up for a new Perseus project. If you want to move this directory somewhere else, you can do that as usual, everything's self-contained.
 
-You'll notice in there a file called `Cargo.toml`, which is the manifest of any Rust app; it defines dependencies, the package name, the author, etc.
-
-In that file, add the following underneath the `[dependencies]` line:
-
-```
-perseus = { version = "=0.4.0-beta.3", features = [ "hydrate" ] }
-sycamore = "=0.8.0-beta.7"
-```
-
-*Note: we install Sycamore as well because that's how you write views in Perseus, it's useless without it! We've also used the `=[version]` syntax here to pin our app to a specific beta version of Sycamore, otherwise Cargo will politely update it automatically when a new version comes out. Normally, that's very nice of it, but, when we're working with beta versions (which won't be for much longer, hopefully!), a new version could break your code, so it's best to deliberately update when you decide to.*
-
-Now you can run `cargo build`, and that will fetch the `perseus` crate and get everything ready for you! Note that we haven't defined the integration as a dependency yet, and that's deliberate, because this `Cargo.toml` is going to get *much* more complicated!
-
-But, for now, you're all good to move onto the next section, in which we'll build our first app with Perseus!
+You can run `perseus serve -w` now if you want to see the placeholder app, or you can move ahead to the next section to get your feet wet.

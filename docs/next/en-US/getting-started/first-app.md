@@ -1,6 +1,6 @@
 # Your First App
 
-With a basic directory scaffold all set up, it's time to get into the nitty-gritty of building a Perseus app. Somewhat humorously, the hardest part to wrap your head around as a beginner is probably going to be the `Cargo.toml` we're about to set up. For now, make it look like the following.
+With a basic app scaffold all set up, it's time to get into the nitty-gritty of building a Perseus app. Somewhat humorously, the hardest part to wrap your head around as a beginner is probably going to be the `Cargo.toml` we're about to set up. It should look something like the following.
 
 ```toml
 {{#include ../../../examples/comprehensive/tiny/Cargo.toml.example}}
@@ -82,3 +82,5 @@ Now, try updating that `Hello World!` message to be a little more like the first
 Now stop that command with `Ctrl+C` and run `perseus deploy` instead. This will take a very long time, but it will produce a `pkg/` directory that you could put on a real-world server, and it would be completely ready to serve your brand-new app! Because this app is so simple, you could even use `perseus deploy -e` instead to just produce a bunch of flat files that you could host from anywhere without needing a proper server.
 
 All this has just scratched the surface of what's possible with Perseus, and there's so much more to learn! The next big things are about understanding some of the core principles behind Perseus, which should help you to understand why any of what you just did actually worked.
+
+*Note: next time you make a Perseus app, you can speed up the boilerplate with `perseus new`, which sets up everything you need straight away!*
