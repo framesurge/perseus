@@ -66,7 +66,11 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
             .into());
         }
         // Copy in the server executable
+        #[cfg(target_os = "windows")]
+        let to = output_path.join("server.exe");
+        #[cfg(not(target_os = "windows"))]
         let to = output_path.join("server");
+        
         if let Err(err) = fs::copy(&server_path, &to) {
             return Err(DeployError::MoveAssetFailed {
                 to: to.to_str().map(|s| s.to_string()).unwrap(),
