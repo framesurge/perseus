@@ -25,6 +25,10 @@ pub enum Error {
     DeployError(#[from] DeployError),
     #[error(transparent)]
     WatchError(#[from] WatchError),
+    #[error(transparent)]
+    InitError(#[from] InitError),
+    #[error(transparent)]
+    NewError(#[from] NewError),
 }
 
 /// Errors that can occur while attempting to execute a Perseus app with
@@ -158,6 +162,50 @@ pub enum WatchError {
     },
     #[error("couldn't get the path to the cli's executable, try re-running the command")]
     GetSelfPathFailed {
+        #[source]
+        source: std::io::Error,
+    },
+}
+
+#[derive(Error, Debug)]
+pub enum InitError {
+    #[error("couldn't create directory structure for new project, do you have the necessary permissions?")]
+    CreateDirStructureFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't create file '{filename}' for project initialization")]
+    CreateInitFileFailed {
+        #[source]
+        source: std::io::Error,
+        filename: String,
+    },
+}
+
+#[derive(Error, Debug)]
+pub enum NewError {
+    // The `new` command calls the `init` command in effect
+    #[error(transparent)]
+    InitError(#[from] InitError),
+    #[error("couldn't create directory for new project, do you have the necessary permissions?")]
+    CreateProjectDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("fetching the custom initialization template failed")]
+    GetCustomInitFailed {
+        #[source]
+        source: ExecutionError,
+    },
+    #[error(
+        "fetching the custom initialization template returned non-zero exit code ({exit_code})"
+    )]
+    GetCustomInitNonZeroExitCode { exit_code: i32 },
+    #[error(
+        "couldn't remove git internals at '{target_dir:?}' for custom initialization template"
+    )]
+    RemoveCustomInitGitFailed {
+        target_dir: Option<String>,
         #[source]
         source: std::io::Error,
     },

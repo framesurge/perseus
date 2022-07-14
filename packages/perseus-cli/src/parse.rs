@@ -32,6 +32,8 @@ pub enum Subcommand {
     /// to see more detailed logs
     #[clap(subcommand)]
     Snoop(SnoopSubcommand),
+    New(NewOpts),
+    Init(InitOpts),
 }
 /// Builds your app
 #[derive(Parser)]
@@ -122,6 +124,31 @@ pub struct TinkerOpts {
     /// Don't remove and recreate the `dist/` directory
     #[clap(long)]
     pub no_clean: bool,
+}
+/// Creates a new Perseus project in a directory of the given name, which will
+/// be created in the current path
+#[derive(Parser)]
+pub struct NewOpts {
+    /// The name of the new project, which will also be used for the directory
+    #[clap(value_parser)]
+    pub name: String,
+    /// An optional custom URL to a Git repository to be used as a custom
+    /// template (note that custom templates will not respect your project's
+    /// name). This can be followed with `@branch` to fetch from `branch`
+    /// rather than the default
+    #[clap(short, long)]
+    pub template: Option<String>,
+    /// The path to a custom directory to create (if this is not provided, the
+    /// project name will be used by default)
+    #[clap(long)]
+    pub dir: Option<String>,
+}
+/// Intializes a new Perseus project in the current directory
+#[derive(Parser)]
+pub struct InitOpts {
+    /// The name of the new project
+    #[clap(value_parser)]
+    pub name: String,
 }
 
 #[derive(Parser)]

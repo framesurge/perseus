@@ -4,7 +4,7 @@ use fmterr::fmt_err;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use perseus_cli::parse::{ExportOpts, ServeOpts, SnoopSubcommand};
 use perseus_cli::{
-    build, check_env, delete_artifacts, deploy, export,
+    build, check_env, delete_artifacts, deploy, export, init, new,
     parse::{Opts, Subcommand},
     serve, serve_exported, tinker,
 };
@@ -298,6 +298,8 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             SnoopSubcommand::Serve(snoop_serve_opts) => snoop_server(dir, snoop_serve_opts)?,
         },
         Subcommand::ExportErrorPage(opts) => export_error_page(dir, opts)?,
+        Subcommand::New(opts) => new(dir, opts)?,
+        Subcommand::Init(opts) => init(dir, opts)?,
     };
     Ok(exit_code)
 }
