@@ -23,7 +23,7 @@ fn main() {
     let envs = if integration_locked {
         vec![("TEST_EXAMPLE", &cli_path)]
     } else {
-        vec![("TEST_EXAMPLE", &cli_path), ("PERSEUS_CARGO_ARGS", &cargo_args)]
+        vec![("TEST_EXAMPLE", &cli_path), ("PERSEUS_CARGO_ENGINE_ARGS", &cargo_args)]
     };
 
     #[cfg(unix)]

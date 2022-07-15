@@ -1,6 +1,6 @@
 use crate::cmd::run_cmd_directly;
-use crate::errors::*;
-use crate::parse::{SnoopServeOpts, SnoopWasmOpts};
+use crate::parse::SnoopServeOpts;
+use crate::{errors::*, get_user_crate_name};
 use std::env;
 use std::path::PathBuf;
 
@@ -12,7 +12,7 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
         format!(
             "{} run {}",
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-            env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
+            env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
         vec![
@@ -24,17 +24,28 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
 
 /// Runs the commands to build the user's app to Wasm directly so they can see
 /// detailed logs.
-pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, ExecutionError> {
+pub fn snoop_wasm_build(dir: PathBuf) -> Result<i32, ExecutionError> {
+    let crate_name = get_user_crate_name(&dir)?;
+
+    println!("[NOTE]: You should expect unused code warnings here! Don't worry about them, they're just a product of the target-gating.");
+    let exit_code = run_cmd_directly(
+        format!(
+            "{} build --target wasm32-unknown-unknown {}",
+            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+            env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
+        ),
+        &dir,
+        vec![("CARGO_TARGET_DIR", "target_wasm")],
+    )?;
+    if exit_code != 0 {
+        return Ok(exit_code);
+    }
     run_cmd_directly(
         format!(
-            "{} build --out-dir dist/pkg --out-name perseus_engine --target web {} {}",
-            env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
-            if opts.profiling {
-                "--profiling"
-            } else {
-                "--dev"
-            },
-            env::var("PERSEUS_WASM_PACK_ARGS").unwrap_or_else(|_| String::new())
+            "{cmd} ./target_wasm/wasm32-unknown-unknown/debug/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
+            cmd=env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
+            args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
+            crate_name=crate_name
         ),
         &dir,
         vec![("CARGO_TARGET_DIR", "target_wasm")],
@@ -44,20 +55,18 @@ pub fn snoop_wasm_build(dir: PathBuf, opts: SnoopWasmOpts) -> Result<i32, Execut
 /// Runs the commands to run the server directly so the user can see detailed
 /// logs.
 pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, ExecutionError> {
-    // Set the environment variables for the host and port
-    env::set_var("PERSEUS_HOST", opts.host);
-    env::set_var("PERSEUS_PORT", opts.port.to_string());
-
     run_cmd_directly(
         format!(
             "{} run {}",
             env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-            env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
+            env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
         vec![
             ("PERSEUS_ENGINE_OPERATION", "serve"),
             ("CARGO_TARGET_DIR", "target_engine"),
+            ("PERSEUS_HOST", &opts.host),
+            ("PERSEUS_PORT", &opts.port.to_string()),
         ], /* Unlike the `serve` command, we're both
             * building and running here, so we provide
             * the operation */

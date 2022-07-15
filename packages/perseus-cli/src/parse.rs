@@ -157,16 +157,9 @@ pub enum SnoopSubcommand {
     /// calls and the like)
     Build,
     /// Snoops on the Wasm building process (mostly for debugging errors)
-    WasmBuild(SnoopWasmOpts),
+    WasmBuild,
     /// Snoops on the server process (run `perseus build` before this)
     Serve(SnoopServeOpts),
-}
-
-#[derive(Parser)]
-pub struct SnoopWasmOpts {
-    /// Produce a profiling build (for use with `twiggy` and the like)
-    #[clap(short, long)]
-    pub profiling: bool,
 }
 
 #[derive(Parser)]

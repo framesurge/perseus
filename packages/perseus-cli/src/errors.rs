@@ -65,6 +65,13 @@ pub enum ExecutionError {
         #[source]
         source: std::num::ParseIntError,
     },
+    #[error("couldn't parse `Cargo.toml` (are you running in the right directory?)")]
+    GetManifestFailed {
+        #[source]
+        source: cargo_toml::Error,
+    },
+    #[error("couldn't get crate name from `[package]` section of `Cargo.toml` (are you running in the right directory?)")]
+    CrateNameNotPresentInManifest,
 }
 
 /// Errors that can occur while running `perseus export`.

@@ -1,6 +1,4 @@
 use crate::errors::*;
-#[allow(unused_imports)]
-use cargo_toml::Manifest;
 use std::env;
 use std::process::Command;
 
@@ -20,9 +18,9 @@ pub fn check_env() -> Result<(), Error> {
             "PERSEUS_CARGO_PATH",
         ),
         (
-            env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
-            "wasm-pack",
-            "PERSEUS_WASM_PACK_PATH",
+            env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
+            "wasm-bindgen",
+            "PERSEUS_WASM_BINDGEN_PATH",
         ),
     ];
 

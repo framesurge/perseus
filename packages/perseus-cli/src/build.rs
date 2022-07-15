@@ -1,7 +1,7 @@
 use crate::cmd::{cfg_spinner, run_stage};
-use crate::errors::*;
 use crate::parse::BuildOpts;
 use crate::thread::{spawn_thread, ThreadHandle};
+use crate::{errors::*, get_user_crate_name};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
 use std::env;
@@ -56,6 +56,7 @@ pub fn build_internal(
     ),
     ExecutionError,
 > {
+    let crate_name = get_user_crate_name(&dir)?;
     // Static generation message
     let sg_msg = format!(
         "{} {} Generating your app",
@@ -92,7 +93,7 @@ pub fn build_internal(
                 "{} run {} {}",
                 env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
                 if is_release { "--release" } else { "" },
-                env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
+                env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
             )],
             &sg_dir,
             &sg_spinner,
@@ -107,12 +108,24 @@ pub fn build_internal(
     });
     let wb_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
-            vec![&format!(
-                "{} build --out-dir dist/pkg --out-name perseus_engine --target web {} {}",
-                env::var("PERSEUS_WASM_PACK_PATH").unwrap_or_else(|_| "wasm-pack".to_string()),
-                if is_release { "--release" } else { "--dev" }, /* If we don't supply `--dev`, another profile will be used */
-                env::var("PERSEUS_WASM_PACK_ARGS").unwrap_or_else(|_| String::new())
-            )],
+            vec![
+                // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
+                &format!(
+                    "{} build --target wasm32-unknown-unknown {} {}",
+                    env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                    if is_release { "--release" } else { "" },
+                    env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
+                ),
+                // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
+                &format!(
+                    // TODO Somehow pin output artifact name...
+                    "{cmd} ./target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
+                    cmd=env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
+                    profile={ if is_release { "release" } else { "debug" } },
+                    args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
+                    crate_name=crate_name
+                )
+            ],
             &wb_dir,
             &wb_spinner,
             &wb_msg,

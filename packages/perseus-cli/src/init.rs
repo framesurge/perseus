@@ -57,7 +57,7 @@ pub fn init(dir: PathBuf, opts: InitOpts) -> Result<i32, InitError> {
 pub fn new(dir: PathBuf, opts: NewOpts) -> Result<i32, NewError> {
     // Create the directory (if the user provided a name explicitly, use that,
     // otherwise use the project name)
-    let target = dir.join(opts.dir.unwrap_or(opts.name.clone()));
+    let target = dir.join(opts.dir.unwrap_or_else(|| opts.name.clone()));
 
     // Check if we're using the default template or one from a URL
     if let Some(url) = opts.template {

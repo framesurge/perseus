@@ -70,12 +70,12 @@ fn build_server(
                 "{} build --message-format json {} {}",
                 env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
                 if is_release { "--release" } else { "" },
-                env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
+                env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
             )],
             &sb_target,
             &sb_spinner,
             &sb_msg,
-            vec![]
+            vec![("CARGO_TARGET_DIR", "target_engine")]
         )?);
 
         let msgs: Vec<&str> = stdout.trim().split('\n').collect();

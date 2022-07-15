@@ -181,7 +181,6 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
 
         // The browser-specific `main` function
         #[cfg(target_arch = "wasm32")]
-        #[wasm_bindgen::prelude::wasm_bindgen]
         pub fn main() -> ::perseus::ClientReturn {
             ::perseus::run_client(__perseus_simple_main)
         }
@@ -220,7 +219,6 @@ pub fn main_export_impl(input: MainFn) -> TokenStream {
 
         // The browser-specific `main` function
         #[cfg(target_arch = "wasm32")]
-        #[wasm_bindgen::prelude::wasm_bindgen]
         pub fn main() -> ::perseus::ClientReturn {
             ::perseus::run_client(__perseus_simple_main)
         }
@@ -250,7 +248,6 @@ pub fn browser_main_impl(input: MainFn) -> TokenStream {
         // The browser-specific `main` function
         // This absolutely MUST be called `main`, otherwise the hardcodes Wasm importer will fail (and then interactivity is gone completely with a really weird error message)
         #[cfg(target_arch = "wasm32")]
-        #[wasm_bindgen::prelude::wasm_bindgen]
         #(#attrs)*
         pub fn main() -> #return_type {
             #block

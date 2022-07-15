@@ -33,8 +33,8 @@ mod thread;
 mod tinker;
 
 use errors::*;
-use std::fs;
 use std::path::PathBuf;
+use std::{fs, path::Path};
 
 /// The current version of the CLI, extracted from the crate version.
 pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -91,4 +91,16 @@ pub fn delete_artifacts(dir: PathBuf, dir_to_remove: &str) -> Result<(), Executi
     }
 
     Ok(())
+}
+
+/// Gets the name of the user's crate from their `Cargo.toml` (assumed to be in
+/// the root of the given directory).
+pub fn get_user_crate_name(dir: &Path) -> Result<String, ExecutionError> {
+    let manifest = cargo_toml::Manifest::from_path(dir.join("Cargo.toml"))
+        .map_err(|err| ExecutionError::GetManifestFailed { source: err })?;
+    let name = manifest
+        .package
+        .ok_or(ExecutionError::CrateNameNotPresentInManifest)?
+        .name;
+    Ok(name)
 }
