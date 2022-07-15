@@ -17,7 +17,7 @@ pub fn snoop_build(dir: PathBuf) -> Result<i32, ExecutionError> {
         &dir,
         vec![
             ("PERSEUS_ENGINE_OPERATION", "build"),
-            ("CARGO_TARGET_DIR", "target_engine"),
+            ("CARGO_TARGET_DIR", "dist/target_engine"),
         ],
     )
 }
@@ -35,20 +35,20 @@ pub fn snoop_wasm_build(dir: PathBuf) -> Result<i32, ExecutionError> {
             env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
         ),
         &dir,
-        vec![("CARGO_TARGET_DIR", "target_wasm")],
+        vec![("CARGO_TARGET_DIR", "dist/target_wasm")],
     )?;
     if exit_code != 0 {
         return Ok(exit_code);
     }
     run_cmd_directly(
         format!(
-            "{cmd} ./target_wasm/wasm32-unknown-unknown/debug/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
+            "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/debug/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
             cmd=env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
             args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
             crate_name=crate_name
         ),
         &dir,
-        vec![("CARGO_TARGET_DIR", "target_wasm")],
+        vec![("CARGO_TARGET_DIR", "dist/target_wasm")],
     )
 }
 
@@ -64,7 +64,7 @@ pub fn snoop_server(dir: PathBuf, opts: SnoopServeOpts) -> Result<i32, Execution
         &dir,
         vec![
             ("PERSEUS_ENGINE_OPERATION", "serve"),
-            ("CARGO_TARGET_DIR", "target_engine"),
+            ("CARGO_TARGET_DIR", "dist/target_engine"),
             ("PERSEUS_HOST", &opts.host),
             ("PERSEUS_PORT", &opts.port.to_string()),
         ], /* Unlike the `serve` command, we're both

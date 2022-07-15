@@ -9,8 +9,8 @@ use perseus_cli::{
     serve, serve_exported, tinker,
 };
 use perseus_cli::{
-    delete_dist, errors::*, export_error_page, order_reload, run_reload_server, snoop_build,
-    snoop_server, snoop_wasm_build,
+    create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
+    snoop_build, snoop_server, snoop_wasm_build,
 };
 use std::env;
 use std::io::Write;
@@ -234,6 +234,8 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 }
 
 async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
+    create_dist(&dir)?;
+
     let exit_code = match opts.subcmd {
         Subcommand::Build(build_opts) => {
             // Delete old build artifacts
@@ -275,6 +277,10 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
         }
         Subcommand::Clean => {
             delete_dist(dir)?;
+            // Warn the user that the next run will be quite a bit slower
+            eprintln!(
+                "[NOTE]: Build artifacts have been deleted, the next run will take some time."
+            );
             0
         }
         Subcommand::Deploy(deploy_opts) => {

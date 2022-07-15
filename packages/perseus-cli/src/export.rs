@@ -172,7 +172,7 @@ pub fn export_internal(
             &ep_msg,
             vec![
                 ("PERSEUS_ENGINE_OPERATION", "export"),
-                ("CARGO_TARGET_DIR", "target_engine")
+                ("CARGO_TARGET_DIR", "dist/target_engine")
             ]
         )?);
 
@@ -190,7 +190,7 @@ pub fn export_internal(
                 ),
                 // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
                 &format!(
-                    "{cmd} ./target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
+                    "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
                     cmd=env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
                     profile={ if is_release { "release" } else { "debug" } },
                     args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
@@ -200,7 +200,7 @@ pub fn export_internal(
             &wb_target,
             &wb_spinner,
             &wb_msg,
-            vec![("CARGO_TARGET_DIR", "target_wasm")]
+            vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
         )?);
 
         Ok(0)

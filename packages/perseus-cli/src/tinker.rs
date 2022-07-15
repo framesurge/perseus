@@ -55,7 +55,10 @@ pub fn tinker_internal(
             &tk_target,
             &tk_spinner,
             &tk_msg,
-            vec![("PERSEUS_ENGINE_OPERATION", "tinker")]
+            vec![
+                ("PERSEUS_ENGINE_OPERATION", "tinker"),
+                ("CARGO_TARGET_DIR", "dist/target_engine")
+            ]
         )?);
 
         Ok(0)

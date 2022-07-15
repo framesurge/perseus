@@ -50,8 +50,19 @@ pub use serve_exported::serve_exported;
 pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};
 pub use tinker::tinker;
 
-/// Deletes the entire `dist/` directory. Nicely, because there are no Cargo
-/// artifacts in there, running this won't slow down future runs at all.
+/// Creates the `dist/` directory in the project root, which is necessary
+/// for Cargo to be able to put its build artifacts in there.
+pub fn create_dist(dir: &Path) -> Result<(), ExecutionError> {
+    let target = dir.join("dist");
+    if !target.exists() {
+        fs::create_dir(target).map_err(|err| ExecutionError::CreateDistFailed { source: err })?;
+    }
+    Ok(())
+}
+
+/// Deletes the entire `dist/` directory. Notably, this is where we keep
+/// several Cargo artifacts, so this means the next build will be much
+/// slower.
 pub fn delete_dist(dir: PathBuf) -> Result<(), ExecutionError> {
     let target = dir.join("dist");
     if target.exists() {

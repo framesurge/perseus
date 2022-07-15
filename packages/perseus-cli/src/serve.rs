@@ -75,7 +75,7 @@ fn build_server(
             &sb_target,
             &sb_spinner,
             &sb_msg,
-            vec![("CARGO_TARGET_DIR", "target_engine")]
+            vec![("CARGO_TARGET_DIR", "dist/target_engine")]
         )?);
 
         let msgs: Vec<&str> = stdout.trim().split('\n').collect();

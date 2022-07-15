@@ -100,7 +100,7 @@ pub fn build_internal(
             &sg_msg,
             vec![
                 ("PERSEUS_ENGINE_OPERATION", "build"),
-                ("CARGO_TARGET_DIR", "target_engine")
+                ("CARGO_TARGET_DIR", "dist/target_engine")
             ]
         )?);
 
@@ -119,7 +119,7 @@ pub fn build_internal(
                 // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
                 &format!(
                     // TODO Somehow pin output artifact name...
-                    "{cmd} ./target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
+                    "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
                     cmd=env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
                     profile={ if is_release { "release" } else { "debug" } },
                     args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
@@ -131,11 +131,11 @@ pub fn build_internal(
             &wb_msg,
             if is_release {
                 vec![
-                    ("CARGO_TARGET_DIR", "target_wasm"),
+                    ("CARGO_TARGET_DIR", "dist/target_wasm"),
                     ("RUSTFLAGS", &wasm_opt_flags),
                 ]
             } else {
-                vec![("CARGO_TARGET_DIR", "target_wasm")]
+                vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
             }
         )?);
 

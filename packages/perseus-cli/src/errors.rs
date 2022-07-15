@@ -72,6 +72,11 @@ pub enum ExecutionError {
     },
     #[error("couldn't get crate name from `[package]` section of `Cargo.toml` (are you running in the right directory?)")]
     CrateNameNotPresentInManifest,
+    #[error("couldn't create directory for distribution artifacts (do you have the necessary permissions?)")]
+    CreateDistFailed {
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 /// Errors that can occur while running `perseus export`.
