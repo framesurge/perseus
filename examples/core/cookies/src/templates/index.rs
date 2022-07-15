@@ -23,7 +23,10 @@ pub fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_page).head(head)
+    Template::new("index")
+        .request_state_fn(get_request_state)
+        .template(index_page)
+        .head(head)
 }
 
 #[perseus::request_state]
