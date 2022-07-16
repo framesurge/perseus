@@ -153,6 +153,14 @@ pub fn export_internal(
         BUILDING
     );
 
+    // Prepare the optimization flags for the Wasm build (only used in release mode)
+    let wasm_opt_flags = if is_release {
+        env::var("PERSEUS_WASM_RELEASE_RUSTFLAGS")
+            .unwrap_or_else(|_| "-C opt-level=z -C codegen-units=1".to_string())
+    } else {
+        String::new()
+    };
+
     // We parallelize the first two spinners (static generation and Wasm building)
     // We make sure to add them at the top (the server spinner may have already been
     // instantiated)
@@ -214,7 +222,14 @@ pub fn export_internal(
             &wb_target,
             &wb_spinner,
             &wb_msg,
-            vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
+            if is_release {
+                vec![
+                    ("CARGO_TARGET_DIR", "dist/target_wasm"),
+                    ("RUSTFLAGS", &wasm_opt_flags),
+                ]
+            } else {
+                vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
+            }
         )?);
 
         Ok(0)

@@ -139,6 +139,11 @@ pub enum DeployError {
         #[source]
         source: std::io::Error,
     },
+    #[error("couldn't create distribution artifacts directory for deployment (if this persists, try `perseus clean`)")]
+    CreateDistDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 #[derive(Error, Debug)]
