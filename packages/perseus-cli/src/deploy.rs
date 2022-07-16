@@ -1,6 +1,7 @@
 use crate::errors::*;
 use crate::export;
 use crate::install::Tools;
+use crate::parse::Opts;
 use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
 use fs_extra::copy_items;
@@ -13,12 +14,17 @@ use std::path::PathBuf;
 /// together in one folder that can be conveniently uploaded to a server, file
 /// host, etc. This can return any kind of error because deploying involves
 /// working with other subcommands.
-pub fn deploy(dir: PathBuf, opts: DeployOpts, tools: &Tools) -> Result<i32, Error> {
+pub fn deploy(
+    dir: PathBuf,
+    opts: &DeployOpts,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, Error> {
     // Fork at whether we're using static exporting or not
     let exit_code = if opts.export_static {
-        deploy_export(dir, opts.output, tools)?
+        deploy_export(dir, opts.output.to_string(), tools, global_opts)?
     } else {
-        deploy_full(dir, opts.output, tools)?
+        deploy_full(dir, opts.output.to_string(), tools, global_opts)?
     };
 
     Ok(exit_code)
@@ -27,11 +33,16 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts, tools: &Tools) -> Result<i32, Erro
 /// Deploys the user's app in its entirety, with a bundled server. This can
 /// return any kind of error because deploying involves working with other
 /// subcommands.
-fn deploy_full(dir: PathBuf, output: String, tools: &Tools) -> Result<i32, Error> {
+fn deploy_full(
+    dir: PathBuf,
+    output: String,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, Error> {
     // Build everything for production, not running the server
     let (serve_exit_code, server_path) = serve(
         dir.clone(),
-        ServeOpts {
+        &ServeOpts {
             no_run: true,
             no_build: false,
             release: true,
@@ -44,6 +55,7 @@ fn deploy_full(dir: PathBuf, output: String, tools: &Tools) -> Result<i32, Error
             port: 8080,
         },
         tools,
+        global_opts,
     )?;
     if serve_exit_code != 0 {
         return Ok(serve_exit_code);
@@ -151,11 +163,16 @@ fn deploy_full(dir: PathBuf, output: String, tools: &Tools) -> Result<i32, Error
 
 /// Uses static exporting to deploy the user's app. This can return any kind of
 /// error because deploying involves working with other subcommands.
-fn deploy_export(dir: PathBuf, output: String, tools: &Tools) -> Result<i32, Error> {
+fn deploy_export(
+    dir: PathBuf,
+    output: String,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, Error> {
     // Export the app to `.perseus/exported`, using release mode
     let export_exit_code = export(
         dir.clone(),
-        ExportOpts {
+        &ExportOpts {
             release: true,
             serve: false,
             host: String::new(),
@@ -164,6 +181,7 @@ fn deploy_export(dir: PathBuf, output: String, tools: &Tools) -> Result<i32, Err
             custom_watch: Vec::new(),
         },
         tools,
+        global_opts,
     )?;
     if export_exit_code != 0 {
         return Ok(export_exit_code);

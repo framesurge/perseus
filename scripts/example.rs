@@ -20,11 +20,9 @@ fn main() {
     // These paths are for the CLI, which is inside `packages/perseus-cli`
     let cli_path = format!("../../examples/{}/{}", &category, &example);
     let cargo_args = format!("--features \"perseus-integration/{}\"", integration);
-    let envs = if integration_locked {
-        vec![("TEST_EXAMPLE", &cli_path)]
-    } else {
-        vec![("TEST_EXAMPLE", &cli_path), ("PERSEUS_CARGO_ENGINE_ARGS", &cargo_args)]
-    };
+    if !integration_locked {
+        args.push(format!("--cargo-engine-args='{}'", &cargo_args));
+    }
 
     #[cfg(unix)]
     let shell_exec = "sh";
@@ -39,7 +37,7 @@ fn main() {
         // We don't provide any quoted arguments to the CLI ever, so this is fine
         .args([shell_param, &format!("cargo run -- {}", args.join(" "))])
         .current_dir("packages/perseus-cli") // We run on the bleeding-edge version of the CLI, from which we know the example from `TEST_EXAMPLE` above
-        .envs(envs)
+        .env("TEST_EXAMPLE", &cli_path)
         .spawn()
         .expect("couldn't run example (command execution failed)");
     let _ = child.wait().expect("couldn't wait on example executor process");

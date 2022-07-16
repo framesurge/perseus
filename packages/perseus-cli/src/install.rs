@@ -1,5 +1,6 @@
 use crate::cmd::{cfg_spinner, fail_spinner, succeed_spinner};
 use crate::errors::*;
+use crate::parse::Opts;
 use console::Emoji;
 use flate2::read::GzDecoder;
 use futures::future::try_join;
@@ -295,7 +296,7 @@ fn check_tool(
 ///
 /// This also creates a CLI spinner to track progress (if we need to install
 /// anything).
-pub async fn install_tools(dir: &Path) -> Result<Tools, InstallError> {
+pub async fn install_tools(dir: &Path, global_opts: &Opts) -> Result<Tools, InstallError> {
     // Create the directory for tools
     let target = dir.join("dist/tools");
     if !target.exists() {
@@ -310,7 +311,7 @@ pub async fn install_tools(dir: &Path) -> Result<Tools, InstallError> {
     );
     if let (Some(wb), Some(wo)) = expected_paths {
         return Ok(Tools {
-            cargo: env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+            cargo: global_opts.cargo_path.clone(),
             wasm_bindgen: wb,
             wasm_opt: wo,
         });
@@ -334,7 +335,7 @@ pub async fn install_tools(dir: &Path) -> Result<Tools, InstallError> {
     let paths = res.unwrap();
 
     Ok(Tools {
-        cargo: env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+        cargo: global_opts.cargo_path.clone(),
         wasm_bindgen: paths.0,
         wasm_opt: paths.1,
     })

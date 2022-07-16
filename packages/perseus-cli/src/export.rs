@@ -1,11 +1,10 @@
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::install::Tools;
-use crate::parse::ExportOpts;
+use crate::parse::{ExportOpts, Opts};
 use crate::thread::{spawn_thread, ThreadHandle};
 use crate::{errors::*, get_user_crate_name};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -130,6 +129,7 @@ pub fn export_internal(
     num_steps: u8,
     is_release: bool,
     tools: &Tools,
+    global_opts: &Opts,
 ) -> Result<
     (
         ThreadHandle<impl FnOnce() -> Result<i32, ExportError>, Result<i32, ExportError>>,
@@ -138,6 +138,14 @@ pub fn export_internal(
     ExportError,
 > {
     let tools = tools.clone();
+    let Opts {
+        cargo_browser_args,
+        cargo_engine_args,
+        wasm_bindgen_args,
+        wasm_opt_args,
+        wasm_release_rustflags,
+        ..
+    } = global_opts.clone();
     let crate_name = get_user_crate_name(&dir)?;
 
     // Exporting pages message
@@ -153,14 +161,6 @@ pub fn export_internal(
         BUILDING
     );
 
-    // Prepare the optimization flags for the Wasm build (only used in release mode)
-    let wasm_opt_flags = if is_release {
-        env::var("PERSEUS_WASM_RELEASE_RUSTFLAGS")
-            .unwrap_or_else(|_| "-C opt-level=z -C codegen-units=1".to_string())
-    } else {
-        String::new()
-    };
-
     // We parallelize the first two spinners (static generation and Wasm building)
     // We make sure to add them at the top (the server spinner may have already been
     // instantiated)
@@ -171,82 +171,99 @@ pub fn export_internal(
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
     let wb_target = dir;
     let cargo_exec = tools.cargo.clone();
-    let ep_thread = spawn_thread(move || {
-        handle_exit_code!(run_stage(
-            vec![&format!(
-                "{} run {} {}",
-                cargo_exec,
-                if is_release { "--release" } else { "" },
-                env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
-            )],
-            &ep_target,
-            &ep_spinner,
-            &ep_msg,
-            vec![
-                ("PERSEUS_ENGINE_OPERATION", "export"),
-                ("CARGO_TARGET_DIR", "dist/target_engine")
-            ]
-        )?);
+    let ep_thread = spawn_thread(
+        move || {
+            handle_exit_code!(run_stage(
+                vec![&format!(
+                    "{} run {} {}",
+                    cargo_exec,
+                    if is_release { "--release" } else { "" },
+                    cargo_engine_args
+                )],
+                &ep_target,
+                &ep_spinner,
+                &ep_msg,
+                vec![
+                    ("PERSEUS_ENGINE_OPERATION", "export"),
+                    ("CARGO_TARGET_DIR", "dist/target_engine")
+                ]
+            )?);
 
-        Ok(0)
-    });
-    let wb_thread = spawn_thread(move || {
-        let mut cmds = vec![
+            Ok(0)
+        },
+        global_opts.sequential,
+    );
+    let wb_thread = spawn_thread(
+        move || {
+            let mut cmds = vec![
             // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
             format!(
                 "{} build --target wasm32-unknown-unknown {} {}",
                 tools.cargo,
                 if is_release { "--release" } else { "" },
-                env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
+                cargo_browser_args
             ),
             // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
             format!(
                 "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
                 cmd=tools.wasm_bindgen,
                 profile={ if is_release { "release" } else { "debug" } },
-                args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
+                args=wasm_bindgen_args,
                 crate_name=crate_name
             )
         ];
-        // If we're building for release, then we should run `wasm-opt`
-        if is_release {
-            cmds.push(format!(
+            // If we're building for release, then we should run `wasm-opt`
+            if is_release {
+                cmds.push(format!(
                 "{cmd} -Oz ./dist/pkg/perseus_engine_bg.wasm -o ./dist/pkg/perseus_engine_bg.wasm {args}",
                 cmd=tools.wasm_opt,
-                args=env::var("PERSEUS_WASM_OPT_ARGS").unwrap_or_else(|_| String::new())
+                args=wasm_opt_args
             ));
-        }
-        let cmds = cmds.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
-        handle_exit_code!(run_stage(
-            cmds,
-            &wb_target,
-            &wb_spinner,
-            &wb_msg,
-            if is_release {
-                vec![
-                    ("CARGO_TARGET_DIR", "dist/target_wasm"),
-                    ("RUSTFLAGS", &wasm_opt_flags),
-                ]
-            } else {
-                vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
             }
-        )?);
+            let cmds = cmds.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
+            handle_exit_code!(run_stage(
+                cmds,
+                &wb_target,
+                &wb_spinner,
+                &wb_msg,
+                if is_release {
+                    vec![
+                        ("CARGO_TARGET_DIR", "dist/target_wasm"),
+                        ("RUSTFLAGS", &wasm_release_rustflags),
+                    ]
+                } else {
+                    vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
+                }
+            )?);
 
-        Ok(0)
-    });
+            Ok(0)
+        },
+        global_opts.sequential,
+    );
 
     Ok((ep_thread, wb_thread))
 }
 
 /// Builds the subcrates to get a directory that we can serve. Returns an exit
 /// code.
-pub fn export(dir: PathBuf, opts: ExportOpts, tools: &Tools) -> Result<i32, ExportError> {
+pub fn export(
+    dir: PathBuf,
+    opts: &ExportOpts,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, ExportError> {
     let spinners = MultiProgress::new();
     // We'll add another not-quite-spinner if we're serving
     let num_spinners = if opts.serve { 3 } else { 2 };
 
-    let (ep_thread, wb_thread) =
-        export_internal(dir.clone(), &spinners, num_spinners, opts.release, tools)?;
+    let (ep_thread, wb_thread) = export_internal(
+        dir.clone(),
+        &spinners,
+        num_spinners,
+        opts.release,
+        tools,
+        global_opts,
+    )?;
     let ep_res = ep_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;

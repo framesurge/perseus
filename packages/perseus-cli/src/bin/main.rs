@@ -13,7 +13,6 @@ use perseus_cli::{
     run_reload_server, snoop_build, snoop_server, snoop_wasm_build,
 };
 use std::env;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::channel;
@@ -76,20 +75,18 @@ enum Event {
 // vector in testing If at any point a warning can't be printed, the program
 // will panic
 async fn core(dir: PathBuf) -> Result<i32, Error> {
-    // Get `stdout` so we can write warnings appropriately
-    let stdout = &mut std::io::stdout();
-
-    // Warn the user if they're using the CLI single-threaded mode
-    if env::var("PERSEUS_CLI_SEQUENTIAL").is_ok() {
-        writeln!(stdout, "Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.\n").expect("Failed to write to stdout.");
-    }
-
     // Parse the CLI options with `clap`
     let opts = Opts::parse();
+
+    // Warn the user if they're using the CLI single-threaded mode
+    if opts.sequential {
+        println!("Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.");
+    }
+
     // Check the user's environment to make sure they have prerequisites
     // We do this after any help pages or version numbers have been parsed for
     // snappiness
-    check_env()?;
+    check_env(&opts)?;
 
     // Check if this process is allowed to watch for changes
     // This will be set to `true` if this is a child process
@@ -125,9 +122,14 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
             // Set up a browser reloading server
             // We provide an option for the user to disable this
-            if env::var("PERSEUS_NO_BROWSER_RELOAD").is_err() {
+            let Opts {
+                reload_server_host,
+                reload_server_port,
+                ..
+            } = opts.clone();
+            if !opts.no_browser_reload {
                 tokio::task::spawn(async move {
-                    run_reload_server().await;
+                    run_reload_server(reload_server_host, reload_server_port).await;
                 });
             }
 
@@ -242,45 +244,45 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
 async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
     create_dist(&dir)?;
-    let tools = install_tools(&dir).await?;
+    let tools = install_tools(&dir, &opts).await?;
 
     let exit_code = match opts.subcmd {
-        Subcommand::Build(build_opts) => {
+        Subcommand::Build(ref build_opts) => {
             // Delete old build artifacts
             delete_artifacts(dir.clone(), "static")?;
-            build(dir, build_opts, &tools)?
+            build(dir, build_opts, &tools, &opts)?
         }
-        Subcommand::Export(export_opts) => {
+        Subcommand::Export(ref export_opts) => {
             // Delete old build/export artifacts
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
-            let exit_code = export(dir.clone(), export_opts.clone(), &tools)?;
+            let exit_code = export(dir.clone(), export_opts, &tools, &opts)?;
             if exit_code != 0 {
                 return Ok(exit_code);
             }
             if export_opts.serve {
                 // Tell any connected browsers to reload
-                order_reload();
-                serve_exported(dir, export_opts.host, export_opts.port).await;
+                order_reload(opts.reload_server_host.to_string(), opts.reload_server_port);
+                serve_exported(dir, export_opts.host.to_string(), export_opts.port).await;
             }
             0
         }
-        Subcommand::Serve(serve_opts) => {
+        Subcommand::Serve(ref serve_opts) => {
             if !serve_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
             // This orders reloads internally
-            let (exit_code, _server_path) = serve(dir, serve_opts, &tools)?;
+            let (exit_code, _server_path) = serve(dir, serve_opts, &tools, &opts)?;
             exit_code
         }
-        Subcommand::Test(test_opts) => {
+        Subcommand::Test(ref test_opts) => {
             // This will be used by the subcrates
             env::set_var("PERSEUS_TESTING", "true");
             // Delete old build artifacts if `--no-build` wasn't specified
             if !test_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
-            let (exit_code, _server_path) = serve(dir, test_opts, &tools)?;
+            let (exit_code, _server_path) = serve(dir, test_opts, &tools, &opts)?;
             exit_code
         }
         Subcommand::Clean => {
@@ -291,31 +293,33 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             );
             0
         }
-        Subcommand::Deploy(deploy_opts) => {
+        Subcommand::Deploy(ref deploy_opts) => {
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
             delete_artifacts(dir.clone(), "pkg")?;
-            deploy(dir, deploy_opts, &tools)?
+            deploy(dir, deploy_opts, &tools, &opts)?
         }
-        Subcommand::Tinker(tinker_opts) => {
+        Subcommand::Tinker(ref tinker_opts) => {
             // Unless we've been told not to, we start with a blank slate
             // This will remove old tinkerings and eliminate any possible corruptions (which
             // are very likely with tinkering!)
             if !tinker_opts.no_clean {
                 delete_dist(dir.clone())?;
             }
-            tinker(dir, &tools)?
+            tinker(dir, &tools, &opts)?
         }
-        Subcommand::Snoop(snoop_subcmd) => match snoop_subcmd {
-            SnoopSubcommand::Build => snoop_build(dir, &tools)?,
-            SnoopSubcommand::WasmBuild => snoop_wasm_build(dir, &tools)?,
-            SnoopSubcommand::Serve(snoop_serve_opts) => {
-                snoop_server(dir, snoop_serve_opts, &tools)?
+        Subcommand::Snoop(ref snoop_subcmd) => match snoop_subcmd {
+            SnoopSubcommand::Build => snoop_build(dir, &tools, &opts)?,
+            SnoopSubcommand::WasmBuild => snoop_wasm_build(dir, &tools, &opts)?,
+            SnoopSubcommand::Serve(ref snoop_serve_opts) => {
+                snoop_server(dir, snoop_serve_opts, &tools, &opts)?
             }
         },
-        Subcommand::ExportErrorPage(opts) => export_error_page(dir, opts, &tools)?,
-        Subcommand::New(opts) => new(dir, opts)?,
-        Subcommand::Init(opts) => init(dir, opts)?,
+        Subcommand::ExportErrorPage(ref eep_opts) => {
+            export_error_page(dir, eep_opts, &tools, &opts)?
+        }
+        Subcommand::New(ref new_opts) => new(dir, new_opts, &opts)?,
+        Subcommand::Init(ref init_opts) => init(dir, init_opts)?,
     };
     Ok(exit_code)
 }

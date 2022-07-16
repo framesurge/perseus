@@ -1,6 +1,6 @@
 use crate::cmd::run_cmd_directly;
 use crate::errors::*;
-use std::env;
+use crate::parse::Opts;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -12,7 +12,7 @@ use std::process::Command;
 ///
 /// Checks if the user has `cargo` installed, and tries to install the
 /// `wasm32-unknown-unknown` target with `rustup` if it's available.
-pub fn check_env() -> Result<(), Error> {
+pub fn check_env(global_opts: &Opts) -> Result<(), Error> {
     #[cfg(unix)]
     let shell_exec = "sh";
     #[cfg(windows)]
@@ -23,8 +23,7 @@ pub fn check_env() -> Result<(), Error> {
     let shell_param = "-command";
 
     // Check for `cargo`
-    let cargo_cmd =
-        env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()) + " --version";
+    let cargo_cmd = global_opts.cargo_path.to_string() + " --version";
     let cargo_res = Command::new(shell_exec)
         .args([shell_param, &cargo_cmd])
         .output()
@@ -41,8 +40,7 @@ pub fn check_env() -> Result<(), Error> {
     }
     // If the user has `rustup`, make sure they have `wasm32-unknown-unknown`
     // installed If they don'aren't using `rustup`, we won't worry about this
-    let rustup_cmd =
-        env::var("PERSEUS_RUSTUP_PATH").unwrap_or_else(|_| "rustup".to_string()) + " target list";
+    let rustup_cmd = global_opts.rustup_path.to_string() + " target list";
     let rustup_res = Command::new(shell_exec)
         .args([shell_param, &rustup_cmd])
         .output();

@@ -21,9 +21,7 @@ static NEXT_UID: AtomicUsize = AtomicUsize::new(0);
 
 /// Runs the reload server, which is used to instruct the browser on when to
 /// reload for updates.
-pub async fn run_reload_server() {
-    let (host, port) = get_reload_server_host_and_port();
-
+pub async fn run_reload_server(host: String, port: u16) {
     // Parse `localhost` into `127.0.0.1` (picky Rust `std`)
     let host = if host == "localhost" {
         "127.0.0.1".to_string()
@@ -93,25 +91,13 @@ pub async fn run_reload_server() {
 /// Orders all connected browsers to reload themselves. This spawns a blocking
 /// task through Tokio under the hood. Note that this will only do anything if
 /// `PERSEUS_USE_RELOAD_SERVER` is set to `true`.
-pub fn order_reload() {
+pub fn order_reload(host: String, port: u16) {
+    // This environment variable is only for use by the CLI internally
     if env::var("PERSEUS_USE_RELOAD_SERVER").is_ok() {
-        let (host, port) = get_reload_server_host_and_port();
-
         tokio::task::spawn(async move {
             // We don't care if this fails because we have no guarnatees that the server is
             // actually up
             let _ = reqwest::get(&format!("http://{}:{}/send", host, port)).await;
         });
     }
-}
-
-/// Gets the host and port to run the reload server on.
-fn get_reload_server_host_and_port() -> (String, u16) {
-    let host = env::var("PERSEUS_RELOAD_SERVER_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "3100".to_string());
-    let port = port
-        .parse::<u16>()
-        .expect("reload server port must be a number");
-
-    (host, port)
 }

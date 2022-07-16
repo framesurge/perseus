@@ -1,20 +1,15 @@
 use crate::cmd::run_cmd_directly;
 use crate::install::Tools;
-use crate::parse::SnoopServeOpts;
+use crate::parse::{Opts, SnoopServeOpts};
 use crate::{errors::*, get_user_crate_name};
-use std::env;
 use std::path::PathBuf;
 
 /// Runs static generation processes directly so the user can see detailed logs.
 /// This is commonly used for allowing users to see `dbg!` and the like in their
 /// builder functions.
-pub fn snoop_build(dir: PathBuf, tools: &Tools) -> Result<i32, ExecutionError> {
+pub fn snoop_build(dir: PathBuf, tools: &Tools, global_opts: &Opts) -> Result<i32, ExecutionError> {
     run_cmd_directly(
-        format!(
-            "{} run {}",
-            tools.cargo,
-            env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
-        ),
+        format!("{} run {}", tools.cargo, global_opts.cargo_engine_args),
         &dir,
         vec![
             ("PERSEUS_ENGINE_OPERATION", "build"),
@@ -26,15 +21,18 @@ pub fn snoop_build(dir: PathBuf, tools: &Tools) -> Result<i32, ExecutionError> {
 /// Runs the commands to build the user's app to Wasm directly so they can see
 /// detailed logs. This can't be used for release builds, so we don't have to
 /// worry about `wasm-opt`.
-pub fn snoop_wasm_build(dir: PathBuf, tools: &Tools) -> Result<i32, ExecutionError> {
+pub fn snoop_wasm_build(
+    dir: PathBuf,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, ExecutionError> {
     let crate_name = get_user_crate_name(&dir)?;
 
     println!("[NOTE]: You should expect unused code warnings here! Don't worry about them, they're just a product of the target-gating.");
     let exit_code = run_cmd_directly(
         format!(
             "{} build --target wasm32-unknown-unknown {}",
-            tools.cargo,
-            env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
+            tools.cargo, global_opts.cargo_browser_args
         ),
         &dir,
         vec![("CARGO_TARGET_DIR", "dist/target_wasm")],
@@ -46,7 +44,7 @@ pub fn snoop_wasm_build(dir: PathBuf, tools: &Tools) -> Result<i32, ExecutionErr
         format!(
             "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/debug/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
             cmd=tools.wasm_bindgen,
-            args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
+            args=global_opts.wasm_bindgen_args,
             crate_name=crate_name
         ),
         &dir,
@@ -58,15 +56,12 @@ pub fn snoop_wasm_build(dir: PathBuf, tools: &Tools) -> Result<i32, ExecutionErr
 /// logs.
 pub fn snoop_server(
     dir: PathBuf,
-    opts: SnoopServeOpts,
+    opts: &SnoopServeOpts,
     tools: &Tools,
+    global_opts: &Opts,
 ) -> Result<i32, ExecutionError> {
     run_cmd_directly(
-        format!(
-            "{} run {}",
-            tools.cargo,
-            env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
-        ),
+        format!("{} run {}", tools.cargo, global_opts.cargo_engine_args),
         &dir,
         vec![
             ("PERSEUS_ENGINE_OPERATION", "serve"),

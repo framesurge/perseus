@@ -1,6 +1,6 @@
 use crate::cmd::run_cmd_directly;
 use crate::errors::*;
-use crate::parse::{InitOpts, NewOpts};
+use crate::parse::{InitOpts, NewOpts, Opts};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -26,7 +26,7 @@ fn create_file_if_not_present(
 
 /// Initializes a new Perseus project in the given directory, based on either
 /// the default template or one from a given URL.
-pub fn init(dir: PathBuf, opts: InitOpts) -> Result<i32, InitError> {
+pub fn init(dir: PathBuf, opts: &InitOpts) -> Result<i32, InitError> {
     // Create the basic directory structure (this will create both `src/` and
     // `src/templates/`)
     fs::create_dir_all(dir.join("src/templates"))
@@ -54,13 +54,13 @@ pub fn init(dir: PathBuf, opts: InitOpts) -> Result<i32, InitError> {
 /// Initializes a new Perseus project in a new directory that's a child of the
 /// current one.
 // The `dir` here is the current dir, the name of the one to create is in `opts`
-pub fn new(dir: PathBuf, opts: NewOpts) -> Result<i32, NewError> {
+pub fn new(dir: PathBuf, opts: &NewOpts, global_opts: &Opts) -> Result<i32, NewError> {
     // Create the directory (if the user provided a name explicitly, use that,
     // otherwise use the project name)
-    let target = dir.join(opts.dir.unwrap_or_else(|| opts.name.clone()));
+    let target = dir.join(opts.dir.as_ref().unwrap_or(&opts.name));
 
     // Check if we're using the default template or one from a URL
-    if let Some(url) = opts.template {
+    if let Some(url) = &opts.template {
         let url_parts = url.split('@').collect::<Vec<&str>>();
         let engine_url = url_parts[0];
         // A custom branch can be specified after a `@`, or we'll use `stable`
@@ -68,7 +68,7 @@ pub fn new(dir: PathBuf, opts: NewOpts) -> Result<i32, NewError> {
             // We'll only clone the production branch, and only the top level, we don't need the
             // whole shebang
             "{} clone --single-branch {branch} --depth 1 {repo} {output}",
-            std::env::var("PERSEUS_GIT_PATH").unwrap_or_else(|_| "git".to_string()),
+            global_opts.git_path,
             branch = if let Some(branch) = url_parts.get(1) {
                 format!("--branch {}", branch)
             } else {
@@ -103,7 +103,12 @@ pub fn new(dir: PathBuf, opts: NewOpts) -> Result<i32, NewError> {
     } else {
         fs::create_dir(&target).map_err(|err| NewError::CreateProjectDirFailed { source: err })?;
         // Now initialize in there
-        let exit_code = init(target, InitOpts { name: opts.name })?;
+        let exit_code = init(
+            target,
+            &InitOpts {
+                name: opts.name.to_string(),
+            },
+        )?;
         Ok(exit_code)
     }
 }

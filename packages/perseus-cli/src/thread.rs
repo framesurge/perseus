@@ -1,17 +1,15 @@
-use std::env;
 use std::thread::{self, JoinHandle};
 
 /// Spawns a new thread with the given code, or executes it directly if the
 /// environment variable `PERSEUS_CLI_SEQUENTIAL` is set to any valid (Unicode)
 /// value. Multithreading is the default.
-pub fn spawn_thread<F, T>(f: F) -> ThreadHandle<F, T>
+pub fn spawn_thread<F, T>(f: F, sequential: bool) -> ThreadHandle<F, T>
 where
     F: FnOnce() -> T,
     F: Send + 'static,
     T: Send + 'static,
 {
-    let single = env::var("PERSEUS_CLI_SEQUENTIAL").is_ok();
-    if single {
+    if sequential {
         ThreadHandle {
             join_handle: None,
             f: Some(f),

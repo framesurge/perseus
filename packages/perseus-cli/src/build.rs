@@ -1,11 +1,10 @@
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::install::Tools;
-use crate::parse::BuildOpts;
+use crate::parse::{BuildOpts, Opts};
 use crate::thread::{spawn_thread, ThreadHandle};
 use crate::{errors::*, get_user_crate_name};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
-use std::env;
 use std::path::PathBuf;
 
 // Emojis for stages
@@ -22,23 +21,6 @@ macro_rules! handle_exit_code {
     };
 }
 
-// /// Finalizes the build by renaming some directories.
-// pub fn finalize(target: &Path) -> Result<(), ExecutionError> {
-//     // Move the `pkg/` directory into `dist/pkg/`
-//     let pkg_dir = target.join("dist/pkg");
-//     if pkg_dir.exists() {
-//         if let Err(err) = fs::remove_dir_all(&pkg_dir) {
-//             return Err(ExecutionError::MovePkgDirFailed { source: err });
-//         }
-//     }
-//     // The `fs::rename()` function will fail on Windows if the destination already exists, so this should work (we've just deleted it as per https://github.com/rust-lang/rust/issues/31301#issuecomment-177117325)
-//     if let Err(err) = fs::rename(target.join("pkg"), target.join("dist/pkg"))
-// {         return Err(ExecutionError::MovePkgDirFailed { source: err });
-//     }
-
-//     Ok(())
-// }
-
 /// Actually builds the user's code, program arguments having been interpreted.
 /// This needs to know how many steps there are in total because the serving
 /// logic also uses it. This also takes a `MultiProgress` to interact with so it
@@ -51,6 +33,7 @@ pub fn build_internal(
     num_steps: u8,
     is_release: bool,
     tools: &Tools,
+    global_opts: &Opts,
 ) -> Result<
     (
         ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
@@ -60,6 +43,14 @@ pub fn build_internal(
 > {
     // We need to own this for the threads
     let tools = tools.clone();
+    let Opts {
+        wasm_release_rustflags,
+        cargo_engine_args,
+        cargo_browser_args,
+        wasm_bindgen_args,
+        wasm_opt_args,
+        ..
+    } = global_opts.clone();
 
     let crate_name = get_user_crate_name(&dir)?;
     // Static generation message
@@ -75,14 +66,6 @@ pub fn build_internal(
         BUILDING
     );
 
-    // Prepare the optimization flags for the Wasm build (only used in release mode)
-    let wasm_opt_flags = if is_release {
-        env::var("PERSEUS_WASM_RELEASE_RUSTFLAGS")
-            .unwrap_or_else(|_| "-C opt-level=z -C codegen-units=1".to_string())
-    } else {
-        String::new()
-    };
-
     // We parallelize the first two spinners (static generation and Wasm building)
     // We make sure to add them at the top (the server spinner may have already been
     // instantiated)
@@ -93,79 +76,91 @@ pub fn build_internal(
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
     let wb_dir = dir;
     let cargo_exec = tools.cargo.clone();
-    let sg_thread = spawn_thread(move || {
-        handle_exit_code!(run_stage(
-            vec![&format!(
-                "{} run {} {}",
-                cargo_exec,
-                if is_release { "--release" } else { "" },
-                env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
-            )],
-            &sg_dir,
-            &sg_spinner,
-            &sg_msg,
-            vec![
-                ("PERSEUS_ENGINE_OPERATION", "build"),
-                ("CARGO_TARGET_DIR", "dist/target_engine")
-            ]
-        )?);
+    let sg_thread = spawn_thread(
+        move || {
+            handle_exit_code!(run_stage(
+                vec![&format!(
+                    "{} run {} {}",
+                    cargo_exec,
+                    if is_release { "--release" } else { "" },
+                    cargo_engine_args
+                )],
+                &sg_dir,
+                &sg_spinner,
+                &sg_msg,
+                vec![
+                    ("PERSEUS_ENGINE_OPERATION", "build"),
+                    ("CARGO_TARGET_DIR", "dist/target_engine")
+                ]
+            )?);
 
-        Ok(0)
-    });
-    let wb_thread = spawn_thread(move || {
-        let mut cmds = vec![
+            Ok(0)
+        },
+        global_opts.sequential,
+    );
+    let wb_thread = spawn_thread(
+        move || {
+            let mut cmds = vec![
             // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
             format!(
                 "{} build --target wasm32-unknown-unknown {} {}",
                 tools.cargo,
                 if is_release { "--release" } else { "" },
-                env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
+                cargo_browser_args
             ),
             // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
             format!(
                 "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
                 cmd=tools.wasm_bindgen,
                 profile={ if is_release { "release" } else { "debug" } },
-                args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
+                args=wasm_bindgen_args,
                 crate_name=crate_name
             )
         ];
-        // If we're building for release, then we should run `wasm-opt`
-        if is_release {
-            cmds.push(format!(
+            // If we're building for release, then we should run `wasm-opt`
+            if is_release {
+                cmds.push(format!(
                 "{cmd} -Oz ./dist/pkg/perseus_engine_bg.wasm -o ./dist/pkg/perseus_engine_bg.wasm {args}",
                 cmd=tools.wasm_opt,
-                args=env::var("PERSEUS_WASM_OPT_ARGS").unwrap_or_else(|_| String::new())
+                args=wasm_opt_args
             ));
-        }
-        let cmds = cmds.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
-        handle_exit_code!(run_stage(
-            cmds,
-            &wb_dir,
-            &wb_spinner,
-            &wb_msg,
-            if is_release {
-                vec![
-                    ("CARGO_TARGET_DIR", "dist/target_wasm"),
-                    ("RUSTFLAGS", &wasm_opt_flags),
-                ]
-            } else {
-                vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
             }
-        )?);
+            let cmds = cmds.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
+            handle_exit_code!(run_stage(
+                cmds,
+                &wb_dir,
+                &wb_spinner,
+                &wb_msg,
+                if is_release {
+                    vec![
+                        ("CARGO_TARGET_DIR", "dist/target_wasm"),
+                        ("RUSTFLAGS", &wasm_release_rustflags),
+                    ]
+                } else {
+                    vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
+                }
+            )?);
 
-        Ok(0)
-    });
+            Ok(0)
+        },
+        global_opts.sequential,
+    );
 
     Ok((sg_thread, wb_thread))
 }
 
 /// Builds the subcrates to get a directory that we can serve. Returns an exit
 /// code.
-pub fn build(dir: PathBuf, opts: BuildOpts, tools: &Tools) -> Result<i32, ExecutionError> {
+pub fn build(
+    dir: PathBuf,
+    opts: &BuildOpts,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, ExecutionError> {
     let spinners = MultiProgress::new();
 
-    let (sg_thread, wb_thread) = build_internal(dir, &spinners, 2, opts.release, tools)?;
+    let (sg_thread, wb_thread) =
+        build_internal(dir, &spinners, 2, opts.release, tools, global_opts)?;
     let sg_res = sg_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;
@@ -178,11 +173,6 @@ pub fn build(dir: PathBuf, opts: BuildOpts, tools: &Tools) -> Result<i32, Execut
     if wb_res != 0 {
         return Ok(wb_res);
     }
-
-    // This waits for all the threads and lets the spinners draw to the terminal
-    // spinners.join().map_err(|_| ErrorKind::ThreadWaitFailed)?;
-    // And now we can run the finalization stage
-    // finalize(&dir)?;
 
     // We've handled errors in the component threads, so the exit code is now zero
     Ok(0)
