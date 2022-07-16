@@ -16,7 +16,6 @@ pub fn get_op() -> Option<EngineOperation> {
                 // we shouldn't need to specify this environment variable So, in
                 // production, we take the server as the default If a user wants
                 // a builder though, they can just set the environment variable
-                // TODO Document this!
                 if cfg!(debug_assertions) {
                     None
                 } else {
