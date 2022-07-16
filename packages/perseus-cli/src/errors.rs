@@ -302,4 +302,11 @@ pub enum InstallError {
         #[source]
         source: std::io::Error,
     },
+    #[error("couldn't read `dist/tools/` to determine which tool versions were installed (do you have the necessary permissions?)")]
+    ReadToolsDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("directory found in `dist/tools/` with invalid name (running `perseus clean` should resolve this)")]
+    InvalidToolsDirName { name: String },
 }

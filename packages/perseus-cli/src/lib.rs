@@ -23,6 +23,7 @@ mod export;
 mod export_error_page;
 mod init;
 mod install;
+mod install_cache;
 /// Parsing utilities for arguments.
 pub mod parse;
 mod prepare;
@@ -44,7 +45,7 @@ pub use deploy::deploy;
 pub use export::export;
 pub use export_error_page::export_error_page;
 pub use init::{init, new};
-pub use install::install_tools;
+pub use install::Tools;
 pub use prepare::check_env;
 pub use reload_server::{order_reload, run_reload_server};
 pub use serve::serve;
