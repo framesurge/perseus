@@ -5,13 +5,15 @@ use thiserror::Error;
 /// All errors that can be returned by the CLI.
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("prerequisite command execution failed for prerequisite '{cmd}' (set '{env_var}' to another location if you've installed it elsewhere)")]
-    PrereqNotPresent {
-        cmd: String,
-        env_var: String,
+    #[error("couldn't find `cargo`, which is a dependency of this cli (set 'PERSEUS_CARGO_PATH' to another location if you've installed it elsewhere)")]
+    CargoNotPresent {
         #[source]
         source: std::io::Error,
     },
+    #[error(
+        "couldn't install `wasm32-unknown-unknown` target (do you have an internet connection?)"
+    )]
+    RustupTargetAddFailed { code: i32 },
     #[error("couldn't get current directory (have you just deleted it?)")]
     CurrentDirUnavailable {
         #[source]
