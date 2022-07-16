@@ -9,7 +9,7 @@ use reqwest::Client;
 use std::borrow::BorrowMut;
 use std::fs;
 use std::fs::File;
-use std::{env, path::Path, process::Command};
+use std::{path::Path, process::Command};
 use tar::Archive;
 use tokio::io::AsyncWriteExt;
 
@@ -27,7 +27,7 @@ static INSTALLING: Emoji<'_, '_> = Emoji("📥", "");
 async fn get_tool(
     target: &Path,
     tool: &str,
-    tool_env_var: &str,
+    (tool_path, tool_version): (&Option<String>, &Option<String>),
     // If this is built on an unsupported platform, this should be `None`
     // This should contain `%version` to be replaced with the version
     artifact_name: Option<&str>,
@@ -41,7 +41,7 @@ async fn get_tool(
     // Before we start, we sanity check the tool's presence again
     // This is because the main system will blindly rerun all installations, even if
     // only one tool is missing, which can lead to corruptions in some cases
-    if let Some(path) = check_tool(target, tool, tool_env_var, final_path) {
+    if let Some(path) = check_tool(target, tool, tool_path, final_path) {
         return Ok(path);
     };
 
@@ -88,9 +88,9 @@ async fn get_tool(
     // binaries available
     let artifact_name = artifact_name.unwrap();
     // Get the latest version if the user hasn't specified something else
-    let version = match env::var(&format!("PERSEUS_{}_VERSION", tool_env_var)) {
-        Ok(v) => v,
-        Err(_) => {
+    let version = match tool_version {
+        Some(v) => v.to_string(),
+        None => {
             let json = Client::new()
                 .get(&format!(
                     "https://api.github.com/repos/{}/releases/latest",
@@ -189,7 +189,7 @@ async fn get_tool(
 /// Installs `wasm-bindgen`, returning the path to the tool. This should not be
 /// called if the tool already exists, or if we've been given an environment
 /// variable for it.
-async fn install_wasm_bindgen(dir: &Path) -> Result<String, InstallError> {
+async fn install_wasm_bindgen(dir: &Path, global_opts: &Opts) -> Result<String, InstallError> {
     // This is based on https://github.com/rustwasm/wasm-bindgen/releases
     let artifact_name = match true {
         // Linux
@@ -212,7 +212,10 @@ async fn install_wasm_bindgen(dir: &Path) -> Result<String, InstallError> {
     get_tool(
         &dir.join("dist/tools"),
         "wasm-bindgen",
-        "WASM_BINDGEN",
+        (
+            &global_opts.wasm_bindgen_path,
+            &global_opts.wasm_bindgen_version,
+        ),
         artifact_name,
         "rustwasm/wasm-bindgen",
         // The name of the extarcted directory is the same as the artifact name
@@ -226,7 +229,7 @@ async fn install_wasm_bindgen(dir: &Path) -> Result<String, InstallError> {
 /// Installs `wasm-opt`, returning the path to the tool. This should not be
 /// called if the tool already exists, or if we've been given an environment
 /// variable for it.
-async fn install_wasm_opt(dir: &Path) -> Result<String, InstallError> {
+async fn install_wasm_opt(dir: &Path, global_opts: &Opts) -> Result<String, InstallError> {
     // This is based on https://github.com/WebAssembly/binaryen/releases
     let artifact_name = match true {
         // Linux
@@ -251,7 +254,7 @@ async fn install_wasm_opt(dir: &Path) -> Result<String, InstallError> {
     get_tool(
         &dir.join("dist/tools"),
         "wasm-opt",
-        "WASM_OPT",
+        (&global_opts.wasm_opt_path, &global_opts.wasm_opt_version),
         artifact_name,
         "WebAssembly/binaryen",
         "binaryen-%version",
@@ -265,14 +268,14 @@ async fn install_wasm_opt(dir: &Path) -> Result<String, InstallError> {
 fn check_tool(
     target: &Path,
     tool: &str,
-    tool_env_var: &str,
+    tool_path: &Option<String>,
     // This will be automatically adjusted for Windows
     final_path: &str,
 ) -> Option<String> {
     // First, check if the user has told us where to find the tool
     // If they have, we just assume it's valid
-    if let Ok(path) = env::var(&format!("PERSEUS_{}_PATH", tool_env_var)) {
-        return Some(path);
+    if let Some(path) = tool_path {
+        return Some(path.to_string());
     }
 
     // The path within the extracted directory (which will be named as the tool is)
@@ -306,8 +309,18 @@ pub async fn install_tools(dir: &Path, global_opts: &Opts) -> Result<Tools, Inst
 
     // Check if the tools exist (if they all do, we won't bother with the spinner)
     let expected_paths = (
-        check_tool(&target, "wasm-bindgen", "WASM_BINDGEN", "wasm-bindgen"),
-        check_tool(&target, "wasm-opt", "WASM_OPT", "bin/wasm-opt"),
+        check_tool(
+            &target,
+            "wasm-bindgen",
+            &global_opts.wasm_bindgen_path,
+            "wasm-bindgen",
+        ),
+        check_tool(
+            &target,
+            "wasm-opt",
+            &global_opts.wasm_opt_path,
+            "bin/wasm-opt",
+        ),
     );
     if let (Some(wb), Some(wo)) = expected_paths {
         return Ok(Tools {
@@ -325,7 +338,11 @@ pub async fn install_tools(dir: &Path, global_opts: &Opts) -> Result<Tools, Inst
     let spinner = cfg_spinner(ProgressBar::new_spinner(), &spinner_msg);
 
     // Install all the tools in parallel
-    let res = try_join(install_wasm_bindgen(dir), install_wasm_opt(dir)).await;
+    let res = try_join(
+        install_wasm_bindgen(dir, global_opts),
+        install_wasm_opt(dir, global_opts),
+    )
+    .await;
     if let Err(err) = res {
         fail_spinner(&spinner, &spinner_msg);
         return Err(err);

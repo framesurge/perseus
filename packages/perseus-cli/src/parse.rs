@@ -63,7 +63,11 @@ pub struct Opts {
     pub sequential: bool,
     /// Disable automatic browser reloading
     #[clap(long, global = true)]
-    pub no_browser_reload: bool, // TODO Tool versions
+    pub no_browser_reload: bool,
+    #[clap(long, global = true)]
+    pub wasm_bindgen_version: Option<String>,
+    #[clap(long, global = true)]
+    pub wasm_opt_version: Option<String>,
 }
 
 #[derive(Parser, Clone)]
