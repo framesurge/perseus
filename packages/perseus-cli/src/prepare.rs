@@ -11,18 +11,11 @@ pub fn check_env() -> Result<(), Error> {
     // We'll loop through each prerequisite executable to check their existence
     // If the spawn returns an error, it's considered not present, success means
     // presence
-    let prereq_execs = vec![
-        (
-            env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-            "cargo",
-            "PERSEUS_CARGO_PATH",
-        ),
-        (
-            env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
-            "wasm-bindgen",
-            "PERSEUS_WASM_BINDGEN_PATH",
-        ),
-    ];
+    let prereq_execs = vec![(
+        env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+        "cargo",
+        "PERSEUS_CARGO_PATH",
+    )];
 
     for exec in prereq_execs {
         let res = Command::new(&exec.0).output();

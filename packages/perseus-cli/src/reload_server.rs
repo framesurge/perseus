@@ -97,10 +97,10 @@ pub fn order_reload() {
     if env::var("PERSEUS_USE_RELOAD_SERVER").is_ok() {
         let (host, port) = get_reload_server_host_and_port();
 
-        tokio::task::spawn_blocking(move || {
+        tokio::task::spawn(async move {
             // We don't care if this fails because we have no guarnatees that the server is
             // actually up
-            let _ = ureq::get(&format!("http://{}:{}/send", host, port)).call();
+            let _ = reqwest::get(&format!("http://{}:{}/send", host, port)).await;
         });
     }
 }

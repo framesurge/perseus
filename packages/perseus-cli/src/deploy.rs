@@ -1,5 +1,6 @@
 use crate::errors::*;
 use crate::export;
+use crate::install::Tools;
 use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
 use fs_extra::copy_items;
@@ -12,12 +13,12 @@ use std::path::PathBuf;
 /// together in one folder that can be conveniently uploaded to a server, file
 /// host, etc. This can return any kind of error because deploying involves
 /// working with other subcommands.
-pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
+pub fn deploy(dir: PathBuf, opts: DeployOpts, tools: &Tools) -> Result<i32, Error> {
     // Fork at whether we're using static exporting or not
     let exit_code = if opts.export_static {
-        deploy_export(dir, opts.output)?
+        deploy_export(dir, opts.output, tools)?
     } else {
-        deploy_full(dir, opts.output)?
+        deploy_full(dir, opts.output, tools)?
     };
 
     Ok(exit_code)
@@ -26,7 +27,7 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
 /// Deploys the user's app in its entirety, with a bundled server. This can
 /// return any kind of error because deploying involves working with other
 /// subcommands.
-fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
+fn deploy_full(dir: PathBuf, output: String, tools: &Tools) -> Result<i32, Error> {
     // Build everything for production, not running the server
     let (serve_exit_code, server_path) = serve(
         dir.clone(),
@@ -42,6 +43,7 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
             host: "127.0.0.1".to_string(),
             port: 8080,
         },
+        tools,
     )?;
     if serve_exit_code != 0 {
         return Ok(serve_exit_code);
@@ -126,7 +128,7 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
 
 /// Uses static exporting to deploy the user's app. This can return any kind of
 /// error because deploying involves working with other subcommands.
-fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
+fn deploy_export(dir: PathBuf, output: String, tools: &Tools) -> Result<i32, Error> {
     // Export the app to `.perseus/exported`, using release mode
     let export_exit_code = export(
         dir.clone(),
@@ -138,6 +140,7 @@ fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
             watch: false,
             custom_watch: Vec::new(),
         },
+        tools,
     )?;
     if export_exit_code != 0 {
         return Ok(export_exit_code);

@@ -1,5 +1,6 @@
 use crate::build::build_internal;
 use crate::cmd::{cfg_spinner, run_stage};
+use crate::install::Tools;
 use crate::parse::ServeOpts;
 use crate::thread::{spawn_thread, ThreadHandle};
 use crate::{errors::*, order_reload};
@@ -38,10 +39,12 @@ fn build_server(
     did_build: bool,
     exec: Arc<Mutex<String>>,
     is_release: bool,
+    tools: &Tools,
 ) -> Result<
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     ExecutionError,
 > {
+    let tools = tools.clone();
     let num_steps = match did_build {
         true => 4,
         false => 2,
@@ -68,7 +71,7 @@ fn build_server(
                 // This sets Cargo to tell us everything, including the executable path to the
                 // server
                 "{} build --message-format json {} {}",
-                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                tools.cargo,
                 if is_release { "--release" } else { "" },
                 env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
             )],
@@ -194,7 +197,11 @@ fn run_server(
 /// Builds the subcrates to get a directory that we can serve and then serves
 /// it. If possible, this will return the path to the server executable so that
 /// it can be used in deployment.
-pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), ExecutionError> {
+pub fn serve(
+    dir: PathBuf,
+    opts: ServeOpts,
+    tools: &Tools,
+) -> Result<(i32, Option<String>), ExecutionError> {
     // Set the environment variables for the host and port
     env::set_var("PERSEUS_HOST", opts.host);
     env::set_var("PERSEUS_PORT", opts.port.to_string());
@@ -212,10 +219,12 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         did_build,
         Arc::clone(&exec),
         opts.release,
+        tools,
     )?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {
-        let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 4, opts.release)?;
+        let (sg_thread, wb_thread) =
+            build_internal(dir.clone(), &spinners, 4, opts.release, tools)?;
         let sg_res = sg_thread
             .join()
             .map_err(|_| ExecutionError::ThreadWaitFailed)??;

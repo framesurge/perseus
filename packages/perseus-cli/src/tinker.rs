@@ -1,5 +1,6 @@
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::errors::*;
+use crate::install::Tools;
 use crate::thread::{spawn_thread, ThreadHandle};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
@@ -29,10 +30,12 @@ pub fn tinker_internal(
     dir: PathBuf,
     spinners: &MultiProgress,
     num_steps: u8,
+    tools: &Tools,
 ) -> Result<
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     Error,
 > {
+    let tools = tools.clone();
     // Tinkering message
     let tk_msg = format!(
         "{} {} Running plugin tinkers",
@@ -49,7 +52,7 @@ pub fn tinker_internal(
         handle_exit_code!(run_stage(
             vec![&format!(
                 "{} run {}",
-                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                tools.cargo,
                 env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
             )],
             &tk_target,
@@ -70,10 +73,10 @@ pub fn tinker_internal(
 /// Runs plugin tinkers on the engine and returns an exit code. This doesn't
 /// have a release mode because tinkers should be applied in development to work
 /// in both development and production.
-pub fn tinker(dir: PathBuf) -> Result<i32, Error> {
+pub fn tinker(dir: PathBuf, tools: &Tools) -> Result<i32, Error> {
     let spinners = MultiProgress::new();
 
-    let tk_thread = tinker_internal(dir, &spinners, 1)?;
+    let tk_thread = tinker_internal(dir, &spinners, 1, tools)?;
     let tk_res = tk_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;

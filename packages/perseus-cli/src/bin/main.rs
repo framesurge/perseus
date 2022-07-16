@@ -9,8 +9,8 @@ use perseus_cli::{
     serve, serve_exported, tinker,
 };
 use perseus_cli::{
-    create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
-    snoop_build, snoop_server, snoop_wasm_build,
+    create_dist, delete_dist, errors::*, export_error_page, install_tools, order_reload,
+    run_reload_server, snoop_build, snoop_server, snoop_wasm_build,
 };
 use std::env;
 use std::io::Write;
@@ -48,6 +48,13 @@ async fn real_main() -> i32 {
         Ok(exit_code) => exit_code,
         // If something failed, we print the error to `stderr` and return a failure exit code
         Err(err) => {
+            // Check if this was an error with tool installation (in which case we should
+            // delete `dist/tools/` to *try* to avoid corruptions)
+            if matches!(err, Error::InstallError(_)) {
+                if let Err(err) = delete_artifacts(dir.clone(), "tools") {
+                    eprintln!("{}", fmt_err(&err));
+                }
+            }
             eprintln!("{}", fmt_err(&err));
             1
         }
@@ -58,7 +65,7 @@ async fn real_main() -> i32 {
 enum Event {
     // Sent if we should restart the child process
     Reload,
-    // Sent if we should temrinate the child process
+    // Sent if we should terminate the child process
     Terminate,
 }
 
@@ -235,18 +242,19 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
 async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
     create_dist(&dir)?;
+    let tools = install_tools(&dir).await?;
 
     let exit_code = match opts.subcmd {
         Subcommand::Build(build_opts) => {
             // Delete old build artifacts
             delete_artifacts(dir.clone(), "static")?;
-            build(dir, build_opts)?
+            build(dir, build_opts, &tools)?
         }
         Subcommand::Export(export_opts) => {
             // Delete old build/export artifacts
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
-            let exit_code = export(dir.clone(), export_opts.clone())?;
+            let exit_code = export(dir.clone(), export_opts.clone(), &tools)?;
             if exit_code != 0 {
                 return Ok(exit_code);
             }
@@ -262,7 +270,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
                 delete_artifacts(dir.clone(), "static")?;
             }
             // This orders reloads internally
-            let (exit_code, _server_path) = serve(dir, serve_opts)?;
+            let (exit_code, _server_path) = serve(dir, serve_opts, &tools)?;
             exit_code
         }
         Subcommand::Test(test_opts) => {
@@ -272,7 +280,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             if !test_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
-            let (exit_code, _server_path) = serve(dir, test_opts)?;
+            let (exit_code, _server_path) = serve(dir, test_opts, &tools)?;
             exit_code
         }
         Subcommand::Clean => {
@@ -287,7 +295,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
             delete_artifacts(dir.clone(), "pkg")?;
-            deploy(dir, deploy_opts)?
+            deploy(dir, deploy_opts, &tools)?
         }
         Subcommand::Tinker(tinker_opts) => {
             // Unless we've been told not to, we start with a blank slate
@@ -296,14 +304,16 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             if !tinker_opts.no_clean {
                 delete_dist(dir.clone())?;
             }
-            tinker(dir)?
+            tinker(dir, &tools)?
         }
         Subcommand::Snoop(snoop_subcmd) => match snoop_subcmd {
-            SnoopSubcommand::Build => snoop_build(dir)?,
-            SnoopSubcommand::WasmBuild => snoop_wasm_build(dir)?,
-            SnoopSubcommand::Serve(snoop_serve_opts) => snoop_server(dir, snoop_serve_opts)?,
+            SnoopSubcommand::Build => snoop_build(dir, &tools)?,
+            SnoopSubcommand::WasmBuild => snoop_wasm_build(dir, &tools)?,
+            SnoopSubcommand::Serve(snoop_serve_opts) => {
+                snoop_server(dir, snoop_serve_opts, &tools)?
+            }
         },
-        Subcommand::ExportErrorPage(opts) => export_error_page(dir, opts)?,
+        Subcommand::ExportErrorPage(opts) => export_error_page(dir, opts, &tools)?,
         Subcommand::New(opts) => new(dir, opts)?,
         Subcommand::Init(opts) => init(dir, opts)?,
     };

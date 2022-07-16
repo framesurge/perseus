@@ -1,4 +1,5 @@
 use crate::cmd::{cfg_spinner, run_stage};
+use crate::install::Tools;
 use crate::parse::BuildOpts;
 use crate::thread::{spawn_thread, ThreadHandle};
 use crate::{errors::*, get_user_crate_name};
@@ -49,6 +50,7 @@ pub fn build_internal(
     spinners: &MultiProgress,
     num_steps: u8,
     is_release: bool,
+    tools: &Tools,
 ) -> Result<
     (
         ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
@@ -56,6 +58,9 @@ pub fn build_internal(
     ),
     ExecutionError,
 > {
+    // We need to own this for the threads
+    let tools = tools.clone();
+
     let crate_name = get_user_crate_name(&dir)?;
     // Static generation message
     let sg_msg = format!(
@@ -87,11 +92,12 @@ pub fn build_internal(
     let wb_spinner = spinners.insert(1, ProgressBar::new_spinner());
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
     let wb_dir = dir;
+    let cargo_exec = tools.cargo.clone();
     let sg_thread = spawn_thread(move || {
         handle_exit_code!(run_stage(
             vec![&format!(
                 "{} run {} {}",
-                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
+                cargo_exec,
                 if is_release { "--release" } else { "" },
                 env::var("PERSEUS_CARGO_ENGINE_ARGS").unwrap_or_else(|_| String::new())
             )],
@@ -107,25 +113,34 @@ pub fn build_internal(
         Ok(0)
     });
     let wb_thread = spawn_thread(move || {
+        let mut cmds = vec![
+            // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
+            format!(
+                "{} build --target wasm32-unknown-unknown {} {}",
+                tools.cargo,
+                if is_release { "--release" } else { "" },
+                env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
+            ),
+            // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
+            format!(
+                "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
+                cmd=tools.wasm_bindgen,
+                profile={ if is_release { "release" } else { "debug" } },
+                args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
+                crate_name=crate_name
+            )
+        ];
+        // If we're building for release, then we should run `wasm-opt`
+        if is_release {
+            cmds.push(format!(
+                "{cmd} -Oz ./dist/pkg/perseus_engine_bg.wasm -o ./dist/pkg/perseus_engine_bg.wasm {args}",
+                cmd=tools.wasm_opt,
+                args=env::var("PERSEUS_WASM_OPT_ARGS").unwrap_or_else(|_| String::new())
+            ));
+        }
+        let cmds = cmds.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
         handle_exit_code!(run_stage(
-            vec![
-                // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
-                &format!(
-                    "{} build --target wasm32-unknown-unknown {} {}",
-                    env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-                    if is_release { "--release" } else { "" },
-                    env::var("PERSEUS_CARGO_BROWSER_ARGS").unwrap_or_else(|_| String::new())
-                ),
-                // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
-                &format!(
-                    // TODO Somehow pin output artifact name...
-                    "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
-                    cmd=env::var("PERSEUS_WASM_BINDGEN_PATH").unwrap_or_else(|_| "wasm-bindgen".to_string()),
-                    profile={ if is_release { "release" } else { "debug" } },
-                    args=env::var("PERSEUS_WASM_BINDGEN_ARGS").unwrap_or_else(|_| String::new()),
-                    crate_name=crate_name
-                )
-            ],
+            cmds,
             &wb_dir,
             &wb_spinner,
             &wb_msg,
@@ -147,10 +162,10 @@ pub fn build_internal(
 
 /// Builds the subcrates to get a directory that we can serve. Returns an exit
 /// code.
-pub fn build(dir: PathBuf, opts: BuildOpts) -> Result<i32, ExecutionError> {
+pub fn build(dir: PathBuf, opts: BuildOpts, tools: &Tools) -> Result<i32, ExecutionError> {
     let spinners = MultiProgress::new();
 
-    let (sg_thread, wb_thread) = build_internal(dir, &spinners, 2, opts.release)?;
+    let (sg_thread, wb_thread) = build_internal(dir, &spinners, 2, opts.release, tools)?;
     let sg_res = sg_thread
         .join()
         .map_err(|_| ExecutionError::ThreadWaitFailed)??;
