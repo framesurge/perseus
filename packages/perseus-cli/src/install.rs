@@ -4,12 +4,16 @@ use crate::parse::Opts;
 use console::Emoji;
 use flate2::read::GzDecoder;
 use futures::future::try_join;
+use home::home_dir;
 use indicatif::ProgressBar;
 use reqwest::Client;
 use std::borrow::BorrowMut;
 use std::fs;
 use std::fs::File;
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 use tar::Archive;
 use tokio::io::AsyncWriteExt;
 
@@ -21,6 +25,48 @@ static INSTALLING: Emoji<'_, '_> = Emoji("📥", "");
 //
 // Importantly, if the user has specified an environment variable specifying
 // where a tool can be found, we'll use that no matter what.
+
+/// Gets the directory to store tools in. This will preferentially use the
+/// system-wide cache, falling back to a local version.
+///
+/// If the user specifies that we're running on CI, we'll use the local version
+/// regardless.
+pub fn get_tools_dir(project: &Path, no_system_cache: bool) -> Result<PathBuf, InstallError> {
+    match home_dir() {
+        Some(path) if !no_system_cache => {
+            let target = path.join(".cargo/perseus_tools");
+            if target.exists() {
+                Ok(target)
+            } else {
+                // Try to create the system-wide cache (this will create `~/.cargo/` as well if
+                // necessary)
+                if fs::create_dir_all(&target).is_ok() {
+                    Ok(target)
+                } else {
+                    // Failed, so we'll resort to the local cache
+                    let target = project.join("dist/tools");
+                    if !target.exists() {
+                        // If this fails, we have no recourse, so we'll have to fail
+                        fs::create_dir_all(&target)
+                            .map_err(|err| InstallError::CreateToolsDirFailed { source: err })?;
+                    }
+                    // It either already existed or we've just created it
+                    Ok(target)
+                }
+            }
+        }
+        _ => {
+            let target = project.join("dist/tools");
+            if !target.exists() {
+                // If this fails, we have no recourse, so we'll have to fail
+                fs::create_dir_all(&target)
+                    .map_err(|err| InstallError::CreateToolsDirFailed { source: err })?;
+            }
+            // It either already existed or we've just created it
+            Ok(target)
+        }
+    }
+}
 
 /// A representation of the paths to all the external tools we need.
 /// This includes `cargo`, simply for convenience, even though it's not
@@ -42,12 +88,7 @@ impl Tools {
     ///
     /// If tools are installed, this will create a CLI spinner automatically.
     pub async fn new(dir: &Path, global_opts: &Opts) -> Result<Self, InstallError> {
-        // Create the directory for tools
-        let target = dir.join("dist/tools");
-        if !target.exists() {
-            fs::create_dir(&target)
-                .map_err(|err| InstallError::CreateToolsDirFailed { source: err })?;
-        }
+        let target = get_tools_dir(dir, global_opts.no_system_tools_cache)?;
 
         // Instantiate the tools
         let wasm_bindgen = Tool::new(

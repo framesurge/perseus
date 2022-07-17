@@ -1,6 +1,7 @@
 use clap::Parser;
 use command_group::stdlib::CommandGroup;
 use fmterr::fmt_err;
+use home::home_dir;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use perseus_cli::parse::{ExportOpts, ServeOpts, SnoopSubcommand};
 use perseus_cli::{
@@ -48,10 +49,23 @@ async fn real_main() -> i32 {
         // If something failed, we print the error to `stderr` and return a failure exit code
         Err(err) => {
             // Check if this was an error with tool installation (in which case we should
-            // delete `dist/tools/` to *try* to avoid corruptions)
+            // delete the tools directory to *try* to avoid corruptions)
             if matches!(err, Error::InstallError(_)) {
+                // We'll try to delete *both* the local one and the system-wide cache
                 if let Err(err) = delete_artifacts(dir.clone(), "tools") {
                     eprintln!("{}", fmt_err(&err));
+                }
+                if let Some(path) = home_dir() {
+                    let target = path.join(".cargo/perseus_tools");
+                    if target.exists() {
+                        if let Err(err) = std::fs::remove_dir_all(&target) {
+                            let err = ExecutionError::RemoveArtifactsFailed {
+                                target: target.to_str().map(|s| s.to_string()),
+                                source: err,
+                            };
+                            eprintln!("{}", fmt_err(&err))
+                        }
+                    }
                 }
             }
             eprintln!("{}", fmt_err(&err));

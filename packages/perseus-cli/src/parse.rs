@@ -64,10 +64,18 @@ pub struct Opts {
     /// Disable automatic browser reloading
     #[clap(long, global = true)]
     pub no_browser_reload: bool,
+    /// A custom version of `wasm-bindgen` to use (defaults to the latest
+    /// installed version, and after that the latest available from GitHub)
     #[clap(long, global = true)]
     pub wasm_bindgen_version: Option<String>,
+    /// A custom version of `wasm-opt` to use (defaults to the latest installed
+    /// version, and after that the latest available from GitHub)
     #[clap(long, global = true)]
     pub wasm_opt_version: Option<String>,
+    /// Disables the system-wide tools cache in `~/.cargo/perseus_tools/` (you
+    /// should set this for CI)
+    #[clap(long, global = true)]
+    pub no_system_tools_cache: bool,
 }
 
 #[derive(Parser, Clone)]
