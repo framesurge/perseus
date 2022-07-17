@@ -34,7 +34,7 @@ pub fn init(dir: PathBuf, opts: &InitOpts) -> Result<i32, InitError> {
     // Now create each file
     create_file_if_not_present(&dir.join("Cargo.toml"), DFLT_INIT_CARGO_TOML, &opts.name)?;
     create_file_if_not_present(&dir.join(".gitignore"), DFLT_INIT_GITIGNORE, &opts.name)?;
-    create_file_if_not_present(&dir.join("src/lib.rs"), DFLT_INIT_LIB_RS, &opts.name)?;
+    create_file_if_not_present(&dir.join("src/main.rs"), DFLT_INIT_MAIN_RS, &opts.name)?;
     create_file_if_not_present(
         &dir.join("src/templates/mod.rs"),
         DFLT_INIT_MOD_RS,
@@ -137,26 +137,11 @@ tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-warp = { version = "=0.4.0-beta.3", features = [ "dflt-server" ] }
 
 # Browser-only dependencies go here
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
-
-# We'll use `src/lib.rs` as both a binary *and* a library at the same time (which we need to tell Cargo explicitly)
-[lib]
-name = "lib"
-path = "src/lib.rs"
-crate-type = [ "cdylib", "rlib" ]
-
-[[bin]]
-name = "%name"
-path = "src/lib.rs"
-
-# This section adds some optimizations to make your app nice and speedy in production
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = [ "-Oz" ]"#;
+[target.'cfg(target_arch = "wasm32")'.dependencies]"#;
 static DFLT_INIT_GITIGNORE: &str = r#"dist/
 target_wasm/
 target_engine/"#;
-static DFLT_INIT_LIB_RS: &str = r#"mod templates;
+static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 
 use perseus::{Html, PerseusApp};
 
