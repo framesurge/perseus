@@ -8,9 +8,20 @@ mod fluent;
 #[cfg(feature = "translator-fluent")]
 pub use fluent::{FluentTranslator, FLUENT_TRANSLATOR_FILE_EXT};
 
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(feature = "translator-lightweight")]
+mod lightweight;
+#[cfg(feature = "translator-lightweight")]
+pub use lightweight::{LightweightTranslator, LIGHTWEIGHT_TRANSLATOR_FILE_EXT};
+
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 mod dummy;
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 pub use dummy::{DummyTranslator, DUMMY_TRANSLATOR_FILE_EXT};
 
 // And then we export defaults using feature gates
@@ -18,6 +29,11 @@ pub use dummy::{DummyTranslator, DUMMY_TRANSLATOR_FILE_EXT};
 pub use FluentTranslator as Translator;
 #[cfg(feature = "translator-fluent")]
 pub use FLUENT_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
+
+#[cfg(feature = "translator-lightweight")]
+pub use LightweightTranslator as Translator;
+#[cfg(feature = "translator-lightweight")]
+pub use LIGHTWEIGHT_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
 // And then we export the appropriate macro backends, hidden from the docs
 #[cfg(feature = "translator-fluent")]
@@ -32,22 +48,52 @@ pub use fluent::t_macro_backend_with_args;
 #[cfg(feature = "translator-fluent")]
 pub use fluent::TranslationArgs;
 
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(feature = "translator-lightweight")]
+#[doc(hidden)]
+pub use lightweight::link_macro_backend;
+#[cfg(feature = "translator-lightweight")]
+#[doc(hidden)]
+pub use lightweight::t_macro_backend;
+#[cfg(feature = "translator-lightweight")]
+#[doc(hidden)]
+pub use lightweight::t_macro_backend_with_args;
+#[cfg(feature = "translator-lightweight")]
+pub use lightweight::TranslationArgs;
+
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 #[doc(hidden)]
 pub use dummy::link_macro_backend;
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 #[doc(hidden)]
 pub use dummy::t_macro_backend;
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 #[doc(hidden)]
 pub use dummy::t_macro_backend_with_args;
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 pub use dummy::TranslationArgs;
 
 // If no translators have been specified, we'll use a dummy one
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 pub use DummyTranslator as Translator;
-#[cfg(all(not(feature = "translator-fluent")))]
+#[cfg(all(
+    not(feature = "translator-fluent"),
+    not(feature = "translator-lightweight")
+))]
 pub use DUMMY_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
 /// Translates the given ID conveniently, taking arguments for interpolation as
