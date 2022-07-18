@@ -15,7 +15,7 @@ pub fn export_error_page(
     run_cmd_directly(
         format!(
             "{} run {} -- {} {}",
-            tools.cargo,
+            tools.cargo_engine,
             global_opts.cargo_engine_args,
             // These are mandatory
             opts.code,

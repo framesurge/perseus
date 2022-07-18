@@ -15,9 +15,12 @@ pub struct Opts {
     #[clap(subcommand)]
     pub subcmd: Subcommand,
     // All the following arguments are global, and can provided to any subcommand
-    /// The path to `cargo`
+    /// The path to `cargo` when used for engine builds
     #[clap(long, default_value = "cargo", global = true)]
-    pub cargo_path: String,
+    pub cargo_engine_path: String,
+    /// The path to `cargo` when used for browser builds
+    #[clap(long, default_value = "cargo", global = true)]
+    pub cargo_browser_path: String,
     /// A path to `wasm-bindgen`, if you want to use a local installation (note
     /// that the CLI will install it locally for you by default)
     #[clap(long, global = true)]

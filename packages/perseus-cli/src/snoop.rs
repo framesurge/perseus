@@ -9,7 +9,10 @@ use std::path::PathBuf;
 /// builder functions.
 pub fn snoop_build(dir: PathBuf, tools: &Tools, global_opts: &Opts) -> Result<i32, ExecutionError> {
     run_cmd_directly(
-        format!("{} run {}", tools.cargo, global_opts.cargo_engine_args),
+        format!(
+            "{} run {}",
+            tools.cargo_engine, global_opts.cargo_engine_args
+        ),
         &dir,
         vec![
             ("PERSEUS_ENGINE_OPERATION", "build"),
@@ -32,7 +35,7 @@ pub fn snoop_wasm_build(
     let exit_code = run_cmd_directly(
         format!(
             "{} build --target wasm32-unknown-unknown {}",
-            tools.cargo, global_opts.cargo_browser_args
+            tools.cargo_browser, global_opts.cargo_browser_args
         ),
         &dir,
         vec![("CARGO_TARGET_DIR", "dist/target_wasm")],
@@ -61,7 +64,10 @@ pub fn snoop_server(
     global_opts: &Opts,
 ) -> Result<i32, ExecutionError> {
     run_cmd_directly(
-        format!("{} run {}", tools.cargo, global_opts.cargo_engine_args),
+        format!(
+            "{} run {}",
+            tools.cargo_engine, global_opts.cargo_engine_args
+        ),
         &dir,
         vec![
             ("PERSEUS_ENGINE_OPERATION", "serve"),

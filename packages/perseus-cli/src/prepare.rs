@@ -23,7 +23,7 @@ pub fn check_env(global_opts: &Opts) -> Result<(), Error> {
     let shell_param = "-command";
 
     // Check for `cargo`
-    let cargo_cmd = global_opts.cargo_path.to_string() + " --version";
+    let cargo_cmd = global_opts.cargo_engine_path.to_string() + " --version";
     let cargo_res = Command::new(shell_exec)
         .args([shell_param, &cargo_cmd])
         .output()

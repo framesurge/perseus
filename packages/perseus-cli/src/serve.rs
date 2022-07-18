@@ -76,7 +76,7 @@ fn build_server(
                     // This sets Cargo to tell us everything, including the executable path to the
                     // server
                     "{} build --message-format json {} {}",
-                    tools.cargo,
+                    tools.cargo_engine,
                     if is_release { "--release" } else { "" },
                     cargo_engine_args
                 )],

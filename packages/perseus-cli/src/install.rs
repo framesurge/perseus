@@ -76,8 +76,10 @@ pub fn get_tools_dir(project: &Path, no_system_cache: bool) -> Result<PathBuf, I
 /// intended to be passed around through the rest of the CLI.
 #[derive(Clone)]
 pub struct Tools {
-    /// The path to `cargo`.
-    pub cargo: String,
+    /// The path to `cargo` on the engine-side.
+    pub cargo_engine: String,
+    /// The path to `cargo` on the browser-side.
+    pub cargo_browser: String,
     /// The path to `wasm-bindgen`.
     pub wasm_bindgen: String,
     /// The path to `wasm-opt`.
@@ -111,7 +113,8 @@ impl Tools {
             (&wb_status, &wo_status)
         {
             Ok(Tools {
-                cargo: global_opts.cargo_path.clone(),
+                cargo_engine: global_opts.cargo_engine_path.clone(),
+                cargo_browser: global_opts.cargo_browser_path.clone(),
                 wasm_bindgen: wb_path.to_string(),
                 wasm_opt: wo_path.to_string(),
             })
@@ -137,7 +140,8 @@ impl Tools {
             let paths = res.unwrap();
 
             Ok(Tools {
-                cargo: global_opts.cargo_path.clone(),
+                cargo_engine: global_opts.cargo_engine_path.clone(),
+                cargo_browser: global_opts.cargo_browser_path.clone(),
                 wasm_bindgen: paths.0,
                 wasm_opt: paths.1,
             })

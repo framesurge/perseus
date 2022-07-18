@@ -56,7 +56,7 @@ pub fn tinker_internal(
     let tk_thread = spawn_thread(
         move || {
             handle_exit_code!(run_stage(
-                vec![&format!("{} run {}", tools.cargo, cargo_engine_args)],
+                vec![&format!("{} run {}", tools.cargo_engine, cargo_engine_args)],
                 &tk_target,
                 &tk_spinner,
                 &tk_msg,

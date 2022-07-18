@@ -75,13 +75,13 @@ pub fn build_internal(
     let wb_spinner = spinners.insert(1, ProgressBar::new_spinner());
     let wb_spinner = cfg_spinner(wb_spinner, &wb_msg);
     let wb_dir = dir;
-    let cargo_exec = tools.cargo.clone();
+    let cargo_engine_exec = tools.cargo_engine.clone();
     let sg_thread = spawn_thread(
         move || {
             handle_exit_code!(run_stage(
                 vec![&format!(
                     "{} run {} {}",
-                    cargo_exec,
+                    cargo_engine_exec,
                     if is_release { "--release" } else { "" },
                     cargo_engine_args
                 )],
@@ -104,7 +104,7 @@ pub fn build_internal(
             // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
             format!(
                 "{} build --target wasm32-unknown-unknown {} {}",
-                tools.cargo,
+                tools.cargo_browser,
                 if is_release { "--release" } else { "" },
                 cargo_browser_args
             ),
