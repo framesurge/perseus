@@ -138,9 +138,7 @@ perseus-warp = { version = "=0.4.0-beta.3", features = [ "dflt-server" ] }
 
 # Browser-only dependencies go here
 [target.'cfg(target_arch = "wasm32")'.dependencies]"#;
-static DFLT_INIT_GITIGNORE: &str = r#"dist/
-target_wasm/
-target_engine/"#;
+static DFLT_INIT_GITIGNORE: &str = r#"dist/"#;
 static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 
 use perseus::{Html, PerseusApp};

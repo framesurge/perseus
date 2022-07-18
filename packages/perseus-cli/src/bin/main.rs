@@ -257,17 +257,17 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 }
 
 async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
-    create_dist(&dir)?;
-
     // We install the tools for every command except `new`, `init`, and `clean`
     let exit_code = match opts.subcmd {
         Subcommand::Build(ref build_opts) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             // Delete old build artifacts
             delete_artifacts(dir.clone(), "static")?;
             build(dir, build_opts, &tools, &opts)?
         }
         Subcommand::Export(ref export_opts) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             // Delete old build/export artifacts
             delete_artifacts(dir.clone(), "static")?;
@@ -284,6 +284,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             0
         }
         Subcommand::Serve(ref serve_opts) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             if !serve_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
@@ -293,6 +294,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             exit_code
         }
         Subcommand::Test(ref test_opts) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             // This will be used by the subcrates
             env::set_var("PERSEUS_TESTING", "true");
@@ -312,6 +314,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             0
         }
         Subcommand::Deploy(ref deploy_opts) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
@@ -319,6 +322,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             deploy(dir, deploy_opts, &tools, &opts)?
         }
         Subcommand::Tinker(ref tinker_opts) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             // Unless we've been told not to, we start with a blank slate
             // This will remove old tinkerings and eliminate any possible corruptions (which
@@ -329,6 +333,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             tinker(dir, &tools, &opts)?
         }
         Subcommand::Snoop(ref snoop_subcmd) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             match snoop_subcmd {
                 SnoopSubcommand::Build => snoop_build(dir, &tools, &opts)?,
@@ -339,6 +344,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             }
         }
         Subcommand::ExportErrorPage(ref eep_opts) => {
+            create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             export_error_page(dir, eep_opts, &tools, &opts)?
         }

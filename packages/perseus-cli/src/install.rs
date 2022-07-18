@@ -36,7 +36,7 @@ pub fn get_tools_dir(project: &Path, no_system_cache: bool) -> Result<PathBuf, I
         Some(dirs) if !no_system_cache => {
             let target = dirs.cache_dir().join("tools");
             if target.exists() {
-                Ok(target.to_path_buf())
+                Ok(target)
             } else {
                 // Try to create the system-wide cache
                 if fs::create_dir_all(&target).is_ok() {
