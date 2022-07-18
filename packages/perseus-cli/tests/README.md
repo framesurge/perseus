@@ -25,7 +25,6 @@ This directory contains a series of integration tests written for the CLI's end-
 - `perseus serve`/`perseus test` (same code, `perseus test`'s unique behavior tested in `examples/` integration tests by proxy)
   - Default
   - With custom host/port
-  - In release mode, ensuring smaller artifacts produced
   - Without running final binary (confirming that produced path to binary exists)
 - `perseus snoop build` (checking `dbg!` call visibility)
 - `perseus snoop wasm-build` (checking `dbg!` call visibility)

@@ -179,7 +179,7 @@ pub async fn get_build_state(
     path: String,
     locale: String,
 ) -> RenderFnResultWithCause<DocsPageProps> {
-    use perseus::internal::get_path_prefix_server;
+    use perseus::utils::get_path_prefix_server;
     use regex::Regex;
 
     let path_vec: Vec<&str> = path.split('/').collect();

@@ -1,4 +1,4 @@
-use perseus::internal::i18n::Translator;
+use perseus::i18n::Translator;
 use perseus::link;
 use perseus::navigate;
 use sycamore::prelude::*;
