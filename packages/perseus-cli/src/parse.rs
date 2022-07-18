@@ -8,15 +8,80 @@ use clap::Parser;
 
 /// The command-line interface for Perseus, a super-fast WebAssembly frontend
 /// development framework!
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 #[clap(version = PERSEUS_VERSION)]
 // #[clap(setting = AppSettings::ColoredHelp)]
 pub struct Opts {
     #[clap(subcommand)]
     pub subcmd: Subcommand,
+    // All the following arguments are global, and can provided to any subcommand
+    /// The path to `cargo` when used for engine builds
+    #[clap(long, default_value = "cargo", global = true)]
+    pub cargo_engine_path: String,
+    /// The path to `cargo` when used for browser builds
+    #[clap(long, default_value = "cargo", global = true)]
+    pub cargo_browser_path: String,
+    /// A path to `wasm-bindgen`, if you want to use a local installation (note
+    /// that the CLI will install it locally for you by default)
+    #[clap(long, global = true)]
+    pub wasm_bindgen_path: Option<String>,
+    /// A path to `wasm-opt`, if you want to use a local installation (note that
+    /// the CLI will install it locally for you by default)
+    #[clap(long, global = true)]
+    pub wasm_opt_path: Option<String>,
+    /// The path to `rustup`
+    #[clap(long, default_value = "rustup", global = true)]
+    pub rustup_path: String,
+    /// The value of `RUSTFLAGS` when building for Wasm in release mode
+    #[clap(
+        long,
+        default_value = "-C opt-level=z -C codegen-units=1",
+        global = true
+    )]
+    pub wasm_release_rustflags: String,
+    /// Any arguments to `cargo` when building for the engine-side
+    #[clap(long, default_value = "", global = true)]
+    pub cargo_engine_args: String,
+    /// Any arguments to `cargo` when building for the browser-side
+    #[clap(long, default_value = "", global = true)]
+    pub cargo_browser_args: String,
+    /// Any arguments to `wasm-bindgen`
+    #[clap(long, default_value = "", global = true)]
+    pub wasm_bindgen_args: String,
+    /// Any arguments to `wasm-opt` (only run in release builds)
+    #[clap(long, default_value = "-Oz", global = true)]
+    pub wasm_opt_args: String,
+    /// The path to `git` (for downloading custom templates for `perseus new`)
+    #[clap(long, default_value = "git", global = true)]
+    pub git_path: String,
+    /// The host for the reload server (you should almost never change this)
+    #[clap(long, default_value = "localhost", global = true)]
+    pub reload_server_host: String,
+    /// The port for the reload server (you should almost never change this)
+    #[clap(long, default_value = "3100", global = true)]
+    pub reload_server_port: u16,
+    /// If this is set, commands will be run sequentially rather than in
+    /// parallel (slows down operations, but reduces memory usage)
+    #[clap(long, global = true)]
+    pub sequential: bool,
+    /// Disable automatic browser reloading
+    #[clap(long, global = true)]
+    pub no_browser_reload: bool,
+    /// A custom version of `wasm-bindgen` to use (defaults to the latest
+    /// installed version, and after that the latest available from GitHub)
+    #[clap(long, global = true)]
+    pub wasm_bindgen_version: Option<String>,
+    /// A custom version of `wasm-opt` to use (defaults to the latest installed
+    /// version, and after that the latest available from GitHub)
+    #[clap(long, global = true)]
+    pub wasm_opt_version: Option<String>,
+    /// Disables the system-wide tools cache in `~/.cargo/perseus_tools/` (you
+    /// should set this for CI)
+    #[clap(long, global = true)]
+    pub no_system_tools_cache: bool,
 }
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub enum Subcommand {
     Build(BuildOpts),
     ExportErrorPage(ExportErrorPageOpts),
@@ -36,7 +101,7 @@ pub enum Subcommand {
     Init(InitOpts),
 }
 /// Builds your app
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct BuildOpts {
     /// Build for production
     #[clap(long)]
@@ -108,7 +173,7 @@ pub struct ServeOpts {
     pub port: u16,
 }
 /// Packages your app for deployment
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct DeployOpts {
     /// Change the output from `pkg/` to somewhere else
     #[clap(short, long, default_value = "pkg")]
@@ -119,7 +184,7 @@ pub struct DeployOpts {
 }
 /// Runs the `tinker` action of plugins, which lets them modify the Perseus
 /// engine
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct TinkerOpts {
     /// Don't remove and recreate the `dist/` directory
     #[clap(long)]
@@ -127,7 +192,7 @@ pub struct TinkerOpts {
 }
 /// Creates a new Perseus project in a directory of the given name, which will
 /// be created in the current path
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct NewOpts {
     /// The name of the new project, which will also be used for the directory
     #[clap(value_parser)]
@@ -144,32 +209,25 @@ pub struct NewOpts {
     pub dir: Option<String>,
 }
 /// Intializes a new Perseus project in the current directory
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct InitOpts {
     /// The name of the new project
     #[clap(value_parser)]
     pub name: String,
 }
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub enum SnoopSubcommand {
     /// Snoops on the static generation process (this will let you see `dbg!`
     /// calls and the like)
     Build,
     /// Snoops on the Wasm building process (mostly for debugging errors)
-    WasmBuild(SnoopWasmOpts),
+    WasmBuild,
     /// Snoops on the server process (run `perseus build` before this)
     Serve(SnoopServeOpts),
 }
 
-#[derive(Parser)]
-pub struct SnoopWasmOpts {
-    /// Produce a profiling build (for use with `twiggy` and the like)
-    #[clap(short, long)]
-    pub profiling: bool,
-}
-
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct SnoopServeOpts {
     /// Where to host your exported app
     #[clap(long, default_value = "127.0.0.1")]

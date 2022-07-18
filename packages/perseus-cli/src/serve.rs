@@ -1,6 +1,7 @@
 use crate::build::build_internal;
 use crate::cmd::{cfg_spinner, run_stage};
-use crate::parse::ServeOpts;
+use crate::install::Tools;
+use crate::parse::{Opts, ServeOpts};
 use crate::thread::{spawn_thread, ThreadHandle};
 use crate::{errors::*, order_reload};
 use console::{style, Emoji};
@@ -38,10 +39,16 @@ fn build_server(
     did_build: bool,
     exec: Arc<Mutex<String>>,
     is_release: bool,
+    tools: &Tools,
+    global_opts: &Opts,
 ) -> Result<
     ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
     ExecutionError,
 > {
+    let tools = tools.clone();
+    let Opts {
+        cargo_engine_args, ..
+    } = global_opts.clone();
     let num_steps = match did_build {
         true => 4,
         false => 2,
@@ -62,35 +69,37 @@ fn build_server(
     let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = dir;
-    let sb_thread = spawn_thread(move || {
-        let (stdout, _stderr) = handle_exit_code!(run_stage(
-            vec![&format!(
-                // This sets Cargo to tell us everything, including the executable path to the
-                // server
-                "{} build --message-format json {} {}",
-                env::var("PERSEUS_CARGO_PATH").unwrap_or_else(|_| "cargo".to_string()),
-                if is_release { "--release" } else { "" },
-                env::var("PERSEUS_CARGO_ARGS").unwrap_or_else(|_| String::new())
-            )],
-            &sb_target,
-            &sb_spinner,
-            &sb_msg,
-            vec![]
-        )?);
+    let sb_thread = spawn_thread(
+        move || {
+            let (stdout, _stderr) = handle_exit_code!(run_stage(
+                vec![&format!(
+                    // This sets Cargo to tell us everything, including the executable path to the
+                    // server
+                    "{} build --message-format json {} {}",
+                    tools.cargo_engine,
+                    if is_release { "--release" } else { "" },
+                    cargo_engine_args
+                )],
+                &sb_target,
+                &sb_spinner,
+                &sb_msg,
+                vec![("CARGO_TARGET_DIR", "dist/target_engine")]
+            )?);
 
-        let msgs: Vec<&str> = stdout.trim().split('\n').collect();
-        // If we got to here, the exit code was 0 and everything should've worked
-        // The last message will just tell us that the build finished, the second-last
-        // one will tell us the executable path
-        let msg = msgs.get(msgs.len() - 2);
-        let msg = match msg {
-            // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
-            Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
-                .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
-            None => return Err(ExecutionError::ServerExectutableMsgNotFound),
-        };
-        let server_exec_path = msg.get("executable");
-        let server_exec_path = match server_exec_path {
+            let msgs: Vec<&str> = stdout.trim().split('\n').collect();
+            // If we got to here, the exit code was 0 and everything should've worked
+            // The last message will just tell us that the build finished, the second-last
+            // one will tell us the executable path
+            let msg = msgs.get(msgs.len() - 2);
+            let msg = match msg {
+                // We'll parse it as a Serde `Value`, we don't need to know everything that's in
+                // there
+                Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
+                    .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
+                None => return Err(ExecutionError::ServerExectutableMsgNotFound),
+            };
+            let server_exec_path = msg.get("executable");
+            let server_exec_path = match server_exec_path {
             // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
             Some(server_exec_path) => match server_exec_path.as_str() {
                 Some(server_exec_path) => server_exec_path,
@@ -106,12 +115,14 @@ fn build_server(
             }),
         };
 
-        // And now the main thread needs to know about this
-        let mut exec_val = exec.lock().unwrap();
-        *exec_val = server_exec_path.to_string();
+            // And now the main thread needs to know about this
+            let mut exec_val = exec.lock().unwrap();
+            *exec_val = server_exec_path.to_string();
 
-        Ok(0)
-    });
+            Ok(0)
+        },
+        global_opts.sequential,
+    );
 
     Ok(sb_thread)
 }
@@ -194,9 +205,15 @@ fn run_server(
 /// Builds the subcrates to get a directory that we can serve and then serves
 /// it. If possible, this will return the path to the server executable so that
 /// it can be used in deployment.
-pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), ExecutionError> {
+pub fn serve(
+    dir: PathBuf,
+    opts: &ServeOpts,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<(i32, Option<String>), ExecutionError> {
     // Set the environment variables for the host and port
-    env::set_var("PERSEUS_HOST", opts.host);
+    // NOTE Another part of this code depends on setting these in this way
+    env::set_var("PERSEUS_HOST", &opts.host);
     env::set_var("PERSEUS_PORT", opts.port.to_string());
 
     let spinners = MultiProgress::new();
@@ -212,10 +229,13 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
         did_build,
         Arc::clone(&exec),
         opts.release,
+        tools,
+        global_opts,
     )?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {
-        let (sg_thread, wb_thread) = build_internal(dir.clone(), &spinners, 4, opts.release)?;
+        let (sg_thread, wb_thread) =
+            build_internal(dir.clone(), &spinners, 4, opts.release, tools, global_opts)?;
         let sg_res = sg_thread
             .join()
             .map_err(|_| ExecutionError::ThreadWaitFailed)??;
@@ -237,7 +257,10 @@ pub fn serve(dir: PathBuf, opts: ServeOpts) -> Result<(i32, Option<String>), Exe
     }
 
     // Order any connected browsers to reload
-    order_reload();
+    order_reload(
+        global_opts.reload_server_host.to_string(),
+        global_opts.reload_server_port,
+    );
 
     // Now actually run that executable path if we should
     if should_run {

@@ -1,6 +1,7 @@
 use clap::Parser;
 use command_group::stdlib::CommandGroup;
 use fmterr::fmt_err;
+use home::home_dir;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use perseus_cli::parse::{ExportOpts, ServeOpts, SnoopSubcommand};
 use perseus_cli::{
@@ -9,11 +10,10 @@ use perseus_cli::{
     serve, serve_exported, tinker,
 };
 use perseus_cli::{
-    delete_dist, errors::*, export_error_page, order_reload, run_reload_server, snoop_build,
-    snoop_server, snoop_wasm_build,
+    create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
+    snoop_build, snoop_server, snoop_wasm_build, Tools,
 };
 use std::env;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::channel;
@@ -48,6 +48,26 @@ async fn real_main() -> i32 {
         Ok(exit_code) => exit_code,
         // If something failed, we print the error to `stderr` and return a failure exit code
         Err(err) => {
+            // Check if this was an error with tool installation (in which case we should
+            // delete the tools directory to *try* to avoid corruptions)
+            if matches!(err, Error::InstallError(_)) {
+                // We'll try to delete *both* the local one and the system-wide cache
+                if let Err(err) = delete_artifacts(dir.clone(), "tools") {
+                    eprintln!("{}", fmt_err(&err));
+                }
+                if let Some(path) = home_dir() {
+                    let target = path.join(".cargo/perseus_tools");
+                    if target.exists() {
+                        if let Err(err) = std::fs::remove_dir_all(&target) {
+                            let err = ExecutionError::RemoveArtifactsFailed {
+                                target: target.to_str().map(|s| s.to_string()),
+                                source: err,
+                            };
+                            eprintln!("{}", fmt_err(&err))
+                        }
+                    }
+                }
+            }
             eprintln!("{}", fmt_err(&err));
             1
         }
@@ -58,7 +78,7 @@ async fn real_main() -> i32 {
 enum Event {
     // Sent if we should restart the child process
     Reload,
-    // Sent if we should temrinate the child process
+    // Sent if we should terminate the child process
     Terminate,
 }
 
@@ -69,20 +89,18 @@ enum Event {
 // vector in testing If at any point a warning can't be printed, the program
 // will panic
 async fn core(dir: PathBuf) -> Result<i32, Error> {
-    // Get `stdout` so we can write warnings appropriately
-    let stdout = &mut std::io::stdout();
-
-    // Warn the user if they're using the CLI single-threaded mode
-    if env::var("PERSEUS_CLI_SEQUENTIAL").is_ok() {
-        writeln!(stdout, "Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.\n").expect("Failed to write to stdout.");
-    }
-
     // Parse the CLI options with `clap`
     let opts = Opts::parse();
+
+    // Warn the user if they're using the CLI single-threaded mode
+    if opts.sequential {
+        println!("Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.");
+    }
+
     // Check the user's environment to make sure they have prerequisites
     // We do this after any help pages or version numbers have been parsed for
     // snappiness
-    check_env()?;
+    check_env(&opts)?;
 
     // Check if this process is allowed to watch for changes
     // This will be set to `true` if this is a child process
@@ -118,9 +136,14 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
             // Set up a browser reloading server
             // We provide an option for the user to disable this
-            if env::var("PERSEUS_NO_BROWSER_RELOAD").is_err() {
+            let Opts {
+                reload_server_host,
+                reload_server_port,
+                ..
+            } = opts.clone();
+            if !opts.no_browser_reload {
                 tokio::task::spawn(async move {
-                    run_reload_server().await;
+                    run_reload_server(reload_server_host, reload_server_port).await;
                 });
             }
 
@@ -234,72 +257,93 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 }
 
 async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
+    create_dist(&dir)?;
+
+    // We install the tools for every command except `new`, `init`, and `clean`
     let exit_code = match opts.subcmd {
-        Subcommand::Build(build_opts) => {
+        Subcommand::Build(ref build_opts) => {
+            let tools = Tools::new(&dir, &opts).await?;
             // Delete old build artifacts
             delete_artifacts(dir.clone(), "static")?;
-            build(dir, build_opts)?
+            build(dir, build_opts, &tools, &opts)?
         }
-        Subcommand::Export(export_opts) => {
+        Subcommand::Export(ref export_opts) => {
+            let tools = Tools::new(&dir, &opts).await?;
             // Delete old build/export artifacts
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
-            let exit_code = export(dir.clone(), export_opts.clone())?;
+            let exit_code = export(dir.clone(), export_opts, &tools, &opts)?;
             if exit_code != 0 {
                 return Ok(exit_code);
             }
             if export_opts.serve {
                 // Tell any connected browsers to reload
-                order_reload();
-                serve_exported(dir, export_opts.host, export_opts.port).await;
+                order_reload(opts.reload_server_host.to_string(), opts.reload_server_port);
+                serve_exported(dir, export_opts.host.to_string(), export_opts.port).await;
             }
             0
         }
-        Subcommand::Serve(serve_opts) => {
+        Subcommand::Serve(ref serve_opts) => {
+            let tools = Tools::new(&dir, &opts).await?;
             if !serve_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
             // This orders reloads internally
-            let (exit_code, _server_path) = serve(dir, serve_opts)?;
+            let (exit_code, _server_path) = serve(dir, serve_opts, &tools, &opts)?;
             exit_code
         }
-        Subcommand::Test(test_opts) => {
+        Subcommand::Test(ref test_opts) => {
+            let tools = Tools::new(&dir, &opts).await?;
             // This will be used by the subcrates
             env::set_var("PERSEUS_TESTING", "true");
             // Delete old build artifacts if `--no-build` wasn't specified
             if !test_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
             }
-            let (exit_code, _server_path) = serve(dir, test_opts)?;
+            let (exit_code, _server_path) = serve(dir, test_opts, &tools, &opts)?;
             exit_code
         }
         Subcommand::Clean => {
             delete_dist(dir)?;
+            // Warn the user that the next run will be quite a bit slower
+            eprintln!(
+                "[NOTE]: Build artifacts have been deleted, the next run will take some time."
+            );
             0
         }
-        Subcommand::Deploy(deploy_opts) => {
+        Subcommand::Deploy(ref deploy_opts) => {
+            let tools = Tools::new(&dir, &opts).await?;
             delete_artifacts(dir.clone(), "static")?;
             delete_artifacts(dir.clone(), "exported")?;
             delete_artifacts(dir.clone(), "pkg")?;
-            deploy(dir, deploy_opts)?
+            deploy(dir, deploy_opts, &tools, &opts)?
         }
-        Subcommand::Tinker(tinker_opts) => {
+        Subcommand::Tinker(ref tinker_opts) => {
+            let tools = Tools::new(&dir, &opts).await?;
             // Unless we've been told not to, we start with a blank slate
             // This will remove old tinkerings and eliminate any possible corruptions (which
             // are very likely with tinkering!)
             if !tinker_opts.no_clean {
                 delete_dist(dir.clone())?;
             }
-            tinker(dir)?
+            tinker(dir, &tools, &opts)?
         }
-        Subcommand::Snoop(snoop_subcmd) => match snoop_subcmd {
-            SnoopSubcommand::Build => snoop_build(dir)?,
-            SnoopSubcommand::WasmBuild(snoop_wasm_opts) => snoop_wasm_build(dir, snoop_wasm_opts)?,
-            SnoopSubcommand::Serve(snoop_serve_opts) => snoop_server(dir, snoop_serve_opts)?,
-        },
-        Subcommand::ExportErrorPage(opts) => export_error_page(dir, opts)?,
-        Subcommand::New(opts) => new(dir, opts)?,
-        Subcommand::Init(opts) => init(dir, opts)?,
+        Subcommand::Snoop(ref snoop_subcmd) => {
+            let tools = Tools::new(&dir, &opts).await?;
+            match snoop_subcmd {
+                SnoopSubcommand::Build => snoop_build(dir, &tools, &opts)?,
+                SnoopSubcommand::WasmBuild => snoop_wasm_build(dir, &tools, &opts)?,
+                SnoopSubcommand::Serve(ref snoop_serve_opts) => {
+                    snoop_server(dir, snoop_serve_opts, &tools, &opts)?
+                }
+            }
+        }
+        Subcommand::ExportErrorPage(ref eep_opts) => {
+            let tools = Tools::new(&dir, &opts).await?;
+            export_error_page(dir, eep_opts, &tools, &opts)?
+        }
+        Subcommand::New(ref new_opts) => new(dir, new_opts, &opts)?,
+        Subcommand::Init(ref init_opts) => init(dir, init_opts)?,
     };
     Ok(exit_code)
 }

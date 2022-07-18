@@ -1,6 +1,6 @@
 use crate::cmd::run_cmd_directly;
 use crate::errors::*;
-use crate::parse::{InitOpts, NewOpts};
+use crate::parse::{InitOpts, NewOpts, Opts};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -26,7 +26,7 @@ fn create_file_if_not_present(
 
 /// Initializes a new Perseus project in the given directory, based on either
 /// the default template or one from a given URL.
-pub fn init(dir: PathBuf, opts: InitOpts) -> Result<i32, InitError> {
+pub fn init(dir: PathBuf, opts: &InitOpts) -> Result<i32, InitError> {
     // Create the basic directory structure (this will create both `src/` and
     // `src/templates/`)
     fs::create_dir_all(dir.join("src/templates"))
@@ -34,7 +34,7 @@ pub fn init(dir: PathBuf, opts: InitOpts) -> Result<i32, InitError> {
     // Now create each file
     create_file_if_not_present(&dir.join("Cargo.toml"), DFLT_INIT_CARGO_TOML, &opts.name)?;
     create_file_if_not_present(&dir.join(".gitignore"), DFLT_INIT_GITIGNORE, &opts.name)?;
-    create_file_if_not_present(&dir.join("src/lib.rs"), DFLT_INIT_LIB_RS, &opts.name)?;
+    create_file_if_not_present(&dir.join("src/main.rs"), DFLT_INIT_MAIN_RS, &opts.name)?;
     create_file_if_not_present(
         &dir.join("src/templates/mod.rs"),
         DFLT_INIT_MOD_RS,
@@ -54,13 +54,13 @@ pub fn init(dir: PathBuf, opts: InitOpts) -> Result<i32, InitError> {
 /// Initializes a new Perseus project in a new directory that's a child of the
 /// current one.
 // The `dir` here is the current dir, the name of the one to create is in `opts`
-pub fn new(dir: PathBuf, opts: NewOpts) -> Result<i32, NewError> {
+pub fn new(dir: PathBuf, opts: &NewOpts, global_opts: &Opts) -> Result<i32, NewError> {
     // Create the directory (if the user provided a name explicitly, use that,
     // otherwise use the project name)
-    let target = dir.join(opts.dir.unwrap_or(opts.name.clone()));
+    let target = dir.join(opts.dir.as_ref().unwrap_or(&opts.name));
 
     // Check if we're using the default template or one from a URL
-    if let Some(url) = opts.template {
+    if let Some(url) = &opts.template {
         let url_parts = url.split('@').collect::<Vec<&str>>();
         let engine_url = url_parts[0];
         // A custom branch can be specified after a `@`, or we'll use `stable`
@@ -68,7 +68,7 @@ pub fn new(dir: PathBuf, opts: NewOpts) -> Result<i32, NewError> {
             // We'll only clone the production branch, and only the top level, we don't need the
             // whole shebang
             "{} clone --single-branch {branch} --depth 1 {repo} {output}",
-            std::env::var("PERSEUS_GIT_PATH").unwrap_or_else(|_| "git".to_string()),
+            global_opts.git_path,
             branch = if let Some(branch) = url_parts.get(1) {
                 format!("--branch {}", branch)
             } else {
@@ -103,7 +103,12 @@ pub fn new(dir: PathBuf, opts: NewOpts) -> Result<i32, NewError> {
     } else {
         fs::create_dir(&target).map_err(|err| NewError::CreateProjectDirFailed { source: err })?;
         // Now initialize in there
-        let exit_code = init(target, InitOpts { name: opts.name })?;
+        let exit_code = init(
+            target,
+            &InitOpts {
+                name: opts.name.to_string(),
+            },
+        )?;
         Ok(exit_code)
     }
 }
@@ -132,26 +137,11 @@ tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-warp = { version = "=0.4.0-beta.3", features = [ "dflt-server" ] }
 
 # Browser-only dependencies go here
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
-
-# We'll use `src/lib.rs` as both a binary *and* a library at the same time (which we need to tell Cargo explicitly)
-[lib]
-name = "lib"
-path = "src/lib.rs"
-crate-type = [ "cdylib", "rlib" ]
-
-[[bin]]
-name = "%name"
-path = "src/lib.rs"
-
-# This section adds some optimizations to make your app nice and speedy in production
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = [ "-Oz" ]"#;
+[target.'cfg(target_arch = "wasm32")'.dependencies]"#;
 static DFLT_INIT_GITIGNORE: &str = r#"dist/
 target_wasm/
 target_engine/"#;
-static DFLT_INIT_LIB_RS: &str = r#"mod templates;
+static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 
 use perseus::{Html, PerseusApp};
 

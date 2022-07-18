@@ -37,7 +37,15 @@ ctrlc = { version = "3.0", features = ["termination"] }
 notify = "=5.0.0-pre.13"
 futures = "0.3"
 tokio-stream = "0.1"
-ureq = "2"
+reqwest = { version = "0.11", features = [ "json", "stream" ] }
+tar = "0.4"
+flate2 = "1"
+home = "0.5"
+
+[dev-dependencies]
+assert_cmd = "2"
+assert_fs = "1"
+predicates = "2"
 
 [lib]
 name = "perseus_cli"

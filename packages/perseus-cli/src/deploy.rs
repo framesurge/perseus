@@ -1,5 +1,7 @@
 use crate::errors::*;
 use crate::export;
+use crate::install::Tools;
+use crate::parse::Opts;
 use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
 use fs_extra::copy_items;
@@ -12,12 +14,17 @@ use std::path::PathBuf;
 /// together in one folder that can be conveniently uploaded to a server, file
 /// host, etc. This can return any kind of error because deploying involves
 /// working with other subcommands.
-pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
+pub fn deploy(
+    dir: PathBuf,
+    opts: &DeployOpts,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, Error> {
     // Fork at whether we're using static exporting or not
     let exit_code = if opts.export_static {
-        deploy_export(dir, opts.output)?
+        deploy_export(dir, opts.output.to_string(), tools, global_opts)?
     } else {
-        deploy_full(dir, opts.output)?
+        deploy_full(dir, opts.output.to_string(), tools, global_opts)?
     };
 
     Ok(exit_code)
@@ -26,11 +33,16 @@ pub fn deploy(dir: PathBuf, opts: DeployOpts) -> Result<i32, Error> {
 /// Deploys the user's app in its entirety, with a bundled server. This can
 /// return any kind of error because deploying involves working with other
 /// subcommands.
-fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
+fn deploy_full(
+    dir: PathBuf,
+    output: String,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, Error> {
     // Build everything for production, not running the server
     let (serve_exit_code, server_path) = serve(
         dir.clone(),
-        ServeOpts {
+        &ServeOpts {
             no_run: true,
             no_build: false,
             release: true,
@@ -42,6 +54,8 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
             host: "127.0.0.1".to_string(),
             port: 8080,
         },
+        tools,
+        global_opts,
     )?;
     if serve_exit_code != 0 {
         return Ok(serve_exit_code);
@@ -103,10 +117,33 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
                 .into());
             }
         }
-        // Copy in the entire `dist` directory (it must exist)
-        let from = dir.join("dist");
-        if let Err(err) = copy_dir(&from, &output, &CopyOptions::new()) {
+        // Create the `dist/` directory in the output directory
+        if let Err(err) = fs::create_dir(&output_path.join("dist")) {
+            return Err(DeployError::CreateDistDirFailed { source: err }.into());
+        }
+        // Copy in the different parts of the `dist/` directory that we need (they all
+        // have to exist)
+        let from = dir.join("dist/static");
+        if let Err(err) = copy_dir(&from, &output_path.join("dist"), &CopyOptions::new()) {
             return Err(DeployError::MoveDirFailed {
+                to: output,
+                from: from.to_str().map(|s| s.to_string()).unwrap(),
+                source: err,
+            }
+            .into());
+        }
+        let from = dir.join("dist/pkg");
+        if let Err(err) = copy_dir(&from, &output_path.join("dist"), &CopyOptions::new()) {
+            return Err(DeployError::MoveDirFailed {
+                to: output,
+                from: from.to_str().map(|s| s.to_string()).unwrap(),
+                source: err,
+            }
+            .into());
+        }
+        let from = dir.join("dist/render_conf.json");
+        if let Err(err) = fs::copy(&from, &output_path.join("dist/render_conf.json")) {
+            return Err(DeployError::MoveAssetFailed {
                 to: output,
                 from: from.to_str().map(|s| s.to_string()).unwrap(),
                 source: err,
@@ -126,11 +163,16 @@ fn deploy_full(dir: PathBuf, output: String) -> Result<i32, Error> {
 
 /// Uses static exporting to deploy the user's app. This can return any kind of
 /// error because deploying involves working with other subcommands.
-fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
+fn deploy_export(
+    dir: PathBuf,
+    output: String,
+    tools: &Tools,
+    global_opts: &Opts,
+) -> Result<i32, Error> {
     // Export the app to `.perseus/exported`, using release mode
     let export_exit_code = export(
         dir.clone(),
-        ExportOpts {
+        &ExportOpts {
             release: true,
             serve: false,
             host: String::new(),
@@ -138,6 +180,8 @@ fn deploy_export(dir: PathBuf, output: String) -> Result<i32, Error> {
             watch: false,
             custom_watch: Vec::new(),
         },
+        tools,
+        global_opts,
     )?;
     if export_exit_code != 0 {
         return Ok(export_exit_code);

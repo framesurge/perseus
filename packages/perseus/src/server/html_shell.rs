@@ -77,13 +77,15 @@ impl HtmlShell {
         // unnecessary extra requests) If we're using the `wasm2js` feature,
         // this will try to load a JS version instead (expected to be at
         // `/.perseus/bundle.wasm.js`)
+        //
+        // Note: because we're using binary bundles, we don't need to import
+        // a `main` function or the like, `init()` just works
         #[cfg(not(feature = "wasm2js"))]
         let load_wasm_bundle = format!(
             r#"
-        import init, {{ main as run }} from "{path_prefix}/.perseus/bundle.js";
+        import init from "{path_prefix}/.perseus/bundle.js";
         async function main() {{
             await init("{path_prefix}/.perseus/bundle.wasm");
-            run();
         }}
         main();
         "#,
@@ -92,10 +94,9 @@ impl HtmlShell {
         #[cfg(feature = "wasm2js")]
         let load_wasm_bundle = format!(
             r#"
-        import init, {{ main as run }} from "{path_prefix}/.perseus/bundle.js";
+        import init from "{path_prefix}/.perseus/bundle.js";
         async function main() {{
             await init("{path_prefix}/.perseus/bundle.wasm.js");
-            run();
         }}
         main();
         "#,

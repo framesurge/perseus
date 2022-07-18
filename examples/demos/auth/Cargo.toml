@@ -17,15 +17,5 @@ tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-integration = { path = "../../../packages/perseus-integration", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
 # We need the `HtmlDocument` feature to be able to use cookies (which this example does)
 web-sys = { version = "0.3", features = [ "Storage" ] }
-
-[lib]
-name = "lib"
-path = "src/lib.rs"
-crate-type = [ "cdylib", "rlib" ]
-
-[[bin]]
-name = "perseus-example-auth"
-path = "src/lib.rs"
