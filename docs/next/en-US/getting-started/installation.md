@@ -27,4 +27,6 @@ cd my-app
 
 This will create a new directory called `my-app/` in your current directory, setting it up for a new Perseus project. If you want to move this directory somewhere else, you can do that as usual, everything's self-contained.
 
+Note that any `perseus` command will also install the `wasm32-unknown-unknown` target if you have `rustup` available to do so, since you need it for developing with Perseus. Also note that the Perseus CLI used to have some other dependencies, namely `wasm-pack`, but these are now all inbuilt, and will be automatically installed and managed for you!
+
 You can run `perseus serve -w` now if you want to see the placeholder app, or you can move ahead to the next section to get your feet wet.
