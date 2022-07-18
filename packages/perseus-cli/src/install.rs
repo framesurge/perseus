@@ -2,9 +2,9 @@ use crate::cmd::{cfg_spinner, fail_spinner, succeed_spinner};
 use crate::errors::*;
 use crate::parse::Opts;
 use console::Emoji;
+use directories::ProjectDirs;
 use flate2::read::GzDecoder;
 use futures::future::try_join;
-use home::home_dir;
 use indicatif::ProgressBar;
 use reqwest::Client;
 use std::borrow::BorrowMut;
@@ -32,14 +32,13 @@ static INSTALLING: Emoji<'_, '_> = Emoji("📥", "");
 /// If the user specifies that we're running on CI, we'll use the local version
 /// regardless.
 pub fn get_tools_dir(project: &Path, no_system_cache: bool) -> Result<PathBuf, InstallError> {
-    match home_dir() {
-        Some(path) if !no_system_cache => {
-            let target = path.join(".cargo/perseus_tools");
+    match ProjectDirs::from("", "perseus", "perseus_cli") {
+        Some(dirs) if !no_system_cache => {
+            let target = dirs.cache_dir().join("tools");
             if target.exists() {
-                Ok(target)
+                Ok(target.to_path_buf())
             } else {
-                // Try to create the system-wide cache (this will create `~/.cargo/` as well if
-                // necessary)
+                // Try to create the system-wide cache
                 if fs::create_dir_all(&target).is_ok() {
                     Ok(target)
                 } else {

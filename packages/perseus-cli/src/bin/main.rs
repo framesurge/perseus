@@ -1,7 +1,7 @@
 use clap::Parser;
 use command_group::stdlib::CommandGroup;
+use directories::ProjectDirs;
 use fmterr::fmt_err;
-use home::home_dir;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use perseus_cli::parse::{ExportOpts, ServeOpts, SnoopSubcommand};
 use perseus_cli::{
@@ -55,8 +55,8 @@ async fn real_main() -> i32 {
                 if let Err(err) = delete_artifacts(dir.clone(), "tools") {
                     eprintln!("{}", fmt_err(&err));
                 }
-                if let Some(path) = home_dir() {
-                    let target = path.join(".cargo/perseus_tools");
+                if let Some(dirs) = ProjectDirs::from("", "perseus", "perseus_cli") {
+                    let target = dirs.cache_dir().join("tools");
                     if target.exists() {
                         if let Err(err) = std::fs::remove_dir_all(&target) {
                             let err = ExecutionError::RemoveArtifactsFailed {
