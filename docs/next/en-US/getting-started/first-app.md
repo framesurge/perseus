@@ -23,13 +23,13 @@ The third section is exactly the same as the previous, just without that `not(..
 
 </details>
 
-Next, we can get on with the app's actual code! Head over to `src/lib.rs` and put the following inside:
+Next, we can get on with the app's actual code! Head over to `src/main.rs` and put the following inside:
 
 ```rust
-{{#include ../../../examples/comprehensive/tiny/src/lib.rs}}
+{{#include ../../../examples/comprehensive/tiny/src/main.rs}}
 ```
 
-This is your entire first app! Note that most Perseus app's won't actually look like this, we've condensed everything into 17 lines of code for simplicity.
+This is your entire first app! Note that most Perseus apps won't actually look like this, we've condensed everything into 17 lines of code for simplicity.
 
 <details>
 <summary>So that means something, does it?</summary>

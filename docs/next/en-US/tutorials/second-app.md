@@ -141,10 +141,10 @@ Notably, an error page is defined with a closure that takes four arguments: a re
 
 ## Tying it all together
 
-Now, we can bring everything together in `src/lib.rs`:
+Now, we can bring everything together in `src/main.rs`:
 
 ```rust
-{{#include ../../../examples/core/basic/src/lib.rs}}
+{{#include ../../../examples/core/basic/src/main.rs}}
 ```
 
 **Important:** replace `perseus_integration` here with `perseus_warp`! We use `perseus_integration` as an internal glue crate, and all code in these docs is sourced directly from the examples.
