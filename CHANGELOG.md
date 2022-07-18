@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.5](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.4...v0.4.0-beta.5) (2022-07-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* `[lib]`/`[[bin]]` settings no longer required in
+`Cargo.toml`, and `lib.rs` should be renamed to `main.rs` (everything is
+a binary now)
+
+### Features
+
+* made cli auto-install needed tools and use global flags for config ([#160](https://github.com/arctic-hen7/perseus/issues/160)) ([4682b9d](https://github.com/arctic-hen7/perseus/commit/4682b9d3e2cf542c6ac521ee3563c4e34c342a8b))
+* **i18n:** added lightweight translator ([b5bb075](https://github.com/arctic-hen7/perseus/commit/b5bb07505d75aaa8b995d95244d96f6a46a4c545))
+
+
+### Bug Fixes
+
+* **cli:** made system tools cache XDG-compliant ([085cd9b](https://github.com/arctic-hen7/perseus/commit/085cd9bda92012a0d18235d040cdc83f4069f294))
+* fixed typo in new project template ([#163](https://github.com/arctic-hen7/perseus/issues/163)) ([1d7cc9f](https://github.com/arctic-hen7/perseus/commit/1d7cc9f9c024f4f62f798e06097f895159438ad5))
+
+
+### Documentation Changes
+
+* fixed broken links after binary changes ([fa99478](https://github.com/arctic-hen7/perseus/commit/fa9947806113d2cd6feaad77ba3614d87434513a))
+* updated docs for new cli setup ([eba6cab](https://github.com/arctic-hen7/perseus/commit/eba6cab892774f4b49c032ff30a5378eb1959a40))
+
 ## [0.4.0-beta.4](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.3...v0.4.0-beta.4) (2022-07-14)
 
 
