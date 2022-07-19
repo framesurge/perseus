@@ -54,47 +54,6 @@ RUN apt-get update \
   && rustup default ${RUST_RELEASE_CHANNEL} \
   && rustup target add wasm32-unknown-unknown
 
-# Create a build stage for `perseus-cli` that we can run in parallel.
-FROM base as perseus
-
-# Work from the chosen install path for `perseus-cli`.
-WORKDIR /perseus
-
-# Install crate `perseus-cli` into the work path.
-RUN cargo install perseus-cli --version $PERSEUS_VERSION \
-  && mv /usr/local/cargo/bin/perseus .
-
-# Create a build stage for `perseus-size-opt` that we can run in parallel.
-FROM base as perseus-size-opt
-
-# Work from the chosen install path for `perseus-size-opt`.
-WORKDIR /perseus-size-opt
-
-# Download and make adjustments to the source of `perseus-size-opt`.
-RUN curl -L# https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
-  | tar -xz --strip-components=1 \
-  && rm -rf ./examples \
-  && sed -i "s|^\(perseus =\).*$|\1 \"=${PERSEUS_VERSION}\"|" ./Cargo.toml \
-  && printf '%s\n' \
-  '#!/bin/sh' \
-  'rm_workspace () {' \
-  '  local a=$( grep -ne "^\[workspace\]$" ./Cargo.toml | grep -Eo "^[^:]+" )' \
-  '  local b=$( grep -ne "^\]$" ./Cargo.toml | grep -Eo "^[^:]+" )' \
-  '  sed -i "${a},${b}d" ./Cargo.toml' \
-  '}' \
-  'rm_workspace' > ./rm_workspace.sh \
-  && chmod +x ./rm_workspace.sh && . ./rm_workspace.sh && rm -f ./rm_workspace.sh
-
-# Create a build stage for `wasm-pack` that we can run in parallel.
-FROM base as wasm-pack
-
-# Work from the chosen install path for `wasm-pack`.
-WORKDIR /wasm-pack
-
-# Install crate `wasm-pack` into the work path.
-RUN cargo install wasm-pack --version $WASM_PACK_VERSION \
-  && mv /usr/local/cargo/bin/wasm-pack .
-
 # Create a build stage for `binaryen` we can run in parallel.
 FROM base as binaryen
 
@@ -119,70 +78,141 @@ RUN curl -L#o esbuild-${ESBUILD_VERSION}.tar.gz \
   && tar --strip-components=1 -xzf esbuild-${ESBUILD_VERSION}.tar.gz \
   && rm -f esbuild-${ESBUILD_VERSION}.tar.gz
 
+# Create a build stage for `perseus-size-opt` that we can run in parallel.
+FROM base as perseus-size-opt
+
+# Work from the chosen install path for `perseus-size-opt`.
+WORKDIR /perseus-size-opt
+
+# Download and make adjustments to the source of `perseus-size-opt`.
+RUN curl -L# https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
+  | tar -xz --strip-components=1 \
+  && rm -rf ./examples \
+  && sed -i "s|^\(perseus =\).*$|\1 { path = \\\"/perseus/packages/perseus\\\" }|;" ./Cargo.toml \
+  && printf '%s\n' \
+  '#!/bin/sh' \
+  'rm_workspace () {' \
+  '  local a=$( grep -ne "^\[workspace\]$" ./Cargo.toml | grep -Eo "^[^:]+" )' \
+  '  local b=$( grep -ne "^\]$" ./Cargo.toml | grep -Eo "^[^:]+" )' \
+  '  sed -i "${a},${b}d" ./Cargo.toml' \
+  '}' \
+  'rm_workspace' > ./rm_workspace.sh \
+  && chmod +x ./rm_workspace.sh && . ./rm_workspace.sh && rm -f ./rm_workspace.sh
+
+# Create a build stage for `wasm-pack` that we can run in parallel.
+FROM base as wasm-pack
+
+# Work from the chosen install path for `wasm-pack`.
+WORKDIR /wasm-pack
+
+# Install crate `wasm-pack` into the work path.
+RUN cargo install wasm-pack --version $WASM_PACK_VERSION \
+  && mv /usr/local/cargo/bin/wasm-pack .
+
+# Create a build stage for the codebase of the `perseus` framework that we can run in parallel.
+FROM base as framework
+
+# Work from the root of the codebase.
+WORKDIR /perseus
+
+# Download and make adjustments to the codebase of the framework.
+RUN curl -L# https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
+  | tar -xz --strip-components=1 \
+  && sed -i "\
+  s|\(println!.*\)$|// \1|; \
+  s|\.\./\.\.examples/core/basic/\.perseus|/perseus/examples/core/basic/\.perseus|g; \
+  s|\(fs::remove_dir_all(dest\.join(\"\.perseus/dist\"))\.unwrap();\)|// \1|; \
+  s|PERSEUS_VERSION|path = \\\\\"/perseus/packages/perseus\\\\\"|g; \
+  s|PERSEUS_ACTIX_WEB_VERSION|path = \\\\\"/perseus/packages/perseus-actix-web\\\\\"|g; \
+  s|PERSEUS_WARP_VERSION|path = \\\\\"/perseus/packages/perseus-warp\\\\\"|g;" \
+  ./packages/perseus-cli/build.rs \
+  && sed -i "\
+  s|^\(perseus = {\) \(.*\) \(}\)$|\1 \2, features = \[ \"hydrate\" \] \3|; \
+  s|^\(sycamore =\).*$|\1 \"=${SYCAMORE_VERSION}\"|; \
+  " ./examples/comprehensive/tiny/Cargo.toml \
+  && printf '%s\n' \
+  'perseus-size-opt = { path = "/perseus-size-opt" }' >> ./examples/comprehensive/tiny/Cargo.toml \
+  && rm -f ./examples/comprehensive/tiny/src/lib.rs \
+  && printf '%s\n' \
+  'use perseus::{ErrorPages, Html, PerseusApp, Plugins, Template};' \
+  'use sycamore::view;' \
+  '' \
+  'use perseus_size_opt::{perseus_size_opt, SizeOpts};' \
+  '' \
+  '#[perseus::main]' \
+  'pub fn main<G: Html>() -> PerseusApp<G> {' \
+  '    PerseusApp::new()' \
+  '        .template(|| {' \
+  '            Template::new("index").template(|_| {' \
+  '                view! {' \
+  '                    p { "Hello World!" }' \
+  '                }' \
+  '            })' \
+  '        })' \
+  '        .error_pages(|| ErrorPages::new(|url, status, err, _| {' \
+  '            view! {' \
+  "                p { (format!(\"An error with HTTP code {} occurred at '{}': '{}'.\", status, url, err)) }" \
+  '            }' \
+  '        }))' \
+  '        .plugins(' \
+  '            Plugins::new()' \
+  '                .plugin(' \
+  '                    perseus_size_opt,' \
+  '                    SizeOpts {' \
+  '                        wee_alloc: true,' \
+  '                        lto: true,' \
+  '                        opt_level: "s".to_string(),' \
+  '                        codegen_units: 1,' \
+  '                        enable_fluent_bundle_patch: false,' \
+  '                    }' \
+  '                )' \
+  '        )' \
+  '}' > ./examples/comprehensive/tiny/src/lib.rs \
+  && sed -i "s|^\(sycamore =\).*$|\1 \"=${SYCAMORE_VERSION}\"|" \
+  ./examples/core/basic/Cargo.toml \
+  && sed -i "\
+  s|^\(sycamore =\).*$|\1 { version = \\\"=${SYCAMORE_VERSION}\\\", features = [ \\\"ssr\\\" ] }|;
+  s|^\(sycamore-router =\).*$|\1 \\\"=${SYCAMORE_VERSION}\\\"|;" \
+  ./examples/core/basic/.perseus/Cargo.toml
+
+# Create a build stage for `perseus-cli` that we can run in parallel.
+FROM framework as perseus-cli
+
+# Copy perseus-size-opt to satisfy dependencies.
+COPY --from=perseus-size-opt /perseus-size-opt/ /perseus-size-opt/
+
+# Work from the root of the package.
+WORKDIR /perseus/packages/perseus-cli
+
+# Compile the release profile of package `perseus-cli`.
+RUN cargo build --bin perseus --release
+
 # Create a build stage for building our app.
-FROM base as builder
+FROM framework as builder
 
 # Copy the tools we previously prepared in parallel.
-COPY --from=perseus /perseus/perseus /usr/bin/
-COPY --from=perseus-size-opt /perseus-size-opt /perseus-size-opt/
-COPY --from=wasm-pack /wasm-pack/wasm-pack /usr/bin/
 COPY --from=binaryen /binaryen/bin/ /usr/bin/
 COPY --from=binaryen /binaryen/include/ /usr/include/
 COPY --from=binaryen /binaryen/lib/ /usr/lib/
 COPY --from=esbuild /esbuild/bin/esbuild /usr/bin/
+COPY --from=perseus-cli /perseus/target/release/perseus /usr/bin/
+COPY --from=perseus-size-opt /perseus-size-opt/ /perseus-size-opt/
+COPY --from=wasm-pack /wasm-pack/wasm-pack /usr/bin/
 
-# Single-threaded perseus CLI mode required for low memory environments.
-# ENV PERSEUS_CLI_SEQUENTIAL=true
+# Work from the root of our app.
+WORKDIR /perseus/examples/comprehensive/tiny
 
-# Work from the root of the project.
-WORKDIR /app
-
-# Build and deploy our app using the following commands.
+# Execute all necessary commands for deploying our app.
 RUN . /etc/profile && . /usr/local/cargo/env \
-  && curl -L# \
-  https://codeload.github.com/arctic-hen7/perseus/tar.gz/v${PERSEUS_VERSION} \
-  | tar -xz --strip-components=4 perseus-${PERSEUS_VERSION}/examples/comprehensive/tiny \
-  && sed -i "\
-  s|^\(perseus =\).*$|\1 \{ version = \"=${PERSEUS_VERSION}\", features = \[ \"hydrate\" \] \}|; \
-  s|^\(sycamore =\).*$|\1 \"=${SYCAMORE_VERSION}\"|;" ./Cargo.toml \
-  && printf '%s\n' "perseus-size-opt = { path = \"/perseus-size-opt\", version = \"=${PERSEUS_SIZE_OPT_VERSION}\" }" >> ./Cargo.toml \
-  && cat ./Cargo.toml \
-  && curl -L# \
-  https://codeload.github.com/arctic-hen7/perseus-size-opt/tar.gz/v${PERSEUS_SIZE_OPT_VERSION} \
-  | tar -C ./src -xz --strip-components=4 perseus-size-opt-${PERSEUS_SIZE_OPT_VERSION}/examples/simple/src \
-  && sed -i "\
-  s|\(\.plugin\)(\(perseus_size_opt,\) SizeOpts::default())$|\n\
-  \1(\n\
-    \2\n\
-    SizeOpts {\n\
-      wee_alloc: true,\n\
-      lto: true,\n\
-      opt_level: \"s\".to_string(),\n\
-      codegen_units: 1,\n\
-      enable_fluent_bundle_patch: false,\n\
-    }\n\
-  )|" ./src/lib.rs && cat ./src/lib.rs \
-  && cargo update -p perseus --precise $PERSEUS_VERSION \
-  && cargo update -p sycamore --precise $SYCAMORE_VERSION \
   && perseus clean \
   && perseus prep \
   && perseus tinker \
-  && cat ./.perseus/Cargo.toml \
-  && cat ./src/lib.rs \
   && printf '%s\n' \
   '#!/bin/sh' \
   'parse_file () {' \
   '  local file_path=./.perseus/src/lib.rs' \
-  '  local line_num=1' \
-  '  while IFS= read -r lib_line' \
-  '  do' \
-  '    if [ ! -z $( echo ${lib_line} | cut -d " " -f 1 | grep -e "clippy" ) ]' \
-  '    then' \
-  '      break' \
-  '    fi' \
-  '    line_num=$(( $line_num + 1 ))' \
-  '  done < $file_path' \
-  '  if [ $line_num -ne 1 ]' \
+  '  local line_num=$( grep -ne "clippy" $file_path | grep -Eo "^[^:]+" )' \
+  '  if [ ! -z "${line_num}" ] && [ $line_num -ne 1 ]' \
   '  then' \
   '    awk -i inplace '"\\" \
   '    -v line_num=$line_num '"\\" \
@@ -199,11 +229,9 @@ RUN . /etc/profile && . /usr/local/cargo/env \
   --target=${ESBUILD_TARGET} \
   --outfile=./pkg/dist/pkg/perseus_engine.js \
   --allow-overwrite \
-  && ls -lha ./pkg/dist/pkg \
   && wasm-opt \
   -Os ./pkg/dist/pkg/perseus_engine_bg.wasm \
-  -o ./pkg/dist/pkg/perseus_engine_bg.wasm \
-  && ls -lha ./pkg/dist/pkg
+  -o ./pkg/dist/pkg/perseus_engine_bg.wasm
 
 # Prepare the final image where the app will be deployed.
 FROM debian:stable-slim
@@ -212,13 +240,13 @@ FROM debian:stable-slim
 WORKDIR /app
 
 # Copy the app into its chosen install path.
-COPY --from=builder /app/pkg /app/
+COPY --from=builder /perseus/examples/comprehensive/tiny/pkg /app/
 
 # Bind the server to `localhost`.
-ENV HOST=0.0.0.0
+ENV PERSEUS_HOST=0.0.0.0
 
 # Bind the container to the default port of 8080.
-ENV PORT=8080
+ENV PERSEUS_PORT=8080
 
 # Configure the container to automatically serve the deployed app while running.
 CMD ["./server"]
