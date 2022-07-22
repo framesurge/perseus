@@ -6,13 +6,13 @@ Note that this tutorial assumes you've already installed Rust and the Perseus CL
 
 ## Setup
 
-We can create a new Rust project by going to some directory and running `cargo new --lib my-app`, which will create a folder called `my-app/` and set it up as a library. Then, you can pop in there and replace everything in `Cargo.toml` with the following:
+We can create a new Perseus project by going to some directory and running `perseus new my-app`, which will create a folder called `my-app/` and set it up for Perseus. Then, you can pop in there and make sure `Cargo.toml` looks like the following:
 
 ```toml
 {{#include ../../../examples/core/basic/Cargo.toml.example}}
 ```
 
-This is almost identical to the [first app](:getting-started/first-app) we built, so we'll skip over further explanation here. Recall though that this structure of declaring engine-side and browser-side dependencies separately is a fairly standard pattern in Perseus, and remember that the section after `[lib]` is telling Cargo to treat `src/lib.rs` as both a library (for the browser) *and* a binary (for the engine).
+This is almost identical to the [first app](:getting-started/first-app) we built, so we'll skip over further explanation here. Recall though that this structure of declaring engine-side and browser-side dependencies separately is a fairly standard pattern in Perseus.
 
 Next, create some files and folders so that your project tree looks like this:
 
@@ -36,7 +36,7 @@ mod error_pages;
 mod templates;
 ```
 
-And then add the following to `src/templates/mod.rs` to declare the files in there to Cargo:
+And then make `src/templates/mod.rs` look like the following to declare the files in there to Cargo:
 
 ```rust
 {{#include ../../../examples/core/basic/src/templates/mod.rs}}
@@ -48,7 +48,7 @@ The reason these are `pub mod`s is so that we can access them from `lib.rs` easi
 
 Let's jump right into the code of this app! We'll start with the index template, which will render the landing page of our site. The code for this is accordingly in `src/templates/index.rs`.
 
-In `src/templates/index.rs`, dump the following code:
+In `src/templates/index.rs`, dump the following code (replacing the auto-generated code):
 
 ```rust
 {{#include ../../../examples/core/basic/src/templates/index.rs}}
@@ -141,10 +141,10 @@ Notably, an error page is defined with a closure that takes four arguments: a re
 
 ## Tying it all together
 
-Now, we can bring everything together in `src/lib.rs`:
+Now, we can bring everything together in `src/main.rs`:
 
 ```rust
-{{#include ../../../examples/core/basic/src/lib.rs}}
+{{#include ../../../examples/core/basic/src/main.rs}}
 ```
 
 **Important:** replace `perseus_integration` here with `perseus_warp`! We use `perseus_integration` as an internal glue crate, and all code in these docs is sourced directly from the examples.

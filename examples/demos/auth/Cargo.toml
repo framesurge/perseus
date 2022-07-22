@@ -1,6 +1,6 @@
 [package]
 name = "perseus-example-auth"
-version = "0.4.0-beta.3"
+version = "0.4.0-beta.5"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -17,15 +17,5 @@ tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-integration = { path = "../../../packages/perseus-integration", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
 # We need the `HtmlDocument` feature to be able to use cookies (which this example does)
 web-sys = { version = "0.3", features = [ "Storage" ] }
-
-[lib]
-name = "lib"
-path = "src/lib.rs"
-crate-type = [ "cdylib", "rlib" ]
-
-[[bin]]
-name = "perseus-example-auth"
-path = "src/lib.rs"

@@ -21,6 +21,8 @@ mod deploy;
 pub mod errors;
 mod export;
 mod export_error_page;
+mod init;
+mod install;
 /// Parsing utilities for arguments.
 pub mod parse;
 mod prepare;
@@ -32,8 +34,8 @@ mod thread;
 mod tinker;
 
 use errors::*;
-use std::fs;
 use std::path::PathBuf;
+use std::{fs, path::Path};
 
 /// The current version of the CLI, extracted from the crate version.
 pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -41,6 +43,8 @@ pub use build::build;
 pub use deploy::deploy;
 pub use export::export;
 pub use export_error_page::export_error_page;
+pub use init::{init, new};
+pub use install::{get_tools_dir, Tools};
 pub use prepare::check_env;
 pub use reload_server::{order_reload, run_reload_server};
 pub use serve::serve;
@@ -48,8 +52,19 @@ pub use serve_exported::serve_exported;
 pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};
 pub use tinker::tinker;
 
-/// Deletes the entire `dist/` directory. Nicely, because there are no Cargo
-/// artifacts in there, running this won't slow down future runs at all.
+/// Creates the `dist/` directory in the project root, which is necessary
+/// for Cargo to be able to put its build artifacts in there.
+pub fn create_dist(dir: &Path) -> Result<(), ExecutionError> {
+    let target = dir.join("dist");
+    if !target.exists() {
+        fs::create_dir(target).map_err(|err| ExecutionError::CreateDistFailed { source: err })?;
+    }
+    Ok(())
+}
+
+/// Deletes the entire `dist/` directory. Notably, this is where we keep
+/// several Cargo artifacts, so this means the next build will be much
+/// slower.
 pub fn delete_dist(dir: PathBuf) -> Result<(), ExecutionError> {
     let target = dir.join("dist");
     if target.exists() {
@@ -89,4 +104,16 @@ pub fn delete_artifacts(dir: PathBuf, dir_to_remove: &str) -> Result<(), Executi
     }
 
     Ok(())
+}
+
+/// Gets the name of the user's crate from their `Cargo.toml` (assumed to be in
+/// the root of the given directory).
+pub fn get_user_crate_name(dir: &Path) -> Result<String, ExecutionError> {
+    let manifest = cargo_toml::Manifest::from_path(dir.join("Cargo.toml"))
+        .map_err(|err| ExecutionError::GetManifestFailed { source: err })?;
+    let name = manifest
+        .package
+        .ok_or(ExecutionError::CrateNameNotPresentInManifest)?
+        .name;
+    Ok(name)
 }

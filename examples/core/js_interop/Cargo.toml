@@ -1,6 +1,6 @@
 [package]
 name = "perseus-example-js-interop"
-version = "0.4.0-beta.3"
+version = "0.4.0-beta.5"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,16 +20,3 @@ tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-integration = { path = "../../../packages/perseus-integration", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
-
-[lib]
-name = "lib"
-path = "src/lib.rs"
-crate-type = [ "cdylib", "rlib" ]
-
-[[bin]]
-name = "perseus-example-js-interop"
-path = "src/lib.rs"
-
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = [ "-Oz" ]

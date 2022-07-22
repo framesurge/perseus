@@ -1,6 +1,6 @@
 # Your First App
 
-With a basic directory scaffold all set up, it's time to get into the nitty-gritty of building a Perseus app. Somewhat humorously, the hardest part to wrap your head around as a beginner is probably going to be the `Cargo.toml` we're about to set up. For now, make it look like the following.
+With a basic app scaffold all set up, it's time to get into the nitty-gritty of building a Perseus app. Somewhat humorously, the hardest part to wrap your head around as a beginner is probably going to be the `Cargo.toml` we're about to set up. It should look something like the following.
 
 ```toml
 {{#include ../../../examples/comprehensive/tiny/Cargo.toml.example}}
@@ -21,23 +21,15 @@ The second is `[target.'cfg(not(target_arch = "wasm32"))'.dependencies]`, which 
 
 The third section is exactly the same as the previous, just without that `not(...)`, so this one defines dependencies that we use in the browser only. We've put `wasm-bindgen` here, which we could compile on the server, but it would be a little pointless, since Perseus only uses it behind the scenes in making your app work in the browser. (This is needed for a macro that a Perseus macro defines, which is why you have to import it yourself.)
 
-Now we've got some really weird stuff, that you may not have seen before even if you've been working with Rust for a while. The next two sections, `[lib]` and `[bin]`, declare that `src/lib.rs` is both a binary *and* a library. What does that mean? Well, a library is something that exposes some functions, and that's what Wasm expects. But the engine needs a binary to not just expose code, but to run it as well. Conveniently, you can define these in the same place, and you can then annoy Cargo a little by telling it to treat `lib.rs` as both a binary and a library. This will print a little warning at the top of every `cargo` command you run in this directory, but there's no actual problem here.
-
-*Note: this solution isn't ideal, and the situation of this will be improved by the time v0.4.0 goes stable. The aim is to get Wasm to work with a binary rather than a library, which requires changing several things in the CLI.*
-
-The only other thing of note here is `crate-type` under the `[lib]` section, which makes your library compatible with Wasm. Unfortunately, Perseus has basically no control over the fact that that's required, and we'd like it to not be necessary too!
-
-So, to summarize, there's a bunch of weird stuff in `Cargo.toml` for every Perseus app, but you usually don't have to care about it too much!
-
 </details>
 
-Next, we can get on with the app's actual code! Head over to `src/lib.rs` and put the following inside:
+Next, we can get on with the app's actual code! Head over to `src/main.rs` and put the following inside:
 
 ```rust
-{{#include ../../../examples/comprehensive/tiny/src/lib.rs}}
+{{#include ../../../examples/comprehensive/tiny/src/main.rs}}
 ```
 
-This is your entire first app! Note that most Perseus app's won't actually look like this, we've condensed everything into 17 lines of code for simplicity.
+This is your entire first app! Note that most Perseus apps won't actually look like this, we've condensed everything into 17 lines of code for simplicity.
 
 <details>
 <summary>So that means something, does it?</summary>
@@ -64,7 +56,6 @@ With that all out of the way, add the following to `.gitignore`:
 
 ```gitignore
 dist/
-target_wasm
 ```
 
 That just tells Git not to pay any attention to the build artifacts that Perseus is about to create. Now run this command:

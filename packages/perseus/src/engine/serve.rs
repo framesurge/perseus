@@ -27,9 +27,21 @@ pub(crate) fn get_host_and_port() -> (String, u16) {
 
 /// Gets the properties to pass to the server, invoking plugin opportunities as
 /// necessary. This is entirely engine-agnostic.
+///
+/// WARNING: in production, this will automatically set the working directory
+/// to be the parent of the actual binary! This means that disabling
+/// debug assertions in development will lead to utterly incomprehensible
+/// errors! You have been warned!
 pub(crate) fn get_props<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
 ) -> ServerProps<M, T> {
+    if !cfg!(debug_assertions) {
+        let binary_loc = env::current_exe().unwrap();
+        let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close
+                                                       // to sanity
+        env::set_current_dir(binary_dir).unwrap();
+    }
+
     let plugins = app.get_plugins();
 
     plugins

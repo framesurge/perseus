@@ -2,6 +2,89 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.5](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.4...v0.4.0-beta.5) (2022-07-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* `[lib]`/`[[bin]]` settings no longer required in
+`Cargo.toml`, and `lib.rs` should be renamed to `main.rs` (everything is
+a binary now)
+
+### Features
+
+* made cli auto-install needed tools and use global flags for config ([#160](https://github.com/arctic-hen7/perseus/issues/160)) ([4682b9d](https://github.com/arctic-hen7/perseus/commit/4682b9d3e2cf542c6ac521ee3563c4e34c342a8b))
+* **i18n:** added lightweight translator ([b5bb075](https://github.com/arctic-hen7/perseus/commit/b5bb07505d75aaa8b995d95244d96f6a46a4c545))
+
+
+### Bug Fixes
+
+* **cli:** made system tools cache XDG-compliant ([085cd9b](https://github.com/arctic-hen7/perseus/commit/085cd9bda92012a0d18235d040cdc83f4069f294))
+* fixed typo in new project template ([#163](https://github.com/arctic-hen7/perseus/issues/163)) ([1d7cc9f](https://github.com/arctic-hen7/perseus/commit/1d7cc9f9c024f4f62f798e06097f895159438ad5))
+
+
+### Documentation Changes
+
+* fixed broken links after binary changes ([fa99478](https://github.com/arctic-hen7/perseus/commit/fa9947806113d2cd6feaad77ba3614d87434513a))
+* updated docs for new cli setup ([eba6cab](https://github.com/arctic-hen7/perseus/commit/eba6cab892774f4b49c032ff30a5378eb1959a40))
+
+## [0.4.0-beta.4](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.3...v0.4.0-beta.4) (2022-07-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* passed path, locale, and request to logic-based revalidation
+* header setting functions now take either a usual state
+argument or no state (no more `Option<T>`s)
+* state amalgamation functions now take `path`, `locale`,
+`build_state`, and `request_state`; `States` is private
+* restructured exports significantly
+
+### Features
+
+* **cli:** added `perseus new` and `perseus init` ([0bf879b](https://github.com/arctic-hen7/perseus/commit/0bf879bfc072117ed82e42b8fd111f21bc895483)), closes [#128](https://github.com/arctic-hen7/perseus/issues/128)
+* passed path, locale, and request to logic-based revalidation ([5473683](https://github.com/arctic-hen7/perseus/commit/5473683a59db2aa19aabe5986461b739458a0470))
+* removed `Option<T>` weirdness on header setting ([869000b](https://github.com/arctic-hen7/perseus/commit/869000ba5fb4083c0175c011e3a31f398dbdd350))
+* **cli:** added support for watching custom files ([723d4ca](https://github.com/arctic-hen7/perseus/commit/723d4cae0659f4f02e2e7affc957df065b156373))
+* added further target directory separation ([b2d7e16](https://github.com/arctic-hen7/perseus/commit/b2d7e16c6912107a7717a8cb421728fd4f4b0a6c))
+* added proper state mgmt to amalgamation ([ceaf7b2](https://github.com/arctic-hen7/perseus/commit/ceaf7b264507856989134de12fe27b137f990679))
+* added type-safety to time-based revalidation ([7b3ff88](https://github.com/arctic-hen7/perseus/commit/7b3ff880fa6910c750400e95cbba33772d2eee6a))
+
+
+### Bug Fixes
+
+* fixed `perseus deploy` target binary name on Windows ([#156](https://github.com/arctic-hen7/perseus/issues/156)) ([32a6f24](https://github.com/arctic-hen7/perseus/commit/32a6f247cbac016735a9c341e469a1be6b8fc37c))
+* fixed warp js snippets handling ([dab7e72](https://github.com/arctic-hen7/perseus/commit/dab7e726ddfd73b6d4df66d6bff2e05f16b4aae9))
+* fixed wasm issues with `ComputedDuration` ([247caff](https://github.com/arctic-hen7/perseus/commit/247caffcd655062beb094d9d87a71da3d6fc7e22))
+
+
+### Performance Improvements
+
+* split target directories for engine/server ([651349d](https://github.com/arctic-hen7/perseus/commit/651349d9b32a87cae3bf912694385fa80cee66ed))
+
+
+### Code Refactorings
+
+* restructured exports significantly ([70d425b](https://github.com/arctic-hen7/perseus/commit/70d425b11670ef2796f83a5c338a4e95cce185a0))
+
+
+### Documentation Changes
+
+* fixed typos in readme ([9ba6947](https://github.com/arctic-hen7/perseus/commit/9ba694750e6e7da4fefe70839f23a243ac64eabd))
+* fixed typos in tiny example readme ([8ab3afd](https://github.com/arctic-hen7/perseus/commit/8ab3afdc7553d7486c89817b56884f9b121dfa68))
+* rewrote advanced docs ([191d8c9](https://github.com/arctic-hen7/perseus/commit/191d8c9f040e34debd98e88cd8d0dd589c852af9))
+* scaffolded out FDT ([ca12e03](https://github.com/arctic-hen7/perseus/commit/ca12e0373a954cf7524dcd05ec804c565a535eb0))
+* updated docs for `perseus new` and co ([8810c23](https://github.com/arctic-hen7/perseus/commit/8810c23f604329549893842e00585f8a0b8cc6e8))
+* **examples:** updated example writing docs and base example ([0c1b578](https://github.com/arctic-hen7/perseus/commit/0c1b578e5b06a64258a348a68359224a7d95976f))
+* substantially improved code-level docs ([6ec4852](https://github.com/arctic-hen7/perseus/commit/6ec48529e2371dc464d993f3743091b9cccb0a96))
+* updated js interop example readme ([11ed444](https://github.com/arctic-hen7/perseus/commit/11ed44470139688c6f3c89fd7d872bda076eab13))
+* **examples:** added js interop example ([766dd44](https://github.com/arctic-hen7/perseus/commit/766dd4433aabb91fbec74b1957c3cba0729997c7))
+* finished updates to code-level docs ([76ef81c](https://github.com/arctic-hen7/perseus/commit/76ef81c5bc4f6b4055c93ae005247fb4766bb333))
+* updated docs for cranelift and wasm-opt ([7829c74](https://github.com/arctic-hen7/perseus/commit/7829c7447c888a66db250667ee7b91bd296385e8))
+* updated signature docs ([2e008d4](https://github.com/arctic-hen7/perseus/commit/2e008d4e48a6301796371dfb2adb96a3019dac27))
+* wrote second app tutorial ([55751aa](https://github.com/arctic-hen7/perseus/commit/55751aa24a515089c66d114d7a0fb128f2234354))
+* wrote state generation docs ([eb7e8ee](https://github.com/arctic-hen7/perseus/commit/eb7e8ee56bd95958ce3e85d98b39bafa6e21bb9b))
+
 ## [0.4.0-beta.3](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.2...v0.4.0-beta.3) (2022-07-04)
 
 

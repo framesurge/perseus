@@ -1,6 +1,6 @@
 [package]
 name = "perseus"
-version = "0.4.0-beta.3"
+version = "0.4.0-beta.5"
 edition = "2021"
 description = "A lightning-fast frontend web dev platform with full support for SSR and SSG."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -17,7 +17,7 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 sycamore = { version = "=0.8.0-beta.7", features = [ "ssr" ] }
 sycamore-router = "=0.8.0-beta.7"
 sycamore-futures = "=0.8.0-beta.7"
-perseus-macro = { path = "../perseus-macro", version = "0.4.0-beta.3", optional = true }
+perseus-macro = { path = "../perseus-macro", version = "0.4.0-beta.5", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
@@ -50,6 +50,7 @@ wasm-bindgen-futures = "0.4"
 # BUG This adds 1.9kB to the production bundle (that's without size optimizations though)
 default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
+translator-lightweight = []
 # This feature adds support for a number of macros that will make your life MUCH easier (read: use this unless you have very specific needs or are completely insane)
 macros = [ "perseus-macro" ]
 # This feature enable support for functions that make using the default engine configuration much easier.

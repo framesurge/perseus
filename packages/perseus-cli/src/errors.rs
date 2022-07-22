@@ -5,13 +5,15 @@ use thiserror::Error;
 /// All errors that can be returned by the CLI.
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("prerequisite command execution failed for prerequisite '{cmd}' (set '{env_var}' to another location if you've installed it elsewhere)")]
-    PrereqNotPresent {
-        cmd: String,
-        env_var: String,
+    #[error("couldn't find `cargo`, which is a dependency of this cli (set 'PERSEUS_CARGO_PATH' to another location if you've installed it elsewhere)")]
+    CargoNotPresent {
         #[source]
         source: std::io::Error,
     },
+    #[error(
+        "couldn't install `wasm32-unknown-unknown` target (do you have an internet connection?)"
+    )]
+    RustupTargetAddFailed { code: i32 },
     #[error("couldn't get current directory (have you just deleted it?)")]
     CurrentDirUnavailable {
         #[source]
@@ -25,6 +27,12 @@ pub enum Error {
     DeployError(#[from] DeployError),
     #[error(transparent)]
     WatchError(#[from] WatchError),
+    #[error(transparent)]
+    InitError(#[from] InitError),
+    #[error(transparent)]
+    NewError(#[from] NewError),
+    #[error(transparent)]
+    InstallError(#[from] InstallError),
 }
 
 /// Errors that can occur while attempting to execute a Perseus app with
@@ -60,6 +68,18 @@ pub enum ExecutionError {
     PortNotNumber {
         #[source]
         source: std::num::ParseIntError,
+    },
+    #[error("couldn't parse `Cargo.toml` (are you running in the right directory?)")]
+    GetManifestFailed {
+        #[source]
+        source: cargo_toml::Error,
+    },
+    #[error("couldn't get crate name from `[package]` section of `Cargo.toml` (are you running in the right directory?)")]
+    CrateNameNotPresentInManifest,
+    #[error("couldn't create directory for distribution artifacts (do you have the necessary permissions?)")]
+    CreateDistFailed {
+        #[source]
+        source: std::io::Error,
     },
 }
 
@@ -121,6 +141,11 @@ pub enum DeployError {
         #[source]
         source: std::io::Error,
     },
+    #[error("couldn't create distribution artifacts directory for deployment (if this persists, try `perseus clean`)")]
+    CreateDistDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 #[derive(Error, Debug)]
@@ -161,4 +186,127 @@ pub enum WatchError {
         #[source]
         source: std::io::Error,
     },
+}
+
+#[derive(Error, Debug)]
+pub enum InitError {
+    #[error("couldn't create directory structure for new project, do you have the necessary permissions?")]
+    CreateDirStructureFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't create file '{filename}' for project initialization")]
+    CreateInitFileFailed {
+        #[source]
+        source: std::io::Error,
+        filename: String,
+    },
+}
+
+#[derive(Error, Debug)]
+pub enum NewError {
+    // The `new` command calls the `init` command in effect
+    #[error(transparent)]
+    InitError(#[from] InitError),
+    #[error("couldn't create directory for new project, do you have the necessary permissions?")]
+    CreateProjectDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("fetching the custom initialization template failed")]
+    GetCustomInitFailed {
+        #[source]
+        source: ExecutionError,
+    },
+    #[error(
+        "fetching the custom initialization template returned non-zero exit code ({exit_code})"
+    )]
+    GetCustomInitNonZeroExitCode { exit_code: i32 },
+    #[error(
+        "couldn't remove git internals at '{target_dir:?}' for custom initialization template"
+    )]
+    RemoveCustomInitGitFailed {
+        target_dir: Option<String>,
+        #[source]
+        source: std::io::Error,
+    },
+}
+
+#[derive(Error, Debug)]
+pub enum InstallError {
+    #[error("couldn't create `dist/tools/` for external dependency installation")]
+    CreateToolsDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    // This will only be called after we've checked if the user has already installed the tool
+    // themselves
+    #[error("couldn't install '{tool}', as there are no precompiled binaries for your platform and it's not currently installed; please install this tool manually (see https://arctic-hen7.github.io/perseus/en-US/docs/0.4.x/reference/faq)")]
+    ExternalToolUnavailable {
+        tool: String,
+        // This is from checking if the tool is installed at the usual path
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't download binary for '{tool}' (do you have an internet connection?)")]
+    BinaryDownloadRequestFailed {
+        tool: String,
+        #[source]
+        source: reqwest::Error,
+    },
+    #[error(
+        "couldn't create destination for tool download (do you have the necessary permissions?)"
+    )]
+    CreateToolDownloadDestFailed {
+        #[source]
+        source: tokio::io::Error,
+    },
+    #[error("couldn't chunk tool download properly (do you have an internet connection?)")]
+    ChunkBinaryDownloadFailed {
+        #[source]
+        source: reqwest::Error,
+    },
+    #[error(
+        "couldn't write downloaded chunk of external tool (do you have the necessary permissions?)"
+    )]
+    WriteBinaryDownloadChunkFailed {
+        #[source]
+        source: tokio::io::Error,
+    },
+    #[error("couldn't determine latest version of '{tool}' (do you have an internet connection?)")]
+    GetLatestToolVersionFailed {
+        tool: String,
+        #[source]
+        source: reqwest::Error,
+    },
+    #[error("couldn't parse latest version of '{tool}' (if this error persists, please report it as a bug)")]
+    ParseToolVersionFailed { tool: String },
+    #[error("couldn't create destination for extraction of external tool (do you have the necessary permissions?)")]
+    CreateToolExtractDestFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't extract '{tool}' (do you have the necessary permissions?)")]
+    ToolExtractFailed {
+        tool: String,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't delete archive from tool deletion")]
+    ArchiveDeletionFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't rename directory for external tool binaries")]
+    DirRenameFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("couldn't read `dist/tools/` to determine which tool versions were installed (do you have the necessary permissions?)")]
+    ReadToolsDirFailed {
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("directory found in `dist/tools/` with invalid name (running `perseus clean` should resolve this)")]
+    InvalidToolsDirName { name: String },
 }

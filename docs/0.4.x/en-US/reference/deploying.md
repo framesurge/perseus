@@ -34,4 +34,11 @@ To make this work, you should also add the following to your `Cargo.toml` under 
 wee_alloc = "0.4"
 ```
 
+Finally, for another small cut to bundle sizes, you can set `wasm-opt`, a tool that `wasm-pack` runs automatically (and the Perseus CLI runs `wasm-pack`) to optimize for size by adding the following to your `Cargo.toml`:
+
+```toml
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = [ "-Oz" ]
+```
+
 You can find more information about optimizing Wasm bundle sizes [here](https://rustwasm.github.io/book/reference/code-size.html#optimizing-builds-for-code-size).
