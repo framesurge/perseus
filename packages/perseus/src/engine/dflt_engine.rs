@@ -112,6 +112,14 @@ where
             let props = get_props(app());
             // This returns a `(String, u16)` of the host and port for maximum compatibility
             let addr = get_host_and_port();
+            // In production, give the user a heads up that something's actually happening
+            #[cfg(not(debug_assertions))]
+            println!(
+                "Your production app is now live on <http://{host}:{port}>! To change this, re-run this command with different settings for the `PERSEUS_HOST` and `PERSEUS_PORT` environment variables.\nNote that the above address will not reflect any domains configured.",
+                host = &addr.0,
+                port = &addr.1
+            );
+
             serve_fn(props, addr).await;
             0
         }
