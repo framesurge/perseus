@@ -7,7 +7,6 @@ use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::*;
@@ -270,7 +269,7 @@ pub(crate) struct ShellProps<'a> {
     pub router_state: RouterState,
     /// A *client-side* translations manager to use (this manages caching
     /// translations).
-    pub translations_manager: Rc<RefCell<ClientTranslationsManager>>,
+    pub translations_manager: ClientTranslationsManager,
     /// The error pages, for use if something fails.
     pub error_pages: Rc<ErrorPages<TemplateNodeType>>,
     /// The container responsible for the initial render from the server
@@ -351,10 +350,7 @@ pub(crate) async fn app_shell(
             checkpoint("page_visible");
 
             // Now that the user can see something, we can get the translator
-            let mut translations_manager_mut = translations_manager.borrow_mut();
-            // This gets an `Rc<Translator>` that references the translations manager,
-            // meaning no cloning of translations
-            let translator = translations_manager_mut
+            let translator = translations_manager
                 .get_translator_for_locale(&locale)
                 .await;
             let translator = match translator {
@@ -465,11 +461,7 @@ pub(crate) async fn app_shell(
                                 checkpoint("page_visible");
 
                                 // Now that the user can see something, we can get the translator
-                                let mut translations_manager_mut =
-                                    translations_manager.borrow_mut();
-                                // This gets an `Rc<Translator>` that references the translations
-                                // manager, meaning no cloning of translations
-                                let translator = translations_manager_mut
+                                let translator = translations_manager
                                     .get_translator_for_locale(&locale)
                                     .await;
                                 let translator = match translator {

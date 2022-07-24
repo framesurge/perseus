@@ -9,7 +9,6 @@ use crate::{
     template::{RenderCtx, TemplateMap, TemplateNodeType},
     DomNode, ErrorPages, Html,
 };
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
@@ -43,7 +42,7 @@ struct OnRouteChangeProps<'a, G: Html> {
     locales: Rc<Locales>,
     container_rx: NodeRef<G>,
     router_state: RouterState,
-    translations_manager: Rc<RefCell<ClientTranslationsManager>>,
+    translations_manager: ClientTranslationsManager,
     error_pages: Rc<ErrorPages<TemplateNodeType>>,
     initial_container: Option<Element>,
 }
@@ -189,7 +188,7 @@ pub(crate) fn perseus_router<G: Html>(
     // verison
     let container_rx = NodeRef::new();
 
-    let translations_manager = Rc::new(RefCell::new(ClientTranslationsManager::new(&locales)));
+    let translations_manager = ClientTranslationsManager::new(&locales);
     // Now that we've used the reference, put the locales in an `Rc`
     let locales = Rc::new(locales);
     // Get the error pages in an `Rc` so we aren't creating hundreds of them

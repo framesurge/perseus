@@ -258,12 +258,14 @@ impl<G: Html> Template<G> {
         &self,
         props: PageProps,
         cx: Scope<'a>,
-        translator: &Translator,
+        // Taking a reference here involves a serious risk of runtime panics, unfortunately (it's
+        // simpler to own it at this point, and we clone it anyway internally)
+        translator: Translator,
     ) -> View<G> {
         // The router component has already set up all the elements of context needed by
         // the rest of the system, we can get on with rendering the template All
         // we have to do is provide the translator, replacing whatever is present
-        provide_context_signal_replace(cx, translator.clone());
+        provide_context_signal_replace(cx, translator);
 
         (self.template)(cx, props)
     }

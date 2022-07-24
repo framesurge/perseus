@@ -3,17 +3,21 @@ use crate::errors::*;
 use crate::i18n::Translator;
 use crate::shell::fetch;
 use crate::utils::get_path_prefix_client;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 /// Manages translations in the app shell. This handles fetching translations
 /// from the server as well as caching for performance. This is distinct from
 /// `TranslationsManager` in that it operates on the client-side rather than on
 /// the server. This optimizes for users viewing many pages in the same locale,
 /// which is by far the most common use of most websites in terms of i18n.
-#[derive(Debug)]
+///
+/// This holds mutability internally to avoid issues with async/await.
+#[derive(Debug, Clone)]
 pub(crate) struct ClientTranslationsManager {
     /// The cached translator. If the same locale is requested again, this will
     /// simply be returned.
-    cached_translator: Option<Translator>,
+    cached_translator: Rc<RefCell<Option<Translator>>>,
     locales: Locales,
 }
 impl ClientTranslationsManager {
@@ -22,24 +26,24 @@ impl ClientTranslationsManager {
     /// it can avoid network requests to unsupported locales.
     pub fn new(locales: &Locales) -> Self {
         Self {
-            cached_translator: None,
+            cached_translator: Rc::new(RefCell::new(None)),
             locales: locales.clone(),
         }
     }
     /// Gets an `&'static Translator` for the given locale. This will use the
     /// internally cached `Translator` if possible, and will otherwise fetch
-    /// the translations from the server. This needs mutability because it will
-    /// modify its internal cache if necessary.
+    /// the translations from the server. This manages mutability for caching
+    /// internally.
     pub async fn get_translator_for_locale<'a>(
-        &'a mut self,
+        &'a self,
         locale: &'a str,
-    ) -> Result<&'a Translator, ClientError> {
+    ) -> Result<Translator, ClientError> {
         let path_prefix = get_path_prefix_client();
         // Check if we've already cached
-        if self.cached_translator.is_some()
-            && self.cached_translator.as_ref().unwrap().get_locale() == locale
+        let mut cached_translator = self.cached_translator.borrow_mut();
+        if cached_translator.is_some() && cached_translator.as_ref().unwrap().get_locale() == locale
         {
-            Ok(self.cached_translator.as_ref().unwrap())
+            Ok(cached_translator.as_ref().unwrap().clone())
         } else {
             // Check if the locale is supported and we're actually using i18n
             if self.locales.is_supported(locale) && self.locales.using_i18n {
@@ -78,17 +82,17 @@ impl ClientTranslationsManager {
                     },
                 };
                 // Cache that translator
-                self.cached_translator = Some(translator);
+                *cached_translator = Some(translator);
                 // Now return that
-                Ok(self.cached_translator.as_ref().unwrap())
+                Ok(cached_translator.as_ref().unwrap().clone())
             } else if !self.locales.using_i18n {
                 // If we aren't even using i18n, then it would be pointless to fetch
                 // translations
                 let translator = Translator::new("xx-XX".to_string(), "".to_string()).unwrap();
                 // Cache that translator
-                self.cached_translator = Some(translator);
+                *cached_translator = Some(translator);
                 // Now return that
-                Ok(self.cached_translator.as_ref().unwrap())
+                Ok(cached_translator.as_ref().unwrap().clone())
             } else {
                 Err(ClientError::LocaleNotSupported {
                     locale: locale.to_string(),
