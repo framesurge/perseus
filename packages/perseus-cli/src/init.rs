@@ -15,7 +15,9 @@ fn create_file_if_not_present(
     if fs::metadata(filename).is_ok() {
         eprintln!("[WARNING]: Didn't create '{}', since it already exists. If you didn't mean for this to happen, you should remove this file and try again.", filename_str);
     } else {
-        let contents = contents.replace("%name", name);
+        let contents = contents
+            .replace("%name", name)
+            .replace("%perseus_version", env!("CARGO_PKG_VERSION"));
         fs::write(filename, contents).map_err(|err| InitError::CreateInitFileFailed {
             source: err,
             filename: filename_str.to_string(),
@@ -115,7 +117,8 @@ pub fn new(dir: PathBuf, opts: &NewOpts, global_opts: &Opts) -> Result<i32, NewE
 
 // --- BELOW ARE THE RAW FILES FOR DEFAULT INTIALIZATION ---
 // The token `%name` in all of these will be replaced with the given project
-// name NOTE: These must be updated for breaking changes
+// name
+// NOTE: These must be updated for breaking changes
 
 static DFLT_INIT_CARGO_TOML: &str = r#"[package]
 name = "%name"
@@ -126,7 +129,7 @@ edition = "2021"
 
 # Dependencies for the engine and the browser go here
 [dependencies]
-perseus = { version = "=0.4.0-beta.3", features = [ "hydrate" ] }
+perseus = { version = "=%perseus_version", features = [ "hydrate" ] }
 sycamore = "=0.8.0-beta.7"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
@@ -134,7 +137,7 @@ serde_json = "1"
 # Engine-only dependencies go here
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
-perseus-warp = { version = "=0.4.0-beta.3", features = [ "dflt-server" ] }
+perseus-warp = { version = "=%perseus_version", features = [ "dflt-server" ] }
 
 # Browser-only dependencies go here
 [target.'cfg(target_arch = "wasm32")'.dependencies]"#;
