@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.6](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.5...v0.4.0-beta.6) (2022-08-13)
+
+
+### Features
+
+* added feedback to deployed server binaries ([04eab84](https://github.com/arctic-hen7/perseus/commit/04eab84821a93fd5de0fa333a868375929c9adf8)), closes [#164](https://github.com/arctic-hen7/perseus/issues/164)
+
+
+### Bug Fixes
+
+* **cli:** fixed `perseus new`/`perseus init` package versions ([22dac34](https://github.com/arctic-hen7/perseus/commit/22dac34f87b173e7d16912a1a83a64f13e917ec0))
+* **website:** added necessary images back ([8e6707c](https://github.com/arctic-hen7/perseus/commit/8e6707c55b0b38bed9d53edd3bfa304029837599))
+* fixed runtime panics in app shell ([cb39dc1](https://github.com/arctic-hen7/perseus/commit/cb39dc178f6186588c507da4799d6a21c9aafbf8))
+
+
+### Documentation Changes
+
+* fixed typo ([#171](https://github.com/arctic-hen7/perseus/issues/171)) ([c3e7c35](https://github.com/arctic-hen7/perseus/commit/c3e7c35e5b9c7e0303f0e6d3da459bc05985d14f))
+* update fetching demo readme ([#168](https://github.com/arctic-hen7/perseus/issues/168)) ([402b36e](https://github.com/arctic-hen7/perseus/commit/402b36e0fea335ded44c6a51da598872636d2afb))
+
 ## [0.4.0-beta.5](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.4...v0.4.0-beta.5) (2022-07-18)
 
 
