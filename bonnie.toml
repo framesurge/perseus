@@ -48,7 +48,7 @@ site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\""
 site.desc = "builds and serves the site for local development (requires `concurrently`)"
 site.subcommands.export.cmd = [
     "cd website",
-    "perseus export -sw --cargo-engine-path cargo-clif"
+    "perseus export -sw --cargo-engine-path cargo-clif --custom-watch ../docs/"
 ]
 site.subcommands.export.desc = "exports and serves the site, watching for changes"
 site.subcommands.tinker.cmd = [

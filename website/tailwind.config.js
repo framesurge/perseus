@@ -16,6 +16,7 @@ module.exports = {
             "2xs": "370px",
             xs: "475px",
             ...defaultTheme.screens,
+            "3xl": "1792px",
         },
         colors: {
             // Full color palette
@@ -31,7 +32,13 @@ module.exports = {
             amber: colors.amber,
             yellow: colors.amber,
             green: colors.emerald,
+            lime: colors.lime,
             indigo: colors.indigo,
+            // Colors from meshes
+            "mesh-purple": "#7566e4",
+            "mesh-lilac-dark": "#a06fd2",
+            "mesh-lilac-light": "#b18ed7",
+            "mesh-pink": "#db80bd"
         },
     },
     variants: {},

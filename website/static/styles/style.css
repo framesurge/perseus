@@ -1,21 +1,84 @@
 body {
     min-height: 100%;
-    height: 100vh;
 }
 .__perseus_content {
     min-height: 100%;
     min-width: 100%;
-    height: 100vh;
-    display: grid;
-    grid-template-rows: 1fr auto;
-    position: absolute;
+    /* height: 100vh; /\* Yes, we need this *\/ */
+    height: 100%;
+    /* position: absolute; */
+    /* Style things for the footer to stay at the bottom */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+/* This is equivalent to `main`, but also works on docs pages with a sidebar */
+.scroll-container {
+    flex-grow: 1;
 }
 header {
-    grid-row: 1;
     position: fixed;
     top: 0;
+    z-index: 99;
 }
-footer {
-    grid-row-start: 3;
-    grid-row-end: 4;
+header, footer, .scroll-container {
+    flex-shrink: 0;
+}
+
+* {
+    scroll-behavior: smooth;
+}
+
+/* Font family for the title (Cy Grotesk Grand on Canva) */
+@font-face {
+    font-family: "cy-grotesk-grand-regular";
+    /* Relative to this file! */
+    src: url("../cy-grotesk-grand-regular.woff2") format('woff2');
+}
+.title-font {
+    font-family: "cy-grotesk-grand-regular";
+    line-height: 1.1em;
+    letter-spacing: -0.03em;
+}
+/* The default styling for this is atrocious */
+.copy-to-clipboard-button {
+    border-radius: 0.5rem !important;
+    padding: 0.5rem !important;
+    margin-top: 1rem !important;
+    margin-right: 1rem !important;
+}
+/* This fixes `pre` responsiveness with Prism highlighting */
+.code-toolbar {
+    overflow: auto;
+}
+.w-full .code-toolbar {
+    width: 100%;
+}
+
+.mesh-open-bg {
+    background-image: url("../mesh_open.png");
+    background-size: cover;
+}
+.mesh-close-bg {
+    background-image: url("../mesh_close.png");
+    background-size: cover;
+}
+
+/* Styles for the Lighthouse report (mostly copied from Lighthouse itself for the animations etc.) */
+.font-mono-lh {
+    font-family: 'Roboto Mono', 'Menlo', 'dejavu sans mono', 'Consolas', 'Lucida Console', monospace
+}
+.lh-gauge-arc {
+    stroke-linecap: round;
+    /* Puts the gap in the right place */
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+.lh-gauge-arc-animation {
+    /* Animates around the circle */
+    animation: load-gauge 3s ease forwards;
+    animation-delay: 250ms;
+}
+@keyframes load-gauge {
+    from { stroke-dasharray: 0 352; }
 }
