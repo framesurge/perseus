@@ -1,7 +1,6 @@
 use super::Locales;
 use crate::template::TemplateNodeType;
 use crate::utils::get_path_prefix_client;
-use crate::Html;
 use sycamore::rt::Reflect;
 use sycamore::view::View;
 use wasm_bindgen::JsValue;

@@ -21,8 +21,6 @@ pub(crate) use router_component::{perseus_router, PerseusRouterProps};
 pub use router_state::{RouterLoadState, RouterState};
 
 #[cfg(target_arch = "wasm32")]
-pub(crate) use get_initial_view::{
-    get_global_state, get_initial_state, get_initial_view, GetInitialViewProps, InitialState,
-};
+pub(crate) use get_initial_view::{get_global_state, get_initial_view, GetInitialViewProps};
 #[cfg(target_arch = "wasm32")]
-pub(crate) use get_subsequent_view::get_subsequent_view;
+pub(crate) use get_subsequent_view::{get_subsequent_view, GetSubsequentViewProps};

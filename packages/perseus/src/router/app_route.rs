@@ -2,7 +2,6 @@ use super::{match_route, RouteVerdict};
 use crate::{
     i18n::Locales,
     template::{TemplateMap, TemplateNodeType},
-    Html,
 };
 use std::collections::HashMap;
 use sycamore_router::Route;

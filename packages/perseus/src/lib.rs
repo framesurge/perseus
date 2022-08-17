@@ -62,8 +62,6 @@ mod export;
 mod init;
 mod macros;
 mod page_data;
-#[cfg(target_arch = "wasm32")]
-mod shell;
 mod translator;
 
 // The rest of this file is devoted to module structuring

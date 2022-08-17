@@ -1,22 +1,16 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::i18n::{detect_locale, ClientTranslationsManager, Locales};
-use crate::page_data::PageData;
 use crate::router::match_route;
 use crate::router::{RouteInfo, RouteVerdict, RouterLoadState, RouterState};
-use crate::shell::ShellProps;
-use crate::template::{PageProps, Template, TemplateMap, TemplateNodeType};
+use crate::template::{PageProps, TemplateMap, TemplateNodeType};
 use crate::utils::checkpoint;
-use crate::utils::get_path_prefix_client;
 use crate::ErrorPages;
 use fmterr::fmt_err;
 use std::collections::HashMap;
-use std::rc::Rc;
 use sycamore::prelude::*;
 use sycamore::rt::Reflect; // We can piggyback off Sycamore to avoid bringing in `js_sys`
-use wasm_bindgen::{JsCast, JsValue};
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{Element, Request, RequestInit, RequestMode, Response};
+use wasm_bindgen::JsValue;
 
 pub(crate) struct GetInitialViewProps<'a, 'cx> {
     /// The app's reactive scope.
@@ -71,7 +65,9 @@ pub(crate) fn get_initial_view(
             path,
             template,
             locale,
-            was_incremental_match,
+            // Since we're not requesting anything from the server, we don't need to worry about
+            // whether it's an incremental match or not
+            was_incremental_match: _,
         }) => {
             let path_with_locale = match locale.as_str() {
                 "xx-XX" => path.clone(),

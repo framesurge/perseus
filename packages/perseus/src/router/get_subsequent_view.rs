@@ -1,21 +1,45 @@
-use crate::error_pages::ErrorPageData;
 use crate::errors::*;
-use crate::i18n::ClientTranslationsManager;
 use crate::page_data::PageData;
-use crate::router::{get_global_state, RouteVerdict, RouterLoadState, RouterState};
-use crate::shell::{fetch, ShellProps};
+use crate::router::{get_global_state, RouterLoadState, RouterState, RouteVerdict};
+use crate::i18n::ClientTranslationsManager;
+use crate::utils::fetch;
 use crate::template::{PageProps, Template, TemplateNodeType};
+use std::rc::Rc;
+use crate::error_pages::ErrorPages;
 use crate::utils::checkpoint;
 use crate::utils::get_path_prefix_client;
-use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::collections::HashMap;
-use std::rc::Rc;
 use sycamore::prelude::*;
-use sycamore::rt::Reflect; // We can piggyback off Sycamore to avoid bringing in `js_sys`
-use wasm_bindgen::{JsCast, JsValue};
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{Element, Request, RequestInit, RequestMode, Response};
+
+/// Properties for the app shell. These should be constructed literally when
+/// working with the app shell.
+// #[derive(Debug)]
+pub(crate) struct GetSubsequentViewProps<'a> {
+    /// The app's reactive scope.
+    pub cx: Scope<'a>,
+    /// The path we're rendering for (not the template path, the full path,
+    /// though parsed a little).
+    pub path: String,
+    /// The template to render for.
+    pub template: Rc<Template<TemplateNodeType>>,
+    /// Whether or not the router returned an incremental match (if this page
+    /// exists on a template using incremental generation and it wasn't defined
+    /// at build time).
+    pub was_incremental_match: bool,
+    /// The locale we're rendering in.
+    pub locale: String,
+    /// The router state.
+    pub router_state: RouterState,
+    /// A *client-side* translations manager to use (this manages caching
+    /// translations).
+    pub translations_manager: ClientTranslationsManager,
+    /// The error pages, for use if something fails.
+    pub error_pages: Rc<ErrorPages<TemplateNodeType>>,
+    /// The current route verdict. This will be stored in context so that it can
+    /// be used for possible reloads. Eventually, this will be made obsolete
+    /// when Sycamore supports this natively.
+    pub route_verdict: RouteVerdict<TemplateNodeType>,
+}
 
 /// Gets the view to render on a change of route after the app has already
 /// loaded. This involves network requests to determine the state of the page,
@@ -24,7 +48,7 @@ use web_sys::{Element, Request, RequestInit, RequestMode, Response};
 /// it. We also won't be hydrating anything, so there's no point in getting the
 /// HTML, it actually slows page transitions down.
 pub(crate) async fn get_subsequent_view(
-    ShellProps {
+    GetSubsequentViewProps {
         cx,
         path,
         template,
@@ -34,7 +58,7 @@ pub(crate) async fn get_subsequent_view(
         translations_manager,
         error_pages,
         route_verdict,
-    }: ShellProps<'_>,
+    }: GetSubsequentViewProps<'_>,
 ) -> View<TemplateNodeType> {
     let path_with_locale = match locale.as_str() {
         "xx-XX" => path.clone(),

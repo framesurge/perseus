@@ -2,16 +2,12 @@ use crate::translator::Translator;
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::SsrNode;
-#[cfg(target_arch = "wasm32")]
-use crate::{DomNode, HydrateNode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::Scope;
 use sycamore::view;
 use sycamore::view::View;
-#[cfg(target_arch = "wasm32")]
-use web_sys::Element;
 
 /// The callback to a template the user must provide for error pages. This is
 /// passed the status code, the error message, the URL of the problematic asset,

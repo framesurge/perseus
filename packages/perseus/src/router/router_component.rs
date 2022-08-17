@@ -1,28 +1,23 @@
 use crate::{
     checkpoint,
-    error_pages::ErrorPageData,
     i18n::Locales,
     i18n::{detect_locale, ClientTranslationsManager},
     router::{
-        get_initial_state, get_initial_view, get_subsequent_view, GetInitialViewProps,
-        InitialState, RouterLoadState, RouterState,
+        get_initial_view, get_subsequent_view, GetInitialViewProps, GetSubsequentViewProps, RouterLoadState, RouterState,
     },
     router::{PerseusRoute, RouteInfo, RouteVerdict},
-    shell::ShellProps,
     template::{RenderCtx, TemplateMap, TemplateNodeType},
-    DomNode, ErrorPages, Html,
+    ErrorPages,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
-    prelude::{
-        component, create_effect, create_signal, view, NodeRef, ReadSignal, Scope, Signal, View,
-    },
+    prelude::{component, create_effect, create_signal, view, ReadSignal, Scope, Signal, View},
     Prop,
 };
+use sycamore_futures::spawn_local_scoped;
 use sycamore_router::{HistoryIntegration, RouterBase};
 use web_sys::Element;
-use sycamore_futures::spawn_local_scoped;
 
 // We don't want to bring in a styling library, so we do this the old-fashioned
 // way! We're particualrly comprehensive with these because the user could
@@ -80,7 +75,7 @@ async fn get_view(
             locale,
             was_incremental_match,
         }) => {
-            get_subsequent_view(ShellProps {
+            get_subsequent_view(GetSubsequentViewProps {
                 cx,
                 path: path.clone(),
                 template: template.clone(),
@@ -162,7 +157,8 @@ pub(crate) fn perseus_router(
     // Define a `Signal` for the view we're going to be currently rendering, which
     // will contain the current page, or some kind of error message
     let curr_view: &Signal<View<TemplateNodeType>> = create_signal(cx, initial_view);
-    // This allows us to not run the subsequent load code on the initial load (we need a separate one for the reload commander)
+    // This allows us to not run the subsequent load code on the initial load (we
+    // need a separate one for the reload commander)
     let is_initial = create_signal(cx, true);
     let is_initial_reload_commander = create_signal(cx, true);
 
@@ -248,7 +244,8 @@ pub(crate) fn perseus_router(
     let gvp = get_view_props.clone();
     create_effect(cx, move || {
         router_state.reload_commander.track();
-        // Using a tracker of the initial state separate to the main one is fine, because this effect is guaranteed to fire on page load (they'll both be set)
+        // Using a tracker of the initial state separate to the main one is fine,
+        // because this effect is guaranteed to fire on page load (they'll both be set)
         if *is_initial_reload_commander.get_untracked() {
             is_initial_reload_commander.set(false);
         } else {
@@ -262,7 +259,8 @@ pub(crate) fn perseus_router(
                 // If the first page hasn't loaded yet, terminate now
                 None => return,
             };
-            // Because of the way futures work, a double clone is unfortunately necessary for now
+            // Because of the way futures work, a double clone is unfortunately necessary
+            // for now
             let gvp = gvp.clone();
             spawn_local_scoped(cx, async move {
                 let new_view = get_view(verdict.clone(), gvp).await;

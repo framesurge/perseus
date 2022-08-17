@@ -1,7 +1,7 @@
 use super::Locales;
 use crate::errors::*;
 use crate::i18n::Translator;
-use crate::shell::fetch;
+use crate::utils::fetch;
 use crate::utils::get_path_prefix_client;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -39,7 +39,6 @@ impl ClientTranslationsManager {
     ///
     /// This will also return the cached translator if possible.
     fn preflight_check(&self, locale: &str) -> Result<Option<Translator>, ClientError> {
-        let path_prefix = get_path_prefix_client();
         // Check if we've already cached
         let mut cached_translator = self.cached_translator.borrow_mut();
         if cached_translator.is_some() && cached_translator.as_ref().unwrap().get_locale() == locale
