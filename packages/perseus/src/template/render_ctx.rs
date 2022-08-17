@@ -123,7 +123,8 @@ impl RenderCtx {
                 // The user is trying to thaw on the server, which is an absolutely horrific idea (we should be generating state, and loops could happen)
                 RouterLoadState::Server => panic!("attempted to thaw frozen state on server-side (you can only do this in the browser)"),
             };
-        if curr_route == route {
+        // We handle the possibility that the page tried to reload before it had been made interactive here (we'll just reload wherever we are)
+        if curr_route == route || route == "SERVER" {
             // We'll need to imperatively instruct the router to reload the current page
             // (Sycamore can't do this yet) We know the last verdict will be
             // available because the only way we can be here is if we have a page
