@@ -3,7 +3,8 @@ use crate::{
     i18n::Locales,
     i18n::{detect_locale, ClientTranslationsManager},
     router::{
-        get_initial_view, get_subsequent_view, GetInitialViewProps, GetSubsequentViewProps, RouterLoadState, RouterState,
+        get_initial_view, get_subsequent_view, GetInitialViewProps, GetSubsequentViewProps,
+        RouterLoadState, RouterState,
     },
     router::{PerseusRoute, RouteInfo, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
@@ -318,6 +319,25 @@ pub(crate) fn perseus_router(
         });
     };
 
+    // Append the route announcer to the end of the document body
+    let document = web_sys::window().unwrap().document().unwrap();
+    let announcer = document.create_element("p").unwrap();
+    announcer.set_attribute("aria-live", "assertive").unwrap();
+    announcer.set_attribute("role", "alert").unwrap();
+    announcer
+        .set_attribute("style", ROUTE_ANNOUNCER_STYLES)
+        .unwrap();
+    announcer.set_id("__perseus_route_announcer");
+    let body_elem: Element = document.body().unwrap().into();
+    body_elem
+        .append_with_node_1(&announcer.clone().into())
+        .unwrap();
+    // Update the announcer's text whenever the `route_announcement` changes
+    create_effect(cx, move || {
+        let ra = route_announcement.get();
+        announcer.set_inner_html(&ra);
+    });
+
     view! { cx,
         // This is a lower-level version of `Router` that lets us provide a `Route` with the data we want
         RouterBase {
@@ -350,9 +370,6 @@ pub(crate) fn perseus_router(
                     div {
                         (*curr_view.get())
                     }
-                    // div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
-                    // TODO Add route announcer somehow...
-                    // p(id = "__perseus_route_announcer", aria_live = "assertive", role = "alert", style = ROUTE_ANNOUNCER_STYLES) { (route_announcement.get()) }
                 }
             }
         }

@@ -1,14 +1,14 @@
-use crate::errors::*;
-use crate::page_data::PageData;
-use crate::router::{get_global_state, RouterLoadState, RouterState, RouteVerdict};
-use crate::i18n::ClientTranslationsManager;
-use crate::utils::fetch;
-use crate::template::{PageProps, Template, TemplateNodeType};
-use std::rc::Rc;
 use crate::error_pages::ErrorPages;
+use crate::errors::*;
+use crate::i18n::ClientTranslationsManager;
+use crate::page_data::PageData;
+use crate::router::{get_global_state, RouteVerdict, RouterLoadState, RouterState};
+use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::checkpoint;
+use crate::utils::fetch;
 use crate::utils::get_path_prefix_client;
 use fmterr::fmt_err;
+use std::rc::Rc;
 use sycamore::prelude::*;
 
 /// Properties for the app shell. These should be constructed literally when
