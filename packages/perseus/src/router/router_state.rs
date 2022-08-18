@@ -86,6 +86,12 @@ pub enum RouterLoadState {
         /// we're using i18n).
         path: String,
     },
+    /// An error page has been loaded.
+    ErrorLoaded {
+        /// The full path to the page we intended to load, on which the error
+        /// occurred (including the locale, if we're using i18n).
+        path: String,
+    },
     /// A new page is being loaded, and will soon replace whatever is currently
     /// loaded. The name of the new template is attached.
     Loading {

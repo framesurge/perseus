@@ -11,9 +11,6 @@ use fmterr::fmt_err;
 use std::rc::Rc;
 use sycamore::prelude::*;
 
-/// Properties for the app shell. These should be constructed literally when
-/// working with the app shell.
-// #[derive(Debug)]
 pub(crate) struct GetSubsequentViewProps<'a> {
     /// The app's reactive scope.
     pub cx: Scope<'a>,
@@ -47,6 +44,10 @@ pub(crate) struct GetSubsequentViewProps<'a> {
 /// since that would just take longer, and we have everything we need to render
 /// it. We also won't be hydrating anything, so there's no point in getting the
 /// HTML, it actually slows page transitions down.
+///
+/// Note that this will automatically update the router state just before it
+/// returns, meaning that any errors that may occur after this function has been
+/// called need to reset the router state to be an error.
 pub(crate) async fn get_subsequent_view(
     GetSubsequentViewProps {
         cx,
@@ -130,13 +131,18 @@ pub(crate) async fn get_subsequent_view(
                             .await;
                         let translator = match translator {
                             Ok(translator) => translator,
-                            Err(err) => match &err {
-                                // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view(cx, url, *status, &fmt_err(&err), None),
-                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.get_view(cx, url, 500, &fmt_err(&err), None),
-                                ClientError::LocaleNotSupported { locale } => return error_pages.get_view(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
-                                // No other errors should be returned
-                                _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                            Err(err) => {
+                                router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                                    path: path_with_locale.clone(),
+                                });
+                                match &err {
+                                    // These errors happen because we couldn't get a translator, so they certainly don't get one
+                                    ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view(cx, url, *status, &fmt_err(&err), None),
+                                    ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.get_view(cx, url, 500, &fmt_err(&err), None),
+                                    ClientError::LocaleNotSupported { locale } => return error_pages.get_view(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
+                                    // No other errors should be returned
+                                    _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                                }
                             }
                         };
 
@@ -148,30 +154,45 @@ pub(crate) async fn get_subsequent_view(
                             global_state: get_global_state(),
                         };
                         let template_name = template.get_path();
+                        // Pre-emptively update the router state
+                        checkpoint("page_interactive");
+                        // Update the router state
+                        router_state.set_load_state(RouterLoadState::Loaded {
+                            template_name,
+                            path: path_with_locale,
+                        });
                         // Now return the view that should be rendered
                         template.render_for_template_client(page_props, cx, translator)
-                        //// TODO Run this after rendering
-                        // checkpoint("page_interactive");
-                        // // Update the router state
-                        // router_state.set_load_state(RouterLoadState::Loaded {
-                        //     template_name,
-                        //     path: path_with_locale,
-                        // });
                     }
                     // If the page failed to serialize, an exception has occurred
-                    Err(err) => panic!("page data couldn't be serialized: '{}'", err),
+                    Err(err) => {
+                        router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                            path: path_with_locale.clone(),
+                        });
+                        panic!("page data couldn't be serialized: '{}'", err)
+                    }
                 }
             }
             // No translators ready yet
-            None => error_pages.get_view(cx, &asset_url, 404, "page not found", None),
-        },
-        Err(err) => match &err {
-            // No translators ready yet
-            ClientError::FetchError(FetchError::NotOk { url, status, .. }) => {
-                error_pages.get_view(cx, url, *status, &fmt_err(&err), None)
+            None => {
+                router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                    path: path_with_locale.clone(),
+                });
+                error_pages.get_view(cx, &asset_url, 404, "page not found", None)
             }
-            // No other errors should be returned
-            _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
         },
+        Err(err) => {
+            router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                path: path_with_locale.clone(),
+            });
+            match &err {
+                // No translators ready yet
+                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => {
+                    error_pages.get_view(cx, url, *status, &fmt_err(&err), None)
+                }
+                // No other errors should be returned
+                _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
+            }
+        }
     }
 }

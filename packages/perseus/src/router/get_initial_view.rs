@@ -42,6 +42,10 @@ pub(crate) struct GetInitialViewProps<'a, 'cx> {
 /// Note that this function can only be run once, since it will delete the
 /// initial state infrastructure from the page entirely. If this function is run
 /// without that infrastructure being present, an error page will be rendered.
+///
+/// Note that this will automatically update the router state just before it
+/// returns, meaning that any errors that may occur after this function has been
+/// called need to reset the router state to be an error.
 pub(crate) fn get_initial_view(
     GetInitialViewProps {
         cx,
@@ -105,13 +109,16 @@ pub(crate) fn get_initial_view(
                     let translations_str = match get_translations() {
                         Some(translations_str) => translations_str,
                         None => {
+                            router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                                path: path_with_locale.clone(),
+                            });
                             return error_pages.get_view(
                                 cx,
                                 "*",
                                 500,
                                 "expected translations in global variable, but none found",
                                 None,
-                            )
+                            );
                         }
                     };
                     let translator = translations_manager
@@ -119,6 +126,9 @@ pub(crate) fn get_initial_view(
                     let translator = match translator {
                         Ok(translator) => translator,
                         Err(err) => {
+                            router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                                path: path_with_locale.clone(),
+                            });
                             match &err {
                                 // These errors happen because we couldn't get a translator, so they certainly don't get one
                                 ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view(cx, url, *status, &fmt_err(&err), None),
@@ -136,20 +146,24 @@ pub(crate) fn get_initial_view(
                         state,
                         global_state,
                     };
+                    // Pre-emptively declare the page interactive 9since all we do from this point
+                    // is hydrate
+                    checkpoint("page_interactive");
+                    // Update the router state
+                    router_state.set_load_state(RouterLoadState::Loaded {
+                        template_name: path,
+                        path: path_with_locale,
+                    });
                     // Return the actual template, for rendering/hydration
                     template.render_for_template_client(page_props, cx, translator)
-                    // // TODO This needs to be done after rendering
-                    // checkpoint("page_interactive");
-                    // // Update the router state
-                    // router_state.set_load_state(RouterLoadState::Loaded {
-                    //     template_name: path,
-                    //     path: path_with_locale,
-                    // });
                 }
                 // We have an error that the server sent down, so we should just return that error
                 // view
                 InitialState::Error(ErrorPageData { url, status, err }) => {
                     checkpoint("initial_state_error");
+                    router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                        path: path_with_locale.clone(),
+                    });
                     error_pages.get_view(cx, &url, status, &err, None)
                 }
                 // The entire purpose of this function is to work with the initial state, so if this
@@ -158,6 +172,9 @@ pub(crate) fn get_initial_view(
                 // hedging my bets)
                 InitialState::NotPresent => {
                     checkpoint("initial_state_error");
+                    router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                        path: path_with_locale.clone(),
+                    });
                     error_pages.get_view(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None)
                 }
             }
@@ -169,6 +186,7 @@ pub(crate) fn get_initial_view(
         RouteVerdict::NotFound => {
             checkpoint("not_found");
             if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
+                router_state.set_load_state(RouterLoadState::ErrorLoaded { path: url.clone() });
                 // If this is an error from an initial state page, then we'll hydrate whatever's
                 // already there
                 //
@@ -176,6 +194,10 @@ pub(crate) fn get_initial_view(
                 // provide no translator (and one certainly won't exist in context)
                 error_pages.get_view(cx, &url, status, &err, None)
             } else {
+                // TODO Update the router state
+                // router_state.set_load_state(RouterLoadState::ErrorLoaded {
+                //     path: path_with_locale.clone()
+                // });
                 // Given that were only handling the initial load, this should really never
                 // happen...
                 error_pages.get_view(cx, "", 404, "not found", None)
