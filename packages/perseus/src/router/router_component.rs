@@ -4,7 +4,7 @@ use crate::{
     i18n::{detect_locale, ClientTranslationsManager},
     router::{
         get_initial_view, get_subsequent_view, GetInitialViewProps, GetSubsequentViewProps,
-        RouterLoadState, RouterState,
+        InitialView, RouterLoadState, RouterState,
     },
     router::{PerseusRoute, RouteInfo, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
@@ -13,7 +13,9 @@ use crate::{
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
-    prelude::{component, create_effect, create_signal, view, ReadSignal, Scope, Signal, View},
+    prelude::{
+        component, create_effect, create_signal, on_mount, view, ReadSignal, Scope, Signal, View,
+    },
     Prop,
 };
 use sycamore_futures::spawn_local_scoped;
@@ -90,7 +92,14 @@ async fn get_view(
             .await
         }
         // For subsequent loads, this should only be possible if the dev forgot `link!()`
-        RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
+        RouteVerdict::LocaleDetection(path) => {
+            let dest = detect_locale(path.clone(), &locales);
+            // Since this is only for subsequent loads, we know the router is instantiated
+            // This shouldn't be a replacement navigation, since the user has deliberatley
+            // navigated here
+            sycamore_router::navigate(&dest);
+            View::empty()
+        }
         RouteVerdict::NotFound => {
             checkpoint("not_found");
             // TODO Update the router state here (we need a path though...)
@@ -156,6 +165,21 @@ pub(crate) fn perseus_router(
         templates: &templates,
         render_cfg: &render_cfg,
     });
+    let initial_view = match initial_view {
+        InitialView::View(initial_view) => initial_view,
+        // if we need to redirect, then we'll create a fake view that will just execute that code
+        // (which we can guarantee to run after the router is ready)
+        InitialView::Redirect(dest) => {
+            let dest = dest.clone();
+            on_mount(cx, move || {
+                sycamore_router::navigate_replace(&dest);
+            });
+            // Note that using an empty view doesn't lead to any layout shift, since
+            // redirects have nothing rendered on the server-side (so this is actually
+            // correct hydration)
+            View::empty()
+        }
+    };
     // Define a `Signal` for the view we're going to be currently rendering, which
     // will contain the current page, or some kind of error message
     let curr_view: &Signal<View<TemplateNodeType>> = create_signal(cx, initial_view);
@@ -356,6 +380,7 @@ pub(crate) fn perseus_router(
                         spawn_local_scoped(cx, async move {
                             let route = route.get();
                             let verdict = route.get_verdict();
+                            crate::web_log!("{:#?}", &verdict);
                             let new_view = get_view(verdict.clone(), gvp).await;
                             curr_view.set(new_view);
                         });

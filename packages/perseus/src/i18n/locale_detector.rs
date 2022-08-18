@@ -11,8 +11,10 @@ use wasm_bindgen::JsValue;
 /// browser i18n settings). Any pages that direct to this should be explicitly
 /// excluded from search engines (they don't show anything until redirected).
 /// This is guided by [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647.txt), but is not yet fully compliant (only supports `xx-XX` form locales).
-/// Note that this bypasses Sycamore's routing logic and triggers a full reload.
-pub(crate) fn detect_locale(url: String, locales: &Locales) -> View<TemplateNodeType> {
+///
+/// Note that this does not actually redirect on its own, it merely provides an
+/// argument for `sycamore_router::navigate_replace()`.
+pub(crate) fn detect_locale(url: String, locales: &Locales) -> String {
     // If nothing matches, we'll use the default locale
     let mut locale = locales.default.clone();
 
@@ -69,12 +71,8 @@ pub(crate) fn detect_locale(url: String, locales: &Locales) -> View<TemplateNode
         &JsValue::undefined(),
     )
     .unwrap();
-    // Imperatively navigate to the localized route
-    // This certainly shouldn't fail...
-    sycamore_router::navigate_replace(new_loc);
 
-    // To satisfy the return type (we will never get here)
-    View::empty()
+    new_loc.to_string()
 }
 
 /// The possible outcomes of trying to match a locale.

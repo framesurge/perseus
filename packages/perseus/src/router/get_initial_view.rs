@@ -57,7 +57,7 @@ pub(crate) fn get_initial_view(
         templates,
         render_cfg,
     }: GetInitialViewProps<'_, '_>,
-) -> View<TemplateNodeType> {
+) -> InitialView {
     // Start by figuring out what template we should be rendering
     let path_segments = path
         .split('/')
@@ -72,7 +72,7 @@ pub(crate) fn get_initial_view(
             // Since we're not requesting anything from the server, we don't need to worry about
             // whether it's an incremental match or not
             was_incremental_match: _,
-        }) => {
+        }) => InitialView::View({
             let path_with_locale = match locale.as_str() {
                 "xx-XX" => path.clone(),
                 locale => format!("{}/{}", locale, &path),
@@ -112,13 +112,13 @@ pub(crate) fn get_initial_view(
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                 path: path_with_locale.clone(),
                             });
-                            return error_pages.get_view(
+                            return InitialView::View(error_pages.get_view(
                                 cx,
                                 "*",
                                 500,
                                 "expected translations in global variable, but none found",
                                 None,
-                            );
+                            ));
                         }
                     };
                     let translator = translations_manager
@@ -129,14 +129,14 @@ pub(crate) fn get_initial_view(
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                 path: path_with_locale.clone(),
                             });
-                            match &err {
+                            return InitialView::View(match &err {
                                 // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view(cx, url, *status, &fmt_err(&err), None),
-                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.get_view(cx, url, 500, &fmt_err(&err), None),
-                                ClientError::LocaleNotSupported { .. } => return error_pages.get_view(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
+                                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages.get_view(cx, url, *status, &fmt_err(&err), None),
+                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => error_pages.get_view(cx, url, 500, &fmt_err(&err), None),
+                                ClientError::LocaleNotSupported { .. } => error_pages.get_view(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
                                 // No other errors should be returned
                                 _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
-                            }
+                            });
                         }
                     };
 
@@ -178,12 +178,14 @@ pub(crate) fn get_initial_view(
                     error_pages.get_view(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None)
                 }
             }
-        }
+        }),
         // If the user is using i18n, then they'll want to detect the locale on any paths
         // missing a locale Those all go to the same system that redirects to the
         // appropriate locale Note that `container` doesn't exist for this scenario
-        RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
-        RouteVerdict::NotFound => {
+        RouteVerdict::LocaleDetection(path) => {
+            InitialView::Redirect(detect_locale(path.clone(), &locales))
+        }
+        RouteVerdict::NotFound => InitialView::View({
             checkpoint("not_found");
             if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
                 router_state.set_load_state(RouterLoadState::ErrorLoaded { path: url.clone() });
@@ -202,8 +204,22 @@ pub(crate) fn get_initial_view(
                 // happen...
                 error_pages.get_view(cx, "", 404, "not found", None)
             }
-        }
+        }),
     }
+}
+
+/// A representation of the possible outcomes of getting the view for the
+/// initial load.
+pub(crate) enum InitialView {
+    /// A view is available to be rendered/hydrated.
+    View(View<TemplateNodeType>),
+    /// We need to redirect somewhere else, and the path to redirect to is
+    /// attached.
+    ///
+    /// Currently, this is only used by locale redirection, though this could
+    /// theoretically also be used for server-level reloads, if those
+    /// directives are ever supported.
+    Redirect(String),
 }
 
 /// A representation of whether or not the initial state was present. If it was,
