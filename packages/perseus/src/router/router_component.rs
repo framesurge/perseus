@@ -380,7 +380,6 @@ pub(crate) fn perseus_router(
                         spawn_local_scoped(cx, async move {
                             let route = route.get();
                             let verdict = route.get_verdict();
-                            crate::web_log!("{:#?}", &verdict);
                             let new_view = get_view(verdict.clone(), gvp).await;
                             curr_view.set(new_view);
                         });
