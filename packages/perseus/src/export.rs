@@ -129,6 +129,7 @@ pub async fn create_translation_file(
 }
 
 /// Exports a single path within a template.
+#[allow(clippy::too_many_arguments)]
 pub async fn export_path(
     (path, template_path): (String, String),
     templates: &TemplateMap<SsrNode>,
@@ -235,7 +236,7 @@ pub async fn export_path(
         // not using i18n
         let full_html = html_shell
             .clone()
-            .page_data(&page_data, global_state, &String::new())
+            .page_data(&page_data, global_state, "")
             .to_string();
         // We don't add an extension because this will be queried directly by the
         // browser
