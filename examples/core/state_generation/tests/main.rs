@@ -111,7 +111,7 @@ async fn revalidation(c: &mut Client) -> Result<(), fantoccini::error::CmdError>
     // be different
     std::thread::sleep(std::time::Duration::from_secs(5));
     c.refresh().await?;
-    wait_for_checkpoint!("router_entry", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     let new_text = c.find(Locator::Css("p")).await?.text().await?;
     assert_ne!(text, new_text);
 
@@ -135,7 +135,7 @@ async fn revalidation_and_incremental_generation(
         // be different
         std::thread::sleep(std::time::Duration::from_secs(5));
         c.refresh().await?;
-        wait_for_checkpoint!("router_entry", 0, c);
+        wait_for_checkpoint!("page_interactive", 0, c);
         let new_text = c.find(Locator::Css("p")).await?.text().await?;
         assert_ne!(text, new_text);
 
