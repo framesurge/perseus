@@ -10,6 +10,10 @@ use std::rc::Rc;
 /// the correct error page. Note that this is only for use in initial loads
 /// (other systems handle errors in subsequent loads, and the app shell
 /// exists then so the server doesn't have to do nearly as much work).
+///
+/// This doesn't inject translations of any sort, deliberately, since
+/// we can't ensure that they would even exist --- this is used for all
+/// types of server-side errors.
 pub fn build_error_page(
     url: &str,
     status: u16,
