@@ -1,5 +1,9 @@
 #[cfg(target_arch = "wasm32")]
 mod app_route;
+#[cfg(target_arch = "wasm32")]
+mod get_initial_view;
+#[cfg(target_arch = "wasm32")]
+mod get_subsequent_view;
 mod match_route;
 mod route_verdict;
 #[cfg(target_arch = "wasm32")]
@@ -15,3 +19,10 @@ pub use route_verdict::{RouteInfo, RouteInfoAtomic, RouteVerdict, RouteVerdictAt
 #[cfg(target_arch = "wasm32")]
 pub(crate) use router_component::{perseus_router, PerseusRouterProps};
 pub use router_state::{RouterLoadState, RouterState};
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) use get_initial_view::{
+    get_global_state, get_initial_view, GetInitialViewProps, InitialView,
+};
+#[cfg(target_arch = "wasm32")]
+pub(crate) use get_subsequent_view::{get_subsequent_view, GetSubsequentViewProps};

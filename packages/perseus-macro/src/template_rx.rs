@@ -153,7 +153,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         // add it to the page state store
         let state_arg = &fn_args[1];
         let rx_props_ty = match state_arg {
-            FnArg::Typed(PatType { ty, .. }) => make_mid(&**ty),
+            FnArg::Typed(PatType { ty, .. }) => make_mid(ty),
             FnArg::Receiver(_) => unreachable!(),
         };
         // There's also a second argument for the global state, which we'll deserialize
@@ -163,7 +163,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         // variable (this should be fine?)
         let global_state_arg = &fn_args[2];
         let (global_state_arg_pat, global_state_rx) = match global_state_arg {
-            FnArg::Typed(PatType { pat, ty, .. }) => (pat, make_mid(&**ty)),
+            FnArg::Typed(PatType { pat, ty, .. }) => (pat, make_mid(ty)),
             FnArg::Receiver(_) => unreachable!(),
         };
         let name_string = name.to_string();
@@ -264,7 +264,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         // add it to the page state store
         let arg = &fn_args[1];
         let rx_props_ty = match arg {
-            FnArg::Typed(PatType { ty, .. }) => make_mid(&**ty),
+            FnArg::Typed(PatType { ty, .. }) => make_mid(ty),
             FnArg::Receiver(_) => unreachable!(),
         };
         let name_string = name.to_string();

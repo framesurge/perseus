@@ -1,4 +1,5 @@
 use super::rx_state::AnyFreeze;
+#[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
 use crate::make_async_trait;
 use crate::template::RenderFnResult;
@@ -10,6 +11,7 @@ use std::rc::Rc;
 make_async_trait!(GlobalStateCreatorFnType, RenderFnResult<String>);
 /// The type of functions that generate global state. These will generate a
 /// `String` for their custom global state type.
+#[cfg(not(target_arch = "wasm32"))]
 pub type GlobalStateCreatorFn = Box<dyn GlobalStateCreatorFnType + Send + Sync>;
 
 /// A creator for global state. This stores user-provided functions that will be
