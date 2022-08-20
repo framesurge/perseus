@@ -7,6 +7,7 @@ use fmterr::fmt_err;
 use perseus::{
     errors::err_to_status_code,
     i18n::TranslationsManager,
+    internal::PageDataPartial,
     server::{get_page_for_template, GetPageProps, ServerOptions},
     stores::{ImmutableStore, MutableStore},
     Request,
@@ -85,18 +86,23 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
                 translations_manager: &translations_manager,
             },
             template,
+            false,
         )
         .await;
         match page_data {
             Ok(page_data) => {
+                let partial_page_data = PageDataPartial {
+                    state: page_data.state,
+                    head: page_data.head,
+                };
                 // http_res.content_type("text/html");
                 // Generate and add HTTP headers
                 let mut header_map = HeaderMap::new();
-                for (key, val) in template.get_headers(page_data.state.clone()) {
+                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
                     header_map.insert(key.unwrap(), val);
                 }
 
-                let page_data_str = serde_json::to_string(&page_data).unwrap();
+                let page_data_str = serde_json::to_string(&partial_page_data).unwrap();
 
                 (StatusCode::OK, header_map, page_data_str)
             }

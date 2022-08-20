@@ -101,6 +101,7 @@ pub use client::{run_client, ClientReturn};
 /// TODO
 #[cfg(not(target_arch = "wasm32"))]
 pub mod internal {
+    pub use crate::page_data::*;
     pub use crate::{build::*, export::*};
 }
 /// Internal utilities for logging. These are just re-exports so that users

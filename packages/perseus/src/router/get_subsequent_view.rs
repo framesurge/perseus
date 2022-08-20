@@ -1,7 +1,7 @@
 use crate::error_pages::ErrorPages;
 use crate::errors::*;
 use crate::i18n::ClientTranslationsManager;
-use crate::page_data::PageData;
+use crate::page_data::PageDataPartial;
 use crate::router::{get_global_state, RouteVerdict, RouterLoadState, RouterState};
 use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::checkpoint;
@@ -97,7 +97,7 @@ pub(crate) async fn get_subsequent_view(
         Ok(page_data_str_opt) => match page_data_str_opt {
             Some(page_data_str) => {
                 // All good, deserialize the page data
-                let page_data = serde_json::from_str::<PageData>(&page_data_str);
+                let page_data = serde_json::from_str::<PageDataPartial>(&page_data_str);
                 match page_data {
                     Ok(page_data) => {
                         // Interpolate the metadata directly into the document's `<head>`

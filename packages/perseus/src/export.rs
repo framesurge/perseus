@@ -1,5 +1,6 @@
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
+use crate::page_data::PageDataPartial;
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
 use crate::template::TemplateMap;
@@ -216,7 +217,11 @@ pub async fn export_path(
 
             // Serialize the page data to JSON and write it as a partial (fetched by the app
             // shell for subsequent loads)
-            let partial = serde_json::to_string(&page_data).unwrap();
+            let partial_page_data = PageDataPartial {
+                state: page_data.state,
+                head: page_data.head,
+            };
+            let partial = serde_json::to_string(&partial_page_data).unwrap();
             immutable_store
                 .write(
                     &format!("exported/.perseus/page/{}/{}.json", locale, &path),
@@ -246,7 +251,11 @@ pub async fn export_path(
 
         // Serialize the page data to JSON and write it as a partial (fetched by the app
         // shell for subsequent loads)
-        let partial = serde_json::to_string(&page_data).unwrap();
+        let partial_page_data = PageDataPartial {
+            state: page_data.state,
+            head: page_data.head,
+        };
+        let partial = serde_json::to_string(&partial_page_data).unwrap();
         immutable_store
             .write(
                 &format!("exported/.perseus/page/{}/{}.json", locales.default, &path),
