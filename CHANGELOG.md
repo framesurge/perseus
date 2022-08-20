@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.7](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.6...v0.4.0-beta.7) (2022-08-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* - Added `ErrorLoaded { path }` case to `RouterLoadState` (which must now be matched)
+- Removed `page_visible testing` checkpoint (use `page_interactive` instead)
+- `router_entry checkpoint` is now only fired on subsequent loads
+
+### Features
+
+* **cli:** added support for automatically updating tools from lockfile ([52ab3f1](https://github.com/arctic-hen7/perseus/commit/52ab3f17dec243fa2759489b7e5116c9c4ac4de9)), closes [#169](https://github.com/arctic-hen7/perseus/issues/169)
+* redesigned app shell with support for hydration ([#177](https://github.com/arctic-hen7/perseus/issues/177)) ([d407727](https://github.com/arctic-hen7/perseus/commit/d4077272fe2849546a043a8ae73f723635bee8ea))
+
+
+### Bug Fixes
+
+* fixed response caching functions ([e29e5d2](https://github.com/arctic-hen7/perseus/commit/e29e5d2be36920126a32eca2ac3e4edbca6b8a95))
+
+
+### Performance Improvements
+
+* removed unnecessary content pre-rendering from server render process ([e1c9ad3](https://github.com/arctic-hen7/perseus/commit/e1c9ad36421e3aa8f21b0d9065c22d5082e9bde7))
+
 ## [0.4.0-beta.6](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.5...v0.4.0-beta.6) (2022-08-13)
 
 
