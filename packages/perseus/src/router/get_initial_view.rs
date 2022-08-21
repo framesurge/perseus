@@ -112,7 +112,7 @@ pub(crate) fn get_initial_view(
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                 path: path_with_locale.clone(),
                             });
-                            return InitialView::View(error_pages.get_view(
+                            return InitialView::View(error_pages.get_view_and_render_head(
                                 cx,
                                 "*",
                                 500,
@@ -131,9 +131,9 @@ pub(crate) fn get_initial_view(
                             });
                             return InitialView::View(match &err {
                                 // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages.get_view(cx, url, *status, &fmt_err(&err), None),
-                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => error_pages.get_view(cx, url, 500, &fmt_err(&err), None),
-                                ClientError::LocaleNotSupported { .. } => error_pages.get_view(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
+                                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages.get_view_and_render_head(cx, url, *status, &fmt_err(&err), None),
+                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None),
+                                ClientError::LocaleNotSupported { .. } => error_pages.get_view_and_render_head(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
                                 // No other errors should be returned
                                 _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                             });
@@ -164,10 +164,12 @@ pub(crate) fn get_initial_view(
                     router_state.set_load_state(RouterLoadState::ErrorLoaded {
                         path: path_with_locale.clone(),
                     });
+                    // We don't need to replace the head, because the server's handled that for us
                     error_pages.get_view(cx, &url, status, &err, None)
                 }
                 // The entire purpose of this function is to work with the initial state, so if this
-                // is true, then we have a problem Theoretically, this should never
+                // is true, then we have a problem
+                // Theoretically, this should never
                 // happen... (but I've seen magical infinite loops that crash browsers, so I'm
                 // hedging my bets)
                 InitialState::NotPresent => {
@@ -175,7 +177,7 @@ pub(crate) fn get_initial_view(
                     router_state.set_load_state(RouterLoadState::ErrorLoaded {
                         path: path_with_locale.clone(),
                     });
-                    error_pages.get_view(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None)
+                    error_pages.get_view_and_render_head(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None)
                 }
             }
         }),
@@ -194,6 +196,8 @@ pub(crate) fn get_initial_view(
                 //
                 // Since this page has come from the server, anything could have happened, so we
                 // provide no translator (and one certainly won't exist in context)
+                // But we don't need to replace the head, since the server will have already
+                // done that
                 error_pages.get_view(cx, &url, status, &err, None)
             } else {
                 // TODO Update the router state
@@ -202,7 +206,7 @@ pub(crate) fn get_initial_view(
                 // });
                 // Given that were only handling the initial load, this should really never
                 // happen...
-                error_pages.get_view(cx, "", 404, "not found", None)
+                error_pages.get_view_and_render_head(cx, "", 404, "not found", None)
             }
         }),
     }

@@ -1,4 +1,6 @@
 use crate::translator::Translator;
+#[cfg(target_arch = "wasm32")]
+use crate::utils::replace_head;
 use crate::Html;
 use crate::SsrNode;
 use serde::{Deserialize, Serialize};
@@ -7,8 +9,6 @@ use std::rc::Rc;
 use sycamore::prelude::Scope;
 use sycamore::view;
 use sycamore::view::View;
-#[cfg(target_arch = "wasm32")]
-use crate::utils::replace_head;
 
 /// The function to a template the user must provide for error pages. This is
 /// passed the status code, the error message, the URL of the problematic asset,
@@ -17,10 +17,11 @@ use crate::utils::replace_head;
 /// rely on symbols or the like in these cases.
 pub type ErrorPageTemplate<G> =
     Box<dyn Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
-/// The function the user must provide to render the document `<head>` associated
-/// with a certain error page. Note that this will only be rendered on the server-side,
-/// and will be completely unreactive, being directly interpolated into the document
-/// metadata on the client-side if the error page is loaded.
+/// The function the user must provide to render the document `<head>`
+/// associated with a certain error page. Note that this will only be rendered
+/// on the server-side, and will be completely unreactive, being directly
+/// interpolated into the document metadata on the client-side if the error page
+/// is loaded.
 pub type ErrorPageHeadTemplate = ErrorPageTemplate<SsrNode>;
 
 /// A representation of the views configured in an app for responding to errors.
@@ -41,8 +42,8 @@ pub type ErrorPageHeadTemplate = ErrorPageTemplate<SsrNode>;
 /// case you should try to display language-agnostic information).
 ///
 /// The second closure to each error page is for the document `<head>` that will
-/// be rendered in conjunction with that error page. Importantly, this is completely
-/// unreactive, and is rendered to a string on the engine-side.
+/// be rendered in conjunction with that error page. Importantly, this is
+/// completely unreactive, and is rendered to a string on the engine-side.
 ///
 /// In development, you can get away with not defining any error pages for your
 /// app, as Perseus has a simple inbuilt default, though, when you try to go to
@@ -94,13 +95,19 @@ impl<G: Html> ErrorPages<G> {
             + Sync
             + 'static,
     ) {
-        self.status_pages.insert(status, (Box::new(page), Box::new(head)));
+        self.status_pages
+            .insert(status, (Box::new(page), Box::new(head)));
     }
     /// Adds a new page for the given status code. If a page was already defined
     /// for the given code, it will be updated by the mechanics of
     /// the internal `HashMap`. This differs from `.add_page()` in that it takes
     /// an `Rc`, which can be useful for plugins.
-    pub fn add_page_rc(&mut self, status: u16, page: ErrorPageTemplate<G>, head: ErrorPageHeadTemplate) {
+    pub fn add_page_rc(
+        &mut self,
+        status: u16,
+        page: ErrorPageTemplate<G>,
+        head: ErrorPageHeadTemplate,
+    ) {
         self.status_pages.insert(status, (page, head));
     }
     /// Gets the internal template function to render.
@@ -124,7 +131,8 @@ impl<G: Html> ErrorPages<G> {
         let template_fn = self.get_template_fn(status);
         template_fn(cx, url.to_string(), status, err.to_string(), translator)
     }
-    /// Gets the `View<G>` to render the content and automatically renders and replaces the document `<head>` appropriately.
+    /// Gets the `View<G>` to render the content and automatically renders and
+    /// replaces the document `<head>` appropriately.
     #[cfg(target_arch = "wasm32")]
     pub fn get_view_and_render_head(
         &self,
@@ -132,7 +140,7 @@ impl<G: Html> ErrorPages<G> {
         url: &str,
         status: u16,
         err: &str,
-        translator: Option<Rc<Translator>>
+        translator: Option<Rc<Translator>>,
     ) -> View<G> {
         let head = self.render_head(url, status, err, translator.clone());
         replace_head(&head);
@@ -140,7 +148,8 @@ impl<G: Html> ErrorPages<G> {
     }
     /// Renders the head of an error page to a `String`.
     ///
-    /// This is needed on the browser-side to render error pages that occur abruptly.
+    /// This is needed on the browser-side to render error pages that occur
+    /// abruptly.
     pub fn render_head(
         &self,
         url: &str,

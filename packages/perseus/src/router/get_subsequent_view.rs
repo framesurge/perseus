@@ -7,10 +7,10 @@ use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::checkpoint;
 use crate::utils::fetch;
 use crate::utils::get_path_prefix_client;
+use crate::utils::replace_head;
 use fmterr::fmt_err;
 use std::rc::Rc;
 use sycamore::prelude::*;
-use crate::utils::replace_head;
 
 pub(crate) struct GetSubsequentViewProps<'a> {
     /// The app's reactive scope.

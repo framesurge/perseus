@@ -131,8 +131,16 @@ pub struct FunctionalPluginSettingsActions<G: Html> {
     /// Adds additional error pages. This must return a map of HTTP status codes
     /// to erro page templates. Note that these have the power to override
     /// the user's error pages.
-    pub add_error_pages:
-        FunctionalPluginAction<(), HashMap<u16, (crate::error_pages::ErrorPageTemplate<G>, crate::error_pages::ErrorPageHeadTemplate)>>,
+    pub add_error_pages: FunctionalPluginAction<
+        (),
+        HashMap<
+            u16,
+            (
+                crate::error_pages::ErrorPageTemplate<G>,
+                crate::error_pages::ErrorPageHeadTemplate,
+            ),
+        >,
+    >,
     /// Actions pertaining to the HTML shell, in their own category for
     /// cleanliness (as there are quite a few).
     pub html_shell_actions: FunctionalPluginHtmlShellActions,

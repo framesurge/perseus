@@ -10,9 +10,9 @@ mod decode_time_str;
 mod fetch;
 mod log;
 mod path_prefix;
-mod test;
 #[cfg(target_arch = "wasm32")]
 mod replace_head;
+mod test;
 
 pub(crate) use async_fn_trait::AsyncFnReturn;
 #[cfg(not(target_arch = "wasm32"))]
