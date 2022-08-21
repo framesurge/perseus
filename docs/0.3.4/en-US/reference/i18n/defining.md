@@ -6,7 +6,7 @@ The first part of setting up i18n in Perseus is to state that your app uses it, 
 {{#include ../../../../examples/core/i18n/src/lib.rs}}
 ```
 
-There are two paremeters to the `.locales()` function: the default locale for your app, and then any other locales it supports (other than the default). Each of these locales should be specified in the form `xx-XX`, where `xx` is the language code (e.g. `en` for English, `fr` for French, `la` for Latin) and `XX` is the region code (e.g. `US` for United States, `GB` for Great Britain, `CN` for China).
+There are two parameters to the `.locales()` function: the default locale for your app, and then any other locales it supports (other than the default). Each of these locales should be specified in the form `xx-XX`, where `xx` is the language code (e.g. `en` for English, `fr` for French, `la` for Latin) and `XX` is the region code (e.g. `US` for United States, `GB` for Great Britain, `CN` for China).
 
 ## Routing
 

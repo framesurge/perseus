@@ -1,8 +1,8 @@
 # Listening to the Router
 
-Given that Perseus loads new pages without reloading the browser tab, users will have no way to know that their clicking on a link actually did anything, which can be extremely annoying for your users, and may even dissaude them from using your site! Usually, this is circumvented by how quickly Perseus can load a new page, but, if a user happens to be on a particularly slow connection, it could take several seconds.
+Given that Perseus loads new pages without reloading the browser tab, users will have no way to know that their clicking on a link actually did anything, which can be extremely annoying for your users, and may even dissuade them from using your site! Usually, this is circumvented by how quickly Perseus can load a new page, but, if a user happens to be on a particularly slow connection, it could take several seconds.
 
-To avoid this, many modern frameworks support a loading bar at the top of the page to show that something is actully happening. Some sites prefer a more intrusive full page overlay with a loading indicator. No matter what approach you choose, Perseus gets out of your way and lets you build it, by using *router state*. This is a Sycamore `ReadSignal` that you can get access to in your templates and then use to listen for events on the router.
+To avoid this, many modern frameworks support a loading bar at the top of the page to show that something is actually happening. Some sites prefer a more intrusive full page overlay with a loading indicator. No matter what approach you choose, Perseus gets out of your way and lets you build it, by using *router state*. This is a Sycamore `ReadSignal` that you can get access to in your templates and then use to listen for events on the router.
 
 ## Usage
 
