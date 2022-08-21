@@ -7,6 +7,7 @@ use crate::template::{PageProps, Template, TemplateNodeType};
 use crate::utils::checkpoint;
 use crate::utils::fetch;
 use crate::utils::get_path_prefix_client;
+use crate::utils::replace_head;
 use fmterr::fmt_err;
 use std::rc::Rc;
 use sycamore::prelude::*;
@@ -48,6 +49,7 @@ pub(crate) struct GetSubsequentViewProps<'a> {
 /// Note that this will automatically update the router state just before it
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
+// TODO Eliminate all panics in this function
 pub(crate) async fn get_subsequent_view(
     GetSubsequentViewProps {
         cx,
@@ -101,28 +103,7 @@ pub(crate) async fn get_subsequent_view(
                 match page_data {
                     Ok(page_data) => {
                         // Interpolate the metadata directly into the document's `<head>`
-                        // Get the current head
-                        let head_elem = web_sys::window()
-                            .unwrap()
-                            .document()
-                            .unwrap()
-                            .query_selector("head")
-                            .unwrap()
-                            .unwrap();
-                        let head_html = head_elem.inner_html();
-                        // We'll assume that there's already previously interpolated head in
-                        // addition to the hardcoded stuff, but it will be separated by the
-                        // server-injected delimiter comment
-                        // Thus, we replace the stuff after that delimiter comment with the
-                        // new head
-                        let head_parts: Vec<&str> = head_html
-                            .split("<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->")
-                            .collect();
-                        let new_head = format!(
-                            "{}\n<!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->\n{}",
-                            head_parts[0], &page_data.head
-                        );
-                        head_elem.set_inner_html(&new_head);
+                        replace_head(&page_data.head);
 
                         // Now get the translator (this will be cached if the user hasn't switched
                         // locales)
@@ -137,9 +118,9 @@ pub(crate) async fn get_subsequent_view(
                                 });
                                 match &err {
                                     // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                    ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view(cx, url, *status, &fmt_err(&err), None),
-                                    ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.get_view(cx, url, 500, &fmt_err(&err), None),
-                                    ClientError::LocaleNotSupported { locale } => return error_pages.get_view(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
+                                    ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view_and_render_head(cx, url, *status, &fmt_err(&err), None),
+                                    ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None),
+                                    ClientError::LocaleNotSupported { locale } => return error_pages.get_view_and_render_head(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
                                     // No other errors should be returned
                                     _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
                                 }
@@ -178,7 +159,7 @@ pub(crate) async fn get_subsequent_view(
                 router_state.set_load_state(RouterLoadState::ErrorLoaded {
                     path: path_with_locale.clone(),
                 });
-                error_pages.get_view(cx, &asset_url, 404, "page not found", None)
+                error_pages.get_view_and_render_head(cx, &asset_url, 404, "page not found", None)
             }
         },
         Err(err) => {
@@ -188,7 +169,7 @@ pub(crate) async fn get_subsequent_view(
             match &err {
                 // No translators ready yet
                 ClientError::FetchError(FetchError::NotOk { url, status, .. }) => {
-                    error_pages.get_view(cx, url, *status, &fmt_err(&err), None)
+                    error_pages.get_view_and_render_head(cx, url, *status, &fmt_err(&err), None)
                 }
                 // No other errors should be returned
                 _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),

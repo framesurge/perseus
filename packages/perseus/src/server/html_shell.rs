@@ -272,13 +272,19 @@ impl HtmlShell {
     /// translations, so error pages rendered from here will not be
     /// internationalized.
     // TODO Provide translations where we can at least?
-    pub fn error_page(mut self, error_page_data: &ErrorPageData, error_html: &str) -> Self {
+    pub fn error_page(
+        mut self,
+        error_page_data: &ErrorPageData,
+        error_html: &str,
+        error_head: &str,
+    ) -> Self {
         let error = serde_json::to_string(error_page_data).unwrap();
         let state_var = format!(
             "window.__PERSEUS_INITIAL_STATE = `error-{}`;",
             escape_page_data(&error),
         );
         self.scripts_after_boundary.push(state_var);
+        self.head_after_boundary.push(error_head.to_string());
         self.content = error_html.into();
 
         self
