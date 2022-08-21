@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::Scope;
+use sycamore::utils::hydrate::with_no_hydration_context;
 use sycamore::view;
 use sycamore::view::View;
 
@@ -162,7 +163,9 @@ impl<G: Html> ErrorPages<G> {
             false => &self.fallback.1,
         };
         sycamore::render_to_string(|cx| {
-            head_fn(cx, url.to_string(), status, err.to_string(), translator)
+            with_no_hydration_context(|| {
+                head_fn(cx, url.to_string(), status, err.to_string(), translator)
+            })
         })
     }
 }

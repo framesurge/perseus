@@ -104,7 +104,7 @@ async fn get_view(
             checkpoint("not_found");
             // TODO Update the router state here (we need a path though...)
             // This function only handles subsequent loads, so this is all we have
-            error_pages.get_view(cx, "", 404, "not found", None)
+            error_pages.get_view_and_render_head(cx, "", 404, "not found", None)
         }
     }
 }
