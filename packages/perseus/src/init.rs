@@ -740,7 +740,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run((), self.plugins.get_plugin_data());
         for (_plugin_name, plugin_error_pages) in extra_error_pages {
             for (status, error_page) in plugin_error_pages {
-                error_pages.add_page_rc(status, error_page);
+                error_pages.add_page_rc(status, error_page.0, error_page.1);
             }
         }
 
