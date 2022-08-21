@@ -57,6 +57,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     };
 
     // Run the routing algorithms on the path to figure out which template we need
+    // (this *does* check if the locale is supported)
     let verdict = match_route_atomic(&path_slice, render_cfg.get_ref(), templates, &opts.locales);
     match verdict {
         // If this is the outcome, we know that the locale is supported and the like
@@ -90,6 +91,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                     translations_manager: translations_manager.get_ref(),
                 },
                 template,
+                true, // This is an initial load, so we do want the content rendered/fetched
             )
             .await;
             let page_data = match page_data {
@@ -99,11 +101,23 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                     return html_err(err_to_status_code(&err), &fmt_err(&err));
                 }
             };
+            // Get the translations to interpolate into the page
+            let translations = translations_manager
+                .get_translations_str_for_locale(locale)
+                .await;
+            let translations = match translations {
+                Ok(translations) => translations,
+                // We know for sure that this locale is supported, so there's been an internal
+                // server error if it can't be found
+                Err(err) => {
+                    return html_err(500, &fmt_err(&err));
+                }
+            };
 
             let final_html = html_shell
                 .get_ref()
                 .clone()
-                .page_data(&page_data, &global_state)
+                .page_data(&page_data, &global_state, &translations)
                 .to_string();
 
             let mut http_res = HttpResponse::Ok();

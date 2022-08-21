@@ -1,6 +1,6 @@
 [package]
 name = "perseus-cli"
-version = "0.4.0-beta.6"
+version = "0.4.0-beta.7"
 edition = "2021"
 description = "The CLI for the Perseus frontend framework."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -41,6 +41,8 @@ reqwest = { version = "0.11", features = [ "json", "stream" ] }
 tar = "0.4"
 flate2 = "1"
 directories = "4"
+cargo_metadata = "0.15"
+cargo-lock = "8"
 
 [dev-dependencies]
 assert_cmd = "2"

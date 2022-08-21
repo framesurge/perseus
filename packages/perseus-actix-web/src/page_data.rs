@@ -4,6 +4,7 @@ use fmterr::fmt_err;
 use perseus::{
     errors::err_to_status_code,
     i18n::TranslationsManager,
+    internal::PageDataPartial,
     server::{get_page_for_template, GetPageProps, ServerOptions},
     stores::{ImmutableStore, MutableStore},
 };
@@ -68,18 +69,23 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
                 translations_manager: translations_manager.get_ref(),
             },
             template,
+            false, // For subsequent loads, we don't want to render content (the client can do it)
         )
         .await;
         match page_data {
             Ok(page_data) => {
+                let partial_page_data = PageDataPartial {
+                    state: page_data.state,
+                    head: page_data.head,
+                };
                 let mut http_res = HttpResponse::Ok();
                 http_res.content_type("text/html");
                 // Generate and add HTTP headers
-                for (key, val) in template.get_headers(page_data.state.clone()) {
+                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
                     http_res.insert_header((key.unwrap(), val));
                 }
 
-                http_res.body(serde_json::to_string(&page_data).unwrap())
+                http_res.body(serde_json::to_string(&partial_page_data).unwrap())
             }
             // We parse the error to return an appropriate status code
             Err(err) => {

@@ -66,6 +66,7 @@ impl Freeze for RenderCtx {
             route: match &*self.router.get_load_state_rc().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => path,
                 RouterLoadState::Loading { path, .. } => path,
+                RouterLoadState::ErrorLoaded { path } => path,
                 // If we encounter this during re-hydration, we won't try to set the URL in the
                 // browser
                 RouterLoadState::Server => "SERVER",
@@ -120,10 +121,13 @@ impl RenderCtx {
         let curr_route = match &*self.router.get_load_state_rc().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => path.to_string(),
                 RouterLoadState::Loading { path, .. } => path.to_string(),
+                RouterLoadState::ErrorLoaded { path } => path.to_string(),
                 // The user is trying to thaw on the server, which is an absolutely horrific idea (we should be generating state, and loops could happen)
                 RouterLoadState::Server => panic!("attempted to thaw frozen state on server-side (you can only do this in the browser)"),
             };
-        if curr_route == route {
+        // We handle the possibility that the page tried to reload before it had been
+        // made interactive here (we'll just reload wherever we are)
+        if curr_route == route || route == "SERVER" {
             // We'll need to imperatively instruct the router to reload the current page
             // (Sycamore can't do this yet) We know the last verdict will be
             // available because the only way we can be here is if we have a page

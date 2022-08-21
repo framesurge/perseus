@@ -1,20 +1,24 @@
 use crate::{
     checkpoint,
-    error_pages::ErrorPageData,
     i18n::Locales,
     i18n::{detect_locale, ClientTranslationsManager},
+    router::{
+        get_initial_view, get_subsequent_view, GetInitialViewProps, GetSubsequentViewProps,
+        InitialView, RouterLoadState, RouterState,
+    },
     router::{PerseusRoute, RouteInfo, RouteVerdict},
-    router::{RouterLoadState, RouterState},
-    shell::{app_shell, get_initial_state, InitialState, ShellProps},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
-    DomNode, ErrorPages, Html,
+    ErrorPages,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
-    prelude::{component, create_effect, create_signal, view, NodeRef, ReadSignal, Scope, View},
+    prelude::{
+        component, create_effect, create_signal, on_mount, view, ReadSignal, Scope, Signal, View,
+    },
     Prop,
 };
+use sycamore_futures::spawn_local_scoped;
 use sycamore_router::{HistoryIntegration, RouterBase};
 use web_sys::Element;
 
@@ -34,103 +38,75 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
     word-wrap: normal;
 "#;
 
-/// The properties that `on_route_change` takes. See the shell properties for
+/// The properties that `get_view()` takes. See the shell properties for
 /// the details for most of these.
 #[derive(Clone)]
-struct OnRouteChangeProps<'a, G: Html> {
+struct GetViewProps<'a> {
     cx: Scope<'a>,
     locales: Rc<Locales>,
-    container_rx: NodeRef<G>,
     router_state: RouterState,
     translations_manager: ClientTranslationsManager,
     error_pages: Rc<ErrorPages<TemplateNodeType>>,
-    initial_container: Option<Element>,
 }
 
-/// The function that runs when a route change takes place. This can also be run
-/// at any time to force the current page to reload.
-fn on_route_change<G: Html>(
+/// Get the view we should be rendering at the moment, based on a route verdict.
+/// This should be called on every route change to update the page. This doesn't
+/// actually render the view, it just returns it for rendering. Note that this
+/// may return error pages.
+///
+/// This function is designed for managing subsequent views only, since the
+/// router component should be instantiated *after* the initial view
+/// has been hydrated.
+///
+/// If the page needs to redirect to a particular locale, then this function
+/// will imperatively do so.
+async fn get_view(
     verdict: RouteVerdict<TemplateNodeType>,
-    OnRouteChangeProps {
+    GetViewProps {
         cx,
         locales,
-        container_rx,
         router_state,
         translations_manager,
         error_pages,
-        initial_container,
-    }: OnRouteChangeProps<'_, G>,
-) {
-    sycamore_futures::spawn_local_scoped(cx, async move {
-        let container_rx_elem = container_rx
-            .get::<DomNode>()
-            .unchecked_into::<web_sys::Element>();
-        checkpoint("router_entry");
-        match &verdict {
-            // Perseus' custom routing system is tightly coupled to the template system, and returns
-            // exactly what we need for the app shell! If a non-404 error occurred, it
-            // will be handled in the app shell
-            RouteVerdict::Found(RouteInfo {
-                path,
-                template,
-                locale,
-                was_incremental_match,
-            }) => {
-                app_shell(ShellProps {
-                    cx,
-                    path: path.clone(),
-                    template: template.clone(),
-                    was_incremental_match: *was_incremental_match,
-                    locale: locale.clone(),
-                    router_state,
-                    translations_manager: translations_manager.clone(),
-                    error_pages: error_pages.clone(),
-                    initial_container: initial_container.unwrap(),
-                    container_rx_elem,
-                    route_verdict: verdict,
-                })
-                .await
-            }
-            // If the user is using i18n, then they'll want to detect the locale on any paths
-            // missing a locale Those all go to the same system that redirects to the
-            // appropriate locale Note that `container` doesn't exist for this scenario
-            RouteVerdict::LocaleDetection(path) => detect_locale(path.clone(), &locales),
-            // To get a translator here, we'd have to go async and dangerously check the URL
-            // If this is an initial load, there'll already be an error message, so we should only
-            // proceed if the declaration is not `error` BUG If we have an error in a
-            // subsequent load, the error message appears below the current page...
-            RouteVerdict::NotFound => {
-                checkpoint("not_found");
-                if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state()
-                {
-                    let initial_container = initial_container.unwrap();
-                    // We need to move the server-rendered content from its current container to the
-                    // reactive container (otherwise Sycamore can't work with it properly)
-                    // If we're not hydrating, there's no point in moving anything over, we'll just
-                    // fully re-render
-                    #[cfg(feature = "hydrate")]
-                    {
-                        let initial_html = initial_container.inner_html();
-                        container_rx_elem.set_inner_html(&initial_html);
-                    }
-                    initial_container.set_inner_html("");
-                    // Make the initial container invisible
-                    initial_container
-                        .set_attribute("style", "display: none;")
-                        .unwrap();
-                    // Hydrate the error pages
-                    // Right now, we don't provide translators to any error pages that have come
-                    // from the server
-                    error_pages.render_page(cx, &url, status, &err, None, &container_rx_elem);
-                } else {
-                    // This is an error from navigating within the app (probably the dev mistyped a
-                    // link...), so we'll clear the page
-                    container_rx_elem.set_inner_html("");
-                    error_pages.render_page(cx, "", 404, "not found", None, &container_rx_elem);
-                }
-            }
-        };
-    });
+    }: GetViewProps<'_>,
+) -> View<TemplateNodeType> {
+    checkpoint("router_entry");
+    match &verdict {
+        RouteVerdict::Found(RouteInfo {
+            path,
+            template,
+            locale,
+            was_incremental_match,
+        }) => {
+            get_subsequent_view(GetSubsequentViewProps {
+                cx,
+                path: path.clone(),
+                template: template.clone(),
+                was_incremental_match: *was_incremental_match,
+                locale: locale.clone(),
+                router_state,
+                translations_manager: translations_manager.clone(),
+                error_pages: error_pages.clone(),
+                route_verdict: verdict,
+            })
+            .await
+        }
+        // For subsequent loads, this should only be possible if the dev forgot `link!()`
+        RouteVerdict::LocaleDetection(path) => {
+            let dest = detect_locale(path.clone(), &locales);
+            // Since this is only for subsequent loads, we know the router is instantiated
+            // This shouldn't be a replacement navigation, since the user has deliberatley
+            // navigated here
+            sycamore_router::navigate(&dest);
+            View::empty()
+        }
+        RouteVerdict::NotFound => {
+            checkpoint("not_found");
+            // TODO Update the router state here (we need a path though...)
+            // This function only handles subsequent loads, so this is all we have
+            error_pages.get_view_and_render_head(cx, "", 404, "not found", None)
+        }
+    }
 }
 
 /// The properties that the router takes.
@@ -157,7 +133,7 @@ pub(crate) struct PerseusRouterProps {
 /// creates with `create_app_root!` to be provided easily. That given `cx`
 /// property will be used for all context registration in the app.
 #[component]
-pub(crate) fn perseus_router<G: Html>(
+pub(crate) fn perseus_router(
     cx: Scope,
     PerseusRouterProps {
         error_pages,
@@ -165,7 +141,53 @@ pub(crate) fn perseus_router<G: Html>(
         templates,
         render_cfg,
     }: PerseusRouterProps,
-) -> View<G> {
+) -> View<TemplateNodeType> {
+    let translations_manager = ClientTranslationsManager::new(&locales);
+    // Get the error pages in an `Rc` so we aren't creating hundreds of them
+    let error_pages = Rc::new(error_pages);
+    // Now create an instance of `RenderCtx`, which we'll insert into context and
+    // use everywhere throughout the app
+    let render_ctx = RenderCtx::default().set_ctx(cx);
+    // TODO Replace passing a router state around with getting it out of context
+    // instead in the shell
+    let router_state = &render_ctx.router; // We need this for interfacing with the router though
+
+    // Prepare the initial view for hydration (because we have everything we need in
+    // global window variables, this can be synchronous)
+    let initial_view = get_initial_view(GetInitialViewProps {
+        cx,
+        // Get the path directly, in the same way the Sycamore router's history integration does
+        path: web_sys::window().unwrap().location().pathname().unwrap(),
+        router_state: router_state.clone(),
+        translations_manager: &translations_manager,
+        error_pages: &error_pages,
+        locales: &locales,
+        templates: &templates,
+        render_cfg: &render_cfg,
+    });
+    let initial_view = match initial_view {
+        InitialView::View(initial_view) => initial_view,
+        // if we need to redirect, then we'll create a fake view that will just execute that code
+        // (which we can guarantee to run after the router is ready)
+        InitialView::Redirect(dest) => {
+            let dest = dest.clone();
+            on_mount(cx, move || {
+                sycamore_router::navigate_replace(&dest);
+            });
+            // Note that using an empty view doesn't lead to any layout shift, since
+            // redirects have nothing rendered on the server-side (so this is actually
+            // correct hydration)
+            View::empty()
+        }
+    };
+    // Define a `Signal` for the view we're going to be currently rendering, which
+    // will contain the current page, or some kind of error message
+    let curr_view: &Signal<View<TemplateNodeType>> = create_signal(cx, initial_view);
+    // This allows us to not run the subsequent load code on the initial load (we
+    // need a separate one for the reload commander)
+    let is_initial = create_signal(cx, true);
+    let is_initial_reload_commander = create_signal(cx, true);
+
     // Create a `Route` to pass through Sycamore with the information we need
     let route = PerseusRoute {
         verdict: RouteVerdict::NotFound,
@@ -174,33 +196,8 @@ pub(crate) fn perseus_router<G: Html>(
         locales: locales.clone(),
     };
 
-    // Get the root that the server will have injected initial load content into
-    // This will be moved into a reactive `<div>` by the app shell
-    // This is an `Option<Element>` until we know we aren't doing locale detection
-    // (in which case it wouldn't exist)
-    let initial_container = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .query_selector("#__perseus_content_initial")
-        .unwrap();
-    // And create a node reference that we can use as a handle to the reactive
-    // verison
-    let container_rx = NodeRef::new();
-
-    let translations_manager = ClientTranslationsManager::new(&locales);
     // Now that we've used the reference, put the locales in an `Rc`
     let locales = Rc::new(locales);
-    // Get the error pages in an `Rc` so we aren't creating hundreds of them
-    let error_pages = Rc::new(error_pages);
-
-    // Now create an instance of `RenderCtx`, which we'll insert into context and
-    // use everywhere throughout the app
-    let render_ctx = RenderCtx::default().set_ctx(cx);
-
-    // TODO Replace passing a router state around with getting it out of context
-    // instead in the shell
-    let router_state = &render_ctx.router; // We need this for interfacing with the router though
 
     // Create a derived state for the route announcement
     // We do this with an effect because we only want to update in some cases (when
@@ -261,35 +258,45 @@ pub(crate) fn perseus_router<G: Html>(
 
     // Set up the function we'll call on a route change
     // Set up the properties for the function we'll call in a route change
-    let on_route_change_props = OnRouteChangeProps {
+    let get_view_props = GetViewProps {
         cx,
         locales,
-        container_rx: container_rx.clone(),
         router_state: router_state.clone(),
         translations_manager,
         error_pages,
-        initial_container,
     };
 
     // Listen for changes to the reload commander and reload as appropriate
-    let orcp_clone = on_route_change_props.clone();
+    let gvp = get_view_props.clone();
     create_effect(cx, move || {
         router_state.reload_commander.track();
-        // Get the route verdict and re-run the function we use on route changes
-        // This has to be untracked, otherwise we get an infinite loop that will
-        // actually break client browsers (I had to manually kill Firefox...)
-        // TODO Investigate how the heck this actually caused an infinite loop...
-        let verdict = router_state.get_last_verdict();
-        let verdict = match &verdict {
-            Some(verdict) => verdict,
-            // If the first page hasn't loaded yet, terminate now
-            None => return,
-        };
-        on_route_change(verdict.clone(), orcp_clone.clone());
+        // Using a tracker of the initial state separate to the main one is fine,
+        // because this effect is guaranteed to fire on page load (they'll both be set)
+        if *is_initial_reload_commander.get_untracked() {
+            is_initial_reload_commander.set(false);
+        } else {
+            // Get the route verdict and re-run the function we use on route changes
+            // This has to be untracked, otherwise we get an infinite loop that will
+            // actually break client browsers (I had to manually kill Firefox...)
+            // TODO Investigate how the heck this actually caused an infinite loop...
+            let verdict = router_state.get_last_verdict();
+            let verdict = match verdict {
+                Some(verdict) => verdict,
+                // If the first page hasn't loaded yet, terminate now
+                None => return,
+            };
+            // Because of the way futures work, a double clone is unfortunately necessary
+            // for now
+            let gvp = gvp.clone();
+            spawn_local_scoped(cx, async move {
+                let new_view = get_view(verdict.clone(), gvp).await;
+                curr_view.set(new_view);
+            });
+        }
     });
 
     // This section handles live reloading and HSR freezing
-    // We used to haev an indicator shared to the macros, but that's no longer used
+    // We used to have an indicator shared to the macros, but that's no longer used
     #[cfg(all(feature = "live-reload", debug_assertions))]
     {
         use crate::state::Freeze;
@@ -337,27 +344,56 @@ pub(crate) fn perseus_router<G: Html>(
         });
     };
 
+    // Append the route announcer to the end of the document body
+    let document = web_sys::window().unwrap().document().unwrap();
+    let announcer = document.create_element("p").unwrap();
+    announcer.set_attribute("aria-live", "assertive").unwrap();
+    announcer.set_attribute("role", "alert").unwrap();
+    announcer
+        .set_attribute("style", ROUTE_ANNOUNCER_STYLES)
+        .unwrap();
+    announcer.set_id("__perseus_route_announcer");
+    let body_elem: Element = document.body().unwrap().into();
+    body_elem
+        .append_with_node_1(&announcer.clone().into())
+        .unwrap();
+    // Update the announcer's text whenever the `route_announcement` changes
+    create_effect(cx, move || {
+        let ra = route_announcement.get();
+        announcer.set_inner_html(&ra);
+    });
+
     view! { cx,
         // This is a lower-level version of `Router` that lets us provide a `Route` with the data we want
         RouterBase {
             integration: HistoryIntegration::new(),
             route,
-            view: move |cx, route: &ReadSignal<PerseusRoute<TemplateNodeType>>| {
-                // Sycamore's reactivity is broken by a future, so we need to explicitly add the route to the reactive dependencies here
-                // We do need the future though (otherwise `container_rx` doesn't link to anything until it's too late)
+            view: move |cx, route: &ReadSignal<PerseusRoute>| {
+                // Do this on every update to the route, except the first time, when we'll use the initial load
                 create_effect(cx, move || {
-                    let route = route.get();
-                    let verdict = route.get_verdict();
-                    on_route_change(verdict.clone(), on_route_change_props.clone());
+                    route.track();
+
+                    if *is_initial.get_untracked() {
+                        is_initial.set(false);
+                    } else {
+                        let gvp = get_view_props.clone();
+                        spawn_local_scoped(cx, async move {
+                            let route = route.get();
+                            let verdict = route.get_verdict();
+                            let new_view = get_view(verdict.clone(), gvp).await;
+                            curr_view.set(new_view);
+                        });
+                    }
                 });
 
                 // This template is reactive, and will be updated as necessary
                 // However, the server has already rendered initial load content elsewhere, so we move that into here as well in the app shell
                 // The main reason for this is that the router only intercepts click events from its children
+
                 view! { cx,
+                    // BUG (Sycamore): We can't remove this `div` yet...
                     div {
-                        div(id="__perseus_content_rx", class="__perseus_content", ref=container_rx) {}
-                        p(id = "__perseus_route_announcer", aria_live = "assertive", role = "alert", style = ROUTE_ANNOUNCER_STYLES) { (route_announcement.get()) }
+                        (*curr_view.get())
                     }
                 }
             }

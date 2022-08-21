@@ -62,8 +62,6 @@ mod export;
 mod init;
 mod macros;
 mod page_data;
-#[cfg(target_arch = "wasm32")]
-mod shell;
 mod translator;
 
 // The rest of this file is devoted to module structuring
@@ -95,7 +93,7 @@ pub use crate::{
 };
 // Browser-side only
 #[cfg(target_arch = "wasm32")]
-pub use crate::shell::checkpoint;
+pub use crate::utils::checkpoint;
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
 pub use client::{run_client, ClientReturn};
 
@@ -103,6 +101,7 @@ pub use client::{run_client, ClientReturn};
 /// TODO
 #[cfg(not(target_arch = "wasm32"))]
 pub mod internal {
+    pub use crate::page_data::*;
     pub use crate::{build::*, export::*};
 }
 /// Internal utilities for logging. These are just re-exports so that users

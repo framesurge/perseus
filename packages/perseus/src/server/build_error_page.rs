@@ -10,6 +10,10 @@ use std::rc::Rc;
 /// the correct error page. Note that this is only for use in initial loads
 /// (other systems handle errors in subsequent loads, and the app shell
 /// exists then so the server doesn't have to do nearly as much work).
+///
+/// This doesn't inject translations of any sort, deliberately, since
+/// we can't ensure that they would even exist --- this is used for all
+/// types of server-side errors.
 pub fn build_error_page(
     url: &str,
     status: u16,
@@ -19,7 +23,8 @@ pub fn build_error_page(
     error_pages: &ErrorPages<SsrNode>,
     html_shell: &HtmlShell,
 ) -> String {
-    let error_html = error_pages.render_to_string(url, status, err, translator);
+    let error_html = error_pages.render_to_string(url, status, err, translator.clone());
+    let error_head = error_pages.render_head(url, status, err, translator);
     // We create a JSON representation of the data necessary to hydrate the error
     // page on the client-side Right now, translators are never included in
     // transmitted error pages
@@ -31,6 +36,6 @@ pub fn build_error_page(
 
     html_shell
         .clone()
-        .error_page(&error_page_data, &error_html)
+        .error_page(&error_page_data, &error_html, &error_head)
         .to_string()
 }

@@ -68,11 +68,13 @@ pub struct Opts {
     #[clap(long, global = true)]
     pub no_browser_reload: bool,
     /// A custom version of `wasm-bindgen` to use (defaults to the latest
-    /// installed version, and after that the latest available from GitHub)
+    /// installed version, and after that the latest available from GitHub;
+    /// update to latest can be forced with `latest`)
     #[clap(long, global = true)]
     pub wasm_bindgen_version: Option<String>,
     /// A custom version of `wasm-opt` to use (defaults to the latest installed
-    /// version, and after that the latest available from GitHub)
+    /// version, and after that the latest available from GitHub; update to
+    /// latest can be forced with `latest`)
     #[clap(long, global = true)]
     pub wasm_opt_version: Option<String>,
     /// Disables the system-wide tools cache in `~/.cargo/perseus_tools/` (you

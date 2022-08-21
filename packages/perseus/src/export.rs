@@ -1,5 +1,6 @@
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
+use crate::page_data::PageDataPartial;
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
 use crate::template::TemplateMap;
@@ -85,6 +86,7 @@ pub async fn export_app<T: TranslationsManager>(
             immutable_store,
             path_prefix.to_string(),
             global_state,
+            translations_manager,
         );
         export_futs.push(fut);
     }
@@ -128,6 +130,7 @@ pub async fn create_translation_file(
 }
 
 /// Exports a single path within a template.
+#[allow(clippy::too_many_arguments)]
 pub async fn export_path(
     (path, template_path): (String, String),
     templates: &TemplateMap<SsrNode>,
@@ -136,6 +139,7 @@ pub async fn export_path(
     immutable_store: &ImmutableStore,
     path_prefix: String,
     global_state: &Option<String>,
+    translations_manager: &impl TranslationsManager,
 ) -> Result<(), ServerError> {
     // We need the encoded path to reference flattened build artifacts
     // But we don't create a flattened system with exporting, everything is properly
@@ -193,12 +197,16 @@ pub async fn export_path(
                 immutable_store,
             )
             .await?;
+            // Get the translations string for this locale
+            let translations = translations_manager
+                .get_translations_str_for_locale(locale.to_string())
+                .await?;
             // Create a full HTML file from those that can be served for initial loads
             // The build process writes these with a dummy default locale even though we're
             // not using i18n
             let full_html = html_shell
                 .clone()
-                .page_data(&page_data, global_state)
+                .page_data(&page_data, global_state, &translations)
                 .to_string();
             immutable_store
                 .write(
@@ -209,7 +217,11 @@ pub async fn export_path(
 
             // Serialize the page data to JSON and write it as a partial (fetched by the app
             // shell for subsequent loads)
-            let partial = serde_json::to_string(&page_data).unwrap();
+            let partial_page_data = PageDataPartial {
+                state: page_data.state,
+                head: page_data.head,
+            };
+            let partial = serde_json::to_string(&partial_page_data).unwrap();
             immutable_store
                 .write(
                     &format!("exported/.perseus/page/{}/{}.json", locale, &path),
@@ -229,7 +241,7 @@ pub async fn export_path(
         // not using i18n
         let full_html = html_shell
             .clone()
-            .page_data(&page_data, global_state)
+            .page_data(&page_data, global_state, "")
             .to_string();
         // We don't add an extension because this will be queried directly by the
         // browser
@@ -239,7 +251,11 @@ pub async fn export_path(
 
         // Serialize the page data to JSON and write it as a partial (fetched by the app
         // shell for subsequent loads)
-        let partial = serde_json::to_string(&page_data).unwrap();
+        let partial_page_data = PageDataPartial {
+            state: page_data.state,
+            head: page_data.head,
+        };
+        let partial = serde_json::to_string(&partial_page_data).unwrap();
         immutable_store
             .write(
                 &format!("exported/.perseus/page/{}/{}.json", locales.default, &path),
