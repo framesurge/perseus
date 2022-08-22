@@ -113,10 +113,9 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
     let toggle_menu = |_| menu_open.set(!*menu_open.get());
 
     view! { cx,
-        // TODO click-away events
-        header(class = "shadow-md sm:p-2 w-full bg-white dark:text-white dark:bg-navy mb-20") {
+        header(class = "shadow-md sm:p-2 w-full mb-20 text-black backdrop-blur-md") {
             div(class = "flex justify-between") {
-                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl", href = link!("/", cx)) {
+                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl text-bold title-font", href = link!("/", cx)) {
                     (t!("perseus", cx))
                 }
                 // The button for opening/closing the hamburger menu on mobile
@@ -145,7 +144,7 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                 }
             }
             // This displays the navigation links when the menu is opened on mobile
-            // TODO click-away event
+            // TODO Click-away event
             nav(
                 id = "mobile_nav_menu",
                 class = format!(
@@ -170,6 +169,7 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                 }
             }
         }
+        // TODO Dual-pane scroll on desktop
         div(
             class = format!(
                 "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 overflow-y-auto {}",
