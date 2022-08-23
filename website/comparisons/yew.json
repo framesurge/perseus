@@ -13,5 +13,8 @@
     "supports_exporting": "none",
     "language": "Rust",
     "homepage_lighthouse_desktop": 99,
-    "homepage_lighthouse_mobile": 93
+    "homepage_lighthouse_mobile": 93,
+    "text": {
+        "en-US": "Test: Yew"
+    }
 }

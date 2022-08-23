@@ -79,6 +79,7 @@ comparisons-table-details =
     .homepage_lighthouse_mobile = The Lighthouse score out of 100 for mobile (higher is better). These are collected from Google's PageSpeed Insights tool. These are for the framework's website, and may not reflect the performance of all sites made with the framework.
 comparisons-sycamore-heading = Perseus vs Sycamore
 comparisons-sycamore-text = Perseus is a framework that uses Sycamore to write views (the things users see), so there's not much point in comparing the two as competitors. However, Sycamore can be used without Perseus, which works perfectly well, though you'll miss out on features like inbuilt internationalization, static generation (though you could build this yourself), and incremental generation. If you want to build just a bit of your site with Rust, Sycamore is the perfect tool, Perseus is a full framework designed for building entire websites.
+comparisons-unknown-heading = Perseus vs { $name }
 
 docs-title-base = Perseus Docs
 docs-status =

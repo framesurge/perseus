@@ -13,5 +13,8 @@
     "supports_exporting": "none",
     "language": "Rust",
     "homepage_lighthouse_desktop": 100,
-    "homepage_lighthouse_mobile": 79
+    "homepage_lighthouse_mobile": 79,
+    "text": {
+        "en-US": "Test"
+    }
 }

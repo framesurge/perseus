@@ -13,5 +13,6 @@
     "supports_exporting": "full",
     "language": "Rust",
     "homepage_lighthouse_desktop": 100,
-    "homepage_lighthouse_mobile": 95
+    "homepage_lighthouse_mobile": 95,
+    "text": ""
 }

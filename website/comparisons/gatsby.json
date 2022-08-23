@@ -13,5 +13,8 @@
     "supports_exporting": "full",
     "language": "JavaScript/TypeScript",
     "homepage_lighthouse_desktop": 75,
-    "homepage_lighthouse_mobile": 45
+    "homepage_lighthouse_mobile": 45,
+    "text": {
+        "en-US": "Test"
+    }
 }
