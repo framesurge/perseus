@@ -90,3 +90,10 @@ footer {
 @keyframes load-gauge {
     from { stroke-dasharray: 0 352; }
 }
+
+/* This uses text shadows to make Emoji green (for the *100* emoji in the
+ * comparisons table). */
+.emoji-green {
+    color: transparent;
+    text-shadow: 0 0 0 #059669;
+}

@@ -79,11 +79,13 @@ impl FeatureSupport {
 pub fn render_lighthouse_score<G: Html>(cx: Scope, score: u8) -> View<G> {
     if score == 100 {
         view! { cx,
-            "💯"
+            span(class = "emoji-green") {
+                "💯"
+            }
         }
     } else if score >= 90 {
         view! { cx,
-            span(class = "text-green-500") {
+            span(class = "text-green-600") {
                 (score)
             }
         }

@@ -15,6 +15,6 @@
     "homepage_lighthouse_desktop": 100,
     "homepage_lighthouse_mobile": 72,
     "text": {
-        "en-US": "Test"
+        "en-US": "NextJS is a fullstack framework for building websites and apps in JavaScript, and is the framework closest to Perseus' capabilities. Notably however, Perseus is considerably faster than NextJS at runtime (though not in compilation time), and supports the unique feature of using both server-side and build-time state generation on the same page. NextJS is far more widely used though, and has a vibrant ecosystem of plugins and tutorials that may be difficult to find with a younger framework, like Perseus."
     }
 }
