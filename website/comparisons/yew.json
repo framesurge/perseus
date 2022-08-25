@@ -15,6 +15,6 @@
     "homepage_lighthouse_desktop": 99,
     "homepage_lighthouse_mobile": 93,
     "text": {
-        "en-US": "Test: Yew"
+        "en-US": "Yew is by far the most popular Rust web development framework at the moment, but its support for state management remains minimal. With recently added support for server-side rendering, Yew may well fulfill the needs of many websites, though its lack of support for build-time state generation, let alone more advanced features like incremental generation, makes it less performant than Perseus for more advanced use-cases. However, the more ReactJS-like style of Yew's syntax may be appreciated by developers who are used to working with React, while Sycamore (which underlies Perseus) uses a more SolidJS-like approach (which, since it doesn't have a virtual DOM, is faster)."
     }
 }

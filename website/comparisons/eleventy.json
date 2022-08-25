@@ -15,6 +15,6 @@
     "homepage_lighthouse_desktop": 100,
     "homepage_lighthouse_mobile": 97,
     "text": {
-        "en-US": "Test"
+        "en-US": "Eleventy is an extremely capable static site generator that creates websites that are usually as performant as Perseus ones, though it lacks the state platform necessary for app development. With a host of integrations out of the box, Eleventy is an excellent choice for small websites, though Perseus' app shell and state platform make it outperform Eleventy at runtime, while enabling the development of more advanced apps that take advantage of features like request-time state generation, and incremental generation."
     }
 }
