@@ -1,18 +1,37 @@
-body, #root, #root > div {
+body {
+    height: 100vh;
+}
+#root, #root > div {
     min-height: 100%;
 }
-/* This is equivalent to `main`, but also works on docs pages with a sidebar */
-.scroll-container {
-    flex-grow: 1;
+#root > div {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+        'header'
+        'main'
+        'footer';
 }
+/* /\* This is equivalent to `main`, but also works on docs pages with a sidebar *\/ */
+/* .scroll-container { */
+/*     flex-grow: 1; */
+/* } */
 header {
     position: fixed;
     top: 0;
     z-index: 99;
+    grid-area: 'header';
 }
-header, footer, .scroll-container {
-    flex-shrink: 0;
+main {
+    grid-area: 'main';
 }
+footer {
+    grid-area: 'footer';
+}
+/* header, footer, .scroll-container { */
+/*     flex-shrink: 0; */
+/* } */
 
 * {
     scroll-behavior: smooth;

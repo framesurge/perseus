@@ -64,8 +64,9 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     });
 
     view! { cx,
-        Container(ContainerProps {
+        Container{
             title: t!("perseus", cx),
+            text_color: "text-black".to_string(),
             children: view! { cx,
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
@@ -111,7 +112,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                     }
                 }
             }
-        })
+        }
     }
 }
 

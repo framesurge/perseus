@@ -351,8 +351,9 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     // };
 
     view! { cx,
-        Container(ContainerProps {
+        Container{
             title: t!("perseus", cx),
+            text_color: "text-white".to_string(),
             children: view! { cx,
                 // Introduction screen with the app-in-a-file example
                 IndexTile {
@@ -627,7 +628,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                     "window.Prism.highlightAll();"
                 }
             }
-        })
+        }
     }
 }
 
