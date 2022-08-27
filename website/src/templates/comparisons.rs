@@ -1,5 +1,6 @@
 use crate::components::comparisons::{render_lighthouse_score, Comparison, RawComparison};
-use crate::components::container::{Container, ContainerProps};
+use crate::components::container::Container;
+use crate::components::header::HeaderProps;
 use crate::components::info_svg::INFO_SVG;
 use perseus::{t, ErrorCause, GenericErrorWithCause, Html, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
@@ -304,9 +305,13 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
     });
 
     view! { cx,
-        Container(ContainerProps {
-            title: t!("perseus", cx),
-            text_color: "text-black".to_string(),
+        Container {
+            header: HeaderProps {
+                title: t!("perseus", cx),
+                text_color: "text-black".to_string(),
+                mobile_nav_extension: View::empty(),
+                menu_open: None,
+            },
             children: view! { cx,
                 div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
                     div {
@@ -352,7 +357,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
                     }
                 }
             }
-        })
+        }
     }
 }
 

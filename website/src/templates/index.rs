@@ -1,5 +1,6 @@
 use crate::components::arrows::{DOWN_ARROW, UP_ARROW};
-use crate::components::container::{Container, ContainerProps};
+use crate::components::container::Container;
+use crate::components::header::HeaderProps;
 use crate::components::features_list::get_features_list;
 use crate::components::github_svg::GITHUB_SVG;
 use perseus::{link, t, Html, Template};
@@ -351,9 +352,13 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     // };
 
     view! { cx,
-        Container{
-            title: t!("perseus", cx),
-            text_color: "text-white".to_string(),
+        Container {
+            header: HeaderProps {
+                title: t!("perseus", cx),
+                text_color: "text-white".to_string(),
+                mobile_nav_extension: View::empty(),
+                menu_open: None,
+            },
             children: view! { cx,
                 // Introduction screen with the app-in-a-file example
                 IndexTile {

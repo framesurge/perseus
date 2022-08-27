@@ -1,13 +1,10 @@
-body {
-    height: 100vh;
-}
-#root, #root > div {
-    min-height: 100%;
+html, body, body > div, #root, #root > div {
+    height: 100%;
 }
 #root > div {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr min-content;
     grid-template-areas:
         'header'
         'main'
@@ -21,13 +18,13 @@ header {
     position: fixed;
     top: 0;
     z-index: 99;
-    grid-area: 'header';
+    grid-area: header;
 }
 main {
-    grid-area: 'main';
+    grid-area: main;
 }
 footer {
-    grid-area: 'footer';
+    grid-area: footer;
 }
 /* header, footer, .scroll-container { */
 /*     flex-shrink: 0; */

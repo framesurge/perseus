@@ -2,7 +2,8 @@
 // locale, and then a list of plugins inside Note that the same plugins must be
 // defined for every locale
 
-use crate::components::container::{Container, ContainerProps};
+use crate::components::container::Container;
+use crate::components::header::HeaderProps;
 use crate::components::trusted_svg::TRUSTED_SVG;
 use perseus::{t, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
@@ -64,9 +65,13 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     });
 
     view! { cx,
-        Container{
-            title: t!("perseus", cx),
-            text_color: "text-black".to_string(),
+        Container {
+            header: HeaderProps {
+                title: t!("perseus", cx),
+                text_color: "text-black".to_string(),
+                mobile_nav_extension: View::empty(),
+                menu_open: None,
+            },
             children: view! { cx,
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
