@@ -108,7 +108,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                                                     View::empty()
                                                 })
                                             }
-                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!("plugin-card-author", { "author" = plugin.author.clone() }, cx)) }
+                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!("plugin-card-author", { "author" = &plugin.author }, cx)) }
                                             p { (plugin.description) }
                                         }
                                     }

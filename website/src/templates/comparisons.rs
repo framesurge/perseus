@@ -255,7 +255,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
         h3(class = "text-2xl underline") { (t!(
             "comparisons-unknown-heading",
             {
-                "name" = comparison.get().name.to_string()
+                "name" = &comparison.get().name
             },
             cx
         )) }

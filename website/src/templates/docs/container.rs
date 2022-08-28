@@ -33,7 +33,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
                 let version = create_ref(cx, version);
                 view! { cx,
                         option(value = &version, selected = current_version == version) { (t!("docs-version-switcher.beta", {
-                            "version" = version.to_string()
+                            "version" = version
                         }, cx)) }
                 }
             })
@@ -50,7 +50,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
                 let version = create_ref(cx, version);
                 view! { cx,
                         option(value = version, selected = current_version == version) { (t!("docs-version-switcher.outdated", {
-                            "version" = version.to_string()
+                            "version" = version
                         }, cx)) }
                 }
             })
@@ -81,7 +81,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
             (beta_versions)
             option(value = stable_version, selected = current_version == stable_version) {
                 (t!("docs-version-switcher.stable", {
-                    "version" = stable_version.to_string()
+                    "version" = stable_version
                 }, cx))
             }
             (old_versions)
@@ -108,6 +108,7 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
         current_version: props.current_version.clone(),
     };
     let dvsp_clone = docs_version_switcher_props.clone();
+    let stable_version = create_ref(cx, get_stable_version(&props.manifest).0);
 
     view! { cx,
         Container {
@@ -144,10 +145,10 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                         div(class = "h-full flex w-full") {
                             // These styles were meticulously arrived at through pure trial and error...
                             div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
-                                (status.render(cx))
-                                    main(class = "text-black dark:text-white") {
-                                        (props.children.clone())
-                                    }
+                                (status.render(cx, stable_version.to_string()))
+                                main(class = "text-black dark:text-white") {
+                                    (props.children.clone())
+                                }
                             }
                         }
                     }
