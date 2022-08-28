@@ -1,6 +1,6 @@
 # The Index View
 
-In most Perseus apps, you can just ofcus on building your app's templates, and leave the boilerplate entirely to the Perseus engine, but sometimes that isn't quite sufficient, like if you want to use one stylesheet across your entire app. In traditional architectures, these are the kinds of modifications you might make to an `index.html` file that a framework inserts itself into, and you can do exactly this with Perseus! If you provide an `index.html` file in the root of your porject (not inside `src/`), Perseus will insert itself into that!
+In most Perseus apps, you can just focus on building your app's templates, and leave the boilerplate entirely to the Perseus engine, but sometimes that isn't quite sufficient, like if you want to use one stylesheet across your entire app. In traditional architectures, these are the kinds of modifications you might make to an `index.html` file that a framework inserts itself into, and you can do exactly this with Perseus! If you provide an `index.html` file in the root of your project (not inside `src/`), Perseus will insert itself into that!
 
 However, if you're using Perseus, you probably don't want to be writing HTML right? You're supposed to be using Sycamore! Well, that's completely true, and so Perseus supports creating an index view with Sycamore code! You can do this like so:
 
