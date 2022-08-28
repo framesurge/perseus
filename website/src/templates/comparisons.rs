@@ -309,6 +309,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
             header: HeaderProps {
                 title: t!("perseus", cx),
                 text_color: "text-black".to_string(),
+                menu_color: "bg-black".to_string(),
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },

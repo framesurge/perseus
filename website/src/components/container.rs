@@ -1,6 +1,6 @@
-use sycamore::prelude::*;
-use super::header::{Header, HeaderProps};
 use super::footer::Footer;
+use super::header::{Header, HeaderProps};
+use sycamore::prelude::*;
 
 #[derive(Prop)]
 pub struct ContainerProps<G: Html> {

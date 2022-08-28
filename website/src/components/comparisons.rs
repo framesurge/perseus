@@ -28,13 +28,14 @@ pub struct Comparison {
     // Ours are 100 and 95, respectively
     pub homepage_lighthouse_desktop: u8,
     pub homepage_lighthouse_mobile: u8,
-    /// A bit of text that compares the two frameworks. This should be localized.
+    /// A bit of text that compares the two frameworks. This should be
+    /// localized.
     pub text: String,
 }
 
 /// A raw comparison, as would be found on disk. This contains multiple locales,
-/// which should be resolved to a single one before being handed to the comparisons
-/// page itself.
+/// which should be resolved to a single one before being handed to the
+/// comparisons page itself.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RawComparison {
     pub name: String,

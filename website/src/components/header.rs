@@ -1,15 +1,20 @@
+use perseus::{link, t};
 use sycamore::prelude::*;
-use perseus::{t, link};
 
 #[derive(Prop)]
 pub struct HeaderProps<G: Html> {
     /// The text color used across the whole header.
     pub text_color: String,
+    /// The color used for the hamburger menu on mobile. This should use
+    /// background colors
+    pub menu_color: String,
     /// The title of the page to be used in the header.
     pub title: String,
-    /// Additional contents that should be added to the navigation menu on mobile.
+    /// Additional contents that should be added to the navigation menu on
+    /// mobile.
     pub mobile_nav_extension: View<G>,
-    /// An optional field that allows the caller to control menu opening imperatively.
+    /// An optional field that allows the caller to control menu opening
+    /// imperatively.
     pub menu_open: Option<RcSignal<bool>>,
 }
 
@@ -20,9 +25,10 @@ pub fn Header<G: Html>(
     HeaderProps {
         title,
         text_color,
+        menu_color,
         mobile_nav_extension,
-        menu_open
-    }: HeaderProps<G>
+        menu_open,
+    }: HeaderProps<G>,
 ) -> View<G> {
     // Use the given menu opening `Signal` if it was provided, or create a new one
     let menu_open = match menu_open {
@@ -35,11 +41,11 @@ pub fn Header<G: Html>(
         header(
             // This doesn't have a background color, we blur the background based on the content underneath
             class = format!(
-                "shadow-md sm:p-2 w-full mb-20 backdrop-blur-md {}",
+                "shadow-md sm:p-2 w-full mb-20 backdrop-blur-lg {}",
                 &text_color
             )
         ) {
-            div(class = "flex justify-between") {
+            div(class = "flex justify-between items-center") {
                 a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl text-bold title-font", href = link!("/", cx)) {
                     (title)
                 }
@@ -47,7 +53,7 @@ pub fn Header<G: Html>(
                 // This is done by a Tailwind module
                 div(
                     class = format!(
-                        "sm:hidden m-3 mr-5 tham tham-e-spin tham-w-6 {}",
+                        "md:hidden m-3 mr-5 tham tham-e-spin tham-w-6 {}",
                         if *menu_open.get() {
                             "tham-active"
                         } else {
@@ -57,11 +63,16 @@ pub fn Header<G: Html>(
                     on:click = toggle_menu
                 ) {
                     div(class = "tham-box") {
-                        div(class = "bg-white tham-inner") {}
+                        div(
+                            class = format!(
+                                "tham-inner {}",
+                                &menu_color,
+                            )
+                        ) {}
                     }
                 }
                 // This displays the navigation links on desktop
-                nav(class = "hidden sm:flex") {
+                nav(class = "hidden md:flex") {
                     ul(class = "mr-5 flex") {
                         NavLinks()
                     }
@@ -72,7 +83,7 @@ pub fn Header<G: Html>(
             nav(
                 id = "mobile_nav_menu",
                 class = format!(
-                    "sm:hidden w-full text-center justify-center {}",
+                    "md:hidden w-full text-center justify-center {}",
                     if *menu_open.get() {
                         "flex flex-col"
                     } else {

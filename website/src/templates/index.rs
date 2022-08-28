@@ -1,8 +1,8 @@
 use crate::components::arrows::{DOWN_ARROW, UP_ARROW};
 use crate::components::container::Container;
-use crate::components::header::HeaderProps;
 use crate::components::features_list::get_features_list;
 use crate::components::github_svg::GITHUB_SVG;
+use crate::components::header::HeaderProps;
 use perseus::{link, t, Html, Template};
 use sycamore::prelude::*;
 use web_sys::{
@@ -356,6 +356,7 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
             header: HeaderProps {
                 title: t!("perseus", cx),
                 text_color: "text-white".to_string(),
+                menu_color: "bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },

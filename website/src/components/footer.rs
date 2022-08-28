@@ -1,5 +1,5 @@
-use sycamore::prelude::*;
 use perseus::t;
+use sycamore::prelude::*;
 
 static COPYRIGHT_YEARS: &str = "2021-2022";
 

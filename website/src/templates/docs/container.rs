@@ -1,8 +1,8 @@
+use crate::components::container::Container;
+use crate::components::header::HeaderProps;
 use crate::templates::docs::generation::{
     get_beta_versions, get_outdated_versions, get_stable_version, DocsManifest, DocsVersionStatus,
 };
-use crate::components::container::Container;
-use crate::components::header::HeaderProps;
 use perseus::i18n::Translator;
 use perseus::{link, navigate, t};
 use sycamore::prelude::*;
@@ -109,36 +109,25 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
     };
     let dvsp_clone = docs_version_switcher_props.clone();
 
-    // Create a parent `RcSignal` for controlling the header's menu, which we'll link into the sidebar
-    let menu_open_root = create_rc_signal(false);
-    // We then want it in a convenient form locally
-    let menu_open = create_ref(cx, menu_open_root.clone());
-
     view! { cx,
         Container {
             header: HeaderProps {
                 text_color: "text-black".to_string(),
+                menu_color: "bg-black".to_string(),
                 title: t!("perseus", cx),
                 mobile_nav_extension: view! { cx,
                     hr()
-                    div(class = "text-left p-3") {
+                    div(class = "text-left p-3 overflow-y-scroll h-[60vh]") {
                         DocsVersionSwitcher(docs_version_switcher_props)
                         div(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links)
                     }
                 },
-                menu_open: Some(menu_open_root),
+                menu_open: None,
             },
             children: view! { cx,
                 // TODO Dual-pane scroll on desktop
                 div(
-                    class = format!(
-                        "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 overflow-y-auto {}",
-                        if !*menu_open.get() {
-                            "flex"
-                        } else {
-                            "hidden"
-                        }
-                    )
+                    class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 overflow-y-auto"
                 ) {
                     div(class = "flex w-full") {
                         // The sidebar that'll display navigation through the docs
