@@ -91,6 +91,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                     translations_manager: translations_manager.get_ref(),
                 },
                 template,
+                true, // This is an initial load, so we do want the content rendered/fetched
             )
             .await;
             let page_data = match page_data {

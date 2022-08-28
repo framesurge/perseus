@@ -18,11 +18,6 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 /// When running automated tests, you may wish to set `force_run` to the result
 /// of an environment variable check that you'll use when testing.
 ///
-/// This function expects to be run in the context of `.perseus/`, or any
-/// directory in which a folder `cache/` is available. If you're using Perseus
-/// without the CLI and you don't want that directory to exist, you shouldn't
-/// use this function.
-///
 /// # Panics
 /// If this filesystem operations fail, this function will panic. It can't
 /// return a graceful error since it's expected to return the type you
@@ -54,7 +49,7 @@ where
     // In production, we'll just run the function directly
     if cfg!(debug_assertions) {
         // Check if the cache file exists
-        let filename = format!("cache/{}.json", &name);
+        let filename = format!("dist/cache/{}.json", &name);
         match File::open(&filename).await {
             Ok(mut file) => {
                 if force_run {
@@ -129,7 +124,7 @@ where
             }
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                 // The file doesn't exist yet, create the parent cache directory
-                create_dir_all("cache")
+                create_dir_all("dist/cache")
                     .await
                     .unwrap_or_else(|err| panic!("couldn't create cache directory: {}", err));
                 // We have no cache, so we'll have to run the function

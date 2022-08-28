@@ -77,6 +77,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                     translations_manager: &translations_manager,
                 },
                 template,
+                true,
             )
             .await;
             let page_data = match page_data {

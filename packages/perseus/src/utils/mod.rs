@@ -10,6 +10,8 @@ mod decode_time_str;
 mod fetch;
 mod log;
 mod path_prefix;
+#[cfg(target_arch = "wasm32")]
+mod replace_head;
 mod test;
 
 pub(crate) use async_fn_trait::AsyncFnReturn;
@@ -23,3 +25,5 @@ pub use decode_time_str::{ComputedDuration, Duration, InvalidDuration};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use fetch::fetch;
 pub use path_prefix::*;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use replace_head::replace_head;
