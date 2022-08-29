@@ -297,12 +297,12 @@ impl HtmlShell {
 impl fmt::Display for HtmlShell {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let head_start = self.head_before_boundary.join("\n");
-        // We also inject a delimiter comment that will be used to wall off the constant
-        // document head from the interpolated document head
+        // We also inject a delimiter dummy `<meta>` tag that will be used to wall off
+        // the constant document head from the interpolated document head
         let head_end = format!(
             r#"
             <script type="module">{scripts_before_boundary}</script>
-            <!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->
+            <meta itemprop="__perseus_head_boundary" content="">
             {head_after_boundary}
             <script>{scripts_after_boundary}</script>
             "#,
@@ -329,7 +329,7 @@ impl fmt::Display for HtmlShell {
         let html_replacement = format!(
             // We give the content a specific ID so that it can be deleted if an error page needs
             // to be rendered on the client-side
-            "{}{}",
+            "{}<div>{}</div>",
             &html_to_replace_double, self.content,
         );
         // Now interpolate that HTML into the HTML shell
