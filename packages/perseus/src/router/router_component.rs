@@ -365,10 +365,10 @@ pub(crate) fn perseus_router(
 
     view! { cx,
         // This is a lower-level version of `Router` that lets us provide a `Route` with the data we want
-        RouterBase {
-            integration: HistoryIntegration::new(),
-            route,
-            view: move |cx, route: &ReadSignal<PerseusRoute>| {
+        RouterBase(
+            integration = HistoryIntegration::new(),
+            route = route,
+            view = move |cx, route: &ReadSignal<PerseusRoute>| {
                 // Do this on every update to the route, except the first time, when we'll use the initial load
                 create_effect(cx, move || {
                     route.track();
@@ -391,12 +391,12 @@ pub(crate) fn perseus_router(
                 // The main reason for this is that the router only intercepts click events from its children
 
                 view! { cx,
-                    // BUG (Sycamore): We can't remove this `div` yet...
-                    div {
-                        (*curr_view.get())
-                    }
+                        // BUG (Sycamore): We can't remove this `div` yet...
+                        div {
+                            (*curr_view.get())
+                        }
                 }
             }
-        }
+        )
     }
 }

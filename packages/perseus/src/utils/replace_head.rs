@@ -19,9 +19,9 @@ pub(crate) fn replace_head(new: &str) {
     // For some horrific reason, this isn't implemented as an iterator in `web_sys`
     for idx in 0..(els_to_remove.length()) {
         let el = els_to_remove.get(idx).unwrap();
-        head_elem.remove_child(&el);
+        head_elem.remove_child(&el).unwrap();
     }
     // And now append the new HTML to the head (yes, this position is untyped...)
     // This position is inside the element, after its last child
-    head_elem.insert_adjacent_html("beforeend", new);
+    head_elem.insert_adjacent_html("beforeend", new).unwrap();
 }

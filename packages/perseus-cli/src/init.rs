@@ -130,7 +130,7 @@ edition = "2021"
 # Dependencies for the engine and the browser go here
 [dependencies]
 perseus = { version = "=%perseus_version", features = [ "hydrate" ] }
-sycamore = "=0.8.0-beta.7"
+sycamore = "0.8"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 
