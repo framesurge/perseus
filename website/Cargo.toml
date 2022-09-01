@@ -14,6 +14,7 @@ readme = "./README.md"
 [dependencies]
 perseus = { version = "=0.4.0-beta.5", features = [ "translator-fluent" ] }
 sycamore = "=0.8.0-beta.7"
+sycamore-macro = "=0.8.0-beta.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 fluent-bundle = "0.15"
