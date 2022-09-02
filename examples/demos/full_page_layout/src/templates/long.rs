@@ -5,14 +5,12 @@ use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 #[perseus::template_rx]
 pub fn long_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
-        Layout {
-            title: "Long".to_string(),
-            children: view! { cx,
-                a(href = "") { "Index" }
-                br {}
-                p {
-                    ("This is a test. ".repeat(5000))
-                }
+        Layout(title = "Long") {
+            // Anything we put in here will be rendered inside the `<main>` block of the layout
+            a(href = "") { "Index" }
+            br {}
+            p {
+                ("This is a test. ".repeat(5000))
             }
         }
     }

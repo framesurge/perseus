@@ -4,14 +4,19 @@ use sycamore::prelude::*;
 // applied to any Sycamore app.
 
 #[component]
-pub fn Layout<G: Html>(cx: Scope, props: LayoutProps<G>) -> View<G> {
+pub fn Layout<'a, G: Html>(
+    cx: Scope<'a>,
+    LayoutProps { title, children }: LayoutProps<'a, G>,
+) -> View<G> {
+    let children = children.call(cx);
+
     view! { cx,
         // These elements are styled with bright colors for demonstration purposes
         header(style = "background-color: red; color: white; padding: 1rem") {
-            p { (props.title) }
+            p { (title.to_string()) }
         }
         main(style = "padding: 1rem") {
-            (props.children)
+            (children)
         }
         footer(style = "background-color: black; color: white; padding: 1rem") {
             p { "Hey there, I'm a footer!" }
@@ -20,9 +25,9 @@ pub fn Layout<G: Html>(cx: Scope, props: LayoutProps<G>) -> View<G> {
 }
 
 #[derive(Prop)]
-pub struct LayoutProps<G: Html> {
+pub struct LayoutProps<'a, G: Html> {
     /// The title of the page, which will be displayed in the header.
-    pub title: String,
+    pub title: &'a str,
     /// The content to put inside the layout.
-    pub children: View<G>,
+    pub children: Children<'a, G>,
 }

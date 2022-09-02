@@ -5,16 +5,12 @@
 
 /* This makes all the elements that wrap our code take up the whole page, so that we can put things at the bottom.
  * Without this, the footer would be just beneath the content if the content doesn't fill the whole page (try disabling this).
- *
- * Quirk: we have to deal with the wrapper around `#root` created by `PerseusRoot` as well as the wrapper inside it (both will be gone by v0.4.0 stabilization)
 */
-html, body, body > div, #root, #root > div {
+html, body, #root {
     height: 100%;
 }
-/* This makes the `<div>` that wraps our whole app use CSS Grid to display three sections: the header, content, and footer.
- * Quirk: soon, this will just be `#root`
-*/
-#root > div {
+/* This makes the `<div>` that wraps our whole app use CSS Grid to display three sections: the header, content, and footer. */
+#root {
     display: grid;
     grid-template-columns: 1fr;
     /* The header will be automatically sized, the footer will be as small as possible, and the content will take up the rest of the space in the middle */
