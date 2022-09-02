@@ -360,6 +360,7 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
+            footer: true,
             children: view! { cx,
                 // Introduction screen with the app-in-a-file example
                 IndexTile {

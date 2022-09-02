@@ -73,6 +73,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
+            footer: true,
             children: view! { cx,
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {

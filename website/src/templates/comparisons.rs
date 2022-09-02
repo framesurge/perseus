@@ -313,6 +313,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
+            footer: true,
             children: view! { cx,
                 div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
                     div {

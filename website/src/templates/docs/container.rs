@@ -1,5 +1,6 @@
 use crate::components::container::Container;
 use crate::components::header::HeaderProps;
+use crate::components::footer::Footer;
 use crate::templates::docs::generation::{
     get_beta_versions, get_outdated_versions, get_stable_version, DocsManifest, DocsVersionStatus,
 };
@@ -125,31 +126,31 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                 },
                 menu_open: None,
             },
+            footer: false,
             children: view! { cx,
-                // TODO Dual-pane scroll on desktop
-                div(
-                    class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 overflow-y-auto"
-                ) {
-                    div(class = "flex w-full") {
-                        // The sidebar that'll display navigation through the docs
-                        div(class = "h-full hidden md:block max-w-xs w-full border-r") {
-                            div(class = "mr-5") {
-                                div(class = "text-left text-black dark:text-white p-3") {
-                                    aside {
-                                        DocsVersionSwitcher(dvsp_clone)
+                // TODO Use shadow DOM to avoid replicating all docs links etc. in initial loads
+                div(class = "flex w-full") {
+                    // The sidebar that'll display navigation through the docs
+                    div(class = "h-screen pt-14 xs:pt-16 sm:pt-20 lg:pt-25 hidden md:block max-w-xs w-full border-r overflow-y-auto") {
+                        div(class = "mr-5") {
+                            div(class = "text-left text-black dark:text-white p-3") {
+                                aside {
+                                    DocsVersionSwitcher(dvsp_clone)
                                         div(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links_clone)
-                                    }
                                 }
                             }
                         }
-                        div(class = "h-full flex w-full") {
-                            // These styles were meticulously arrived at through pure trial and error...
-                            div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
-                                (status.render(cx, stable_version.to_string()))
-                                main(class = "text-black dark:text-white") {
-                                    (props.children.clone())
-                                }
+                    }
+                    div(class = "h-screen pt-14 xs:pt-16 sm:pt-20 lg:pt-25 grid grid-rows-[1fr_min-content] w-full overflow-y-auto") {
+                        // These styles were meticulously arrived at through pure trial and error...
+                        div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl min-w-0") {
+                            (status.render(cx, stable_version.to_string()))
+                            main(class = "text-black dark:text-white") {
+                                (props.children.clone())
                             }
+                        }
+                        div(class = "row-start-2") {
+                            Footer {}
                         }
                     }
                 }
