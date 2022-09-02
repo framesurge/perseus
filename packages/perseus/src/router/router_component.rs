@@ -391,10 +391,7 @@ pub(crate) fn perseus_router(
                 // The main reason for this is that the router only intercepts click events from its children
 
                 view! { cx,
-                        // BUG (Sycamore): We can't remove this `div` yet...
-                        div {
-                            (*curr_view.get())
-                        }
+                        (*curr_view.get())
                 }
             }
         )

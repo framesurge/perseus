@@ -329,7 +329,7 @@ impl fmt::Display for HtmlShell {
         let html_replacement = format!(
             // We give the content a specific ID so that it can be deleted if an error page needs
             // to be rendered on the client-side
-            "{}<div>{}</div>",
+            "{}{}",
             &html_to_replace_double, self.content,
         );
         // Now interpolate that HTML into the HTML shell
