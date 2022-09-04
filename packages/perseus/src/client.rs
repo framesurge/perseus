@@ -63,7 +63,12 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     #[cfg(feature = "hydrate")]
     sycamore::hydrate_to(move |cx| perseus_router(cx, router_props), &root);
     #[cfg(not(feature = "hydrate"))]
-    sycamore::render_to(move |cx| perseus_router(cx, router_props), &root);
+    {
+        // We have to delete the existing content before we can render the new stuff
+        // (which should be the same)
+        root.set_inner_html("");
+        sycamore::render_to(move |cx| perseus_router(cx, router_props), &root);
+    }
 
     Ok(())
 }
