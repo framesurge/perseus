@@ -25,10 +25,10 @@ syn = "1"
 proc-macro2 = "1"
 darling = "0.13"
 serde_json = "1"
-sycamore-reactive = "0.8"
+sycamore-reactive = "^0.8.1"
 regex = "1"
 
 [dev-dependencies]
 trybuild = { version = "1.0", features = ["diff"] }
-sycamore = "0.8"
+sycamore = "^0.8.1"
 serde = { version = "1", features = [ "derive" ] }

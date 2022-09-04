@@ -17,11 +17,3 @@ resolver = "2"
 lto = true
 opt-level = "z"
 codegen-units = 1
-
-# Until v0.8.1
-[patch.crates-io]
-sycamore = { git = "https://github.com/sycamore-rs/sycamore" }
-sycamore-router = { git = "https://github.com/sycamore-rs/sycamore" }
-sycamore-router-macro = { git = "https://github.com/sycamore-rs/sycamore" }
-sycamore-macro = { git = "https://github.com/sycamore-rs/sycamore" }
-sycamore-futures = { git = "https://github.com/sycamore-rs/sycamore" }
