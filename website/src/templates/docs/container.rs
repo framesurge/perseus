@@ -112,8 +112,8 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
     let stable_version = create_ref(cx, get_stable_version(&props.manifest).0);
 
     view! { cx,
-        Container {
-            header: HeaderProps {
+        Container(
+            header = HeaderProps {
                 text_color: "text-black".to_string(),
                 menu_color: "bg-black".to_string(),
                 title: t!("perseus", cx),
@@ -126,8 +126,8 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                 },
                 menu_open: None,
             },
-            footer: false,
-            children: view! { cx,
+            footer = false,
+        ) {
                 // TODO Use shadow DOM to avoid replicating all docs links etc. in initial loads
                 div(class = "flex w-full") {
                     // The sidebar that'll display navigation through the docs
@@ -154,7 +154,6 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                         }
                     }
                 }
-            }
         }
     }
 }

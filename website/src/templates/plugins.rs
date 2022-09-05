@@ -65,16 +65,16 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     });
 
     view! { cx,
-        Container {
-            header: HeaderProps {
+        Container(
+            header = HeaderProps {
                 title: t!("perseus", cx),
                 text_color: "text-black".to_string(),
                 menu_color: "bg-black".to_string(),
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
-            footer: true,
-            children: view! { cx,
+            footer = true,
+        ) {
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
                         h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold mb-5") { (t!("plugins-title", cx)) }
@@ -91,9 +91,9 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                     }
                     div(class = "w-full flex justify-center") {
                         ul(class = "text-center w-full max-w-7xl mx-2 mb-16") {
-                            Indexed {
-                                iterable: filtered_plugins,
-                                view: |cx, plugin| view! { cx,
+                            Indexed(
+                                iterable = filtered_plugins,
+                                view = |cx, plugin| view! { cx,
                                     li(class = "inline-block align-top m-2") {
                                         a(
                                             class = "block text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm dark:text-white",
@@ -114,12 +114,11 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                                         }
                                     }
                                 }
-                            }
+                            )
                         }
                     }
                 }
             }
-        }
     }
 }
 

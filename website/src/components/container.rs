@@ -3,18 +3,20 @@ use super::header::{Header, HeaderProps};
 use sycamore::prelude::*;
 
 #[derive(Prop)]
-pub struct ContainerProps<G: Html> {
+pub struct ContainerProps<'a, G: Html> {
     pub header: HeaderProps<G>,
-    pub children: View<G>,
+    pub children: Children<'a, G>,
     pub footer: bool,
 }
 
 #[component(Container<G>)]
-pub fn Container<G: Html>(cx: Scope, props: ContainerProps<G>) -> View<G> {
+pub fn Container<'a, G: Html>(cx: Scope<'a>, props: ContainerProps<'a, G>) -> View<G> {
+    let children = props.children.call(cx);
+
     view! { cx,
         Header(props.header)
         main(id = "scroll-container") {
-            (props.children.clone())
+            (children)
         }
         (if props.footer {
             view! { cx,

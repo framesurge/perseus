@@ -352,23 +352,23 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     // };
 
     view! { cx,
-        Container {
-            header: HeaderProps {
+        Container(
+            header = HeaderProps {
                 title: t!("perseus", cx),
                 text_color: "text-white".to_string(),
                 menu_color: "bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
-            footer: true,
-            children: view! { cx,
+            footer = true,
+        ) {
                 // Introduction screen with the app-in-a-file example
-                IndexTile {
-                    id: "intro".to_string(),
-                    classes: "mesh-open-bg".to_string(),
-                    order: TileOrder::TextLeft,
-                    custom_supplement: None,
-                    text_block: view! { cx,
+                IndexTile(
+                    id = "intro".to_string(),
+                    classes = "mesh-open-bg".to_string(),
+                    order = TileOrder::TextLeft,
+                    custom_supplement = None,
+                    text_block = view! { cx,
                         // NOTE These styles are deliberately different from the rest to prevent text overlaps
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!("index-intro.heading", cx)) }
                         div(class = "uppercase w-full flex items-center flex-col sm:flex-row justify-center lg:justify-start") {
@@ -390,7 +390,7 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
                         }
                     },
                     // TODO Use state for this
-                    code: r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
+                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
 use sycamore::view;
 
 #[perseus::main(perseus_integration::dflt_server)]
@@ -407,17 +407,17 @@ pub fn main<G: Html>() -> PerseusApp<G> {
             p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
         }))
 }"#.to_string(),
-                    code_lang: "rust".to_string(),
-                    extra: None,
-                    nav_buttons: NavButtons::Bottom("state_gen".to_string())
-                }
+                    code_lang = "rust".to_string(),
+                    extra = None,
+                    nav_buttons = NavButtons::Bottom("state_gen".to_string())
+                )
                 // State generation tile
-                IndexTile {
-                    id: "state_gen".to_string(),
-                    classes: "bg-mesh-purple".to_string(),
-                    order: TileOrder::TextRight,
-                    custom_supplement: None,
-                    text_block: view! { cx,
+                IndexTile(
+                    id = "state_gen".to_string(),
+                    classes = "bg-mesh-purple".to_string(),
+                    order = TileOrder::TextRight,
+                    custom_supplement = None,
+                    text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             (t!("index-state-gen.heading", cx))
                         }
@@ -428,7 +428,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                         }
                     },
                     // TODO Extreme state generation example in one file
-                    code: r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
+                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
 use sycamore::view;
 
 #[perseus::main(perseus_integration::dflt_server)]
@@ -445,17 +445,17 @@ pub fn main<G: Html>() -> PerseusApp<G> {
             p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
         }))
 }"#.to_string(),
-                    code_lang: "rust".to_string(),
-                    extra: None,
-                    nav_buttons: NavButtons::Both("intro".to_string(), "i18n".to_string())
-                }
+                    code_lang = "rust".to_string(),
+                    extra = None,
+                    nav_buttons = NavButtons::Both("intro".to_string(), "i18n".to_string())
+                )
                 // I18n tile
-                IndexTile {
-                    id: "i18n".to_string(),
-                    classes: "bg-mesh-lilac-dark".to_string(),
-                    order: TileOrder::TextLeft,
-                    custom_supplement: None,
-                    text_block: view! { cx,
+                IndexTile(
+                    id = "i18n".to_string(),
+                    classes = "bg-mesh-lilac-dark".to_string(),
+                    order = TileOrder::TextLeft,
+                    custom_supplement = None,
+                    text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             (t!("index-i18n.heading", cx)) // TODO Tooltip on i18n
                         }
@@ -466,7 +466,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                         }
                     },
                     // TODO I18n in a file example
-                    code: r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
+                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
 use sycamore::view;
 
 #[perseus::main(perseus_integration::dflt_server)]
@@ -483,17 +483,17 @@ pub fn main<G: Html>() -> PerseusApp<G> {
             p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
         }))
 }"#.to_string(),
-                    code_lang: "rust".to_string(),
-                    extra: None,
-                    nav_buttons: NavButtons::Both("state_gen".to_string(), "opts".to_string())
-                }
+                    code_lang = "rust".to_string(),
+                    extra = None,
+                    nav_buttons = NavButtons::Both("state_gen".to_string(), "opts".to_string())
+                )
                 // Options tile
-                IndexTile {
-                    id: "opts".to_string(),
-                    classes: "bg-mesh-lilac-light".to_string(),
-                    order: TileOrder::TextRight,
-                    custom_supplement: None,
-                    text_block: view! { cx,
+                IndexTile(
+                    id = "opts".to_string(),
+                    classes = "bg-mesh-lilac-light".to_string(),
+                    order = TileOrder::TextRight,
+                    custom_supplement = None,
+                    text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             (t!("index-opts.heading", cx)) // TODO Best heading?
                         }
@@ -502,7 +502,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                         }
                     },
                     // TODO Extreme state generation example in one file
-                    code: r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
+                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
 use sycamore::view;
 
 #[perseus::main(perseus_integration::dflt_server)]
@@ -519,16 +519,16 @@ pub fn main<G: Html>() -> PerseusApp<G> {
             p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
         }))
 }"#.to_string(),
-                    code_lang: "rust".to_string(),
-                    extra: None,
-                    nav_buttons: NavButtons::Both("i18n".to_string(), "speed".to_string())
-                }
+                    code_lang = "rust".to_string(),
+                    extra = None,
+                    nav_buttons = NavButtons::Both("i18n".to_string(), "speed".to_string())
+                )
                 // Speed tile (uses an image of the Lighthouse scores instead of a code example)
-                IndexTile {
-                    id: "speed".to_string(),
-                    classes: "bg-mesh-pink".to_string(),
-                    order: TileOrder::TextLeft,
-                    text_block: view! { cx,
+                IndexTile(
+                    id = "speed".to_string(),
+                    classes = "bg-mesh-pink".to_string(),
+                    order = TileOrder::TextLeft,
+                    text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             (t!("index-speed.heading", cx))
                         }
@@ -546,47 +546,47 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                             ) {}
                         }
                     },
-                    code: String::new(),
-                    code_lang: String::new(),
-                    custom_supplement: Some(view! { cx,
+                    code = String::new(),
+                    code_lang = String::new(),
+                    custom_supplement = Some(view! { cx,
                         div(class = "bg-white rounded-2xl !p-8 w-full flex flex-col lg:flex-row justify-center lg:justify-evenly") {
-                            AnimatedCircularProgressBar {
-                                percent: 100,
-                                label: t!("index-speed.desktop-perf-label", cx)
-                            }
+                            AnimatedCircularProgressBar(
+                                percent = 100,
+                                label = t!("index-speed.desktop-perf-label", cx)
+                            )
                             // TODO Footnote this
-                            AnimatedCircularProgressBar {
-                                percent: 97,
-                                label: t!("index-speed.mobile-perf-label", cx)
-                            }
-                            AnimatedCircularProgressBar {
-                                percent: 100,
-                                label: t!("index-speed.best-practices-label", cx)
-                            }
+                            AnimatedCircularProgressBar(
+                                percent = 97,
+                                label = t!("index-speed.mobile-perf-label", cx)
+                            )
+                            AnimatedCircularProgressBar(
+                                percent = 100,
+                                label = t!("index-speed.best-practices-label", cx)
+                            )
                         }
                     }),
-                    extra: None,
-                    nav_buttons: NavButtons::Both("opts".to_string(), "cta".to_string())
-                }
+                    extra = None,
+                    nav_buttons = NavButtons::Both("opts".to_string(), "cta".to_string())
+                )
                 // Final tile (different)
-                IndexTile {
-                    id: "cta".to_string(),
-                    classes: "mesh-close-bg".to_string(),
-                    order: TileOrder::TextLeft, // TODO Change this?
-                    text_block: view! { cx,
+                IndexTile(
+                    id = "cta".to_string(),
+                    classes = "mesh-close-bg".to_string(),
+                    order = TileOrder::TextLeft, // TODO Change this?
+                    text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             (t!("index-cta.heading", cx))
                         }
                     },
-                    code: r#"> cargo install perseus-cli
+                    code = r#"> cargo install perseus-cli
 > perseus new my-project
 > perseus serve -w
 # Ready to deploy?
 > perseus deploy
 # And send `pkg/` to your server!"#.to_string(),
-                    code_lang: "shell".to_string(),
-                    custom_supplement: None,
-                    extra: Some(view! { cx,
+                    code_lang = "shell".to_string(),
+                    custom_supplement = None,
+                    extra = Some(view! { cx,
                         div(class = "flex justify-center") {
                             ul(
                                 class = "text-center max-w-4xl"
@@ -624,8 +624,8 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                             }
                         }
                     }),
-                    nav_buttons: NavButtons::Top("speed".to_string())
-                }
+                    nav_buttons = NavButtons::Top("speed".to_string())
+                )
 
                 // Because of how Perseus currently shifts everything, we need to re-highlight
                 // And if the user starts on a page with nothing, they'll see no highlighting on any other pages, so we rerun every time the URL changes
@@ -635,7 +635,6 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                     "window.Prism.highlightAll();"
                 }
             }
-        }
     }
 }
 

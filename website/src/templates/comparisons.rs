@@ -305,31 +305,31 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
     });
 
     view! { cx,
-        Container {
-            header: HeaderProps {
+        Container(
+            header = HeaderProps {
                 title: t!("perseus", cx),
                 text_color: "text-black".to_string(),
                 menu_color: "bg-black".to_string(),
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
-            footer: true,
-            children: view! { cx,
-                div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
-                    div {
-                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold") {
-                            (t!("comparisons-heading", cx))
-                        }
-                        br()
+            footer = true,
+        ) {
+            div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
+                div {
+                    h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold") {
+                        (t!("comparisons-heading", cx))
+                    }
+                    br()
                         p(class = "text-lg") {
                             (t!("comparisons-subtitle", cx))
                         }
-                        p(
-                            class = "italic px-1",
-                            dangerously_set_inner_html = &t!("comparisons-extra", cx)
-                        )
-                    }
-                    br(class = "mb-2 sm:mb-16 md:mb-24")
+                    p(
+                        class = "italic px-1",
+                        dangerously_set_inner_html = &t!("comparisons-extra", cx)
+                    )
+                }
+                br(class = "mb-2 sm:mb-16 md:mb-24")
                     div(class = "p-1") {
                         select(
                             class = "p-1 rounded-sm dark:bg-navy mb-4",
@@ -343,20 +343,19 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
                             (select_options)
                         }
                         br()
-                        div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
-                            div(class = "flex justify-center flex-col") {
-                                ComparisonTable(ComparisonTableProps {
-                                    comparison: curr_comparison,
-                                    perseus_comparison
-                                })
+                            div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
+                                div(class = "flex justify-center flex-col") {
+                                    ComparisonTable(ComparisonTableProps {
+                                        comparison: curr_comparison,
+                                        perseus_comparison
+                                    })
+                                }
                             }
-                        }
                         br(class = "mb-1 sm:mb-8 md:mb-12")
-                        h3(class = "text-xl underline") { (t!("comparisons-sycamore-heading", cx)) }
+                            h3(class = "text-xl underline") { (t!("comparisons-sycamore-heading", cx)) }
                         div(class = "w-full flex justify-center text-sm") {
                             p(class = "max-w-prose") { (t!("comparisons-sycamore-text", cx)) }
                         }
-                    }
                 }
             }
         }
