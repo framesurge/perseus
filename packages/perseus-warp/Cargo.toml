@@ -1,6 +1,6 @@
 [package]
 name = "perseus-warp"
-version = "0.4.0-beta.7"
+version = "0.4.0-beta.8"
 edition = "2021"
 description = "An integration that makes the Perseus framework easy to use with Warp."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.4.0-beta.7" }
+perseus = { path = "../perseus", version = "0.4.0-beta.8" }
 tokio = { version = "1", features = [ "rt-multi-thread" ] }
 warp = { package = "warp-fix-171", version = "0.3" } # Temporary until Warp #171 is resolved
 urlencoding = "2.1"
@@ -23,7 +23,7 @@ serde_json = "1"
 thiserror = "1"
 fmterr = "0.1"
 futures = "0.3"
-sycamore = { version = "0.8", features = ["ssr"] }
+sycamore = { version = "^0.8.1", features = ["ssr"] }
 
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes

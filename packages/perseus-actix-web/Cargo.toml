@@ -1,6 +1,6 @@
 [package]
 name = "perseus-actix-web"
-version = "0.4.0-beta.7"
+version = "0.4.0-beta.8"
 edition = "2021"
 description = "An integration that makes the Perseus frontend framework easy to use with Actix Web."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.4.0-beta.7" }
+perseus = { path = "../perseus", version = "0.4.0-beta.8" }
 actix-web = "=4.1.0"
 actix-http = "=3.2.1" # Without this, Actix can introduce breaking changes in a dependency tree
 # actix-router = "=0.5.0-rc.3"
@@ -25,7 +25,7 @@ serde_json = "1"
 thiserror = "1"
 fmterr = "0.1"
 futures = "0.3"
-sycamore = { version = "0.8", features = ["ssr"] }
+sycamore = { version = "^0.8.1", features = ["ssr"] }
 
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes

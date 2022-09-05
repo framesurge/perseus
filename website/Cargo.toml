@@ -31,3 +31,5 @@ regex = "1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wee_alloc = "0.4"
+
+[workspace]

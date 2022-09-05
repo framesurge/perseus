@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.8](https://github.com/framesurge/perseus/compare/v0.4.0-beta.7...v0.4.0-beta.8) (2022-09-04)
+
+
+### Features
+
+* added support for error page heads ([#179](https://github.com/framesurge/perseus/issues/179)) ([41590b1](https://github.com/framesurge/perseus/commit/41590b179210be04e7c05de55355511ec637b967))
+* removed final wrapper `<div>` ([e4106f6](https://github.com/framesurge/perseus/commit/e4106f69e1162dc7530113aead64646d727a22f3))
+* removed wrapper `<div>` inside root ([3198558](https://github.com/framesurge/perseus/commit/31985581dbbb535b607f5cc378c697001faef635))
+
+
+### Bug Fixes
+
+* fixed non-hydration rendering ([ae934bf](https://github.com/framesurge/perseus/commit/ae934bf75a2d9a2031e4d0fd2d3bb1eef8ac73b5))
+* **website:** pinned to sycamore v0.8.0-beta.7 for now ([af6c017](https://github.com/framesurge/perseus/commit/af6c0174193a465f7137b33d127539252d7286e3))
+* **website:** tmp fix for build ([21c608b](https://github.com/framesurge/perseus/commit/21c608ba7f4c3440db84e0262992a54818240f3c))
+* made head replacement only target dynamic elements ([73aa387](https://github.com/framesurge/perseus/commit/73aa38714e3b0ecdbd625e7d555b5527aa23a226)), closes [#182](https://github.com/framesurge/perseus/issues/182)
+
+
+### Documentation Changes
+
+* made general improvements ([#180](https://github.com/framesurge/perseus/issues/180)) ([1def873](https://github.com/framesurge/perseus/commit/1def8735557b6587c3738cc09cf593b22cc0d454))
+* updated faq for latest version ([fd42e44](https://github.com/framesurge/perseus/commit/fd42e44f25be8f42edb8d467bf5cd81da3661952))
+
+
+### Code Refactorings
+
+* enabled hydration in `plugins` example ([64cff9f](https://github.com/framesurge/perseus/commit/64cff9fbc2f22eb6049f2c156bc6512fd4b59a25))
+
 ## [0.4.0-beta.7](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.6...v0.4.0-beta.7) (2022-08-20)
 
 
