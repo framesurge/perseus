@@ -4,6 +4,7 @@ members = [
     "examples/core/*",
     "examples/demos/*",
     "examples/comprehensive/*",
+    "examples/website/*",
     "website",
     # We have the CLI subcrates as workspace members so we can actively develop on them
     # They also can't be a workspace until nested workspaces are supported

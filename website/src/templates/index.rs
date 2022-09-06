@@ -3,7 +3,8 @@ use crate::components::container::Container;
 use crate::components::features_list::get_features_list;
 use crate::components::github_svg::GITHUB_SVG;
 use crate::components::header::HeaderProps;
-use perseus::{link, t, Html, Template};
+use perseus::{Html, RenderFnResultWithCause, Template, link, t};
+use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 use web_sys::{
     DomRectReadOnly, Element, Event, EventTarget, IntersectionObserver, IntersectionObserverEntry,
@@ -56,7 +57,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
         supplement
     } else {
         view! { cx,
-            pre(class = "rounded-2xl !pb-12 !p-8") {
+            pre(class = "rounded-2xl !pb-12 !p-8 !text-sm max-h-[80vh]") {
                 code(class = format!("language-{}", props.code_lang)) {
                     (props.code)
                 }
@@ -276,7 +277,7 @@ fn AnimatedCircularProgressBar<G: Html>(
 
 #[perseus::template(IndexPage)]
 #[component(IndexPage<G>)]
-pub fn index_page<G: Html>(cx: Scope) -> View<G> {
+pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     // // Fix these on mobile
     // let nav_buttons = match props.nav_buttons {
     //     NavButtons::Both(prev_id, next_id) => view! { cx,
@@ -390,23 +391,7 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
                         }
                     },
                     // TODO Use state for this
-                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
-use sycamore::view;
-
-#[perseus::main(perseus_integration::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
-    PerseusApp::new()
-        .template(|| {
-            Template::new("index").template(|cx, _| {
-                view! { cx,
-                    p { "Hello World!" }
-                }
-            })
-        })
-        .error_pages(|| ErrorPages::new(|cx, url, status, err, _| view! { cx,
-            p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
-        }))
-}"#.to_string(),
+                    code = examples.app_in_a_file.to_string(),
                     code_lang = "rust".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Bottom("state_gen".to_string())
@@ -647,5 +632,33 @@ pub fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_page).head(head)
+    Template::new("index")
+        .template(index_page)
+        .head(head)
+        .build_state_fn(get_build_state)
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct CodeExamples {
+    app_in_a_file: String,
+    state_generation: String,
+    i18n: String,
+    cli: String,
+    get_started: String
+}
+
+#[perseus::build_state]
+async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<CodeExamples> {
+    use std::fs;
+
+    // We know exactly where the examples we want are
+    let props = CodeExamples {
+        app_in_a_file: fs::read_to_string("../examples/website/app_in_a_file/src/main.rs")?,
+        state_generation: String::new(),
+        i18n: String::new(),
+        cli: String::new(),
+        get_started: String::new()
+    };
+
+    Ok(props)
 }

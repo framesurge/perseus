@@ -16,7 +16,7 @@
     "index-speed.heading": "Fast. Crazy. Fast.",
     "index-speed.desc-line-1": "Underlying platform? <strong>Rust.</strong>",
     "index-speed.desc-line-2": "Target platform? <strong>WebAssembly.</strong>",
-    "index-speed.desc-line-3": "Lighthouse scores? <strong class=\"emoji-green\">💯</strong>",
+    "index-speed.desc-line-3": "Lighthouse scores? <strong>💯</strong>",
     "index-speed.desktop-perf-label": "Performance (Desktop)",
     "index-speed.mobile-perf-label": "Performance (Mobile)",
     "index-speed.best-practices-label": "Best Practices",
