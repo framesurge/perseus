@@ -390,7 +390,6 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             }
                         }
                     },
-                    // TODO Use state for this
                     code = examples.app_in_a_file.to_string(),
                     code_lang = "rust".to_string(),
                     extra = None,
@@ -412,24 +411,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             ) {}
                         }
                     },
-                    // TODO Extreme state generation example in one file
-                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
-use sycamore::view;
-
-#[perseus::main(perseus_integration::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
-    PerseusApp::new()
-        .template(|| {
-            Template::new("index").template(|cx, _| {
-                view! { cx,
-                    p { "Hello World!" }
-                }
-            })
-        })
-        .error_pages(|| ErrorPages::new(|cx, url, status, err, _| view! { cx,
-            p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
-        }))
-}"#.to_string(),
+                    code = examples.state_generation.to_string(),
                     code_lang = "rust".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Both("intro".to_string(), "i18n".to_string())
@@ -450,24 +432,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                             ) {}
                         }
                     },
-                    // TODO I18n in a file example
-                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
-use sycamore::view;
-
-#[perseus::main(perseus_integration::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
-    PerseusApp::new()
-        .template(|| {
-            Template::new("index").template(|cx, _| {
-                view! { cx,
-                    p { "Hello World!" }
-                }
-            })
-        })
-        .error_pages(|| ErrorPages::new(|cx, url, status, err, _| view! { cx,
-            p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
-        }))
-}"#.to_string(),
+                    code = examples.i18n.to_string(),
                     code_lang = "rust".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Both("state_gen".to_string(), "opts".to_string())
@@ -486,24 +451,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                             (t!("index-opts.desc", cx))
                         }
                     },
-                    // TODO Extreme state generation example in one file
-                    code = r#"use perseus::{ErrorPages, Html, PerseusApp, Template};
-use sycamore::view;
-
-#[perseus::main(perseus_integration::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
-    PerseusApp::new()
-        .template(|| {
-            Template::new("index").template(|cx, _| {
-                view! { cx,
-                    p { "Hello World!" }
-                }
-            })
-        })
-        .error_pages(|| ErrorPages::new(|cx, url, status, err, _| view! { cx,
-            p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
-        }))
-}"#.to_string(),
+                    code = examples.cli.to_string(),
                     code_lang = "rust".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Both("i18n".to_string(), "speed".to_string())
@@ -563,12 +511,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                             (t!("index-cta.heading", cx))
                         }
                     },
-                    code = r#"> cargo install perseus-cli
-> perseus new my-project
-> perseus serve -w
-# Ready to deploy?
-> perseus deploy
-# And send `pkg/` to your server!"#.to_string(),
+                    code = examples.get_started.to_string(),
                     code_lang = "shell".to_string(),
                     custom_supplement = None,
                     extra = Some(view! { cx,
@@ -654,10 +597,10 @@ async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCa
     // We know exactly where the examples we want are
     let props = CodeExamples {
         app_in_a_file: fs::read_to_string("../examples/website/app_in_a_file/src/main.rs")?,
-        state_generation: String::new(),
-        i18n: String::new(),
-        cli: String::new(),
-        get_started: String::new()
+        state_generation: fs::read_to_string("../examples/website/state_generation/src/main.rs")?,
+        i18n: fs::read_to_string("../examples/website/i18n/src/main.rs")?,
+        cli: fs::read_to_string("../examples/website/cli.txt")?,
+        get_started: fs::read_to_string("../examples/website/get_started.txt")?
     };
 
     Ok(props)
