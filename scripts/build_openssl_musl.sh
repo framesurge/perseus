@@ -1,7 +1,7 @@
 #!/bin/bash
 # This script build OpenSSL from source for musl cross-compilation, without which the Perseus CLI can't be built for Alpine Linux and the like.
 # WARNING: this is for execution on CI, not on your local system!
-# Source: https://github.com/dobefore/cross-compile-openssl-musl/blob/main/d.sh (license details pending...)
+# Source: https://github.com/dobefore/cross-compile-openssl-musl/blob/main/d.sh (used under MIT license)
 
 wget --no-check-certificate https://www.openssl.org/source/old/1.1.1/openssl-1.1.1f.tar.gz
 tar -zxvf openssl-1.1.1f.tar.gz  -C .
