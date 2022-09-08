@@ -1,57 +1,69 @@
-use perseus::{ErrorPages, Html, PerseusApp, Template, RenderFnResultWithCause};
+use std::time::Duration;
+use perseus::{Html, PerseusApp, RenderFnResult, RenderFnResultWithCause, Template, blame_err};
 use sycamore::prelude::*;
 
-// Initialize our app with the `perseus_warp` package's default server (fully customizable)
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
-        // Create a new template at `index`, which maps to our landing page
-        .template(
-            Template::new("index")
-                .template(index_page)
-                // It will generate state with `get_index_build_state` when you build your app
-                .build_state_fn(get_index_build_state)
+        .template(||
+            Template::new("post")
+                .template(post_page)
+                .build_paths_fn(get_build_paths)
+                .build_state_fn(get_build_state)
+                // Reload every blog post every day, in case it's changed
+                .revalidate_after(Duration::new(60 * 60 * 24, 0))
+                // If the user requests a page we haven't created yet, still
+                // pass it to `get_build_state()` and cache the output for
+                // future users (lazy page building)
+                .incremental_generation()
         )
 }
 
-// Our app's landing page (takes in a render scope and some properties, which we can generate)
 #[perseus::template_rx]
-fn index_page<'a, G: Html>(cx: Scope<'a>, props: IndexPropsRx<'a>) -> View<G> {
-    // Output a view, which will be converted to HTML ahead-of-time and hydrated
+fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostRx<'a>) -> View<G> {
     view! { cx,
-        // Greet the user
-        h1 { (format!(
-            "Hello, {}!",
-            props.name.get()
-        )) }
-        // Let them specify what their name is
-        input(
-            placeholder = "Name",
-            bind:value = props.name
+        h1 { (props.title.get()) }
+        p { (props.author.get()) }
+        div(
+            dangerously_set_inner_html = &props.content.get()
         )
     }
 }
 
-// The index page will take this as state, which it can modify at runtime reactively
-#[perseus::make_rx(IndexPropsRx)]
-struct IndexProps {
-    name: String,
+#[perseus::make_rx(PostRx)]
+struct Post {
+    title: String,
+    author: String,
+    content: String
 }
 
-// This function will be run when you build your app, to generate default state ahead-of-time
+// This function will be run for each path under `/post/` to generate its state
 #[perseus::build_state]
-async fn get_index_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<IndexProps> {
-    let props = IndexProps {
-        // If the user hasn't given their name yet, say `Hello, User!`
-        name: "User".to_string(),
+async fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<Post> {
+    let raw_post = match get_post_for_path(path) {
+        Ok(post) => post,
+        // If the user sends us some bogus path with incremental generation,
+        // return a 404 appropriately
+        Err(err) => blame_err!(client, 404, err)
+    };
+    let html_content = parse_markdown(raw_post.content);
+    let props = Post {
+        title: raw_post.title,
+        author: raw_post.author,
+        content: html_content,
     };
     Ok(props)
 }
 
-// A simple about page that takes no state
-#[perseus::template_rx]
-fn about_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
-        p { "This is an example webapp created with Perseus!" }
-    }
+async fn get_build_paths() -> RenderFnResult<Vec<String>> {
+    // These will all become URLs at `/post/<name>`
+    Ok(vec![
+        "welcome".to_string(),
+        "really-popular-post".to_string(),
+        "foobar".to_string(),
+    ])
 }
+
+// SNIP
+fn get_post_for_path(path: String) -> Result<Post, std::io::Error> { unimplemented!() }
+fn parse_markdown(content: String) -> String { unimplemented!() }

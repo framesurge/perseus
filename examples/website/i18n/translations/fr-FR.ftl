@@ -1,0 +1,1 @@
+greeting = Bonjour, le monde!

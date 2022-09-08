@@ -57,7 +57,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
         supplement
     } else {
         view! { cx,
-            pre(class = "rounded-2xl !pb-12 !p-8 !text-sm max-h-[80vh]") {
+            pre(class = "rounded-2xl !p-8 !text-sm max-h-[80vh]") {
                 code(class = format!("language-{}", props.code_lang)) {
                     (props.code)
                 }
@@ -452,7 +452,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                         }
                     },
                     code = examples.cli.to_string(),
-                    code_lang = "rust".to_string(),
+                    code_lang = "sh".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Both("i18n".to_string(), "speed".to_string())
                 )
@@ -512,7 +512,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                         }
                     },
                     code = examples.get_started.to_string(),
-                    code_lang = "shell".to_string(),
+                    code_lang = "sh".to_string(),
                     custom_supplement = None,
                     extra = Some(view! { cx,
                         div(class = "flex justify-center") {
@@ -592,16 +592,25 @@ struct CodeExamples {
 
 #[perseus::build_state]
 async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<CodeExamples> {
-    use std::fs;
-
     // We know exactly where the examples we want are
+    // TODO Join these futures separately
     let props = CodeExamples {
-        app_in_a_file: fs::read_to_string("../examples/website/app_in_a_file/src/main.rs")?,
-        state_generation: fs::read_to_string("../examples/website/state_generation/src/main.rs")?,
-        i18n: fs::read_to_string("../examples/website/i18n/src/main.rs")?,
-        cli: fs::read_to_string("../examples/website/cli.txt")?,
-        get_started: fs::read_to_string("../examples/website/get_started.txt")?
+        app_in_a_file: get_example("../examples/website/app_in_a_file/src/main.rs").await?,
+        state_generation: get_example("../examples/website/state_generation/src/main.rs").await?,
+        i18n: get_example("../examples/website/i18n/src/main.rs").await?,
+        cli: get_example("../examples/website/cli.txt").await?,
+        get_started: get_example("../examples/website/get_started.txt").await?
     };
 
     Ok(props)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+async fn get_example(path: &str) -> Result<String, std::io::Error> {
+    use tokio::fs;
+
+    let raw = fs::read_to_string(path).await?;
+    // Get rid of anything after a snip comment
+    let snipped_parts = raw.split("// SNIP").collect::<Vec<_>>();
+    Ok(snipped_parts[0].to_string())
 }
