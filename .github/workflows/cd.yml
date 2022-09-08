@@ -44,6 +44,8 @@ jobs:
             - name: Install musl toolchain
               run: rustup target add x86_64-unknown-linux-musl
             - run: cargo install bonnie
+            - name: Prepare OpenSSL for cross-compilation
+              run: bash scripts/build_openssl_musl.sh
             - name: Build
               run: cargo build --release --target x86_64-unknown-linux-musl
               working-directory: packages/perseus-cli
