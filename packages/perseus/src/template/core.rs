@@ -15,7 +15,7 @@ use crate::utils::AsyncFnReturn;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
 use crate::utils::PerseusDuration; /* We do actually want this in both the engine and the
-                                     * browser */
+                                    * browser */
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;

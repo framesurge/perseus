@@ -33,6 +33,8 @@ pub fn get_template<G: Html>() -> Template<G> {
         .should_revalidate_fn(should_revalidate)
         .build_state_fn(get_build_state)
         .build_paths_fn(get_build_paths)
+        // WARNING: this will revalidate on every reload in development, because incremental
+        // generation is recalculated on every request in development
         .incremental_generation()
 }
 
