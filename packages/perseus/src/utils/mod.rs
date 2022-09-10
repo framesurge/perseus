@@ -4,7 +4,6 @@ mod cache_res;
 #[cfg(target_arch = "wasm32")]
 mod checkpoint;
 mod context;
-#[cfg(not(target_arch = "wasm32"))]
 mod decode_time_str;
 #[cfg(target_arch = "wasm32")]
 mod fetch;
@@ -20,8 +19,7 @@ pub use cache_res::{cache_fallible_res, cache_res};
 #[cfg(target_arch = "wasm32")]
 pub use checkpoint::checkpoint;
 pub(crate) use context::provide_context_signal_replace;
-#[cfg(not(target_arch = "wasm32"))]
-pub use decode_time_str::{ComputedDuration, Duration, InvalidDuration};
+pub use decode_time_str::{ComputedDuration, InvalidDuration, PerseusDuration}; /* These have dummy equivalents for the browser */
 #[cfg(target_arch = "wasm32")]
 pub(crate) use fetch::fetch;
 pub use path_prefix::*;
