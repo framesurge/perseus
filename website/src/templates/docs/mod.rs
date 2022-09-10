@@ -3,5 +3,6 @@ pub mod generation; // This needs to be public so that we can reuse the `parse_m
 mod get_file_at_version;
 mod icons;
 mod template;
+mod search_bar;
 
 pub use template::get_template;

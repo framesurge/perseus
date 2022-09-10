@@ -85,5 +85,6 @@
     "plugin-details.no_link_text": "N/A",
     "plugin-search.placeholder": "Search",
     "plugin-search.no_results": "No results found.",
-    "plugins-desc": "These are all the public plugins for Perseus! If you've made a plugin, and you'd like it to be listed here, please open an issue on our repository!"
+    "plugins-desc": "These are all the public plugins for Perseus! If you've made a plugin, and you'd like it to be listed here, please open an issue on our repository!",
+    "search": "Search the docs"
 }

@@ -4,6 +4,7 @@ use crate::components::footer::Footer;
 use crate::templates::docs::generation::{
     get_beta_versions, get_outdated_versions, get_stable_version, DocsManifest, DocsVersionStatus,
 };
+use super::search_bar::SearchBar;
 use perseus::i18n::Translator;
 use perseus::{link, navigate, t};
 use sycamore::prelude::*;
@@ -120,7 +121,12 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                 mobile_nav_extension: view! { cx,
                     hr()
                     div(class = "text-left p-3 overflow-y-scroll h-[60vh]") {
-                        DocsVersionSwitcher(docs_version_switcher_props)
+                        div(class = "flex w-full justify-center text-center") {
+                            div(class = "max-w-3xl flex flex-col") {
+                                SearchBar()
+                                DocsVersionSwitcher(docs_version_switcher_props)
+                            }
+                        }
                         div(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links)
                     }
                 },
@@ -135,8 +141,11 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
                         div(class = "mr-5") {
                             div(class = "text-left text-black dark:text-white p-3") {
                                 aside {
-                                    DocsVersionSwitcher(dvsp_clone)
-                                        div(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links_clone)
+                                    div(class = "flex flex-col") {
+                                        SearchBar()
+                                        DocsVersionSwitcher(dvsp_clone)
+                                    }
+                                    div(class = "docs-links-markdown", dangerously_set_inner_html = &docs_links_clone)
                                 }
                             }
                         }
