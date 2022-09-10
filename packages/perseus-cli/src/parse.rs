@@ -101,6 +101,9 @@ pub enum Subcommand {
     Snoop(SnoopSubcommand),
     New(NewOpts),
     Init(InitOpts),
+    /// Checks if your app builds properly for both the engine-side and the
+    /// browser-side
+    Check(CheckOpts),
 }
 /// Builds your app
 #[derive(Parser, Clone)]
@@ -237,4 +240,21 @@ pub struct SnoopServeOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
+}
+
+#[derive(Parser, Clone)]
+pub struct CheckOpts {
+    /// Watch the files in your working directory for changes (exluding
+    /// `target/` and `dist/`)
+    #[clap(short, long)]
+    pub watch: bool,
+    /// Marks a specific file/directory to be watched (directories will be
+    /// recursively watched)
+    #[clap(long)]
+    pub custom_watch: Vec<String>,
+    /// Make sure the app's page generation works properly (this will take much
+    /// longer, but almost guarantees that your app will actually build);
+    /// use this to catch errors in build state and the like
+    #[clap(short, long)]
+    pub generate: bool,
 }

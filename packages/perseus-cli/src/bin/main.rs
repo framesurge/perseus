@@ -3,14 +3,14 @@ use command_group::stdlib::CommandGroup;
 use directories::ProjectDirs;
 use fmterr::fmt_err;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
-use perseus_cli::parse::{ExportOpts, ServeOpts, SnoopSubcommand};
+use perseus_cli::parse::{CheckOpts, ExportOpts, ServeOpts, SnoopSubcommand};
 use perseus_cli::{
     build, check_env, delete_artifacts, deploy, export, init, new,
     parse::{Opts, Subcommand},
     serve, serve_exported, tinker,
 };
 use perseus_cli::{
-    create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
+    check, create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
     snoop_build, snoop_server, snoop_wasm_build, Tools,
 };
 use std::env;
@@ -118,6 +118,11 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             ..
         })
         | Subcommand::Serve(ServeOpts {
+            watch,
+            custom_watch,
+            ..
+        })
+        | Subcommand::Check(CheckOpts {
             watch,
             custom_watch,
             ..
@@ -350,6 +355,13 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
         }
         Subcommand::New(ref new_opts) => new(dir, new_opts, &opts)?,
         Subcommand::Init(ref init_opts) => init(dir, init_opts)?,
+        Subcommand::Check(ref check_opts) => {
+            create_dist(&dir)?;
+            let tools = Tools::new(&dir, &opts).await?;
+            // Delete old build artifacts
+            delete_artifacts(dir.clone(), "static")?;
+            check(dir, check_opts, &tools, &opts)?
+        }
     };
     Ok(exit_code)
 }

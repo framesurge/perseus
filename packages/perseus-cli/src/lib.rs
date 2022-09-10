@@ -16,6 +16,7 @@ the documentation you'd like to see on this front!
 #![deny(missing_docs)]
 
 mod build;
+mod check;
 mod cmd;
 mod deploy;
 pub mod errors;
@@ -40,6 +41,7 @@ use std::{fs, path::Path};
 /// The current version of the CLI, extracted from the crate version.
 pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use build::build;
+pub use check::check;
 pub use deploy::deploy;
 pub use export::export;
 pub use export_error_page::export_error_page;

@@ -7,7 +7,7 @@ use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
 use std::path::PathBuf;
 
-// Emojis for stages
+// Emoji for stages
 static GENERATING: Emoji<'_, '_> = Emoji("🔨", "");
 static BUILDING: Emoji<'_, '_> = Emoji("🏗️ ", ""); // Yes, there's a space here, for some reason it's needed...
 
