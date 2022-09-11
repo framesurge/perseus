@@ -1,5 +1,5 @@
-use sycamore::prelude::*;
 use perseus::t;
+use sycamore::prelude::*;
 
 #[component]
 pub fn SearchBar<G: Html>(cx: Scope) -> View<G> {

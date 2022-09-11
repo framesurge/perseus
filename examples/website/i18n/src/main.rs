@@ -1,22 +1,23 @@
-use perseus::{Html, PerseusApp, Template, t};
+use perseus::{t, Html, PerseusApp, Template};
 use sycamore::prelude::*;
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
-        .template(||
-            Template::new("index")
-                .template(index_page)
-        )
+        .template(|| Template::new("index").template(index_page))
+        // EXCERPT_START
         .locales_and_translations_manager(
-            "en-US", // Default locale
+            "en-US",             // Default locale
             &["fr-FR", "es-ES"], // Other supported locales
         )
+    // EXCERPT_END
 }
 
+// EXCERPT_START
 // Our landing page. Going to `/` will cause a redirect to `/en-US`,
 // `/es-ES`, or `/fr-FR` based on the user's locale settings in their browser,
-// all automatically. If nothing matches, the default locale (`en-US`) will be used.
+// all automatically. If nothing matches, the default locale (`en-US`) will be
+// used.
 #[perseus::template_rx]
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
@@ -30,3 +31,4 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
 //      greeting = ¡Hola, mundo!
 // `translations/fr-FR.ftl`:
 //      greeting = Bonjour, le monde!
+// EXCERPT_END

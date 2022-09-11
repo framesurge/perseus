@@ -1,10 +1,10 @@
+use super::search_bar::SearchBar;
 use crate::components::container::Container;
-use crate::components::header::HeaderProps;
 use crate::components::footer::Footer;
+use crate::components::header::HeaderProps;
 use crate::templates::docs::generation::{
     get_beta_versions, get_outdated_versions, get_stable_version, DocsManifest, DocsVersionStatus,
 };
-use super::search_bar::SearchBar;
 use perseus::i18n::Translator;
 use perseus::{link, navigate, t};
 use sycamore::prelude::*;

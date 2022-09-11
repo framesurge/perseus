@@ -3,7 +3,7 @@ use crate::components::container::Container;
 use crate::components::features_list::get_features_list;
 use crate::components::github_svg::GITHUB_SVG;
 use crate::components::header::HeaderProps;
-use perseus::{Html, RenderFnResultWithCause, Template, link, t};
+use perseus::{link, t, Html, RenderFnResultWithCause, Template};
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 use web_sys::{
@@ -20,7 +20,7 @@ struct IndexTileProps<G: Html> {
     /// The contents of the block containing text.
     text_block: View<G>,
     /// The contents of the tile's code example.
-    code: String,
+    code: Example,
     /// The language of the code example, for syntax highlighting.
     code_lang: String,
     /// The order of the code example and text.
@@ -56,10 +56,117 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
     let supplement_view = if let Some(supplement) = props.custom_supplement {
         supplement
     } else {
-        view! { cx,
-            pre(class = "rounded-2xl !p-8 !text-sm max-h-[80vh]") {
-                code(class = format!("language-{}", props.code_lang)) {
-                    (props.code)
+        // If we have excerpts, we'll display those preferentially, and let the user
+        // switch to the full version with a button
+        match props.code {
+            Example::Simple(example) => view! { cx,
+                pre(class = "rounded-2xl !p-8 !text-sm max-h-[80vh]") {
+                    code(class = format!("language-{}", props.code_lang)) {
+                        (example)
+                    }
+                }
+            },
+            Example::WithExcerpts { full, excerpts } => {
+                // We use a separate signal for the button states so they don't lag with the
+                // blur transition
+                let show_full_button = create_signal(cx, false);
+                let show_full_rc = create_rc_signal(false);
+                let show_full = create_ref(cx, show_full_rc.clone());
+                let show_full_1 = show_full_rc.clone();
+                let show_full_2 = show_full_rc.clone();
+                let example = create_memo(cx, move || {
+                    if *show_full.get() {
+                        full.to_string()
+                    } else {
+                        excerpts.to_string()
+                    }
+                });
+                let pre = NodeRef::new();
+                let pre_noderef = pre.clone();
+                let pre_noderef_2 = pre.clone();
+                let parent = NodeRef::new();
+                let parent_noderef = parent.clone();
+                let parent_noderef_2 = parent.clone();
+
+                view! { cx,
+                    // The max height on here is for a transition hack, and the real max height is controlled by the `pre`
+                    div(
+                        ref = parent,
+                        class = "bg-[#313346] rounded-2xl max-h-[90vh] flex flex-col overflow-hidden transition-[max-height] duration-200 height-transition-short"
+                    ) {
+                        div(
+                            class = "w-full flex justify-around"
+                        ) {
+                            // Shows excerpts
+                            button(
+                                class = format!(
+                                    "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
+                                    if *show_full_button.get() { "bg-indigo-500" } else { "bg-indigo-700" }
+                                ),
+                                on:click = move |_| {
+                                   // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
+                                    if *show_full.get_untracked() {
+                                        show_full_button.set(false);
+                                        // Blur the code
+                                        let pre_node = pre_noderef.get::<DomNode>();
+                                        pre_node.add_class("blur");
+                                        #[cfg(target_arch = "wasm32")]
+                                        {
+                                            let show_full_1 = show_full_1.clone();
+                                            let parent = parent_noderef.get::<DomNode>();
+                                            let timer = gloo_timers::callback::Timeout::new(150, move || {
+                                                // We're going to shorter content, so decrease the parent's max height for a hack transition
+                                                parent.remove_class("height-transition-long");
+                                                parent.add_class("height-transition-short");
+                                                show_full_1.set(false);
+                                                // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
+                                                js_sys::eval("window.Prism.highlightAll()");
+                                                pre_node.remove_class("blur");
+                                            });
+                                            timer.forget();
+                                        }
+                                    }
+                                }
+                            ) { (t!("index-example-switcher.excerpts", cx)) }
+                            // Shows full text
+                            button(
+                                class = format!(
+                                    "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
+                                    if *show_full_button.get() { "bg-indigo-700" } else { "bg-indigo-500" }
+                                ),
+                                on:click = move |_| {
+                                    // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
+                                    if !*show_full.get_untracked() {
+                                        show_full_button.set(true);
+                                        // Blur the code
+                                        let pre_node = pre_noderef_2.get::<DomNode>();
+                                        pre_node.add_class("blur");
+                                        #[cfg(target_arch = "wasm32")]
+                                        {
+                                            let show_full_2 = show_full_2.clone();
+                                            let parent = parent_noderef_2.get::<DomNode>();
+                                            let timer = gloo_timers::callback::Timeout::new(150, move || {
+                                                // We're going to longer content, so increase the parent's max height for a hack transition
+                                                parent.remove_class("height-transition-short");
+                                                parent.add_class("height-transition-long");
+                                                show_full_2.set(true);
+                                                // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
+                                                js_sys::eval("window.Prism.highlightAll()");
+                                                pre_node.remove_class("blur");
+                                            });
+                                            timer.forget();
+                                        }
+                                    }
+                                }
+                            ) { (t!("index-example-switcher.full", cx)) }
+                        }
+                        // We apply the actual maximum height here so we can do a height transition hack on the parent
+                        pre(ref = pre, class = "rounded-2xl !p-8 !text-[0.85rem] !m-0 overflow-y-auto transition-[filter] duration-100 max-h-[80vh]") {
+                            code(class = format!("language-{}", props.code_lang)) {
+                                (example.get())
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -390,7 +497,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             }
                         }
                     },
-                    code = examples.app_in_a_file.to_string(),
+                    code = examples.app_in_a_file,
                     code_lang = "rust".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Bottom("state_gen".to_string())
@@ -411,7 +518,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             ) {}
                         }
                     },
-                    code = examples.state_generation.to_string(),
+                    code = examples.state_generation,
                     code_lang = "rust".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Both("intro".to_string(), "i18n".to_string())
@@ -432,7 +539,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             ) {}
                         }
                     },
-                    code = examples.i18n.to_string(),
+                    code = examples.i18n,
                     code_lang = "rust".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Both("state_gen".to_string(), "opts".to_string())
@@ -451,7 +558,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             (t!("index-opts.desc", cx))
                         }
                     },
-                    code = examples.cli.to_string(),
+                    code = examples.cli,
                     code_lang = "sh".to_string(),
                     extra = None,
                     nav_buttons = NavButtons::Both("i18n".to_string(), "speed".to_string())
@@ -479,7 +586,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             ) {}
                         }
                     },
-                    code = String::new(),
+                    code = Example::Simple(String::new()),
                     code_lang = String::new(),
                     custom_supplement = Some(view! { cx,
                         div(class = "bg-white rounded-2xl !p-8 w-full flex flex-col lg:flex-row justify-center lg:justify-evenly") {
@@ -511,7 +618,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             (t!("index-cta.heading", cx))
                         }
                     },
-                    code = examples.get_started.to_string(),
+                    code = examples.get_started,
                     code_lang = "sh".to_string(),
                     custom_supplement = None,
                     extra = Some(view! { cx,
@@ -558,7 +665,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // Because of how Perseus currently shifts everything, we need to re-highlight
                 // And if the user starts on a page with nothing, they'll see no highlighting on any other pages, so we rerun every time the URL changes
                 // This will be relative to the base URI
-                script(src = ".perseus/static/prism.js", defer = true)
+
                 script {
                     "window.Prism.highlightAll();"
                 }
@@ -571,6 +678,7 @@ pub fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { (t!("perseus", cx)) }
         link(rel = "stylesheet", href = ".perseus/static/prism.css")
+        script(src = ".perseus/static/prism.js", defer = true)
     }
 }
 
@@ -583,11 +691,20 @@ pub fn get_template<G: Html>() -> Template<G> {
 
 #[derive(Serialize, Deserialize, Clone)]
 struct CodeExamples {
-    app_in_a_file: String,
-    state_generation: String,
-    i18n: String,
-    cli: String,
-    get_started: String
+    app_in_a_file: Example,
+    state_generation: Example,
+    i18n: Example,
+    cli: Example,
+    get_started: Example,
+}
+
+/// A representation of a code example, which might have a short version.
+#[derive(Serialize, Deserialize, Clone)]
+enum Example {
+    /// A normal example.
+    Simple(String),
+    /// An example with a short version and a long one.
+    WithExcerpts { excerpts: String, full: String },
 }
 
 #[perseus::build_state]
@@ -599,18 +716,44 @@ async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCa
         state_generation: get_example("../examples/website/state_generation/src/main.rs").await?,
         i18n: get_example("../examples/website/i18n/src/main.rs").await?,
         cli: get_example("../examples/website/cli.txt").await?,
-        get_started: get_example("../examples/website/get_started.txt").await?
+        get_started: get_example("../examples/website/get_started.txt").await?,
     };
 
     Ok(props)
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn get_example(path: &str) -> Result<String, std::io::Error> {
+async fn get_example(path: &str) -> Result<Example, std::io::Error> {
     use tokio::fs;
 
     let raw = fs::read_to_string(path).await?;
     // Get rid of anything after a snip comment
     let snipped_parts = raw.split("// SNIP").collect::<Vec<_>>();
-    Ok(snipped_parts[0].to_string())
+    let full = snipped_parts[0].to_string();
+    // Check if there are excerpts
+    if full.contains("// EXCERPT_START") {
+        // Excerpts can't overlap, and they must be fully delimited, so just using
+        // matched indices works for this case
+        let mut excerpts = Vec::new();
+        let excerpt_starts = full.match_indices("// EXCERPT_START").collect::<Vec<_>>();
+        let excerpt_ends = full.match_indices("// EXCERPT_END").collect::<Vec<_>>();
+        for (i, (start_idx, _)) in excerpt_starts.into_iter().enumerate() {
+            let (end_idx, _) = excerpt_ends[i];
+            let excerpt = &full[(start_idx + 16)..end_idx];
+            excerpts.push(excerpt.trim());
+        }
+        let excerpts_str = excerpts.join("\n\n// ...\n\n");
+
+        // Remove the excerpt delimiters from the full version for cleanliness
+        let full = full
+            .replace("// EXCERPT_START\n", "")
+            .replace("// EXCERPT_END\n", "");
+
+        Ok(Example::WithExcerpts {
+            excerpts: excerpts_str,
+            full,
+        })
+    } else {
+        Ok(Example::Simple(full))
+    }
 }
