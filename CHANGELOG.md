@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.9](https://github.com/framesurge/perseus/compare/v0.4.0-beta.8...v0.4.0-beta.9) (2022-09-11)
+
+
+### Features
+
+* **cli:** added `perseus check` for faster validation ([5a1be87](https://github.com/framesurge/perseus/commit/5a1be873e82c14330ce55df5aba2b1e4fe21d814))
+
+
+### Bug Fixes
+
+* fixed revalidation time strings ([76ed6fc](https://github.com/framesurge/perseus/commit/76ed6fcb21e7bf7ee8026315e0336ba6dac8220d))
+* fixed route announcer dimensions ([dba4a4f](https://github.com/framesurge/perseus/commit/dba4a4f4044418c9e1997f2dd12cb8702fe68c3a))
+
+
+### Documentation Changes
+
+* merged 0.4.x with next docs ([4be9e5b](https://github.com/framesurge/perseus/commit/4be9e5bc72bd5dc42ae77b4cb463375a5bdb9814))
+* noted incremental generation/revalidation quirks in examples ([8fd19c8](https://github.com/framesurge/perseus/commit/8fd19c8ba7930e13ca6d669d41edc551015b97c7))
+* updated migration docs for current project status ([9e985ce](https://github.com/framesurge/perseus/commit/9e985cebcef66e470204faf0b9df9182308e36a8))
+
 ## [0.4.0-beta.8](https://github.com/framesurge/perseus/compare/v0.4.0-beta.7...v0.4.0-beta.8) (2022-09-04)
 
 
