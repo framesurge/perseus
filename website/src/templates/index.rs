@@ -60,7 +60,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
         // switch to the full version with a button
         match props.code {
             Example::Simple(example) => view! { cx,
-                pre(class = "rounded-2xl !p-8 !text-sm max-h-[80vh]") {
+                pre(class = "!rounded-2xl !p-8 !text-sm max-h-[80vh]") {
                     code(class = format!("language-{}", props.code_lang)) {
                         (example)
                     }
@@ -84,15 +84,10 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                 let pre = NodeRef::new();
                 let pre_noderef = pre.clone();
                 let pre_noderef_2 = pre.clone();
-                let parent = NodeRef::new();
-                let parent_noderef = parent.clone();
-                let parent_noderef_2 = parent.clone();
 
                 view! { cx,
-                    // The max height on here is for a transition hack, and the real max height is controlled by the `pre`
                     div(
-                        ref = parent,
-                        class = "bg-[#313346] rounded-2xl max-h-[90vh] flex flex-col overflow-hidden transition-[max-height] duration-200 height-transition-short"
+                        class = "bg-[#313346] rounded-2xl h-[80vh] flex flex-col overflow-hidden"
                     ) {
                         div(
                             class = "w-full flex justify-around"
@@ -113,11 +108,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                         #[cfg(target_arch = "wasm32")]
                                         {
                                             let show_full_1 = show_full_1.clone();
-                                            let parent = parent_noderef.get::<DomNode>();
                                             let timer = gloo_timers::callback::Timeout::new(150, move || {
-                                                // We're going to shorter content, so decrease the parent's max height for a hack transition
-                                                parent.remove_class("height-transition-long");
-                                                parent.add_class("height-transition-short");
                                                 show_full_1.set(false);
                                                 // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
                                                 js_sys::eval("window.Prism.highlightAll()");
@@ -144,11 +135,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                         #[cfg(target_arch = "wasm32")]
                                         {
                                             let show_full_2 = show_full_2.clone();
-                                            let parent = parent_noderef_2.get::<DomNode>();
                                             let timer = gloo_timers::callback::Timeout::new(150, move || {
-                                                // We're going to longer content, so increase the parent's max height for a hack transition
-                                                parent.remove_class("height-transition-short");
-                                                parent.add_class("height-transition-long");
                                                 show_full_2.set(true);
                                                 // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
                                                 js_sys::eval("window.Prism.highlightAll()");
@@ -160,10 +147,12 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                 }
                             ) { (t!("index-example-switcher.full", cx)) }
                         }
-                        // We apply the actual maximum height here so we can do a height transition hack on the parent
-                        pre(ref = pre, class = "rounded-2xl !p-8 !text-[0.85rem] !m-0 overflow-y-auto transition-[filter] duration-100 max-h-[80vh]") {
-                            code(class = format!("language-{}", props.code_lang)) {
-                                (example.get())
+                        // We need this div so our styles can apply it to the `.code-toolbar` created by Prism
+                        div(class = "h-full") {
+                            pre(ref = pre, class = "!rounded-2xl !p-8 !text-[0.85rem] !m-0 overflow-y-auto h-full transition-[filter] duration-100") {
+                                code(class = format!("language-{}", props.code_lang)) {
+                                    (example.get())
+                                }
                             }
                         }
                     }
