@@ -26,7 +26,7 @@ use web_sys::Element;
 // way! We're particualrly comprehensive with these because the user could
 // *potentially* stuff things up with global rules https://medium.com/@jessebeach/beware-smushed-off-screen-accessible-text-5952a4c2cbfe
 const ROUTE_ANNOUNCER_STYLES: &str = r#"
-    margin: 0;
+    margin: -1px;
     padding: 0;
     border: 0;
     clip: rect(0 0 0 0);
