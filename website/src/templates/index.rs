@@ -96,7 +96,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                             button(
                                 class = format!(
                                     "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
-                                    if *show_full_button.get() { "bg-indigo-500" } else { "bg-indigo-700" }
+                                    if *show_full_button.get() { "bg-indigo-500" } else { "bg-indigo-600" }
                                 ),
                                 on:click = move |_| {
                                    // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
@@ -123,7 +123,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                             button(
                                 class = format!(
                                     "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
-                                    if *show_full_button.get() { "bg-indigo-700" } else { "bg-indigo-500" }
+                                    if *show_full_button.get() { "bg-indigo-600" } else { "bg-indigo-500" }
                                 ),
                                 on:click = move |_| {
                                     // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
@@ -468,11 +468,11 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!("index-intro.heading", cx)) }
                         div(class = "uppercase w-full flex items-center flex-col sm:flex-row justify-center lg:justify-start") {
                             a(
-                                class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 sm:mb-0",
+                                class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 sm:mb-0 hover:shadow-white/50 hover:shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-110 ease-in-out",
                                 href = link!("/docs", cx)
                             ) { (t!("index-intro.get-started-button", cx)) }
                             a(
-                                class = "bg-[#8085ff] text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold inline-flex items-center",
+                                class = "bg-[#8085ff] text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold inline-flex items-center hover:shadow-[#8085ff]/50 hover:shadow-lg transition-shadow duration-200",
                                 href = "https://github.com/arctic-hen7/perseus",
                                 target = "_blank"
                             ) {
@@ -614,33 +614,33 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                                 class = "text-center max-w-4xl"
                             ) {
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
+                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
                                     href = link!("/docs", cx)
                                 ) { (t!("index-cta.docs-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
+                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
                                     href = "https://github.com/arctic-hen7/perseus"
                                 ) { (t!("index-cta.gh-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
+                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
                                     href = "https://docs.rs/perseus/latest/perseus"
                                 ) { (t!("index-cta.api-docs-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
+                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
                                     href = "https://crates.io/crates/perseus"
                                 ) { (t!("index-cta.crates-io-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
+                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
                                     on:click = |_| {
                                         // TODO Display a 'coming soon' message here
                                     }
                                 ) { (t!("index-cta.matrix-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
-                                    href = "TODO"
+                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    href = "https://discord.com/invite/GNqWYWNTdp"
                                 ) { (t!("index-cta.discord-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
+                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
                                     href = link!("/comparisons", cx)
                                 ) { (t!("index-cta.comparisons-button", cx)) }
                             }

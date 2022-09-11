@@ -77,7 +77,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
         ) {
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
-                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold mb-5") { (t!("plugins-title", cx)) }
+                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold mb-5") { (t!("plugins-title", cx)) }
                         br()
                         p(class = "mx-1 mb-2") { (t!("plugins-desc", cx)) }
                         div(class = "w-full flex justify-center text-center mb-3") {
