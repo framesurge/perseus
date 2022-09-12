@@ -97,8 +97,7 @@ pub use crate::utils::checkpoint;
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
 pub use client::{run_client, ClientReturn};
 
-// Internal utilities for lower-level work
-/// TODO
+/// Internal utilities for lower-level work.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod internal {
     pub use crate::page_data::*;
@@ -111,4 +110,24 @@ pub mod internal {
 pub mod log {
     pub use wasm_bindgen::JsValue;
     pub use web_sys::console::log_1 as log_js_value;
+}
+
+/// A series of imports needed by most Perseus apps, in some form. This should
+/// be used in conjunction with the Sycamore prelude.
+pub mod prelude {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub use crate::utils::{cache_fallible_res, cache_res};
+    pub use crate::web_log;
+    #[cfg(feature = "macros")]
+    pub use crate::{
+        amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
+        global_build_state, head, main, main_export, make_rx, request_state, set_headers,
+        should_revalidate, template, template_rx, test,
+    };
+    #[cfg(feature = "i18n")]
+    pub use crate::{link, t};
+    pub use crate::{
+        ErrorCause, ErrorPages, GenericErrorWithCause, PerseusApp, PerseusRoot, RenderFnResult,
+        RenderFnResultWithCause, Template,
+    };
 }
