@@ -1,19 +1,16 @@
-html, body, body > div, #root, #root > div {
+html, body, body > div, #root {
     height: 100vh;
 }
-#root > div {
+#root {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr min-content;
+    grid-template-rows: auto 1fr auto;
     grid-template-areas:
         'header'
         'main'
         'footer';
 }
 /* This is equivalent to `main`, but also works on docs pages with a sidebar */
-.scroll-container {
-    flex-grow: 1;
-}
 header {
     position: fixed;
     top: 0;
@@ -25,9 +22,6 @@ main {
 }
 footer {
     grid-area: footer;
-}
-header, footer, .scroll-container {
-    flex-shrink: 0;
 }
 
 * {
