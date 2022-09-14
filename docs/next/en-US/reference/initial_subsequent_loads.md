@@ -1,6 +1,6 @@
 # Initial vs. Subsequent Loads
 
-In a Persues app, there are two ways for a page in your app to be loaded, and it's important to understand this if you want to work with the more advanced features of Perseus. The first way is an *initial load*, which is when a user comes onto your site from an external URL (e.g. a search engine). The second is a *subsequent load*, which is when a user moves from one page on your site to another (e.g. a link on your landing page takes them to an about page).
+In a Perseus app, there are two ways for a page in your app to be loaded, and it's important to understand this if you want to work with the more advanced features of Perseus. The first way is an *initial load*, which is when a user comes onto your site from an external URL (e.g. a search engine). The second is a *subsequent load*, which is when a user moves from one page on your site to another (e.g. a link on your landing page takes them to an about page).
 
 ## Initial Loads
 
@@ -12,7 +12,7 @@ This HTML file has in it a prerendered version of the page, meaning the user wil
 
 Once this Wasm is loaded, all other links in the app are controlled by subsequent loads. Importantly, if the user goes to an external URL and then comes back, another initial load will occur (though hopefully their browser will have cached the Wasm bundle, reducing the load time to almost zero).
 
-One caveat to all this is if i18n is being used, in which case there's unfortunately no way for the server to reliably know which language a page should be returned in. If the user requested `/en-US/about`, no problem, but if they just gave us `/about`, we need to send them a script to figure out their locale. Specifically, this comes in a blank HTML page that includes the Wasm bundle, which will then detect the locale and mvoe ahead with rendering.
+One caveat to all this is if i18n is being used, in which case there's unfortunately no way for the server to reliably know which language a page should be returned in. If the user requested `/en-US/about`, no problem, but if they just gave us `/about`, we need to send them a script to figure out their locale. Specifically, this comes in a blank HTML page that includes the Wasm bundle, which will then detect the locale and move ahead with rendering.
 
 Unfortunately, this approach does lead to a moment of having a blank screen before the Wasm bundle has loaded, something that we aim to resolve in the longer-term.
 
