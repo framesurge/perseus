@@ -86,7 +86,7 @@ pub fn render_lighthouse_score<G: Html>(cx: Scope, score: u8) -> View<G> {
         }
     } else if score >= 90 {
         view! { cx,
-            span(class = "text-green-600") {
+            span(class = "text-emerald-600") {
                 (score)
             }
         }

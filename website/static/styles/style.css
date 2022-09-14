@@ -10,10 +10,10 @@ html, body, body > div, #root, #root > div {
         'main'
         'footer';
 }
-/* /\* This is equivalent to `main`, but also works on docs pages with a sidebar *\/ */
-/* .scroll-container { */
-/*     flex-grow: 1; */
-/* } */
+/* This is equivalent to `main`, but also works on docs pages with a sidebar */
+.scroll-container {
+    flex-grow: 1;
+}
 header {
     position: fixed;
     top: 0;
@@ -26,9 +26,9 @@ main {
 footer {
     grid-area: footer;
 }
-/* header, footer, .scroll-container { */
-/*     flex-shrink: 0; */
-/* } */
+header, footer, .scroll-container {
+    flex-shrink: 0;
+}
 
 * {
     scroll-behavior: smooth;
@@ -63,13 +63,25 @@ footer {
     height: 100%;
 }
 
-.mesh-open-bg {
-    background-image: url("../mesh_open.png");
-    background-size: cover;
+@media (prefers-color-scheme: light) {
+    .mesh-open-bg {
+        background-image: url("../mesh_open.png");
+        background-size: cover;
+    }
+    .mesh-close-bg {
+        background-image: url("../mesh_close.png");
+        background-size: cover;
+    }
 }
-.mesh-close-bg {
-    background-image: url("../mesh_close.png");
-    background-size: cover;
+@media (prefers-color-scheme: dark) {
+    .mesh-open-bg {
+        background-image: url("../mesh_open_dark.png");
+        background-size: cover;
+    }
+    .mesh-close-bg {
+        background-image: url("../mesh_close_dark.png");
+        background-size: cover;
+    }
 }
 
 /* Styles for the Lighthouse report (mostly copied from Lighthouse itself for the animations etc.) */
@@ -99,6 +111,49 @@ footer {
 }
 /* This adds an encoded SVG background to search bar inputs */
 input.search-bar-bg {
-    background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'%3E%3C/path%3E%3C/svg%3E") no-repeat 0.75rem center;
     padding-left: 2.25rem;
+}
+@media (prefers-color-scheme: light) {
+    input.search-bar-bg {
+        background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='black' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'%3E%3C/path%3E%3C/svg%3E") no-repeat 0.75rem center;
+    }
+}
+@media (prefers-color-scheme: dark) {
+    input.search-bar-bg {
+        background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'%3E%3C/path%3E%3C/svg%3E") no-repeat 0.75rem center;
+    }
+}
+
+/* Styling for index page tiles to have their background be separate elements so they can be filtered for dark mode */
+.tile-outer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+@media (prefers-color-scheme: dark) {
+    .tile-outer::before {
+        filter: brightness(70%) contrast(130%);
+    }
+}
+/* Styling for the background of each index page tile */
+.tile-start::before {
+    background-image: url("../mesh_open.png");
+}
+.tile-state-generation::before {
+    background-color: #7566e4;
+}
+.tile-i18n::before {
+    background-color: #a06fd2;
+}
+.tile-options::before {
+    background-color: #b18ed7;
+}
+.tile-speed::before {
+    background-color: #db80bd;
+}
+.tile-end::before {
+    background-image: url("../mesh_close.png");
 }

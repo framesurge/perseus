@@ -26,7 +26,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                         link(rel = "stylesheet", href = ".perseus/static/tailwind.css")
                         link(rel = "stylesheet", href = ".perseus/static/styles/style.css")
                     }
-                    body(class = "bg-white dark:bg-navy") {
+                    body(class = "bg-white dark:bg-neutral-900") {
                         PerseusRoot()
                     }
                 }

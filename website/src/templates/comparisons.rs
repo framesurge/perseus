@@ -110,7 +110,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
 
     view! { cx,
         table(class = "w-full overflow-x-scroll table-fixed border-collapse") {
-            thead(class = "mt-4 text-white bg-indigo-500 rounded-xl") {
+            thead(class = "mt-4 text-white bg-indigo-500 dark:bg-indigo-700 rounded-xl") {
                 th(class = "p-1 py-2 text-xs xs:text-base") {
                     (t!("comparisons-table-header", cx))
                 }
@@ -308,8 +308,8 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
         Container(
             header = HeaderProps {
                 title: t!("perseus", cx),
-                text_color: "text-black".to_string(),
-                menu_color: "bg-black".to_string(),
+                text_color: "text-black dark:text-white".to_string(),
+                menu_color: "bg-black dark:bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
@@ -332,7 +332,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
                 br(class = "mb-2 sm:mb-16 md:mb-24")
                     div(class = "p-1") {
                         select(
-                            class = "p-1 rounded-sm dark:bg-navy mb-4",
+                            class = "p-2 rounded-sm dark:bg-neutral-800 mb-4",
                             on:input = |event: web_sys::Event| {
                                 use wasm_bindgen::JsCast;
                                 let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();

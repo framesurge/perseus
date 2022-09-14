@@ -68,8 +68,8 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
         Container(
             header = HeaderProps {
                 title: t!("perseus", cx),
-                text_color: "text-black".to_string(),
-                menu_color: "bg-black".to_string(),
+                text_color: "text-black dark:text-white".to_string(),
+                menu_color: "bg-black dark:bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
                 menu_open: None,
             },
@@ -81,7 +81,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                         br()
                         p(class = "mx-1 mb-2") { (t!("plugins-desc", cx)) }
                         div(class = "w-full flex justify-center text-center mb-3") {
-                            input(class = "mx-2 max-w-7xl p-3 rounded-lg border-2 border-indigo-600 dark:bg-navy", on:input = |ev: web_sys::Event| {
+                            input(class = "mx-2 max-w-7xl p-3 rounded-md border border-indigo-500 focus:outline-indigo-600 dark:focus:outline-indigo-700 search-bar-bg", on:input = |ev: web_sys::Event| {
                                 // This longwinded code gets the actual value that the user typed in
                                 let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
                                 let new_input = target.value();

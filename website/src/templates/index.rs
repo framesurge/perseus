@@ -15,7 +15,7 @@ use web_sys::{
 struct IndexTileProps<G: Html> {
     /// The HTML ID of this tile.
     id: String,
-    /// Any additional styling classes (used for the background).
+    /// Any additional styling classes (used for the background). These will be applied to the outer tile wrapper `<div>`.
     classes: String,
     /// The contents of the block containing text.
     text_block: View<G>,
@@ -47,7 +47,7 @@ enum NavButtons {
     Both(String, String),
 }
 
-/// A responsive tile component for the index page.
+/// A responsive tile component for the index page. This uses a wrapper component for background images as `::before`s, for enabling filter application for dark mode.
 #[component]
 fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
     let order = create_ref(cx, props.order);
@@ -96,7 +96,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                             button(
                                 class = format!(
                                     "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
-                                    if *show_full_button.get() { "bg-indigo-500" } else { "bg-indigo-600" }
+                                    if *show_full_button.get() { "bg-indigo-500 dark:bg-indigo-600" } else { "bg-indigo-600 dark:bg-indigo-800" }
                                 ),
                                 on:click = move |_| {
                                    // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
@@ -123,7 +123,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                             button(
                                 class = format!(
                                     "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
-                                    if *show_full_button.get() { "bg-indigo-600" } else { "bg-indigo-500" }
+                                    if *show_full_button.get() { "bg-indigo-600 dark:bg-indigo-800" } else { "bg-indigo-500 dark:bg-indigo-600" }
                                 ),
                                 on:click = move |_| {
                                     // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
@@ -168,73 +168,79 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
     // (the second for the code example)
     view! { cx,
         div(
-            // Generic styles go here (the Flexbox here just centers everything vertically/horiztonally)
             class = format!(
-                "{} relative lg:h-[102vh] lg:px-8 xl:px-12 2xl:px-24 3xl:px-40 text-white {}",
-                // If this tile has extra content at the bottom, we need three screens on mobile, otherwise two
-                if has_extra {
-                    "h-[306vh]"
-                } else {
-                    "h-[204vh]"
-                },
-                props.classes
-            ),
-            id = format!("{}-tile", props.id)
+                "tile-outer relative {}",
+                props.classes,
+            )
         ) {
             div(
-                // This grid is responsible for aligning the text block and supplement block next to each other, with the extra stuff below them
+                // Generic styles go here (the Flexbox here just centers everything vertically/horiztonally)
                 class = format!(
-                    "grid w-full h-full items-center {}",
+                    "{} relative lg:h-[102vh] lg:px-8 xl:px-12 2xl:px-24 3xl:px-40 text-white",
+                    // If this tile has extra content at the bottom, we need three screens on mobile, otherwise two
                     if has_extra {
-                        // We need a fancy grid alignment on desktop if we have extra content
-                        "grid-cols-1 grid-rows-3 lg:grid-rows-[75%_25%] lg:grid-cols-2"
+                        "h-[306vh]"
                     } else {
-                        "grid-cols-1 grid-rows-2 lg:grid-rows-1 lg:grid-cols-2"
+                        "h-[204vh]"
                     }
-                )
+                ),
+                id = format!("{}-tile", props.id)
             ) {
-                // Text block
                 div(
+                    // This grid is responsible for aligning the text block and supplement block next to each other, with the extra stuff below them
                     class = format!(
-                        "col-span-1 row-span-1 row-start-1 h-[102vh] lg:h-auto lg:bg-none flex lg:block justify-center text-center items-center flex-col lg:max-w-[50rem] {}",
-                        // We need to apply padding in the right direction based on the order of items
-                        // We also assign the grid column to use based on this, which allows us to invert the item order
-                        if let TileOrder::TextLeft = order {
-                            "lg:pr-4 xl:pr-8 lg:text-left lg:col-start-1 lg:justify-self-start"
+                        "grid w-full h-full items-center {}",
+                        if has_extra {
+                            // We need a fancy grid alignment on desktop if we have extra content
+                            "grid-cols-1 grid-rows-3 lg:grid-rows-[75%_25%] lg:grid-cols-2"
                         } else {
-                            "lg:pl-4 xl:pl-8 lg:text-right lg:col-start-2 lg:justify-self-end"
+                            "grid-cols-1 grid-rows-2 lg:grid-rows-1 lg:grid-cols-2"
                         }
                     )
                 ) {
-                    (props.text_block)
-                }
-                // Supplement block (usu. code example)
-                div(
-                    class = format!(
-                        "col-span-1 row-span-1 row-start-2 w-full lg:row-start-1 overflow-auto h-[102vh] lg:h-auto flex lg:block items-center p-6 lg:p-0 {}",
-                        // As above, we assign the grid column based on the direction of text
-                        if let TileOrder::TextLeft = order {
-                            "lg:col-start-2"
-                        } else {
-                            "lg:col-start-1"
-                        }
-                    )
-                ) {
-                    (supplement_view)
-                }
-                // Any extra content would be placed below the text and supplement blocks
-                // if it doesn't exist, it should be hidden
-                div(
-                    class = format!(
-                        "col-span-1 lg:col-span-2 {}",
-                        if !has_extra {
-                            "hidden"
-                        } else {
-                            ""
-                        }
-                    )
-                ) {
-                    (extra_view)
+                    // Text block
+                    div(
+                        class = format!(
+                            "col-span-1 row-span-1 row-start-1 h-[102vh] lg:h-auto lg:bg-none flex lg:block justify-center text-center items-center flex-col lg:max-w-[50rem] {}",
+                            // We need to apply padding in the right direction based on the order of items
+                            // We also assign the grid column to use based on this, which allows us to invert the item order
+                            if let TileOrder::TextLeft = order {
+                                "lg:pr-4 xl:pr-8 lg:text-left lg:col-start-1 lg:justify-self-start"
+                            } else {
+                                "lg:pl-4 xl:pl-8 lg:text-right lg:col-start-2 lg:justify-self-end"
+                            }
+                        )
+                    ) {
+                        (props.text_block)
+                    }
+                    // Supplement block (usu. code example)
+                    div(
+                        class = format!(
+                            "col-span-1 row-span-1 row-start-2 w-full lg:row-start-1 overflow-auto h-[102vh] lg:h-auto flex lg:block items-center p-6 lg:p-0 {}",
+                            // As above, we assign the grid column based on the direction of text
+                            if let TileOrder::TextLeft = order {
+                                "lg:col-start-2"
+                            } else {
+                                "lg:col-start-1"
+                            }
+                        )
+                    ) {
+                        (supplement_view)
+                    }
+                    // Any extra content would be placed below the text and supplement blocks
+                    // if it doesn't exist, it should be hidden
+                    div(
+                        class = format!(
+                            "col-span-1 lg:col-span-2 {}",
+                            if !has_extra {
+                                "hidden"
+                            } else {
+                                ""
+                            }
+                        )
+                    ) {
+                        (extra_view)
+                    }
                 }
             }
         }
@@ -334,7 +340,7 @@ fn AnimatedCircularProgressBar<G: Html>(
             ) {
                 // Base background
                 circle(
-                    class = "opacity-10 fill-green-600 stroke-green-600",
+                    class = "opacity-10 fill-emerald-600 dark:fill-emerald-400 stroke-emerald-600 dark:stroke-emerald-400",
                     stroke-width = STROKE.to_string(),
                     r = normalized_radius.to_string(),
                     cx = RADIUS.to_string(),
@@ -342,7 +348,7 @@ fn AnimatedCircularProgressBar<G: Html>(
                 ) {}
                 // Arc for the meter itself
                 circle(
-                    class = "stroke-green-600 fill-transparent lh-gauge-arc",
+                    class = "stroke-emerald-600 dark:stroke-emerald-400 fill-transparent lh-gauge-arc",
                     stroke-width = STROKE.to_string(),
                     r = normalized_radius.to_string(),
                     cx = RADIUS.to_string(),
@@ -359,11 +365,11 @@ fn AnimatedCircularProgressBar<G: Html>(
                     y="50%",
                     text-anchor = "middle",
                     dy = ".37em", // Eyeballed
-                    class = "fill-green-600 text-[2rem] font-medium font-mono-lighthouse"
+                    class = "fill-emerald-600 dark:fill-emerald-400 text-[2rem] font-medium font-mono-lighthouse"
                 ) { (props.percent.to_string()) }
             }
             span(
-                class = "text-xl text-green-700"
+                class = "text-xl text-emerald-700 dark:text-emerald-400"
             ) { (props.label) }
         }
     }
@@ -460,7 +466,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // Introduction screen with the app-in-a-file example
                 IndexTile(
                     id = "intro".to_string(),
-                    classes = "mesh-open-bg".to_string(),
+                    classes = "tile-start".to_string(),
                     order = TileOrder::TextLeft,
                     custom_supplement = None,
                     text_block = view! { cx,
@@ -468,11 +474,11 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!("index-intro.heading", cx)) }
                         div(class = "uppercase w-full flex items-center flex-col sm:flex-row justify-center lg:justify-start") {
                             a(
-                                class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 sm:mb-0 hover:shadow-white/50 hover:shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-110 ease-in-out",
+                                class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 sm:mb-0 hover:shadow-white/50 dark:hover:shadow-black/50 hover:shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-110 ease-in-out",
                                 href = link!("/docs", cx)
                             ) { (t!("index-intro.get-started-button", cx)) }
                             a(
-                                class = "bg-[#8085ff] text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold inline-flex items-center hover:shadow-[#8085ff]/50 hover:shadow-lg transition-shadow duration-200",
+                                class = "bg-[#8085ff] dark:bg-[#787CFC] text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold inline-flex items-center hover:shadow-[#8085ff]/50 dark:hover:shadow-[#787CFC]/50 hover:shadow-lg transition-shadow duration-200",
                                 href = "https://github.com/arctic-hen7/perseus",
                                 target = "_blank"
                             ) {
@@ -492,7 +498,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // State generation tile
                 IndexTile(
                     id = "state_gen".to_string(),
-                    classes = "bg-mesh-purple".to_string(),
+                    classes = "tile-state-generation".to_string(),
                     order = TileOrder::TextRight,
                     custom_supplement = None,
                     text_block = view! { cx,
@@ -513,7 +519,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // I18n tile
                 IndexTile(
                     id = "i18n".to_string(),
-                    classes = "bg-mesh-lilac-dark".to_string(),
+                    classes = "tile-i18n".to_string(),
                     order = TileOrder::TextLeft,
                     custom_supplement = None,
                     text_block = view! { cx,
@@ -534,7 +540,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // Options tile
                 IndexTile(
                     id = "opts".to_string(),
-                    classes = "bg-mesh-lilac-light".to_string(),
+                    classes = "tile-options".to_string(),
                     order = TileOrder::TextRight,
                     custom_supplement = None,
                     text_block = view! { cx,
@@ -553,7 +559,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // Speed tile (uses an image of the Lighthouse scores instead of a code example)
                 IndexTile(
                     id = "speed".to_string(),
-                    classes = "bg-mesh-pink".to_string(),
+                    classes = "tile-speed".to_string(),
                     order = TileOrder::TextLeft,
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
@@ -576,7 +582,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     code = Example::Simple(String::new()),
                     code_lang = String::new(),
                     custom_supplement = Some(view! { cx,
-                        div(class = "bg-white rounded-2xl !p-8 w-full flex flex-col lg:flex-row justify-center lg:justify-evenly") {
+                        div(class = "bg-white dark:bg-[#272822] rounded-2xl !p-8 w-full flex flex-col lg:flex-row justify-center lg:justify-evenly") {
                             AnimatedCircularProgressBar(
                                 percent = 100,
                                 label = t!("index-speed.desktop-perf-label", cx)
@@ -598,7 +604,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // Final tile (different)
                 IndexTile(
                     id = "cta".to_string(),
-                    classes = "mesh-close-bg".to_string(),
+                    classes = "tile-end".to_string(),
                     order = TileOrder::TextLeft, // TODO Change this?
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
@@ -614,33 +620,33 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                                 class = "text-center max-w-4xl"
                             ) {
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = link!("/docs", cx)
                                 ) { (t!("index-cta.docs-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://github.com/arctic-hen7/perseus"
                                 ) { (t!("index-cta.gh-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://docs.rs/perseus/latest/perseus"
                                 ) { (t!("index-cta.api-docs-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://crates.io/crates/perseus"
                                 ) { (t!("index-cta.crates-io-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     on:click = |_| {
                                         // TODO Display a 'coming soon' message here
                                     }
                                 ) { (t!("index-cta.matrix-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://discord.com/invite/GNqWYWNTdp"
                                 ) { (t!("index-cta.discord-button", cx)) }
                                 a(
-                                    class = "bg-white text-black sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 transition-colors duration-200",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = link!("/comparisons", cx)
                                 ) { (t!("index-cta.comparisons-button", cx)) }
                             }

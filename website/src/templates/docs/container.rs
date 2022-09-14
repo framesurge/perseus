@@ -115,8 +115,8 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
     view! { cx,
         Container(
             header = HeaderProps {
-                text_color: "text-black".to_string(),
-                menu_color: "bg-black".to_string(),
+                text_color: "text-black dark:text-white".to_string(),
+                menu_color: "bg-black dark:bg-white".to_string(),
                 title: t!("perseus", cx),
                 mobile_nav_extension: view! { cx,
                     hr()
