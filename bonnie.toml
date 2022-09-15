@@ -96,6 +96,7 @@ site.subcommands.deploy-prod.cmd.generic = [
     "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus tinker",
     # Point this live version of the CLI at the given example
     "PERSEUS_BASE_PATH=https://framesurge.sh/perseus perseus deploy -e",
+    "PERSEUS_BASE_PATH=https://framesurge.sh/perseus perseus export-error-page --code 404 --output pkg/404.html",
     # Build the Tribble contributing docs
     "cd ..",
     "tribble deploy --path https://framesurge.sh/perseus/tribble -o tribble",
@@ -107,6 +108,7 @@ site.subcommands.deploy-prod.cmd.targets.windows = [
     "powershell -Command { $env:PERSEUS_BASE_PATH=\"http://localhost:8080/perseus\"; perseus tinker }",
     # Point this live version of the CLI at the given example
     "powershell -Command { $env:PERSEUS_BASE_PATH=\"https://framesurge.sh/perseus\"; perseus deploy -e }",
+    "powershell -Command { $env:PERSEUS_BASE_PATH=\"https://framesurge.sh/perseus\"; perseus export-error-page --code 404 --output pkg/404.html } ",
     # Build the Tribble contributing docs
     "cd ..",
     "tribble deploy --path https://framesurge.sh/perseus/tribble -o tribble",
