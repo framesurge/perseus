@@ -1,6 +1,6 @@
-use perseus::{ErrorPages, Html, i18n::Translator};
-use sycamore::prelude::*;
+use perseus::{i18n::Translator, ErrorPages, Html};
 use std::rc::Rc;
+use sycamore::prelude::*;
 
 // This site will be exported statically, so we only have control over 404 pages
 // for broken links in the site itself
@@ -17,20 +17,22 @@ pub fn get_error_pages<G: Html>() -> ErrorPages<G> {
             }
         },
     );
-    error_pages.add_page(
-        404,
-        not_found_page,
-        |cx, _, _, _, _| {
-            view! { cx,
-                title { "Not Found" }
-            }
-        },
-    );
+    error_pages.add_page(404, not_found_page, |cx, _, _, _, _| {
+        view! { cx,
+            title { "Not Found" }
+        }
+    });
 
     error_pages
 }
 
-fn not_found_page<G: Html>(cx: Scope, _url: String, _status: u16, _err: String, _translator: Option<Rc<Translator>>) -> View<G> {
+fn not_found_page<G: Html>(
+    cx: Scope,
+    _url: String,
+    _status: u16,
+    _err: String,
+    _translator: Option<Rc<Translator>>,
+) -> View<G> {
     view! { cx,
         div(class = "flex flex-col justify-center items-center h-screen") {
             main(class = "flex flex-col border border-black rounded-lg max-w-xl m-4") {

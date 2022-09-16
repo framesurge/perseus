@@ -15,7 +15,8 @@ use web_sys::{
 struct IndexTileProps<G: Html> {
     /// The HTML ID of this tile.
     id: String,
-    /// Any additional styling classes (used for the background). These will be applied to the outer tile wrapper `<div>`.
+    /// Any additional styling classes (used for the background). These will be
+    /// applied to the outer tile wrapper `<div>`.
     classes: String,
     /// The contents of the block containing text.
     text_block: View<G>,
@@ -47,7 +48,9 @@ enum NavButtons {
     Both(String, String),
 }
 
-/// A responsive tile component for the index page. This uses a wrapper component for background images as `::before`s, for enabling filter application for dark mode.
+/// A responsive tile component for the index page. This uses a wrapper
+/// component for background images as `::before`s, for enabling filter
+/// application for dark mode.
 #[component]
 fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
     let order = create_ref(cx, props.order);
