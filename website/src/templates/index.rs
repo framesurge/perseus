@@ -658,7 +658,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                 // Because of how Perseus currently shifts everything, we need to re-highlight
                 // And if the user starts on a page with nothing, they'll see no highlighting on any other pages, so we rerun every time the URL changes
                 // This will be relative to the base URI
-
+                script(src = ".perseus/static/prism.js", defer = true)
                 script {
                     "window.Prism.highlightAll();"
                 }
@@ -671,7 +671,6 @@ pub fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { (t!("perseus", cx)) }
         link(rel = "stylesheet", href = ".perseus/static/prism.css")
-        script(src = ".perseus/static/prism.js", defer = true)
     }
 }
 
