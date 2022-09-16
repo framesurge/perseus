@@ -284,9 +284,18 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             if export_opts.serve {
                 // Tell any connected browsers to reload
                 order_reload(opts.reload_server_host.to_string(), opts.reload_server_port);
-                serve_exported(dir, export_opts.host.to_string(), export_opts.port).await;
+                // This will terminate if we get an error exporting the 404 page
+                serve_exported(
+                    dir,
+                    export_opts.host.to_string(),
+                    export_opts.port,
+                    &tools,
+                    &opts,
+                )
+                .await?
+            } else {
+                0
             }
-            0
         }
         Subcommand::Serve(ref serve_opts) => {
             create_dist(&dir)?;
@@ -351,7 +360,9 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
         Subcommand::ExportErrorPage(ref eep_opts) => {
             create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
-            export_error_page(dir, eep_opts, &tools, &opts)?
+            export_error_page(
+                dir, eep_opts, &tools, &opts, true, /* Do prompt the user */
+            )?
         }
         Subcommand::New(ref new_opts) => new(dir, new_opts, &opts)?,
         Subcommand::Init(ref init_opts) => init(dir, init_opts)?,
