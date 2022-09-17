@@ -1,7 +1,6 @@
-pub mod arrows;
+// pub mod arrows;
 pub mod comparisons;
 pub mod container;
-pub mod features_list;
 pub mod footer;
 pub mod github_svg;
 pub mod header;

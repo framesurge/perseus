@@ -67,9 +67,9 @@ async fn get_build_paths() -> RenderFnResult<Vec<String>> {
 // EXCERPT_END
 
 // SNIP
-fn get_post_for_path(path: String) -> Result<Post, std::io::Error> {
+fn get_post_for_path(_path: String) -> Result<Post, std::io::Error> {
     unimplemented!()
 }
-fn parse_markdown(content: String) -> String {
+fn parse_markdown(_content: String) -> String {
     unimplemented!()
 }

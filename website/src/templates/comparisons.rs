@@ -1,11 +1,17 @@
-use crate::components::comparisons::{render_lighthouse_score, Comparison, RawComparison};
+#[perseus::engine]
+use crate::components::comparisons::RawComparison;
+use crate::components::comparisons::{render_lighthouse_score, Comparison};
 use crate::components::container::Container;
 use crate::components::header::HeaderProps;
 use crate::components::info_svg::INFO_SVG;
-use perseus::{t, ErrorCause, GenericErrorWithCause, Html, RenderFnResultWithCause, Template};
+use perseus::{t, Html, Template};
+#[perseus::engine]
+use perseus::{ErrorCause, GenericErrorWithCause, RenderFnResultWithCause};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+#[perseus::engine]
 use std::fs;
+#[perseus::engine]
 use std::path::PathBuf;
 use sycamore::prelude::*;
 

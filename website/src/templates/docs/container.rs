@@ -6,7 +6,7 @@ use crate::templates::docs::generation::{
     get_beta_versions, get_outdated_versions, get_stable_version, DocsManifest, DocsVersionStatus,
 };
 use perseus::i18n::Translator;
-use perseus::{link, navigate, t};
+use perseus::{navigate, t};
 use sycamore::prelude::*;
 use wasm_bindgen::JsCast;
 

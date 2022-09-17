@@ -1,13 +1,19 @@
+#[perseus::engine]
 use crate::templates::docs::get_file_at_version::get_file_at_version;
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
+#[perseus::engine]
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::{t, RenderFnResult, RenderFnResultWithCause};
-#[cfg(not(target_arch = "wasm32"))]
+use perseus::t;
+#[perseus::engine]
+use perseus::{RenderFnResult, RenderFnResultWithCause};
+#[perseus::engine]
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
+use std::fs; /* The lazy static will never be evaluated on the web, but we still need the
+               * import (TODO improve this...a lot) */
+#[perseus::engine]
 use std::path::PathBuf;
 use sycamore::prelude::*;
 #[cfg(not(target_arch = "wasm32"))]

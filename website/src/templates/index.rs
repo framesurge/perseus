@@ -1,15 +1,13 @@
-use crate::components::arrows::{DOWN_ARROW, UP_ARROW};
 use crate::components::container::Container;
-use crate::components::features_list::get_features_list;
 use crate::components::github_svg::GITHUB_SVG;
 use crate::components::header::HeaderProps;
-use perseus::{link, t, Html, RenderFnResultWithCause, Template};
+#[perseus::engine]
+use perseus::RenderFnResultWithCause;
+use perseus::{link, t, Html, Template};
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
-use web_sys::{
-    DomRectReadOnly, Element, Event, EventTarget, IntersectionObserver, IntersectionObserverEntry,
-    IntersectionObserverInit,
-};
+#[cfg(target_arch = "wasm32")]
+use web_sys::{Element, IntersectionObserver, IntersectionObserverEntry, IntersectionObserverInit};
 
 #[derive(Prop)]
 struct IndexTileProps<G: Html> {
@@ -33,6 +31,7 @@ struct IndexTileProps<G: Html> {
     extra: Option<View<G>>,
     /// The type of navigation buttons between sections that this section should
     /// have.
+    #[allow(dead_code)] // Pending further work
     nav_buttons: NavButtons,
 }
 #[derive(Clone)]
@@ -75,8 +74,10 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                 let show_full_button = create_signal(cx, false);
                 let show_full_rc = create_rc_signal(false);
                 let show_full = create_ref(cx, show_full_rc.clone());
+                #[allow(unused_variables)] // Wasm-only
                 let show_full_1 = show_full_rc.clone();
-                let show_full_2 = show_full_rc.clone();
+                #[allow(unused_variables)] // Wasm-only
+                let show_full_2 = show_full_rc;
                 let example = create_memo(cx, move || {
                     if *show_full.get() {
                         full.to_string()
@@ -114,7 +115,8 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                             let timer = gloo_timers::callback::Timeout::new(150, move || {
                                                 show_full_1.set(false);
                                                 // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
-                                                js_sys::eval("window.Prism.highlightAll()");
+                                                // This shouldn't break the app if it fails
+                                                let _ = js_sys::eval("window.Prism.highlightAll()");
                                                 pre_node.remove_class("blur");
                                             });
                                             timer.forget();
@@ -141,7 +143,8 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                             let timer = gloo_timers::callback::Timeout::new(150, move || {
                                                 show_full_2.set(true);
                                                 // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
-                                                js_sys::eval("window.Prism.highlightAll()");
+                                                // This shouldn't break the app if it fails
+                                                let _ = js_sys::eval("window.Prism.highlightAll()");
                                                 pre_node.remove_class("blur");
                                             });
                                             timer.forget();
@@ -730,9 +733,9 @@ async fn get_example(path: &str) -> Result<Example, std::io::Error> {
         // Excerpts can't overlap, and they must be fully delimited, so just using
         // matched indices works for this case
         let mut excerpts = Vec::new();
-        let excerpt_starts = full.match_indices("// EXCERPT_START").collect::<Vec<_>>();
+        let excerpt_starts = full.match_indices("// EXCERPT_START");
         let excerpt_ends = full.match_indices("// EXCERPT_END").collect::<Vec<_>>();
-        for (i, (start_idx, _)) in excerpt_starts.into_iter().enumerate() {
+        for (i, (start_idx, _)) in excerpt_starts.enumerate() {
             let (end_idx, _) = excerpt_ends[i];
             let excerpt = &full[(start_idx + 16)..end_idx];
             excerpts.push(excerpt.trim());

@@ -5,11 +5,14 @@
 use crate::components::container::Container;
 use crate::components::header::HeaderProps;
 use crate::components::trusted_svg::TRUSTED_SVG;
-use perseus::{t, RenderFnResultWithCause, Template};
+#[perseus::engine]
+use perseus::RenderFnResultWithCause;
+use perseus::{t, Template};
 use serde::{Deserialize, Serialize};
+#[perseus::engine]
 use std::fs;
 use sycamore::prelude::*;
-#[cfg(not(target_arch = "wasm32"))]
+#[perseus::engine]
 use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
