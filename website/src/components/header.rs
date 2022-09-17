@@ -41,7 +41,7 @@ pub fn Header<G: Html>(
         header(
             // This doesn't have a background color, we blur the background based on the content underneath
             class = format!(
-                "shadow-md sm:p-2 w-full mb-20 backdrop-blur-lg {}",
+                "shadow-md sm:p-2 w-full mb-20 bg-neutral-500/30 backdrop-blur-lg {}",
                 &text_color
             )
         ) {

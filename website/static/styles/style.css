@@ -57,6 +57,17 @@ footer {
     height: 100%;
 }
 
+/* The hackiest light mode for Prisma in human history */
+@media (prefers-color-scheme: light) {
+    pre:not(.permadark) code {
+        /* BUG This produces false-positive bad contrast ratios with Lighthouse and Axe (see https://github.com/dequelabs/axe-core/issues/3214) */
+        filter: hue-rotate(125deg) invert(1) contrast(1.5) saturate(5);
+    }
+    pre[class*=language-]:not(.permadark) {
+        background-color: #e9e9e9 !important;
+    }
+}
+
 @media (prefers-color-scheme: light) {
     .mesh-open-bg {
         background-image: url("../mesh_open.png");

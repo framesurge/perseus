@@ -62,7 +62,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
         // switch to the full version with a button
         match props.code {
             Example::Simple(example) => view! { cx,
-                pre(class = "!rounded-2xl !p-8 !text-sm max-h-[80vh]") {
+                pre(class = "!rounded-2xl !p-8 !text-sm permadark max-h-[80vh]") {
                     code(class = format!("language-{}", props.code_lang)) {
                         (example)
                     }
@@ -154,7 +154,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                             ) { (t!("index-example-switcher.full", cx)) }
                         }
                         // We need this div so our styles can apply it to the `.code-toolbar` created by Prism
-                        pre(ref = pre, class = "!rounded-2xl !p-8 !text-[0.85rem] !m-0 overflow-y-auto h-full transition-[filter] duration-100") {
+                        pre(ref = pre, class = "!rounded-2xl !p-8 !text-[0.85rem] !m-0 permadark overflow-y-auto h-full transition-[filter] duration-100") {
                             code(class = format!("language-{}", props.code_lang)) {
                                 (example.get())
                             }
