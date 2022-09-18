@@ -96,7 +96,7 @@ fn build_server(
                 // there
                 Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
                     .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
-                None => return Err(ExecutionError::ServerExectutableMsgNotFound),
+                None => return Err(ExecutionError::ServerExecutableMsgNotFound),
             };
             let server_exec_path = msg.get("executable");
             let server_exec_path = match server_exec_path {

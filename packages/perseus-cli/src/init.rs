@@ -115,7 +115,7 @@ pub fn new(dir: PathBuf, opts: &NewOpts, global_opts: &Opts) -> Result<i32, NewE
     }
 }
 
-// --- BELOW ARE THE RAW FILES FOR DEFAULT INTIALIZATION ---
+// --- BELOW ARE THE RAW FILES FOR DEFAULT INITIALIZATION ---
 // The token `%name` in all of these will be replaced with the given project
 // name
 // NOTE: These must be updated for breaking changes

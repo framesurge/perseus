@@ -24,7 +24,7 @@ static GENERATING_LOCKFILE: Emoji<'_, '_> = Emoji("🔏", "");
 
 // For each of the tools installed in this file, we preferentially
 // manually download it. If that can't be achieved due to a platform
-// mismatch, then we'll see if the user already has a verion installed.
+// mismatch, then we'll see if the user already has a version installed.
 //
 // Importantly, if the user has specified an environment variable specifying
 // where a tool can be found, we'll use that no matter what.
@@ -279,7 +279,7 @@ impl Tool {
     }
     /// Gets the path to the already-installed version of the tool to use. This
     /// should take the full path to `dist/tools/`. This will automatically
-    /// handle whether or not to install a new version, use a verion already
+    /// handle whether or not to install a new version, use a version already
     /// installed globally on the user's system, etc. If this returns
     /// `ToolStatus::NeedsInstall`, we can be sure that there are binaries
     /// available, and the same if it returns `ToolStatus::NeedsLatestInstall`.
@@ -302,7 +302,7 @@ impl Tool {
                 // If they've given us a version, we'll check if that directory exists (we don't
                 // care about any others)
                 if let Some(version) = &self.user_given_version {
-                    // If the user wants the latets version, just force an update
+                    // If the user wants the latest version, just force an update
                     if version == "latest" {
                         Ok(ToolStatus::NeedsLatestInstall)
                     } else {
@@ -508,7 +508,7 @@ impl Tool {
     /// installed program).
     ///
     /// If there's nothing the user has installed, then this will return an
-    /// error, and hence it should onyl be called after all other options
+    /// error, and hence it should only be called after all other options
     /// have been exhausted.
     fn get_path_to_preinstalled(&self) -> Result<String, InstallError> {
         #[cfg(unix)]

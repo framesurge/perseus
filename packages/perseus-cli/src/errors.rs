@@ -53,7 +53,7 @@ pub enum ExecutionError {
         source: serde_json::Error,
     },
     #[error("expected second-last message from Cargo to contain server executable path, none existed (too few messages) (report this as a bug if it persists)")]
-    ServerExectutableMsgNotFound,
+    ServerExecutableMsgNotFound,
     #[error("couldn't parse server executable path from Cargo (report this as a bug if it persists): {err}")]
     ParseServerExecutableFailed { err: String },
     #[error("couldn't remove and replace internal build artifact directory '{target:?}' (run `perseus clean` if this persists)")]

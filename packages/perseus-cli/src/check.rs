@@ -119,7 +119,7 @@ fn cargo_check(
                 &engine_spinner,
                 &engine_msg,
                 vec![
-                    // We still need this for checking, because otherwise we can't chcek the engine
+                    // We still need this for checking, because otherwise we can't check the engine
                     // and the browser simultaneously (different targets, so no
                     // commonalities gained by one directory)
                     ("CARGO_TARGET_DIR", "dist/target_engine")

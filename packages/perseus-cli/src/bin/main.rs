@@ -209,7 +209,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
             // This will store the handle to the child process
             // This will be updated every time we re-create the process
-            // We spawn it as a process group, whcih means signals go to grandchild
+            // We spawn it as a process group, which means signals go to grandchild
             // processes as well, which means hot reloading can actually work!
             let mut child = Command::new(&bin_name);
             let child = child
@@ -247,7 +247,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                         // We have to manually terminate the process group, because it's a process
                         // *group*
                         let _ = child.kill();
-                        // From here, we can let the prgoram terminate naturally
+                        // From here, we can let the program terminate naturally
                         break Ok(0);
                     }
                     Err(err) => break Err(WatchError::WatcherError { source: err }),
