@@ -1,6 +1,6 @@
 # Plugins
 
-Like many fullstack frameworks, Perseus supports *plugins*, which allow you to extend the basic functionality of Perseus in sometimes extreme ways! However, unlike other frameworks, Perseus is already extremely customizabel with usual usage, due to the way it exposes all operations directly to the user. For example, if you wanted to restructure your server, all that code is open to you directly.
+Like many fullstack frameworks, Perseus supports *plugins*, which allow you to extend the basic functionality of Perseus in sometimes extreme ways! However, unlike other frameworks, Perseus is already extremely customizable with usual usage, due to the way it exposes all operations directly to the user. For example, if you wanted to restructure your server, all that code is open to you directly.
 
 In earlier version of Perseus, there was a folder called `.perseus/` that stored a large amount of internal code, and plugins were mostly used to modify that. Today, that code simply doesn't exist anymore, and everything is bundled into the main app! (With the consequence of a slightly wild `Cargo.toml`...) This means that most things aren't done with a plugin anymore.
 
