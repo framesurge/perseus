@@ -530,7 +530,12 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     custom_supplement = None,
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!("index-i18n.heading", cx)) // TODO Tooltip on i18n
+                            div(class = "tooltip") {
+                                span(id = "i18n-dotted-border") { (t!("index-i18n.heading.start", cx)) }
+                                // We have to undo most of the title font stuff from the parent
+                                span(class = "tooltip-text font-sans text-base normal-case tracking-normal") { (t!("index-i18n.heading.tooltip", cx)) }
+                            }
+                            span { (t!("index-i18n.heading.rest", cx)) }
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(

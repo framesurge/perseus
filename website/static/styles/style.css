@@ -162,3 +162,36 @@ input.search-bar-bg {
 .tile-end::before {
     background-image: url("../mesh_close.png");
 }
+
+/* Tooltip handling */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+.tooltip .tooltip-text {
+    visibility: hidden;
+    background-color: #404040;
+    color: white;
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+
+    /* Position the element in the center of the absolute parent */
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -200%); /* And then move it above */
+
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Provides a dotted underline with controllable spacing/sizing (specialized for a single word) */
+#i18n-dotted-border {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='4.5%25' y1='100%25' x2='97%25' y2='100%25' fill='none' stroke='white' stroke-width='3' stroke-dasharray='2%2c 8' stroke-dashoffset='0' stroke-linecap='butt'/%3e%3c/svg%3e");
+}
