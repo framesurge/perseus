@@ -6,7 +6,7 @@ One of the most important features of Perseus is its state platform, as explaine
 
 The *build state* strategy is very simple: provide a function to a [`Template`](=struct.Template@perseus) and it will be run when you build your app. Its output will then be used as state!
 
-To take a simple example, let's say you have a (very contrived) page that should display the number of entries in a database at the time it was built. You would make a templat for this, perhaps called `entries` (so it would be hosted at `/entries` on your site), and you'd provide a simple view that calls on some state, which would only need a single property for the number of entries in the DB. Then, just show that!
+To take a simple example, let's say you have a (very contrived) page that should display the number of entries in a database at the time it was built. You would make a template for this, perhaps called `entries` (so it would be hosted at `/entries` on your site), and you'd provide a simple view that calls on some state, which would only need a single property for the number of entries in the DB. Then, just show that!
 
 To make this work though, we need to execute some logic at build-time, which we can do with *build state*! By calling the `.build_state_fn()` method on [`Template`](struct.Template@perseus) and providing a function annotated with `#[perseus::build_state]`, that function will be called when the template is built, and its output will be used to provide the initial value of the state.
 
@@ -18,7 +18,7 @@ A *build state* function takes two parameters: the path (see below) and the loca
 
 But now, let's say we actually have multiple tables in our database, and we want to know how many entries are in each one, with each count being displayed on a different page. Really, we want several pages under that `/entries` path now. This is easily achievable with *build paths*, which allows a single template to generate many pages.
 
-By providing a function to the `.build_paths_fn()` method of [`Template`](=struct.Template@perseus), that will be called at build-time to generate a `Vec<String>` of paths underneath `/entries`. For instant, if we returned `vec![ "foo".to_string(), "bar".to_string(), "baz".to_string() ]`, Perseus would create pages at `/entries/foo`, `/entires/bar`, and `/entries/baz`. If you wanted to create an `/entries` page, you would provide an empty string as one of the elemtents in that `Vec<String>`.
+By providing a function to the `.build_paths_fn()` method of [`Template`](=struct.Template@perseus), that will be called at build-time to generate a `Vec<String>` of paths underneath `/entries`. For instant, if we returned `vec![ "foo".to_string(), "bar".to_string(), "baz".to_string() ]`, Perseus would create pages at `/entries/foo`, `/entires/bar`, and `/entries/baz`. If you wanted to create an `/entries` page, you would provide an empty string as one of the elements in that `Vec<String>`.
 
 Note that you can also create nested paths like `foo/bar/baz` just like that.
 
@@ -42,7 +42,7 @@ A *request state* function takes three arguments: the path, the locale it's bein
 
 However, there's a problem with the above idea in most frameworks that support build state and request state, or similar principles. You can only usually use one, since otherwise the build state and the request state might generate conflicting states! This is exactly what would happen here: the build state would happily get the count, and the request state would always override this as `None`, authorized or not, and it would set `authorized`, which the build state might always assume to be `true`. Whatever shall we do?
 
-The answer to this is dead simple: the *state amalgamation* strategy, whjich allows us to take in both of those states and do some arbitrary stuff to resolve them. In this case, based on the value of `authorized` property from the *request state*, we would either return `authorized: false, state: None`, or `authorized: true, state: Some(state)`, where `state` in the latter comes from the *build state* function. Nifty, eh?
+The answer to this is dead simple: the *state amalgamation* strategy, which allows us to take in both of those states and do some arbitrary stuff to resolve them. In this case, based on the value of `authorized` property from the *request state*, we would either return `authorized: false, state: None`, or `authorized: true, state: Some(state)`, where `state` in the latter comes from the *build state* function. Nifty, eh?
 
 Note though that you won't always need state amalgamation, it's mostly useful for adding this kind of authentication to pages that already have build state, allowing you to get the best optimizations and the best security!
 
@@ -74,4 +74,4 @@ And *this* is why you the *build state* function returns a [`RenderFnResultWithC
 
 ## Examples
 
-Some of this may be a little tricky to visualize, so there's an example [here](https://github.com/artic-hen7/perseus/tree/main/examples/core/state_generation) that goes through each of Perseus' state generation strategies systemtically! Note that it doesn't use the same example of a database entry counter as described here, but rather more basic examples to just show the basic functionality of each strategy. Enjoy!
+Some of this may be a little tricky to visualize, so there's an example [here](https://github.com/artic-hen7/perseus/tree/main/examples/core/state_generation) that goes through each of Perseus' state generation strategies systematically! Note that it doesn't use the same example of a database entry counter as described here, but rather more basic examples to just show the basic functionality of each strategy. Enjoy!
