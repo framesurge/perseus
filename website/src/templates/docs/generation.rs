@@ -12,7 +12,7 @@ use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs; /* The lazy static will never be evaluated on the web, but we still need the
-               * import (TODO improve this...a lot) */
+              * import (TODO improve this...a lot) */
 #[perseus::engine]
 use std::path::PathBuf;
 use sycamore::prelude::*;
