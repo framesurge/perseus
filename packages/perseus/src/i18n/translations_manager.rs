@@ -1,4 +1,4 @@
-// This file contains the logic for a universal interface to fecth `Translator`
+// This file contains the logic for a universal interface to fetch `Translator`
 // instances for given locales At simplest, this is just a filesystem interface,
 // but it might be something like a database in production This has its own
 // error management logic because the user may implement it separately
@@ -146,7 +146,7 @@ impl FsTranslationsManager {
         let cached_translations_kv_vec = join_all(futs).await;
         manager.cached_translations = cached_translations_kv_vec.iter().cloned().collect();
         // We only declare the locales that are being cached after getting translations
-        // becuase otherwise those getters would be using undefined caches
+        // because otherwise those getters would be using undefined caches
         manager.cached_locales = locales_to_cache;
 
         manager

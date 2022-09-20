@@ -29,7 +29,7 @@ pub(crate) fn connect_to_reload_server(live_reload_tx: Sender<()>) {
         Ok(ws) => ws,
         Err(err) => return log(&format!("Connection failed: {:?}.", err)),
     };
-    // This is apparently more efficient for small bianry messages
+    // This is apparently more efficient for small binary messages
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
     // Set up a message handler

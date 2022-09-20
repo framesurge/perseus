@@ -174,7 +174,7 @@ macro_rules! define_app {
             // We need the filesystem here, and we don't need on it in the browser
             // We can't modify `app` if this is all in a block, so we compromise a bit
             let index_html = if cfg!(target_arch = "wasm32") {
-                // In the browser, this would turn into using the hardocded default, but we don't need the index view there anyway
+                // In the browser, this would turn into using the hardcoded default, but we don't need the index view there anyway
                 ::std::result::Result::Err(::std::io::Error::from(::std::io::ErrorKind::NotFound))
             } else {
                 ::std::fs::read_to_string("../index.html")

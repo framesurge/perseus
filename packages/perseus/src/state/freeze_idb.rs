@@ -24,7 +24,7 @@ pub enum IdbError {
         #[source]
         source: RexieError,
     },
-    #[error("an error occured while trying to set a new value")]
+    #[error("an error occurred while trying to set a new value")]
     SetError {
         #[source]
         source: RexieError,

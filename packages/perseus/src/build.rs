@@ -91,7 +91,7 @@ async fn gen_state_for_path(
     global_state: &Option<String>,
 ) -> Result<(), ServerError> {
     let template_path = template.get_path();
-    // If needed, we'll contruct a full path that's URL encoded so we can easily
+    // If needed, we'll construct a full path that's URL encoded so we can easily
     // save it as a file
     let full_path_without_locale = match template.uses_build_paths() {
         true => format!("{}/{}", &template_path, path),
@@ -130,7 +130,7 @@ async fn gen_state_for_path(
         let initial_state = template
             .get_build_state(full_path_without_locale.clone(), translator.get_locale())
             .await?;
-        // Write that intial state to a static JSON file
+        // Write that initial state to a static JSON file
         mutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),
@@ -167,7 +167,7 @@ async fn gen_state_for_path(
         let initial_state = template
             .get_build_state(full_path_without_locale.clone(), translator.get_locale())
             .await?;
-        // Write that intial state to a static JSON file
+        // Write that initial state to a static JSON file
         immutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),

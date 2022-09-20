@@ -22,7 +22,7 @@ pub const LIGHTWEIGHT_TRANSLATOR_FILE_EXT: &str = "json";
 /// like pluralization with this system, you should use multiple separate
 /// translation IDs.
 ///
-/// This system supports variants only in the msot basic way: you could create
+/// This system supports variants only in the most basic way: you could create
 /// multiple 'sub-ids' on ID `x` by having one ID called `x.y` and another
 /// called `x.z`, etc., but the system doesn't particularly care, unlike Fluent,
 /// which explicitly handles these cases.
@@ -64,7 +64,7 @@ impl LightweightTranslator {
     pub fn url(&self, url: &str) -> String {
         format!("{}{}", self.locale, url)
     }
-    /// Gets the locale for which this instancce is configured.
+    /// Gets the locale for which this instance is configured.
     pub fn get_locale(&self) -> String {
         self.locale.clone()
     }
@@ -121,7 +121,7 @@ impl LightweightTranslator {
 }
 
 /// A *very* simple argument interpolation system based on a `HashMap`. Any more
-/// complex functionality shoudl use `translator-fluent` instead.
+/// complex functionality should use `translator-fluent` instead.
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub struct TranslationArgs(pub HashMap<String, String>);

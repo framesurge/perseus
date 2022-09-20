@@ -7,7 +7,7 @@ type PluginDataMap = HashMap<String, Box<dyn Any + Send>>;
 
 /// A representation of all the plugins used by an app.
 ///
-/// Due to the sheer number and compexity of nested fields, this is best
+/// Due to the sheer number and complexity of nested fields, this is best
 /// transferred in an `Rc`, which unfortunately results in double indirection
 /// for runner functions.
 pub struct Plugins<G: Html> {
@@ -49,7 +49,7 @@ impl<G: Html> Plugins<G> {
     /// error if one has, noting the conflict explicitly in the error message.
     /// This can only register plugins that run exclusively on the
     /// server-side (including tinker-time and the build process).
-    // We allow unusued variables and the like for linting because otherwise any
+    // We allow unused variables and the like for linting because otherwise any
     // errors in Wasm compilation will show these up, which is annoying
     pub fn plugin<D: Any + Send>(
         #[cfg_attr(target_arch = "wasm32", allow(unused_mut))] mut self,
@@ -88,7 +88,7 @@ impl<G: Html> Plugins<G> {
     }
     /// The same as `.plugin()`, but registers a plugin that can run on the
     /// client-side. This is deliberately separated out to make conditional
-    /// compilation feasible and to emphasize to users what's incrasing their
+    /// compilation feasible and to emphasize to users what's increasing their
     /// bundle sizes. Note that this should also be used for plugins that
     /// run on both the client and server.
     pub fn plugin_with_client_privilege<D: Any + Send>(

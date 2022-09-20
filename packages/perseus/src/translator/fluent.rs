@@ -78,7 +78,7 @@ impl FluentTranslator {
     pub fn url(&self, url: &str) -> String {
         format!("{}{}", self.locale, url)
     }
-    /// Gets the locale for which this instancce is configured.
+    /// Gets the locale for which this instance is configured.
     pub fn get_locale(&self) -> String {
         self.locale.clone()
     }

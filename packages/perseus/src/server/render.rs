@@ -218,7 +218,7 @@ async fn should_revalidate(
     req: Request,
 ) -> Result<bool, ServerError> {
     let mut should_revalidate = false;
-    // If it revalidates after a certain period of time, we needd to check that
+    // If it revalidates after a certain period of time, we need to check that
     // BEFORE the custom logic
     if template.revalidates_with_time() {
         // Get the time when it should revalidate (RFC 3339)
