@@ -485,7 +485,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             ) { (t!("index-intro.get-started-button", cx)) }
                             a(
                                 class = "bg-[#8085ff] dark:bg-[#787CFC] text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold inline-flex items-center hover:shadow-[#8085ff]/50 dark:hover:shadow-[#787CFC]/50 hover:shadow-lg transition-shadow duration-200",
-                                href = "https://github.com/arctic-hen7/perseus",
+                                href = "https://github.com/framesurge/perseus",
                                 target = "_blank"
                             ) {
                                 span(
