@@ -4,7 +4,7 @@ use crate::PERSEUS_VERSION;
 use clap::Parser;
 
 // The documentation for the `Opts` struct will appear in the help page, hence
-// the lack of puncutation and the lowercasing in places
+// the lack of punctuation and the lowercasing in places
 
 /// The command-line interface for Perseus, a super-fast WebAssembly frontend
 /// development framework!
@@ -127,7 +127,7 @@ pub struct ExportOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
-    /// Watch the files in your working directory for changes (exluding
+    /// Watch the files in your working directory for changes (excluding
     /// `target/` and `dist/`)
     #[clap(short, long)]
     pub watch: bool,
@@ -162,7 +162,7 @@ pub struct ServeOpts {
     /// don't manually invoke it unless you have a good reason!)
     #[clap(long)]
     pub standalone: bool,
-    /// Watch the files in your working directory for changes (exluding
+    /// Watch the files in your working directory for changes (excluding
     /// `target/` and `dist/`)
     #[clap(short, long)]
     pub watch: bool,
@@ -213,7 +213,7 @@ pub struct NewOpts {
     #[clap(long)]
     pub dir: Option<String>,
 }
-/// Intializes a new Perseus project in the current directory
+/// Initializes a new Perseus project in the current directory
 #[derive(Parser, Clone)]
 pub struct InitOpts {
     /// The name of the new project
@@ -244,7 +244,7 @@ pub struct SnoopServeOpts {
 
 #[derive(Parser, Clone)]
 pub struct CheckOpts {
-    /// Watch the files in your working directory for changes (exluding
+    /// Watch the files in your working directory for changes (excluding
     /// `target/` and `dist/`)
     #[clap(short, long)]
     pub watch: bool,

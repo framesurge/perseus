@@ -16,7 +16,7 @@ type Clients = Arc<RwLock<HashMap<usize, UnboundedSender<Message>>>>;
 
 /// A simple counter that can be incremented from anywhere. This will be used as
 /// the source of the next user ID. This is an atomic `usize` for maximum
-/// platofrm portability (see the Rust docs on atomic primtives).
+/// platform portability (see the Rust docs on atomic primitives).
 static NEXT_UID: AtomicUsize = AtomicUsize::new(0);
 
 /// Runs the reload server, which is used to instruct the browser on when to
@@ -95,7 +95,7 @@ pub fn order_reload(host: String, port: u16) {
     // This environment variable is only for use by the CLI internally
     if env::var("PERSEUS_USE_RELOAD_SERVER").is_ok() {
         tokio::task::spawn(async move {
-            // We don't care if this fails because we have no guarnatees that the server is
+            // We don't care if this fails because we have no guarantees that the server is
             // actually up
             let _ = reqwest::get(&format!("http://{}:{}/send", host, port)).await;
         });
