@@ -53,7 +53,7 @@ pub enum ExecutionError {
         source: serde_json::Error,
     },
     #[error("expected second-last message from Cargo to contain server executable path, none existed (too few messages) (report this as a bug if it persists)")]
-    ServerExectutableMsgNotFound,
+    ServerExecutableMsgNotFound,
     #[error("couldn't parse server executable path from Cargo (report this as a bug if it persists): {err}")]
     ParseServerExecutableFailed { err: String },
     #[error("couldn't remove and replace internal build artifact directory '{target:?}' (run `perseus clean` if this persists)")]
@@ -309,4 +309,21 @@ pub enum InstallError {
     },
     #[error("directory found in `dist/tools/` with invalid name (running `perseus clean` should resolve this)")]
     InvalidToolsDirName { name: String },
+    #[error("generating `Cargo.lock` returned non-zero exit code")]
+    LockfileGenerationNonZero { code: i32 },
+    #[error("couldn't generate `Cargo.lock`")]
+    LockfileGenerationFailed {
+        #[source]
+        source: ExecutionError,
+    },
+    #[error("couldn't fetch metadata for current crate (have you run `perseus init` yet?)")]
+    MetadataFailed {
+        #[source]
+        source: cargo_metadata::Error,
+    },
+    #[error("couldn't load `Cargo.lock` from workspace root")]
+    LockfileLoadFailed {
+        #[source]
+        source: cargo_lock::Error,
+    },
 }

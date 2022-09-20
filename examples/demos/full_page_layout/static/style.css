@@ -1,0 +1,44 @@
+/* This removes the margins inserted by default around pages */
+* {
+    margin: 0;
+}
+
+/* This makes all the elements that wrap our code take up the whole page, so that we can put things at the bottom.
+ * Without this, the footer would be just beneath the content if the content doesn't fill the whole page (try disabling this).
+*/
+html, body, #root {
+    height: 100%;
+}
+/* This makes the `<div>` that wraps our whole app use CSS Grid to display three sections: the header, content, and footer. */
+#root {
+    display: grid;
+    grid-template-columns: 1fr;
+    /* The header will be automatically sized, the footer will be as small as possible, and the content will take up the rest of the space in the middle */
+    grid-template-rows: auto 1fr min-content;
+    grid-template-areas:
+        'header'
+        'main'
+        'footer';
+}
+header {
+    /* Put this in the right place in the grid */
+    grid-area: header;
+    /* Make this float over the content so it persists as we scroll */
+    position: fixed;
+    top: 0;
+    z-index: 99;
+    /* Make this span the whole page */
+    width: 100%;
+}
+main {
+    /* Put this in the right place in the grid */
+    grid-area: main;
+    /* The header is positioned 'floating' over the content, so we have to make sure this doesn't go behind the header, or it would be invisible.
+     * You may need to adjust this based on screen size, depending on how the header expands.
+    */
+    margin-top: 5rem;
+}
+footer {
+    /* Put this in the right place in the grid */
+    grid-area: footer;
+}

@@ -14,6 +14,8 @@ use crate::utils::provide_context_signal_replace;
 use crate::utils::AsyncFnReturn;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
+use crate::utils::PerseusDuration; /* We do actually want this in both the engine and the
+                                    * browser */
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
@@ -23,7 +25,6 @@ use crate::SsrNode;
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::header::HeaderMap;
-use std::time::Duration;
 use sycamore::prelude::{Scope, View};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
@@ -258,12 +259,14 @@ impl<G: Html> Template<G> {
         &self,
         props: PageProps,
         cx: Scope<'a>,
-        translator: &Translator,
+        // Taking a reference here involves a serious risk of runtime panics, unfortunately (it's
+        // simpler to own it at this point, and we clone it anyway internally)
+        translator: Translator,
     ) -> View<G> {
         // The router component has already set up all the elements of context needed by
         // the rest of the system, we can get on with rendering the template All
         // we have to do is provide the translator, replacing whatever is present
-        provide_context_signal_replace(cx, translator.clone());
+        provide_context_signal_replace(cx, translator);
 
         (self.template)(cx, props)
     }
@@ -673,8 +676,14 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn revalidate_after<I: Into<Duration>>(mut self, val: I) -> Template<G> {
-        self.revalidate_after = Some(ComputedDuration::new(val));
+    pub fn revalidate_after<I: PerseusDuration>(mut self, val: I) -> Template<G> {
+        let computed_duration = match val.into_computed() {
+            Ok(val) => val,
+            // This is fine, because this will be checked when we try to build the app (i.e. it'll
+            // show up before runtime)
+            Err(_) => panic!("invalid revalidation interval"),
+        };
+        self.revalidate_after = Some(computed_duration);
         self
     }
     /// Enables the *revalidation* strategy (time variant). This takes a time
@@ -689,7 +698,7 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(target_arch = "wasm32")]
-    pub fn revalidate_after<I: Into<Duration>>(self, _val: I) -> Template<G> {
+    pub fn revalidate_after<I: PerseusDuration>(self, _val: I) -> Template<G> {
         self
     }
 

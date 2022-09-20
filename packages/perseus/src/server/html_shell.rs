@@ -142,8 +142,18 @@ impl HtmlShell {
         }
     }
 
-    /// Interpolates page data and global state into the shell.
-    pub fn page_data(mut self, page_data: &PageData, global_state: &Option<String>) -> Self {
+    /// Interpolates page data, global state, and translations into the shell.
+    ///
+    /// The translations provided should be the source string from which a
+    /// translator can be derived on the client-side. These are provided in
+    /// a window variable to avoid page interactivity requiring a network
+    /// request to get them.
+    pub fn page_data(
+        mut self,
+        page_data: &PageData,
+        global_state: &Option<String>,
+        translations: &str,
+    ) -> Self {
         // Interpolate a global variable of the state so the app shell doesn't have to
         // make any more trips The app shell will unset this after usage so it
         // doesn't contaminate later non-initial loads Error pages (above) will
@@ -158,6 +168,7 @@ impl HtmlShell {
         } else {
             "None".to_string()
         };
+        let translations = escape_page_data(translations);
 
         // We put this at the very end of the head (after the delimiter comment) because
         // it doesn't matter if it's expunged on subsequent loads
@@ -168,6 +179,13 @@ impl HtmlShell {
         // and not need this after the initial load)
         let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
         self.scripts_before_boundary.push(global_state);
+        // We can put the translations after the boundary, because we'll only need them
+        // on the first page, and then they'll be automatically cached
+        //
+        // Note that we don't need to interpolate the locale, since that's trivially
+        // known from the URL
+        let translations = format!("window.__PERSEUS_TRANSLATIONS = `{}`;", translations);
+        self.scripts_after_boundary.push(translations);
         // Interpolate the document `<head>` (this should of course be removed between
         // page loads)
         self.head_after_boundary.push((&page_data.head).into());
@@ -202,7 +220,9 @@ impl HtmlShell {
         );
 
         // This will be used if JS is enabled, but Wasm is disabled or not supported
-        // (it's then the site's responsibility to show a further message) Wasm support detector courtesy https://stackoverflow.com/a/47880734
+        // (it's then the site's responsibility to show a further message)
+        //
+        // Wasm support detector courtesy https://stackoverflow.com/a/47880734
         let js_redirect = format!(
             r#"
         function wasmSupported() {{
@@ -247,13 +267,24 @@ impl HtmlShell {
     }
 
     /// Interpolates page error data into the shell in the event of a failure.
-    pub fn error_page(mut self, error_page_data: &ErrorPageData, error_html: &str) -> Self {
+    ///
+    /// Importantly, this makes no assumptions about the availability of
+    /// translations, so error pages rendered from here will not be
+    /// internationalized.
+    // TODO Provide translations where we can at least?
+    pub fn error_page(
+        mut self,
+        error_page_data: &ErrorPageData,
+        error_html: &str,
+        error_head: &str,
+    ) -> Self {
         let error = serde_json::to_string(error_page_data).unwrap();
         let state_var = format!(
             "window.__PERSEUS_INITIAL_STATE = `error-{}`;",
             escape_page_data(&error),
         );
         self.scripts_after_boundary.push(state_var);
+        self.head_after_boundary.push(error_head.to_string());
         self.content = error_html.into();
 
         self
@@ -266,12 +297,12 @@ impl HtmlShell {
 impl fmt::Display for HtmlShell {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let head_start = self.head_before_boundary.join("\n");
-        // We also inject a delimiter comment that will be used to wall off the constant
-        // document head from the interpolated document head
+        // We also inject a delimiter dummy `<meta>` tag that will be used to wall off
+        // the constant document head from the interpolated document head
         let head_end = format!(
             r#"
             <script type="module">{scripts_before_boundary}</script>
-            <!--PERSEUS_INTERPOLATED_HEAD_BEGINS-->
+            <meta itemprop="__perseus_head_boundary" content="">
             {head_after_boundary}
             <script>{scripts_after_boundary}</script>
             "#,
@@ -298,7 +329,7 @@ impl fmt::Display for HtmlShell {
         let html_replacement = format!(
             // We give the content a specific ID so that it can be deleted if an error page needs
             // to be rendered on the client-side
-            r#"{}<div id="__perseus_content_initial" class="__perseus_content">{}</div>"#,
+            "{}{}",
             &html_to_replace_double, self.content,
         );
         // Now interpolate that HTML into the HTML shell

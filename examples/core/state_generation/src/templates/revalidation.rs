@@ -1,5 +1,4 @@
 use perseus::{RenderFnResultWithCause, Template};
-use std::time::Duration;
 use sycamore::prelude::{view, Html, Scope, View};
 
 #[perseus::make_rx(PageStateRx)]
@@ -18,11 +17,11 @@ pub fn get_template<G: Html>() -> Template<G> {
     Template::new("revalidation")
         .template(revalidation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
-        .revalidate_after(Duration::new(5, 0))
+        .revalidate_after("5s")
         // This is an alternative method of revalidation that uses logic, which will be executed
-        // every itme a user tries to load this page. For that reason, this should NOT do
+        // every time a user tries to load this page. For that reason, this should NOT do
         // long-running work, as requests will be delayed. If both this
-        // and `revaldiate_after()` are provided, this logic will only run when `revalidate_after()`
+        // and `revalidate_after()` are provided, this logic will only run when `revalidate_after()`
         // tells Perseus that it should revalidate.
         .should_revalidate_fn(should_revalidate)
         .build_state_fn(get_build_state)
@@ -46,6 +45,6 @@ pub async fn should_revalidate(
     _req: perseus::Request,
 ) -> RenderFnResultWithCause<bool> {
     // For simplicity's sake, this will always say we should revalidate, but you
-    // could amke this check any condition
+    // could make this check any condition
     Ok(true)
 }

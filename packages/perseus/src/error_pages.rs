@@ -1,25 +1,29 @@
 use crate::translator::Translator;
-use crate::Html;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::SsrNode;
 #[cfg(target_arch = "wasm32")]
-use crate::{DomNode, HydrateNode};
+use crate::utils::replace_head;
+use crate::Html;
+use crate::SsrNode;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::prelude::Scope;
+use sycamore::utils::hydrate::with_no_hydration_context;
 use sycamore::view;
 use sycamore::view::View;
-#[cfg(target_arch = "wasm32")]
-use web_sys::Element;
 
-/// The callback to a template the user must provide for error pages. This is
+/// The function to a template the user must provide for error pages. This is
 /// passed the status code, the error message, the URL of the problematic asset,
 /// and a translator if one is available . Many error pages are generated when a
 /// translator is not available or couldn't be instantiated, so you'll need to
 /// rely on symbols or the like in these cases.
 pub type ErrorPageTemplate<G> =
     Box<dyn Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
+/// The function the user must provide to render the document `<head>`
+/// associated with a certain error page. Note that this will only be rendered
+/// on the server-side, and will be completely unreactive, being directly
+/// interpolated into the document metadata on the client-side if the error page
+/// is loaded.
+pub type ErrorPageHeadTemplate = ErrorPageTemplate<SsrNode>;
 
 /// A representation of the views configured in an app for responding to errors.
 ///
@@ -38,14 +42,18 @@ pub type ErrorPageTemplate<G> =
 /// occurred before translations data could be fetched and processed, in which
 /// case you should try to display language-agnostic information).
 ///
+/// The second closure to each error page is for the document `<head>` that will
+/// be rendered in conjunction with that error page. Importantly, this is
+/// completely unreactive, and is rendered to a string on the engine-side.
+///
 /// In development, you can get away with not defining any error pages for your
 /// app, as Perseus has a simple inbuilt default, though, when you try to go to
 /// production (e.g. with `perseus deploy`), you'll receive an error message in
 /// building. In other words, you must define your own error pages for release
 /// mode.
 pub struct ErrorPages<G: Html> {
-    status_pages: HashMap<u16, ErrorPageTemplate<G>>,
-    fallback: ErrorPageTemplate<G>,
+    status_pages: HashMap<u16, (ErrorPageTemplate<G>, ErrorPageHeadTemplate)>,
+    fallback: (ErrorPageTemplate<G>, ErrorPageHeadTemplate),
 }
 impl<G: Html> std::fmt::Debug for ErrorPages<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -57,14 +65,18 @@ impl<G: Html> ErrorPages<G> {
     /// will be used when an error occurs whose status code has not been
     /// explicitly handled by some other error page.
     pub fn new(
-        fallback: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G>
+        fallback_page: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G>
+            + Send
+            + Sync
+            + 'static,
+        fallback_head: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<SsrNode>
             + Send
             + Sync
             + 'static,
     ) -> Self {
         Self {
             status_pages: HashMap::default(),
-            fallback: Box::new(fallback),
+            fallback: (Box::new(fallback_page), Box::new(fallback_head)),
         }
     }
     /// Adds a new page for the given status code. If a page was already defined
@@ -79,88 +91,146 @@ impl<G: Html> ErrorPages<G> {
             + Send
             + Sync
             + 'static,
+        head: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<SsrNode>
+            + Send
+            + Sync
+            + 'static,
     ) {
-        self.status_pages.insert(status, Box::new(page));
+        self.status_pages
+            .insert(status, (Box::new(page), Box::new(head)));
     }
     /// Adds a new page for the given status code. If a page was already defined
     /// for the given code, it will be updated by the mechanics of
     /// the internal `HashMap`. This differs from `.add_page()` in that it takes
     /// an `Rc`, which can be useful for plugins.
-    pub fn add_page_rc(&mut self, status: u16, page: ErrorPageTemplate<G>) {
-        self.status_pages.insert(status, page);
+    pub fn add_page_rc(
+        &mut self,
+        status: u16,
+        page: ErrorPageTemplate<G>,
+        head: ErrorPageHeadTemplate,
+    ) {
+        self.status_pages.insert(status, (page, head));
     }
     /// Gets the internal template function to render.
     fn get_template_fn(&self, status: u16) -> &ErrorPageTemplate<G> {
         // Check if we have an explicitly defined page for this status code
         // If not, we'll render the fallback page
         match self.status_pages.contains_key(&status) {
-            true => self.status_pages.get(&status).unwrap(),
-            false => &self.fallback,
+            true => &self.status_pages.get(&status).unwrap().0,
+            false => &self.fallback.0,
         }
     }
-}
-#[cfg(target_arch = "wasm32")]
-impl ErrorPages<DomNode> {
-    /// Renders the appropriate error page to the given DOM container.
-    pub fn render_page(
+    /// Gets the `View<G>` to render the content.
+    pub fn get_view(
         &self,
         cx: Scope,
         url: &str,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
-        container: &Element,
-    ) {
+    ) -> View<G> {
         let template_fn = self.get_template_fn(status);
-        // Render that to the given container
-        sycamore::render_to(
-            |_| template_fn(cx, url.to_string(), status, err.to_string(), translator),
-            container,
-        );
+        template_fn(cx, url.to_string(), status, err.to_string(), translator)
     }
-}
-#[cfg(target_arch = "wasm32")]
-impl ErrorPages<HydrateNode> {
-    /// Hydrates the appropriate error page to the given DOM container. This is
-    /// used for when an error page is rendered by the server and then needs
-    /// interactivity.
-    pub fn hydrate_page(
+    /// Gets the `View<G>` to render the content and automatically renders and
+    /// replaces the document `<head>` appropriately.
+    #[cfg(target_arch = "wasm32")]
+    pub fn get_view_and_render_head(
         &self,
         cx: Scope,
         url: &str,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
-        container: &Element,
-    ) {
-        let template_fn = self.get_template_fn(status);
-        let hydrate_view = template_fn(cx, url.to_string(), status, err.to_string(), translator);
-        // TODO Now convert that `HydrateNode` to a `DomNode`
-        let dom_view = hydrate_view;
-        // Render that to the given container
-        sycamore::hydrate_to(|_| dom_view, container);
+    ) -> View<G> {
+        let head = self.render_head(url, status, err, translator.clone());
+        replace_head(&head);
+        self.get_view(cx, url, status, err, translator)
     }
-    /// Renders the appropriate error page to the given DOM container. This is
-    /// implemented on `HydrateNode` to avoid having to have two `Html` type
-    /// parameters everywhere (one for templates and one for error pages).
-    // TODO Convert from a `HydrateNode` to a `DomNode`
-    pub fn render_page(
+    /// Renders the head of an error page to a `String`.
+    ///
+    /// This is needed on the browser-side to render error pages that occur
+    /// abruptly.
+    pub fn render_head(
         &self,
-        cx: Scope,
         url: &str,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
-        container: &Element,
-    ) {
-        let template_fn = self.get_template_fn(status);
-        // Render that to the given container
-        sycamore::hydrate_to(
-            |_| template_fn(cx, url.to_string(), status, err.to_string(), translator),
-            container,
-        );
+    ) -> String {
+        let head_fn = match self.status_pages.contains_key(&status) {
+            true => &self.status_pages.get(&status).unwrap().1,
+            false => &self.fallback.1,
+        };
+        sycamore::render_to_string(|cx| {
+            with_no_hydration_context(|| {
+                head_fn(cx, url.to_string(), status, err.to_string(), translator)
+            })
+        })
     }
 }
+// #[cfg(target_arch = "wasm32")]
+// impl ErrorPages<DomNode> {
+//     /// Renders the appropriate error page to the given DOM container.
+//     pub fn render_page(
+//         &self,
+//         cx: Scope,
+//         url: &str,
+//         status: u16,
+//         err: &str,
+//         translator: Option<Rc<Translator>>,
+//         container: &Element,
+//     ) {
+//         let template_fn = self.get_template_fn(status);
+//         // Render that to the given container
+//         sycamore::render_to(
+//             |_| template_fn(cx, url.to_string(), status, err.to_string(),
+// translator),             container,
+//         );
+//     }
+// }
+// #[cfg(target_arch = "wasm32")]
+// impl ErrorPages<HydrateNode> {
+//     /// Hydrates the appropriate error page to the given DOM container. This
+// is     /// used for when an error page is rendered by the server and then
+// needs     /// interactivity.
+//     pub fn hydrate_page(
+//         &self,
+//         cx: Scope,
+//         url: &str,
+//         status: u16,
+//         err: &str,
+//         translator: Option<Rc<Translator>>,
+//         container: &Element,
+//     ) {
+//         let template_fn = self.get_template_fn(status);
+//         let hydrate_view = template_fn(cx, url.to_string(), status,
+// err.to_string(), translator);         // TODO Now convert that `HydrateNode`
+// to a `DomNode`         let dom_view = hydrate_view;
+//         // Render that to the given container
+//         sycamore::hydrate_to(|_| dom_view, container);
+//     }
+//     /// Renders the appropriate error page to the given DOM container. This
+// is     /// implemented on `HydrateNode` to avoid having to have two `Html`
+// type     /// parameters everywhere (one for templates and one for error
+// pages).     // TODO Convert from a `HydrateNode` to a `DomNode`
+//     pub fn render_page(
+//         &self,
+//         cx: Scope,
+//         url: &str,
+//         status: u16,
+//         err: &str,
+//         translator: Option<Rc<Translator>>,
+//         container: &Element,
+//     ) {
+//         let template_fn = self.get_template_fn(status);
+//         // Render that to the given container
+//         sycamore::hydrate_to(
+//             |_| template_fn(cx, url.to_string(), status, err.to_string(),
+// translator),             container,
+//         );
+//     }
+// }
 #[cfg(not(target_arch = "wasm32"))]
 impl ErrorPages<SsrNode> {
     /// Renders the error page to a string. This should then be hydrated on the
@@ -202,17 +272,32 @@ impl ErrorPages<SsrNode> {
 impl<G: Html> Default for ErrorPages<G> {
     #[cfg(debug_assertions)]
     fn default() -> Self {
-        let mut error_pages = Self::new(|cx, url, status, err, _| {
-            view! { cx,
-                p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
-            }
-        });
+        let mut error_pages = Self::new(
+            |cx, url, status, err, _| {
+                view! { cx,
+                    p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
+                }
+            },
+            |cx, _, _, _, _| {
+                view! { cx,
+                    title { "Error" }
+                }
+            },
+        );
         // 404 is the most common by far, so we add a little page for that too
-        error_pages.add_page(404, |cx, _, _, _, _| {
-            view! { cx,
-                p { "Page not found." }
-            }
-        });
+        error_pages.add_page(
+            404,
+            |cx, _, _, _, _| {
+                view! { cx,
+                    p { "Page not found." }
+                }
+            },
+            |cx, _, _, _, _| {
+                view! { cx,
+                    title { "Not Found" }
+                }
+            },
+        );
 
         error_pages
     }

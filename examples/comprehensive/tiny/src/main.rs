@@ -1,5 +1,5 @@
-use perseus::{ErrorPages, Html, PerseusApp, Template};
-use sycamore::view;
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 #[perseus::main(perseus_integration::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
@@ -11,7 +11,12 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                 }
             })
         })
-        .error_pages(|| ErrorPages::new(|cx, url, status, err, _| view! { cx,
-            p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
-        }))
+        .error_pages(|| ErrorPages::new(
+            |cx, url, status, err, _| view! { cx,
+                p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
+            },
+            |cx, _, _, _, _| view! { cx,
+                title { "Error" }
+            })
+        )
 }

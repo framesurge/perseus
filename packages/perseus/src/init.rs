@@ -20,6 +20,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::{collections::HashMap, rc::Rc};
 use sycamore::prelude::Scope;
+use sycamore::utils::hydrate::with_no_hydration_context;
 use sycamore::{
     prelude::{component, view},
     view::View,
@@ -527,20 +528,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     // The lifetime of the provided function doesn't need to be static, because we
     // render using it and then we're done with it
     pub fn index_view<'a>(mut self, f: impl Fn(Scope) -> View<SsrNode> + 'a) -> Self {
-        // This, very problematically, could add hydration IDs to the `<head>` and
-        // `<body>`, which we MUST NOT have (or the HTML shell's interpolation breaks in
-        // unexpected ways)
-        let html_str = sycamore::render_to_string(f);
-        // So, we get rid of the hydration IDs completely
-        // We have to get rid of leftover spaces as well to make sure we're completely
-        // good for the naive string replacement
-        #[cfg(not(target_arch = "wasm32"))]
-        let html_str = regex::Regex::new(r#"data-hk=".*?""#)
-            .unwrap()
-            .replace_all(&html_str, "")
-            .to_string()
-            .replace(" >", ">");
+        // We need to render the index view without any hydration IDs (which would break
+        // the HTML shell's interpolation mechanisms)
+        let html_str = sycamore::render_to_string(|cx| with_no_hydration_context(|| f(cx)));
         self.index_view = html_str;
+
         self
     }
     // Setters
@@ -740,7 +732,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .run((), self.plugins.get_plugin_data());
         for (_plugin_name, plugin_error_pages) in extra_error_pages {
             for (status, error_page) in plugin_error_pages {
-                error_pages.add_page_rc(status, error_page);
+                error_pages.add_page_rc(status, error_page.0, error_page.1);
             }
         }
 
@@ -859,7 +851,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 #[allow(non_snake_case)]
 pub fn PerseusRoot<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
-        div(dangerously_set_inner_html = "<div id=\"root\"></div>")
+        // Since we render the index view with no hydration IDs, this conforms
+        // to the expectations of the HTML shell
+        div(id = "root")
     }
 }
 

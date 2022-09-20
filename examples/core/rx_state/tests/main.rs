@@ -8,7 +8,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
     wait_for_checkpoint!("initial_state_present", 0, c);
-    wait_for_checkpoint!("page_visible", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
 
     // The initial greeting should be to an empty string
     let mut greeting = c.find(Locator::Css("p")).await?;
@@ -26,12 +26,12 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080/about"));
     wait_for_checkpoint!("initial_state_not_present", 0, c);
-    wait_for_checkpoint!("page_visible", 1, c);
+    wait_for_checkpoint!("page_interactive", 1, c);
     c.find(Locator::Id("index-link")).await?.click().await?;
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
     wait_for_checkpoint!("initial_state_not_present", 0, c);
-    wait_for_checkpoint!("page_visible", 1, c);
+    wait_for_checkpoint!("page_interactive", 1, c);
 
     let greeting = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(greeting, "Greetings, Test User!");

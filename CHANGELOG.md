@@ -2,6 +2,98 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.9](https://github.com/framesurge/perseus/compare/v0.4.0-beta.8...v0.4.0-beta.9) (2022-09-11)
+
+
+### Features
+
+* **cli:** added `perseus check` for faster validation ([5a1be87](https://github.com/framesurge/perseus/commit/5a1be873e82c14330ce55df5aba2b1e4fe21d814))
+
+
+### Bug Fixes
+
+* fixed revalidation time strings ([76ed6fc](https://github.com/framesurge/perseus/commit/76ed6fcb21e7bf7ee8026315e0336ba6dac8220d))
+* fixed route announcer dimensions ([dba4a4f](https://github.com/framesurge/perseus/commit/dba4a4f4044418c9e1997f2dd12cb8702fe68c3a))
+
+
+### Documentation Changes
+
+* merged 0.4.x with next docs ([4be9e5b](https://github.com/framesurge/perseus/commit/4be9e5bc72bd5dc42ae77b4cb463375a5bdb9814))
+* noted incremental generation/revalidation quirks in examples ([8fd19c8](https://github.com/framesurge/perseus/commit/8fd19c8ba7930e13ca6d669d41edc551015b97c7))
+* updated migration docs for current project status ([9e985ce](https://github.com/framesurge/perseus/commit/9e985cebcef66e470204faf0b9df9182308e36a8))
+
+## [0.4.0-beta.8](https://github.com/framesurge/perseus/compare/v0.4.0-beta.7...v0.4.0-beta.8) (2022-09-04)
+
+
+### Features
+
+* added support for error page heads ([#179](https://github.com/framesurge/perseus/issues/179)) ([41590b1](https://github.com/framesurge/perseus/commit/41590b179210be04e7c05de55355511ec637b967))
+* removed final wrapper `<div>` ([e4106f6](https://github.com/framesurge/perseus/commit/e4106f69e1162dc7530113aead64646d727a22f3))
+* removed wrapper `<div>` inside root ([3198558](https://github.com/framesurge/perseus/commit/31985581dbbb535b607f5cc378c697001faef635))
+
+
+### Bug Fixes
+
+* fixed non-hydration rendering ([ae934bf](https://github.com/framesurge/perseus/commit/ae934bf75a2d9a2031e4d0fd2d3bb1eef8ac73b5))
+* **website:** pinned to sycamore v0.8.0-beta.7 for now ([af6c017](https://github.com/framesurge/perseus/commit/af6c0174193a465f7137b33d127539252d7286e3))
+* **website:** tmp fix for build ([21c608b](https://github.com/framesurge/perseus/commit/21c608ba7f4c3440db84e0262992a54818240f3c))
+* made head replacement only target dynamic elements ([73aa387](https://github.com/framesurge/perseus/commit/73aa38714e3b0ecdbd625e7d555b5527aa23a226)), closes [#182](https://github.com/framesurge/perseus/issues/182)
+
+
+### Documentation Changes
+
+* made general improvements ([#180](https://github.com/framesurge/perseus/issues/180)) ([1def873](https://github.com/framesurge/perseus/commit/1def8735557b6587c3738cc09cf593b22cc0d454))
+* updated faq for latest version ([fd42e44](https://github.com/framesurge/perseus/commit/fd42e44f25be8f42edb8d467bf5cd81da3661952))
+
+
+### Code Refactorings
+
+* enabled hydration in `plugins` example ([64cff9f](https://github.com/framesurge/perseus/commit/64cff9fbc2f22eb6049f2c156bc6512fd4b59a25))
+
+## [0.4.0-beta.7](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.6...v0.4.0-beta.7) (2022-08-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* - Added `ErrorLoaded { path }` case to `RouterLoadState` (which must now be matched)
+- Removed `page_visible testing` checkpoint (use `page_interactive` instead)
+- `router_entry checkpoint` is now only fired on subsequent loads
+
+### Features
+
+* **cli:** added support for automatically updating tools from lockfile ([52ab3f1](https://github.com/arctic-hen7/perseus/commit/52ab3f17dec243fa2759489b7e5116c9c4ac4de9)), closes [#169](https://github.com/arctic-hen7/perseus/issues/169)
+* redesigned app shell with support for hydration ([#177](https://github.com/arctic-hen7/perseus/issues/177)) ([d407727](https://github.com/arctic-hen7/perseus/commit/d4077272fe2849546a043a8ae73f723635bee8ea))
+
+
+### Bug Fixes
+
+* fixed response caching functions ([e29e5d2](https://github.com/arctic-hen7/perseus/commit/e29e5d2be36920126a32eca2ac3e4edbca6b8a95))
+
+
+### Performance Improvements
+
+* removed unnecessary content pre-rendering from server render process ([e1c9ad3](https://github.com/arctic-hen7/perseus/commit/e1c9ad36421e3aa8f21b0d9065c22d5082e9bde7))
+
+## [0.4.0-beta.6](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.5...v0.4.0-beta.6) (2022-08-13)
+
+
+### Features
+
+* added feedback to deployed server binaries ([04eab84](https://github.com/arctic-hen7/perseus/commit/04eab84821a93fd5de0fa333a868375929c9adf8)), closes [#164](https://github.com/arctic-hen7/perseus/issues/164)
+
+
+### Bug Fixes
+
+* **cli:** fixed `perseus new`/`perseus init` package versions ([22dac34](https://github.com/arctic-hen7/perseus/commit/22dac34f87b173e7d16912a1a83a64f13e917ec0))
+* **website:** added necessary images back ([8e6707c](https://github.com/arctic-hen7/perseus/commit/8e6707c55b0b38bed9d53edd3bfa304029837599))
+* fixed runtime panics in app shell ([cb39dc1](https://github.com/arctic-hen7/perseus/commit/cb39dc178f6186588c507da4799d6a21c9aafbf8))
+
+
+### Documentation Changes
+
+* fixed typo ([#171](https://github.com/arctic-hen7/perseus/issues/171)) ([c3e7c35](https://github.com/arctic-hen7/perseus/commit/c3e7c35e5b9c7e0303f0e6d3da459bc05985d14f))
+* update fetching demo readme ([#168](https://github.com/arctic-hen7/perseus/issues/168)) ([402b36e](https://github.com/arctic-hen7/perseus/commit/402b36e0fea335ded44c6a51da598872636d2afb))
+
 ## [0.4.0-beta.5](https://github.com/arctic-hen7/perseus/compare/v0.4.0-beta.4...v0.4.0-beta.5) (2022-07-18)
 
 

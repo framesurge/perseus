@@ -1,4 +1,4 @@
-use crate::cmd::run_cmd_directly;
+use crate::cmd::run_cmd;
 use crate::errors::ExecutionError;
 use crate::install::Tools;
 use crate::parse::{ExportErrorPageOpts, Opts};
@@ -11,8 +11,10 @@ pub fn export_error_page(
     opts: &ExportErrorPageOpts,
     tools: &Tools,
     global_opts: &Opts,
+    prompt: bool,
 ) -> Result<i32, ExecutionError> {
-    run_cmd_directly(
+    // This function would tell the user everything if something goes wrong
+    let (_stdout, _stderr, exit_code) = run_cmd(
         format!(
             "{} run {} -- {} {}",
             tools.cargo_engine,
@@ -26,5 +28,12 @@ pub fn export_error_page(
             ("PERSEUS_ENGINE_OPERATION", "export_error_page"),
             ("CARGO_TARGET_DIR", "dist/target_engine"),
         ],
-    )
+        || {},
+    )?;
+
+    if prompt {
+        println!("🖨 Error page exported for code '{}'!", opts.code);
+    }
+
+    Ok(exit_code)
 }

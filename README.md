@@ -23,8 +23,8 @@ Perseus is a blazingly fast frontend web development framework built in Rust wit
 Here's a taste of Perseus (see [the _tiny_ example](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny) for more):
 
 ```rust,ignore
-use perseus::{Html, PerseusApp, Template};
-use sycamore::view;
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
@@ -45,7 +45,7 @@ Check out [the book](https://arctic-hen7.github.io/perseus/en-US/docs) to learn 
 If you want to start working with Perseus right away, run the following commands and you'll have a basic app ready in no time! (Or, more accurately, after Cargo compiles everything...)
 
 ``` shell
-cargo install perseus-cli --version 0.4.0-beta.5
+cargo install perseus-cli --version 0.4.0-beta.9
 perseus new my-app
 cd my-app/
 perseus serve -w

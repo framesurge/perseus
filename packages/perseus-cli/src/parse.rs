@@ -4,7 +4,7 @@ use crate::PERSEUS_VERSION;
 use clap::Parser;
 
 // The documentation for the `Opts` struct will appear in the help page, hence
-// the lack of puncutation and the lowercasing in places
+// the lack of punctuation and the lowercasing in places
 
 /// The command-line interface for Perseus, a super-fast WebAssembly frontend
 /// development framework!
@@ -68,11 +68,13 @@ pub struct Opts {
     #[clap(long, global = true)]
     pub no_browser_reload: bool,
     /// A custom version of `wasm-bindgen` to use (defaults to the latest
-    /// installed version, and after that the latest available from GitHub)
+    /// installed version, and after that the latest available from GitHub;
+    /// update to latest can be forced with `latest`)
     #[clap(long, global = true)]
     pub wasm_bindgen_version: Option<String>,
     /// A custom version of `wasm-opt` to use (defaults to the latest installed
-    /// version, and after that the latest available from GitHub)
+    /// version, and after that the latest available from GitHub; update to
+    /// latest can be forced with `latest`)
     #[clap(long, global = true)]
     pub wasm_opt_version: Option<String>,
     /// Disables the system-wide tools cache in `~/.cargo/perseus_tools/` (you
@@ -99,6 +101,9 @@ pub enum Subcommand {
     Snoop(SnoopSubcommand),
     New(NewOpts),
     Init(InitOpts),
+    /// Checks if your app builds properly for both the engine-side and the
+    /// browser-side
+    Check(CheckOpts),
 }
 /// Builds your app
 #[derive(Parser, Clone)]
@@ -122,7 +127,7 @@ pub struct ExportOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
-    /// Watch the files in your working directory for changes (exluding
+    /// Watch the files in your working directory for changes (excluding
     /// `target/` and `dist/`)
     #[clap(short, long)]
     pub watch: bool,
@@ -157,7 +162,7 @@ pub struct ServeOpts {
     /// don't manually invoke it unless you have a good reason!)
     #[clap(long)]
     pub standalone: bool,
-    /// Watch the files in your working directory for changes (exluding
+    /// Watch the files in your working directory for changes (excluding
     /// `target/` and `dist/`)
     #[clap(short, long)]
     pub watch: bool,
@@ -208,7 +213,7 @@ pub struct NewOpts {
     #[clap(long)]
     pub dir: Option<String>,
 }
-/// Intializes a new Perseus project in the current directory
+/// Initializes a new Perseus project in the current directory
 #[derive(Parser, Clone)]
 pub struct InitOpts {
     /// The name of the new project
@@ -235,4 +240,21 @@ pub struct SnoopServeOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
+}
+
+#[derive(Parser, Clone)]
+pub struct CheckOpts {
+    /// Watch the files in your working directory for changes (excluding
+    /// `target/` and `dist/`)
+    #[clap(short, long)]
+    pub watch: bool,
+    /// Marks a specific file/directory to be watched (directories will be
+    /// recursively watched)
+    #[clap(long)]
+    pub custom_watch: Vec<String>,
+    /// Make sure the app's page generation works properly (this will take much
+    /// longer, but almost guarantees that your app will actually build);
+    /// use this to catch errors in build state and the like
+    #[clap(short, long)]
+    pub generate: bool,
 }

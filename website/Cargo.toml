@@ -12,8 +12,9 @@ readme = "./README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { version = "=0.4.0-beta.3", features = [ "translator-fluent" ] }
+perseus = { version = "=0.4.0-beta.5", features = [ "translator-fluent" ] }
 sycamore = "=0.8.0-beta.7"
+sycamore-macro = "=0.8.0-beta.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 fluent-bundle = "0.15"
@@ -31,11 +32,4 @@ regex = "1"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wee_alloc = "0.4"
 
-[lib]
-name = "lib"
-path = "src/lib.rs"
-crate-type = [ "cdylib", "rlib" ]
-
-[[bin]]
-name = "perseus-website"
-path = "src/lib.rs"
+[workspace]

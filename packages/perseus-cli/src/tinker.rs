@@ -20,7 +20,7 @@ macro_rules! handle_exit_code {
     };
 }
 
-/// Actually tinkers the engione, program arguments having been interpreted.
+/// Actually tinkers the engine, program arguments having been interpreted.
 /// This needs to know how many steps there are in total and takes a
 /// `MultiProgress` to interact with so it can be used truly atomically. This
 /// returns handles for waiting on the component threads so we can use it

@@ -8,7 +8,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
     wait_for_checkpoint!("initial_state_present", 0, c);
-    wait_for_checkpoint!("page_visible", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
 
     // Check the initials
     let mut page_state = c.find(Locator::Id("page_state")).await?;
@@ -31,7 +31,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // Switch to the about page to demonstrate route restoration as well
     c.find(Locator::Id("about-link")).await?.click().await?;
     c.current_url().await?;
-    wait_for_checkpoint!("page_visible", 1, c);
+    wait_for_checkpoint!("page_interactive", 1, c);
     // Now press the freeze button and get the frozen app
     c.find(Locator::Id("freeze_button")).await?.click().await?;
     let frozen_app = c.find(Locator::Id("frozen_app")).await?.text().await?;
@@ -43,7 +43,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
     wait_for_checkpoint!("initial_state_present", 0, c);
-    wait_for_checkpoint!("page_visible", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     // Check that the empty initials are restored
     assert_eq!(
         c.find(Locator::Id("page_state")).await?.text().await?,
@@ -74,7 +74,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // And go back to the index page to check everything fully
     c.find(Locator::Id("index-link")).await?.click().await?;
     c.current_url().await?;
-    wait_for_checkpoint!("page_visible", 1, c);
+    wait_for_checkpoint!("page_interactive", 1, c);
     // Verify that everything has been correctly restored
     assert_eq!(
         c.find(Locator::Id("page_state")).await?.text().await?,

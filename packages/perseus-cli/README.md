@@ -1,6 +1,6 @@
 # Perseus CLI
 
-This is the official [Perseus](https://github.com/arctic-hen7/perseus) CLI for making building and sevring apps significantly easier! You can install it like so:
+This is the official [Perseus](https://github.com/arctic-hen7/perseus) CLI for making building and serving apps significantly easier! You can install it like so:
 
 ```
 cargo install perseus-cli

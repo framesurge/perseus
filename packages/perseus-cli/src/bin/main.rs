@@ -3,14 +3,14 @@ use command_group::stdlib::CommandGroup;
 use directories::ProjectDirs;
 use fmterr::fmt_err;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
-use perseus_cli::parse::{ExportOpts, ServeOpts, SnoopSubcommand};
+use perseus_cli::parse::{CheckOpts, ExportOpts, ServeOpts, SnoopSubcommand};
 use perseus_cli::{
     build, check_env, delete_artifacts, deploy, export, init, new,
     parse::{Opts, Subcommand},
     serve, serve_exported, tinker,
 };
 use perseus_cli::{
-    create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
+    check, create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
     snoop_build, snoop_server, snoop_wasm_build, Tools,
 };
 use std::env;
@@ -121,6 +121,11 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             watch,
             custom_watch,
             ..
+        })
+        | Subcommand::Check(CheckOpts {
+            watch,
+            custom_watch,
+            ..
         }) if *watch && watch_allowed => {
             let (tx_term, rx) = channel();
             let tx_fs = tx_term.clone();
@@ -204,7 +209,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
             // This will store the handle to the child process
             // This will be updated every time we re-create the process
-            // We spawn it as a process group, whcih means signals go to grandchild
+            // We spawn it as a process group, which means signals go to grandchild
             // processes as well, which means hot reloading can actually work!
             let mut child = Command::new(&bin_name);
             let child = child
@@ -242,7 +247,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                         // We have to manually terminate the process group, because it's a process
                         // *group*
                         let _ = child.kill();
-                        // From here, we can let the prgoram terminate naturally
+                        // From here, we can let the program terminate naturally
                         break Ok(0);
                     }
                     Err(err) => break Err(WatchError::WatcherError { source: err }),
@@ -279,9 +284,18 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             if export_opts.serve {
                 // Tell any connected browsers to reload
                 order_reload(opts.reload_server_host.to_string(), opts.reload_server_port);
-                serve_exported(dir, export_opts.host.to_string(), export_opts.port).await;
+                // This will terminate if we get an error exporting the 404 page
+                serve_exported(
+                    dir,
+                    export_opts.host.to_string(),
+                    export_opts.port,
+                    &tools,
+                    &opts,
+                )
+                .await?
+            } else {
+                0
             }
-            0
         }
         Subcommand::Serve(ref serve_opts) => {
             create_dist(&dir)?;
@@ -346,10 +360,19 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
         Subcommand::ExportErrorPage(ref eep_opts) => {
             create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
-            export_error_page(dir, eep_opts, &tools, &opts)?
+            export_error_page(
+                dir, eep_opts, &tools, &opts, true, /* Do prompt the user */
+            )?
         }
         Subcommand::New(ref new_opts) => new(dir, new_opts, &opts)?,
         Subcommand::Init(ref init_opts) => init(dir, init_opts)?,
+        Subcommand::Check(ref check_opts) => {
+            create_dist(&dir)?;
+            let tools = Tools::new(&dir, &opts).await?;
+            // Delete old build artifacts
+            delete_artifacts(dir.clone(), "static")?;
+            check(dir, check_opts, &tools, &opts)?
+        }
     };
     Ok(exit_code)
 }

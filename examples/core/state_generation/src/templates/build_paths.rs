@@ -29,7 +29,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // We'll take in the path here, which will consist of the template name
-// `build_paths` followed by the spcific path we're building for (as exported
+// `build_paths` followed by the specific path we're building for (as exported
 // from `get_build_paths`)
 #[perseus::build_state]
 pub async fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<PageState> {

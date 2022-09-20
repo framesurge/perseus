@@ -2,9 +2,9 @@ use crate::{
     checkpoint,
     plugins::PluginAction,
     router::{perseus_router, PerseusRouterProps},
-    shell::get_render_cfg,
     template::TemplateNodeType,
 };
+use std::collections::HashMap;
 use wasm_bindgen::JsValue;
 
 use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
@@ -53,9 +53,22 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
     };
 
+    // At this point, the user can already see something from the server-side
+    // rendering, so we now have time to figure out exactly what to render.
+    // Having done that, we can render/hydrate, depending on the feature flags.
+    // All that work is done inside the router.
+
     // This top-level context is what we use for everything, allowing page state to
     // be registered and stored for the lifetime of the app
-    sycamore::render_to(move |cx| perseus_router(cx, router_props), &root);
+    #[cfg(feature = "hydrate")]
+    sycamore::hydrate_to(move |cx| perseus_router(cx, router_props), &root);
+    #[cfg(not(feature = "hydrate"))]
+    {
+        // We have to delete the existing content before we can render the new stuff
+        // (which should be the same)
+        root.set_inner_html("");
+        sycamore::render_to(move |cx| perseus_router(cx, router_props), &root);
+    }
 
     Ok(())
 }
@@ -63,3 +76,26 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 /// A convenience type wrapper for the type returned by nearly all client-side
 /// entrypoints.
 pub type ClientReturn = Result<(), JsValue>;
+
+/// Gets the render configuration from the JS global variable
+/// `__PERSEUS_RENDER_CFG`, which should be inlined by the server. This will
+/// return `None` on any error (not found, serialization failed, etc.), which
+/// should reasonably lead to a `panic!` in the caller.
+fn get_render_cfg() -> Option<HashMap<String, String>> {
+    let val_opt = web_sys::window().unwrap().get("__PERSEUS_RENDER_CFG");
+    let js_obj = match val_opt {
+        Some(js_obj) => js_obj,
+        None => return None,
+    };
+    // The object should only actually contain the string value that was injected
+    let cfg_str = match js_obj.as_string() {
+        Some(cfg_str) => cfg_str,
+        None => return None,
+    };
+    let render_cfg = match serde_json::from_str::<HashMap<String, String>>(&cfg_str) {
+        Ok(render_cfg) => render_cfg,
+        Err(_) => return None,
+    };
+
+    Some(render_cfg)
+}

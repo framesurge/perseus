@@ -1,6 +1,8 @@
-use crate::cmd::{cfg_spinner, fail_spinner, succeed_spinner};
+use crate::cmd::{cfg_spinner, fail_spinner, run_stage, succeed_spinner};
 use crate::errors::*;
 use crate::parse::Opts;
+use cargo_lock::Lockfile;
+use cargo_metadata::MetadataCommand;
 use console::Emoji;
 use directories::ProjectDirs;
 use flate2::read::GzDecoder;
@@ -18,10 +20,11 @@ use tar::Archive;
 use tokio::io::AsyncWriteExt;
 
 static INSTALLING: Emoji<'_, '_> = Emoji("📥", "");
+static GENERATING_LOCKFILE: Emoji<'_, '_> = Emoji("🔏", "");
 
 // For each of the tools installed in this file, we preferentially
 // manually download it. If that can't be achieved due to a platform
-// mismatch, then we'll see if the user already has a verion installed.
+// mismatch, then we'll see if the user already has a version installed.
 //
 // Importantly, if the user has specified an environment variable specifying
 // where a tool can be found, we'll use that no matter what.
@@ -89,6 +92,33 @@ impl Tools {
     ///
     /// If tools are installed, this will create a CLI spinner automatically.
     pub async fn new(dir: &Path, global_opts: &Opts) -> Result<Self, InstallError> {
+        // First, make sure `Cargo.lock` exists, since we'll need it for determining the
+        // right version of `wasm-bindgen`
+        let metadata = MetadataCommand::new()
+            .no_deps()
+            .exec()
+            .map_err(|err| InstallError::MetadataFailed { source: err })?;
+        let workspace_root = metadata.workspace_root.into_std_path_buf();
+        let lockfile_path = workspace_root.join("Cargo.lock");
+        if !lockfile_path.exists() {
+            let lf_msg = format!("{} Generating Cargo lockfile", GENERATING_LOCKFILE);
+            let lf_spinner = cfg_spinner(ProgressBar::new_spinner(), &lf_msg);
+            let (_stdout, _stderr, exit_code) = run_stage(
+                vec!["cargo generate-lockfile"],
+                &workspace_root,
+                &lf_spinner,
+                &lf_msg,
+                Vec::new(),
+            )
+            .map_err(|err| InstallError::LockfileGenerationFailed { source: err })?;
+            if exit_code != 0 {
+                // The output has already been handled, just terminate
+                return Err(InstallError::LockfileGenerationNonZero { code: exit_code });
+            }
+        }
+        let lockfile = Lockfile::load(lockfile_path)
+            .map_err(|err| InstallError::LockfileLoadFailed { source: err })?;
+
         let target = get_tools_dir(dir, global_opts.no_system_tools_cache)?;
 
         // Instantiate the tools
@@ -104,8 +134,8 @@ impl Tools {
         );
 
         // Get the statuses of all the tools
-        let wb_status = wasm_bindgen.get_status(&target)?;
-        let wo_status = wasm_opt.get_status(&target)?;
+        let wb_status = wasm_bindgen.get_status(&target, &lockfile)?;
+        let wo_status = wasm_opt.get_status(&target, &lockfile)?;
         // Figure out if everything is present
         // This is the only case in which we don't have to start the spinner
         if let (ToolStatus::Available(wb_path), ToolStatus::Available(wo_path)) =
@@ -249,11 +279,15 @@ impl Tool {
     }
     /// Gets the path to the already-installed version of the tool to use. This
     /// should take the full path to `dist/tools/`. This will automatically
-    /// handle whether or not to install a new version, use a verion already
+    /// handle whether or not to install a new version, use a version already
     /// installed globally on the user's system, etc. If this returns
     /// `ToolStatus::NeedsInstall`, we can be sure that there are binaries
     /// available, and the same if it returns `ToolStatus::NeedsLatestInstall`.
-    pub fn get_status(&self, target: &Path) -> Result<ToolStatus, InstallError> {
+    pub fn get_status(
+        &self,
+        target: &Path,
+        lockfile: &Lockfile,
+    ) -> Result<ToolStatus, InstallError> {
         // The status information will be incomplete from this first pass
         let initial_status = {
             // If there's a directory that matches with a given user version, we'll use it.
@@ -268,24 +302,30 @@ impl Tool {
                 // If they've given us a version, we'll check if that directory exists (we don't
                 // care about any others)
                 if let Some(version) = &self.user_given_version {
-                    let expected_path = target.join(format!("{}-{}", self.name, version));
-                    Ok(if fs::metadata(&expected_path).is_ok() {
-                        ToolStatus::Available(
-                            expected_path
-                                .join(&self.final_path)
-                                .to_string_lossy()
-                                .to_string(),
-                        )
+                    // If the user wants the latest version, just force an update
+                    if version == "latest" {
+                        Ok(ToolStatus::NeedsLatestInstall)
                     } else {
-                        ToolStatus::NeedsInstall {
-                            version: version.to_string(),
-                            // This will be filled in on the second pass-through
-                            artifact_name: String::new(),
-                        }
-                    })
+                        let expected_path = target.join(format!("{}-{}", self.name, version));
+                        Ok(if fs::metadata(&expected_path).is_ok() {
+                            ToolStatus::Available(
+                                expected_path
+                                    .join(&self.final_path)
+                                    .to_string_lossy()
+                                    .to_string(),
+                            )
+                        } else {
+                            ToolStatus::NeedsInstall {
+                                version: version.to_string(),
+                                // This will be filled in on the second pass-through
+                                artifact_name: String::new(),
+                            }
+                        })
+                    }
                 } else {
-                    // We have no further information from the user, so we'll use the latest version
-                    // that's installed, or we'll install the latest version.
+                    // We have no further information from the user, so we'll use whatever matches
+                    // the user's `Cargo.lock`, or, if they haven't specified anything, we'll try
+                    // the latest version.
                     // Either way, we need to know what we've got installed already by walking the
                     // directory.
                     let mut versions: Vec<String> = Vec::new();
@@ -307,22 +347,50 @@ impl Tool {
                     // Now order those from most recent to least recent
                     versions.sort();
                     let versions = versions.into_iter().rev().collect::<Vec<String>>();
-                    // If there are any at all, pick the first one
-                    if !versions.is_empty() {
-                        let latest_available_version = &versions[0];
-                        // We know the directory for this version had a valid name, so we can
-                        // determine exactly where it was
-                        let path_to_latest_version = target.join(format!(
-                            "{}-{}/{}",
-                            self.name, latest_available_version, self.final_path
-                        ));
-                        Ok(ToolStatus::Available(
-                            path_to_latest_version.to_string_lossy().to_string(),
-                        ))
-                    } else {
-                        // We don't check the latest version here because we haven't started the
-                        // spinner yet
-                        Ok(ToolStatus::NeedsLatestInstall)
+
+                    // Now figure out what would match the current setup by checking `Cargo.lock`
+                    // (it's entirely possible that there are multiple versions
+                    // of `wasm-bindgen` in here, but that would be the user's problem).
+                    // It doesn't matter that we do this erroneously for other tools, since they'll
+                    // just return `None`.
+                    match self.get_pkg_version_from_lockfile(lockfile)? {
+                        Some(version) => {
+                            if versions.contains(&version) {
+                                let path_to_version = target
+                                    .join(format!("{}-{}/{}", self.name, version, self.final_path));
+                                Ok(ToolStatus::Available(
+                                    path_to_version.to_string_lossy().to_string(),
+                                ))
+                            } else {
+                                Ok(ToolStatus::NeedsInstall {
+                                    version,
+                                    // This will be filled in on the second pass-through
+                                    artifact_name: String::new(),
+                                })
+                            }
+                        }
+                        // There's nothing in the lockfile, so we'll go with the latest we have
+                        // installed
+                        None => {
+                            // If there are any at all, pick the first one
+                            if !versions.is_empty() {
+                                let latest_available_version = &versions[0];
+                                // We know the directory for this version had a valid name, so we
+                                // can determine exactly where it
+                                // was
+                                let path_to_latest_version = target.join(format!(
+                                    "{}-{}/{}",
+                                    self.name, latest_available_version, self.final_path
+                                ));
+                                Ok(ToolStatus::Available(
+                                    path_to_latest_version.to_string_lossy().to_string(),
+                                ))
+                            } else {
+                                // We don't check the latest version here because we haven't started
+                                // the spinner yet
+                                Ok(ToolStatus::NeedsLatestInstall)
+                            }
+                        }
                     }
                 }
             }
@@ -440,7 +508,7 @@ impl Tool {
     /// installed program).
     ///
     /// If there's nothing the user has installed, then this will return an
-    /// error, and hence it should onyl be called after all other options
+    /// error, and hence it should only be called after all other options
     /// have been exhausted.
     fn get_path_to_preinstalled(&self) -> Result<String, InstallError> {
         #[cfg(unix)]
@@ -547,6 +615,19 @@ impl Tool {
             .to_str()
             .unwrap()
             .to_string())
+    }
+    /// Gets the version of a specific package in `Cargo.lock`, assuming it has
+    /// already been generated.
+    fn get_pkg_version_from_lockfile(
+        &self,
+        lockfile: &Lockfile,
+    ) -> Result<Option<String>, InstallError> {
+        let version = lockfile
+            .packages
+            .iter()
+            .find(|p| p.name.as_str() == self.name)
+            .map(|p| p.version.to_string());
+        Ok(version)
     }
 }
 
