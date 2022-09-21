@@ -48,9 +48,14 @@ site.cmd = "concurrently \"bonnie site export\" \"bonnie site build-tailwind\""
 site.desc = "builds and serves the site for local development (requires `concurrently`)"
 site.subcommands.export.cmd = [
     "cd website",
-    "perseus export -sw --cargo-engine-path cargo-clif"
+    "perseus export -sw --custom-watch ../docs/ --cargo-engine-path cargo-clif"
 ]
 site.subcommands.export.desc = "exports and serves the site, watching for changes"
+site.subcommands.check.cmd = [
+    "cd website",
+    "perseus check -w --cargo-engine-path cargo-clif"
+]
+site.subcommands.check.desc = "checks the code of the website"
 site.subcommands.tinker.cmd = [
     "cd website",
     "perseus tinker"
@@ -91,6 +96,7 @@ site.subcommands.deploy-prod.cmd.generic = [
     "PERSEUS_BASE_PATH=http://localhost:8080/perseus perseus tinker",
     # Point this live version of the CLI at the given example
     "PERSEUS_BASE_PATH=https://framesurge.sh/perseus perseus deploy -e",
+    "PERSEUS_BASE_PATH=https://framesurge.sh/perseus perseus export-error-page --code 404 --output pkg/404.html",
     # Build the Tribble contributing docs
     "cd ..",
     "tribble deploy --path https://framesurge.sh/perseus/tribble -o tribble",
@@ -102,6 +108,7 @@ site.subcommands.deploy-prod.cmd.targets.windows = [
     "powershell -Command { $env:PERSEUS_BASE_PATH=\"http://localhost:8080/perseus\"; perseus tinker }",
     # Point this live version of the CLI at the given example
     "powershell -Command { $env:PERSEUS_BASE_PATH=\"https://framesurge.sh/perseus\"; perseus deploy -e }",
+    "powershell -Command { $env:PERSEUS_BASE_PATH=\"https://framesurge.sh/perseus\"; perseus export-error-page --code 404 --output pkg/404.html } ",
     # Build the Tribble contributing docs
     "cd ..",
     "tribble deploy --path https://framesurge.sh/perseus/tribble -o tribble",

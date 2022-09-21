@@ -1,13 +1,19 @@
+#[perseus::engine]
 use crate::templates::docs::get_file_at_version::get_file_at_version;
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
+#[perseus::engine]
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::{t, RenderFnResult, RenderFnResultWithCause};
-#[cfg(not(target_arch = "wasm32"))]
+use perseus::t;
+#[perseus::engine]
+use perseus::{RenderFnResult, RenderFnResultWithCause};
+#[perseus::engine]
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
+use std::fs; /* The lazy static will never be evaluated on the web, but we still need the
+              * import (TODO improve this...a lot) */
+#[perseus::engine]
 use std::path::PathBuf;
 use sycamore::prelude::*;
 #[cfg(not(target_arch = "wasm32"))]
@@ -55,7 +61,7 @@ pub enum DocsVersionStatus {
 }
 impl DocsVersionStatus {
     /// Renders the docs status to a Sycamore template for display.
-    pub fn render<G: GenericNode>(&self, cx: Scope) -> View<G> {
+    pub fn render<G: GenericNode>(&self, cx: Scope, stable_version: String) -> View<G> {
         match &self {
             // No message should be displayed if it's the correct version
             Self::Stable => View::empty(),
@@ -68,7 +74,13 @@ impl DocsVersionStatus {
                                 style = "fill: #f87171;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.outdated", cx))
+                            p(dangerously_set_inner_html = &t!(
+                                "docs-status.outdated",
+                                {
+                                    "stable" = &stable_version
+                                },
+                                cx
+                            ))
                         }
                     }
                 }
@@ -82,7 +94,13 @@ impl DocsVersionStatus {
                                 style = "fill: #fcd34d;",
                                 dangerously_set_inner_html = WARNING_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.beta", cx))
+                            p(dangerously_set_inner_html = &t!(
+                                "docs-status.beta",
+                                {
+                                    "stable" = &stable_version
+                                },
+                                cx
+                            ))
                         }
                     }
                 }
@@ -96,7 +114,13 @@ impl DocsVersionStatus {
                                 style = "fill: #fb923c;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!("docs-status.next", cx))
+                            p(dangerously_set_inner_html = &t!(
+                                "docs-status.next",
+                                {
+                                    "stable" = &stable_version
+                                },
+                                cx
+                            ))
                         }
                     }
                 }

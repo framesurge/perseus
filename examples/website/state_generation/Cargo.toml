@@ -1,0 +1,18 @@
+[package]
+name = "perseus-website-example-state-generation"
+version = "0.4.0-beta.8"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+perseus = { path = "../../../packages/perseus" }
+sycamore = "^0.8.1"
+serde = { version = "1", features = [ "derive" ] }
+serde_json = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
+perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]

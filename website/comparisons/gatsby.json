@@ -13,5 +13,8 @@
     "supports_exporting": "full",
     "language": "JavaScript/TypeScript",
     "homepage_lighthouse_desktop": 75,
-    "homepage_lighthouse_mobile": 45
+    "homepage_lighthouse_mobile": 45,
+    "text": {
+        "en-US": "GatsbyJS is a fullstack framework that brought static site generation (build-time state generation, in Perseus) to the mainstream. However, Perseus remains faster than Gatsby at runtime, and is easier to configure for certain common use-cases, sch as internationalization. GatsbyJS has more recently embraced server-side rendering, though the integration between that and build-time state generation is present only in Perseus."
+    }
 }

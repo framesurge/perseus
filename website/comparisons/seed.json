@@ -13,5 +13,8 @@
     "supports_exporting": "none",
     "language": "Rust",
     "homepage_lighthouse_desktop": 100,
-    "homepage_lighthouse_mobile": 79
+    "homepage_lighthouse_mobile": 79,
+    "text": {
+        "en-US": "Seed was one of the first Rust web frameworks to support server-side rendering, and, while it has the performance advantages of Wasm, it lacks a fully developed fullstack state platform: Perseus supports the generation of state at build-time or request-time (or both), and that state can be reactively passed around an app, while Seed uses a more traditional MVC approach, and supports only request-time generation."
+    }
 }

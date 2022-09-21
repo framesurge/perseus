@@ -2,13 +2,17 @@
 // locale, and then a list of plugins inside Note that the same plugins must be
 // defined for every locale
 
-use crate::components::container::{Container, ContainerProps};
+use crate::components::container::Container;
+use crate::components::header::HeaderProps;
 use crate::components::trusted_svg::TRUSTED_SVG;
-use perseus::{t, RenderFnResultWithCause, Template};
+#[perseus::engine]
+use perseus::RenderFnResultWithCause;
+use perseus::{t, Template};
 use serde::{Deserialize, Serialize};
+#[perseus::engine]
 use std::fs;
 use sycamore::prelude::*;
-#[cfg(not(target_arch = "wasm32"))]
+#[perseus::engine]
 use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
@@ -64,16 +68,23 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     });
 
     view! { cx,
-        Container(ContainerProps {
-            title: t!("perseus", cx),
-            children: view! { cx,
+        Container(
+            header = HeaderProps {
+                title: t!("perseus", cx),
+                text_color: "text-black dark:text-white".to_string(),
+                menu_color: "bg-black dark:bg-white".to_string(),
+                mobile_nav_extension: View::empty(),
+                menu_open: None,
+            },
+            footer = true,
+        ) {
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
-                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold mb-5") { (t!("plugins-title", cx)) }
+                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold mb-5") { (t!("plugins-title", cx)) }
                         br()
                         p(class = "mx-1 mb-2") { (t!("plugins-desc", cx)) }
                         div(class = "w-full flex justify-center text-center mb-3") {
-                            input(class = "mx-2 max-w-7xl p-3 rounded-lg border-2 border-indigo-600 dark:bg-navy", on:input = |ev: web_sys::Event| {
+                            input(class = "mx-2 max-w-7xl p-3 rounded-md border border-indigo-500 focus:outline-indigo-600 dark:focus:outline-indigo-700 search-bar-bg", on:input = |ev: web_sys::Event| {
                                 // This longwinded code gets the actual value that the user typed in
                                 let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
                                 let new_input = target.value();
@@ -83,9 +94,9 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                     }
                     div(class = "w-full flex justify-center") {
                         ul(class = "text-center w-full max-w-7xl mx-2 mb-16") {
-                            Indexed {
-                                iterable: filtered_plugins,
-                                view: |cx, plugin| view! { cx,
+                            Indexed(
+                                iterable = filtered_plugins,
+                                view = |cx, plugin| view! { cx,
                                     li(class = "inline-block align-top m-2") {
                                         a(
                                             class = "block text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm dark:text-white",
@@ -101,17 +112,16 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                                                     View::empty()
                                                 })
                                             }
-                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!("plugin-card-author", { "author" = plugin.author.clone() }, cx)) }
+                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!("plugin-card-author", { "author" = &plugin.author }, cx)) }
                                             p { (plugin.description) }
                                         }
                                     }
                                 }
-                            }
+                            )
                         }
                     }
                 }
             }
-        })
     }
 }
 

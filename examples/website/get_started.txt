@@ -1,0 +1,7 @@
+> cargo install perseus-cli
+> perseus new my-project
+> perseus serve -w
+
+# Ready to deploy?
+> perseus deploy
+# And send `pkg/` to your server! 🥳

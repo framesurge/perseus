@@ -1,0 +1,23 @@
+# 🚩 Get ready!
+> perseus init my-app
+
+# 📦 All static?
+> perseus export -sw
+[1/3] 📦 Exporting your app's pages...✅
+[2/3] 🏗️  Building your app to Wasm...✅
+[3/3] 🛰️  Your exported app is now live at <http://127.0.0.1:8080>!
+
+# 📡 Using some more advanced features?
+> perseus serve -w
+[1/4] 🔨 Generating your app...✅
+[2/4] 🏗️  Building your app to Wasm...✅
+[3/4] 📡 Building server...✅
+[4/4] 🛰️  Your app is now live on <http://127.0.0.1:8080>! To change this, re-run this command with different settings for `--host` and `--port`.
+
+# 🧪 Testing your app's features?
+> perseus test
+# 🔎 Investigating some errors?
+> perseus snoop wasm-build
+
+# 🎉 Ready to send it to the world?
+> perseus deploy

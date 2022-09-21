@@ -2,7 +2,7 @@ use crate::templates::docs::container::{DocsContainer, DocsContainerProps};
 use crate::templates::docs::generation::{
     get_build_paths, get_build_state, DocsManifest, DocsVersionStatus,
 };
-use perseus::{t, Template};
+use perseus::Template;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
@@ -36,7 +36,8 @@ pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
         DocsContainer(DocsContainerProps {
             docs_links: sidebar_content,
             children: view! { cx,
-                div(class = "markdown", dangerously_set_inner_html = &content)
+                // Because this is in a grid, we have to make sure it doesn't overflow by specifying this minimum width
+                div(class = "markdown min-w-0", dangerously_set_inner_html = &content)
             },
             status,
             manifest,
@@ -54,6 +55,8 @@ pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
 
 #[perseus::head]
 pub fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
+    use perseus::t;
+
     view! { cx,
         title { (format!("{} | {}", props.title, t!("docs-title-base", cx))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")

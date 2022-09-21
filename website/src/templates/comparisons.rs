@@ -1,10 +1,17 @@
+#[perseus::engine]
+use crate::components::comparisons::RawComparison;
 use crate::components::comparisons::{render_lighthouse_score, Comparison};
-use crate::components::container::{Container, ContainerProps};
+use crate::components::container::Container;
+use crate::components::header::HeaderProps;
 use crate::components::info_svg::INFO_SVG;
-use perseus::{t, ErrorCause, GenericErrorWithCause, Html, RenderFnResultWithCause, Template};
+use perseus::{t, Html, Template};
+#[perseus::engine]
+use perseus::{ErrorCause, GenericErrorWithCause, RenderFnResultWithCause};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+#[perseus::engine]
 use std::fs;
+#[perseus::engine]
 use std::path::PathBuf;
 use sycamore::prelude::*;
 
@@ -79,6 +86,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
         language: perseus_language,
         homepage_lighthouse_desktop: perseus_homepage_lighthouse_desktop,
         homepage_lighthouse_mobile: perseus_homepage_lighthouse_mobile,
+        text: _, // The Perseus comparison has no text
     } = props.perseus_comparison;
 
     let show_details_homepage_lighthouse_desktop = create_signal(cx, false);
@@ -104,10 +112,11 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
         create_memo(cx, || comparison.get().supports_deployment.render());
     let comparison_supports_exporting =
         create_memo(cx, || comparison.get().supports_exporting.render());
+    let comparison_text = create_memo(cx, || comparison.get().text.to_string());
 
     view! { cx,
         table(class = "w-full overflow-x-scroll table-fixed border-collapse") {
-            thead(class = "mt-4 text-white bg-indigo-500 rounded-xl") {
+            thead(class = "mt-4 text-white bg-indigo-500 dark:bg-indigo-700 rounded-xl") {
                 th(class = "p-1 py-2 text-xs xs:text-base") {
                     (t!("comparisons-table-header", cx))
                 }
@@ -249,6 +258,16 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                 }
             }
         }
+        h3(class = "text-2xl underline") { (t!(
+            "comparisons-unknown-heading",
+            {
+                "name" = &comparison.get().name
+            },
+            cx
+        )) }
+        div(class = "w-full flex justify-center") {
+            p(class = "max-w-prose") { (comparison_text.get()) }
+        }
     }
 }
 
@@ -292,27 +311,34 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
     });
 
     view! { cx,
-        Container(ContainerProps {
-            title: t!("perseus", cx),
-            children: view! { cx,
-                div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
-                    div {
-                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-extrabold") {
-                            (t!("comparisons-heading", cx))
-                        }
-                        br()
+        Container(
+            header = HeaderProps {
+                title: t!("perseus", cx),
+                text_color: "text-black dark:text-white".to_string(),
+                menu_color: "bg-black dark:bg-white".to_string(),
+                mobile_nav_extension: View::empty(),
+                menu_open: None,
+            },
+            footer = true,
+        ) {
+            div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
+                div {
+                    h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold") {
+                        (t!("comparisons-heading", cx))
+                    }
+                    br()
                         p(class = "text-lg") {
                             (t!("comparisons-subtitle", cx))
                         }
-                        p(
-                            class = "italic px-1",
-                            dangerously_set_inner_html = &t!("comparisons-extra", cx)
-                        )
-                    }
-                    br(class = "mb-2 sm:mb-16 md:mb-24")
+                    p(
+                        class = "italic px-1",
+                        dangerously_set_inner_html = &t!("comparisons-extra", cx)
+                    )
+                }
+                br(class = "mb-2 sm:mb-16 md:mb-24")
                     div(class = "p-1") {
                         select(
-                            class = "p-1 rounded-sm dark:bg-navy mb-4",
+                            class = "p-2 rounded-sm dark:bg-neutral-800 mb-4",
                             on:input = |event: web_sys::Event| {
                                 use wasm_bindgen::JsCast;
                                 let target: web_sys::HtmlInputElement = event.target().unwrap().unchecked_into();
@@ -323,23 +349,22 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
                             (select_options)
                         }
                         br()
-                        div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
-                            div(class = "flex justify-center") {
-                                ComparisonTable(ComparisonTableProps {
-                                    comparison: curr_comparison,
-                                    perseus_comparison
-                                })
+                            div(class = "px-3 w-full sm:mr-auto sm:ml-auto sm:max-w-prose lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl") {
+                                div(class = "flex justify-center flex-col") {
+                                    ComparisonTable(ComparisonTableProps {
+                                        comparison: curr_comparison,
+                                        perseus_comparison
+                                    })
+                                }
                             }
-                        }
                         br(class = "mb-1 sm:mb-8 md:mb-12")
-                        h3(class = "text-2xl underline") { (t!("comparisons-sycamore-heading", cx)) }
-                        div(class = "w-full flex justify-center") {
+                            h3(class = "text-xl underline") { (t!("comparisons-sycamore-heading", cx)) }
+                        div(class = "w-full flex justify-center text-sm") {
                             p(class = "max-w-prose") { (t!("comparisons-sycamore-text", cx)) }
                         }
-                    }
                 }
             }
-        })
+        }
     }
 }
 
@@ -360,7 +385,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 #[perseus::build_state]
 pub async fn get_build_state(
     _path: String,
-    _locale: String,
+    locale: String,
 ) -> RenderFnResultWithCause<ComparisonsPageProps> {
     use walkdir::WalkDir;
 
@@ -381,14 +406,49 @@ pub async fn get_build_state(
         if path.is_file() {
             // There shouldn't be any non-Unicode comparison files
             let path_str = path.to_str().unwrap();
-            // Get the JSON contents and parse them as a comparison
             let contents = fs::read_to_string(&path)?;
-            let comparison = serde_json::from_str::<Comparison>(&contents)?;
             // If the file is `perseus.json`, we'll add this to a special variable,
             // otherwise it gets added to the generic map
             if path_str.ends_with("perseus.json") {
+                // The Perseus comparison has no localized text
+                let comparison = serde_json::from_str::<Comparison>(&contents)?;
                 perseus_comparison = Some(comparison);
             } else {
+                // Other comparisons have multiple comparison paragraphs, one
+                // for each locale (we have to choose the right one)
+                let raw_comparison = serde_json::from_str::<RawComparison>(&contents)?;
+                let comparison_text = match raw_comparison.text.get(&locale) {
+                    Some(text) => text.to_string(),
+                    None => {
+                        return Err(GenericErrorWithCause {
+                            error: format!(
+                            "comparison {} does not have localized comparison text for locale {}",
+                            raw_comparison.name, locale
+                        )
+                            .into(),
+                            cause: ErrorCause::Server(None),
+                        })
+                    }
+                };
+                let comparison = Comparison {
+                    name: raw_comparison.name,
+                    supports_ssg: raw_comparison.supports_ssg,
+                    supports_ssr: raw_comparison.supports_ssr,
+                    supports_ssr_ssg_same_page: raw_comparison.supports_ssr_ssg_same_page,
+                    supports_i18n: raw_comparison.supports_i18n,
+                    supports_incremental: raw_comparison.supports_incremental,
+                    supports_revalidation: raw_comparison.supports_revalidation,
+                    inbuilt_cli: raw_comparison.inbuilt_cli,
+                    inbuilt_routing: raw_comparison.inbuilt_routing,
+                    supports_shell: raw_comparison.supports_shell,
+                    supports_deployment: raw_comparison.supports_deployment,
+                    supports_exporting: raw_comparison.supports_exporting,
+                    language: raw_comparison.language,
+                    // Ours are 100 and 95, respectively
+                    homepage_lighthouse_desktop: raw_comparison.homepage_lighthouse_desktop,
+                    homepage_lighthouse_mobile: raw_comparison.homepage_lighthouse_mobile,
+                    text: comparison_text,
+                };
                 comparisons.insert(comparison.name.clone(), comparison);
             }
         }
