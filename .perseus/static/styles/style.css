@@ -1,21 +1,197 @@
-body {
-    min-height: 100%;
+html, body, body > div, #root {
     height: 100vh;
 }
-.__perseus_content {
-    min-height: 100%;
-    min-width: 100%;
-    height: 100vh;
+#root {
     display: grid;
-    grid-template-rows: 1fr auto;
-    position: absolute;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr min-content;
+    grid-template-areas:
+        'header'
+        'main'
+        'footer';
 }
+/* This is equivalent to `main`, but also works on docs pages with a sidebar */
 header {
-    grid-row: 1;
     position: fixed;
     top: 0;
+    z-index: 99;
+    grid-area: header;
+}
+main {
+    grid-area: main;
 }
 footer {
-    grid-row-start: 3;
-    grid-row-end: 4;
+    grid-area: footer;
+}
+
+* {
+    scroll-behavior: smooth;
+}
+
+/* Font family for the title (Cy Grotesk Grand on Canva) */
+@font-face {
+    font-family: "cy-grotesk-grand-regular";
+    /* Relative to this file! */
+    src: url("../cy-grotesk-grand-regular.woff2") format('woff2');
+}
+.title-font {
+    font-family: "cy-grotesk-grand-regular";
+    line-height: 1.1em;
+    letter-spacing: -0.03em;
+}
+/* The default styling for this is atrocious */
+.copy-to-clipboard-button {
+    border-radius: 0.5rem !important;
+    padding: 0.5rem !important;
+    margin-top: 1rem !important;
+    margin-right: 1rem !important;
+}
+/* This fixes `pre` responsiveness with Prism highlighting */
+.code-toolbar {
+    overflow: auto;
+}
+.w-full .code-toolbar {
+    width: 100%;
+}
+.h-full .code-toolbar {
+    height: 100%;
+}
+
+/* The hackiest light mode for Prisma in human history */
+@media (prefers-color-scheme: light) {
+    pre:not(.permadark) code {
+        /* BUG This produces false-positive bad contrast ratios with Lighthouse and Axe (see https://github.com/dequelabs/axe-core/issues/3214) */
+        filter: hue-rotate(125deg) invert(1) contrast(1.5) saturate(5);
+    }
+    pre[class*=language-]:not(.permadark) {
+        background-color: #e9e9e9 !important;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .mesh-open-bg {
+        background-image: url("../mesh_open.png");
+        background-size: cover;
+    }
+    .mesh-close-bg {
+        background-image: url("../mesh_close.png");
+        background-size: cover;
+    }
+}
+@media (prefers-color-scheme: dark) {
+    .mesh-open-bg {
+        background-image: url("../mesh_open_dark.png");
+        background-size: cover;
+    }
+    .mesh-close-bg {
+        background-image: url("../mesh_close_dark.png");
+        background-size: cover;
+    }
+}
+
+/* Styles for the Lighthouse report (mostly copied from Lighthouse itself for the animations etc.) */
+.font-mono-lh {
+    font-family: 'Roboto Mono', 'Menlo', 'dejavu sans mono', 'Consolas', 'Lucida Console', monospace
+}
+.lh-gauge-arc {
+    stroke-linecap: round;
+    /* Puts the gap in the right place */
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+.lh-gauge-arc-animation {
+    /* Animates around the circle */
+    animation: load-gauge 3s ease forwards;
+    animation-delay: 250ms;
+}
+@keyframes load-gauge {
+    from { stroke-dasharray: 0 352; }
+}
+
+/* This uses text shadows to make Emoji green (for the *100* emoji in the
+ * comparisons table). */
+.emoji-green {
+    color: transparent;
+    text-shadow: 0 0 0 #059669;
+}
+/* This adds an encoded SVG background to search bar inputs */
+input.search-bar-bg {
+    padding-left: 2.25rem;
+}
+@media (prefers-color-scheme: light) {
+    input.search-bar-bg {
+        background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='black' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'%3E%3C/path%3E%3C/svg%3E") no-repeat 0.75rem center;
+    }
+}
+@media (prefers-color-scheme: dark) {
+    input.search-bar-bg {
+        background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'%3E%3C/path%3E%3C/svg%3E") no-repeat 0.75rem center;
+    }
+}
+
+/* Styling for index page tiles to have their background be separate elements so they can be filtered for dark mode */
+.tile-outer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+@media (prefers-color-scheme: dark) {
+    .tile-outer::before {
+        filter: brightness(70%) contrast(130%);
+    }
+}
+/* Styling for the background of each index page tile */
+.tile-start::before {
+    background-image: url("../mesh_open.png");
+}
+.tile-state-generation::before {
+    background-color: #7566e4;
+}
+.tile-i18n::before {
+    background-color: #a06fd2;
+}
+.tile-options::before {
+    background-color: #b18ed7;
+}
+.tile-speed::before {
+    background-color: #db80bd;
+}
+.tile-end::before {
+    background-image: url("../mesh_close.png");
+}
+
+/* Tooltip handling */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+.tooltip .tooltip-text {
+    visibility: hidden;
+    background-color: #404040;
+    color: white;
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+
+    /* Position the element in the center of the absolute parent */
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -200%); /* And then move it above */
+
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Provides a dotted underline with controllable spacing/sizing (specialized for a single word) */
+#i18n-dotted-border {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='4.5%25' y1='100%25' x2='97%25' y2='100%25' fill='none' stroke='white' stroke-width='3' stroke-dasharray='2%2c 8' stroke-dashoffset='0' stroke-linecap='butt'/%3e%3c/svg%3e");
 }
