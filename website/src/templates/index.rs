@@ -680,6 +680,10 @@ pub fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { (t!("perseus", cx)) }
         link(rel = "stylesheet", href = ".perseus/static/prism.css")
+        // Prefetch the images and fonts so the browser gets on these as quickly as possible
+        link(rel = "prefetch", href = ".perseus/static/mesh_open.jpg")
+        link(rel = "prefetch", href = ".perseus/static/mesh_close.jpg")
+        link(rel = "prefetch", href = ".perseus/static/cy-grotesk-grand-regular.woff2")
     }
 }
 

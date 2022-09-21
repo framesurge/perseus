@@ -45,16 +45,16 @@ fn not_found_page<G: Html>(
                     span { ". If you came here another website, or a search engine, this page probably existed once, but has since been moved. Here are some pages you might like to try instead:" }
                     ul(class = "pl-6 mt-1 w-full") {
                         li {
-                            a(class = "underline text-indigo-500", href = "/") { "Home" }
+                            a(class = "underline text-indigo-500", href = "") { "Home" }
                         }
                         li {
-                            a(class = "underline text-indigo-500", href = "/docs") { "Docs" }
+                            a(class = "underline text-indigo-500", href = "docs") { "Docs" }
                         }
                         li {
-                            a(class = "underline text-indigo-500", href = "/comparisons") { "Comparisons" }
+                            a(class = "underline text-indigo-500", href = "comparisons") { "Comparisons" }
                         }
                         li {
-                            a(class = "underline text-indigo-500", href = "/plugins") { "Plugins" }
+                            a(class = "underline text-indigo-500", href = "plugins") { "Plugins" }
                         }
                     }
                 }

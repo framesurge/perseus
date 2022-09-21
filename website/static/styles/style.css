@@ -68,27 +68,6 @@ footer {
     }
 }
 
-@media (prefers-color-scheme: light) {
-    .mesh-open-bg {
-        background-image: url("../mesh_open.png");
-        background-size: cover;
-    }
-    .mesh-close-bg {
-        background-image: url("../mesh_close.png");
-        background-size: cover;
-    }
-}
-@media (prefers-color-scheme: dark) {
-    .mesh-open-bg {
-        background-image: url("../mesh_open_dark.png");
-        background-size: cover;
-    }
-    .mesh-close-bg {
-        background-image: url("../mesh_close_dark.png");
-        background-size: cover;
-    }
-}
-
 /* Styles for the Lighthouse report (mostly copied from Lighthouse itself for the animations etc.) */
 .font-mono-lh {
     font-family: 'Roboto Mono', 'Menlo', 'dejavu sans mono', 'Consolas', 'Lucida Console', monospace
@@ -145,7 +124,8 @@ input.search-bar-bg {
 }
 /* Styling for the background of each index page tile */
 .tile-start::before {
-    background-image: url("../mesh_open.png");
+    background: linear-gradient(157deg, rgba(148,160,235,1) 0%, rgba(206,121,195,1) 84%, rgba(227,127,188,1) 100%); /* This is a fallback so users can see the white text (esp. on slow networks) */
+    background-image: url("../mesh_open.jpg");
 }
 .tile-state-generation::before {
     background-color: #7566e4;
@@ -160,7 +140,7 @@ input.search-bar-bg {
     background-color: #db80bd;
 }
 .tile-end::before {
-    background-image: url("../mesh_close.png");
+    background-image: url("../mesh_close.jpg");
 }
 
 /* Tooltip handling */
