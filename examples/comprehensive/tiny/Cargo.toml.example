@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-perseus = { version = "=0.4.0-beta.9", features = [ "hydrate" ] }
+perseus = { version = "=0.4.0-beta.10", features = [ "hydrate" ] }
 sycamore = "^0.8.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
-perseus-warp = { version = "=0.4.0-beta.9", features = [ "dflt-server" ] }
+perseus-warp = { version = "=0.4.0-beta.10", features = [ "dflt-server" ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

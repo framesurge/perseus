@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.10](https://github.com/framesurge/perseus/compare/v0.4.0-beta.9...v0.4.0-beta.10) (2022-09-21)
+
+
+### Features
+
+* created new website! 🎉 ([#181](https://github.com/framesurge/perseus/issues/181)) ([b7ace94](https://github.com/framesurge/perseus/commit/b7ace9438843b5c0a4a4e04ade1d754b96328732))
+* **exporting:** made export server serve 404 automatically ([cb4c5b1](https://github.com/framesurge/perseus/commit/cb4c5b1fcfcb7d73ae6920e52c299c1e0835a49f))
+* added `prelude` module to simplify imports ([60557af](https://github.com/framesurge/perseus/commit/60557afed5657603d010c6d8ea35c034aad08cec))
+
+
+### Bug Fixes
+
+* fixed relative path hosting ([8a01244](https://github.com/framesurge/perseus/commit/8a0124420067c55235fb666e36a3056c9cb08c03))
+
+
+### Documentation Changes
+
+* **examples/core:** readability improvements ([#191](https://github.com/framesurge/perseus/issues/191)) ([653ca85](https://github.com/framesurge/perseus/commit/653ca851ae3d12611dac40dcca252f4b4d8ca75b))
+* **perseus-cli:** readability improvements ([#192](https://github.com/framesurge/perseus/issues/192)) ([4f301ab](https://github.com/framesurge/perseus/commit/4f301ab3efe3e32b1481d98d70deeb7fa5fc1d70))
+* `next` docs readability improvements ([#189](https://github.com/framesurge/perseus/issues/189)) ([a91bc2c](https://github.com/framesurge/perseus/commit/a91bc2c94a543b569417209203ba10917a125b9e))
+* 0.4.x readability improvements ([#188](https://github.com/framesurge/perseus/issues/188)) ([e385e21](https://github.com/framesurge/perseus/commit/e385e2120fc55b9ec131c40ef8ac0a2adbdf4ddb))
+
 ## [0.4.0-beta.9](https://github.com/framesurge/perseus/compare/v0.4.0-beta.8...v0.4.0-beta.9) (2022-09-11)
 
 

@@ -45,7 +45,7 @@ Check out [the book](https://arctic-hen7.github.io/perseus/en-US/docs) to learn 
 If you want to start working with Perseus right away, run the following commands and you'll have a basic app ready in no time! (Or, more accurately, after Cargo compiles everything...)
 
 ``` shell
-cargo install perseus-cli --version 0.4.0-beta.9
+cargo install perseus-cli --version 0.4.0-beta.10
 perseus new my-app
 cd my-app/
 perseus serve -w
