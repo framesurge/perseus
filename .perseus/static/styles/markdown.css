@@ -43,22 +43,11 @@
 .markdown h6 {
     line-height: 1.25;
 }
-.markdown code:not([class*=language-]) {
+.markdown :not(pre) code {
+    background-color: #2d2d2d;
+    color: #cccccc;
     padding: 0.25rem;
     border-radius: 0.5rem;
-    word-break: break-all;
-}
-@media (prefers-color-scheme: light) {
-    .markdown code:not([class*=language-]) {
-        background-color: #d2d2d2;
-        color: #333333;
-    }
-}
-@media (prefers-color-scheme: dark) {
-    .markdown code:not([class*=language-]) {
-        background-color: #2d2d2d;
-        color: #cccccc;
-    }
 }
 .markdown pre {
     border-radius: 0.5rem;
