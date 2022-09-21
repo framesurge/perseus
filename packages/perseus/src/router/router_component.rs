@@ -8,6 +8,7 @@ use crate::{
     },
     router::{PerseusRoute, RouteInfo, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
+    utils::get_path_prefix_client,
     ErrorPages,
 };
 use std::collections::HashMap;
@@ -152,12 +153,25 @@ pub(crate) fn perseus_router(
     // instead in the shell
     let router_state = &render_ctx.router; // We need this for interfacing with the router though
 
+    // Get the current path, removing any base paths to avoid relative path locale
+    // redirection loops (in previous versions of Perseus, we used Sycamore to
+    // get the path, and it strips this out automatically)
+    // Note that this does work with full URL paths, because
+    // `get_path_prefix_client` does automatically get just the pathname
+    // component.
+    let path_prefix = get_path_prefix_client();
+    let path = web_sys::window().unwrap().location().pathname().unwrap();
+    let path = if path.starts_with(&path_prefix) {
+        path.strip_prefix(&path_prefix).unwrap()
+    } else {
+        &path
+    };
     // Prepare the initial view for hydration (because we have everything we need in
     // global window variables, this can be synchronous)
     let initial_view = get_initial_view(GetInitialViewProps {
         cx,
         // Get the path directly, in the same way the Sycamore router's history integration does
-        path: web_sys::window().unwrap().location().pathname().unwrap(),
+        path: path.to_string(),
         router_state: router_state.clone(),
         translations_manager: &translations_manager,
         error_pages: &error_pages,
