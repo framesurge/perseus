@@ -20,7 +20,7 @@ fn escape_page_data(data: &str) -> String {
 /// plugins.
 #[derive(Clone, Debug)]
 pub struct HtmlShell {
-    /// The actual shell content, on whcih interpolations will be performed.
+    /// The actual shell content, on which interpolations will be performed.
     pub shell: String,
     /// Additional contents of the head before the interpolation boundary.
     pub head_before_boundary: Vec<String>,
@@ -29,7 +29,7 @@ pub struct HtmlShell {
     /// Additional contents of the head after the interpolation boundary. These
     /// will be wiped out after a page transition.
     pub head_after_boundary: Vec<String>,
-    /// Scripts to be interpolated after the interpolation bounary. These will
+    /// Scripts to be interpolated after the interpolation boundary. These will
     /// be wiped out after a page transition.
     pub scripts_after_boundary: Vec<String>,
     /// Content to be interpolated into the body of the shell.

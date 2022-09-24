@@ -48,7 +48,7 @@ pub mod state;
 /// [`ImmutableStore`] and [`MutableStore`] for details.
 pub mod stores;
 /// Utilities for working with templates and state generation. This is by far
-/// the module you'll procably access the most.
+/// the module you'll probably access the most.
 pub mod template;
 /// General utilities that may be useful while building Perseus apps.
 pub mod utils;

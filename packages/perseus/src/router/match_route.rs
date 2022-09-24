@@ -84,7 +84,7 @@ pub fn get_template_for_path<G: Html>(
 
 /// A version of `get_template_for_path` that accepts an `ArcTemplateMap<G>`.
 /// This is used by `match_route_atomic`, which should be used in scenarios in
-/// which the template map needs to be passed betgween threads.
+/// which the template map needs to be passed between threads.
 ///
 /// Warning: this returns a `&Template<G>` rather than a `Rc<Template<G>>`, and
 /// thus should only be used independently of the rest of Perseus (through

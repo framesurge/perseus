@@ -41,7 +41,7 @@ pub enum PageThawPrefs {
     /// Includes all pages in the app, making frozen state always override state
     /// that's already been initialized.
     IncludeAll,
-    /// Exludes the attached pages by their URLs (with no leading `/`). Pages
+    /// Excludes the attached pages by their URLs (with no leading `/`). Pages
     /// listed here will prioritize active state over frozen state as usual, and
     /// any pages not listed here will prioritize frozen state.
     /// `Exclude(Vec::new())` is equivalent to `IncludeAll`.

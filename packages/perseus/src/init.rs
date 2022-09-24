@@ -567,7 +567,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         format!("<!DOCTYPE html>\n{}", self.index_view)
     }
     /// Gets an HTML shell from an index view string. This is broken out so that
-    /// it can be executed after the app has been built (which requries getting
+    /// it can be executed after the app has been built (which requires getting
     /// the translations manager, consuming `self`). As inconvenient as this
     /// is, it's necessitated, otherwise exporting would try to access the built
     /// app before it had actually been built.
@@ -582,7 +582,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         let mut html_shell = HtmlShell::new(
             index_view_str,
             root,
-            // TODO Handle this properly (good enough for now because that's what we weere already
+            // TODO Handle this properly (good enough for now because that's what we were already
             // doing)
             &get_render_cfg(immutable_store)
                 .await

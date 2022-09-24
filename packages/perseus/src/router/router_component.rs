@@ -24,7 +24,7 @@ use sycamore_router::{HistoryIntegration, RouterBase};
 use web_sys::Element;
 
 // We don't want to bring in a styling library, so we do this the old-fashioned
-// way! We're particualrly comprehensive with these because the user could
+// way! We're particularly comprehensive with these because the user could
 // *potentially* stuff things up with global rules https://medium.com/@jessebeach/beware-smushed-off-screen-accessible-text-5952a4c2cbfe
 const ROUTE_ANNOUNCER_STYLES: &str = r#"
     margin: -1px;
@@ -96,7 +96,7 @@ async fn get_view(
         RouteVerdict::LocaleDetection(path) => {
             let dest = detect_locale(path.clone(), &locales);
             // Since this is only for subsequent loads, we know the router is instantiated
-            // This shouldn't be a replacement navigation, since the user has deliberatley
+            // This shouldn't be a replacement navigation, since the user has deliberately
             // navigated here
             sycamore_router::navigate(&dest);
             View::empty()
