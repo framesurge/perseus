@@ -113,7 +113,7 @@ impl Parse for HeadFn {
             }
             item => Err(syn::Error::new_spanned(
                 item,
-                "only funtions can be used as head functions",
+                "only functions can be used as head functions",
             )),
         }
     }

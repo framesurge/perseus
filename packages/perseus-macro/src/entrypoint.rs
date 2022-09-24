@@ -77,7 +77,7 @@ impl Parse for MainFn {
             }
             item => Err(syn::Error::new_spanned(
                 item,
-                "only funtions can be used as entrypoints",
+                "only functions can be used as entrypoints",
             )),
         }
     }
@@ -152,7 +152,7 @@ impl Parse for EngineMainFn {
             }
             item => Err(syn::Error::new_spanned(
                 item,
-                "only funtions can be used as entrypoints",
+                "only functions can be used as entrypoints",
             )),
         }
     }

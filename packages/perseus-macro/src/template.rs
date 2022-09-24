@@ -94,7 +94,7 @@ impl Parse for TemplateFn {
             }
             item => Err(syn::Error::new_spanned(
                 item,
-                "only funtions can be used as templates",
+                "only functions can be used as templates",
             )),
         }
     }
