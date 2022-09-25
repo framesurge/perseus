@@ -19,7 +19,7 @@ actix-http = { version = "=3.0.0-rc.2", optional = true } # Without this, Actix 
 futures = "0.3"
 warp = { package = "warp-fix-171", version = "0.3", optional = true }
 # TODO Choose features here
-tokio = { version = "1", optional = true, features = [ "macros", "rt-multi-thread" ] } # We don't need this for Actix Web
+tokio = { version = "<=1.20.1", optional = true, features = [ "macros", "rt-multi-thread" ] } # We don't need this for Actix Web
 
 # This binary can use any of the server integrations
 [features]

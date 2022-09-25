@@ -15,7 +15,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 
 [dependencies]
 perseus = { path = "../perseus", version = "0.3.5" }
-tokio = { version = "1", features = [ "rt-multi-thread" ] }
+tokio = { version = "<=1.20.1", features = [ "rt-multi-thread" ] }
 warp = { package = "warp-fix-171", version = "0.3" } # Temporary until Warp #171 is resolved
 urlencoding = "2.1"
 serde = "1"

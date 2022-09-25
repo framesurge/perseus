@@ -14,4 +14,4 @@ wasm-bindgen-futures = "0.4"
 
 [dev-dependencies]
 fantoccini = "0.17"
-tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
+tokio = { version = "<=1.20.1", features = ["macros", "rt", "rt-multi-thread"] }
