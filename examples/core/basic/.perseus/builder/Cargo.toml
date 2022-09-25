@@ -15,7 +15,7 @@ perseus-engine = { path = "../" }
 perseus = { path = "../../../../../packages/perseus", features = [ "tinker-plugins", "server-side" ] }
 futures = "0.3"
 fs_extra = "1"
-tokio = { version = "<=1.20.1", features = [ "macros", "rt-multi-thread" ] }
+tokio = { version = "=1.20.1", features = [ "macros", "rt", "rt-multi-thread" ] }
 fmterr = "0.1"
 
 # We define a binary for building, serving, and doing both
