@@ -113,7 +113,7 @@ RUN apt update \
   build-essential curl wget
 
 # vars
-ENV PERSEUS_VERSION=0.3.5 \
+ENV PERSEUS_VERSION=0.3.6 \
   WEE_ALLOC_VERSION=0.4 \
   ESBUILD_VERSION=0.14.7 \
   BINARYEN_VERSION=104

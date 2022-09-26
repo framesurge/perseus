@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.6](https://github.com/framesurge/perseus/compare/v0.3.5...v0.3.6) (2022-09-26)
+
+
+### Bug Fixes
+
+* pinned tokio version to v1.20.1 to prevent compilation errors ([d165259](https://github.com/framesurge/perseus/commit/d165259823387c02747203d233c85b69c6755161)), closes [tokio-rs/tokio#4979](https://github.com/tokio-rs/tokio/issues/4979)
+* switched to exact dependencies and now everything works ([1182db7](https://github.com/framesurge/perseus/commit/1182db71d06221f4bffbaac54daa2f5eb77e353d))
+
+
+### Documentation Changes
+
+* added notes about hydration bugs ([2aef79c](https://github.com/framesurge/perseus/commit/2aef79c402174e92b931de678648a95c1db6c678))
+* fix typo in `basic` example readme ([#141](https://github.com/framesurge/perseus/issues/141)) ([35ff172](https://github.com/framesurge/perseus/commit/35ff172b44b42e5dcd68a3023c1450d903fa0804))
+* updated docs for index view with example ([eccf137](https://github.com/framesurge/perseus/commit/eccf137032fbe8e6507be9e9317edc16e7576a4f))
+
 ### [0.3.5](https://github.com/arctic-hen7/perseus/compare/v0.3.4...v0.3.5) (2022-04-20)
 
 
