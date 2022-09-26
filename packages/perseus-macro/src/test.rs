@@ -110,7 +110,7 @@ impl Parse for TestFn {
             }
             item => Err(syn::Error::new_spanned(
                 item,
-                "only funtions can be used as tests",
+                "only functions can be used as tests",
             )),
         }
     }

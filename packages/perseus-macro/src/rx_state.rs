@@ -26,7 +26,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
     mid_struct.ident = mid_name.clone();
     // Look through the attributes for any that warn about nested fields
     // These can't exist on the fields themselves because they'd be parsed before
-    // this macro, and tehy're technically invalid syntax (grr.) When we come
+    // this macro, and they're technically invalid syntax (grr.) When we come
     // across these fields, we'll run `.make_rx()` on them instead of naively
     // wrapping them in an `RcSignal`
     let nested_fields = mid_struct
@@ -154,7 +154,7 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
                 let wrapper_ty = nested_fields_map.get(field.ident.as_ref().unwrap());
                 field.ty = if let Some(wrapper_ty) = wrapper_ty {
                     // If we don't make this a reference, nested properties have to be cloned (not
-                    // nice for ergonomics) TODO Chekc back on this, could bite
+                    // nice for ergonomics) TODO Check back on this, could bite
                     // back!
                     syn::Type::Verbatim(quote!(&'rx #wrapper_ty<'rx>))
                 } else {

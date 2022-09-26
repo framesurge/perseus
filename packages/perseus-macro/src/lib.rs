@@ -256,7 +256,7 @@ pub fn engine_main(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// wrapped in a `Signal`, but you can also enable nested fine-grained
 /// reactivity by adding the `#[rx::nested("field_name", FieldTypeRx)]` helper
 /// attribute to the `struct` (not the field, that isn't supported by Rust yet),
-/// where `field_name` is the name of the field you want to use ensted
+/// where `field_name` is the name of the field you want to use instead
 /// reactivity on, and `FieldTypeRx` is the wrapper type that will be expected.
 /// This should be created by using this macro on the original `struct` type.
 ///
