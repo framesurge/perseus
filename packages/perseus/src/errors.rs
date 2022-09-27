@@ -93,6 +93,13 @@ pub enum ServerError {
         #[source]
         source: Box<dyn std::error::Error + Send + Sync>,
     },
+    // We should only get a failure to minify if the user has given invalid HTML, or if Sycamore
+    // stuffed up somewhere
+    #[error("failed to minify html (you can disable the `minify` flag to avoid this; this is very likely a Sycamore bug, unless you've provided invalid custom HTML)")]
+    MinifyError {
+        #[source]
+        source: std::io::Error,
+    },
     #[error(transparent)]
     GlobalStateError(#[from] GlobalStateError),
     #[error(transparent)]

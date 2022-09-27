@@ -6,6 +6,7 @@ use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::Template;
 use crate::template::{PageProps, TemplateMap};
 use crate::translator::Translator;
+use crate::utils::minify;
 use futures::future::try_join_all;
 use std::collections::HashMap;
 use sycamore::prelude::SsrNode;
@@ -147,6 +148,7 @@ async fn gen_state_for_path(
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(page_props.clone(), cx, translator)
         });
+        minify(&prerendered, true)?;
         // Write that prerendered HTML to a static file
         mutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)
@@ -155,6 +157,7 @@ async fn gen_state_for_path(
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
         let head_str = template.render_head_str(page_props, translator);
+        minify(&head_str, true)?;
         mutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -184,6 +187,7 @@ async fn gen_state_for_path(
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(page_props.clone(), cx, translator)
         });
+        minify(&prerendered, true)?;
         // Write that prerendered HTML to a static file
         immutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)

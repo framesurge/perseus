@@ -1,5 +1,8 @@
+use fmterr::fmterr;
+
 use crate::error_pages::ErrorPageData;
 use crate::page_data::PageData;
+use crate::utils::minify;
 use std::collections::HashMap;
 use std::{env, fmt};
 
@@ -116,9 +119,9 @@ impl HtmlShell {
             let port =
                 env::var("PERSEUS_RELOAD_SERVER_PORT").unwrap_or_else(|_| "3100".to_string());
             scripts_before_boundary
-                .push(format!("window.__PERSEUS_RELOAD_SERVER_HOST = '{}'", host));
+                .push(format!("window.__PERSEUS_RELOAD_SERVER_HOST = '{}';", host));
             scripts_before_boundary
-                .push(format!("window.__PERSEUS_RELOAD_SERVER_PORT = '{}'", port));
+                .push(format!("window.__PERSEUS_RELOAD_SERVER_PORT = '{}';", port));
         }
 
         // Add in the `<base>` element at the very top so that it applies to everything
@@ -337,6 +340,17 @@ impl fmt::Display for HtmlShell {
             .replace(&html_to_replace_double, &html_replacement)
             .replace(&html_to_replace_single, &html_replacement);
 
-        f.write_str(&new_shell)
+        // And minify everything
+        // Because this is run on live requests, we have to be fault-tolerant (if we
+        // can't minify, we'll fall back to unminified)
+        let minified = match minify(&new_shell, true) {
+            Ok(minified) => minified,
+            Err(err) => {
+                eprintln!("{}", fmterr(&err));
+                new_shell
+            }
+        };
+
+        f.write_str(&minified)
     }
 }

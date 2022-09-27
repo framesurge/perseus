@@ -8,6 +8,8 @@ mod decode_time_str;
 #[cfg(target_arch = "wasm32")]
 mod fetch;
 mod log;
+#[cfg(not(target_arch = "wasm32"))]
+mod minify;
 mod path_prefix;
 #[cfg(target_arch = "wasm32")]
 mod replace_head;
@@ -22,6 +24,8 @@ pub(crate) use context::provide_context_signal_replace;
 pub use decode_time_str::{ComputedDuration, InvalidDuration, PerseusDuration}; /* These have dummy equivalents for the browser */
 #[cfg(target_arch = "wasm32")]
 pub(crate) use fetch::fetch;
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) use minify::minify;
 pub use path_prefix::*;
 #[cfg(target_arch = "wasm32")]
 pub(crate) use replace_head::replace_head;
