@@ -99,7 +99,7 @@ impl Parse for TemplateFn {
             }
             item => Err(syn::Error::new_spanned(
                 item,
-                "only funtions can be used as templates",
+                "only functions can be used as templates",
             )),
         }
     }
@@ -168,7 +168,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         };
         let name_string = name.to_string();
         // Handle the case in which the template is just using global state and the
-        // first argument is the unit type That's represented for Syn as a typle
+        // first argument is the unit type That's represented for Syn as a tuple
         // with no elements
         match rx_props_ty {
             // This template takes dummy state and global state
