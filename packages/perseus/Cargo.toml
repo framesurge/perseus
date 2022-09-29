@@ -35,7 +35,7 @@ fs_extra = "1"
 http = "0.2"
 urlencoding = "2.1"
 chrono = "0.4"
-minify-html-onepass = "0.10"
+minify-html-onepass = "0.10.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 rexie = { version = "0.2", optional = true }
@@ -49,7 +49,7 @@ wasm-bindgen-futures = "0.4"
 [features]
 # Live reloading will only take effect in development, and won't impact production
 # BUG This adds 1.9kB to the production bundle (that's without size optimizations though)
-default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine", "minify" ]
+default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine", "minify", "minify-js", "minify-css" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 translator-lightweight = []
 # This feature adds support for a number of macros that will make your life MUCH easier (read: use this unless you have very specific needs or are completely insane)
@@ -61,6 +61,8 @@ client-helpers = [ "console_error_panic_hook" ]
 # This feature enables the minification of HTML, CSS, and JS assets, improving your page load speeds. You should only disable this if you're having issues with invalid
 # HTML.
 minify = []
+minify-js = [ "minify" ]
+minify-css = [ "minify" ]
 # This feature enables Sycamore hydration by default (Sycamore hydration feature is always activated though)
 # This is not enabled by default due to some remaining bugs (also, default features in Perseus can't be disabled without altering `.perseus/`)
 hydrate = []

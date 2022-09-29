@@ -11,8 +11,8 @@ pub(crate) fn minify(code: &str, minify_extras: bool) -> Result<String, ServerEr
     // let them disable this feature
     if cfg!(feature = "minify") {
         let cfg = Cfg {
-            minify_js: false, // Pending wilsonzlin/minify-js#1
-            minify_css: minify_extras,
+            minify_js: minify_extras && cfg!(feature = "minify-js"),
+            minify_css: minify_extras && cfg!(feature = "minify-css"),
         };
         let mut bytes = code.as_bytes().to_vec();
 
