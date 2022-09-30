@@ -5,7 +5,7 @@ In most Perseus apps, you can just focus on building your app's templates, and l
 However, if you're using Perseus, you probably don't want to be writing HTML right? You're supposed to be using Sycamore! Well, that's completely true, and so Perseus supports creating an index view with Sycamore code! You can do this like so:
 
 ```rust
-{{#include ../../../examples/core/index_view/src/lib.rs}}
+{{#include ../../../examples/core/index_view/src/main.rs}}
 ```
 
 Note that you can also use `.index_view_str()` to provide an arbitrary HTML string to use instead of Sycamore code.
