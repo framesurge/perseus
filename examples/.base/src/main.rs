@@ -3,7 +3,13 @@ mod templates;
 
 use perseus::{Html, PerseusApp};
 
-#[perseus::main(perseus_integration::dflt_server)]
+
+/// Replace `<perseus_integration>` with an integration of your choice.
+/// Examples of supported integrations:
+/// - perseus_warp (use this one if you follow basic tutorials)
+/// - perseus-actix-web
+/// - perseus-axum
+#[perseus::main(<perseus_integration>::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(crate::templates::index::get_template)
