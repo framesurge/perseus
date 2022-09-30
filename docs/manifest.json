@@ -16,7 +16,7 @@
     },
     "0.3.4": {
         "state": "stable",
-        "git": "eccf137032fbe8e6507be9e9317edc16e7576a4f",
+        "git": "v0.3.6",
         "docs_rs": "0.3"
     },
     "0.4.x": {

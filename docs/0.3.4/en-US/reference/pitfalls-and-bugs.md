@@ -55,3 +55,7 @@ The way you get around this is unfortunately inconvenient, you'll have to manual
 Perseus v0.3.x uses Sycamore v0.7.x, which still has several hydration bugs, so there are multiple things that won't work with it yet. In fact, as a general rule, if you're getting weird layout bugs that make absolutely no logical sense, try disabling hydration, it will often fix things at the moment.
 
 Sycamore v0.8.0 has been released in beta to solve these problems and many others, though it also radically changes Sycamore's API, and the upgrade of Perseus (a very large and complex system) is still ongoing. Once this is complete, Perseus v0.4.0 will be released in beta, and that should fix all current hydration bugs. In other words, if you have an error solely due to hydration at the moment, you should disable it for now and wait until Perseus v0.4.0, which will hopefully fix it. When that's released, if you're still experiencing problems with hydration, please let us know!
+
+## I'm getting errors about Tokio and Wasm...
+
+Make sure you've set `tokio` to be version `=1.20.1`, since any later versions of Tokio won't work with Perseus v0.3.x, due to internal issues. This is entirely fixed in v0.4.x, which is currently in beta. Make sure also that you're up to date with Perseus v0.3.6, if you're still using v0.3.x (`cargo update`, `perseus clean`, `cargo install perseus-cli --version 0.3.6`).
