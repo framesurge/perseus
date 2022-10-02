@@ -37,7 +37,7 @@ pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
             docs_links: sidebar_content,
             children: view! { cx,
                 // Because this is in a grid, we have to make sure it doesn't overflow by specifying this minimum width
-                div(class = "markdown min-w-0", dangerously_set_inner_html = &content)
+                div(class = "markdown min-w-0 pb-10", dangerously_set_inner_html = &content)
             },
             status,
             manifest,

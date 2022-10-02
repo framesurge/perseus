@@ -23,6 +23,7 @@
     font-size: 2.25rem;
     line-height: 2.5rem;
     margin-top: 0.5rem; /* Otherwise the warnings about versions look quite cramped */
+    margin-bottom: 0.5rem; /* This just looks good */
 }
 .markdown h2 {
     font-size: 1.875rem;
