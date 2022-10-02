@@ -175,3 +175,10 @@ input.search-bar-bg {
 #i18n-dotted-border {
     background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='4.5%25' y1='100%25' x2='97%25' y2='100%25' fill='none' stroke='white' stroke-width='3' stroke-dasharray='2%2c 8' stroke-dashoffset='0' stroke-linecap='butt'/%3e%3c/svg%3e");
 }
+
+/* Scrollbar styling to keep light/dark modes consistent there */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+    }
+}
