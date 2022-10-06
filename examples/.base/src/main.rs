@@ -6,7 +6,7 @@ use perseus::{Html, PerseusApp};
 
 /// Replace `<perseus_integration>` with an integration of your choice.
 /// Examples of supported integrations:
-/// - perseus_warp (use this one if you follow basic tutorials)
+/// - perseus_warp (recommended)
 /// - perseus-actix-web
 /// - perseus-axum
 #[perseus::main(<perseus_integration>::dflt_server)]
