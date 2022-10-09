@@ -130,6 +130,9 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// contain a `<div>` with the `id` set to whatever the value of `self.root`
     /// is.
     index_view: String,
+    /// Enabled GZIP Compression on response
+    /// which reduces asset sizes for the app consumer
+    with_compression: bool,
     /// The app's mutable store.
     #[cfg(not(target_arch = "wasm32"))]
     mutable_store: M,
@@ -294,6 +297,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             translations_manager: Tm::Dummy(T::new_dummy()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
+            with_compression: false,
             #[cfg(not(target_arch = "wasm32"))]
             static_dir: "./static".to_string(),
             #[cfg(target_arch = "wasm32")]
@@ -324,6 +328,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             plugins: Rc::new(Plugins::new()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
+            with_compression: false,
             _marker: PhantomData,
         }
     }
@@ -517,6 +522,15 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// uses a Sycamore view rather than an HTML string.
     pub fn index_view_str(mut self, val: &str) -> Self {
         self.index_view = val.to_string();
+        self
+    }
+    /// Sets the index view as a string. This should be used if you're using an
+    /// `index.html` file or the like.
+    ///
+    /// Note: if possible, you should switch to using `.index_view()`, which
+    /// uses a Sycamore view rather than an HTML string.
+    pub fn with_compression(mut self, val: bool) -> Self {
+        self.with_compression = val;
         self
     }
     /// Sets the index view using a Sycamore view, which avoids the need to
