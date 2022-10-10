@@ -39,6 +39,13 @@ static DFLT_INDEX_VIEW: &str = r#"
         <div id="root"></div>
     </body>
 </html>"#;
+/// The default number of pages the page state store will allow before evicting
+/// the oldest. Note: we don't allow an infinite number in development here
+/// because that does actually get quite problematic after a few hours of
+/// constant reloading and HSR (as in Firefox decides that opening the DevTools
+/// is no longer allowed).
+// TODO What's a sensible value here?
+static DFLT_PSS_MAX_SIZE: usize = 25;
 
 // This is broken out for debug implementation ease
 struct TemplateGetters<G: Html>(Vec<Box<dyn Fn() -> Template<G>>>);
@@ -110,6 +117,8 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     template_getters: TemplateGetters<G>,
     /// The app's error pages.
     error_pages: ErrorPagesGetter<G>,
+    /// The maximum size for the page state store.
+    pss_max_size: usize,
     /// The global state creator for the app.
     // This is wrapped in an `Arc` so we can pass it around on the engine-side (which is solely for
     // Actix's benefit...)
@@ -272,6 +281,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // We do offer default error pages, but they'll panic if they're called for production
             // building
             error_pages: ErrorPagesGetter(Box::new(ErrorPages::default)),
+            pss_max_size: DFLT_PSS_MAX_SIZE,
             #[cfg(not(target_arch = "wasm32"))]
             global_state_creator: Arc::new(GlobalStateCreator::default()),
             // By default, we'll disable i18n (as much as I may want more websites to support more
@@ -313,6 +323,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // We do offer default error pages, but they'll panic if they're called for production
             // building
             error_pages: ErrorPagesGetter(Box::new(ErrorPages::default)),
+            pss_max_size: DFLT_PSS_MAX_SIZE,
             // By default, we'll disable i18n (as much as I may want more websites to support more
             // languages...)
             locales: Locales {
@@ -535,7 +546,23 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         self
     }
-    // Setters
+    /// Sets the maximum number of pages that can have their states stored in
+    /// the page state store before the oldest will be evicted. If your app is
+    /// taking up a substantial amount of memory in the browser because your
+    /// page states are fairly large, making this smaller may help.
+    ///
+    /// By default, this is set to 25. Higher values may lead to memory
+    /// difficulties in both development and production, and the poor user
+    /// experience of a browser that's substantially slowed down.
+    ///
+    /// WARNING: any setting applied here will impact HSR in development! (E.g.
+    /// setting this to 1 would mean your position would only be
+    /// saved for the most recent page.)
+    pub fn pss_max_size(mut self, val: usize) -> Self {
+        self.pss_max_size = val;
+        self
+    }
+    // Getters
     /// Gets the HTML ID of the `<div>` at which to insert Perseus.
     pub fn get_root(&self) -> String {
         self.plugins
@@ -737,6 +764,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
 
         error_pages
+    }
+    /// Gets the maximum number of pages that can be stored in the page state
+    /// store before the oldest are evicted.
+    pub fn get_pss_max_size(&self) -> usize {
+        self.pss_max_size
     }
     /// Gets the [`GlobalStateCreator`]. This can't be directly modified by
     /// plugins because of reactive type complexities.

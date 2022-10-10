@@ -122,6 +122,9 @@ pub(crate) struct PerseusRouterProps {
     /// The render configuration of the app (which lays out routing information,
     /// among other things).
     pub render_cfg: HashMap<String, String>,
+    /// The maximum size of the page state store, before pages are evicted
+    /// to save memory in the browser.
+    pub pss_max_size: usize,
 }
 
 /// The Perseus router. This is used internally in the Perseus engine, and you
@@ -141,6 +144,7 @@ pub(crate) fn perseus_router(
         locales,
         templates,
         render_cfg,
+        pss_max_size,
     }: PerseusRouterProps,
 ) -> View<TemplateNodeType> {
     let translations_manager = ClientTranslationsManager::new(&locales);
@@ -148,7 +152,7 @@ pub(crate) fn perseus_router(
     let error_pages = Rc::new(error_pages);
     // Now create an instance of `RenderCtx`, which we'll insert into context and
     // use everywhere throughout the app
-    let render_ctx = RenderCtx::default().set_ctx(cx);
+    let render_ctx = RenderCtx::new(pss_max_size).set_ctx(cx);
     // TODO Replace passing a router state around with getting it out of context
     // instead in the shell
     let router_state = &render_ctx.router; // We need this for interfacing with the router though

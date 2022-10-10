@@ -51,6 +51,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         error_pages: app.get_error_pages(),
         templates: app.get_templates_map(),
         render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
+        pss_max_size: app.get_pss_max_size(),
     };
 
     // At this point, the user can already see something from the server-side

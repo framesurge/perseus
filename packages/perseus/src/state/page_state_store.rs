@@ -14,7 +14,9 @@ use std::rc::Rc;
 /// here. If you need to store state for a page across locales, you should use
 /// the global state system instead. For apps not using i18n, the page URL will
 /// not include any locale.
-#[derive(Default, Clone)]
+// WARNING: Never allow users to manually modify the internal maps/orderings of this,
+// or the eviction protocols will become very confused!
+#[derive(Clone)]
 pub struct PageStateStore {
     /// A map of type IDs to anything, allowing one storage of each type (each
     /// type is intended to a properties `struct` for a template). Entries must
@@ -23,8 +25,39 @@ pub struct PageStateStore {
     // Technically, this should be `Any + Clone`, but that's not possible without something like
     // `dyn_clone`, and we don't need it because we can restrict on the methods instead!
     map: Rc<RefCell<HashMap<String, Box<dyn AnyFreeze>>>>,
+    /// The order in which pages were submitted to the store. This is used to
+    /// evict the state of old pages to prevent Perseus sites from becoming
+    /// massive in the browser's memory and slowing the user's browser down.
+    order: Rc<RefCell<Vec<String>>>,
+    /// The maximum size of the store before pages are evicted, specified in
+    /// terms of a number of pages. Note that this pays no attention to the
+    /// size in memory of individual pages (which should be dropped manually
+    /// if this is a concern).
+    ///
+    /// Note: whatever you set here will impact HSR.
+    max_size: usize,
+    /// A list of pages that will be kept in the store no matter what. This can
+    /// be used to maintain the states of essential pages regardless of how
+    /// much the user has travelled through the site. The *vast* majority of
+    /// use-cases for this would be better fulfilled by using global state, and
+    /// this API is *highly* likely to be misused! If at all possible, use
+    /// global state!
+    keep_list: Rc<RefCell<Vec<String>>>,
 }
 impl PageStateStore {
+    /// Creates a new, empty page state store with the given maximum size. After
+    /// this number of pages have been entered, the oldest ones will have
+    /// their states eliminated. Note that individual pages can be
+    /// marked for keeping or can be manually removed to circumvent these
+    /// mechanisms.
+    pub fn new(max_size: usize) -> Self {
+        Self {
+            map: Rc::default(),
+            order: Rc::default(),
+            max_size,
+            keep_list: Rc::default(),
+        }
+    }
     /// Gets an element out of the state by its type and URL. If the element
     /// stored for the given URL doesn't match the provided type, `None` will be
     /// returned.
@@ -36,13 +69,59 @@ impl PageStateStore {
     /// Adds a new element to the state by its URL. Any existing element with
     /// the same URL will be silently overriden (use `.contains()` to check
     /// first if needed).
+    ///
+    /// This will be added to the end of the `order` property, and any previous
+    /// entries of it in that list will be removed.
     pub fn add<T: AnyFreeze + Clone>(&self, url: &str, val: T) {
         let mut map = self.map.borrow_mut();
         map.insert(url.to_string(), Box::new(val));
+        let mut order = self.order.borrow_mut();
+        // If we haven't been told to keep this page, enter it in the order list so it
+        // can be evicted later
+        if !self.keep_list.borrow().iter().any(|x| x == url) {
+            // Get rid of any previous mentions of this page in the order list
+            order.retain(|stored_url| stored_url != url);
+            order.push(url.to_string());
+            // If we've used up the maximum size yet, we should get rid of the oldest pages
+            if order.len() > self.max_size {
+                // Because this is called on every addition, we can safely assume that it's only
+                // one over
+                let old_url = order.remove(0);
+                map.remove(&old_url);
+            }
+        }
     }
     /// Checks if the state contains an entry for the given URL.
     pub fn contains(&self, url: &str) -> bool {
         self.map.borrow().contains_key(url)
+    }
+    /// Force the store to keep a certain page. This will prevent it from being
+    /// evicted from the store, regardless of how many other pages are
+    /// entered after it.
+    ///
+    /// Warning: in the *vast* majority of cases, your use-case for this will be
+    /// far better served by the global state system! (If you use this with
+    /// mutable state, you are quite likely to shoot yourself in the foot.)
+    pub fn force_keep(&self, url: &str) {
+        let mut order = self.order.borrow_mut();
+        // Get rid of any previous mentions of this page in the order list (which will
+        // prevent this page from ever being evicted)
+        order.retain(|stored_url| stored_url != url);
+        let mut keep_list = self.keep_list.borrow_mut();
+        keep_list.push(url.to_string());
+    }
+    /// Forcibly removes a page from the store. Generally, you should never need
+    /// to use this function, but it's provided for completeness. This could
+    /// be used for preventing a certain page from being frozen,
+    /// if necessary. Note that calling this in development will cause HSR to
+    /// not work (since it relies on the state freezing system).
+    ///
+    /// This returns the page's state, if it was found.
+    pub fn force_remove(&self, url: &str) -> Option<Box<dyn AnyFreeze>> {
+        let mut order = self.order.borrow_mut();
+        order.retain(|stored_url| stored_url != url);
+        let mut map = self.map.borrow_mut();
+        map.remove(url)
     }
 }
 impl PageStateStore {

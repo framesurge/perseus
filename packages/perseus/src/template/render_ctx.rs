@@ -45,17 +45,6 @@ pub struct RenderCtx {
     /// stored HSR state.
     pub is_first: Rc<Cell<bool>>,
 }
-impl Default for RenderCtx {
-    fn default() -> Self {
-        Self {
-            router: RouterState::default(),
-            page_state_store: PageStateStore::default(),
-            global_state: GlobalState::default(),
-            frozen_app: Rc::new(RefCell::new(None)),
-            is_first: Rc::new(Cell::new(true)),
-        }
-    }
-}
 impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized
     /// `String` that can later be used to re-initialize the app to the same
@@ -78,6 +67,17 @@ impl Freeze for RenderCtx {
     }
 }
 impl RenderCtx {
+    /// Creates a new instance of the render context, with the given maximum
+    /// size for the page state store.
+    pub fn new(pss_max_size: usize) -> Self {
+        Self {
+            router: RouterState::default(),
+            page_state_store: PageStateStore::new(pss_max_size),
+            global_state: GlobalState::default(),
+            frozen_app: Rc::new(RefCell::new(None)),
+            is_first: Rc::new(Cell::new(true)),
+        }
+    }
     // TODO Use a custom, optimized context system instead of Sycamore's? (GIven we
     // only need to store one thing...)
     /// Gets an instance of `RenderCtx` out of Sycamore's context system.
