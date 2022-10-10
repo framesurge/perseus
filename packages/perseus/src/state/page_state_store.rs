@@ -87,7 +87,9 @@ impl PageStateStore {
                 // Because this is called on every addition, we can safely assume that it's only
                 // one over
                 let old_url = order.remove(0);
-                map.remove(&old_url);
+                map.remove(&old_url); // This will only occur for pages that
+                                      // aren't in the keep list, since those
+                                      // don't even appear in `order`
             }
         }
     }
