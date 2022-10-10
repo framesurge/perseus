@@ -49,7 +49,7 @@ wasm-bindgen-futures = "0.4"
 [features]
 # Live reloading will only take effect in development, and won't impact production
 # BUG This adds 1.9kB to the production bundle (that's without size optimizations though)
-default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine", "minify", "minify-js", "minify-css" ]
+default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine", "minify", "minify-css" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 translator-lightweight = []
 # This feature adds support for a number of macros that will make your life MUCH easier (read: use this unless you have very specific needs or are completely insane)
