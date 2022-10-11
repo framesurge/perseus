@@ -40,7 +40,7 @@ Perseus uses [Bonnie](https://github.com/arctic-hen7/bonnie) for command aliasin
 
 -   `bonnie dev example showcase serve` -- serves the `showcase` example to <http://localhost:8080>
 
-Before you do anything though, you should run `bonnie setup`, which will do few things to prepare your local development. This includes running `cargo build`, so it will takea a little while. Note that, without running this command, most other actions you try to take will cause errors.
+Before you do anything though, you should run `bonnie setup`, which will do few things to prepare your local development. This includes running `cargo build`, so it will take a little while. Note that, without running this command, most other actions you try to take will cause errors.
 
 ## Testing
 

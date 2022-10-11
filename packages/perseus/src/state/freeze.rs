@@ -22,7 +22,7 @@ pub struct FrozenApp {
 pub struct ThawPrefs {
     /// The preference for page thawing.
     pub page: PageThawPrefs,
-    /// Whether or not active global state should be overriden by frozen state.
+    /// Whether or not active global state should be overridden by frozen state.
     pub global_prefer_frozen: bool,
 }
 

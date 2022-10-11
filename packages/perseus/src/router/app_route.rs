@@ -10,7 +10,7 @@ use sycamore_router::Route;
 /// additional data for Perseus' processing system.
 pub(crate) struct PerseusRoute {
     /// The current route verdict. The initialization value of this is
-    /// completely irrelevant (it will be overriden immediately by the internal
+    /// completely irrelevant (it will be overridden immediately by the internal
     /// routing logic).
     pub verdict: RouteVerdict<TemplateNodeType>,
     /// The app's render configuration.

@@ -148,7 +148,7 @@ check.cmd = [
 ]
 check.desc = "checks code for formatting errors and the like"
 
-spellcheck.cmd = "cspell lint **/*{.rs,.md}"
+spellcheck.cmd = "cspell lint **/*{.rs,.md} --no-progress"
 # TODO Windows version of this??
 spellcheck.subcommands.store.cmd = [
     "cspell --words-only --unique **/*{.rs,.md} | sort --ignore-case > .project-words.txt"

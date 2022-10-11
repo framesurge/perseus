@@ -150,7 +150,7 @@ pub async fn export_path(
     // rest of that template's pages (see #73) The `.html` file extension is
     // added when this variable is used (for contrast to the `.json`s)
     let initial_load_path = if path.ends_with("index") {
-        // However, if it's already an index page, we dont want `index/index.html`
+        // However, if it's already an index page, we don't want `index/index.html`
         path.to_string()
     } else {
         format!("{}/index", &path)

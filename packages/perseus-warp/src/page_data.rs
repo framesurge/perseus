@@ -12,7 +12,7 @@ use warp::http::Response;
 use warp::path::Tail;
 
 // Note: this is the same as for the Actix Web integration, but other frameworks
-// may handle parsing query parameters differntly, so this shouldn't be
+// may handle parsing query parameters differently, so this shouldn't be
 // integrated into the core library
 #[derive(Deserialize)]
 pub struct PageDataReq {

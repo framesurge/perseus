@@ -36,7 +36,7 @@ Note in the above example the usage of the `NewPost` template to override a sect
 
 You can then match each of your routes and render it like so (subset of the previous example):
 
-```rust,no_run,no_plyaground
+```rust,no_run,no_playground
 let root = web_sys::window()
         .unwrap()
         .document()
