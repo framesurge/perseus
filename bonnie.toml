@@ -148,6 +148,14 @@ check.cmd = [
 ]
 check.desc = "checks code for formatting errors and the like"
 
+spellcheck.cmd = "cspell lint **/*{.rs,.md}"
+# TODO Windows version of this??
+spellcheck.subcommands.store.cmd = [
+    "cspell --words-only --unique **/*{.rs,.md} | sort --ignore-case > .project-words.txt"
+]
+spellcheck.subcommands.store.desc = "overrides and recreates the dictionary at `.project-words.txt`, filling it with all the current mistakes"
+spellcheck.desc = "checks docs and code for possible spelling errors (requires `cspell`)"
+
 test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
