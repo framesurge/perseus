@@ -22,9 +22,13 @@ pub struct PageStateStore {
     /// type is intended to a properties `struct` for a template). Entries must
     /// be `Clone`able because we assume them to be `Signal`s or `struct`s
     /// composed of `Signal`s.
+    ///
+    /// This also stores the head string for each page, which means we don't
+    /// need to re-request old pages from the server whatsoever, minimizing
+    /// requests.
     // Technically, this should be `Any + Clone`, but that's not possible without something like
     // `dyn_clone`, and we don't need it because we can restrict on the methods instead!
-    map: Rc<RefCell<HashMap<String, Box<dyn AnyFreeze>>>>,
+    map: Rc<RefCell<HashMap<String, PssEntry>>>,
     /// The order in which pages were submitted to the store. This is used to
     /// evict the state of old pages to prevent Perseus sites from becoming
     /// massive in the browser's memory and slowing the user's browser down.
@@ -61,20 +65,53 @@ impl PageStateStore {
     /// Gets an element out of the state by its type and URL. If the element
     /// stored for the given URL doesn't match the provided type, `None` will be
     /// returned.
-    pub fn get<T: AnyFreeze + Clone>(&self, url: &str) -> Option<T> {
+    ///
+    /// This will NOT return any document metadata, if any exists.
+    pub fn get_state<T: AnyFreeze + Clone>(&self, url: &str) -> Option<T> {
         let map = self.map.borrow();
-        map.get(url)
-            .and_then(|val| val.as_any().downcast_ref::<T>().map(|val| (*val).clone()))
+        match map.get(url) {
+            Some(entry) => {
+                let state = match &entry.state {
+                    PssState::Some(state) => state,
+                    // We don't care whether there could be state in future, there isn't any right now
+                    _ => return None,
+                };
+                state.as_any().downcast_ref::<T>().map(|val| (*val).clone())
+            }
+            None => None,
+        }
     }
-    /// Adds a new element to the state by its URL. Any existing element with
-    /// the same URL will be silently overridden (use `.contains()` to check
-    /// first if needed).
+    /// Gets the document metadata registered for a URL, if it exists.
+    pub fn get_head(&self, url: &str) -> Option<String> {
+        let map = self.map.borrow();
+        match map.get(url) {
+            Some(entry) => entry.head.as_ref().map(|v| v.to_string()),
+            None => None,
+        }
+    }
+    /// Adds page state to the entry in the store with the given URL, creating it if it doesn't exist. Any state
+    /// previously set for the item will be overridden, but any document metadata will be preserved.
     ///
     /// This will be added to the end of the `order` property, and any previous
     /// entries of it in that list will be removed.
-    pub fn add<T: AnyFreeze + Clone>(&self, url: &str, val: T) {
+    ///
+    /// If there's already an entry for the given URL that has been marked as not accepting state,
+    /// this will return `false`, and the entry will not be added. This *must* be handled for correctness.
+    #[must_use]
+    pub fn add_state<T: AnyFreeze + Clone>(&self, url: &str, val: T) -> bool {
         let mut map = self.map.borrow_mut();
-        map.insert(url.to_string(), Box::new(val));
+        // We want to modify any existing entries to avoid wiping out document metadata
+        if let Some(entry) = map.get_mut(url) {
+            if !entry.set_state(Box::new(val)) {
+                return false
+            }
+        } else {
+            let mut new_entry = PssEntry::default();
+            if !new_entry.set_state(Box::new(val)) {
+                return false
+            }
+            map.insert(url.to_string(), new_entry);
+        }
         let mut order = self.order.borrow_mut();
         // If we haven't been told to keep this page, enter it in the order list so it
         // can be evicted later
@@ -92,10 +129,62 @@ impl PageStateStore {
                                       // don't even appear in `order`
             }
         }
+        // If we got to here, then there were no issues with not accepting state
+        true
+    }
+    /// Adds document metadata to the entry in the store for the given URL, creating it if it doesn't exist.
+    ///
+    /// This will be added to the end of the `order` property, and any previous
+    /// entries of it in that list will be removed.
+    pub fn add_head(&self, url: &str, head: String) {
+        let mut map = self.map.borrow_mut();
+        // We want to modify any existing entries to avoid wiping out state
+        if let Some(entry) = map.get_mut(url) {
+            entry.set_head(head);
+        } else {
+            let mut new_entry = PssEntry::default();
+            new_entry.set_head(head);
+            map.insert(url.to_string(), new_entry);
+        }
+        let mut order = self.order.borrow_mut();
+        // If we haven't been told to keep this page, enter it in the order list so it
+        // can be evicted later
+        if !self.keep_list.borrow().iter().any(|x| x == url) {
+            // Get rid of any previous mentions of this page in the order list
+            order.retain(|stored_url| stored_url != url);
+            order.push(url.to_string());
+            // If we've used up the maximum size yet, we should get rid of the oldest pages
+            if order.len() > self.max_size {
+                // Because this is called on every addition, we can safely assume that it's only
+                // one over
+                let old_url = order.remove(0);
+                map.remove(&old_url); // This will only occur for pages that
+                // aren't in the keep list, since those
+                // don't even appear in `order`
+            }
+        }
     }
     /// Checks if the state contains an entry for the given URL.
-    pub fn contains(&self, url: &str) -> bool {
-        self.map.borrow().contains_key(url)
+    pub fn contains(&self, url: &str) -> PssContains {
+        let map = self.map.borrow();
+        let entry = match map.get(url) {
+            Some(entry) => entry,
+            None => return PssContains::None
+        };
+        match entry.state {
+            PssState::Some(_) => match entry.head {
+                Some(_) => PssContains::All,
+                None => PssContains::State,
+            },
+            PssState::None => match entry.head {
+                Some(_) => PssContains::Head,
+                None => PssContains::None,
+            },
+            PssState::Never => match entry.head {
+                Some(_) => PssContains::HeadNoState,
+                None => PssContains::None,
+            },
+        }
     }
     /// Force the store to keep a certain page. This will prevent it from being
     /// evicted from the store, regardless of how many other pages are
@@ -119,7 +208,7 @@ impl PageStateStore {
     /// not work (since it relies on the state freezing system).
     ///
     /// This returns the page's state, if it was found.
-    pub fn force_remove(&self, url: &str) -> Option<Box<dyn AnyFreeze>> {
+    pub fn force_remove(&self, url: &str) -> Option<PssEntry> {
         let mut order = self.order.borrow_mut();
         order.retain(|stored_url| stored_url != url);
         let mut map = self.map.borrow_mut();
@@ -128,14 +217,19 @@ impl PageStateStore {
 }
 impl PageStateStore {
     /// Freezes the component entries into a new `HashMap` of `String`s to avoid
-    /// extra layers of deserialization.
+    /// extra layers of deserialization. This does NOT include document metadata,
+    /// which will be re-requested from the server. (There is no point in freezing
+    /// that, since it can't be unique for the user's page interactions, as it's added directly as the server sends it.)
     // TODO Avoid literally cloning all the page states here if possible
     pub fn freeze_to_hash_map(&self) -> HashMap<String, String> {
         let map = self.map.borrow();
         let mut str_map = HashMap::new();
-        for (k, v) in map.iter() {
-            let v_str = v.freeze();
-            str_map.insert(k.to_string(), v_str);
+        for (k, entry) in map.iter() {
+            // Only freeze the underlying state if there is any (we want to minimize space usage)
+            if let PssState::Some(state) = &entry.state {
+                let v_str = state.freeze();
+                str_map.insert(k.to_string(), v_str);
+            }
         }
 
         str_map
@@ -147,71 +241,70 @@ impl std::fmt::Debug for PageStateStore {
     }
 }
 
-// TODO Use `trybuild` properly with all this
-////  These are tests for the `#[make_rx]` proc macro (here temporarily)
-// #[cfg(test)]
-// mod tests {
-//     use serde::{Deserialize, Serialize};
-//     use crate::state::MakeRx; // We need this to manually use `.make_rx()`
+/// An entry for a single page in the PSS. This type has no concern for the actual type of the page state it stores.
+///
+/// Note: while it is hypothetically possible for this to hold neither a state nor document metadata, that will never happen without user intervention.
+pub struct PssEntry {
+    /// The page state, if any exists. This may come with a guarantee that no state will ever exist.
+    state: PssState<Box<dyn AnyFreeze>>,
+    /// The document metadata of the page, which can be cached to prevent future requests to the server.
+    head: Option<String>,
+}
+impl Default for PssEntry {
+    fn default() -> Self {
+        Self {
+            // There could be state later
+            state: PssState::None,
+            head: None,
+        }
+    }
+}
+impl PssEntry {
+    /// Declare that this entry will *never* have state. This should be done by macros that definitively know the structure of a page.
+    /// This action is irrevocable, since a page cannot transition from never taking state to taking some later in Perseus.
+    ///
+    /// Note that this will not be preserved in freezing (allowing greater flexibility of HSR).
+    ///
+    /// **Warning:** manually calling in the wrong context this may lead to the complete failure of your application!
+    pub fn set_state_never(&mut self) {
+        self.state = PssState::Never;
+    }
+    /// Adds document metadata to this entry.
+    pub fn set_head(&mut self, head: String) {
+        self.head = Some(head);
+    }
+    /// Adds state to this entry. This will return false and do nothing if the entry has been marked as never being able to accept state.
+    #[must_use]
+    pub fn set_state(&mut self, state: Box<dyn AnyFreeze>) -> bool {
+        if let PssState::Never = self.state {
+            false
+        } else {
+            self.state = PssState::Some(state);
+            true
+        }
+    }
+}
 
-//     #[test]
-//     fn named_fields() {
-//         #[perseus_macro::make_rx(TestRx)]
-//         struct Test {
-//             foo: String,
-//             bar: u16,
-//         }
+/// The page state of a PSS entry. This is used to determine whether or not we need to request data from the server.
+pub enum PssState<T> {
+    /// There is state.
+    Some(T),
+    /// There is no state, but there could be some in future.
+    None,
+    /// There is no state, and there never will be any (i.e. this page does not use state).
+    Never
+}
 
-//         let new = Test {
-//             foo: "foo".to_string(),
-//             bar: 5,
-//         }
-//         .make_rx();
-//         new.bar.set(6);
-//     }
-
-//     #[test]
-//     fn nested() {
-//         #[perseus_macro::make_rx(TestRx)]
-//         // `Serialize`, `Deserialize`, and `Clone` are automatically derived
-//         #[rx::nested("nested", NestedRx)]
-//         struct Test {
-//             #[serde(rename = "foo_test")]
-//             foo: String,
-//             bar: u16,
-//             // This will get simple reactivity
-//             // This annotation is unnecessary though
-//             baz: Baz,
-//             // This will get fine-grained reactivity
-//             nested: Nested,
-//         }
-//         #[derive(Serialize, Deserialize, Clone)]
-//         struct Baz {
-//             test: String,
-//         }
-//         #[perseus_macro::make_rx(NestedRx)]
-//         struct Nested {
-//             test: String,
-//         }
-
-//         let new = Test {
-//             foo: "foo".to_string(),
-//             bar: 5,
-//             baz: Baz {
-//                 // We won't be able to `.set()` this
-//                 test: "test".to_string(),
-//             },
-//             nested: Nested {
-//                 // We will be able to `.set()` this
-//                 test: "nested".to_string(),
-//             },
-//         }
-//         .make_rx();
-//         new.bar.set(6);
-//         new.baz.set(Baz {
-//             test: "updated".to_string(),
-//         });
-//         new.nested.test.set("updated".to_string());
-//         let _ = new.clone();
-//     }
-// }
+/// The various things the PSS can contain for a single page. It might have state, a head, both, or neither.
+pub enum PssContains {
+    /// There is no entry for this page.
+    None,
+    /// There is page state only recorded for this page.
+    State,
+    /// There is only document metadata recorded for this page. There is no state recorded, but that doesn't mean the page has none.
+    Head,
+    /// There is document metadata recorded for this page, along with an assurance that there will never be any state.
+    HeadNoState,
+    /// Both document metadata and page state are present for this page.
+    All
+}
