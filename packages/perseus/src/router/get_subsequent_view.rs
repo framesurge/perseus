@@ -130,7 +130,7 @@ pub(crate) async fn get_subsequent_view(
                         let page_props = PageProps {
                             path: path_with_locale.clone(),
                             state: page_data.state,
-                            // This will probably be overriden by the already-set version (unless no
+                            // This will probably be overridden by the already-set version (unless no
                             // page has used global state yet)
                             global_state: get_global_state(),
                         };

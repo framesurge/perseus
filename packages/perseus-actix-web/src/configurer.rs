@@ -86,7 +86,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
                 "/.perseus/translations/{locale}",
                 web::get().to(translations::<T>),
             )
-            // This allows gettting JS interop snippets (including ones that are supposedly
+            // This allows getting JS interop snippets (including ones that are supposedly
             // 'inlined') These won't change, so they can be set as a filesystem
             // dependency safely
             .service(Files::new("/.perseus/snippets", &opts.snippets));

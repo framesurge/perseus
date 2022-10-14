@@ -583,7 +583,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// this into `::get_html_shell()` to do that).
     ///
     /// Note that this automatically adds `<!DOCTYPE html>` to the start of the
-    /// HTML shell produced, which can only be overriden with a control plugin
+    /// HTML shell produced, which can only be overridden with a control plugin
     /// (though you should really never do this in Perseus, which targets
     /// HTML on the web).
     #[cfg(not(target_arch = "wasm32"))]

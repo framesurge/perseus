@@ -54,7 +54,7 @@ impl TranslationArgs {
         Self {}
     }
     /// A filler function to conform to the typical argument-setting interface.
-    /// Again, this will be entirele unnecessary once conditional expression
+    /// Again, this will be entirely unnecessary once conditional expression
     /// compilation is supported.
     pub fn set(&self, _key: &str, _val: &str) {}
 }

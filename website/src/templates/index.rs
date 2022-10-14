@@ -54,7 +54,7 @@ enum NavButtons {
 fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
     let order = create_ref(cx, props.order);
 
-    // This would usually store the code example, but that can be overriden
+    // This would usually store the code example, but that can be overridden
     let supplement_view = if let Some(supplement) = props.custom_supplement {
         supplement
     } else {
@@ -180,7 +180,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
             )
         ) {
             div(
-                // Generic styles go here (the Flexbox here just centers everything vertically/horiztonally)
+                // Generic styles go here (the Flexbox here just centers everything vertically/horizontally)
                 class = format!(
                     "{} relative lg:h-[102vh] lg:px-8 xl:px-12 2xl:px-24 3xl:px-40 text-white",
                     // If this tile has extra content at the bottom, we need three screens on mobile, otherwise two

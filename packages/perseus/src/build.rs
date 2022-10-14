@@ -44,7 +44,7 @@ pub async fn build_template(
 
     // Handle static path generation
     // Because we iterate over the paths, we need a base path if we're not
-    // generating custom ones (that'll be overriden if needed)
+    // generating custom ones (that'll be overridden if needed)
     let paths = match template.uses_build_paths() {
         true => template
             .get_build_paths()
@@ -104,7 +104,7 @@ async fn gen_state_for_path(
         Some(stripped) => stripped.to_string(),
         None => full_path_without_locale,
     };
-    // Add the current locale to the front of that and dencode it as a URL so we can
+    // Add the current locale to the front of that and encode it as a URL so we can
     // store a flat series of files BUG: insanely nested paths won't work
     // whatsoever if the filename is too long, maybe hash instead?
     let full_path_encoded = format!(

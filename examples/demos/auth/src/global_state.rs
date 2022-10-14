@@ -36,7 +36,7 @@ pub enum LoginState {
 
 /// Authentication data for the app.
 // In a real app, you might store privileges here, or user preferences, etc. (all the things you'd
-// need to have available constantly and everwhere)
+// need to have available constantly and everywhere)
 #[perseus::make_rx(AuthDataRx)]
 pub struct AuthData {
     /// The actual login status.

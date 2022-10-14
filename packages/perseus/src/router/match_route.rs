@@ -33,7 +33,7 @@ macro_rules! get_template_for_path {
                 // Make a path out of this and all the previous segments
                 let path_to_try = path_segments[0..(idx + 1)].join("/") + "/*";
 
-                // If we find something, keep going until we don't (maximise specificity)
+                // If we find something, keep going until we don't (maximize specificity)
                 if let Some(template_root_path) = $render_cfg.get(&path_to_try) {
                     was_incremental_match = true;
                     template_name = template_root_path.to_string();

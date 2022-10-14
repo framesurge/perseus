@@ -188,7 +188,7 @@ pub struct Tool {
     /// version number added on).
     pub name: String,
     /// A path provided by the user to the tool. If this is present, then the
-    /// tool won't be installed, we'll use what the iuser has given us
+    /// tool won't be installed, we'll use what the user has given us
     /// instead.
     pub user_given_path: Option<String>,
     /// A specific version number provided by the user. By default, the latest

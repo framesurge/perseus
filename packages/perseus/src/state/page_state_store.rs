@@ -67,7 +67,7 @@ impl PageStateStore {
             .and_then(|val| val.as_any().downcast_ref::<T>().map(|val| (*val).clone()))
     }
     /// Adds a new element to the state by its URL. Any existing element with
-    /// the same URL will be silently overriden (use `.contains()` to check
+    /// the same URL will be silently overridden (use `.contains()` to check
     /// first if needed).
     ///
     /// This will be added to the end of the `order` property, and any previous

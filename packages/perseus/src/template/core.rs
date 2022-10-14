@@ -392,7 +392,7 @@ impl<G: Html> Template<G> {
             .into())
         }
     }
-    /// Amalagmates given request and build states. Errors here can be caused by
+    /// Amalgamates given request and build states. Errors here can be caused by
     /// either the server or the client, so the user must specify
     /// an [`ErrorCause`].
     ///
