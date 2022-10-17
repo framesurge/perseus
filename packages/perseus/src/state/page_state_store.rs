@@ -73,7 +73,8 @@ impl PageStateStore {
             Some(entry) => {
                 let state = match &entry.state {
                     PssState::Some(state) => state,
-                    // We don't care whether there could be state in future, there isn't any right now
+                    // We don't care whether there could be state in future, there isn't any right
+                    // now
                     _ => return None,
                 };
                 state.as_any().downcast_ref::<T>().map(|val| (*val).clone())
@@ -89,26 +90,28 @@ impl PageStateStore {
             None => None,
         }
     }
-    /// Adds page state to the entry in the store with the given URL, creating it if it doesn't exist. Any state
-    /// previously set for the item will be overridden, but any document metadata will be preserved.
+    /// Adds page state to the entry in the store with the given URL, creating
+    /// it if it doesn't exist. Any state previously set for the item will
+    /// be overridden, but any document metadata will be preserved.
     ///
     /// This will be added to the end of the `order` property, and any previous
     /// entries of it in that list will be removed.
     ///
-    /// If there's already an entry for the given URL that has been marked as not accepting state,
-    /// this will return `false`, and the entry will not be added. This *must* be handled for correctness.
+    /// If there's already an entry for the given URL that has been marked as
+    /// not accepting state, this will return `false`, and the entry will
+    /// not be added. This *must* be handled for correctness.
     #[must_use]
     pub fn add_state<T: AnyFreeze + Clone>(&self, url: &str, val: T) -> bool {
         let mut map = self.map.borrow_mut();
         // We want to modify any existing entries to avoid wiping out document metadata
         if let Some(entry) = map.get_mut(url) {
             if !entry.set_state(Box::new(val)) {
-                return false
+                return false;
             }
         } else {
             let mut new_entry = PssEntry::default();
             if !new_entry.set_state(Box::new(val)) {
-                return false
+                return false;
             }
             map.insert(url.to_string(), new_entry);
         }
@@ -132,7 +135,8 @@ impl PageStateStore {
         // If we got to here, then there were no issues with not accepting state
         true
     }
-    /// Adds document metadata to the entry in the store for the given URL, creating it if it doesn't exist.
+    /// Adds document metadata to the entry in the store for the given URL,
+    /// creating it if it doesn't exist.
     ///
     /// This will be added to the end of the `order` property, and any previous
     /// entries of it in that list will be removed.
@@ -159,9 +163,23 @@ impl PageStateStore {
                 // one over
                 let old_url = order.remove(0);
                 map.remove(&old_url); // This will only occur for pages that
-                // aren't in the keep list, since those
-                // don't even appear in `order`
+                                      // aren't in the keep list, since those
+                                      // don't even appear in `order`
             }
+        }
+    }
+    /// Sets the given entry as not being able to take any state. Any future
+    /// attempt to register state for it will lead to silent failures and/or
+    /// panics.
+    pub fn set_state_never(&self, url: &str) {
+        let mut map = self.map.borrow_mut();
+        // If there's no entry for this URl yet, we'll create it
+        if let Some(entry) = map.get_mut(url) {
+            entry.set_state_never();
+        } else {
+            let mut new_entry = PssEntry::default();
+            new_entry.set_state_never();
+            map.insert(url.to_string(), new_entry);
         }
     }
     /// Checks if the state contains an entry for the given URL.
@@ -169,7 +187,7 @@ impl PageStateStore {
         let map = self.map.borrow();
         let entry = match map.get(url) {
             Some(entry) => entry,
-            None => return PssContains::None
+            None => return PssContains::None,
         };
         match entry.state {
             PssState::Some(_) => match entry.head {
@@ -217,15 +235,17 @@ impl PageStateStore {
 }
 impl PageStateStore {
     /// Freezes the component entries into a new `HashMap` of `String`s to avoid
-    /// extra layers of deserialization. This does NOT include document metadata,
-    /// which will be re-requested from the server. (There is no point in freezing
-    /// that, since it can't be unique for the user's page interactions, as it's added directly as the server sends it.)
+    /// extra layers of deserialization. This does NOT include document
+    /// metadata, which will be re-requested from the server. (There is no
+    /// point in freezing that, since it can't be unique for the user's page
+    /// interactions, as it's added directly as the server sends it.)
     // TODO Avoid literally cloning all the page states here if possible
     pub fn freeze_to_hash_map(&self) -> HashMap<String, String> {
         let map = self.map.borrow();
         let mut str_map = HashMap::new();
         for (k, entry) in map.iter() {
-            // Only freeze the underlying state if there is any (we want to minimize space usage)
+            // Only freeze the underlying state if there is any (we want to minimize space
+            // usage)
             if let PssState::Some(state) = &entry.state {
                 let v_str = state.freeze();
                 str_map.insert(k.to_string(), v_str);
@@ -241,13 +261,17 @@ impl std::fmt::Debug for PageStateStore {
     }
 }
 
-/// An entry for a single page in the PSS. This type has no concern for the actual type of the page state it stores.
+/// An entry for a single page in the PSS. This type has no concern for the
+/// actual type of the page state it stores.
 ///
-/// Note: while it is hypothetically possible for this to hold neither a state nor document metadata, that will never happen without user intervention.
+/// Note: while it is hypothetically possible for this to hold neither a state
+/// nor document metadata, that will never happen without user intervention.
 pub struct PssEntry {
-    /// The page state, if any exists. This may come with a guarantee that no state will ever exist.
+    /// The page state, if any exists. This may come with a guarantee that no
+    /// state will ever exist.
     state: PssState<Box<dyn AnyFreeze>>,
-    /// The document metadata of the page, which can be cached to prevent future requests to the server.
+    /// The document metadata of the page, which can be cached to prevent future
+    /// requests to the server.
     head: Option<String>,
 }
 impl Default for PssEntry {
@@ -260,12 +284,16 @@ impl Default for PssEntry {
     }
 }
 impl PssEntry {
-    /// Declare that this entry will *never* have state. This should be done by macros that definitively know the structure of a page.
-    /// This action is irrevocable, since a page cannot transition from never taking state to taking some later in Perseus.
+    /// Declare that this entry will *never* have state. This should be done by
+    /// macros that definitively know the structure of a page. This action
+    /// is irrevocable, since a page cannot transition from never taking state
+    /// to taking some later in Perseus.
     ///
-    /// Note that this will not be preserved in freezing (allowing greater flexibility of HSR).
+    /// Note that this will not be preserved in freezing (allowing greater
+    /// flexibility of HSR).
     ///
-    /// **Warning:** manually calling in the wrong context this may lead to the complete failure of your application!
+    /// **Warning:** manually calling in the wrong context this may lead to the
+    /// complete failure of your application!
     pub fn set_state_never(&mut self) {
         self.state = PssState::Never;
     }
@@ -273,7 +301,8 @@ impl PssEntry {
     pub fn set_head(&mut self, head: String) {
         self.head = Some(head);
     }
-    /// Adds state to this entry. This will return false and do nothing if the entry has been marked as never being able to accept state.
+    /// Adds state to this entry. This will return false and do nothing if the
+    /// entry has been marked as never being able to accept state.
     #[must_use]
     pub fn set_state(&mut self, state: Box<dyn AnyFreeze>) -> bool {
         if let PssState::Never = self.state {
@@ -285,26 +314,32 @@ impl PssEntry {
     }
 }
 
-/// The page state of a PSS entry. This is used to determine whether or not we need to request data from the server.
+/// The page state of a PSS entry. This is used to determine whether or not we
+/// need to request data from the server.
 pub enum PssState<T> {
     /// There is state.
     Some(T),
     /// There is no state, but there could be some in future.
     None,
-    /// There is no state, and there never will be any (i.e. this page does not use state).
-    Never
+    /// There is no state, and there never will be any (i.e. this page does not
+    /// use state).
+    Never,
 }
 
-/// The various things the PSS can contain for a single page. It might have state, a head, both, or neither.
+/// The various things the PSS can contain for a single page. It might have
+/// state, a head, both, or neither.
+#[derive(Debug)]
 pub enum PssContains {
     /// There is no entry for this page.
     None,
     /// There is page state only recorded for this page.
     State,
-    /// There is only document metadata recorded for this page. There is no state recorded, but that doesn't mean the page has none.
+    /// There is only document metadata recorded for this page. There is no
+    /// state recorded, but that doesn't mean the page has none.
     Head,
-    /// There is document metadata recorded for this page, along with an assurance that there will never be any state.
+    /// There is document metadata recorded for this page, along with an
+    /// assurance that there will never be any state.
     HeadNoState,
     /// Both document metadata and page state are present for this page.
-    All
+    All,
 }

@@ -143,11 +143,11 @@ impl RenderCtx {
     /// called, it will also add any frozen state it finds to the page state
     /// store, overriding what was already there.
     ///
-    /// **Warning:** if the page has already been registered in the page state store
-    /// as not being able to receive state, this will silently fail. If this occurs,
-    /// something has gone horribly wrong, and panics will almost certainly follow.
-    /// (Basically, this should *never* happen. If you're not using the macros, you may
-    /// need to be careful of this.)
+    /// **Warning:** if the page has already been registered in the page state
+    /// store as not being able to receive state, this will silently fail.
+    /// If this occurs, something has gone horribly wrong, and panics will
+    /// almost certainly follow. (Basically, this should *never* happen. If
+    /// you're not using the macros, you may need to be careful of this.)
     fn get_frozen_page_state_and_register<R>(&self, url: &str) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
@@ -177,9 +177,10 @@ impl RenderCtx {
                         // Then we convince the compiler that that actually is `R` with the
                         // ludicrous trait bound at the beginning of this function
                         let rx = unrx.make_rx();
-                        // And we do want to add this to the page state store (if this returns false, then this page was never supposed to receive state)
+                        // And we do want to add this to the page state store (if this returns
+                        // false, then this page was never supposed to receive state)
                         if !self.page_state_store.add_state(url, rx.clone()) {
-                            return None
+                            return None;
                         }
                         // Now we should remove this from the frozen state so we don't fall back to
                         // it again
@@ -192,7 +193,9 @@ impl RenderCtx {
                         Some(rx)
                     }
                     // If there's nothing in the frozen state, we'll fall back to the active state
-                    None => self.page_state_store.get_state::<<R::Unrx as MakeRx>::Rx>(url),
+                    None => self
+                        .page_state_store
+                        .get_state::<<R::Unrx as MakeRx>::Rx>(url),
                 }
             } else {
                 None
@@ -210,7 +213,8 @@ impl RenderCtx {
         // unreactive version of `R` has the same properties as `R` itself
         <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
     {
-        self.page_state_store.get_state::<<R::Unrx as MakeRx>::Rx>(url)
+        self.page_state_store
+            .get_state::<<R::Unrx as MakeRx>::Rx>(url)
     }
     /// Gets either the active state or the frozen state for the given page. If
     /// `.thaw()` has been called, thaw preferences will be registered, which
@@ -355,11 +359,12 @@ impl RenderCtx {
     /// Registers a serialized and unreactive state string to the page state
     /// store, returning a fully reactive version.
     ///
-    /// **Warning:** if the page has already been registered in the page state store
-    /// as not being able to receive state, this will silently fail (i.e. the state will be returned, but it won't be registered). If this occurs,
-    /// something has gone horribly wrong, and panics will almost certainly follow.
-    /// (Basically, this should *never* happen. If you're not using the macros, you may
-    /// need to be careful of this.)
+    /// **Warning:** if the page has already been registered in the page state
+    /// store as not being able to receive state, this will silently fail
+    /// (i.e. the state will be returned, but it won't be registered). If this
+    /// occurs, something has gone horribly wrong, and panics will almost
+    /// certainly follow. (Basically, this should *never* happen. If you're
+    /// not using the macros, you may need to be careful of this.)
     pub fn register_page_state_str<R>(
         &self,
         url: &str,
@@ -402,6 +407,12 @@ impl RenderCtx {
         *active_global_state = Box::new(rx.clone());
 
         Ok(rx)
+    }
+    /// Registers a page as definitely taking no state, which allows it to be
+    /// cached fully, preventing unnecessary network requests. Any future
+    /// attempt to set state will lead to silent failures and/or panics.
+    pub fn register_page_no_state(&self, url: &str) {
+        self.page_state_store.set_state_never(url);
     }
 }
 

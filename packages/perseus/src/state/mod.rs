@@ -5,7 +5,7 @@ mod rx_state;
 
 pub use freeze::{FrozenApp, PageThawPrefs, ThawPrefs};
 pub use global_state::{GlobalState, GlobalStateCreator};
-pub use page_state_store::PageStateStore;
+pub use page_state_store::{PageStateStore, PssContains, PssEntry, PssState};
 pub use rx_state::{AnyFreeze, Freeze, MakeRx, MakeUnrx};
 
 #[cfg(all(feature = "idb-freezing", target_arch = "wasm32"))]
