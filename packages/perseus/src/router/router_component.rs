@@ -184,10 +184,7 @@ pub(crate) fn perseus_router(
     // Create a `Route` to pass through Sycamore with the information we need
     let route = PerseusRoute {
         verdict: RouteVerdict::NotFound,
-        // TODO Can we pass through a context instead and use these are necessary?
-        templates: render_ctx.templates.clone(),
-        render_cfg: render_ctx.render_cfg.clone(),
-        locales: render_ctx.locales.clone(),
+        cx: Some(cx),
     };
 
     // Create a derived state for the route announcement

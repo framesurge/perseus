@@ -1,57 +1,56 @@
 use super::{match_route, RouteVerdict};
 use crate::{
     i18n::Locales,
-    template::{TemplateMap, TemplateNodeType},
+    template::{RenderCtx, TemplateMap, TemplateNodeType},
 };
 use std::collections::HashMap;
 use std::rc::Rc;
+use sycamore::prelude::Scope;
 use sycamore_router::Route;
 
 /// The Perseus route system, which implements Sycamore `Route`, but adds
 /// additional data for Perseus' processing system.
-pub(crate) struct PerseusRoute {
+pub(crate) struct PerseusRoute<'cx> {
     /// The current route verdict. The initialization value of this is
     /// completely irrelevant (it will be overridden immediately by the internal
     /// routing logic).
     pub verdict: RouteVerdict<TemplateNodeType>,
-    /// The app's render configuration.
-    pub render_cfg: Rc<HashMap<String, String>>,
-    /// The templates the app is using.
-    pub templates: TemplateMap<TemplateNodeType>,
-    /// The app's i18n configuration.
-    pub locales: Locales,
+    /// The Sycamore scope that allows us to access the render context.
+    ///
+    /// This will *always* be `Some(_)` in actual applications.
+    pub cx: Option<Scope<'cx>>,
 }
 // Sycamore would only use this if we were processing dynamic routes, which
-// we're not In other words, it's fine that these values would break everything
+// we're not
+// In other words, it's fine that these values would break everything
 // if they were used, they're just compiler appeasement
-impl Default for PerseusRoute {
+impl<'cx> Default for PerseusRoute<'cx> {
     fn default() -> Self {
         Self {
             verdict: RouteVerdict::NotFound,
-            render_cfg: Rc::default(),
-            templates: TemplateMap::default(),
-            locales: Locales {
-                default: String::default(),
-                other: Vec::default(),
-                using_i18n: bool::default(),
-            },
+            // Again, this will never be accessed
+            cx: None,
         }
     }
 }
-impl PerseusRoute {
+impl<'cx> PerseusRoute<'cx> {
     /// Gets the current route verdict.
     pub fn get_verdict(&self) -> &RouteVerdict<TemplateNodeType> {
         &self.verdict
     }
 }
-impl Route for PerseusRoute {
+impl<'cx> Route for PerseusRoute<'cx> {
     fn match_route(&self, path: &[&str]) -> Self {
-        let verdict = match_route(path, &self.render_cfg, &self.templates, &self.locales);
+        let render_ctx = RenderCtx::from_ctx(self.cx.unwrap()); // We know the scope will always exist
+        let verdict = match_route(
+            path,
+            &render_ctx.render_cfg,
+            &render_ctx.templates,
+            &render_ctx.locales,
+        );
         Self {
             verdict,
-            render_cfg: self.render_cfg.clone(),
-            templates: self.templates.clone(),
-            locales: self.locales.clone(),
+            cx: self.cx,
         }
     }
 }
