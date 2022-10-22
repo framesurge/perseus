@@ -283,8 +283,7 @@ impl<G: Html> Template<G> {
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
-        // We don't need any page state store here
-        let _ = RenderCtx::new(0).set_ctx(cx);
+        let _ = RenderCtx::default().set_ctx(cx);
         // And now provide a translator separately
         provide_context_signal_replace(cx, translator.clone());
 
@@ -301,7 +300,7 @@ impl<G: Html> Template<G> {
             // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             // We don't need any page state store here
-            let _ = RenderCtx::new(0).set_ctx(cx);
+            let _ = RenderCtx::default().set_ctx(cx);
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
             // We don't want to generate hydration keys for the head because it is static.

@@ -177,6 +177,9 @@ pub enum FetchError {
         #[source]
         source: Box<dyn std::error::Error + Send + Sync>,
     },
+    // This is not used by the `fetch` function, but it is used by the preloading system
+    #[error("asset not found")]
+    NotFound { url: String },
 }
 
 /// Errors that can occur while building an app.

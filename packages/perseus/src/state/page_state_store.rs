@@ -1,3 +1,4 @@
+use crate::page_data::PageDataPartial;
 use crate::state::AnyFreeze;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -47,6 +48,14 @@ pub struct PageStateStore {
     /// this API is *highly* likely to be misused! If at all possible, use
     /// global state!
     keep_list: Rc<RefCell<Vec<String>>>,
+    /// A list of pages whose data have been manually preloaded to minimize
+    /// future network requests. This list is intended for pages that are to
+    /// be globally preloaded; any pages that should only be preloaded for a
+    /// specific route should be placed in `route_preloaded` instead.
+    preloaded: Rc<RefCell<HashMap<String, PageDataPartial>>>,
+    /// Pages that have been prelaoded for the current route, which should be
+    /// cleared on a route change.
+    route_preloaded: Rc<RefCell<HashMap<String, PageDataPartial>>>,
 }
 impl PageStateStore {
     /// Creates a new, empty page state store with the given maximum size. After
@@ -60,6 +69,8 @@ impl PageStateStore {
             order: Rc::default(),
             max_size,
             keep_list: Rc::default(),
+            preloaded: Rc::default(),
+            route_preloaded: Rc::default(),
         }
     }
     /// Gets an element out of the state by its type and URL. If the element
@@ -189,7 +200,7 @@ impl PageStateStore {
             Some(entry) => entry,
             None => return PssContains::None,
         };
-        match entry.state {
+        let contains = match entry.state {
             PssState::Some(_) => match entry.head {
                 Some(_) => PssContains::All,
                 None => PssContains::State,
@@ -202,9 +213,109 @@ impl PageStateStore {
                 Some(_) => PssContains::HeadNoState,
                 None => PssContains::None,
             },
+        };
+        // Now do a final check to make sure it hasn't been preloaded (which would show
+        // up as `PssContains::None` after that)
+        match contains {
+            PssContains::None => {
+                let preloaded = self.preloaded.borrow();
+                let route_preloaded = self.route_preloaded.borrow();
+                // We don't currently distinguish between *how* the page has been preloaded
+                if route_preloaded.contains_key(url) || preloaded.contains_key(url) {
+                    PssContains::Preloaded
+                } else {
+                    contains
+                }
+            }
+            _ => contains,
         }
     }
-    /// Force the store to keep a certain page. This will prevent it from being
+    /// Preloads the given URL from the server and adds it to the PSS.
+    ///
+    /// This function has no effect on the server-side.
+    ///
+    /// Note that this should generally be called through `RenderCtx`, to avoid
+    /// having to manually collect the required arguments.
+    // Note that this function bears striking resemblance to the subsequent load system!
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) async fn preload(
+        &self,
+        path: &str,
+        locale: &str,
+        template_path: &str,
+        was_incremental_match: bool,
+        is_route_preload: bool,
+    ) -> Result<(), crate::errors::ClientError> {
+        use crate::{
+            errors::FetchError,
+            utils::{fetch, get_path_prefix_client},
+        };
+
+        // If we're getting data about the index page, explicitly set it to that
+        // This can be handled by the Perseus server (and is), but not by static
+        // exporting
+        let path_norm = match path.is_empty() {
+            true => "index".to_string(),
+            false => path.to_string(),
+        };
+        // Get the static page data (head and state)
+        let asset_url = format!(
+            "{}/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",
+            get_path_prefix_client(),
+            locale,
+            path_norm,
+            template_path,
+            was_incremental_match
+        );
+        // If this doesn't exist, then it's a 404 (we went here by explicit instruction,
+        // but it may be an unservable ISR page or the like)
+        let page_data_str = fetch(&asset_url).await?;
+        match page_data_str {
+            Some(page_data_str) => {
+                // All good, deserialize the page data
+                let page_data =
+                    serde_json::from_str::<PageDataPartial>(&page_data_str).map_err(|err| {
+                        FetchError::SerFailed {
+                            url: path.to_string(),
+                            source: err.into(),
+                        }
+                    })?;
+                let mut preloaded = if is_route_preload {
+                    self.preloaded.borrow_mut()
+                } else {
+                    self.route_preloaded.borrow_mut()
+                };
+                preloaded.insert(path.to_string(), page_data);
+                Ok(())
+            }
+            None => Err(FetchError::NotFound {
+                url: path.to_string(),
+            }
+            .into()),
+        }
+    }
+    /// Gets a preloaded page. This will search both the globally and
+    /// route-specifically preloaded pages.
+    ///
+    /// Note that this will delete the preloaded page from the preload cache,
+    /// since it's expected to be parsed and rendered immediately.
+    pub fn get_preloaded(&self, url: &str) -> Option<PageDataPartial> {
+        let mut preloaded = self.preloaded.borrow_mut();
+        let mut route_preloaded = self.route_preloaded.borrow_mut();
+        if let Some(page_data) = preloaded.remove(url) {
+            Some(page_data)
+        } else {
+            route_preloaded.remove(url)
+        }
+    }
+    /// Clears all the routes that were preloaded for the last route, keeping
+    /// only those listed (this should be used to make sure we don't have to
+    /// double-preload things).
+    pub fn cycle_route_preloaded(&self, keep_urls: &[&str]) {
+        let mut preloaded = self.route_preloaded.borrow_mut();
+        preloaded.retain(|url, _| keep_urls.iter().any(|keep_url| keep_url == url));
+    }
+    /// Forces the store to keep a certain page. This will prevent it from being
     /// evicted from the store, regardless of how many other pages are
     /// entered after it.
     ///
@@ -342,4 +453,8 @@ pub enum PssContains {
     HeadNoState,
     /// Both document metadata and page state are present for this page.
     All,
+    /// We have a [`PageDataPartial`] for the given page, since it was preloaded
+    /// by some other function (likely the user's action). This will need proper
+    /// processing into a state.
+    Preloaded,
 }

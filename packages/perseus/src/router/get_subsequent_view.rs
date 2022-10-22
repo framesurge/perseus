@@ -1,8 +1,6 @@
-use crate::error_pages::ErrorPages;
 use crate::errors::*;
-use crate::i18n::ClientTranslationsManager;
 use crate::page_data::PageDataPartial;
-use crate::router::{get_global_state, RouteVerdict, RouterLoadState, RouterState};
+use crate::router::{get_global_state, RouteVerdict, RouterLoadState};
 use crate::state::PssContains;
 use crate::template::{PageProps, RenderCtx, Template, TemplateNodeType};
 use crate::utils::checkpoint;
@@ -27,13 +25,6 @@ pub(crate) struct GetSubsequentViewProps<'a> {
     pub was_incremental_match: bool,
     /// The locale we're rendering in.
     pub locale: String,
-    /// The router state.
-    pub router_state: RouterState,
-    /// A *client-side* translations manager to use (this manages caching
-    /// translations).
-    pub translations_manager: ClientTranslationsManager,
-    /// The error pages, for use if something fails.
-    pub error_pages: Rc<ErrorPages<TemplateNodeType>>,
     /// The current route verdict. This will be stored in context so that it can
     /// be used for possible reloads. Eventually, this will be made obsolete
     /// when Sycamore supports this natively.
@@ -58,14 +49,13 @@ pub(crate) async fn get_subsequent_view(
         template,
         was_incremental_match,
         locale,
-        mut router_state,
-        translations_manager,
-        error_pages,
         route_verdict,
     }: GetSubsequentViewProps<'_>,
 ) -> View<TemplateNodeType> {
     let render_ctx = RenderCtx::from_ctx(cx);
-    // TODO Get the router state out of that render context
+    let router_state = &render_ctx.router;
+    let translations_manager = &render_ctx.translations_manager;
+    let error_pages = &render_ctx.error_pages;
     let pss = &render_ctx.page_state_store;
 
     let path_with_locale = match locale.as_str() {
@@ -172,6 +162,8 @@ pub(crate) async fn get_subsequent_view(
             state: None,
             head: pss.get_head(&path).unwrap(),
         }),
+        // The page's data has been preloaded at some other time
+        PssContains::Preloaded => Ok(pss.get_preloaded(&path).unwrap()),
     };
     // Any errors will be prepared error pages ready for return
     let page_data = match page_data {

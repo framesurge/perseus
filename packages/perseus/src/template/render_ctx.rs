@@ -1,9 +1,11 @@
+#[cfg(target_arch = "wasm32")]
+use super::TemplateNodeType;
 use crate::errors::*;
 use crate::router::{RouterLoadState, RouterState};
 use crate::state::{
     AnyFreeze, Freeze, FrozenApp, GlobalState, MakeRx, MakeUnrx, PageStateStore, ThawPrefs,
 };
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{provide_context, use_context, Scope};
 use sycamore_router::navigate;
@@ -39,11 +41,34 @@ pub struct RenderCtx {
     /// A previous state the app was once in, still serialized. This will be
     /// rehydrated gradually by the template macro.
     pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
+    /// The app's error pages. If you need to render an error, you should use
+    /// these!
+    ///
+    /// **Warning:** these don't exist on the engine-side! But, there, you
+    /// should always return a build-time error rather than produce a page
+    /// with an error in it.
+    #[cfg(target_arch = "wasm32")]
+    pub error_pages: Rc<crate::error_pages::ErrorPages<TemplateNodeType>>,
+    // --- PRIVATE FIELDS ---
+    // Any users accessing these are *extremely* likely to shoot themselves in the foot!
     /// Whether or not this page is the very first to have been rendered since
     /// the browser loaded the app. This will be reset on full reloads, and is
     /// used internally to determine whether or not we should look for
     /// stored HSR state.
-    pub is_first: Rc<Cell<bool>>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) is_first: Rc<std::cell::Cell<bool>>,
+    /// The locales, for use in routing.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) locales: crate::i18n::Locales,
+    /// The map of all templates in the app, for use in routing.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) templates: crate::template::TemplateMap<TemplateNodeType>,
+    /// The render configuration, for use in routing.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) render_cfg: Rc<std::collections::HashMap<String, String>>,
+    /// The client-side translations manager.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) translations_manager: crate::i18n::ClientTranslationsManager,
 }
 impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized
@@ -66,16 +91,43 @@ impl Freeze for RenderCtx {
         serde_json::to_string(&frozen_app).unwrap()
     }
 }
+#[cfg(not(target_arch = "wasm32"))] // To prevent foot-shooting
+impl Default for RenderCtx {
+    fn default() -> Self {
+        Self {
+            router: RouterState::default(),
+            page_state_store: PageStateStore::new(0), /* There will be no need for the PSS on the
+                                                       * server-side */
+            global_state: GlobalState::default(),
+            frozen_app: Rc::new(RefCell::new(None)),
+        }
+    }
+}
 impl RenderCtx {
     /// Creates a new instance of the render context, with the given maximum
-    /// size for the page state store.
-    pub fn new(pss_max_size: usize) -> Self {
+    /// size for the page state store, and other properties.
+    #[cfg(target_arch = "wasm32")] // To prevent foot-shooting
+    /// Note: this is designed for client-side usage, use `::default()` on the
+    /// engine-side.
+    pub(crate) fn new(
+        pss_max_size: usize,
+        locales: crate::i18n::Locales,
+        templates: crate::template::TemplateMap<TemplateNodeType>,
+        render_cfg: Rc<std::collections::HashMap<String, String>>,
+        error_pages: Rc<crate::error_pages::ErrorPages<TemplateNodeType>>,
+    ) -> Self {
+        let translations_manager = crate::i18n::ClientTranslationsManager::new(&locales);
         Self {
             router: RouterState::default(),
             page_state_store: PageStateStore::new(pss_max_size),
             global_state: GlobalState::default(),
             frozen_app: Rc::new(RefCell::new(None)),
-            is_first: Rc::new(Cell::new(true)),
+            is_first: Rc::new(std::cell::Cell::new(true)),
+            error_pages,
+            locales,
+            templates,
+            render_cfg,
+            translations_manager,
         }
     }
     // TODO Use a custom, optimized context system instead of Sycamore's? (GIven we
@@ -89,8 +141,53 @@ impl RenderCtx {
     /// have been added to context already (or Sycamore will cause a panic).
     /// Once this is done, the render context can be modified safely with
     /// interior mutability.
-    pub fn set_ctx(self, cx: Scope) -> &Self {
+    pub(crate) fn set_ctx(self, cx: Scope) -> &Self {
         provide_context(cx, self)
+    }
+    /// Preloads the given URL from the server and caches it, preventing
+    /// future network requests to fetch that page.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn preload(&self, url: &str) -> Result<(), ClientError> {
+        self._preload(url, false).await
+    }
+    /// Preloads the given URL from the server and caches it for the current
+    /// route, preventing future network requests to fetch that page. On a
+    /// route transition, this will be removed.
+    ///
+    /// WARNING: the route preloading system is under heavy construction at
+    /// present!
+    #[cfg(target_arch = "wasm32")]
+    pub async fn route_preload(&self, url: &str) -> Result<(), ClientError> {
+        self._preload(url, true).await
+    }
+    /// Preloads the given URL from the server and caches it, preventing
+    /// future network requests to fetch that page.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
+        use crate::router::match_route;
+
+        let path_segments = path
+            .split('/')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
+                                     // Get a route verdict on this so we know where we're going (this doesn't modify
+                                     // the router state)
+        let verdict = match_route(
+            &path_segments,
+            &self.render_cfg,
+            &self.templates,
+            &self.locales,
+        );
+
+        todo!()
+        // // We just needed to acquire the arguments to this function
+        // self.page_state_store.preload(
+        //     path,
+        //     &verdict.locale,
+        //     &verdict.template.get_path(),
+        //     verdict.was_incremental_match,
+        //     is_route_preload,
+        // ).await
     }
     /// Commands Perseus to 'thaw' the app from the given frozen state. You'll
     /// also need to provide preferences for thawing, which allow you to control

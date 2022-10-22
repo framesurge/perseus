@@ -1,38 +1,14 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
-use crate::i18n::{detect_locale, ClientTranslationsManager, Locales};
+use crate::i18n::detect_locale;
 use crate::router::match_route;
-use crate::router::{RouteInfo, RouteVerdict, RouterLoadState, RouterState};
-use crate::template::{PageProps, TemplateMap, TemplateNodeType};
+use crate::router::{RouteInfo, RouteVerdict, RouterLoadState};
+use crate::template::{PageProps, RenderCtx, TemplateNodeType};
 use crate::utils::checkpoint;
-use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::collections::HashMap;
 use sycamore::prelude::*;
 use sycamore::rt::Reflect; // We can piggyback off Sycamore to avoid bringing in `js_sys`
 use wasm_bindgen::JsValue;
-
-pub(crate) struct GetInitialViewProps<'a, 'cx> {
-    /// The app's reactive scope.
-    pub cx: Scope<'cx>,
-    /// The path we're rendering for (not the template path, the full path,
-    /// though parsed a little).
-    pub path: String,
-    /// The router state.
-    pub router_state: RouterState,
-    /// A *client-side* translations manager to use (this manages caching
-    /// translations).
-    pub translations_manager: &'a ClientTranslationsManager,
-    /// The error pages, for use if something fails.
-    pub error_pages: &'a ErrorPages<TemplateNodeType>,
-    /// The locales settings the app is using.
-    pub locales: &'a Locales,
-    /// The templates the app is using.
-    pub templates: &'a TemplateMap<TemplateNodeType>,
-    /// The render configuration of the app (which lays out routing information,
-    /// among other things).
-    pub render_cfg: &'a HashMap<String, String>,
-}
 
 /// Gets the initial view that we should display when the app first loads. This
 /// doesn't need to be asynchronous, since initial loads provide everything
@@ -47,17 +23,17 @@ pub(crate) struct GetInitialViewProps<'a, 'cx> {
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
 pub(crate) fn get_initial_view(
-    GetInitialViewProps {
-        cx,
-        path,
-        mut router_state,
-        translations_manager,
-        error_pages,
-        locales,
-        templates,
-        render_cfg,
-    }: GetInitialViewProps<'_, '_>,
+    cx: Scope,
+    path: String, // The full path, not the template path (but parsed a little)
 ) -> InitialView {
+    let render_ctx = RenderCtx::from_ctx(cx);
+    let router_state = &render_ctx.router;
+    let translations_manager = &render_ctx.translations_manager;
+    let locales = &render_ctx.locales;
+    let templates = &render_ctx.templates;
+    let render_cfg = &render_ctx.render_cfg;
+    let error_pages = &render_ctx.error_pages;
+
     // Start by figuring out what template we should be rendering
     let path_segments = path
         .split('/')

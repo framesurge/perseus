@@ -4,6 +4,7 @@ use crate::{
     template::{TemplateMap, TemplateNodeType},
 };
 use std::collections::HashMap;
+use std::rc::Rc;
 use sycamore_router::Route;
 
 /// The Perseus route system, which implements Sycamore `Route`, but adds
@@ -14,7 +15,7 @@ pub(crate) struct PerseusRoute {
     /// routing logic).
     pub verdict: RouteVerdict<TemplateNodeType>,
     /// The app's render configuration.
-    pub render_cfg: HashMap<String, String>,
+    pub render_cfg: Rc<HashMap<String, String>>,
     /// The templates the app is using.
     pub templates: TemplateMap<TemplateNodeType>,
     /// The app's i18n configuration.
@@ -27,7 +28,7 @@ impl Default for PerseusRoute {
     fn default() -> Self {
         Self {
             verdict: RouteVerdict::NotFound,
-            render_cfg: HashMap::default(),
+            render_cfg: Rc::default(),
             templates: TemplateMap::default(),
             locales: Locales {
                 default: String::default(),
