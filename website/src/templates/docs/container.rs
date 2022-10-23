@@ -15,7 +15,7 @@ struct DocsVersionSwitcherProps {
     manifest: DocsManifest,
     current_version: String,
 }
-#[component(DocsVersionSwitcher<G>)]
+#[component]
 fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> View<G> {
     // We'll fill this in from the reactive scope
     // Astonishingly, this actually works...
@@ -100,7 +100,7 @@ pub struct DocsContainerProps<G: GenericNode> {
     pub current_version: String,
 }
 
-#[component(DocsContainer<G>)]
+#[component]
 pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G> {
     let docs_links = props.docs_links.clone();
     let docs_links_clone = docs_links.clone();

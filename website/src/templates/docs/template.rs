@@ -19,7 +19,7 @@ pub struct DocsPageProps {
 }
 
 #[perseus::template(DocsPage)]
-#[component(DocsPage<G>)]
+#[component]
 pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
     // These come pre-translated for the current locale
     // Note that all the docs files have a title emblazoned at the top already, so

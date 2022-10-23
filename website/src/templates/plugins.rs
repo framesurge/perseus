@@ -46,7 +46,7 @@ struct PluginDetails {
 }
 
 #[perseus::template(PluginsPage)]
-#[component(PluginsPage<G>)]
+#[component]
 fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     let plugins = create_signal(cx, props.plugins);
     // This will store the plugins relevant to the user's search (all of them by
