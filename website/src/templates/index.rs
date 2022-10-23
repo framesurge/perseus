@@ -382,7 +382,7 @@ fn AnimatedCircularProgressBar<G: Html>(
 }
 
 #[perseus::template(IndexPage)]
-#[component(IndexPage<G>)]
+#[component]
 pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     // // Fix these on mobile
     // let nav_buttons = match props.nav_buttons {

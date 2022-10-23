@@ -27,6 +27,7 @@ use sycamore::prelude::*;
 //     }
 // }
 
+#[component]
 pub fn SearchBar<G: Html>(_cx: Scope) -> View<G> {
     View::empty()
 }

@@ -9,7 +9,7 @@ pub struct ContainerProps<'a, G: Html> {
     pub footer: bool,
 }
 
-#[component(Container<G>)]
+#[component]
 pub fn Container<'a, G: Html>(cx: Scope<'a>, props: ContainerProps<'a, G>) -> View<G> {
     let children = props.children.call(cx);
 

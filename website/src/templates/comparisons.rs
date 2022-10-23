@@ -20,7 +20,7 @@ struct ComparisonRowProps<'a> {
     comparison_val: &'a ReadSignal<String>,
     name: String,
 }
-#[component(ComparisonRow<G>)]
+#[component]
 fn ComparisonRow<'a, G: Html>(cx: Scope<'a>, props: ComparisonRowProps<'a>) -> View<G> {
     let show_details = create_signal(cx, false);
     let name = create_ref(cx, props.name);
@@ -67,7 +67,7 @@ struct ComparisonTableProps<'a> {
     comparison: &'a ReadSignal<Comparison>,
     perseus_comparison: Comparison,
 }
-#[component(ComparisonTable<G>)]
+#[component]
 fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) -> View<G> {
     let comparison = props.comparison;
     let Comparison {
@@ -279,7 +279,7 @@ pub struct ComparisonsPageProps {
 }
 
 #[perseus::template(ComparisonsPage)]
-#[component(ComparisonsPage<G>)]
+#[component]
 pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View<G> {
     let comparisons = props.comparisons.clone();
     let perseus_comparison = props.perseus_comparison;
