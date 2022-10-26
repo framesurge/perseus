@@ -163,7 +163,14 @@ pub(crate) async fn get_subsequent_view(
             head: pss.get_head(&path).unwrap(),
         }),
         // The page's data has been preloaded at some other time
-        PssContains::Preloaded => Ok(pss.get_preloaded(&path).unwrap()),
+        PssContains::Preloaded => {
+            let page_data = pss.get_preloaded(&path).unwrap();
+            // Register the head, otherwise it will never be registered and the page will
+            // never properly show up in the PSS (meaning future preload
+            // calls will go through, creating unnecessary network requests)
+            pss.add_head(&path, page_data.head.to_string());
+            Ok(page_data)
+        }
     };
     // Any errors will be prepared error pages ready for return
     let page_data = match page_data {

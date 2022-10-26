@@ -71,6 +71,8 @@ pub use http;
 #[cfg(not(target_arch = "wasm32"))]
 pub use http::Request as HttpRequest;
 pub use sycamore_futures::spawn_local_scoped;
+#[cfg(target_arch = "wasm32")]
+pub use wasm_bindgen_futures::spawn_local;
 /// All HTTP requests use empty bodies for simplicity of passing them around.
 /// They'll never need payloads (value in path requested).
 #[cfg(not(target_arch = "wasm32"))]

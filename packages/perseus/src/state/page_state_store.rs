@@ -196,28 +196,27 @@ impl PageStateStore {
     /// Checks if the state contains an entry for the given URL.
     pub fn contains(&self, url: &str) -> PssContains {
         let map = self.map.borrow();
-        let entry = match map.get(url) {
-            Some(entry) => entry,
-            None => return PssContains::None,
-        };
-        let contains = match entry.state {
-            PssState::Some(_) => match entry.head {
-                Some(_) => PssContains::All,
-                None => PssContains::State,
+        let contains = match map.get(url) {
+            Some(entry) => match entry.state {
+                PssState::Some(_) => match entry.head {
+                    Some(_) => PssContains::All,
+                    None => PssContains::State,
+                },
+                PssState::None => match entry.head {
+                    Some(_) => PssContains::Head,
+                    None => PssContains::None,
+                },
+                PssState::Never => match entry.head {
+                    Some(_) => PssContains::HeadNoState,
+                    None => PssContains::None,
+                },
             },
-            PssState::None => match entry.head {
-                Some(_) => PssContains::Head,
-                None => PssContains::None,
-            },
-            PssState::Never => match entry.head {
-                Some(_) => PssContains::HeadNoState,
-                None => PssContains::None,
-            },
+            None => PssContains::None,
         };
         // Now do a final check to make sure it hasn't been preloaded (which would show
         // up as `PssContains::None` after that)
         match contains {
-            PssContains::None => {
+            PssContains::None | PssContains::Head | PssContains::State => {
                 let preloaded = self.preloaded.borrow();
                 let route_preloaded = self.route_preloaded.borrow();
                 // We don't currently distinguish between *how* the page has been preloaded
@@ -250,6 +249,13 @@ impl PageStateStore {
             errors::FetchError,
             utils::{fetch, get_path_prefix_client},
         };
+
+        // If we already have the page loaded fully in the PSS, abort immediately
+        if let PssContains::All | PssContains::HeadNoState | PssContains::Preloaded =
+            self.contains(path)
+        {
+            return Ok(());
+        }
 
         // If we're getting data about the index page, explicitly set it to that
         // This can be handled by the Perseus server (and is), but not by static
@@ -298,7 +304,8 @@ impl PageStateStore {
     /// route-specifically preloaded pages.
     ///
     /// Note that this will delete the preloaded page from the preload cache,
-    /// since it's expected to be parsed and rendered immediately.
+    /// since it's expected to be parsed and rendered immediately. It should
+    /// also have its head entered in the PSS.
     pub fn get_preloaded(&self, url: &str) -> Option<PageDataPartial> {
         let mut preloaded = self.preloaded.borrow_mut();
         let mut route_preloaded = self.route_preloaded.borrow_mut();

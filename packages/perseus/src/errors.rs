@@ -76,6 +76,10 @@ pub enum ClientError {
         #[source]
         source: serde_json::Error,
     },
+    #[error("the given path for preloading leads to a locale detection page; you probably wanted to wrap the path in `link!(...)`")]
+    PreloadLocaleDetection,
+    #[error("the given path for preloading was not found")]
+    PreloadNotFound,
 }
 
 /// Errors that can occur in the build process or while the server is running.

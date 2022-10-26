@@ -146,9 +146,27 @@ impl RenderCtx {
     }
     /// Preloads the given URL from the server and caches it, preventing
     /// future network requests to fetch that page.
+    ///
+    /// This function automatically defers the asynchronous preloading
+    /// work to a browser future for convenience. If you would like to
+    /// access the underlying future, use `.try_preload()` instead.
+    ///
+    /// # Panics
+    /// This function will panic if any errors occur in preloading, such as
+    /// the route being not found, or not localized. If the path you're
+    /// preloading is not hardcoded, use `.try_preload()` instead.
+    // Conveniently, we can use the lifetime mechanics of knowing that the render context
+    // is registered on the given scope to ensure that the future works out
     #[cfg(target_arch = "wasm32")]
-    pub async fn preload(&self, url: &str) -> Result<(), ClientError> {
-        self._preload(url, false).await
+    pub fn preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+        use fmterr::fmt_err;
+        let url = url.to_string();
+
+        crate::spawn_local_scoped(cx, async move {
+            if let Err(err) = self.try_preload(&url).await {
+                panic!("{}", fmt_err(&err));
+            }
+        });
     }
     /// Preloads the given URL from the server and caches it for the current
     /// route, preventing future network requests to fetch that page. On a
@@ -156,15 +174,47 @@ impl RenderCtx {
     ///
     /// WARNING: the route preloading system is under heavy construction at
     /// present!
+    ///
+    /// This function automatically defers the asynchronous preloading
+    /// work to a browser future for convenience. If you would like to
+    /// access the underlying future, use `.try_route_preload()` instead.
+    ///
+    /// # Panics
+    /// This function will panic if any errors occur in preloading, such as
+    /// the route being not found, or not localized. If the path you're
+    /// preloading is not hardcoded, use `.try_route_preload()` instead.
+    // Conveniently, we can use the lifetime mechanics of knowing that the render context
+    // is registered on the given scope to ensure that the future works out
     #[cfg(target_arch = "wasm32")]
-    pub async fn route_preload(&self, url: &str) -> Result<(), ClientError> {
+    pub fn route_preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+        use fmterr::fmt_err;
+        let url = url.to_string();
+
+        crate::spawn_local_scoped(cx, async move {
+            if let Err(err) = self.try_route_preload(&url).await {
+                panic!("{}", fmt_err(&err));
+            }
+        });
+    }
+    /// A version of `.preload()` that returns a future that can resolve to an
+    /// error. If the path you're preloading is not hardcoded, you should
+    /// use this.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn try_preload(&self, url: &str) -> Result<(), ClientError> {
+        self._preload(url, false).await
+    }
+    /// A version of `.route_preload()` that returns a future that can resolve
+    /// to an error. If the path you're preloading is not hardcoded, you
+    /// should use this.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn try_route_preload(&self, url: &str) -> Result<(), ClientError> {
         self._preload(url, true).await
     }
     /// Preloads the given URL from the server and caches it, preventing
     /// future network requests to fetch that page.
     #[cfg(target_arch = "wasm32")]
     pub async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
-        use crate::router::match_route;
+        use crate::router::{match_route, RouteVerdict};
 
         let path_segments = path
             .split('/')
@@ -178,16 +228,24 @@ impl RenderCtx {
             &self.templates,
             &self.locales,
         );
+        // Make sure we've got a valid verdict (otherwise the user should be told there
+        // was an error)
+        let route_info = match verdict {
+            RouteVerdict::Found(info) => info,
+            RouteVerdict::NotFound => return Err(ClientError::PreloadNotFound),
+            RouteVerdict::LocaleDetection(dest) => return Err(ClientError::PreloadLocaleDetection),
+        };
 
-        todo!()
-        // // We just needed to acquire the arguments to this function
-        // self.page_state_store.preload(
-        //     path,
-        //     &verdict.locale,
-        //     &verdict.template.get_path(),
-        //     verdict.was_incremental_match,
-        //     is_route_preload,
-        // ).await
+        // We just needed to acquire the arguments to this function
+        self.page_state_store
+            .preload(
+                path,
+                &route_info.locale,
+                &route_info.template.get_path(),
+                route_info.was_incremental_match,
+                is_route_preload,
+            )
+            .await
     }
     /// Commands Perseus to 'thaw' the app from the given frozen state. You'll
     /// also need to provide preferences for thawing, which allow you to control
