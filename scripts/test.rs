@@ -73,7 +73,7 @@ fn real_main() -> i32 {
         println!("The given example is locked to a specific integration. The provided integration may not be used.");
         String::new()
     } else {
-        format!("--features 'perseus-integration/{}'", &integration)
+        format!("--features 'perseus-warp/{}'", &integration)
     };
 
     // We want to get an exit code from actually running the tests (which interact with the server we're running in the background), which we'll return from this process
