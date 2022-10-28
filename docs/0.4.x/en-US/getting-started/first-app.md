@@ -36,7 +36,7 @@ This is your entire first app! Note that most Perseus apps won't actually look l
 
 We've started off with some simple imports that we need, which we'll talk about as we get to them. The really important thing here is the `main()` function, which is annotated with the `#[perseus::main()]` *proc macro* (these are nifty things in Rust that let you define something, like a function, and then let the macro modify it). This macro isn't necessary, but it's very good for small apps, because there's actually fair bit of stuff happening behind the scenes here.
 
-We also give that macro an argument, `perseus_integration::dflt_server`. You should change this to whatever integration you're using (we set up `perseus_warp` earlier). Every integration has a feature called `dflt-server` (which we enabled earlier in `Cargo.toml`) that exposes a function called `dflt_server` (notice how the packages use hyphens and the code uses underscores --- this is a Rust convention).
+We also give that macro an argument, `perseus_warp::dflt_server`. You should change this to whatever integration you're using (we set up `perseus_warp` earlier). Every integration has a feature called `dflt-server` (which we enabled earlier in `Cargo.toml`) that exposes a function called `dflt_server` (notice how the packages use hyphens and the code uses underscores --- this is a Rust convention).
 
 As you might have inferred, the argument we provide to the `#[perseus::main()]` macro is the function it will use to create a server for our app! You can provide something like `dflt_server` here if you don't want to think about that much more, or you can define an expansive API and use that here instead! (Note that there's actually a much better way to do this, which is addressed much later on.)
 

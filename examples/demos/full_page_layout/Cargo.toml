@@ -16,7 +16,9 @@ fantoccini = "0.17"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
-# This is an internal convenience crate that exposes all integrations through features for testing
-perseus-integration = { path = "../../../packages/perseus-integration", default-features = false }
+## **WARNING!** Before running this example outside the Perseus repo, replace the below line with
+## the one commented out below it (changing the path dependency to the version you want to use)
+perseus-warp = { package = "perseus-integration", path = "../../../packages/perseus-integration", default-features = false }
+# perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dlft-server" ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
