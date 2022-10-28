@@ -19,7 +19,8 @@ fn main() {
     let integration_locked = std::fs::metadata(format!("examples/{}/{}/.integration_locked", &category, &example)).is_ok();
     // These paths are for the CLI, which is inside `packages/perseus-cli`
     let cli_path = format!("../../examples/{}/{}", &category, &example);
-    let cargo_args = format!("--features \"perseus-integration/{}\"", integration);
+    // We use `perseus-warp` because that's aliased to `perseus-integration` in all example crates for readability of code examples
+    let cargo_args = format!("--features \"perseus-warp/{}\"", integration);
     if !integration_locked {
         args.push(format!("--cargo-engine-args='{}'", &cargo_args));
     }
