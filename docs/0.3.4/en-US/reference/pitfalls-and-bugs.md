@@ -31,7 +31,7 @@ If you're getting errors along the lines of not being able to find the latest Pe
 
 However, sometimes you'll need to purge your system's Cargo cache, which can be done safely by running the following commands:
 
-```
+```shell
 cd ~/.cargo
 mkdir old
 mv git old
