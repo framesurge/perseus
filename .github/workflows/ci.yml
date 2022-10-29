@@ -58,6 +58,8 @@ jobs:
                       type: core
                     - name: custom_server
                       type: core
+            # We want to run as many jobs as we can for debugging, so we can see easily what has actually failed (and re-run failed jobs more quickly)
+            fail-fast: false
         steps:
             - uses: actions/checkout@v2
             - run: cargo install bonnie wasm-pack rust-script
