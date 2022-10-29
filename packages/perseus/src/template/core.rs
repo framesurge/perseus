@@ -299,6 +299,7 @@ impl<G: Html> Template<G> {
             // The context we have here has no context elements set on it, so we set all the
             // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
+            // We don't need any page state store here
             let _ = RenderCtx::default().set_ctx(cx);
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
@@ -525,7 +526,8 @@ impl<G: Html> Template<G> {
     }
     /// Checks if this template defines no rendering logic whatsoever. Such
     /// templates will be rendered using SSG. Basic templates can
-    /// still modify headers.
+    /// still modify headers (which could hypothetically be using global state
+    /// that's dependent on server-side generation).
     #[cfg(not(target_arch = "wasm32"))]
     pub fn is_basic(&self) -> bool {
         !self.uses_build_paths()

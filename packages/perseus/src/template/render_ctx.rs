@@ -1,9 +1,11 @@
+#[cfg(target_arch = "wasm32")]
+use super::TemplateNodeType;
 use crate::errors::*;
 use crate::router::{RouterLoadState, RouterState};
 use crate::state::{
     AnyFreeze, Freeze, FrozenApp, GlobalState, MakeRx, MakeUnrx, PageStateStore, ThawPrefs,
 };
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{provide_context, use_context, Scope};
 use sycamore_router::navigate;
@@ -39,22 +41,34 @@ pub struct RenderCtx {
     /// A previous state the app was once in, still serialized. This will be
     /// rehydrated gradually by the template macro.
     pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
+    /// The app's error pages. If you need to render an error, you should use
+    /// these!
+    ///
+    /// **Warning:** these don't exist on the engine-side! But, there, you
+    /// should always return a build-time error rather than produce a page
+    /// with an error in it.
+    #[cfg(target_arch = "wasm32")]
+    pub error_pages: Rc<crate::error_pages::ErrorPages<TemplateNodeType>>,
+    // --- PRIVATE FIELDS ---
+    // Any users accessing these are *extremely* likely to shoot themselves in the foot!
     /// Whether or not this page is the very first to have been rendered since
     /// the browser loaded the app. This will be reset on full reloads, and is
     /// used internally to determine whether or not we should look for
     /// stored HSR state.
-    pub is_first: Rc<Cell<bool>>,
-}
-impl Default for RenderCtx {
-    fn default() -> Self {
-        Self {
-            router: RouterState::default(),
-            page_state_store: PageStateStore::default(),
-            global_state: GlobalState::default(),
-            frozen_app: Rc::new(RefCell::new(None)),
-            is_first: Rc::new(Cell::new(true)),
-        }
-    }
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) is_first: Rc<std::cell::Cell<bool>>,
+    /// The locales, for use in routing.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) locales: crate::i18n::Locales,
+    /// The map of all templates in the app, for use in routing.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) templates: crate::template::TemplateMap<TemplateNodeType>,
+    /// The render configuration, for use in routing.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) render_cfg: Rc<std::collections::HashMap<String, String>>,
+    /// The client-side translations manager.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) translations_manager: crate::i18n::ClientTranslationsManager,
 }
 impl Freeze for RenderCtx {
     /// 'Freezes' the relevant parts of the render configuration to a serialized
@@ -77,7 +91,45 @@ impl Freeze for RenderCtx {
         serde_json::to_string(&frozen_app).unwrap()
     }
 }
+#[cfg(not(target_arch = "wasm32"))] // To prevent foot-shooting
+impl Default for RenderCtx {
+    fn default() -> Self {
+        Self {
+            router: RouterState::default(),
+            page_state_store: PageStateStore::new(0), /* There will be no need for the PSS on the
+                                                       * server-side */
+            global_state: GlobalState::default(),
+            frozen_app: Rc::new(RefCell::new(None)),
+        }
+    }
+}
 impl RenderCtx {
+    /// Creates a new instance of the render context, with the given maximum
+    /// size for the page state store, and other properties.
+    #[cfg(target_arch = "wasm32")] // To prevent foot-shooting
+    /// Note: this is designed for client-side usage, use `::default()` on the
+    /// engine-side.
+    pub(crate) fn new(
+        pss_max_size: usize,
+        locales: crate::i18n::Locales,
+        templates: crate::template::TemplateMap<TemplateNodeType>,
+        render_cfg: Rc<std::collections::HashMap<String, String>>,
+        error_pages: Rc<crate::error_pages::ErrorPages<TemplateNodeType>>,
+    ) -> Self {
+        let translations_manager = crate::i18n::ClientTranslationsManager::new(&locales);
+        Self {
+            router: RouterState::default(),
+            page_state_store: PageStateStore::new(pss_max_size),
+            global_state: GlobalState::default(),
+            frozen_app: Rc::new(RefCell::new(None)),
+            is_first: Rc::new(std::cell::Cell::new(true)),
+            error_pages,
+            locales,
+            templates,
+            render_cfg,
+            translations_manager,
+        }
+    }
     // TODO Use a custom, optimized context system instead of Sycamore's? (GIven we
     // only need to store one thing...)
     /// Gets an instance of `RenderCtx` out of Sycamore's context system.
@@ -89,8 +141,111 @@ impl RenderCtx {
     /// have been added to context already (or Sycamore will cause a panic).
     /// Once this is done, the render context can be modified safely with
     /// interior mutability.
-    pub fn set_ctx(self, cx: Scope) -> &Self {
+    pub(crate) fn set_ctx(self, cx: Scope) -> &Self {
         provide_context(cx, self)
+    }
+    /// Preloads the given URL from the server and caches it, preventing
+    /// future network requests to fetch that page.
+    ///
+    /// This function automatically defers the asynchronous preloading
+    /// work to a browser future for convenience. If you would like to
+    /// access the underlying future, use `.try_preload()` instead.
+    ///
+    /// # Panics
+    /// This function will panic if any errors occur in preloading, such as
+    /// the route being not found, or not localized. If the path you're
+    /// preloading is not hardcoded, use `.try_preload()` instead.
+    // Conveniently, we can use the lifetime mechanics of knowing that the render context
+    // is registered on the given scope to ensure that the future works out
+    #[cfg(target_arch = "wasm32")]
+    pub fn preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+        use fmterr::fmt_err;
+        let url = url.to_string();
+
+        crate::spawn_local_scoped(cx, async move {
+            if let Err(err) = self.try_preload(&url).await {
+                panic!("{}", fmt_err(&err));
+            }
+        });
+    }
+    /// Preloads the given URL from the server and caches it for the current
+    /// route, preventing future network requests to fetch that page. On a
+    /// route transition, this will be removed.
+    ///
+    /// WARNING: the route preloading system is under heavy construction at
+    /// present!
+    ///
+    /// This function automatically defers the asynchronous preloading
+    /// work to a browser future for convenience. If you would like to
+    /// access the underlying future, use `.try_route_preload()` instead.
+    ///
+    /// # Panics
+    /// This function will panic if any errors occur in preloading, such as
+    /// the route being not found, or not localized. If the path you're
+    /// preloading is not hardcoded, use `.try_route_preload()` instead.
+    // Conveniently, we can use the lifetime mechanics of knowing that the render context
+    // is registered on the given scope to ensure that the future works out
+    #[cfg(target_arch = "wasm32")]
+    pub fn route_preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+        use fmterr::fmt_err;
+        let url = url.to_string();
+
+        crate::spawn_local_scoped(cx, async move {
+            if let Err(err) = self.try_route_preload(&url).await {
+                panic!("{}", fmt_err(&err));
+            }
+        });
+    }
+    /// A version of `.preload()` that returns a future that can resolve to an
+    /// error. If the path you're preloading is not hardcoded, you should
+    /// use this.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn try_preload(&self, url: &str) -> Result<(), ClientError> {
+        self._preload(url, false).await
+    }
+    /// A version of `.route_preload()` that returns a future that can resolve
+    /// to an error. If the path you're preloading is not hardcoded, you
+    /// should use this.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn try_route_preload(&self, url: &str) -> Result<(), ClientError> {
+        self._preload(url, true).await
+    }
+    /// Preloads the given URL from the server and caches it, preventing
+    /// future network requests to fetch that page.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
+        use crate::router::{match_route, RouteVerdict};
+
+        let path_segments = path
+            .split('/')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
+                                     // Get a route verdict on this so we know where we're going (this doesn't modify
+                                     // the router state)
+        let verdict = match_route(
+            &path_segments,
+            &self.render_cfg,
+            &self.templates,
+            &self.locales,
+        );
+        // Make sure we've got a valid verdict (otherwise the user should be told there
+        // was an error)
+        let route_info = match verdict {
+            RouteVerdict::Found(info) => info,
+            RouteVerdict::NotFound => return Err(ClientError::PreloadNotFound),
+            RouteVerdict::LocaleDetection(dest) => return Err(ClientError::PreloadLocaleDetection),
+        };
+
+        // We just needed to acquire the arguments to this function
+        self.page_state_store
+            .preload(
+                path,
+                &route_info.locale,
+                &route_info.template.get_path(),
+                route_info.was_incremental_match,
+                is_route_preload,
+            )
+            .await
     }
     /// Commands Perseus to 'thaw' the app from the given frozen state. You'll
     /// also need to provide preferences for thawing, which allow you to control
@@ -142,6 +297,12 @@ impl RenderCtx {
     /// An internal getter for the frozen state for the given page. When this is
     /// called, it will also add any frozen state it finds to the page state
     /// store, overriding what was already there.
+    ///
+    /// **Warning:** if the page has already been registered in the page state
+    /// store as not being able to receive state, this will silently fail.
+    /// If this occurs, something has gone horribly wrong, and panics will
+    /// almost certainly follow. (Basically, this should *never* happen. If
+    /// you're not using the macros, you may need to be careful of this.)
     fn get_frozen_page_state_and_register<R>(&self, url: &str) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
@@ -171,8 +332,11 @@ impl RenderCtx {
                         // Then we convince the compiler that that actually is `R` with the
                         // ludicrous trait bound at the beginning of this function
                         let rx = unrx.make_rx();
-                        // And we do want to add this to the page state store
-                        self.page_state_store.add(url, rx.clone());
+                        // And we do want to add this to the page state store (if this returns
+                        // false, then this page was never supposed to receive state)
+                        if !self.page_state_store.add_state(url, rx.clone()) {
+                            return None;
+                        }
                         // Now we should remove this from the frozen state so we don't fall back to
                         // it again
                         drop(frozen_app_full);
@@ -184,7 +348,9 @@ impl RenderCtx {
                         Some(rx)
                     }
                     // If there's nothing in the frozen state, we'll fall back to the active state
-                    None => self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url),
+                    None => self
+                        .page_state_store
+                        .get_state::<<R::Unrx as MakeRx>::Rx>(url),
                 }
             } else {
                 None
@@ -202,7 +368,8 @@ impl RenderCtx {
         // unreactive version of `R` has the same properties as `R` itself
         <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
     {
-        self.page_state_store.get::<<R::Unrx as MakeRx>::Rx>(url)
+        self.page_state_store
+            .get_state::<<R::Unrx as MakeRx>::Rx>(url)
     }
     /// Gets either the active state or the frozen state for the given page. If
     /// `.thaw()` has been called, thaw preferences will be registered, which
@@ -346,6 +513,13 @@ impl RenderCtx {
     }
     /// Registers a serialized and unreactive state string to the page state
     /// store, returning a fully reactive version.
+    ///
+    /// **Warning:** if the page has already been registered in the page state
+    /// store as not being able to receive state, this will silently fail
+    /// (i.e. the state will be returned, but it won't be registered). If this
+    /// occurs, something has gone horribly wrong, and panics will almost
+    /// certainly follow. (Basically, this should *never* happen. If you're
+    /// not using the macros, you may need to be careful of this.)
     pub fn register_page_state_str<R>(
         &self,
         url: &str,
@@ -362,7 +536,8 @@ impl RenderCtx {
         let unrx = serde_json::from_str::<R::Unrx>(state_str)
             .map_err(|err| ClientError::StateInvalid { source: err })?;
         let rx = unrx.make_rx();
-        self.page_state_store.add(url, rx.clone());
+        // Potential silent failure (see above)
+        let _ = self.page_state_store.add_state(url, rx.clone());
 
         Ok(rx)
     }
@@ -387,6 +562,12 @@ impl RenderCtx {
         *active_global_state = Box::new(rx.clone());
 
         Ok(rx)
+    }
+    /// Registers a page as definitely taking no state, which allows it to be
+    /// cached fully, preventing unnecessary network requests. Any future
+    /// attempt to set state will lead to silent failures and/or panics.
+    pub fn register_page_no_state(&self, url: &str) {
+        self.page_state_store.set_state_never(url);
     }
 }
 

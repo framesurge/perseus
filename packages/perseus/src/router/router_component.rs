@@ -1,10 +1,9 @@
 use crate::{
     checkpoint,
+    i18n::detect_locale,
     i18n::Locales,
-    i18n::{detect_locale, ClientTranslationsManager},
     router::{
-        get_initial_view, get_subsequent_view, GetInitialViewProps, GetSubsequentViewProps,
-        InitialView, RouterLoadState, RouterState,
+        get_initial_view, get_subsequent_view, GetSubsequentViewProps, InitialView, RouterLoadState,
     },
     router::{PerseusRoute, RouteInfo, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
@@ -39,17 +38,6 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
     word-wrap: normal;
 "#;
 
-/// The properties that `get_view()` takes. See the shell properties for
-/// the details for most of these.
-#[derive(Clone)]
-struct GetViewProps<'a> {
-    cx: Scope<'a>,
-    locales: Rc<Locales>,
-    router_state: RouterState,
-    translations_manager: ClientTranslationsManager,
-    error_pages: Rc<ErrorPages<TemplateNodeType>>,
-}
-
 /// Get the view we should be rendering at the moment, based on a route verdict.
 /// This should be called on every route change to update the page. This doesn't
 /// actually render the view, it just returns it for rendering. Note that this
@@ -62,14 +50,8 @@ struct GetViewProps<'a> {
 /// If the page needs to redirect to a particular locale, then this function
 /// will imperatively do so.
 async fn get_view(
+    cx: Scope<'_>,
     verdict: RouteVerdict<TemplateNodeType>,
-    GetViewProps {
-        cx,
-        locales,
-        router_state,
-        translations_manager,
-        error_pages,
-    }: GetViewProps<'_>,
 ) -> View<TemplateNodeType> {
     checkpoint("router_entry");
     match &verdict {
@@ -85,16 +67,14 @@ async fn get_view(
                 template: template.clone(),
                 was_incremental_match: *was_incremental_match,
                 locale: locale.clone(),
-                router_state,
-                translations_manager: translations_manager.clone(),
-                error_pages: error_pages.clone(),
                 route_verdict: verdict,
             })
             .await
         }
         // For subsequent loads, this should only be possible if the dev forgot `link!()`
         RouteVerdict::LocaleDetection(path) => {
-            let dest = detect_locale(path.clone(), &locales);
+            let render_ctx = RenderCtx::from_ctx(cx);
+            let dest = detect_locale(path.clone(), &render_ctx.locales);
             // Since this is only for subsequent loads, we know the router is instantiated
             // This shouldn't be a replacement navigation, since the user has deliberately
             // navigated here
@@ -102,10 +82,13 @@ async fn get_view(
             View::empty()
         }
         RouteVerdict::NotFound => {
+            let render_ctx = RenderCtx::from_ctx(cx);
             checkpoint("not_found");
             // TODO Update the router state here (we need a path though...)
             // This function only handles subsequent loads, so this is all we have
-            error_pages.get_view_and_render_head(cx, "", 404, "not found", None)
+            render_ctx
+                .error_pages
+                .get_view_and_render_head(cx, "", 404, "not found", None)
         }
     }
 }
@@ -122,6 +105,9 @@ pub(crate) struct PerseusRouterProps {
     /// The render configuration of the app (which lays out routing information,
     /// among other things).
     pub render_cfg: HashMap<String, String>,
+    /// The maximum size of the page state store, before pages are evicted
+    /// to save memory in the browser.
+    pub pss_max_size: usize,
 }
 
 /// The Perseus router. This is used internally in the Perseus engine, and you
@@ -141,17 +127,20 @@ pub(crate) fn perseus_router(
         locales,
         templates,
         render_cfg,
+        pss_max_size,
     }: PerseusRouterProps,
 ) -> View<TemplateNodeType> {
-    let translations_manager = ClientTranslationsManager::new(&locales);
-    // Get the error pages in an `Rc` so we aren't creating hundreds of them
-    let error_pages = Rc::new(error_pages);
     // Now create an instance of `RenderCtx`, which we'll insert into context and
-    // use everywhere throughout the app
-    let render_ctx = RenderCtx::default().set_ctx(cx);
-    // TODO Replace passing a router state around with getting it out of context
-    // instead in the shell
-    let router_state = &render_ctx.router; // We need this for interfacing with the router though
+    // use everywhere throughout the app (this contains basically everything Perseus
+    // needs in terms of infrastructure)
+    let render_ctx = RenderCtx::new(
+        pss_max_size,
+        locales,   // Pretty light
+        templates, // Already has `Rc`s
+        Rc::new(render_cfg),
+        Rc::new(error_pages),
+    )
+    .set_ctx(cx);
 
     // Get the current path, removing any base paths to avoid relative path locale
     // redirection loops (in previous versions of Perseus, we used Sycamore to
@@ -168,17 +157,7 @@ pub(crate) fn perseus_router(
     };
     // Prepare the initial view for hydration (because we have everything we need in
     // global window variables, this can be synchronous)
-    let initial_view = get_initial_view(GetInitialViewProps {
-        cx,
-        // Get the path directly, in the same way the Sycamore router's history integration does
-        path: path.to_string(),
-        router_state: router_state.clone(),
-        translations_manager: &translations_manager,
-        error_pages: &error_pages,
-        locales: &locales,
-        templates: &templates,
-        render_cfg: &render_cfg,
-    });
+    let initial_view = get_initial_view(cx, path.to_string());
     let initial_view = match initial_view {
         InitialView::View(initial_view) => initial_view,
         // if we need to redirect, then we'll create a fake view that will just execute that code
@@ -205,13 +184,8 @@ pub(crate) fn perseus_router(
     // Create a `Route` to pass through Sycamore with the information we need
     let route = PerseusRoute {
         verdict: RouteVerdict::NotFound,
-        templates,
-        render_cfg,
-        locales: locales.clone(),
+        cx: Some(cx),
     };
-
-    // Now that we've used the reference, put the locales in an `Rc`
-    let locales = Rc::new(locales);
 
     // Create a derived state for the route announcement
     // We do this with an effect because we only want to update in some cases (when
@@ -221,7 +195,7 @@ pub(crate) fn perseus_router(
     let route_announcement = create_signal(cx, String::new());
     let mut is_first_page = true; // This is different from the first page load (this is the first page as a
                                   // whole)
-    let load_state = router_state.get_load_state_rc();
+    let load_state = render_ctx.router.get_load_state_rc();
     create_effect(cx, move || {
         if let RouterLoadState::Loaded { path, .. } = &*load_state.get() {
             if is_first_page {
@@ -270,18 +244,8 @@ pub(crate) fn perseus_router(
         }
     });
 
-    // Set up the function we'll call on a route change
-    // Set up the properties for the function we'll call in a route change
-    let get_view_props = GetViewProps {
-        cx,
-        locales,
-        router_state: router_state.clone(),
-        translations_manager,
-        error_pages,
-    };
-
     // Listen for changes to the reload commander and reload as appropriate
-    let gvp = get_view_props.clone();
+    let router_state = &render_ctx.router;
     create_effect(cx, move || {
         router_state.reload_commander.track();
         // Using a tracker of the initial state separate to the main one is fine,
@@ -299,11 +263,8 @@ pub(crate) fn perseus_router(
                 // If the first page hasn't loaded yet, terminate now
                 None => return,
             };
-            // Because of the way futures work, a double clone is unfortunately necessary
-            // for now
-            let gvp = gvp.clone();
             spawn_local_scoped(cx, async move {
-                let new_view = get_view(verdict.clone(), gvp).await;
+                let new_view = get_view(cx, verdict.clone()).await;
                 curr_view.set(new_view);
             });
         }
@@ -390,11 +351,10 @@ pub(crate) fn perseus_router(
                     if *is_initial.get_untracked() {
                         is_initial.set(false);
                     } else {
-                        let gvp = get_view_props.clone();
                         spawn_local_scoped(cx, async move {
                             let route = route.get();
                             let verdict = route.get_verdict();
-                            let new_view = get_view(verdict.clone(), gvp).await;
+                            let new_view = get_view(cx, verdict.clone()).await;
                             curr_view.set(new_view);
                         });
                     }

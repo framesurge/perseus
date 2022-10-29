@@ -1,38 +1,15 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
-use crate::i18n::{detect_locale, ClientTranslationsManager, Locales};
+use crate::i18n::detect_locale;
 use crate::router::match_route;
-use crate::router::{RouteInfo, RouteVerdict, RouterLoadState, RouterState};
-use crate::template::{PageProps, TemplateMap, TemplateNodeType};
+use crate::router::{RouteInfo, RouteVerdict, RouterLoadState};
+use crate::template::{PageProps, RenderCtx, TemplateNodeType};
 use crate::utils::checkpoint;
-use crate::ErrorPages;
 use fmterr::fmt_err;
-use std::collections::HashMap;
 use sycamore::prelude::*;
 use sycamore::rt::Reflect; // We can piggyback off Sycamore to avoid bringing in `js_sys`
-use wasm_bindgen::JsValue;
-
-pub(crate) struct GetInitialViewProps<'a, 'cx> {
-    /// The app's reactive scope.
-    pub cx: Scope<'cx>,
-    /// The path we're rendering for (not the template path, the full path,
-    /// though parsed a little).
-    pub path: String,
-    /// The router state.
-    pub router_state: RouterState,
-    /// A *client-side* translations manager to use (this manages caching
-    /// translations).
-    pub translations_manager: &'a ClientTranslationsManager,
-    /// The error pages, for use if something fails.
-    pub error_pages: &'a ErrorPages<TemplateNodeType>,
-    /// The locales settings the app is using.
-    pub locales: &'a Locales,
-    /// The templates the app is using.
-    pub templates: &'a TemplateMap<TemplateNodeType>,
-    /// The render configuration of the app (which lays out routing information,
-    /// among other things).
-    pub render_cfg: &'a HashMap<String, String>,
-}
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::Element;
 
 /// Gets the initial view that we should display when the app first loads. This
 /// doesn't need to be asynchronous, since initial loads provide everything
@@ -47,17 +24,18 @@ pub(crate) struct GetInitialViewProps<'a, 'cx> {
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
 pub(crate) fn get_initial_view(
-    GetInitialViewProps {
-        cx,
-        path,
-        mut router_state,
-        translations_manager,
-        error_pages,
-        locales,
-        templates,
-        render_cfg,
-    }: GetInitialViewProps<'_, '_>,
+    cx: Scope,
+    path: String, // The full path, not the template path (but parsed a little)
 ) -> InitialView {
+    let render_ctx = RenderCtx::from_ctx(cx);
+    let router_state = &render_ctx.router;
+    let translations_manager = &render_ctx.translations_manager;
+    let locales = &render_ctx.locales;
+    let templates = &render_ctx.templates;
+    let render_cfg = &render_ctx.render_cfg;
+    let error_pages = &render_ctx.error_pages;
+    let pss = &render_ctx.page_state_store;
+
     // Start by figuring out what template we should be rendering
     let path_segments = path
         .split('/')
@@ -140,13 +118,20 @@ pub(crate) fn get_initial_view(
                         }
                     };
 
+                    #[cfg(feature = "cache-initial-load")]
+                    {
+                        // Cache the page's head in the PSS (getting it as realiably as we can)
+                        let head_str = get_head();
+                        pss.add_head(&path, head_str);
+                    }
+
                     let path = template.get_path();
                     let page_props = PageProps {
                         path: path_with_locale.clone(),
                         state,
                         global_state,
                     };
-                    // Pre-emptively declare the page interactive 9since all we do from this point
+                    // Pre-emptively declare the page interactive since all we do from this point
                     // is hydrate
                     checkpoint("page_interactive");
                     // Update the router state
@@ -231,7 +216,7 @@ pub(crate) enum InitialView {
 /// isn't an initial load, and we need to request the page from the server. It
 /// could also be an error that the server has rendered.
 #[derive(Debug)]
-pub(crate) enum InitialState {
+enum InitialState {
     /// A non-error initial state has been injected. This could be `None`, since
     /// not all pages have state.
     Present(Option<String>),
@@ -245,7 +230,7 @@ pub(crate) enum InitialState {
 /// Gets the initial state injected by the server, if there was any. This is
 /// used to differentiate initial loads from subsequent ones, which have
 /// different log chains to prevent double-trips (a common SPA problem).
-pub(crate) fn get_initial_state() -> InitialState {
+fn get_initial_state() -> InitialState {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_INITIAL_STATE");
     let js_obj = match val_opt {
         Some(js_obj) => js_obj,
@@ -309,7 +294,7 @@ pub(crate) fn get_global_state() -> Option<String> {
 /// Gets the translations injected by the server, if there was any. If there are
 /// errors in this, we can return `None` and not worry about it, they'll be
 /// handled by the initial state.
-pub(crate) fn get_translations() -> Option<String> {
+fn get_translations() -> Option<String> {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_TRANSLATIONS");
     let js_obj = match val_opt {
         Some(js_obj) => js_obj,
@@ -324,4 +309,39 @@ pub(crate) fn get_translations() -> Option<String> {
     // With translations, there's no such thing as `None` (even apps without i18n
     // have a dummy translator)
     Some(state_str)
+}
+
+/// Gets the entire contents of the current `<head>`, up to the Perseus head-end
+/// comment (which prevents any JS that was loaded later from being included).
+/// This is not guaranteed to always get exactly the original head, but it's
+/// pretty good, and prevents unnecessary network requests, while enabling the
+/// caching of initially laoded pages.
+#[cfg(feature = "cache-initial-load")]
+fn get_head() -> String {
+    let document = web_sys::window().unwrap().document().unwrap();
+    // Get the current head
+    let head_node = document.query_selector("head").unwrap().unwrap();
+    // Get all the elements after the head boundary (otherwise we'd be duplicating
+    // the initial stuff)
+    let els = document
+        .query_selector_all(r#"meta[itemprop='__perseus_head_boundary'] ~ *"#)
+        .unwrap();
+    // No, `NodeList` does not have an iterator implementation...
+    let mut head_vec = Vec::new();
+    for i in 0..els.length() {
+        let elem: Element = els.get(i).unwrap().unchecked_into();
+        // Check if this is the delimiter that denotes the end of the head (it's
+        // impossible for the user to add anything below here), since we don't
+        // want to get anything that other scripts might have added (but if that shows
+        // up, it shouldn't be catastrophic)
+        if elem.tag_name().to_lowercase() == "meta"
+            && elem.get_attribute("itemprop") == Some("__perseus_head_end".to_string())
+        {
+            break;
+        }
+        let html = elem.outer_html();
+        head_vec.push(html);
+    }
+
+    head_vec.join("\n")
 }

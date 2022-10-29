@@ -57,7 +57,7 @@ impl RouterState {
         (*self.last_verdict.borrow()).clone()
     }
     /// Sets the last verdict.
-    pub fn set_last_verdict(&mut self, new: RouteVerdict<TemplateNodeType>) {
+    pub fn set_last_verdict(&self, new: RouteVerdict<TemplateNodeType>) {
         let mut last_verdict = self.last_verdict.borrow_mut();
         *last_verdict = Some(new);
     }

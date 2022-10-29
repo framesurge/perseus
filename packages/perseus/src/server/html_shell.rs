@@ -302,12 +302,16 @@ impl fmt::Display for HtmlShell {
         let head_start = self.head_before_boundary.join("\n");
         // We also inject a delimiter dummy `<meta>` tag that will be used to wall off
         // the constant document head from the interpolated document head
+        // There's another one of these for denoting the end so we can semi-reliably
+        // extract the head of initially loaded pages for PSS caching
         let head_end = format!(
             r#"
             <script type="module">{scripts_before_boundary}</script>
             <meta itemprop="__perseus_head_boundary" content="">
             {head_after_boundary}
             <script>{scripts_after_boundary}</script>
+            <meta itemprop="__perseus_head_end" content="">
+            <script>//</script>
             "#,
             scripts_before_boundary = self.scripts_before_boundary.join("\n"),
             head_after_boundary = self.head_after_boundary.join("\n"),

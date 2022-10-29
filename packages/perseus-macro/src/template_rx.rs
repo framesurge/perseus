@@ -202,6 +202,9 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                         #block
                     }
 
+                    // Declare that this page will never take any state to enable full caching
+                    render_ctx.register_page_no_state(&props.path);
+
                     #component_name(cx)
                 }
             },
@@ -241,6 +244,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                         let render_ctx = ::perseus::get_render_ctx!(cx);
                         // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
                         match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
+                            // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
                             ::std::option::Option::Some(existing_state) => existing_state,
                             // Again, frozen state has been dealt with already, so we'll fall back to generated state
                             ::std::option::Option::None => {
@@ -286,6 +290,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     let render_ctx = ::perseus::get_render_ctx!(cx);
                     // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
                     match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
+                            // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
                         ::std::option::Option::Some(existing_state) => existing_state,
                         // Again, frozen state has been dealt with already, so we'll fall back to generated state
                         ::std::option::Option::None => {
@@ -315,6 +320,10 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 fn #component_name #generics(#cx_arg) -> #return_type {
                     #block
                 }
+
+                // Declare that this page will never take any state to enable full caching
+                let render_ctx = ::perseus::get_render_ctx!(cx);
+                render_ctx.register_page_no_state(&props.path);
 
                 #component_name(cx)
             }
