@@ -118,9 +118,12 @@ pub(crate) fn get_initial_view(
                         }
                     };
 
-                    // Cache the page's head in the PSS (getting it as realiably as we can)
-                    let head_str = get_head();
-                    pss.add_head(&path, head_str);
+                    #[cfg(feature = "cache-initial-load")]
+                    {
+                        // Cache the page's head in the PSS (getting it as realiably as we can)
+                        let head_str = get_head();
+                        pss.add_head(&path, head_str);
+                    }
 
                     let path = template.get_path();
                     let page_props = PageProps {
@@ -313,6 +316,7 @@ fn get_translations() -> Option<String> {
 /// This is not guaranteed to always get exactly the original head, but it's
 /// pretty good, and prevents unnecessary network requests, while enabling the
 /// caching of initially laoded pages.
+#[cfg(feature = "cache-initial-load")]
 fn get_head() -> String {
     let document = web_sys::window().unwrap().document().unwrap();
     // Get the current head
