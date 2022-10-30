@@ -7,7 +7,7 @@ on:
             - "website/**"
             - ".github/workflows/website.yml" # If we change this build script, it should rerun
             - "bonnie.toml" # Any changes to the `deploy-prod` command should trigger a rebuild
-            - "tribble.yml" # Any changes to hte contributing docs should update this
+            - "tribble.yml" # Any changes to the contributing docs should update this
         branches:
             - main
 
@@ -19,12 +19,26 @@ jobs:
             - uses: actions/checkout@v2
               with:
                   fetch-depth: 0
-            - run: cargo install bonnie wasm-pack
-            - run: cargo install perseus-cli --version 0.4.0-beta.10
-            - run: RUSTFLAGS=--cfg=web_sys_unstable_apis cargo install tribble
+
+            # Cache the Cargo binaries
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.cargo/bin/
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-website-cargo-bins
+            # Only install the binaries if the cache doesn't have them
+            - name: Install Dependencies
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: cargo apt install bonnie rust-script && cargo install perseus-cli --version 0.4.0-beta.10 && RUSTFLAGS=--cfg=web_sys_unstable_apis cargo install tribble
+
+            # TODO Cache NPM deps (see https://github.com/actions/cache/blob/main/examples.md#node---npm)
             - run: npm install -g tailwindcss
             - run: npm install
               working-directory: website
+
+            # We want to build from scratch each time, so no caching here
             - name: Build website
               run: bonnie site deploy-prod
             - name: Deploy website to GitHub Pages

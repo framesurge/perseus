@@ -43,7 +43,20 @@ jobs:
                     #   type: core
         steps:
             - uses: actions/checkout@v2
-            - run: cargo install bonnie wasm-pack rust-script
+
+            # Cache Cargo binaries
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.cargo/bin/
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-cargo-bins
+            # Only install the binaries if the cache doesn't have them
+            - name: Install Dependencies
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: cargo apt install bonnie rust-script
+
             - name: Run benchmark for ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie bench size ${{ matrix.type }} ${{ matrix.name }} --json | tee output.txt
             # Download previous benchmark result from cache (if exists)
