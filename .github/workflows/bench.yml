@@ -55,7 +55,7 @@ jobs:
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
-              run: cargo apt install bonnie rust-script
+              run: cargo install bonnie rust-script
 
             - name: Run benchmark for ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie bench size ${{ matrix.type }} ${{ matrix.name }} --json | tee output.txt

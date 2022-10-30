@@ -31,7 +31,7 @@ jobs:
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
-              run: cargo apt install bonnie rust-script && cargo install perseus-cli --version 0.4.0-beta.10 && RUSTFLAGS=--cfg=web_sys_unstable_apis cargo install tribble
+              run: cargo install bonnie rust-script && cargo install perseus-cli --version 0.4.0-beta.10 && RUSTFLAGS=--cfg=web_sys_unstable_apis cargo install tribble
 
             # TODO Cache NPM deps (see https://github.com/actions/cache/blob/main/examples.md#node---npm)
             - run: npm install -g tailwindcss

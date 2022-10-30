@@ -74,7 +74,7 @@ jobs:
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
-              run: cargo apt install bonnie rust-script
+              run: cargo install bonnie rust-script
 
             # Also cache the apt packages we need for testing
             - uses: awalsh128/cache-apt-pkgs-action@latest
