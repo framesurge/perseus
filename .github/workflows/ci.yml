@@ -11,7 +11,20 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
-            - run: cargo install bonnie
+
+            # Cache Cargo binaries
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.cargo/bin/
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-cargo-bins
+            # Only install the binaries if the cache doesn't have them
+            - name: Install Dependencies
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: cargo install bonnie rust-script
+
             - run: rustup target add wasm32-unknown-unknown
             - name: Run checks
               run: bonnie check
@@ -19,7 +32,20 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
-            - run: cargo install bonnie
+
+            # Cache Cargo binaries
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.cargo/bin/
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-cargo-bins
+            # Only install the binaries if the cache doesn't have them
+            - name: Install Dependencies
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: cargo install bonnie rust-script
+
             - name: Run traditional tests
               run: cargo test --all
     # We now have a separate job for each example's E2E testing because they all take a while, we may as well run them in parallel
@@ -79,10 +105,23 @@ jobs:
             # Also cache the apt packages we need for testing
             - uses: awalsh128/cache-apt-pkgs-action@latest
               with:
-                packages: firefox firefox-geckodriver
+                packages: firefox
                 version: 1.0
 
+            # And finally cache Geckodriver itself
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.geckodriver
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-geckodriver
+            - name: Install Geckodriver
+              if:
+              run: wget -O ~/geckodriver-archive https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz && tar -xvzf ~/geckodriver-archive && mv ./geckodriver ./.geckodriver && chmod +x ./.geckodriver
+
             - name: Run Firefox WebDriver
-              run: geckodriver &
+              # We use the path of the one we installed manually
+              run: ~/.geckodriver &
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }} --headless
