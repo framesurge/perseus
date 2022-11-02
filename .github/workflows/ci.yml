@@ -110,14 +110,14 @@ jobs:
 
             # And finally cache Geckodriver itself
             - uses: actions/cache@v3
-              id: cache
+              id: geckocache
               with:
                 path: |
                   ~/.geckodriver
                 # The cache should be OS-specific
                 key: ${{ runner.os }}-geckodriver
             - name: Install Geckodriver
-              if:
+              if: steps.geckocache.outputs.cache-hit != 'true'
               run: wget -O ~/geckodriver-archive https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz && tar -xvzf ~/geckodriver-archive && mv ./geckodriver ./.geckodriver && chmod +x ./.geckodriver
 
             - name: Run Firefox WebDriver
