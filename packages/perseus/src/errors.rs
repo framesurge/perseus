@@ -104,6 +104,11 @@ pub enum ServerError {
         #[source]
         source: std::io::Error,
     },
+    #[error("failed to decode url provided (probably malformed request)")]
+    UrlDecodeFailed {
+        #[source]
+        source: std::string::FromUtf8Error,
+    },
     #[error(transparent)]
     GlobalStateError(#[from] GlobalStateError),
     #[error(transparent)]

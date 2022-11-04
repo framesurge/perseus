@@ -5,7 +5,7 @@ use axum::{
 };
 use fmterr::fmt_err;
 use perseus::{
-    errors::err_to_status_code,
+    errors::{err_to_status_code, ServerError},
     i18n::{TranslationsManager, Translator},
     router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
     server::{
@@ -50,11 +50,25 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     translations_manager: Arc<T>,
     global_state: Arc<Option<String>>,
 ) -> (StatusCode, HeaderMap, Html<String>) {
+    let error_pages = &opts.error_pages;
     let path = http_req.uri().path().to_string();
+    let path = match urlencoding::decode(&path) {
+        Ok(path) => path.to_string(),
+        Err(err) => {
+            return return_error_page(
+                path.as_str(),
+                400,
+                &fmt_err(&ServerError::UrlDecodeFailed { source: err }),
+                None,
+                error_pages,
+                html_shell.as_ref(),
+            )
+        }
+    };
+    let path = path.as_str();
     let http_req = Request::from_parts(http_req.into_parts().0, ());
 
     let templates = &opts.templates_map;
-    let error_pages = &opts.error_pages;
     let path_slice = get_path_slice(&path);
     // Create a closure to make returning error pages easier (most have the same
     // data)

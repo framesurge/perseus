@@ -58,6 +58,10 @@ pub(crate) async fn get_subsequent_view(
     let error_pages = &render_ctx.error_pages;
     let pss = &render_ctx.page_state_store;
 
+    let path = js_sys::decode_uri_component(&path)
+        .unwrap()
+        .as_string()
+        .unwrap();
     let path_with_locale = match locale.as_str() {
         "xx-XX" => path.clone(),
         locale => format!("{}/{}", locale, &path),

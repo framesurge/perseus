@@ -2,7 +2,7 @@ use crate::conv_req::convert_req;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
 use perseus::{
-    errors::err_to_status_code,
+    errors::{err_to_status_code, ServerError},
     i18n::{TranslationsManager, Translator},
     router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
     server::{
@@ -49,6 +49,20 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
     let path = req.path();
+    let path = match urlencoding::decode(path) {
+        Ok(path) => path.to_string(),
+        Err(err) => {
+            return return_error_page(
+                path,
+                400,
+                &fmt_err(&ServerError::UrlDecodeFailed { source: err }),
+                None,
+                error_pages,
+                html_shell.as_ref(),
+            )
+        }
+    };
+    let path = path.as_str();
     let path_slice = get_path_slice(path);
     // Create a closure to make returning error pages easier (most have the same
     // data)

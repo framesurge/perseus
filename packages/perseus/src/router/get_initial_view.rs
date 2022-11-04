@@ -36,6 +36,10 @@ pub(crate) fn get_initial_view(
     let error_pages = &render_ctx.error_pages;
     let pss = &render_ctx.page_state_store;
 
+    let path = js_sys::decode_uri_component(&path)
+        .unwrap()
+        .as_string()
+        .unwrap();
     // Start by figuring out what template we should be rendering
     let path_segments = path
         .split('/')
