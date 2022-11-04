@@ -63,7 +63,7 @@ impl HtmlShell {
 
         // Define the render config as a global variable
         let render_cfg = format!(
-            "window.__PERSEUS_RENDER_CFG = '{render_cfg}';",
+            "window.__PERSEUS_RENDER_CFG = `{render_cfg}`;",
             // It's safe to assume that something we just deserialized will serialize again in this
             // case
             render_cfg = serde_json::to_string(render_cfg).unwrap()
