@@ -9,22 +9,22 @@ use std::rc::Rc;
 /// `Arc` and `Rc` versions.
 macro_rules! get_template_for_path {
     ($raw_path:expr, $render_cfg:expr, $templates:expr) => {{
-        let mut path = $raw_path;
-        // If the path is empty, we're looking for the special `index` page
-        if path.is_empty() {
-            path = "index";
-        }
+        let path = $raw_path;
+        // // If the path is empty, we're looking for the special `index` page
+        // if path.is_empty() {
+        //     path = "index";
+        // }
 
         let mut was_incremental_match = false;
         // Match the path to one of the templates
-        let mut template_name = String::new();
+        let mut template_name = None;
         // We'll try a direct match first
         if let Some(template_root_path) = $render_cfg.get(path) {
-            template_name = template_root_path.to_string();
+            template_name = Some(template_root_path.to_string());
         }
         // Next, an ISR match (more complex), which we only want to run if we didn't get
         // an exact match above
-        if template_name.is_empty() {
+        if template_name.is_none() {
             // We progressively look for more and more specificity of the path, adding each
             // segment That way, we're searching forwards rather than backwards,
             // which is more efficient
@@ -36,20 +36,20 @@ macro_rules! get_template_for_path {
                 // If we find something, keep going until we don't (maximize specificity)
                 if let Some(template_root_path) = $render_cfg.get(&path_to_try) {
                     was_incremental_match = true;
-                    template_name = template_root_path.to_string();
+                    template_name = Some(template_root_path.to_string());
                 } else {
                     break;
                 }
             }
         }
         // If we still have nothing, then the page doesn't exist
-        if template_name.is_empty() {
+        if template_name.is_none() {
             return (None, was_incremental_match);
         }
 
         // Return the necessary info for the caller to get the template in a form it
         // wants (might be an `Rc` of a reference)
-        (template_name, was_incremental_match)
+        (template_name.unwrap(), was_incremental_match)
     }};
 }
 

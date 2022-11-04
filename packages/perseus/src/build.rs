@@ -96,11 +96,22 @@ async fn gen_state_for_path(
     // save it as a file
     let full_path_without_locale = match template.uses_build_paths() {
         true => format!("{}/{}", &template_path, path),
+        // // If we're using build paths on the root template, make sure we don't end up with `index/...`
+        // true => if template_path == "index" {
+        //     path.to_string()
+        // } else {
+        //     format!("{}/{}", &template_path, path)
+        // },
         // We don't want to concatenate the name twice if we don't have to
         false => template_path.clone(),
     };
-    // Strip trailing `/`s for the reasons described above
+    // Strip leading/trailing `/`s for the reasons described above
+    // Leading is to handle index pages with build paths
     let full_path_without_locale = match full_path_without_locale.strip_suffix('/') {
+        Some(stripped) => stripped.to_string(),
+        None => full_path_without_locale,
+    };
+    let full_path_without_locale = match full_path_without_locale.strip_prefix('/') {
         Some(stripped) => stripped.to_string(),
         None => full_path_without_locale,
     };
@@ -287,8 +298,12 @@ pub async fn build_template_and_get_cfg(
         // Add each page that the template explicitly generated (ignoring ISR for now)
         for page in pages {
             let path = format!("{}/{}", &template_root_path, &page);
-            // Remove any trailing `/`s for the reasons described above
+            // Remove any leading/trailing `/`s for the reasons described above
             let path = match path.strip_suffix('/') {
+                Some(stripped) => stripped.to_string(),
+                None => path,
+            };
+            let path = match path.strip_prefix('/') {
                 Some(stripped) => stripped.to_string(),
                 None => path,
             };

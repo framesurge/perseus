@@ -80,13 +80,14 @@ pub(crate) async fn get_subsequent_view(
         // We only have one part of the puzzle (or nothing at all), and no guarantee that the other
         // doesn't exist, so we'll have to check with the server to be safe
         PssContains::State | PssContains::Head | PssContains::None => {
-            // If we're getting data about the index page, explicitly set it to that
-            // This can be handled by the Perseus server (and is), but not by static
-            // exporting
-            let path_norm = match path.is_empty() {
-                true => "index".to_string(),
-                false => path.to_string(),
-            };
+            // // If we're getting data about the index page, explicitly set it to that
+            // // This can be handled by the Perseus server (and is), but not by static
+            // // exporting
+            // let path_norm = match path.is_empty() {
+            //     true => "index".to_string(),
+            //     false => path.to_string(),
+            // };
+            let path_norm = path.to_string();
             // Get the static page data (head and state)
             let asset_url = format!(
                 "{}/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",

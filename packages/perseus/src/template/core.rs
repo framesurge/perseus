@@ -470,8 +470,14 @@ impl<G: Html> Template<G> {
     /// Gets the path of the template. This is the root path under which any
     /// generated pages will be served. In the simplest case, there will
     /// only be one page rendered, and it will occupy that root position.
+    ///
+    /// Note that this will automatically transform `index` to an empty string.
     pub fn get_path(&self) -> String {
-        self.path.clone()
+        if self.path == "index" {
+            String::new()
+        } else {
+            self.path.clone()
+        }
     }
     /// Gets the interval after which the template will next revalidate.
     #[cfg(not(target_arch = "wasm32"))]
