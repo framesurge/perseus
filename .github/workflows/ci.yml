@@ -118,7 +118,7 @@ jobs:
                 key: ${{ runner.os }}-geckodriver
             - name: Install Geckodriver
               if: steps.geckocache.outputs.cache-hit != 'true'
-              run: wget -O ~/geckodriver-archive https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz && tar -xvzf ~/geckodriver-archive && mv ~/geckodriver ~/.geckodriver && chmod +x ~/.geckodriver
+              run: wget -O ~/geckodriver-archive https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz && tar -xvzf ~/geckodriver-archive -C ~/ && mv ~/geckodriver ~/.geckodriver && chmod +x ~/.geckodriver
 
             - name: Run Firefox WebDriver
               # We use the path of the one we installed manually
