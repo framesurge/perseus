@@ -96,12 +96,6 @@ async fn gen_state_for_path(
     // save it as a file
     let full_path_without_locale = match template.uses_build_paths() {
         true => format!("{}/{}", &template_path, path),
-        // // If we're using build paths on the root template, make sure we don't end up with `index/...`
-        // true => if template_path == "index" {
-        //     path.to_string()
-        // } else {
-        //     format!("{}/{}", &template_path, path)
-        // },
         // We don't want to concatenate the name twice if we don't have to
         false => template_path.clone(),
     };

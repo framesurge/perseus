@@ -41,9 +41,21 @@ impl<'cx> PerseusRoute<'cx> {
 }
 impl<'cx> Route for PerseusRoute<'cx> {
     fn match_route(&self, path: &[&str]) -> Self {
+        // Decode the path (we can't do this in `match_route` because of how it's called
+        // by initial view, and we don't want to double-decode!)
+        let path = path.join("/");
+        let path = js_sys::decode_uri_component(&path)
+            .unwrap()
+            .as_string()
+            .unwrap();
+        let path_segments = path
+            .split('/')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
+
         let render_ctx = RenderCtx::from_ctx(self.cx.unwrap()); // We know the scope will always exist
         let verdict = match_route(
-            path,
+            &path_segments,
             &render_ctx.render_cfg,
             &render_ctx.templates,
             &render_ctx.locales,
