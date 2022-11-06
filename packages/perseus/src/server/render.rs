@@ -376,11 +376,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         .get_translator_for_locale(locale.to_string())
         .await?;
 
-    let mut path = raw_path;
-    // If the path is empty, we're looking for the special `index` page
-    if path.is_empty() {
-        path = "index";
-    }
+    let path = raw_path;
     // Remove `/` from the path by encoding it as a URL (that's what we store) and
     // add the locale
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path));
@@ -679,11 +675,7 @@ pub async fn get_page<M: MutableStore, T: TranslationsManager>(
     templates: &TemplateMap<SsrNode>,
     render_html: bool,
 ) -> Result<PageData, ServerError> {
-    let mut path = props.raw_path;
-    // If the path is empty, we're looking for the special `index` page
-    if path.is_empty() {
-        path = "index";
-    }
+    let path = props.raw_path;
     // Get the template to use
     let template = templates.get(template_name);
     let template = match template {
