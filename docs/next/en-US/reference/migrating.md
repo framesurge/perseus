@@ -5,7 +5,7 @@ Perseus v0.4.x added several breaking changes, along with a full migration to Sy
 **Warning:** Perseus v0.4.x is still in beta, so there may still be several bugs! Additionally, both the Perseus API is potentially subject to significant changes during the beta period, so you may be making major changes to your app quite often.
 
 1. Restructure your `Cargo.toml` to reflect the new dependency-splitting format (which splits engine-side dependencies from those only needed in the browser). See [here](https://github.com/framesurge/perseus/tree/main/examples/core/basic/Cargo.toml) for an example. Note that this will involve adding a server integration for use, like `perseus-warp`.
-2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.4.0-beta.10`.
+2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.4.0-beta.11`.
 3. Delete the old `.perseus/` directory (this is no longer needed).
 4. Rename your `lib.rs` file to `main.rs`.
 5. Update each error page instantiation function to provide, as another argument, a function that returns a Sycamore `View<G>` for the document metadata of that error page (e.g. title).

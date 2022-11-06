@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.11](https://github.com/framesurge/perseus/compare/v0.4.0-beta.10...v0.4.0-beta.11) (2022-11-06)
+
+
+### Features
+
+* added greater control over minification ([5385f12](https://github.com/framesurge/perseus/commit/5385f1239448d7955493f1ff8e6ee6bd84787e47))
+* added page state store caching, preloading, and memory management ([#204](https://github.com/framesurge/perseus/issues/204)) ([0c4fa6b](https://github.com/framesurge/perseus/commit/0c4fa6bf5ce5063b0a564a92b77600d63e80a86e))
+
+
+### Bug Fixes
+
+* fixed quotation marks in rneder cfg interpolation ([6a9c9c7](https://github.com/framesurge/perseus/commit/6a9c9c7b43235e6d05913d9a60b264b00b2c9ae1))
+* fixed serving bug with index page ([8a1efb5](https://github.com/framesurge/perseus/commit/8a1efb5af8c2071325ffe441490055bad24a2fdc))
+* fixed subsequent loads of pages with special characters ([c112b58](https://github.com/framesurge/perseus/commit/c112b584e00d814d4c711110ae5dc723b847dc7d))
+* fixed support for paths with url encodings ([a329952](https://github.com/framesurge/perseus/commit/a32995210e0346c86254d06c04b0291c3f8e0c20))
+* made build paths possible on index page ([18bd1bf](https://github.com/framesurge/perseus/commit/18bd1bf834894c17ca7d270db8e730fefcb7b42d))
+* **website:** added langauge declarations to som badly formatted codeblocks ([3f5b8cf](https://github.com/framesurge/perseus/commit/3f5b8cf712821da8826bddef788a5318c7606682))
+* **website:** made scrollbars obey dark theme ([5f0c704](https://github.com/framesurge/perseus/commit/5f0c704cc52c229c891fb91aa898b2b0053a773d))
+* **website:** updated `#[component]` annotations ([430d4a2](https://github.com/framesurge/perseus/commit/430d4a2babff5ea3eff8e25fc00fd3407560ad8d))
+
+
+### Performance Improvements
+
+* added inbuilt minification ([50e04e0](https://github.com/framesurge/perseus/commit/50e04e0651996eda379a992414b389eed1d1a3ea))
+* **website:** improved image performance ([a0328fc](https://github.com/framesurge/perseus/commit/a0328fc78eead93c6b4249dfbdf1d15e7edb9f58))
+
+
+### Documentation Changes
+
+* add instruction to replace perseus_integration ([#197](https://github.com/framesurge/perseus/issues/197)) ([8612c9e](https://github.com/framesurge/perseus/commit/8612c9e7ed35deaee90b16b882234454ef1c7a44))
+* clarified tokio issues in v0.3.x in docs ([ff36ff2](https://github.com/framesurge/perseus/commit/ff36ff23f5c4132ace13f2ad2e18488ed0dd3be9))
+* **perseus-macro:** readability fixups ([#194](https://github.com/framesurge/perseus/issues/194)) ([f74b400](https://github.com/framesurge/perseus/commit/f74b4008fb901f915791e41048a9e8865b69a41c))
+
+
+### Code Refactorings
+
+* **src:** readability improvements ([#193](https://github.com/framesurge/perseus/issues/193)) ([2309c5c](https://github.com/framesurge/perseus/commit/2309c5cdd83efb1bc8e7962ac6c1b7a7eb60c0ee))
+* **website:** added some nicer padding on docs pages ([b152a2e](https://github.com/framesurge/perseus/commit/b152a2e5e8ad0b04ffe2408f57c07af358b57038))
+* **website:** made codeblocks slightly lighter in light mode ([264b65f](https://github.com/framesurge/perseus/commit/264b65faf1196cfc080de80edf274ed5593c7e74))
+
 ## [0.4.0-beta.10](https://github.com/framesurge/perseus/compare/v0.4.0-beta.9...v0.4.0-beta.10) (2022-09-21)
 
 
