@@ -119,7 +119,7 @@ jobs:
             # - name: Install Geckodriver
             #   if: steps.geckocache.outputs.cache-hit != 'true'
             #   run: wget -O ~/geckodriver-archive https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz && tar -xvzf ~/geckodriver-archive -C ~/ && mv ~/geckodriver ~/.geckodriver && chmod +x ~/.geckodriver
-            - run: apt update && apt install firefox firefox-geckodriver
+            - run: sudo apt update && sudo apt install firefox firefox-geckodriver
 
             - name: Run Firefox WebDriver
               run: geckodriver &
