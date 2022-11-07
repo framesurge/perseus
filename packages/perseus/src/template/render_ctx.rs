@@ -226,7 +226,7 @@ impl RenderCtx {
     /// Preloads the given URL from the server and caches it, preventing
     /// future network requests to fetch that page.
     #[cfg(target_arch = "wasm32")]
-    pub async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
+    async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
         use crate::router::{match_route, RouteVerdict};
 
         let path_segments = path
@@ -502,7 +502,7 @@ impl RenderCtx {
     ///
     /// If the state from the server hadn't been handled by the previous freeze,
     /// and it hasn't been handled yet, this will return `None`.
-    pub fn get_active_or_frozen_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
+    fn get_active_or_frozen_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
         // We need this so that the compiler understands that the reactive version of the
@@ -565,7 +565,7 @@ impl RenderCtx {
     }
     /// Registers a serialized and unreactive state string as the new active
     /// global state, returning a fully reactive version.
-    pub fn register_global_state_str<R>(
+    fn register_global_state_str<R>(
         &self,
         state_str: &str,
     ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
