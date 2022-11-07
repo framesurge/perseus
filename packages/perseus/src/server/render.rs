@@ -156,16 +156,20 @@ async fn render_amalgamated_state(
     let page_props = PageProps {
         path: path_with_locale,
         state: state.clone(),
-        global_state: global_state.clone(),
     };
     let html = if render_html {
         sycamore::render_to_string(|cx| {
-            template.render_for_template_server(page_props.clone(), cx, translator)
+            template.render_for_template_server(
+                page_props.clone(),
+                global_state.clone(),
+                cx,
+                translator,
+            )
         })
     } else {
         String::new()
     };
-    let head = template.render_head_str(page_props, translator);
+    let head = template.render_head_str(page_props, global_state.clone(), translator);
 
     Ok((html, head, state))
 }
@@ -281,12 +285,16 @@ async fn revalidate(
     let page_props = PageProps {
         path: path_with_locale,
         state: state.clone(),
-        global_state: global_state.clone(),
     };
     let html = sycamore::render_to_string(|cx| {
-        template.render_for_template_server(page_props.clone(), cx, translator)
+        template.render_for_template_server(
+            page_props.clone(),
+            global_state.clone(),
+            cx,
+            translator,
+        )
     });
-    let head = template.render_head_str(page_props, translator);
+    let head = template.render_head_str(page_props, global_state.clone(), translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's
     // request-time only
@@ -463,12 +471,17 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     let page_props = PageProps {
                         path: path_with_locale.clone(),
                         state: state.clone(),
-                        global_state: global_state.clone(),
                     };
                     let html_val = sycamore::render_to_string(|cx| {
-                        template.render_for_template_server(page_props.clone(), cx, &translator)
+                        template.render_for_template_server(
+                            page_props.clone(),
+                            global_state.clone(),
+                            cx,
+                            &translator,
+                        )
                     });
-                    let head_val = template.render_head_str(page_props, &translator);
+                    let head_val =
+                        template.render_head_str(page_props, global_state.clone(), &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes
                     // We don't need to worry about revalidation that operates by logic, that's
                     // request-time only Obviously we don't need to revalidate
@@ -589,14 +602,19 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         let page_props = PageProps {
             path: path_with_locale,
             state: state.clone(),
-            global_state: global_state.clone(),
         };
-        let head_val = template.render_head_str(page_props.clone(), &translator);
+        let head_val =
+            template.render_head_str(page_props.clone(), global_state.clone(), &translator);
         head = head_val;
         // We should only render the HTML if necessary, since we're not caching
         if render_html {
             let html_val = sycamore::render_to_string(|cx| {
-                template.render_for_template_server(page_props, cx, &translator)
+                template.render_for_template_server(
+                    page_props,
+                    global_state.clone(),
+                    cx,
+                    &translator,
+                )
             });
             html = html_val;
         }
@@ -631,13 +649,18 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         let page_props = PageProps {
             path: path_with_locale,
             state: state.clone(),
-            global_state: global_state.clone(),
         };
-        let head_val = template.render_head_str(page_props.clone(), &translator);
+        let head_val =
+            template.render_head_str(page_props.clone(), global_state.clone(), &translator);
         // We should only render the HTML if necessary, since we're not caching
         if render_html {
             let html_val = sycamore::render_to_string(|cx| {
-                template.render_for_template_server(page_props, cx, &translator)
+                template.render_for_template_server(
+                    page_props,
+                    global_state.clone(),
+                    cx,
+                    &translator,
+                )
             });
             html = html_val;
         }

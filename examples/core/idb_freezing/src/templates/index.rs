@@ -9,19 +9,15 @@ pub struct IndexProps {
 }
 
 #[perseus::template_rx]
-pub fn index_page<'a, G: Html>(
-    cx: Scope<'a>,
-    state: IndexPropsRx<'a>,
-    global_state: AppStateRx<'a>,
-) -> View<G> {
+pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());
     let thaw_status = create_signal(cx, String::new());
     // It's faster to get this only once and rely on reactivity
     // But it's unused when this runs on the server-side because of the target-gate
     // below
-    #[allow(unused_variables)]
     let render_ctx = perseus::get_render_ctx!(cx);
+    let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily

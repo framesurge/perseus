@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::any::Any;
+use sycamore::prelude::Scope;
 
 /// A trait for `struct`s that can be made reactive. Typically, this will be
 /// derived with the `#[make_rx]` macro, though it can be implemented manually
@@ -28,6 +29,27 @@ pub trait MakeUnrx {
     fn make_unrx(self) -> Self::Unrx;
 }
 
+/// A trait for reactive `struct`s that can be made to use `&'a Signal`s
+/// rather than `RcSignal`s, when provided with a Sycamore reactive scope.
+/// This is necessary for reaping the benefits of the ergonomics of Sycamore's
+/// v2 reactive primitives.
+pub trait MakeRxRef {
+    /// The type of the reactive `struct` using `&'a Signal`s (into which
+    /// the type implementing this trait can be converted).
+    type RxRef<'a>;
+    /// Convert this into a version using `&'a Signal`s using `create_ref()`.
+    fn to_ref_struct<'a>(self, cx: Scope<'a>) -> Self::RxRef<'a>;
+}
+
+/// A trait for `struct`s that are both reactive *and* using `&'a Signal`s
+/// to store their underlying data. This exists solely to link such types to
+/// their intermediate, `RcSignal`, equivalents.
+pub trait RxRef {
+    /// The linked intermediate type using `RcSignal`s. Note that this is
+    /// itself reactive, just not very ergonomic.
+    type RxNonRef: MakeUnrx;
+}
+
 /// A trait for reactive `struct`s that can be made unreactive and serialized to
 /// a `String`. `struct`s that implement this should implement `MakeUnrx` for
 /// simplicity, but they technically don't have to (they always do in Perseus
@@ -36,17 +58,6 @@ pub trait Freeze {
     /// 'Freezes' the reactive `struct` by making it unreactive and converting
     /// it to a `String`.
     fn freeze(&self) -> String;
-}
-
-// Perseus initializes the global state as an `Option::<()>::None`, so it has to
-// implement `Freeze`. It may seem silly, because we wouldn't want to freeze the
-// global state if it hadn't been initialized, but that means it's unmodified
-// from the server, so there would be no point in freezing it (just as there'd
-// be no point in freezing the router state).
-impl Freeze for Option<()> {
-    fn freeze(&self) -> String {
-        "None".to_string()
-    }
 }
 
 /// A convenience super-trait for `Freeze`able things that can be downcast to

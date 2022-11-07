@@ -3,7 +3,9 @@ use perseus::{Html, Template};
 use sycamore::prelude::*;
 
 #[perseus::template_rx]
-fn index_view<'a, G: Html>(cx: Scope<'a>, _: (), AppStateRx { auth }: AppStateRx<'a>) -> View<G> {
+fn index_view<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+    let AppStateRx { auth } = perseus::get_render_ctx!(cx).get_global_state::<AppStateRx>(cx);
+
     let AuthDataRx { state, username } = auth;
     // This isn't part of our data model because it's only used here to pass to the
     // login function

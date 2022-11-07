@@ -301,12 +301,17 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
                 ::serde_json::to_string(&unrx).unwrap()
             }
         }
-        #[derive(::std::clone::Clone)]
-        #ref_struct
-        impl #generics #mid_name #generics {
-            pub fn to_ref_struct(self, cx: ::sycamore::prelude::Scope) -> #ref_name #generics {
+        // TODO Generics
+        impl ::perseus::state::MakeRxRef for #mid_name {
+            type RxRef<'a> = #ref_name<'a>;
+            fn to_ref_struct<'a>(self, cx: ::sycamore::prelude::Scope<'a>) -> #ref_name<'a> {
                 #make_ref_fields
             }
+        }
+        #[derive(::std::clone::Clone)]
+        #ref_struct
+        impl<'a> ::perseus::state::RxRef for #ref_name<'a> {
+            type RxNonRef = #mid_name;
         }
     }
 }

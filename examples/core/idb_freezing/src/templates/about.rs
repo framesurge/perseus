@@ -4,14 +4,14 @@ use sycamore::prelude::*;
 use crate::global_state::*;
 
 #[perseus::template_rx]
-pub fn about_page<'a, G: Html>(cx: Scope<'a>, _: (), global_state: AppStateRx<'a>) -> View<G> {
+pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());
     // It's faster to get this only once and rely on reactivity
     // But it's unused when this runs on the server-side because of the target-gate
     // below
-    #[allow(unused_variables)]
     let render_ctx = perseus::get_render_ctx!(cx);
+    let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         p(id = "global_state") { (global_state.test.get()) }

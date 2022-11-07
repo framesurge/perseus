@@ -3,7 +3,8 @@ use super::TemplateNodeType;
 use crate::errors::*;
 use crate::router::{RouterLoadState, RouterState};
 use crate::state::{
-    AnyFreeze, Freeze, FrozenApp, GlobalState, MakeRx, MakeUnrx, PageStateStore, ThawPrefs,
+    AnyFreeze, Freeze, FrozenApp, GlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx,
+    PageStateStore, RxRef, ThawPrefs,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -92,13 +93,18 @@ impl Freeze for RenderCtx {
     }
 }
 #[cfg(not(target_arch = "wasm32"))] // To prevent foot-shooting
-impl Default for RenderCtx {
-    fn default() -> Self {
+impl RenderCtx {
+    /// Initializes a new `RenderCtx` on the server-side with the given global
+    /// state.
+    pub(crate) fn server(global_state: Option<String>) -> Self {
         Self {
             router: RouterState::default(),
             page_state_store: PageStateStore::new(0), /* There will be no need for the PSS on the
                                                        * server-side */
-            global_state: GlobalState::default(),
+            global_state: match global_state {
+                Some(global_state) => GlobalState::new(GlobalStateType::Server(global_state)),
+                None => GlobalState::new(GlobalStateType::None),
+            },
             frozen_app: Rc::new(RefCell::new(None)),
         }
     }
@@ -106,9 +112,13 @@ impl Default for RenderCtx {
 impl RenderCtx {
     /// Creates a new instance of the render context, with the given maximum
     /// size for the page state store, and other properties.
-    #[cfg(target_arch = "wasm32")] // To prevent foot-shooting
-    /// Note: this is designed for client-side usage, use `::default()` on the
+    ///
+    /// Note: this is designed for client-side usage, use `::server()` on the
     /// engine-side.
+    ///
+    /// Note also that this will automatically extract global state from page
+    /// variables.
+    #[cfg(target_arch = "wasm32")] // To prevent foot-shooting
     pub(crate) fn new(
         pss_max_size: usize,
         locales: crate::i18n::Locales,
@@ -120,7 +130,10 @@ impl RenderCtx {
         Self {
             router: RouterState::default(),
             page_state_store: PageStateStore::new(pss_max_size),
-            global_state: GlobalState::default(),
+            global_state: match get_global_state() {
+                Some(global_state) => GlobalState::new(GlobalStateType::Server(global_state)),
+                None => GlobalState::new(GlobalStateType::None),
+            },
             frozen_app: Rc::new(RefCell::new(None)),
             is_first: Rc::new(std::cell::Cell::new(true)),
             error_pages,
@@ -413,6 +426,10 @@ impl RenderCtx {
     /// An internal getter for the frozen global state. When this is called, it
     /// will also add any frozen state to the registered global state,
     /// removing whatever was there before.
+    ///
+    /// If the app was frozen before the global state from the server had been
+    /// parsed, this will return `None` (i.e. there will only be frozen
+    /// global state if the app had handled it before it froze).
     fn get_frozen_global_state_and_register<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
@@ -427,8 +444,12 @@ impl RenderCtx {
             if thaw_prefs.global_prefer_frozen {
                 // Get the serialized and unreactive frozen state from the store
                 match frozen_app.global_state.as_str() {
-                    // See `rx_state.rs` for why this would be the default value
+                    // There was no global state (hypothetically, a bundle change could mean there's
+                    // some now...)
                     "None" => None,
+                    // There was some global state from the server that hadn't been dealt with yet
+                    // (it will be extracted)
+                    "Server" => None,
                     state_str => {
                         // Deserialize into the unreactive version
                         let unrx = match serde_json::from_str::<R::Unrx>(state_str) {
@@ -443,7 +464,7 @@ impl RenderCtx {
                         let rx = unrx.make_rx();
                         // And we'll register this as the new active global state
                         let mut active_global_state = self.global_state.0.borrow_mut();
-                        *active_global_state = Box::new(rx.clone());
+                        *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
                         // Now we should remove this from the frozen state so we don't fall back to
                         // it again
                         drop(frozen_app_full);
@@ -463,6 +484,9 @@ impl RenderCtx {
         }
     }
     /// An internal getter for the active (already registered) global state.
+    ///
+    /// If the global state from the server hasn't been parsed yet, this will
+    /// return `None`.
     fn get_active_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
@@ -470,16 +494,14 @@ impl RenderCtx {
         // unreactive version of `R` has the same properties as `R` itself
         <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
     {
-        self.global_state
-            .0
-            .borrow()
-            .as_any()
-            .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
-            .cloned()
+        self.global_state.0.borrow().parse_active::<R>()
     }
     /// Gets either the active or the frozen global state, depending on thaw
     /// preferences. Otherwise, this is exactly the same as
     /// `.get_active_or_frozen_state()`.
+    ///
+    /// If the state from the server hadn't been handled by the previous freeze,
+    /// and it hasn't been handled yet, this will return `None`.
     pub fn get_active_or_frozen_global_state<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
     where
         R: Clone + AnyFreeze + MakeUnrx,
@@ -559,7 +581,7 @@ impl RenderCtx {
             .map_err(|err| ClientError::StateInvalid { source: err })?;
         let rx = unrx.make_rx();
         let mut active_global_state = self.global_state.0.borrow_mut();
-        *active_global_state = Box::new(rx.clone());
+        *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
 
         Ok(rx)
     }
@@ -568,6 +590,109 @@ impl RenderCtx {
     /// attempt to set state will lead to silent failures and/or panics.
     pub fn register_page_no_state(&self, url: &str) {
         self.page_state_store.set_state_never(url);
+    }
+
+    /// Gets the global state.
+    ///
+    /// This is operating on a render context that has already defined its
+    /// thawing preferences, so we can intelligently choose whether or not
+    /// to use any frozen global state here if nothing has been initialized.
+    ///
+    /// # Panics
+    ///
+    /// This will panic if the app has no global state. If you don't know
+    /// whether or not there is global state, use `.try_global_state()`
+    /// instead.
+    // This function takes the final ref struct as a type parameter! That
+    // complicates everything substantially.
+    pub fn get_global_state<'a, R>(
+        &self,
+        cx: Scope<'a>,
+    ) -> <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>
+    where
+        R: RxRef,
+        // We need this so that the compiler understands that the reactive version of the
+        // unreactive version of `R` has the same properties as `R` itself
+        <<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx:
+            Clone + AnyFreeze + MakeUnrx + MakeRxRef,
+        <R as RxRef>::RxNonRef: MakeUnrx + AnyFreeze + Clone,
+    {
+        self.try_get_global_state::<R>(cx).unwrap().unwrap()
+    }
+    /// The underlying logic for `.get_global_state()`, except this will return
+    /// `None` if the app does not have global state.
+    ///
+    /// This will return an error if the state from the server was found to be
+    /// invalid.
+    pub fn try_get_global_state<'a, R>(
+        &self,
+        cx: Scope<'a>,
+    ) -> Result<
+        Option<
+            <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>,
+        >,
+        ClientError,
+    >
+    where
+        R: RxRef,
+        // We need this so that the compiler understands that the reactive version of the
+        // unreactive version of `R` has the same properties as `R` itself
+        <<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx:
+            Clone + AnyFreeze + MakeUnrx + MakeRxRef,
+        <R as RxRef>::RxNonRef: MakeUnrx + AnyFreeze + Clone,
+    {
+        let global_state_ty = self.global_state.0.borrow();
+        // Bail early if the app doesn't support global state
+        if let GlobalStateType::None = *global_state_ty {
+            return Ok(None);
+        }
+        // Check if there's an actively loaded state or a frozen state (note
+        // that this will set up global state if there was something in the frozen data)
+        let rx_state = if let Some(rx_state) =
+            self.get_active_or_frozen_global_state::<<R as RxRef>::RxNonRef>()
+        {
+            rx_state
+        } else {
+            // There was nothing, so we'll load from the server
+            if let GlobalStateType::Server(server_str) = &*global_state_ty {
+                let server_str = server_str.to_string();
+                // The registration borrows mutably, so we have to drop here
+                drop(global_state_ty);
+                self.register_global_state_str::<<R as RxRef>::RxNonRef>(&server_str)?
+            } else {
+                // We bailed on `None` earlier, and `.get_active_or_frozen_global_state()`
+                // would've caught `Loaded`
+                unreachable!()
+            }
+        };
+
+        // Now use the context we have to convert that to a reference struct
+        let ref_rx_state = rx_state.to_ref_struct(cx);
+
+        Ok(Some(ref_rx_state))
+    }
+}
+
+/// Gets the global state injected by the server, if there was any. If there are
+/// errors in this, we can return `None` and not worry about it, they'll be
+/// handled by the initial state.
+#[cfg(target_arch = "wasm32")]
+fn get_global_state() -> Option<String> {
+    let val_opt = web_sys::window().unwrap().get("__PERSEUS_GLOBAL_STATE");
+    let js_obj = match val_opt {
+        Some(js_obj) => js_obj,
+        None => return None,
+    };
+    // The object should only actually contain the string value that was injected
+    let state_str = match js_obj.as_string() {
+        Some(state_str) => state_str,
+        None => return None,
+    };
+    // On the server-side, we encode a `None` value directly (otherwise it will be
+    // some convoluted stringified JSON)
+    match state_str.as_str() {
+        "None" => None,
+        state_str => Some(state_str.to_string()),
     }
 }
 
