@@ -19,7 +19,6 @@ pub fn get_template<G: Html>() -> Template<G> {
         .build_state_fn(get_build_state)
         .template(index_page)
         .head(head)
-        .build_paths_fn(build_paths)
 }
 
 #[perseus::head]
@@ -37,9 +36,4 @@ pub async fn get_build_state(
     Ok(IndexPageState {
         greeting: "Hello World!".to_string(),
     })
-}
-
-#[perseus::build_paths]
-async fn build_paths() -> perseus::prelude::RenderFnResult<Vec<String>> {
-    Ok(vec!["".to_string(), "a test".to_string()])
 }
