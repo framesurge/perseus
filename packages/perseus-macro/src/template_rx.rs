@@ -105,12 +105,12 @@ impl Parse for TemplateFn {
     }
 }
 
-/// Converts the user-given name of a final reactive `struct` into the
-/// intermediary name used for the one we'll interface with. This will remove
-/// any associated lifetimes because we want just the type name. This will leave
-/// generics intact though.
-// TODO Use this to set the lifetime name we want?
-fn make_mid(ty: &Type) -> Type {
+/// Converts the user-given name of a final reactive `struct` with lifetimes
+/// into the same type, just without those lifetimes, so we can use it outside
+/// the scope in which those lifetimes have been defined.
+///
+/// See the callers of this function to see exactly why it's necessary.
+fn remove_lifetimes(ty: &Type) -> Type {
     // Don't run any transformation if this is the unit type
     match ty {
         Type::Tuple(TypeTuple { elems, .. }) if elems.is_empty() => ty.clone(),
@@ -122,8 +122,6 @@ fn make_mid(ty: &Type) -> Type {
             let ty_str = Regex::new(r#"(('.*?) |<\s*('[^, ]*?)\s*>)"#)
                 .unwrap()
                 .replace_all(&ty_str, "");
-            // And now actually make the replacement we need (ref to intermediate)
-            let ty_str = ty_str.trim().to_string() + "PerseusRxIntermediary";
             Type::Verbatim(TokenStream::from_str(&ty_str).unwrap())
         }
     }
@@ -151,13 +149,13 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         // add it to the page state store
         let arg = &fn_args[1];
         let rx_props_ty = match arg {
-            FnArg::Typed(PatType { ty, .. }) => make_mid(ty),
+            FnArg::Typed(PatType { ty, .. }) => remove_lifetimes(ty),
             FnArg::Receiver(_) => unreachable!(),
         };
         let name_string = name.to_string();
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(cx: ::sycamore::prelude::Scope, props: ::perseus::template::PageProps) -> ::sycamore::prelude::View<G> {
-                use ::perseus::state::{MakeRx, MakeRxRef};
+                use ::perseus::state::{MakeRx, MakeRxRef, RxRef};
 
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
@@ -172,7 +170,9 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                     // If they are, we'll use them (so state persists for templates across the whole app)
                     let render_ctx = ::perseus::get_render_ctx!(cx);
                     // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                    match render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
+                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user decalred are defined inside the above function, which we
+                    // aren't inside!
+                    match render_ctx.get_active_or_frozen_page_state::<<#rx_props_ty as RxRef>::RxNonRef>(&props.path) {
                             // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
                         ::std::option::Option::Some(existing_state) => existing_state,
                         // Again, frozen state has been dealt with already, so we'll fall back to generated state
@@ -180,7 +180,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                             // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
                             // We also assume that any state we have is valid because it comes from the server
                             // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
-                            render_ctx.register_page_state_str::<#rx_props_ty>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
+                            render_ctx.register_page_state_str::<<#rx_props_ty as RxRef>::RxNonRef>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
                         }
                     }
                 };

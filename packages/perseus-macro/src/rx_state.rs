@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{GenericParam, Ident, ItemStruct, Lifetime, LifetimeDef, Lit, Meta, NestedMeta, Result};
+use syn::{
+    GenericParam, Ident, ItemStruct, Lifetime, LifetimeDef, Lit, Meta, NestedMeta, Result,
+    Visibility,
+};
 
 pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream {
     // Note: we create three `struct`s with this macro: the original, the new one
@@ -11,6 +14,9 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
     // fields, we'll just copy the struct and change the parts we want to
     // We won't create the final `struct` yet to avoid more operations than
     // necessary
+    // Note that we leave this as whatever visibility the original state was to
+    // avoid compiler errors (since it will be exposed as a trait-linked type
+    // through the ref struct)
     let mut mid_struct = orig_struct.clone(); // This will use `RcSignal`s, and will be stored in context
     let ItemStruct {
         ident: orig_name,
