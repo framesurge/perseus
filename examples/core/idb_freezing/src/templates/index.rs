@@ -1,7 +1,7 @@
 use perseus::{Html, RenderFnResultWithCause, Template};
 use sycamore::prelude::*;
 
-use crate::global_state::*;
+use crate::global_state::AppStateRx;
 
 #[perseus::make_rx(IndexPropsRx)]
 pub struct IndexProps {

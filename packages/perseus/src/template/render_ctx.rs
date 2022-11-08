@@ -629,6 +629,7 @@ impl RenderCtx {
         cx: Scope<'a>,
     ) -> Result<
         Option<
+            // Note: I am sorry.
             <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>,
         >,
         ClientError,

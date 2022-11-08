@@ -1,7 +1,7 @@
 use perseus::{Html, Template};
 use sycamore::prelude::{view, Scope, SsrNode, View};
 
-use crate::global_state::*; // See the index page for why we need this
+use crate::global_state::AppStateRx;
 
 // This template needs global state, but doesn't have any state of its own, so
 // the first argument is the unit type `()` (which the macro will detect)

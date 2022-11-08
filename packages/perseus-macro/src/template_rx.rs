@@ -189,7 +189,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     // the first page to access the global state).                 if
     // render_ctx.get_active_or_frozen_global_state::<#global_state_rx>().is_none()
     // {                     // Because this came from the server, we assume
-    // it's valid                     
+    // it's valid
     // render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.
     // unwrap()).unwrap();                 }
 
@@ -202,7 +202,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     //                 fn #component_name #generics(#cx_arg) -> #return_type {
     //                     let __perseus_global_state_intermediate: #global_state_rx
     // = {                         let global_state =
-    // ::perseus::get_render_ctx!(cx).global_state.0.borrow();                  
+    // ::perseus::get_render_ctx!(cx).global_state.0.borrow();
     // // We can guarantee that it will downcast correctly now, because we'll only
     // invoke the component from this function, which sets up the global state
     // correctly                         let global_state_ref =
@@ -210,11 +210,11 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     //                         (*global_state_ref).clone()
     //                     };
     //                     let #global_state_arg_pat =
-    // __perseus_global_state_intermediate.to_ref_struct(cx);                   
+    // __perseus_global_state_intermediate.to_ref_struct(cx);
     // #block                 }
 
     //                 // Declare that this page will never take any state to enable
-    // full caching                 
+    // full caching
     // render_ctx.register_page_no_state(&props.path);
 
     //                 #component_name(cx)
@@ -237,7 +237,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     // the first page to access the global state).                 if
     // render_ctx.get_active_or_frozen_global_state::<#global_state_rx>().is_none()
     // {                     // Because this came from the server, we assume
-    // it's valid                     
+    // it's valid
     // render_ctx.register_global_state_str::<#global_state_rx>(&props.global_state.
     // unwrap()).unwrap();                 }
 
@@ -248,7 +248,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     //                 fn #component_name #generics(#cx_arg, #state_arg) ->
     // #return_type {                     let #global_state_arg_pat:
     // #global_state_rx = {                         let global_state =
-    // ::perseus::get_render_ctx!(cx).global_state.0.borrow();                  
+    // ::perseus::get_render_ctx!(cx).global_state.0.borrow();
     // // We can guarantee that it will downcast correctly now, because we'll only
     // invoke the component from this function, which sets up the global state
     // correctly                         let global_state_ref =
@@ -262,7 +262,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     //                 let props = {
     //                     // Check if properties of the reactive type are already
     // in the page state store                     // If they are, we'll use
-    // them (so state persists for templates across the whole app)              
+    // them (so state persists for templates across the whole app)
     // let render_ctx = ::perseus::get_render_ctx!(cx);                     //
     // The render context will automatically handle prioritizing frozen or active
     // state for us for this page as long as we have a reactive state type, which we
@@ -270,17 +270,17 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     // render_ctx.get_active_or_frozen_page_state::<#rx_props_ty>(&props.path) {
     //                         // If we navigated back to this page, and it's still
     // in the PSS, the given state will be a dummy, but we don't need to worry
-    // because it's never checked if this evaluates                         
+    // because it's never checked if this evaluates
     // ::std::option::Option::Some(existing_state) => existing_state,
     //                         // Again, frozen state has been dealt with already,
-    // so we'll fall back to generated state                         
+    // so we'll fall back to generated state
     // ::std::option::Option::None => {                             // Again,
     // the render context can do the heavy lifting for us (this returns what we
     // need, and can do type checking)                             // We also
     // assume that any state we have is valid because it comes from the server
     //                             // The user really should have a generation
     // function, but if they don't then they'd get a panic, so give them a nice
-    // error message                             
+    // error message
     // render_ctx.register_page_state_str::<#rx_props_ty>(&props.path,
     // &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no
     // state generation functions were provided (please add at least one to use

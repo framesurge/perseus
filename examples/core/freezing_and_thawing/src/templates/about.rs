@@ -2,7 +2,7 @@ use perseus::state::Freeze;
 use perseus::{Html, Template};
 use sycamore::prelude::*;
 
-use crate::global_state::*;
+use crate::global_state::AppStateRx;
 
 #[perseus::template_rx]
 pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
