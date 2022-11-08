@@ -319,3 +319,35 @@ macro_rules! blame_err {
         })
     };
 }
+
+/// This macro is identical to [`blame_err!`], except it will simply return a
+/// [`GenericErrorWithCause`], not `return`ing it from the caller function. This
+/// is more useful if you're providing a blamed error to something like
+/// `.map_err()`.
+#[macro_export]
+macro_rules! make_blamed_err {
+    (client, $err:expr) => {
+        ::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Client(::std::option::Option::None),
+        }
+    };
+    (client, $code:literal, $err:expr) => {
+        ::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Client(::std::option::Option::Some($code)),
+        }
+    };
+    (server, $err:expr) => {
+        ::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Server(::std::option::Option::None),
+        }
+    };
+    (server, $code:literal, $err:expr) => {
+        ::perseus::GenericErrorWithCause {
+            error: $err.into(),
+            cause: $crate::ErrorCause::Server(::std::option::Option::Some($code)),
+        }
+    };
+}
