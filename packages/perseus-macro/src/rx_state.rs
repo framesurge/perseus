@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{
-    GenericParam, Ident, ItemStruct, Lifetime, LifetimeDef, Lit, Meta, NestedMeta, Result,
-    Visibility,
-};
+use syn::{GenericParam, Ident, ItemStruct, Lifetime, LifetimeDef, Lit, Meta, NestedMeta, Result};
 
 pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream {
     // Note: we create three `struct`s with this macro: the original, the new one

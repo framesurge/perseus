@@ -38,7 +38,18 @@ pub struct RenderCtx {
     /// state) will find that it can't downcast to the user's global state
     /// type, which will prompt it to deserialize whatever global state it was
     /// given and then write that here.
-    pub global_state: GlobalState,
+    ///
+    /// This is `pub(crate)` to prevent users accessing this without using the
+    /// wrappers in `RenderCtx` that handle thawing. If this direct access were
+    /// to occur, the likelihood of a `BorrowMut` panic would be *substantial*!
+    /// Essentially, you don't know when you get the global state how it's going
+    /// to be initialized (e.g. it might come from the server, or maybe from a
+    /// frozen state), so the seemingly read-only method
+    /// `.get_global_state()` might actually need to mutate the underlying
+    /// state multiple times, which would fail with a panic if there were
+    /// any existing borrows of the global state. By making this private, we
+    /// prevent this.
+    pub(crate) global_state: GlobalState,
     /// A previous state the app was once in, still serialized. This will be
     /// rehydrated gradually by the template macro.
     pub frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs)>>>,
