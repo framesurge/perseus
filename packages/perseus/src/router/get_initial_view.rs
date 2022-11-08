@@ -303,7 +303,7 @@ fn get_head() -> String {
     let head_node = document.query_selector("head").unwrap().unwrap();
     // Get all the elements after the head boundary (otherwise we'd be duplicating
     // the initial stuff)
-    let els = document
+    let els = head_node
         .query_selector_all(r#"meta[itemprop='__perseus_head_boundary'] ~ *"#)
         .unwrap();
     // No, `NodeList` does not have an iterator implementation...

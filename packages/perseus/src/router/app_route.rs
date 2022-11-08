@@ -1,10 +1,5 @@
 use super::{match_route, RouteVerdict};
-use crate::{
-    i18n::Locales,
-    template::{RenderCtx, TemplateMap, TemplateNodeType},
-};
-use std::collections::HashMap;
-use std::rc::Rc;
+use crate::template::{RenderCtx, TemplateNodeType};
 use sycamore::prelude::Scope;
 use sycamore_router::Route;
 

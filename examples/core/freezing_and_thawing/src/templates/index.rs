@@ -1,5 +1,5 @@
-use perseus::state::Freeze;
 use perseus::prelude::*;
+use perseus::state::Freeze;
 use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;

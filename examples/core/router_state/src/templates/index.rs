@@ -1,5 +1,5 @@
-use perseus::router::RouterLoadState;
 use perseus::prelude::*;
+use perseus::router::RouterLoadState;
 use sycamore::prelude::*;
 
 #[perseus::template_rx]

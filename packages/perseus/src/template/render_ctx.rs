@@ -257,7 +257,7 @@ impl RenderCtx {
         let route_info = match verdict {
             RouteVerdict::Found(info) => info,
             RouteVerdict::NotFound => return Err(ClientError::PreloadNotFound),
-            RouteVerdict::LocaleDetection(dest) => return Err(ClientError::PreloadLocaleDetection),
+            RouteVerdict::LocaleDetection(_) => return Err(ClientError::PreloadLocaleDetection),
         };
 
         // We just needed to acquire the arguments to this function
