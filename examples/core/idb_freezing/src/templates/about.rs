@@ -1,4 +1,4 @@
-use perseus::{Html, Template};
+use perseus::prelude::*;
 use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
@@ -10,7 +10,7 @@ pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     // It's faster to get this only once and rely on reactivity
     // But it's unused when this runs on the server-side because of the target-gate
     // below
-    let render_ctx = perseus::get_render_ctx!(cx);
+    let render_ctx = RenderCtx::from_ctx(cx);
     let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
 
     view! { cx,

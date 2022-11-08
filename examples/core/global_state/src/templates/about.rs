@@ -1,13 +1,11 @@
-use perseus::{Html, Template};
-use sycamore::prelude::{view, Scope, SsrNode, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-// This template needs global state, but doesn't have any state of its own, so
-// the first argument is the unit type `()` (which the macro will detect)
 #[perseus::template_rx]
 pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
-    let global_state = perseus::get_render_ctx!(cx).get_global_state::<AppStateRx>(cx);
+    let global_state = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         // The user can change the global state through an input, and the changes they make will be reflected throughout the app

@@ -710,11 +710,3 @@ fn get_global_state() -> Option<String> {
         state_str => Some(state_str.to_string()),
     }
 }
-
-/// Gets the `RenderCtx` efficiently.
-#[macro_export]
-macro_rules! get_render_ctx {
-    ($cx:expr) => {
-        ::perseus::template::RenderCtx::from_ctx($cx)
-    };
-}

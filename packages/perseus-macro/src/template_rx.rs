@@ -168,7 +168,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 let props = {
                     // Check if properties of the reactive type are already in the page state store
                     // If they are, we'll use them (so state persists for templates across the whole app)
-                    let render_ctx = ::perseus::get_render_ctx!(cx);
+                    let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
                     // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
                     // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user decalred are defined inside the above function, which we
                     // aren't inside!
@@ -205,7 +205,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
                 }
 
                 // Declare that this page will never take any state to enable full caching
-                let render_ctx = ::perseus::get_render_ctx!(cx);
+                let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
                 render_ctx.register_page_no_state(&props.path);
 
                 #component_name(cx)
