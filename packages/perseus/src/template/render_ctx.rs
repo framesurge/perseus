@@ -648,13 +648,16 @@ impl RenderCtx {
             return Ok(None);
         }
         // Check if there's an actively loaded state or a frozen state (note
-        // that this will set up global state if there was something in the frozen data)
+        // that this will set up global state if there was something in the frozen data,
+        // hence it needs any other borrows to be dismissed)
+        drop(global_state_ty);
         let rx_state = if let Some(rx_state) =
             self.get_active_or_frozen_global_state::<<R as RxRef>::RxNonRef>()
         {
             rx_state
         } else {
             // There was nothing, so we'll load from the server
+            let global_state_ty = self.global_state.0.borrow();
             if let GlobalStateType::Server(server_str) = &*global_state_ty {
                 let server_str = server_str.to_string();
                 // The registration borrows mutably, so we have to drop here
