@@ -147,11 +147,15 @@ async fn gen_state_for_path(
         let page_props = PageProps {
             path: full_path_with_locale.clone(),
             state: Some(initial_state),
-            global_state: global_state.clone(),
         };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
-            template.render_for_template_server(page_props.clone(), cx, translator)
+            template.render_for_template_server(
+                page_props.clone(),
+                global_state.clone(),
+                cx,
+                translator,
+            )
         });
         minify(&prerendered, true)?;
         // Write that prerendered HTML to a static file
@@ -161,7 +165,7 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(page_props, translator);
+        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
         minify(&head_str, true)?;
         mutable_store
             .write(
@@ -186,11 +190,15 @@ async fn gen_state_for_path(
         let page_props = PageProps {
             path: full_path_with_locale.clone(),
             state: Some(initial_state),
-            global_state: global_state.clone(),
         };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
-            template.render_for_template_server(page_props.clone(), cx, translator)
+            template.render_for_template_server(
+                page_props.clone(),
+                global_state.clone(),
+                cx,
+                translator,
+            )
         });
         minify(&prerendered, true)?;
         // Write that prerendered HTML to a static file
@@ -200,7 +208,7 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(page_props, translator);
+        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
         immutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -242,12 +250,16 @@ async fn gen_state_for_path(
         let page_props = PageProps {
             path: full_path_with_locale,
             state: None,
-            global_state: global_state.clone(),
         };
         let prerendered = sycamore::render_to_string(|cx| {
-            template.render_for_template_server(page_props.clone(), cx, translator)
+            template.render_for_template_server(
+                page_props.clone(),
+                global_state.clone(),
+                cx,
+                translator,
+            )
         });
-        let head_str = template.render_head_str(page_props, translator);
+        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
         // Write that prerendered HTML to a static file
         immutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)

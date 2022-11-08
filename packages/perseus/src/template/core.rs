@@ -277,13 +277,14 @@ impl<G: Html> Template<G> {
     pub fn render_for_template_server<'a>(
         &self,
         props: PageProps,
+        global_state: Option<String>,
         cx: Scope<'a>,
         translator: &Translator,
     ) -> View<G> {
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
-        let _ = RenderCtx::default().set_ctx(cx);
+        let _ = RenderCtx::server(global_state).set_ctx(cx);
         // And now provide a translator separately
         provide_context_signal_replace(cx, translator.clone());
 
@@ -294,13 +295,18 @@ impl<G: Html> Template<G> {
     /// function will not take effect due to this string rendering. Note that
     /// this function will provide a translator context.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn render_head_str(&self, props: PageProps, translator: &Translator) -> String {
+    pub fn render_head_str(
+        &self,
+        props: PageProps,
+        global_state: Option<String>,
+        translator: &Translator,
+    ) -> String {
         sycamore::render_to_string(|cx| {
             // The context we have here has no context elements set on it, so we set all the
             // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             // We don't need any page state store here
-            let _ = RenderCtx::default().set_ctx(cx);
+            let _ = RenderCtx::server(global_state).set_ctx(cx);
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
             // We don't want to generate hydration keys for the head because it is static.

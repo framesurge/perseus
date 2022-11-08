@@ -71,7 +71,6 @@ pub(crate) fn get_initial_view(
             match initial_state {
                 InitialState::Present(state) => {
                     checkpoint("initial_state_present");
-                    let global_state = get_global_state();
                     // Unset the initial state variable so we perform subsequent renders correctly
                     // This monstrosity is needed until `web-sys` adds a `.set()` method on `Window`
                     // We don't do this for the global state because it should hang around
@@ -133,7 +132,6 @@ pub(crate) fn get_initial_view(
                     let page_props = PageProps {
                         path: path_with_locale.clone(),
                         state,
-                        global_state,
                     };
                     // Pre-emptively declare the page interactive since all we do from this point
                     // is hydrate
@@ -273,28 +271,6 @@ fn get_initial_state() -> InitialState {
     }
 }
 
-/// Gets the global state injected by the server, if there was any. If there are
-/// errors in this, we can return `None` and not worry about it, they'll be
-/// handled by the initial state.
-pub(crate) fn get_global_state() -> Option<String> {
-    let val_opt = web_sys::window().unwrap().get("__PERSEUS_GLOBAL_STATE");
-    let js_obj = match val_opt {
-        Some(js_obj) => js_obj,
-        None => return None,
-    };
-    // The object should only actually contain the string value that was injected
-    let state_str = match js_obj.as_string() {
-        Some(state_str) => state_str,
-        None => return None,
-    };
-    // On the server-side, we encode a `None` value directly (otherwise it will be
-    // some convoluted stringified JSON)
-    match state_str.as_str() {
-        "None" => None,
-        state_str => Some(state_str.to_string()),
-    }
-}
-
 /// Gets the translations injected by the server, if there was any. If there are
 /// errors in this, we can return `None` and not worry about it, they'll be
 /// handled by the initial state.
@@ -327,7 +303,7 @@ fn get_head() -> String {
     let head_node = document.query_selector("head").unwrap().unwrap();
     // Get all the elements after the head boundary (otherwise we'd be duplicating
     // the initial stuff)
-    let els = document
+    let els = head_node
         .query_selector_all(r#"meta[itemprop='__perseus_head_boundary'] ~ *"#)
         .unwrap();
     // No, `NodeList` does not have an iterator implementation...

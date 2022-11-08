@@ -11,6 +11,9 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
     // fields, we'll just copy the struct and change the parts we want to
     // We won't create the final `struct` yet to avoid more operations than
     // necessary
+    // Note that we leave this as whatever visibility the original state was to
+    // avoid compiler errors (since it will be exposed as a trait-linked type
+    // through the ref struct)
     let mut mid_struct = orig_struct.clone(); // This will use `RcSignal`s, and will be stored in context
     let ItemStruct {
         ident: orig_name,
@@ -301,12 +304,17 @@ pub fn make_rx_impl(mut orig_struct: ItemStruct, name_raw: Ident) -> TokenStream
                 ::serde_json::to_string(&unrx).unwrap()
             }
         }
-        #[derive(::std::clone::Clone)]
-        #ref_struct
-        impl #generics #mid_name #generics {
-            pub fn to_ref_struct(self, cx: ::sycamore::prelude::Scope) -> #ref_name #generics {
+        // TODO Generics
+        impl ::perseus::state::MakeRxRef for #mid_name {
+            type RxRef<'a> = #ref_name<'a>;
+            fn to_ref_struct<'a>(self, cx: ::sycamore::prelude::Scope<'a>) -> #ref_name<'a> {
                 #make_ref_fields
             }
+        }
+        #[derive(::std::clone::Clone)]
+        #ref_struct
+        impl<'a> ::perseus::state::RxRef for #ref_name<'a> {
+            type RxNonRef = #mid_name;
         }
     }
 }

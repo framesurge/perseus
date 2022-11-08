@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::page_data::PageDataPartial;
-use crate::router::{get_global_state, RouteVerdict, RouterLoadState};
+use crate::router::{RouteVerdict, RouterLoadState};
 use crate::state::PssContains;
 use crate::template::{PageProps, RenderCtx, Template, TemplateNodeType};
 use crate::utils::checkpoint;
@@ -207,9 +207,6 @@ pub(crate) async fn get_subsequent_view(
     let page_props = PageProps {
         path: path_with_locale.clone(),
         state: page_data.state,
-        // This will probably be overridden by the already-set version (unless no
-        // page has used global state yet)
-        global_state: get_global_state(),
     };
     let template_name = template.get_path();
     // Pre-emptively update the router state

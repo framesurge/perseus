@@ -91,7 +91,7 @@ pub use crate::{
     error_pages::ErrorPages,
     errors::{ErrorCause, GenericErrorWithCause},
     init::*,
-    template::{RenderFnResult, RenderFnResultWithCause, Template},
+    template::{RenderCtx, RenderFnResult, RenderFnResultWithCause, Template},
 };
 // Browser-side only
 #[cfg(target_arch = "wasm32")]
@@ -129,7 +129,7 @@ pub mod prelude {
     #[cfg(feature = "i18n")]
     pub use crate::{link, t};
     pub use crate::{
-        ErrorCause, ErrorPages, GenericErrorWithCause, PerseusApp, PerseusRoot, RenderFnResult,
-        RenderFnResultWithCause, Template,
+        ErrorCause, ErrorPages, GenericErrorWithCause, PerseusApp, PerseusRoot, RenderCtx,
+        RenderFnResult, RenderFnResultWithCause, Template,
     };
 }

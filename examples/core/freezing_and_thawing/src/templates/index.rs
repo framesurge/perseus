@@ -1,8 +1,8 @@
+use perseus::prelude::*;
 use perseus::state::Freeze;
-use perseus::{Html, RenderFnResultWithCause, Template};
 use sycamore::prelude::*;
 
-use crate::global_state::*;
+use crate::global_state::AppStateRx;
 
 #[perseus::make_rx(IndexPropsRx)]
 pub struct IndexProps {
@@ -10,15 +10,13 @@ pub struct IndexProps {
 }
 
 #[perseus::template_rx]
-pub fn index_page<'a, G: Html>(
-    cx: Scope<'a>,
-    state: IndexPropsRx<'a>,
-    global_state: AppStateRx<'a>,
-) -> View<G> {
+pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
     let frozen_app = create_signal(cx, String::new());
-    let render_ctx = perseus::get_render_ctx!(cx);
+    let render_ctx = RenderCtx::from_ctx(cx);
+
+    let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily

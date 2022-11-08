@@ -1,4 +1,5 @@
 use super::rx_state::AnyFreeze;
+use super::{Freeze, MakeRx, MakeUnrx};
 #[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
 use crate::make_async_trait;
@@ -68,12 +69,62 @@ impl GlobalStateCreator {
     }
 }
 
-/// A representation of the global state in an app.
+/// A representation of the global state in an app. This will be initialized as
+/// a string of whatever was given by the server, until a page requests it and
+/// deserializes it properly (since we can't know the type until that happens).
 #[derive(Clone)]
-pub struct GlobalState(pub Rc<RefCell<Box<dyn AnyFreeze>>>);
-impl Default for GlobalState {
-    fn default() -> Self {
-        Self(Rc::new(RefCell::new(Box::new(Option::<()>::None))))
+pub struct GlobalState(pub Rc<RefCell<GlobalStateType>>);
+impl GlobalState {
+    /// A convenience function for creating a new global state from an
+    /// underlying type of global state.
+    pub(crate) fn new(ty: GlobalStateType) -> Self {
+        Self(Rc::new(RefCell::new(ty)))
+    }
+}
+
+/// The backend for the different types of global state.
+pub enum GlobalStateType {
+    /// The global state has been deserialized and loaded, and is ready for use.
+    Loaded(Box<dyn AnyFreeze>),
+    /// The global state is in string form from the server.
+    Server(String),
+    /// There was no global state provided by the server.
+    None,
+}
+impl GlobalStateType {
+    /// Parses the global state into the given reactive type if possible. If the
+    /// state from the server hasn't been parsed yet, this will return
+    /// `None`.
+    ///
+    /// In other words, this will only return something if the global state has
+    /// already been requested and loaded.
+    pub fn parse_active<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
+    where
+        R: Clone + AnyFreeze + MakeUnrx,
+        // We need this so that the compiler understands that the reactive version of the
+        // unreactive version of `R` has the same properties as `R` itself
+        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+    {
+        match &self {
+            // If there's an issue deserializing to this type, we'll fall back to the server
+            Self::Loaded(any) => any
+                .as_any()
+                .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
+                .cloned(),
+            Self::Server(_) => None,
+            Self::None => None,
+        }
+    }
+}
+impl Freeze for GlobalStateType {
+    fn freeze(&self) -> String {
+        match &self {
+            Self::Loaded(state) => state.freeze(),
+            // There's no point in serializing state that was sent from the server, since we can
+            // easily get it again later (it definitionally hasn't changed)
+            Self::Server(_) => "Server".to_string(),
+            Self::None => "None".to_string(),
+        }
     }
 }
 impl std::fmt::Debug for GlobalState {
@@ -81,3 +132,15 @@ impl std::fmt::Debug for GlobalState {
         f.debug_struct("GlobalState").finish()
     }
 }
+
+// /// A representation of global state parsed into a specific type.
+// pub enum ParsedGlobalState<R> {
+//     /// The global state has been deserialized and loaded, and is ready for
+// use.     Loaded(R),
+//     /// We couldn't parse to the desired reactive type.
+//     ParseError,
+//     /// The global state is in string form from the server.
+//     Server(String),
+//     /// There was no global state provided by the server.
+//     None,
+// }
