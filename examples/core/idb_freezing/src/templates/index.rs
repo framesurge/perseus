@@ -8,7 +8,7 @@ pub struct IndexProps {
     username: String,
 }
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());

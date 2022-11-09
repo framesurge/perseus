@@ -8,7 +8,7 @@ pub struct PageState {
     ip: String,
 }
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn request_state_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
     view! { cx,
         p {

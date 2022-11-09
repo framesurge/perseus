@@ -16,7 +16,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 }
 
 // EXCERPT_START
-#[perseus::template_rx]
+#[perseus::template]
 fn index_page<'a, G: Html>(cx: Scope<'a>, props: IndexPropsRx<'a>) -> View<G> {
     view! { cx,
         h1 { (format!(
@@ -50,7 +50,7 @@ async fn get_index_build_state(
 }
 // EXCERPT_END
 
-#[perseus::template_rx]
+#[perseus::template]
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "This is an example webapp created with Perseus!" }

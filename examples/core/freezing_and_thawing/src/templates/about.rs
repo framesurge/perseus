@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate

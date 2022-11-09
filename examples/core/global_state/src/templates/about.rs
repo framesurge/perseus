@@ -3,7 +3,7 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     let global_state = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
 

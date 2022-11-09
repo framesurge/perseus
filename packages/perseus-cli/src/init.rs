@@ -155,7 +155,7 @@ static DFLT_INIT_MOD_RS: &str = r#"pub mod index;"#;
 static DFLT_INIT_INDEX_RS: &str = r#"use perseus::Template;
 use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         // Don't worry, there are much better ways of styling in Perseus!

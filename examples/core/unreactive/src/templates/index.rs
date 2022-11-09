@@ -1,20 +1,23 @@
-use perseus::{Html, RenderFnResultWithCause, SsrNode, Template};
+use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
-use sycamore::prelude::{view, Scope, View};
+use sycamore::prelude::*;
 
 // Without `#[make_rx(...)]`, we have to manually derive `Serialize` and
 // `Deserialize`
-#[derive(Serialize, Deserialize)]
+// We derive `UnreactiveState` too, which actually creates a pseudo-reactive
+// wrapper for this unreactive type, allowing it to work with Perseus;
+// rather strict state platform (this is just a marker trait though)
+#[derive(Serialize, Deserialize, Clone, UnreactiveState)]
 pub struct IndexPageState {
     pub greeting: String,
 }
 
-// With the old template macro, we have to add the Sycamore `#[component(...)]`
-// annotation manually and we get unreactive state passed in Additionally,
-// global state is not supported at all So there's no way of persisting state
-// between templates
-#[perseus::template]
-#[sycamore::component]
+// By adding `unreactive` in brackets, we tell Perseus to expect something with
+// `UnreactiveState` derived.
+// Otherwise, you can do everything in this macro that you can do with a
+// reactive template! Caching, preloading, reactive global state, etc. are all
+// supported.
+#[perseus::template(unreactive)]
 pub fn index_page<G: Html>(cx: Scope, state: IndexPageState) -> View<G> {
     view! { cx,
         p { (state.greeting) }

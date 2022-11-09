@@ -1,7 +1,7 @@
 use perseus::Template;
 use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     // We can't preload pages on the engine-side
     #[cfg(target_arch = "wasm32")]

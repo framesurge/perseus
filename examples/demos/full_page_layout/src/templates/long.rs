@@ -2,7 +2,7 @@ use crate::components::layout::Layout;
 use perseus::Template;
 use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn long_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         Layout(title = "Long") {

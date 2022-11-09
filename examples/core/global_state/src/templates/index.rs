@@ -5,7 +5,7 @@ use crate::global_state::AppStateRx;
 
 // Note that this template takes no state of its own in this example, but it
 // certainly could
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     // We access the global state through the render context, extracted from
     // Sycamore's context system

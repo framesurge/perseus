@@ -71,3 +71,52 @@ impl<T: Any + Freeze> AnyFreeze for T {
         self
     }
 }
+
+/// A marker trait for types that you want to be able to use with the Perseus
+/// state platform, without using `#[make_rx]`. If you want to use unreactive
+/// state, implement this, and you'll automatically be able to use your
+/// unreactive type without problems!
+pub trait UnreactiveState {}
+
+/// A wrapper for storing unreactive state in Perseus, and allowing it to
+/// interface with the (fundamentally reactive) state platform. Generally, you
+/// would just use reactive state, however, sometimes, you may wish to use
+/// unreactive state without sacrificing features like automatic page state
+/// caching: this `struct` allows that.
+///
+/// This is handled automatically by the `#[template]` macro, and you should
+/// never need to use this manually unless you don't use the macros.
+///
+/// This wrapper will automatically implement all the necessary `trait`s to
+/// interface with Perseus' reactive state platform, along with `Serialize` and
+/// `Deserialize` (provided the underlying type also implements the latter two).
+#[derive(Clone)]
+pub struct UnreactiveStateWrapper<
+    T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone,
+>(pub T);
+// Automatically implement `MakeRx` for any marked unreactive type, using
+// `UnreactiveStateWrapper` as the reactive type
+impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> MakeRx for T {
+    type Rx = UnreactiveStateWrapper<T>;
+    fn make_rx(self) -> Self::Rx {
+        UnreactiveStateWrapper(self)
+    }
+}
+// And let it be converted back
+impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> MakeUnrx
+    for UnreactiveStateWrapper<T>
+{
+    type Unrx = T;
+    fn make_unrx(self) -> Self::Unrx {
+        self.0
+    }
+}
+// And, since the underlying type can be serialized, implement `Freeze`
+impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> Freeze
+    for UnreactiveStateWrapper<T>
+{
+    fn freeze(&self) -> String {
+        // Just serialize the underlying type
+        serde_json::to_string(&self.0).unwrap()
+    }
+}

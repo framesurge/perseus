@@ -2,7 +2,7 @@ use perseus::Template;
 use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 
 // This page will actually be replaced entirely by a plugin!
-#[perseus::template_rx]
+#[perseus::template]
 pub fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "About." }

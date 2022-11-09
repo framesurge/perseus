@@ -19,7 +19,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 }
 
 // EXCERPT_START
-#[perseus::template_rx]
+#[perseus::template]
 fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostRx<'a>) -> View<G> {
     view! { cx,
         h1 { (props.title.get()) }

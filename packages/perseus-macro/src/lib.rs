@@ -16,14 +16,13 @@ mod head;
 mod rx_state;
 mod state_fns;
 mod template;
-mod template_rx;
 mod test;
 
 use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::quote;
 use state_fns::StateFnType;
-use syn::{ItemStruct, Path};
+use syn::{DeriveInput, ItemStruct, Path};
 
 /// Annotates functions used for generating state at build time to support
 /// automatic serialization/deserialization of app state and client/server
@@ -102,16 +101,14 @@ pub fn should_revalidate(_args: TokenStream, input: TokenStream) -> TokenStream 
     state_fns::state_fn_impl(parsed, StateFnType::ShouldRevalidate).into()
 }
 
-/// Labels a Sycamore component as a Perseus template, turning it into something
-/// that can be easily inserted into the `.template()` function, avoiding the
-/// need for you to manually serialize/deserialize things. This should be
-/// provided the name of the Sycamore component (same as given to Sycamore's
-/// `#[component()]`, but without the `<G>`).
+// TODO(0.5.x) Remove this entirely
+#[doc(hidden)]
 #[proc_macro_attribute]
-pub fn template(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as template::TemplateFn);
-
-    template::template_impl(parsed).into()
+pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
+    quote! {
+        compile_error!("the `template_rx` macro has been replaced by the `template` macro")
+    }
+    .into()
 }
 
 /// The new version of `#[template]` designed for reactive state. This can
@@ -129,10 +126,34 @@ pub fn template(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// The second argument your template function can take is a global state
 /// generated with the `GlobalStateCreator`. You should also provide the
 /// reactive type here, and Perseus will do all the rest in the background.
+///
+/// Labels a function as a Perseus template, automatically managing its state
+/// and integrating it into your app. Functions annotated with this macro
+/// take at least one argument for Sycamore's reactive scope, and then a
+/// possible other argument for some state they generate with a rendering
+/// strategy (e.g. *build state*, generated when you build your app, see the
+/// book for more). That state is expected to be reactive (see [`make_rx`]),
+/// although, if you use `#[template(unreactive)]`, you can use any state that
+/// has been annotated with [`UnreactiveState`] to make it clear to Perseus not
+/// to expect something reactive.
+///
+/// Although you can make a Perseus app without using this macro, this isn't
+/// recommended, since Perseus passes around state in your app as `String`s and
+/// `dyn Any`s, meaning there is a large amount of overhead to actually using
+/// the state you expect. This macro will automatically handle all that overhead
+/// for you, making the process of building your app *significantly* smoother!
+///
+/// *Note: in previous versions of Perseus, there was a `template_rx` macro,
+/// which has become this. The old unreactive `template` macro has become
+/// `#[template(unreactive)]`. For thos used to using Sycamore `#[component]`
+/// annotation on their pages, this is no longer required. Note also that global
+/// state is now accessed through the `.get_global_state()` method on Perseus'
+/// `RenderCtx`.*
 #[proc_macro_attribute]
-pub fn template_rx(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as template_rx::TemplateFn);
-    template_rx::template_impl(parsed).into()
+pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as template::TemplateFn);
+    let is_reactive = args.to_string() != "unreactive";
+    template::template_impl(parsed, is_reactive).into()
 }
 
 /// Labels a function as a Perseus head function, which is very similar to a
@@ -350,6 +371,18 @@ pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
     quote! {
         #[cfg(target_arch = "wasm32")]
         #input_2
+    }
+    .into()
+}
+
+#[proc_macro_derive(UnreactiveState)]
+pub fn unreactive_state(input: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(input as DeriveInput);
+    let name = input.ident;
+
+    // This is a marker trait, so we barely have to do anything here
+    quote! {
+        impl ::perseus::state::UnreactiveState for #name {}
     }
     .into()
 }

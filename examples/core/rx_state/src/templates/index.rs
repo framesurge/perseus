@@ -9,7 +9,7 @@ pub struct IndexPageState {
 // This macro will make our state reactive *and* store it in the page state
 // store, which means it'll be the same even if we go to the about page and come
 // back (as long as we're in the same session)
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G> {
     view! { cx,
         p { (format!("Greetings, {}!", state.username.get())) }

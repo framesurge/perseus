@@ -60,7 +60,7 @@ The first thing then is `IndexPageState`, which is our first usage of Perseus' s
 
 Importantly, we've annotated that with `#[perseus::make_rx(IndexPageStateRx)]`, which will create a version of this `struct` that uses Sycamore's `Signal`s: a reactive version. If you're unfamiliar with Sycamore's reactivity system, you should read [this](https://sycamore-rs.netlify.app/docs/basics/reactivity) quickly before continuing.
 
-Next, we create a function called `index_page`, which we annotate with `#[perseus::template_rx]`. That macro is used for declaring templates, and you can think of it like black box that makes things work.
+Next, we create a function called `index_page`, which we annotate with `#[perseus::template]`. That macro is used for declaring templates, and you can think of it like black box that makes things work.
 
 <details>
 <summary>Details??</summary>
@@ -94,7 +94,7 @@ Notably, we could actually change this value at runtime if we wanted by calling 
 
 The next function we define is `get_template()`, which is fairly straightforward. It just declares a [`Template`](=struct.Template@perseus) with the necessary properties. Specifically, we define the function that actually renders the template as `index_page`, and the other two we'll get to now.
 
-The first of those is the `head()` function, which is annotated as `#[perseus::head]` (which has similar responsibilities to `#[perseus::template_rx]`). In HTML, the language for creating views on the web, there are two main components to every page: the `<body>` and the `<head>`, the latter of which defines certain metadata, like the title, and any stylesheets you need, for example. If `index_page()` creates the body, then `head()` creates the head in this example. Notably, because the head is rendered only ahead of time, it can't be reactive. For that reason, it's passed the unreactive version of the state, and, rather than being generic over `Html`, it uses [`SsrNode`](=struct.SsrNode@perseus), which is specialized for the engine-side.
+The first of those is the `head()` function, which is annotated as `#[perseus::head]` (which has similar responsibilities to `#[perseus::template]`). In HTML, the language for creating views on the web, there are two main components to every page: the `<body>` and the `<head>`, the latter of which defines certain metadata, like the title, and any stylesheets you need, for example. If `index_page()` creates the body, then `head()` creates the head in this example. Notably, because the head is rendered only ahead of time, it can't be reactive. For that reason, it's passed the unreactive version of the state, and, rather than being generic over `Html`, it uses [`SsrNode`](=struct.SsrNode@perseus), which is specialized for the engine-side.
 
 Because this function will only ever run on the engine-side, `#[perseus::head]` implies a target-gate to the engine (i.e. `#[cfg(not(target_arch = "wasm32"))]` is implicit). This means you can use engine-side dependencies here without any extra gating.
 
@@ -123,7 +123,7 @@ With that done, we can build the second template of this app, which is much simp
 
 This is basically a simpler version of the index template, with no state, and this template only defines a simple view and some metadata in the head.
 
-Importantly, this illustrates that templates that don't take state don't have to have a second argument for their nonexistent state, the `#[perseus::template_rx]` macro is smart enough to handle that (and even a third argument for global state).
+Importantly, this illustrates that templates that don't take state don't have to have a second argument for their nonexistent state, the `#[perseus::template]` macro is smart enough to handle that (and even a third argument for global state).
 
 ## Error pages
 

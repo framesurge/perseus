@@ -9,7 +9,7 @@ pub struct IndexProps {
     username: String,
 }
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate

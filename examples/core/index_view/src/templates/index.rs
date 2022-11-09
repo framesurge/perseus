@@ -1,7 +1,7 @@
 use perseus::{Html, Template};
 use sycamore::prelude::{view, Scope, View};
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "Hello World!" }

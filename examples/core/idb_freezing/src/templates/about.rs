@@ -3,7 +3,7 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());

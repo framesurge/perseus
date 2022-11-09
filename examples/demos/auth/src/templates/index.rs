@@ -2,7 +2,7 @@ use crate::global_state::*;
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-#[perseus::template_rx]
+#[perseus::template]
 fn index_view<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     let AppStateRx { auth } = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
 

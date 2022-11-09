@@ -556,7 +556,7 @@ impl<G: Html> Template<G> {
     // saving!) The macros handle the creation of empty functions to make user's
     // lives easier
     /// Sets the template rendering function to use. This function might take in
-    /// some state (use the `#[perseus::template_rx]` macro for serialization
+    /// some state (use the `#[perseus::template]` macro for serialization
     /// convenience) and/or some global state, and then it must return a
     /// Sycamore [`View`].
     pub fn template(

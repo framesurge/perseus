@@ -1,7 +1,7 @@
 use perseus::{t, Template};
 use sycamore::prelude::{view, Html, Scope, View};
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { (t!("about", cx)) }

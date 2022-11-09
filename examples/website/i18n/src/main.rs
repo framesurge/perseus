@@ -18,7 +18,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 // `/es-ES`, or `/fr-FR` based on the user's locale settings in their browser,
 // all automatically. If nothing matches, the default locale (`en-US`) will be
 // used.
-#[perseus::template_rx]
+#[perseus::template]
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         h1 { (t!("greeting", cx)) }

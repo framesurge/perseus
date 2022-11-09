@@ -10,7 +10,7 @@ pub struct PageState {
     pub time: String,
 }
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn revalidation_and_incremental_generation_page<'a, G: Html>(
     cx: Scope<'a>,
     state: PageStateRx<'a>,

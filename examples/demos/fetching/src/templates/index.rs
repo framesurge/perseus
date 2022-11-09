@@ -7,7 +7,7 @@ pub struct IndexPageState {
     browser_ip: Option<String>,
 }
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<'a, G: Html>(
     cx: Scope<'a>,
     IndexPageStateRx {

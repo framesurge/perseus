@@ -8,7 +8,7 @@ pub struct PageState {
     pub message: String,
 }
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn amalgamation_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
     view! { cx,
         p { (format!("The message is: '{}'", state.message.get())) }

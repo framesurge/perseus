@@ -6,7 +6,7 @@ pub struct IndexPageState {
     pub greeting: String,
 }
 
-#[perseus::template_rx]
+#[perseus::template]
 pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G> {
     view! { cx,
         p { (state.greeting.get()) }
