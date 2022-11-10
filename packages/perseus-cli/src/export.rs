@@ -22,17 +22,82 @@ macro_rules! handle_exit_code {
     };
 }
 
-/// An internal macro for copying files into the export package. The `from` and
-/// `to` that this accepts should be extensions of the `target`, and they'll be
-/// `.join()`ed on.
+/// An internal macro for symlinking/copying files into the export package. The
+/// `from` and `to` that this accepts should be extensions of the `target`, and
+/// they'll be `.join()`ed on.
+///
+/// This will attempt to symlink, and, if that fails, it will print a warning
+/// and copy normally.
+///
+/// For symlinking to work on Windows, developer mode must be enabled.
 macro_rules! copy_file {
     ($from:expr, $to:expr, $target:expr) => {
-        if let Err(err) = fs::copy($target.join($from), $target.join($to)) {
-            return Err(ExportError::MoveAssetFailed {
-                to: $to.to_string(),
-                from: $from.to_string(),
-                source: err,
-            });
+        // Try symlinking first
+        #[cfg(unix)]
+        if std::os::unix::fs::symlink($target.join($from), $target.join($to)).is_err() {
+            // That failed, try a usual copy
+            if let Err(err) = fs::copy($target.join($from), $target.join($to)) {
+                return Err(ExportError::MoveAssetFailed {
+                    to: $to.to_string(),
+                    from: $from.to_string(),
+                    source: err,
+                });
+            }
+        }
+        #[cfg(windows)]
+        if std::os::windows::fs::symlink_file($target.join($from), $target.join($to)).is_err() {
+            // That failed, try a usual copy
+            if let Err(err) = fs::copy($target.join($from), $target.join($to)) {
+                return Err(ExportError::MoveAssetFailed {
+                    to: $to.to_string(),
+                    from: $from.to_string(),
+                    source: err,
+                });
+            }
+        }
+    };
+}
+
+/// An internal macro for symlinking/copying directories into the export
+/// package. The `from` and `to` that this accepts should be extensions of the
+/// `target`, and they'll be `.join()`ed on.
+///
+/// This will attempt to symlink, and, if that fails, it will print a warning
+/// and copy normally.
+///
+/// For symlinking to work on Windows, developer mode must be enabled.
+macro_rules! copy_directory {
+    ($from:expr, $to:expr, $to_symlink:expr, $target:expr) => {
+        // Try symlinking first
+        #[cfg(unix)]
+        if std::os::unix::fs::symlink($target.join($from), $target.join($to_symlink)).is_err() {
+            // That failed, try a usual copy
+            if let Err(err) = fs_extra::dir::copy(
+                $target.join($from),
+                $target.join($to),
+                &fs_extra::dir::CopyOptions::new(),
+            ) {
+                return Err(ExportError::MoveDirFailed {
+                    to: $to.to_string(),
+                    from: $from.to_string(),
+                    source: err,
+                });
+            }
+        }
+        #[cfg(windows)]
+        if std::os::unix::fs::symlink_dir($target.join($from), $target.join($to_symlink)).is_err() {
+            // That failed, try a usual copy
+            if let Err(err) = fs_extra::dir::copy(
+                $target.join($from),
+                $target.join($to),
+                &fs_extra::dir::CopyOptions::new(),
+            ) {
+                return Err(ExportError::MoveDirFailed {
+                    to: $to.to_string(),
+                    from: $from.to_string(),
+                    source: err,
+                });
+            }
         }
     };
 }
@@ -53,66 +118,15 @@ pub fn finalize_export(target: &Path) -> Result<(), ExportError> {
         target
     );
     // Copy any JS snippets over (if the directory doesn't exist though, don't do
-    // anything) This takes a target of the `dist/` directory, and then extends
-    // on that
-    fn copy_snippets(ext: &str, parent: &Path) -> Result<(), ExportError> {
-        // We read from the parent directory (`.perseus`), extended with `ext`
-        if let Ok(snippets) = fs::read_dir(&parent.join(ext)) {
-            for file in snippets {
-                let path = match file {
-                    Ok(file) => file.path(),
-                    Err(err) => {
-                        return Err(ExportError::MoveAssetFailed {
-                            from: "js snippet".to_string(),
-                            to: "exportable js snippet".to_string(),
-                            source: err,
-                        })
-                    }
-                };
-                // Recurse on any directories and copy any files
-                if path.is_dir() {
-                    // We continue to pass on the parent, but we add the filename of this directory
-                    // to the extension
-                    copy_snippets(
-                        &format!("{}/{}", ext, path.file_name().unwrap().to_str().unwrap()),
-                        parent,
-                    )?;
-                } else {
-                    // `ext` holds the folder structure of this file, which we'll preserve
-                    // We must remove the prefix though (which is hardcoded in the initial
-                    // invocation of this function)
-                    let dir_tree = ext.strip_prefix("dist/pkg/snippets").unwrap();
-                    // This is to avoid `//`
-                    let dir_tree = if dir_tree.is_empty() {
-                        String::new()
-                    } else if dir_tree.starts_with('/') {
-                        dir_tree.to_string()
-                    } else {
-                        format!("/{}", dir_tree)
-                    };
-                    let filename = path.file_name().unwrap().to_str().unwrap();
-                    let final_dir_tree =
-                        parent.join(format!("dist/exported/.perseus/snippets{}", dir_tree));
-                    let path_to_copy_to = parent.join(&format!(
-                        "dist/exported/.perseus/snippets{}/{}",
-                        dir_tree, filename
-                    ));
-                    // Create the directory structure needed for this
-                    if let Err(err) = fs::create_dir_all(&final_dir_tree) {
-                        return Err(ExportError::DirStructureCreationFailed { source: err });
-                    }
-                    copy_file!(
-                        path.to_str().unwrap(),
-                        path_to_copy_to.to_str().unwrap(),
-                        parent
-                    );
-                }
-            }
-        }
-
-        Ok(())
+    // anything)
+    if fs::metadata(target.join("dist/pkg/snippets")).is_ok() {
+        copy_directory!(
+            "dist/pkg/snippets",
+            "dist/exported/.perseus",          // For a usual copy
+            "dist/exported/.perseus/snippets", // For a symlink
+            target
+        );
     }
-    copy_snippets("dist/pkg/snippets", target)?;
 
     Ok(())
 }

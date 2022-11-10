@@ -14,6 +14,9 @@ use std::path::PathBuf;
 /// together in one folder that can be conveniently uploaded to a server, file
 /// host, etc. This can return any kind of error because deploying involves
 /// working with other subcommands.
+///
+/// Note that this will execute a full copy of all static assets, so apps with
+/// large volumes of these may have longer deployment times.
 pub fn deploy(
     dir: PathBuf,
     opts: &DeployOpts,
@@ -132,7 +135,7 @@ fn deploy_full(
             }
             .into());
         }
-        let from = dir.join("dist/pkg");
+        let from = dir.join("dist/pkg"); // Note: this handles snippets and the like
         if let Err(err) = copy_dir(&from, &output_path.join("dist"), &CopyOptions::new()) {
             return Err(DeployError::MoveDirFailed {
                 to: output,
