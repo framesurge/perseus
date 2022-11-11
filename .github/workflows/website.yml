@@ -58,6 +58,7 @@ jobs:
             - name: Install NPM dependencies
               if: steps.npm-cache.outputs.cache-hit != 'true'
               run: npm install -g tailwindcss && npm install
+              working-directory: website
 
             - name: Build website
               run: bonnie site deploy-prod
