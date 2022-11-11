@@ -23,7 +23,20 @@ jobs:
                       asset_name: perseus-windows-amd64
         steps:
             - uses: actions/checkout@v2
-            - run: cargo install bonnie
+
+            # Cache Cargo binaries
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.cargo/bin/
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-cargo-bins
+            # Only install the binaries if the cache doesn't have them
+            - name: Install Dependencies
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: cargo install bonnie rust-script
+
             - name: Build
               run: cargo build --release
               working-directory: packages/perseus-cli
@@ -40,10 +53,23 @@ jobs:
         runs-on: ubuntu-latest # We cross-compile from Ubuntu
         steps:
             - uses: actions/checkout@v2
+
+            # Cache Cargo binaries
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.cargo/bin/
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-cargo-bins
+            # Only install the binaries if the cache doesn't have them
+            - name: Install Dependencies
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: cargo install bonnie rust-script
+
             - run: sudo apt install musl-tools
             - name: Install musl toolchain
               run: rustup target add x86_64-unknown-linux-musl
-            - run: cargo install bonnie
             - name: Prepare OpenSSL for cross-compilation
               run: bash scripts/build_openssl_musl.sh
             - name: Build

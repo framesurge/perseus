@@ -33,12 +33,32 @@ jobs:
               if: steps.cache.outputs.cache-hit != 'true'
               run: cargo install bonnie rust-script && cargo install perseus-cli --version 0.4.0-beta.10 && RUSTFLAGS=--cfg=web_sys_unstable_apis cargo install tribble
 
-            # TODO Cache NPM deps (see https://github.com/actions/cache/blob/main/examples.md#node---npm)
-            - run: npm install -g tailwindcss
-            - run: npm install
-              working-directory: website
+            # Also cache all the other Cargo files, since plenty of CI runs won't involve different dependencies
+            - uses: actions/cache@v3
+              with:
+                path: |
+                  ~/.cargo/registry/index/
+                  ~/.cargo/registry/cache/
+                  ~/.cargo/git/db/
+                  target/
+                key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
-            # We want to build from scratch each time, so no caching here
+            - name: Get npm cache directory
+              id: npm-cache-dir
+              run: |
+                echo "::set-output name=dir::$(npm config get cache)"
+            - uses: actions/cache@v3
+              id: npm-cache
+              with:
+                path: ${{ steps.npm-cache-dir.outputs.dir }}
+                key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+                restore-keys: |
+                  ${{ runner.os }}-node-
+            # Only install the NPM dependencies if the cache doesn't have them
+            - name: Install NPM dependencies
+              if: steps.npm-cache.outputs.cache-hit != 'true'
+              run: npm install -g tailwindcss && npm install
+
             - name: Build website
               run: bonnie site deploy-prod
             - name: Deploy website to GitHub Pages
