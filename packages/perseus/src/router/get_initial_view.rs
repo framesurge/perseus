@@ -111,12 +111,42 @@ pub(crate) fn get_initial_view(
                                 path: path_with_locale.clone(),
                             });
                             return InitialView::View(match &err {
-                                // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages.get_view_and_render_head(cx, url, *status, &fmt_err(&err), None),
-                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None),
-                                ClientError::LocaleNotSupported { .. } => error_pages.get_view_and_render_head(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
-                                // No other errors should be returned
-                                _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                                // These errors happen because we couldn't get a translator, so they
+                                // certainly don't get one
+                                ClientError::FetchError(FetchError::NotOk {
+                                    url, status, ..
+                                }) => error_pages.get_view_and_render_head(
+                                    cx,
+                                    url,
+                                    *status,
+                                    &fmt_err(&err),
+                                    None,
+                                ),
+                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => {
+                                    error_pages.get_view_and_render_head(
+                                        cx,
+                                        url,
+                                        500,
+                                        &fmt_err(&err),
+                                        None,
+                                    )
+                                }
+                                ClientError::LocaleNotSupported { .. } => error_pages
+                                    .get_view_and_render_head(
+                                        cx,
+                                        &format!("/{}/...", locale),
+                                        404,
+                                        &fmt_err(&err),
+                                        None,
+                                    ),
+                                // No other errors should be returned, but we'll give any a 400
+                                _ => error_pages.get_view_and_render_head(
+                                    cx,
+                                    &format!("/{}/...", locale),
+                                    400,
+                                    &fmt_err(&err),
+                                    None,
+                                ),
                             });
                         }
                     };
@@ -300,6 +330,8 @@ fn get_translations() -> Option<String> {
 fn get_head() -> String {
     let document = web_sys::window().unwrap().document().unwrap();
     // Get the current head
+    // The server sends through a head, so we can guarantee that one is present (and
+    // it's mandated for custom initial views)
     let head_node = document.query_selector("head").unwrap().unwrap();
     // Get all the elements after the head boundary (otherwise we'd be duplicating
     // the initial stuff)

@@ -18,7 +18,7 @@ use std::marker::PhantomData;
 use std::pin::Pin;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, panic::PanicInfo, rc::Rc};
 use sycamore::prelude::Scope;
 use sycamore::utils::hydrate::with_no_hydration_context;
 use sycamore::{
@@ -104,7 +104,6 @@ where
 /// The options for constructing a Perseus app. This `struct` will tie
 /// together all your code, declaring to Perseus where your templates,
 /// error pages, static content, etc. are.
-#[derive(Debug)]
 pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
     /// injected.
@@ -154,6 +153,10 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// here will only be used if it exists.
     #[cfg(not(target_arch = "wasm32"))]
     static_dir: String,
+    /// A handler for panics on the client-side. This could create an arbitrary
+    /// message for the user, or do anything else.
+    #[cfg(target_arch = "wasm32")]
+    panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
     // We need this on the client-side to account for the unused type parameters
     #[cfg(target_arch = "wasm32")]
     _marker: PhantomData<(M, T)>,
@@ -307,6 +310,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             #[cfg(not(target_arch = "wasm32"))]
             static_dir: "./static".to_string(),
             #[cfg(target_arch = "wasm32")]
+            panic_handler: None,
+            #[cfg(target_arch = "wasm32")]
             _marker: PhantomData,
         }
     }
@@ -335,6 +340,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             plugins: Rc::new(Plugins::new()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
+            panic_handler: None,
             _marker: PhantomData,
         }
     }
@@ -562,6 +568,29 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self.pss_max_size = val;
         self
     }
+    /// Sets the browser-side panic handler for your app. This is a function
+    /// that will be executed if your app panics (which should never be caused
+    /// by Perseus unless something is seriously wrong, it's much more likely
+    /// to come from your code, or third-party code). If this happens, your page
+    /// would become totally uninteractive, with no warning to the user, since
+    /// Wasm will simply abort. In such cases, it is strongly recommended to
+    /// generate a warning message that notifies the user.
+    ///
+    /// Note that there is no access within this function to Sycamore, page
+    /// state, global state, or translators. Assume that your code has
+    /// completely imploded when you write this function.
+    ///
+    /// This has no default value.
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+    pub fn panic_handler(mut self, val: impl Fn(&PanicInfo) + Send + Sync + 'static) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.panic_handler = Some(Box::new(val));
+        }
+        self
+    }
+
     // Getters
     /// Gets the HTML ID of the `<div>` at which to insert Perseus.
     pub fn get_root(&self) -> String {
@@ -872,6 +901,14 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
 
         scoped_static_aliases
+    }
+    /// Takes the user-set panic handler out and returns it as an owned value,
+    /// allowing it to be used as an actual panic hook.
+    #[cfg(target_arch = "wasm32")]
+    pub fn take_panic_handler(
+        &mut self,
+    ) -> Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>> {
+        self.panic_handler.take()
     }
 }
 

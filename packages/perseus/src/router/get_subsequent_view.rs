@@ -41,7 +41,6 @@ pub(crate) struct GetSubsequentViewProps<'a> {
 /// Note that this will automatically update the router state just before it
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
-// TODO Eliminate all panics in this function
 pub(crate) async fn get_subsequent_view(
     GetSubsequentViewProps {
         cx,
@@ -108,12 +107,18 @@ pub(crate) async fn get_subsequent_view(
                                 pss.add_head(&path, page_data.head.to_string());
                                 Ok(page_data)
                             }
-                            // If the page failed to serialize, an exception has occurred
+                            // If the page failed to serialize, it's a server error
                             Err(err) => {
                                 router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                     path: path_with_locale.clone(),
                                 });
-                                panic!("page data couldn't be serialized: '{}'", err)
+                                Err(error_pages.get_view_and_render_head(
+                                    cx,
+                                    &asset_url,
+                                    500,
+                                    &fmt_err(&err),
+                                    None,
+                                ))
                             }
                         }
                     }
@@ -146,8 +151,14 @@ pub(crate) async fn get_subsequent_view(
                                 None,
                             ))
                         }
-                        // No other errors should be returned
-                        _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
+                        // No other errors should be returned, but we'll give any a 400
+                        _ => Err(error_pages.get_view_and_render_head(
+                            cx,
+                            &asset_url,
+                            400,
+                            &fmt_err(&err),
+                            None,
+                        )),
                     }
                 }
             }
@@ -194,12 +205,39 @@ pub(crate) async fn get_subsequent_view(
                 path: path_with_locale.clone(),
             });
             match &err {
-                // These errors happen because we couldn't get a translator, so they certainly don't get one
-                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view_and_render_head(cx, url, *status, &fmt_err(&err), None),
-                ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None),
-                ClientError::LocaleNotSupported { locale } => return error_pages.get_view_and_render_head(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
-                // No other errors should be returned
-                _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                // These errors happen because we couldn't get a translator, so they certainly don't
+                // get one
+                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => {
+                    return error_pages.get_view_and_render_head(
+                        cx,
+                        url,
+                        *status,
+                        &fmt_err(&err),
+                        None,
+                    )
+                }
+                ClientError::FetchError(FetchError::SerFailed { url, .. }) => {
+                    return error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None)
+                }
+                ClientError::LocaleNotSupported { locale } => {
+                    return error_pages.get_view_and_render_head(
+                        cx,
+                        &format!("/{}/...", locale),
+                        404,
+                        &fmt_err(&err),
+                        None,
+                    )
+                }
+                // No other errors should be returned, but we'll give any a 400
+                _ => {
+                    return error_pages.get_view_and_render_head(
+                        cx,
+                        &format!("/{}/...", locale),
+                        400,
+                        &fmt_err(&err),
+                        None,
+                    )
+                }
             }
         }
     };

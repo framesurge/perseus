@@ -4,10 +4,9 @@ use crate::{
     router::{perseus_router, PerseusRouterProps},
     template::TemplateNodeType,
 };
+use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 use std::collections::HashMap;
 use wasm_bindgen::JsValue;
-
-use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 
 /// The entrypoint into the app itself. This will be compiled to Wasm and
 /// actually executed, rendering the rest of the app. Runs the app in the
@@ -22,12 +21,22 @@ use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
     app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
 ) -> Result<(), JsValue> {
-    let app = app();
+    let mut app = app();
     let plugins = app.get_plugins();
+    let panic_handler = app.take_panic_handler();
 
     checkpoint("begin");
-    // Panics should always go to the console
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+    // Handle panics (this works for unwinds and aborts)
+    std::panic::set_hook(Box::new(move |panic_info| {
+        // Print to the console in development
+        #[cfg(debug_assertions)]
+        console_error_panic_hook::hook(panic_info);
+        // If the user wants a little warning dialogue, create that
+        if let Some(panic_handler) = &panic_handler {
+            panic_handler(panic_info);
+        }
+    }));
 
     plugins
         .functional_actions
