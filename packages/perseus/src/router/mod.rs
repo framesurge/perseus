@@ -5,6 +5,7 @@ mod get_initial_view;
 #[cfg(target_arch = "wasm32")]
 mod get_subsequent_view;
 mod match_route;
+mod page_disposer;
 mod route_verdict;
 #[cfg(target_arch = "wasm32")]
 mod router_component;
@@ -24,3 +25,5 @@ pub use router_state::{RouterLoadState, RouterState};
 pub(crate) use get_initial_view::{get_initial_view, InitialView};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use get_subsequent_view::{get_subsequent_view, GetSubsequentViewProps, SubsequentView};
+
+pub use page_disposer::PageDisposer;

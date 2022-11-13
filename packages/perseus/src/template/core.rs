@@ -16,6 +16,7 @@ use crate::utils::AsyncFnReturn;
 use crate::utils::ComputedDuration;
 use crate::utils::PerseusDuration; /* We do actually want this in both the engine and the
                                     * browser */
+use crate::router::PageDisposer;
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
@@ -25,7 +26,6 @@ use crate::SsrNode;
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::header::HeaderMap;
-use sycamore::prelude::ScopeDisposer;
 use sycamore::prelude::Signal;
 use sycamore::prelude::{Scope, View};
 #[cfg(not(target_arch = "wasm32"))]
@@ -95,7 +95,7 @@ make_async_trait!(
 /// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
 /// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
 pub type TemplateFn<G> =
-    Box<dyn Fn(Scope, &Signal<View<G>>, &Signal<Vec<ScopeDisposer>>, PageProps) + Send + Sync>;
+    Box<dyn Fn(Scope, &Signal<View<G>>, PageDisposer, PageProps) + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
@@ -263,7 +263,7 @@ impl<G: Html> Template<G> {
         props: PageProps,
         cx: Scope<'a>,
         curr_view: &'a Signal<View<G>>,
-        scope_disposers: &'a Signal<Vec<ScopeDisposer<'a>>>,
+        scope_disposers: PageDisposer<'a>,
         // Taking a reference here involves a serious risk of runtime panics, unfortunately (it's
         // simpler to own it at this point, and we clone it anyway internally)
         translator: Translator,
@@ -297,12 +297,9 @@ impl<G: Html> Template<G> {
         provide_context_signal_replace(cx, translator.clone());
         // This signal is set by the user's function
         let curr_view = create_signal(cx, View::empty());
-        // And this one is used to set the scope disposer
-        // We don't need to clean this up, because the child scope will be removed
-        // properly when the `cx` this function was given is terminated
-        let scope_disposers = create_signal(cx, Vec::new());
-
-        (self.template)(cx, curr_view, scope_disposers, props);
+        // We don't need to clean up the page disposer, because the child scope will be
+        // removed properly when the `cx` this function was given is terminated
+        (self.template)(cx, curr_view, PageDisposer::new(cx), props);
 
         let view_rc = curr_view.take();
         // TODO Valid to unwrap here? (We should be the only reference holder, since we
@@ -580,10 +577,7 @@ impl<G: Html> Template<G> {
     /// Sycamore [`View`].
     pub fn template(
         mut self,
-        val: impl Fn(Scope, &Signal<View<G>>, &Signal<Vec<ScopeDisposer>>, PageProps)
-            + Send
-            + Sync
-            + 'static,
+        val: impl Fn(Scope, &Signal<View<G>>, PageDisposer, PageProps) + Send + Sync + 'static,
     ) -> Template<G> {
         self.template = Box::new(val);
         self

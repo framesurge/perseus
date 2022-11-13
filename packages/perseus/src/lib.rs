@@ -20,7 +20,6 @@ documentation, and this should mostly be used as a secondary reference source. Y
 
 #![deny(missing_docs)]
 // #![deny(missing_debug_implementations)] // TODO Pending sycamore-rs/sycamore#412
-#![forbid(unsafe_code)]
 #![recursion_limit = "256"] // TODO Do we need this anymore?
 
 /// Utilities for working with the engine-side, particularly with regards to

@@ -1,7 +1,7 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::i18n::detect_locale;
-use crate::router::match_route;
+use crate::router::{match_route, PageDisposer};
 use crate::router::{RouteInfo, RouteVerdict, RouterLoadState};
 use crate::template::{PageProps, RenderCtx, TemplateNodeType};
 use crate::utils::checkpoint;
@@ -27,7 +27,7 @@ pub(crate) fn get_initial_view<'a>(
     cx: Scope<'a>,
     path: String, // The full path, not the template path (but parsed a little)
     curr_view: &'a Signal<View<TemplateNodeType>>,
-    scope_disposers: &'a Signal<Vec<ScopeDisposer<'a>>>,
+    scope_disposers: PageDisposer<'a>,
 ) -> InitialView {
     let render_ctx = RenderCtx::from_ctx(cx);
     let router_state = &render_ctx.router;

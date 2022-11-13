@@ -6,7 +6,7 @@ use crate::{
         get_initial_view, get_subsequent_view, GetSubsequentViewProps, InitialView,
         RouterLoadState, SubsequentView,
     },
-    router::{PerseusRoute, RouteInfo, RouteVerdict},
+    router::{PageDisposer, PerseusRoute, RouteInfo, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
     utils::get_path_prefix_client,
     ErrorPages,
@@ -54,7 +54,7 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
 async fn set_view<'a>(
     cx: Scope<'a>,
     curr_view: &'a Signal<View<TemplateNodeType>>,
-    scope_disposers: &'a Signal<Vec<ScopeDisposer<'a>>>,
+    scope_disposers: PageDisposer<'a>,
     verdict: RouteVerdict<TemplateNodeType>,
 ) {
     checkpoint("router_entry");
@@ -155,9 +155,9 @@ pub(crate) fn perseus_router(
     )
     .set_ctx(cx);
 
-    // Create the two signals that handle routing in Perseus
+    // Create the two key things that handle routing in Perseus
     let curr_view = create_signal(cx, View::empty());
-    let scope_disposers = create_signal(cx, Vec::new()); // For disposing of the child scopes for pages
+    let page_disposer = PageDisposer::new(cx);
 
     // Get the current path, removing any base paths to avoid relative path locale
     // redirection loops (in previous versions of Perseus, we used Sycamore to
@@ -174,7 +174,7 @@ pub(crate) fn perseus_router(
     };
     // Prepare the initial view for hydration (because we have everything we need in
     // global window variables, this can be synchronous)
-    let initial_view = get_initial_view(cx, path.to_string(), curr_view, scope_disposers);
+    let initial_view = get_initial_view(cx, path.to_string(), curr_view, page_disposer);
     match initial_view {
         // Any errors are simply returned, it's our responsibility to display them
         InitialView::Error(view) => curr_view.set(view),
@@ -278,7 +278,7 @@ pub(crate) fn perseus_router(
                 None => return,
             };
             spawn_local_scoped(cx, async move {
-                set_view(cx, curr_view, scope_disposers, verdict.clone()).await;
+                set_view(cx, curr_view, page_disposer, verdict.clone()).await;
             });
         }
     });
@@ -367,7 +367,7 @@ pub(crate) fn perseus_router(
                         spawn_local_scoped(cx, async move {
                             let route = route.get();
                             let verdict = route.get_verdict();
-                            set_view(cx, curr_view, scope_disposers, verdict.clone()).await;
+                            set_view(cx, curr_view, page_disposer, verdict.clone()).await;
                         });
                     }
                 });

@@ -157,7 +157,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
             #vis fn #name<G: ::sycamore::prelude::Html>(
                 cx: ::sycamore::prelude::Scope,
                 curr_view: &::sycamore::prelude::Signal<::sycamore::prelude::View<G>>,
-                scope_disposers: &::sycamore::prelude::Signal<::std::vec::Vec<::sycamore::prelude::ScopeDisposer>>,
+                page_disposer: ::perseus::router::PageDisposer,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef, RxRef};
@@ -190,10 +190,11 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                     }
                 };
 
-                ::sycamore::reactive::create_child_scope(cx, |child_cx| {
+                let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
                     let view = #component_name(cx, props.to_ref_struct(cx));
                     curr_view.set(view);
                 });
+                // page_disposer.update(disposer);
             }
         }
     } else if fn_args.len() == 2 && is_reactive == false {
@@ -216,7 +217,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
             #vis fn #name<G: ::sycamore::prelude::Html>(
                 cx: ::sycamore::prelude::Scope,
                 curr_view: &::sycamore::prelude::Signal<::sycamore::prelude::View<G>>,
-                scope_disposers: &::sycamore::prelude::Signal<::std::vec::Vec<::sycamore::prelude::ScopeDisposer>>,
+                page_disposer: ::perseus::router::PageDisposer,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef, RxRef, MakeUnrx};
@@ -252,10 +253,11 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                 };
 
                 // The `.make_unrx()` function will just convert back to the user's type
-                ::sycamore::reactive::create_child_scope(cx, |child_cx| {
+                let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
                     let view = #component_name(cx, props.make_unrx());
                     curr_view.set(view);
                 });
+                // page_disposer.update(disposer);
             }
         }
     } else if fn_args.len() == 1 {
@@ -266,7 +268,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
             #vis fn #name<G: ::sycamore::prelude::Html>(
                 cx: ::sycamore::prelude::Scope,
                 curr_view: &::sycamore::prelude::Signal<::sycamore::prelude::View<G>>,
-                scope_disposers: &::sycamore::prelude::Signal<::std::vec::Vec<::sycamore::prelude::ScopeDisposer>>,
+                page_disposer: ::perseus::router::PageDisposer,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef};
@@ -283,10 +285,11 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                 let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
                 render_ctx.register_page_no_state(&props.path);
 
-                ::sycamore::reactive::create_child_scope(cx, |child_cx| {
+                let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
                     let view = #component_name(cx);
                     curr_view.set(view);
                 });
+                // page_disposer.update(disposer);
             }
         }
     } else {

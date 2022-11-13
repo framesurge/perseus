@@ -17,11 +17,11 @@ pub(crate) struct GetSubsequentViewProps<'a> {
     /// The `Signal` for the current view, which will imperatively set by the
     /// user's template function (due to the use of child scopes).
     pub curr_view: &'a Signal<View<TemplateNodeType>>,
-    /// The scope disposers for pages, which will be dumped as necessary.
+    /// The scope disposer for pages, which will be dumped as necessary.
     ///
     /// Note that error pages are rendered on the app-level scope, so we don't
-    /// have to worry about them with these.
-    pub scope_disposers: &'a Signal<Vec<ScopeDisposer<'a>>>,
+    /// have to worry about them with this.
+    pub scope_disposers: PageDisposer<'a>,
     /// The path we're rendering for (not the template path, the full path,
     /// though parsed a little).
     pub path: String,
