@@ -24,7 +24,11 @@ pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
                     if let Some(plugin_data) = plugin_data.downcast_ref::<TestPluginData>() {
                         let about_page_greeting = plugin_data.about_page_greeting.to_string();
                         vec![Template::new("about").template(
-                            move |cx, _| sycamore::view! { cx,  p { (about_page_greeting) } },
+                            // This is the kind of weird thing we have to do if we don't use the
+                            // macros
+                            move |cx, curr_view, _, _| {
+                                curr_view.set(sycamore::view! { cx,  p { (about_page_greeting) } })
+                            },
                         )]
                     } else {
                         unreachable!()

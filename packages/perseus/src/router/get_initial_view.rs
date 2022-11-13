@@ -23,9 +23,11 @@ use web_sys::Element;
 /// Note that this will automatically update the router state just before it
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
-pub(crate) fn get_initial_view(
-    cx: Scope,
+pub(crate) fn get_initial_view<'a>(
+    cx: Scope<'a>,
     path: String, // The full path, not the template path (but parsed a little)
+    curr_view: &'a Signal<View<TemplateNodeType>>,
+    scope_disposers: &'a Signal<Vec<ScopeDisposer<'a>>>,
 ) -> InitialView {
     let render_ctx = RenderCtx::from_ctx(cx);
     let router_state = &render_ctx.router;
@@ -54,7 +56,7 @@ pub(crate) fn get_initial_view(
             // Since we're not requesting anything from the server, we don't need to worry about
             // whether it's an incremental match or not
             was_incremental_match: _,
-        }) => InitialView::View({
+        }) => {
             let path_with_locale = match locale.as_str() {
                 "xx-XX" => path.clone(),
                 locale => format!("{}/{}", locale, &path),
@@ -93,7 +95,7 @@ pub(crate) fn get_initial_view(
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                 path: path_with_locale.clone(),
                             });
-                            return InitialView::View(error_pages.get_view_and_render_head(
+                            return InitialView::Error(error_pages.get_view_and_render_head(
                                 cx,
                                 "*",
                                 500,
@@ -110,7 +112,7 @@ pub(crate) fn get_initial_view(
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                 path: path_with_locale.clone(),
                             });
-                            return InitialView::View(match &err {
+                            return InitialView::Error(match &err {
                                 // These errors happen because we couldn't get a translator, so they
                                 // certainly don't get one
                                 ClientError::FetchError(FetchError::NotOk {
@@ -171,8 +173,17 @@ pub(crate) fn get_initial_view(
                         template_name: path,
                         path: path_with_locale,
                     });
-                    // Return the actual template, for rendering/hydration
-                    template.render_for_template_client(page_props, cx, translator)
+                    // Render the actual template to `curr_view` (done imperatively due to child
+                    // scopes)
+                    template.render_for_template_client(
+                        page_props,
+                        cx,
+                        curr_view,
+                        scope_disposers,
+                        translator,
+                    );
+
+                    InitialView::Success
                 }
                 // We have an error that the server sent down, so we should just return that error
                 // view
@@ -182,7 +193,7 @@ pub(crate) fn get_initial_view(
                         path: path_with_locale.clone(),
                     });
                     // We don't need to replace the head, because the server's handled that for us
-                    error_pages.get_view(cx, &url, status, &err, None)
+                    InitialView::Error(error_pages.get_view(cx, &url, status, &err, None))
                 }
                 // The entire purpose of this function is to work with the initial state, so if this
                 // is true, then we have a problem
@@ -194,17 +205,17 @@ pub(crate) fn get_initial_view(
                     router_state.set_load_state(RouterLoadState::ErrorLoaded {
                         path: path_with_locale.clone(),
                     });
-                    error_pages.get_view_and_render_head(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None)
+                    InitialView::Error(error_pages.get_view_and_render_head(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None))
                 }
             }
-        }),
+        }
         // If the user is using i18n, then they'll want to detect the locale on any paths
         // missing a locale Those all go to the same system that redirects to the
         // appropriate locale Note that `container` doesn't exist for this scenario
         RouteVerdict::LocaleDetection(path) => {
             InitialView::Redirect(detect_locale(path.clone(), &locales))
         }
-        RouteVerdict::NotFound => InitialView::View({
+        RouteVerdict::NotFound => InitialView::Error({
             checkpoint("not_found");
             if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
                 router_state.set_load_state(RouterLoadState::ErrorLoaded { path: url.clone() });
@@ -232,8 +243,14 @@ pub(crate) fn get_initial_view(
 /// A representation of the possible outcomes of getting the view for the
 /// initial load.
 pub(crate) enum InitialView {
-    /// A view is available to be rendered/hydrated.
-    View(View<TemplateNodeType>),
+    /// The page has been successfully rendered and sent through the given
+    /// signal.
+    ///
+    /// Due to the use of child scopes, we can't just return a actual view,
+    /// this has to be done imperatively.
+    Success,
+    /// An error view has been produced, which should replace the current view.
+    Error(View<TemplateNodeType>),
     /// We need to redirect somewhere else, and the path to redirect to is
     /// attached.
     ///
