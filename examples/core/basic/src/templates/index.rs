@@ -1,7 +1,9 @@
-use perseus::{Html, RenderFnResultWithCause, SsrNode, Template};
-use sycamore::prelude::{view, Scope, View};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
+use sycamore::prelude::*;
 
-#[perseus::make_rx(IndexPageStateRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "IndexPageStateRx")]
 pub struct IndexPageState {
     pub greeting: String,
 }
@@ -29,11 +31,32 @@ pub fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
 }
 
 #[perseus::build_state]
-pub async fn get_build_state(
-    _path: String,
-    _locale: String,
-) -> RenderFnResultWithCause<IndexPageState> {
-    Ok(IndexPageState {
-        greeting: "Hello World!".to_string(),
-    })
+pub fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<IndexPageState> {
+    let name: String = get_name()
+        .await?
+        .into_iter()
+        .next()
+        .map(|test| test.thing)
+        .unwrap()?
+        .to_string();
+
+    Ok(IndexPageState { greeting: name })
 }
+
+async fn get_name() -> std::io::Result<Vec<Test>> {
+    todo!()
+}
+
+struct Test {
+    thing: std::io::Result<String>,
+}
+
+// #[perseus::build_state]
+// pub async fn get_build_state(
+//     _path: String,
+//     _locale: String,
+// ) -> RenderFnResultWithCause<IndexPageState> {
+//     Ok(IndexPageState {
+//         greeting: "Hello World!".to_string(),
+//     })
+// }

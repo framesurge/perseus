@@ -80,7 +80,7 @@ pub type Request = HttpRequest<()>;
 #[cfg(feature = "macros")]
 pub use perseus_macro::{
     amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
-    global_build_state, head, main, main_export, make_rx, request_state, set_headers,
+    global_build_state, head, main, main_export, ReactiveState, request_state, set_headers,
     should_revalidate, template, template_rx, test, UnreactiveState,
 };
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
@@ -123,7 +123,7 @@ pub mod prelude {
     #[cfg(feature = "macros")]
     pub use crate::{
         amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
-        global_build_state, head, main, main_export, make_rx, request_state, set_headers,
+        global_build_state, head, main, main_export, ReactiveState, request_state, set_headers,
         should_revalidate, template, template_rx, test, UnreactiveState,
     };
     #[cfg(feature = "i18n")]

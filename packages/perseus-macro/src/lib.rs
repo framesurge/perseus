@@ -18,11 +18,13 @@ mod state_fns;
 mod template;
 mod test;
 
-use darling::FromMeta;
+use darling::{FromDeriveInput, FromMeta, ast::Data};
 use proc_macro::TokenStream;
 use quote::quote;
 use state_fns::StateFnType;
 use syn::{DeriveInput, ItemStruct, Path};
+
+use crate::rx_state::ReactiveStateDeriveInput;
 
 /// Annotates functions used for generating state at build time to support
 /// automatic serialization/deserialization of app state and client/server
@@ -340,12 +342,23 @@ pub fn engine_main(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// // Our own derivations still remain
 /// let _new_2 = new.clone();
 /// ```
-#[proc_macro_attribute]
-pub fn make_rx(args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as ItemStruct);
-    let name = syn::parse_macro_input!(args as syn::Ident);
+#[proc_macro_derive(ReactiveState, attributes(rx))]
+pub fn make_rx(input: TokenStream) -> TokenStream {
+    // let input_helpers = input.clone();
+    // let derive = ReactiveStateDerive::from_derive_input(&syn::parse_macro_input!(input_helpers as DeriveInput)).unwrap();
+    // let parsed = syn::parse_macro_input!(input as ItemStruct);
+    // let helpers = match derive.data {
+    //     Data::Struct(fields) => fields.fields,
+    //     // This is unreachable because we've already parsed the input as `ItemStruct`
+    //     Data::Enum(_) => unreachable!(),
+    // };
 
-    rx_state::make_rx_impl(parsed, name).into()
+    let input = match ReactiveStateDeriveInput::from_derive_input(&syn::parse_macro_input!(input as DeriveInput)) {
+        Ok(input) => input,
+        Err(err) => return err.write_errors().into(),
+    };
+
+    rx_state::make_rx_impl(input).into()
 }
 
 /// Marks the annotated code as only to be run as part of the engine (the
