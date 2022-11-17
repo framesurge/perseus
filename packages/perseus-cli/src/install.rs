@@ -141,11 +141,15 @@ impl Tools {
         if let (ToolStatus::Available(wb_path), ToolStatus::Available(wo_path)) =
             (&wb_status, &wo_status)
         {
+            #[cfg(unix)]
+            let (wb_path, wo_path) = (wb_path.to_string(), wo_path.to_string());
+            #[cfg(windows)]
+            let (wb_path, wo_path) = (format!("& \'{}\'", wb_path), format!("& \'{}\'", wo_path));
             Ok(Tools {
                 cargo_engine: global_opts.cargo_engine_path.clone(),
                 cargo_browser: global_opts.cargo_browser_path.clone(),
-                wasm_bindgen: wb_path.to_string(),
-                wasm_opt: wo_path.to_string(),
+                wasm_bindgen: wb_path,
+                wasm_opt: wo_path,
             })
         } else {
             // We need to install some things, which may take some time
@@ -167,12 +171,16 @@ impl Tools {
             // If we're here, we have the paths
             succeed_spinner(&spinner, &spinner_msg);
             let paths = res.unwrap();
+            #[cfg(unix)]
+            let (wb_path, wo_path) = paths;
+            #[cfg(windows)]
+            let (wb_path, wo_path) = (format!("& \'{}\'", paths.0), format!("& \'{}\'", paths.1));
 
             Ok(Tools {
                 cargo_engine: global_opts.cargo_engine_path.clone(),
                 cargo_browser: global_opts.cargo_browser_path.clone(),
-                wasm_bindgen: paths.0,
-                wasm_opt: paths.1,
+                wasm_bindgen: wb_path,
+                wasm_opt: wo_path,
             })
         }
     }
