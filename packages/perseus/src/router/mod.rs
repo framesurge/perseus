@@ -6,11 +6,11 @@ mod get_initial_view;
 mod get_subsequent_view;
 mod match_route;
 mod page_disposer;
+mod route_manager;
 mod route_verdict;
 #[cfg(target_arch = "wasm32")]
 mod router_component;
 mod router_state;
-mod route_manager;
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) use app_route::PerseusRoute;

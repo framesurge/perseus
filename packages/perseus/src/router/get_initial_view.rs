@@ -174,12 +174,7 @@ pub(crate) fn get_initial_view<'a>(
                     });
                     // Render the actual template to the root (done imperatively due to child
                     // scopes)
-                    template.render_for_template_client(
-                        page_props,
-                        cx,
-                        route_manager,
-                        translator,
-                    );
+                    template.render_for_template_client(page_props, cx, route_manager, translator);
 
                     InitialView::Success
                 }

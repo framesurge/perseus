@@ -154,9 +154,9 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
         };
         let name_string = name.to_string();
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(
-                cx: ::sycamore::prelude::Scope,
-                route_manager: ::perseus::router::RouteManager<G>,
+            #vis fn #name<'__perseus_cx, G: ::sycamore::prelude::Html>(
+                cx: ::sycamore::prelude::Scope<'__perseus_cx>,
+                mut route_manager: ::perseus::router::RouteManager<'__perseus_cx, G>,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef, RxRef};
@@ -190,13 +190,13 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                 };
 
                 let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
-                    let view = #component_name(cx, props.to_ref_struct(cx));
+                    let view = #component_name(child_cx, props.to_ref_struct(cx));
                     route_manager.update_view(view);
                 });
-                // page_disposer.update(disposer);
+                route_manager.update_disposer(disposer);
             }
         }
-    } else if fn_args.len() == 2 && is_reactive == false {
+    } else if fn_args.len() == 2 && !is_reactive {
         // This template takes state that isn't reactive (but it must implement
         // `UnreactiveState`) Get the argument for the reactive scope
         let cx_arg = &fn_args[0];
@@ -213,9 +213,9 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
         };
         let name_string = name.to_string();
         quote! {
-            #vis fn #name<G: ::sycamore::prelude::Html>(
-                cx: ::sycamore::prelude::Scope,
-                route_manager: ::perseus::router::RouteManager<G>,
+            #vis fn #name<'__perseus_cx, G: ::sycamore::prelude::Html>(
+                cx: ::sycamore::prelude::Scope<'__perseus_cx>,
+                mut route_manager: ::perseus::router::RouteManager<'__perseus_cx, G>,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef, RxRef, MakeUnrx};
@@ -252,10 +252,10 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
 
                 // The `.make_unrx()` function will just convert back to the user's type
                 let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
-                    let view = #component_name(cx, props.make_unrx());
+                    let view = #component_name(child_cx, props.make_unrx());
                     route_manager.update_view(view);
                 });
-                // page_disposer.update(disposer);
+                route_manager.update_disposer(disposer);
             }
         }
     } else if fn_args.len() == 1 {
@@ -264,9 +264,9 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
         // There are no arguments except for the scope
         quote! {
             // BUG Need to enforce that `cx` and `route_manager` have the same lifetime...
-            #vis fn #name<G: ::sycamore::prelude::Html>(
-                cx: ::sycamore::prelude::Scope,
-                mut route_manager: ::perseus::router::RouteManager<G>,
+            #vis fn #name<'__perseus_cx, G: ::sycamore::prelude::Html>(
+                cx: ::sycamore::prelude::Scope<'__perseus_cx>,
+                mut route_manager: ::perseus::router::RouteManager<'__perseus_cx, G>,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef};
@@ -284,7 +284,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                 render_ctx.register_page_no_state(&props.path);
 
                 let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
-                    let view = #component_name(cx);
+                    let view = #component_name(child_cx);
                     route_manager.update_view(view);
                 });
                 route_manager.update_disposer(disposer);

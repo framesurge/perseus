@@ -16,6 +16,7 @@ use crate::utils::AsyncFnReturn;
 use crate::utils::ComputedDuration;
 use crate::utils::PerseusDuration; /* We do actually want this in both the engine and the
                                     * browser */
+use crate::router::RouteManager;
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
@@ -30,7 +31,6 @@ use sycamore::prelude::Scope;
 use sycamore::prelude::View;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
-use crate::router::RouteManager;
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error
@@ -90,14 +90,13 @@ make_async_trait!(
     request_state: String
 );
 
-
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've
 /// defined state for your page, it's safe to `.unwrap()` the given `Option`
 /// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
 /// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
 pub type TemplateFn<G> =
-    Box<dyn Fn(Scope, RouteManager<G>, PageProps) + Send + Sync>;
+    Box<dyn for<'a> Fn(Scope<'a>, RouteManager<'a, G>, PageProps) + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
@@ -575,10 +574,10 @@ impl<G: Html> Template<G> {
     /// some state (use the `#[perseus::template]` macro for serialization
     /// convenience) and/or some global state, and then it must return a
     /// Sycamore [`View`].
-    pub fn template(
-        mut self,
-        val: impl Fn(Scope, RouteManager<G>, PageProps) + Send + Sync + 'static,
-    ) -> Template<G> {
+    pub fn template<F>(mut self, val: F) -> Template<G>
+    where
+        F: for<'a> Fn(Scope<'a>, RouteManager<'a, G>, PageProps) + Send + Sync + 'static,
+    {
         self.template = Box::new(val);
         self
     }

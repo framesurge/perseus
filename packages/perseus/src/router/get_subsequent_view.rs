@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::page_data::PageDataPartial;
-use crate::router::{RouteVerdict, RouterLoadState, RouteManager};
+use crate::router::{RouteManager, RouteVerdict, RouterLoadState};
 use crate::state::PssContains;
 use crate::template::{PageProps, RenderCtx, Template, TemplateNodeType};
 use crate::utils::checkpoint;

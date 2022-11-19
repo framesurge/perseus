@@ -6,7 +6,7 @@ use crate::{
         get_initial_view, get_subsequent_view, GetSubsequentViewProps, InitialView,
         RouterLoadState, SubsequentView,
     },
-    router::{RouteManager, PerseusRoute, RouteInfo, RouteVerdict},
+    router::{PerseusRoute, RouteInfo, RouteManager, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
     utils::get_path_prefix_client,
     ErrorPages,
@@ -15,8 +15,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
     prelude::{
-        component, create_effect, create_signal, on_mount, view, ReadSignal, Scope,
-        View, create_ref,
+        component, create_effect, create_ref, create_signal, on_mount, view, ReadSignal, Scope,
+        View,
     },
     Prop,
 };

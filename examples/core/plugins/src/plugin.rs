@@ -26,8 +26,10 @@ pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
                         vec![Template::new("about").template(
                             // This is the kind of weird thing we have to do if we don't use the
                             // macros
-                            move |cx, curr_view, _, _| {
-                                curr_view.set(sycamore::view! { cx,  p { (about_page_greeting) } })
+                            move |cx, route_manager, _| {
+                                route_manager.update_view(
+                                    sycamore::view! { cx,  p { (about_page_greeting) } },
+                                )
                             },
                         )]
                     } else {
