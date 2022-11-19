@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::page_data::PageDataPartial;
-use crate::router::{RouteVerdict, RouterLoadState};
+use crate::router::{RouteVerdict, RouterLoadState, RouteManager};
 use crate::state::PssContains;
 use crate::template::{PageProps, RenderCtx, Template, TemplateNodeType};
 use crate::utils::checkpoint;
@@ -14,14 +14,8 @@ use sycamore::prelude::*;
 pub(crate) struct GetSubsequentViewProps<'a> {
     /// The app's reactive scope.
     pub cx: Scope<'a>,
-    /// The `Signal` for the current view, which will imperatively set by the
-    /// user's template function (due to the use of child scopes).
-    pub curr_view: &'a Signal<View<TemplateNodeType>>,
-    /// The scope disposer for pages, which will be dumped as necessary.
-    ///
-    /// Note that error pages are rendered on the app-level scope, so we don't
-    /// have to worry about them with this.
-    pub scope_disposers: PageDisposer<'a>,
+    /// The app's route manager.
+    pub route_manager: &'a RouteManager<'a, TemplateNodeType>,
     /// The path we're rendering for (not the template path, the full path,
     /// though parsed a little).
     pub path: String,
@@ -52,8 +46,7 @@ pub(crate) struct GetSubsequentViewProps<'a> {
 pub(crate) async fn get_subsequent_view(
     GetSubsequentViewProps {
         cx,
-        curr_view,
-        scope_disposers,
+        route_manager,
         path,
         template,
         was_incremental_match,
@@ -271,7 +264,7 @@ pub(crate) async fn get_subsequent_view(
         path: path_with_locale,
     });
     // Now return the view that should be rendered
-    template.render_for_template_client(page_props, cx, curr_view, scope_disposers, translator);
+    template.render_for_template_client(page_props, cx, route_manager, translator);
     SubsequentView::Success
 }
 

@@ -6,7 +6,7 @@ use crate::{
         get_initial_view, get_subsequent_view, GetSubsequentViewProps, InitialView,
         RouterLoadState, SubsequentView,
     },
-    router::{PageDisposer, PerseusRoute, RouteInfo, RouteVerdict},
+    router::{RouteManager, PerseusRoute, RouteInfo, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
     utils::get_path_prefix_client,
     ErrorPages,
@@ -15,8 +15,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
     prelude::{
-        component, create_effect, create_signal, on_mount, view, ReadSignal, Scope, ScopeDisposer,
-        Signal, View,
+        component, create_effect, create_signal, on_mount, view, ReadSignal, Scope,
+        View, create_ref,
     },
     Prop,
 };
@@ -53,8 +53,7 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
 /// will imperatively do so.
 async fn set_view<'a>(
     cx: Scope<'a>,
-    curr_view: &'a Signal<View<TemplateNodeType>>,
-    scope_disposers: PageDisposer<'a>,
+    route_manager: &'a RouteManager<'a, TemplateNodeType>,
     verdict: RouteVerdict<TemplateNodeType>,
 ) {
     checkpoint("router_entry");
@@ -67,8 +66,7 @@ async fn set_view<'a>(
         }) => {
             let subsequent_view = get_subsequent_view(GetSubsequentViewProps {
                 cx,
-                curr_view,
-                scope_disposers,
+                route_manager,
                 path: path.clone(),
                 template: template.clone(),
                 was_incremental_match: *was_incremental_match,
@@ -78,7 +76,7 @@ async fn set_view<'a>(
             .await;
             // Display any errors now
             if let SubsequentView::Error(view) = subsequent_view {
-                curr_view.set(view);
+                route_manager.update_view(view);
             }
         }
         // For subsequent loads, this should only be possible if the dev forgot `link!()`
@@ -95,7 +93,7 @@ async fn set_view<'a>(
             checkpoint("not_found");
             // TODO Update the router state here (we need a path though...)
             // This function only handles subsequent loads, so this is all we have
-            curr_view.set(render_ctx.error_pages.get_view_and_render_head(
+            route_manager.update_view(render_ctx.error_pages.get_view_and_render_head(
                 cx,
                 "",
                 404,
@@ -155,9 +153,9 @@ pub(crate) fn perseus_router(
     )
     .set_ctx(cx);
 
-    // Create the two key things that handle routing in Perseus
-    let curr_view = create_signal(cx, View::empty());
-    let page_disposer = PageDisposer::new(cx);
+    // Create the route manager (note: this is cheap to clone)
+    let route_manager = RouteManager::new(cx);
+    let route_manager = create_ref(cx, route_manager);
 
     // Get the current path, removing any base paths to avoid relative path locale
     // redirection loops (in previous versions of Perseus, we used Sycamore to
@@ -174,10 +172,10 @@ pub(crate) fn perseus_router(
     };
     // Prepare the initial view for hydration (because we have everything we need in
     // global window variables, this can be synchronous)
-    let initial_view = get_initial_view(cx, path.to_string(), curr_view, page_disposer);
+    let initial_view = get_initial_view(cx, path.to_string(), route_manager);
     match initial_view {
         // Any errors are simply returned, it's our responsibility to display them
-        InitialView::Error(view) => curr_view.set(view),
+        InitialView::Error(view) => route_manager.update_view(view),
         // If we need to redirect, then we'll create a fake view that will just execute that code
         // (which we can guarantee to run after the router is ready)
         InitialView::Redirect(dest) => {
@@ -186,7 +184,7 @@ pub(crate) fn perseus_router(
                 sycamore_router::navigate_replace(&dest);
             });
         }
-        // A successful render has already been displayed to `curr_view`
+        // A successful render has already been displayed to the root
         InitialView::Success => (),
     };
 
@@ -278,7 +276,7 @@ pub(crate) fn perseus_router(
                 None => return,
             };
             spawn_local_scoped(cx, async move {
-                set_view(cx, curr_view, page_disposer, verdict.clone()).await;
+                set_view(cx, route_manager, verdict.clone()).await;
             });
         }
     });
@@ -367,7 +365,7 @@ pub(crate) fn perseus_router(
                         spawn_local_scoped(cx, async move {
                             let route = route.get();
                             let verdict = route.get_verdict();
-                            set_view(cx, curr_view, page_disposer, verdict.clone()).await;
+                            set_view(cx, route_manager, verdict.clone()).await;
                         });
                     }
                 });
@@ -377,7 +375,7 @@ pub(crate) fn perseus_router(
                 // The main reason for this is that the router only intercepts click events from its children
 
                 view! { cx,
-                        (*curr_view.get())
+                        (*route_manager.view.get())
                 }
             }
         )

@@ -70,6 +70,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 
     // This top-level context is what we use for everything, allowing page state to
     // be registered and stored for the lifetime of the app
+    // Note: root lifetime creation occurs here
     #[cfg(feature = "hydrate")]
     sycamore::hydrate_to(move |cx| perseus_router(cx, router_props), &root);
     #[cfg(not(feature = "hydrate"))]

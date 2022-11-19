@@ -16,7 +16,6 @@ use crate::utils::AsyncFnReturn;
 use crate::utils::ComputedDuration;
 use crate::utils::PerseusDuration; /* We do actually want this in both the engine and the
                                     * browser */
-use crate::router::PageDisposer;
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
@@ -26,10 +25,12 @@ use crate::SsrNode;
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::header::HeaderMap;
-use sycamore::prelude::Signal;
-use sycamore::prelude::{Scope, View};
+use sycamore::prelude::Scope;
+#[cfg(not(target_arch = "wasm32"))]
+use sycamore::prelude::View;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
+use crate::router::RouteManager;
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error
@@ -89,13 +90,14 @@ make_async_trait!(
     request_state: String
 );
 
+
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've
 /// defined state for your page, it's safe to `.unwrap()` the given `Option`
 /// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
 /// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
 pub type TemplateFn<G> =
-    Box<dyn Fn(Scope, &Signal<View<G>>, PageDisposer, PageProps) + Send + Sync>;
+    Box<dyn Fn(Scope, RouteManager<G>, PageProps) + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
@@ -229,7 +231,7 @@ impl<G: Html> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_, _, _, _| {}),
+            template: Box::new(|_, _, _| {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(not(target_arch = "wasm32"))]
             head: Box::new(|cx, _| sycamore::view! { cx, }),
@@ -262,8 +264,7 @@ impl<G: Html> Template<G> {
         &self,
         props: PageProps,
         cx: Scope<'a>,
-        curr_view: &'a Signal<View<G>>,
-        scope_disposers: PageDisposer<'a>,
+        route_manager: &'a RouteManager<'a, G>,
         // Taking a reference here involves a serious risk of runtime panics, unfortunately (it's
         // simpler to own it at this point, and we clone it anyway internally)
         translator: Translator,
@@ -273,7 +274,7 @@ impl<G: Html> Template<G> {
         // we have to do is provide the translator, replacing whatever is present
         provide_context_signal_replace(cx, translator);
 
-        (self.template)(cx, curr_view, scope_disposers, props);
+        (self.template)(cx, route_manager.clone(), props);
     }
     /// Executes the user-given function that renders the template on the
     /// server-side ONLY. This automatically initializes an isolated global
@@ -287,7 +288,6 @@ impl<G: Html> Template<G> {
         translator: &Translator,
     ) -> View<G> {
         use std::rc::Rc;
-        use sycamore::prelude::create_signal;
 
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
@@ -295,13 +295,13 @@ impl<G: Html> Template<G> {
         let _ = RenderCtx::server(global_state).set_ctx(cx);
         // And now provide a translator separately
         provide_context_signal_replace(cx, translator.clone());
-        // This signal is set by the user's function
-        let curr_view = create_signal(cx, View::empty());
+        // Similarly, we can invent a route manager on the spot
+        let route_manager = RouteManager::new(cx);
         // We don't need to clean up the page disposer, because the child scope will be
         // removed properly when the `cx` this function was given is terminated
-        (self.template)(cx, curr_view, PageDisposer::new(cx), props);
+        (self.template)(cx, route_manager.clone(), props);
 
-        let view_rc = curr_view.take();
+        let view_rc = route_manager.view.take();
         // TODO Valid to unwrap here? (We should be the only reference holder, since we
         // created it...)
         Rc::try_unwrap(view_rc).unwrap()
@@ -577,7 +577,7 @@ impl<G: Html> Template<G> {
     /// Sycamore [`View`].
     pub fn template(
         mut self,
-        val: impl Fn(Scope, &Signal<View<G>>, PageDisposer, PageProps) + Send + Sync + 'static,
+        val: impl Fn(Scope, RouteManager<G>, PageProps) + Send + Sync + 'static,
     ) -> Template<G> {
         self.template = Box::new(val);
         self

@@ -156,8 +156,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(
                 cx: ::sycamore::prelude::Scope,
-                curr_view: &::sycamore::prelude::Signal<::sycamore::prelude::View<G>>,
-                page_disposer: ::perseus::router::PageDisposer,
+                route_manager: ::perseus::router::RouteManager<G>,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef, RxRef};
@@ -192,7 +191,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
 
                 let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
                     let view = #component_name(cx, props.to_ref_struct(cx));
-                    curr_view.set(view);
+                    route_manager.update_view(view);
                 });
                 // page_disposer.update(disposer);
             }
@@ -216,8 +215,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
         quote! {
             #vis fn #name<G: ::sycamore::prelude::Html>(
                 cx: ::sycamore::prelude::Scope,
-                curr_view: &::sycamore::prelude::Signal<::sycamore::prelude::View<G>>,
-                page_disposer: ::perseus::router::PageDisposer,
+                route_manager: ::perseus::router::RouteManager<G>,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef, RxRef, MakeUnrx};
@@ -255,7 +253,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                 // The `.make_unrx()` function will just convert back to the user's type
                 let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
                     let view = #component_name(cx, props.make_unrx());
-                    curr_view.set(view);
+                    route_manager.update_view(view);
                 });
                 // page_disposer.update(disposer);
             }
@@ -265,10 +263,10 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
         let cx_arg = &fn_args[0];
         // There are no arguments except for the scope
         quote! {
+            // BUG Need to enforce that `cx` and `route_manager` have the same lifetime...
             #vis fn #name<G: ::sycamore::prelude::Html>(
                 cx: ::sycamore::prelude::Scope,
-                curr_view: &::sycamore::prelude::Signal<::sycamore::prelude::View<G>>,
-                page_disposer: ::perseus::router::PageDisposer,
+                mut route_manager: ::perseus::router::RouteManager<G>,
                 props: ::perseus::template::PageProps
             ) {
                 use ::perseus::state::{MakeRx, MakeRxRef};
@@ -287,9 +285,9 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
 
                 let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
                     let view = #component_name(cx);
-                    curr_view.set(view);
+                    route_manager.update_view(view);
                 });
-                // page_disposer.update(disposer);
+                route_manager.update_disposer(disposer);
             }
         }
     } else {
