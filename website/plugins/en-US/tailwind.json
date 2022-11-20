@@ -1,0 +1,7 @@
+{
+  "name": "Tailwind Plugin",
+  "description": "Automatically builds Tailwind CSS during your build process.",
+  "author": "wingertge",
+  "url": "https://github.com/wingertge/perseus-tailwind",
+  "trusted": false
+}
