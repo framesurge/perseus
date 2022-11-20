@@ -3,7 +3,7 @@ members = [
 	"packages/*",
     "examples/core/*",
     "examples/demos/*",
-    "examples/comprehensive/*",
+    # "examples/comprehensive/*",
     "examples/website/*",
     "website",
     # We have the CLI subcrates as workspace members so we can actively develop on them

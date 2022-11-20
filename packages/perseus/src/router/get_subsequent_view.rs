@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::page_data::PageDataPartial;
-use crate::router::{RouteVerdict, RouterLoadState};
+use crate::router::{RouteManager, RouteVerdict, RouterLoadState};
 use crate::state::PssContains;
 use crate::template::{PageProps, RenderCtx, Template, TemplateNodeType};
 use crate::utils::checkpoint;
@@ -14,6 +14,8 @@ use sycamore::prelude::*;
 pub(crate) struct GetSubsequentViewProps<'a> {
     /// The app's reactive scope.
     pub cx: Scope<'a>,
+    /// The app's route manager.
+    pub route_manager: &'a RouteManager<'a, TemplateNodeType>,
     /// The path we're rendering for (not the template path, the full path,
     /// though parsed a little).
     pub path: String,
@@ -44,13 +46,14 @@ pub(crate) struct GetSubsequentViewProps<'a> {
 pub(crate) async fn get_subsequent_view(
     GetSubsequentViewProps {
         cx,
+        route_manager,
         path,
         template,
         was_incremental_match,
         locale,
         route_verdict,
     }: GetSubsequentViewProps<'_>,
-) -> View<TemplateNodeType> {
+) -> SubsequentView {
     let render_ctx = RenderCtx::from_ctx(cx);
     let router_state = &render_ctx.router;
     let translations_manager = &render_ctx.translations_manager;
@@ -187,7 +190,7 @@ pub(crate) async fn get_subsequent_view(
     // Any errors will be prepared error pages ready for return
     let page_data = match page_data {
         Ok(page_data) => page_data,
-        Err(view) => return view,
+        Err(view) => return SubsequentView::Error(view),
     };
 
     // Interpolate the metadata directly into the document's `<head>`
@@ -208,35 +211,41 @@ pub(crate) async fn get_subsequent_view(
                 // These errors happen because we couldn't get a translator, so they certainly don't
                 // get one
                 ClientError::FetchError(FetchError::NotOk { url, status, .. }) => {
-                    return error_pages.get_view_and_render_head(
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
                         cx,
                         url,
                         *status,
                         &fmt_err(&err),
                         None,
-                    )
+                    ))
                 }
                 ClientError::FetchError(FetchError::SerFailed { url, .. }) => {
-                    return error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None)
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
+                        cx,
+                        url,
+                        500,
+                        &fmt_err(&err),
+                        None,
+                    ))
                 }
                 ClientError::LocaleNotSupported { locale } => {
-                    return error_pages.get_view_and_render_head(
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
                         cx,
                         &format!("/{}/...", locale),
                         404,
                         &fmt_err(&err),
                         None,
-                    )
+                    ))
                 }
                 // No other errors should be returned, but we'll give any a 400
                 _ => {
-                    return error_pages.get_view_and_render_head(
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
                         cx,
                         &format!("/{}/...", locale),
                         400,
                         &fmt_err(&err),
                         None,
-                    )
+                    ))
                 }
             }
         }
@@ -255,5 +264,13 @@ pub(crate) async fn get_subsequent_view(
         path: path_with_locale,
     });
     // Now return the view that should be rendered
-    template.render_for_template_client(page_props, cx, translator)
+    template.render_for_template_client(page_props, cx, route_manager, translator);
+    SubsequentView::Success
+}
+
+pub(crate) enum SubsequentView {
+    /// The page view *has been* rendered *and* displayed.
+    Success,
+    /// An error view was rendered, and shoudl now be displayed.
+    Error(View<TemplateNodeType>),
 }

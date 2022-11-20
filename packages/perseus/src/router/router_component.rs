@@ -3,9 +3,10 @@ use crate::{
     i18n::detect_locale,
     i18n::Locales,
     router::{
-        get_initial_view, get_subsequent_view, GetSubsequentViewProps, InitialView, RouterLoadState,
+        get_initial_view, get_subsequent_view, GetSubsequentViewProps, InitialView,
+        RouterLoadState, SubsequentView,
     },
-    router::{PerseusRoute, RouteInfo, RouteVerdict},
+    router::{PerseusRoute, RouteInfo, RouteManager, RouteVerdict},
     template::{RenderCtx, TemplateMap, TemplateNodeType},
     utils::get_path_prefix_client,
     ErrorPages,
@@ -14,7 +15,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
     prelude::{
-        component, create_effect, create_signal, on_mount, view, ReadSignal, Scope, Signal, View,
+        component, create_effect, create_ref, create_signal, on_mount, view, ReadSignal, Scope,
+        View,
     },
     Prop,
 };
@@ -39,9 +41,9 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
 "#;
 
 /// Get the view we should be rendering at the moment, based on a route verdict.
-/// This should be called on every route change to update the page. This doesn't
-/// actually render the view, it just returns it for rendering. Note that this
-/// may return error pages.
+/// This should be called on every route change to update the page. This will
+/// return the view it returns, and may add to the scope disposers. Note that
+/// this may return error pages.
 ///
 /// This function is designed for managing subsequent views only, since the
 /// router component should be instantiated *after* the initial view
@@ -49,10 +51,11 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
 ///
 /// If the page needs to redirect to a particular locale, then this function
 /// will imperatively do so.
-async fn get_view(
-    cx: Scope<'_>,
+async fn set_view<'a>(
+    cx: Scope<'a>,
+    route_manager: &'a RouteManager<'a, TemplateNodeType>,
     verdict: RouteVerdict<TemplateNodeType>,
-) -> View<TemplateNodeType> {
+) {
     checkpoint("router_entry");
     match &verdict {
         RouteVerdict::Found(RouteInfo {
@@ -61,15 +64,20 @@ async fn get_view(
             locale,
             was_incremental_match,
         }) => {
-            get_subsequent_view(GetSubsequentViewProps {
+            let subsequent_view = get_subsequent_view(GetSubsequentViewProps {
                 cx,
+                route_manager,
                 path: path.clone(),
                 template: template.clone(),
                 was_incremental_match: *was_incremental_match,
                 locale: locale.clone(),
                 route_verdict: verdict,
             })
-            .await
+            .await;
+            // Display any errors now
+            if let SubsequentView::Error(view) = subsequent_view {
+                route_manager.update_view(view);
+            }
         }
         // For subsequent loads, this should only be possible if the dev forgot `link!()`
         RouteVerdict::LocaleDetection(path) => {
@@ -79,16 +87,19 @@ async fn get_view(
             // This shouldn't be a replacement navigation, since the user has deliberately
             // navigated here
             sycamore_router::navigate(&dest);
-            View::empty()
         }
         RouteVerdict::NotFound => {
             let render_ctx = RenderCtx::from_ctx(cx);
             checkpoint("not_found");
             // TODO Update the router state here (we need a path though...)
             // This function only handles subsequent loads, so this is all we have
-            render_ctx
-                .error_pages
-                .get_view_and_render_head(cx, "", 404, "not found", None)
+            route_manager.update_view(render_ctx.error_pages.get_view_and_render_head(
+                cx,
+                "",
+                404,
+                "not found",
+                None,
+            ))
         }
     }
 }
@@ -142,6 +153,10 @@ pub(crate) fn perseus_router(
     )
     .set_ctx(cx);
 
+    // Create the route manager (note: this is cheap to clone)
+    let route_manager = RouteManager::new(cx);
+    let route_manager = create_ref(cx, route_manager);
+
     // Get the current path, removing any base paths to avoid relative path locale
     // redirection loops (in previous versions of Perseus, we used Sycamore to
     // get the path, and it strips this out automatically)
@@ -157,25 +172,22 @@ pub(crate) fn perseus_router(
     };
     // Prepare the initial view for hydration (because we have everything we need in
     // global window variables, this can be synchronous)
-    let initial_view = get_initial_view(cx, path.to_string());
-    let initial_view = match initial_view {
-        InitialView::View(initial_view) => initial_view,
-        // if we need to redirect, then we'll create a fake view that will just execute that code
+    let initial_view = get_initial_view(cx, path.to_string(), route_manager);
+    match initial_view {
+        // Any errors are simply returned, it's our responsibility to display them
+        InitialView::Error(view) => route_manager.update_view(view),
+        // If we need to redirect, then we'll create a fake view that will just execute that code
         // (which we can guarantee to run after the router is ready)
         InitialView::Redirect(dest) => {
             let dest = dest.clone();
             on_mount(cx, move || {
                 sycamore_router::navigate_replace(&dest);
             });
-            // Note that using an empty view doesn't lead to any layout shift, since
-            // redirects have nothing rendered on the server-side (so this is actually
-            // correct hydration)
-            View::empty()
         }
+        // A successful render has already been displayed to the root
+        InitialView::Success => (),
     };
-    // Define a `Signal` for the view we're going to be currently rendering, which
-    // will contain the current page, or some kind of error message
-    let curr_view: &Signal<View<TemplateNodeType>> = create_signal(cx, initial_view);
+
     // This allows us to not run the subsequent load code on the initial load (we
     // need a separate one for the reload commander)
     let is_initial = create_signal(cx, true);
@@ -264,8 +276,7 @@ pub(crate) fn perseus_router(
                 None => return,
             };
             spawn_local_scoped(cx, async move {
-                let new_view = get_view(cx, verdict.clone()).await;
-                curr_view.set(new_view);
+                set_view(cx, route_manager, verdict.clone()).await;
             });
         }
     });
@@ -354,8 +365,7 @@ pub(crate) fn perseus_router(
                         spawn_local_scoped(cx, async move {
                             let route = route.get();
                             let verdict = route.get_verdict();
-                            let new_view = get_view(cx, verdict.clone()).await;
-                            curr_view.set(new_view);
+                            set_view(cx, route_manager, verdict.clone()).await;
                         });
                     }
                 });
@@ -365,7 +375,7 @@ pub(crate) fn perseus_router(
                 // The main reason for this is that the router only intercepts click events from its children
 
                 view! { cx,
-                        (*curr_view.get())
+                        (*route_manager.view.get())
                 }
             }
         )

@@ -11,7 +11,10 @@ pub fn router_state_page<G: Html>(cx: Scope) -> View<G> {
         RouterLoadState::Loaded {
             template_name,
             path,
-        } => format!("Loaded {} (template: {}).", path, template_name),
+        } => {
+            perseus::web_log!("Loaded.");
+            format!("Loaded {} (template: {}).", path, template_name)
+        }
         RouterLoadState::Loading {
             template_name,
             path,

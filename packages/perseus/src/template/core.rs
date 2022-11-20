@@ -16,6 +16,7 @@ use crate::utils::AsyncFnReturn;
 use crate::utils::ComputedDuration;
 use crate::utils::PerseusDuration; /* We do actually want this in both the engine and the
                                     * browser */
+use crate::router::RouteManager;
 use crate::Html;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
@@ -25,7 +26,9 @@ use crate::SsrNode;
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::header::HeaderMap;
-use sycamore::prelude::{Scope, View};
+use sycamore::prelude::Scope;
+#[cfg(not(target_arch = "wasm32"))]
+use sycamore::prelude::View;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
 
@@ -92,13 +95,14 @@ make_async_trait!(
 /// defined state for your page, it's safe to `.unwrap()` the given `Option`
 /// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
 /// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
-pub type TemplateFn<G> = Box<dyn Fn(Scope, PageProps) -> View<G> + Send + Sync>;
+pub type TemplateFn<G> =
+    Box<dyn for<'a> Fn(Scope<'a>, RouteManager<'a, G>, PageProps) + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
 /// string, rather than a reactive template).
 #[cfg(not(target_arch = "wasm32"))]
-pub type HeadFn = TemplateFn<SsrNode>;
+pub type HeadFn = Box<dyn Fn(Scope, PageProps) -> View<SsrNode> + Send + Sync>;
 #[cfg(not(target_arch = "wasm32"))]
 /// The type of functions that modify HTTP response headers.
 pub type SetHeadersFn = Box<dyn Fn(Option<String>) -> HeaderMap + Send + Sync>;
@@ -152,7 +156,7 @@ pub struct Template<G: Html> {
     /// which will then be interpolated directly into the `<head>`,
     /// so reactivity here will not work!
     #[cfg(not(target_arch = "wasm32"))]
-    head: TemplateFn<SsrNode>,
+    head: HeadFn,
     /// A function to be run when the server returns an HTTP response. This
     /// should return headers for said response, given the template's state.
     /// The most common use-case of this is to add cache control that respects
@@ -226,7 +230,7 @@ impl<G: Html> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|cx, _| sycamore::view! { cx, }),
+            template: Box::new(|_, _, _| {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(not(target_arch = "wasm32"))]
             head: Box::new(|cx, _| sycamore::view! { cx, }),
@@ -259,16 +263,17 @@ impl<G: Html> Template<G> {
         &self,
         props: PageProps,
         cx: Scope<'a>,
+        route_manager: &'a RouteManager<'a, G>,
         // Taking a reference here involves a serious risk of runtime panics, unfortunately (it's
         // simpler to own it at this point, and we clone it anyway internally)
         translator: Translator,
-    ) -> View<G> {
+    ) {
         // The router component has already set up all the elements of context needed by
         // the rest of the system, we can get on with rendering the template All
         // we have to do is provide the translator, replacing whatever is present
         provide_context_signal_replace(cx, translator);
 
-        (self.template)(cx, props)
+        (self.template)(cx, route_manager.clone(), props);
     }
     /// Executes the user-given function that renders the template on the
     /// server-side ONLY. This automatically initializes an isolated global
@@ -281,14 +286,24 @@ impl<G: Html> Template<G> {
         cx: Scope<'a>,
         translator: &Translator,
     ) -> View<G> {
+        use std::rc::Rc;
+
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
         let _ = RenderCtx::server(global_state).set_ctx(cx);
         // And now provide a translator separately
         provide_context_signal_replace(cx, translator.clone());
+        // Similarly, we can invent a route manager on the spot
+        let route_manager = RouteManager::new(cx);
+        // We don't need to clean up the page disposer, because the child scope will be
+        // removed properly when the `cx` this function was given is terminated
+        (self.template)(cx, route_manager.clone(), props);
 
-        (self.template)(cx, props)
+        let view_rc = route_manager.view.take();
+        // TODO Valid to unwrap here? (We should be the only reference holder, since we
+        // created it...)
+        Rc::try_unwrap(view_rc).unwrap()
     }
     /// Executes the user-given function that renders the document `<head>`,
     /// returning a string to be interpolated manually. Reactivity in this
@@ -559,10 +574,10 @@ impl<G: Html> Template<G> {
     /// some state (use the `#[perseus::template]` macro for serialization
     /// convenience) and/or some global state, and then it must return a
     /// Sycamore [`View`].
-    pub fn template(
-        mut self,
-        val: impl Fn(Scope, PageProps) -> View<G> + Send + Sync + 'static,
-    ) -> Template<G> {
+    pub fn template<F>(mut self, val: F) -> Template<G>
+    where
+        F: for<'a> Fn(Scope<'a>, RouteManager<'a, G>, PageProps) + Send + Sync + 'static,
+    {
         self.template = Box::new(val);
         self
     }
