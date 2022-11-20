@@ -8,7 +8,7 @@
 
 Perseus is a blazingly fast frontend web development framework built in Rust with support for generating page state at build-time, request-time, incrementally, or whatever you'd like! It supports reactivity using [Sycamore](https://github.com/sycamore-rs/sycamore), and builds on it to provide a fully-fledged framework for developing modern apps.
 
-**⚠ WARNING:** all new users must append `--wasm-opt-version version_110` to the first Perseus command they run (only needed once), due to [this issue](https://github.com/framesurge/perseus/issues/229), which is the result of an upstream fault. This will hopefully be resolved as soon as possible!
+**⚠ WARNING:** all new users of the v0.4.x beta must append `--wasm-opt-version version_110` to the first Perseus command they run (only needed once), due to [this issue](https://github.com/framesurge/perseus/issues/229), which is the result of an upstream fault. This will hopefully be resolved as soon as possible!
 
 -   📕 Supports static generation (serving only static resources)
 -   🗼 Supports server-side rendering (serving dynamic resources)
