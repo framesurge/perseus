@@ -177,7 +177,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     // } = orig_struct.clone();
     // // The name of the final reference `struct`'s type alias
     // let ref_name = helpers.name.unwrap_or_else(|| Ident::new(&(orig_name.to_string() + "Rx"), Span::call_site()));
-    // // The intemediate struct shouldn't be easily accessible
+    // // The intermediate struct shouldn't be easily accessible
     // let mid_name = Ident::new(
     //     &(orig_name.to_string() + "PerseusRxIntermediary"),
     //     Span::call_site(),

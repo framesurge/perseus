@@ -153,7 +153,7 @@ pub(crate) fn get_initial_view(
 
                     #[cfg(feature = "cache-initial-load")]
                     {
-                        // Cache the page's head in the PSS (getting it as realiably as we can)
+                        // Cache the page's head in the PSS (getting it as reliably as we can)
                         let head_str = get_head();
                         pss.add_head(&path, head_str);
                     }
@@ -325,7 +325,7 @@ fn get_translations() -> Option<String> {
 /// comment (which prevents any JS that was loaded later from being included).
 /// This is not guaranteed to always get exactly the original head, but it's
 /// pretty good, and prevents unnecessary network requests, while enabling the
-/// caching of initially laoded pages.
+/// caching of initially loaded pages.
 #[cfg(feature = "cache-initial-load")]
 fn get_head() -> String {
     let document = web_sys::window().unwrap().document().unwrap();

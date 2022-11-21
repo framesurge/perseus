@@ -147,7 +147,7 @@ pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
 ///
 /// *Note: in previous versions of Perseus, there was a `template_rx` macro,
 /// which has become this. The old unreactive `template` macro has become
-/// `#[template(unreactive)]`. For thos used to using Sycamore `#[component]`
+/// `#[template(unreactive)]`. For those used to using Sycamore `#[component]`
 /// annotation on their pages, this is no longer required. Note also that global
 /// state is now accessed through the `.get_global_state()` method on Perseus'
 /// `RenderCtx`.*

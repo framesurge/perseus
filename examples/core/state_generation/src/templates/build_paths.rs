@@ -57,6 +57,6 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
         "".to_string(),
         "test".to_string(),
         "blah/test/blah".to_string(),
-        "a test".to_string(), // Perseus caan even handle paths with special characters!
+        "a test".to_string(), // Perseus can even handle paths with special characters!
     ])
 }
