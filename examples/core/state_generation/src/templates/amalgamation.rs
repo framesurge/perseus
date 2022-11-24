@@ -1,9 +1,9 @@
-#[cfg(not(target_arch = "wasm32"))]
-use perseus::Request;
-use perseus::{RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, Scope, View};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
+use sycamore::prelude::*;
 
-#[perseus::make_rx(PageStateRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "PageStateRx")]
 pub struct PageState {
     pub message: String,
 }

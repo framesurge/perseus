@@ -18,11 +18,13 @@ mod state_fns;
 mod template;
 mod test;
 
-use darling::FromMeta;
+use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
 use quote::quote;
 use state_fns::StateFnType;
-use syn::{DeriveInput, ItemStruct, Path};
+use syn::{DeriveInput, Path};
+
+use crate::rx_state::ReactiveStateDeriveInput;
 
 /// Annotates functions used for generating state at build time to support
 /// automatic serialization/deserialization of app state and client/server
@@ -145,7 +147,7 @@ pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
 ///
 /// *Note: in previous versions of Perseus, there was a `template_rx` macro,
 /// which has become this. The old unreactive `template` macro has become
-/// `#[template(unreactive)]`. For thos used to using Sycamore `#[component]`
+/// `#[template(unreactive)]`. For those used to using Sycamore `#[component]`
 /// annotation on their pages, this is no longer required. Note also that global
 /// state is now accessed through the `.get_global_state()` method on Perseus'
 /// `RenderCtx`.*
@@ -267,85 +269,20 @@ pub fn engine_main(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// and implement a `.make_rx()` method on the original that allows turning an
 /// instance of the unreactive `struct` into an instance of the reactive one.
 ///
-/// This macro automatically derives `serde::Serialize` and `serde::Deserialize`
-/// on the original `struct`, so do NOT add these yourself, or errors will
-/// occur. Note that you can still use Serde helper macros (e.g. `#[serde(rename
-/// = "testField")]`) as usual. `Clone` will also be derived on both the
-/// original and the new `struct`, so do NOT try to derive it yourself.
-///
 /// If one of your fields is itself a `struct`, by default it will just be
 /// wrapped in a `Signal`, but you can also enable nested fine-grained
-/// reactivity by adding the `#[rx::nested("field_name", FieldTypeRx)]` helper
-/// attribute to the `struct` (not the field, that isn't supported by Rust yet),
-/// where `field_name` is the name of the field you want to use instead
-/// reactivity on, and `FieldTypeRx` is the wrapper type that will be expected.
-/// This should be created by using this macro on the original `struct` type.
-///
-/// Note that this will be deprecated or significantly altered by Sycamore's new
-/// observables system (when it's released). For that reason, this doesn't
-/// support more advanced features like leaving some fields unreactive, this is
-/// an all-or-nothing solution for now.
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// use serde::{Serialize, Deserialize};
-/// use perseus::make_rx;
-/// // We need this trait in scope to manually invoke `.make_rx()`
-/// use perseus::state::MakeRx;
-///
-/// #[make_rx(TestRx)]
-/// // Notice that we don't need to derive `Serialize`,`Deserialize`, or `Clone`, the macro does it for us
-/// #[rx::nested("nested", NestedRx)]
-/// struct Test {
-///     #[serde(rename = "foo_test")]
-///     foo: String,
-///     bar: u16,
-///     // This will get simple reactivity
-///     baz: Baz,
-///     // This will get fine-grained reactivity
-///     // We use the unreactive type in the declaration, and tell the macro what the reactive type is in the annotation above
-///     nested: Nested
-/// }
-/// // On unreactive types, we'll need to derive `Serialize` and `Deserialize` as usual
-/// #[derive(Serialize, Deserialize, Clone)]
-/// struct Baz {
-///     test: String
-/// }
-/// #[perseus_macro::make_rx(NestedRx)]
-/// struct Nested {
-///     test: String
-/// }
-///
-/// let new = Test {
-///     foo: "foo".to_string(),
-///     bar: 5,
-///     baz: Baz {
-///         // We won't be able to `.set()` this
-///         test: "test".to_string()
-///     },
-///     nested: Nested {
-///         // We will be able to `.set()` this
-///         test: "nested".to_string()
-///     }
-/// }.make_rx();
-/// // Simple reactivity
-/// new.bar.set(6);
-/// // Simple reactivity on a `struct`
-/// new.baz.set(Baz {
-///     test: "updated".to_string()
-/// });
-/// // Nested reactivity on a `struct`
-/// new.nested.test.set("updated".to_string());
-/// // Our own derivations still remain
-/// let _new_2 = new.clone();
-/// ```
-#[proc_macro_attribute]
-pub fn make_rx(args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as ItemStruct);
-    let name = syn::parse_macro_input!(args as syn::Ident);
+/// reactivity by adding the `#[rx(nested)]` helper macro to the field.
+/// Fields that have nested reactivity should also use this derive macro.
+#[proc_macro_derive(ReactiveState, attributes(rx))]
+pub fn reactive_state(input: TokenStream) -> TokenStream {
+    let input = match ReactiveStateDeriveInput::from_derive_input(&syn::parse_macro_input!(
+        input as DeriveInput
+    )) {
+        Ok(input) => input,
+        Err(err) => return err.write_errors().into(),
+    };
 
-    rx_state::make_rx_impl(parsed, name).into()
+    rx_state::make_rx_impl(input).into()
 }
 
 /// Marks the annotated code as only to be run as part of the engine (the

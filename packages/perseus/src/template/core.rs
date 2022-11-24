@@ -719,9 +719,9 @@ impl<G: Html> Template<G> {
                 // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
                 match render_ctx.get_active_or_frozen_page_state::<I>(&path) {
                     // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
-                    ::std::option::Option::Some(existing_state) => existing_state,
+                    Some(existing_state) => existing_state,
                     // Again, frozen state has been dealt with already, so we'll fall back to generated state
-                    ::std::option::Option::None => {
+                    None => {
                         // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking).
                         // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message.
                         // If this returns an error, we know the state was of the incorrect type (there is literally nothing we can do about this, and it's best to fail-fast
