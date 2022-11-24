@@ -3,7 +3,7 @@ use crate::i18n::{Locales, TranslationsManager};
 use crate::page_data::PageDataPartial;
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
-use crate::template::TemplateMap;
+use crate::template::{TemplateMap, TemplateState};
 use crate::{page_data::PageData, SsrNode};
 use futures::future::{try_join, try_join_all};
 
@@ -21,12 +21,10 @@ pub async fn get_static_page_data(
         .read(&format!("static/{}.head.html", path))
         .await?;
     let state = match has_state {
-        true => Some(
-            immutable_store
-                .read(&format!("static/{}.json", path))
-                .await?,
-        ),
-        false => None,
+        true => serde_json::from_str(&immutable_store
+            .read(&format!("static/{}.json", path))
+            .await?).map_err(|err| ServerError::InvalidPageState { source: err })?,
+        false => TemplateState::empty().state,
     };
     // Create an instance of `PageData`
     Ok(PageData {

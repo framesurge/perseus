@@ -4,18 +4,10 @@ use axum::{
     response::Html,
 };
 use fmterr::fmt_err;
-use perseus::{
-    errors::{err_to_status_code, ServerError},
-    i18n::{TranslationsManager, Translator},
-    router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
-    server::{
+use perseus::{ErrorPages, Request, SsrNode, errors::{err_to_status_code, ServerError}, i18n::{TranslationsManager, Translator}, router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic}, server::{
         build_error_page, get_page_for_template, get_path_slice, GetPageProps, HtmlShell,
         ServerOptions,
-    },
-    stores::{ImmutableStore, MutableStore},
-    utils::get_path_prefix_server,
-    ErrorPages, Request, SsrNode,
-};
+    }, stores::{ImmutableStore, MutableStore}, template::TemplateState, utils::get_path_prefix_server};
 use std::{collections::HashMap, rc::Rc, sync::Arc};
 
 /// Builds on the internal Perseus primitives to provide a utility function that
@@ -132,7 +124,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             // http_res.content_type("text/html");
             // Generate and add HTTP headers
             let mut header_map = HeaderMap::new();
-            for (key, val) in template.get_headers(page_data.state) {
+            for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                 header_map.insert(key.unwrap(), val);
             }
 

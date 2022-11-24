@@ -2,7 +2,7 @@ use crate::errors::*;
 use crate::i18n::TranslationsManager;
 use crate::page_data::PageData;
 use crate::stores::{ImmutableStore, MutableStore};
-use crate::template::{PageProps, States, Template, TemplateMap};
+use crate::template::{StateGeneratorInfo, States, Template, TemplateMap, TemplateState, UnknownStateType};
 use crate::translator::Translator;
 use crate::Request;
 use crate::SsrNode;
@@ -46,7 +46,7 @@ async fn render_build_state(
     path_encoded: &str,
     immutable_store: &ImmutableStore,
     render_html: bool,
-) -> Result<(String, String, Option<String>), ServerError> {
+) -> Result<(String, String, TemplateState), ServerError> {
     // Get the static HTML
     let html = if render_html {
         immutable_store
@@ -63,8 +63,8 @@ async fn render_build_state(
         .read(&format!("static/{}.json", path_encoded))
         .await
     {
-        Ok(state) => Some(state),
-        Err(_) => None,
+        Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidPageState { source: err })?,
+        Err(_) => TemplateState::empty(),
     };
 
     Ok((html, head, state))
@@ -78,7 +78,7 @@ async fn render_build_state_for_mutable(
     path_encoded: &str,
     mutable_store: &impl MutableStore,
     render_html: bool,
-) -> Result<(String, String, Option<String>), ServerError> {
+) -> Result<(String, String, TemplateState), ServerError> {
     // Get the static HTML
     let html = if render_html {
         mutable_store
@@ -95,8 +95,8 @@ async fn render_build_state_for_mutable(
         .read(&format!("static/{}.json", path_encoded))
         .await
     {
-        Ok(state) => Some(state),
-        Err(_) => None,
+        Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidPageState { source: err })?,
+        Err(_) => TemplateState::empty(),
     };
 
     Ok((html, head, state))
@@ -109,17 +109,14 @@ async fn render_build_state_for_mutable(
 /// As this involves state computation, this only returns the state.
 async fn get_request_state(
     template: &Template<SsrNode>,
-    translator: &Translator,
-    path: &str,
+    build_info: StateGeneratorInfo<UnknownStateType>,
     req: Request,
-) -> Result<Option<String>, ServerError> {
+) -> Result<TemplateState, ServerError> {
     // Generate the initial state (this may generate an error, but there's no file
     // that can't exist)
-    let state = Some(
-        template
-            .get_request_state(path.to_string(), translator.get_locale(), req)
-            .await?,
-    );
+    let state = template
+        .get_request_state(build_info, req)
+        .await?;
 
     Ok(state)
 }
@@ -131,36 +128,29 @@ async fn get_request_state(
 /// the state.
 async fn render_amalgamated_state(
     template: &Template<SsrNode>,
+    build_info: StateGeneratorInfo<UnknownStateType>,
     translator: &Translator,
-    path: &str,
     global_state: &Option<String>,
-    build_state: String,
-    request_state: String,
+    build_state: TemplateState,
+    request_state: TemplateState,
     render_html: bool,
-) -> Result<(String, String, Option<String>), ServerError> {
-    let path_with_locale = get_path_with_locale(path, translator);
+) -> Result<(String, String, TemplateState), ServerError> {
+    let path_with_locale = get_path_with_locale(&build_info.path, &translator);
     // Generate the initial state (this may generate an error, but there's no file
     // that can't exist)
-    let state = Some(
-        template
-            .amalgamate_states(
-                path.to_string(),
-                translator.get_locale(),
-                build_state,
-                request_state,
-            )
-            .await?,
-    );
+    let state = template
+        .amalgamate_states(
+            build_info,
+            build_state,
+            request_state,
+        )
+        .await?;
 
-    // Assemble the page properties
-    let page_props = PageProps {
-        path: path_with_locale,
-        state: state.clone(),
-    };
     let html = if render_html {
         sycamore::render_to_string(|cx| {
             template.render_for_template_server(
-                page_props.clone(),
+                path_with_locale,
+                state.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -169,7 +159,7 @@ async fn render_amalgamated_state(
     } else {
         String::new()
     };
-    let head = template.render_head_str(page_props, global_state.clone(), translator);
+    let head = template.render_head_str(state.clone(), global_state.clone(), translator);
 
     Ok((html, head, state))
 }
@@ -217,8 +207,7 @@ async fn should_revalidate(
     template: &Template<SsrNode>,
     path_encoded: &str,
     mutable_store: &impl MutableStore,
-    translator: &Translator,
-    path: &str,
+    build_info: StateGeneratorInfo<UnknownStateType>,
     req: Request,
 ) -> Result<bool, ServerError> {
     let mut should_revalidate = false;
@@ -248,7 +237,7 @@ async fn should_revalidate(
     // Now run the user's custom revalidation logic
     if template.revalidates_with_logic() {
         should_revalidate = template
-            .should_revalidate(path.to_string(), translator.get_locale(), req)
+            .should_revalidate(build_info, req)
             .await?;
     }
     Ok(should_revalidate)
@@ -264,37 +253,28 @@ async fn should_revalidate(
 /// has to for future caching anyway.
 async fn revalidate(
     template: &Template<SsrNode>,
+    build_info: StateGeneratorInfo<UnknownStateType>,
     translator: &Translator,
-    path: &str,
     path_encoded: &str,
     global_state: &Option<String>,
     mutable_store: &impl MutableStore,
-) -> Result<(String, String, Option<String>), ServerError> {
-    let path_with_locale = get_path_with_locale(path, translator);
+) -> Result<(String, String, TemplateState), ServerError> {
+    let path_with_locale = get_path_with_locale(&build_info.path, &translator);
     // We need to regenerate and cache this page for future usage (until the next
     // revalidation)
-    let state = Some(
-        template
-            .get_build_state(
-                format!("{}/{}", template.get_path(), path),
-                translator.get_locale(),
-            )
-            .await?,
-    );
-    // Assemble the page properties
-    let page_props = PageProps {
-        path: path_with_locale,
-        state: state.clone(),
-    };
+    let state = template
+        .get_build_state(build_info)
+        .await?;
     let html = sycamore::render_to_string(|cx| {
         template.render_for_template_server(
-            page_props.clone(),
+            path_with_locale,
+            state.clone(),
             global_state.clone(),
             cx,
             translator,
         )
     });
-    let head = template.render_head_str(page_props, global_state.clone(), translator);
+    let head = template.render_head_str(state.clone(), global_state.clone(), translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's
     // request-time only
@@ -316,7 +296,7 @@ async fn revalidate(
     mutable_store
         .write(
             &format!("static/{}.json", path_encoded),
-            &state.clone().unwrap(),
+            &state.state.to_string(),
         )
         .await?;
     mutable_store
@@ -388,7 +368,24 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     // Remove `/` from the path by encoding it as a URL (that's what we store) and
     // add the locale
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path));
-    let path_with_locale = get_path_with_locale(path, &translator);
+
+    // Get the extra build data for this template
+    let build_extra = match immutable_store
+        .read(&format!("static/{}.extra.json", template.get_path()))
+        .await
+    {
+        Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidBuildExtra { template_name: template.get_path(), source: err })?,
+        // If this happens, then the immutable store has been tampered with, since
+        // the build logic generates some kind of state for everything
+        Err(_) => return Err(ServerError::MissingBuildExtra { template_name: template.get_path() }),
+    };
+    let build_info = StateGeneratorInfo {
+        path: path.strip_prefix(&format!("{}/", template.get_path())).ok_or(ServerError::TemplateNameNotInPath)?.to_string(),
+        locale: locale.to_string(),
+        extra: build_extra,
+    };
+
+    let path_with_locale = get_path_with_locale(&build_info.path, &translator);
 
     // Only a single string of HTML is needed, and it will be overridden if
     // necessary (priorities system)
@@ -418,16 +415,15 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                         template,
                         &path_encoded,
                         mutable_store,
-                        &translator,
-                        path,
+                        build_info.clone(),
                         req,
                     )
                     .await?
                     {
                         let (html_val, head_val, state) = revalidate(
                             template,
+                            build_info.clone(),
                             &translator,
-                            path,
                             &path_encoded,
                             global_state,
                             mutable_store,
@@ -450,8 +446,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                             .read(&format!("static/{}.json", path_encoded))
                             .await
                         {
-                            Ok(state) => Some(state),
-                            Err(_) => None,
+                            Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidPageState { source: err })?,
+                            Err(_) => TemplateState::empty(),
                         };
                     }
                 }
@@ -462,26 +458,20 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     // `render_html` is `false`) Even if we're going to
                     // amalgamate later, we still have to perform incremental
                     // caching, which means a potentially unnecessary page build
-                    let state = Some(
-                        template
-                            .get_build_state(path.to_string(), locale.to_string())
-                            .await?,
-                    );
-                    // Assemble the page properties
-                    let page_props = PageProps {
-                        path: path_with_locale.clone(),
-                        state: state.clone(),
-                    };
+                    let state = template
+                            .get_build_state(build_info.clone())
+                            .await?;
                     let html_val = sycamore::render_to_string(|cx| {
                         template.render_for_template_server(
-                            page_props.clone(),
+                            path_with_locale.clone(),
+                            state.clone(),
                             global_state.clone(),
                             cx,
                             &translator,
                         )
                     });
                     let head_val =
-                        template.render_head_str(page_props, global_state.clone(), &translator);
+                        template.render_head_str(state.clone(), global_state.clone(), &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes
                     // We don't need to worry about revalidation that operates by logic, that's
                     // request-time only Obviously we don't need to revalidate
@@ -505,7 +495,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     mutable_store
                         .write(
                             &format!("static/{}.json", path_encoded),
-                            &state.clone().unwrap(),
+                            &state.state.to_string(),
                         )
                         .await?;
                     // Write that prerendered HTML to a static file
@@ -531,16 +521,15 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 template,
                 &path_encoded,
                 mutable_store,
-                &translator,
-                path,
+                build_info.clone(),
                 req,
             )
             .await?
             {
                 let (html_val, head_val, state) = revalidate(
                     template,
+                    build_info.clone(),
                     &translator,
-                    path,
                     &path_encoded,
                     global_state,
                     mutable_store,
@@ -581,7 +570,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         // page will be built soon If we're not, and there's no build state,
         // then we still need to build, which we'll do after we've checked for
         // amalgamation
-        let state = get_request_state(template, &translator, path, req_2).await?;
+        let state = get_request_state(template, build_info.clone(), req_2).await?;
         states.request_state = state;
     }
 
@@ -598,19 +587,15 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         // the template with it now
         let state = states.get_defined()?;
 
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: path_with_locale,
-            state: state.clone(),
-        };
         let head_val =
-            template.render_head_str(page_props.clone(), global_state.clone(), &translator);
+            template.render_head_str(state.clone(), global_state.clone(), &translator);
         head = head_val;
         // We should only render the HTML if necessary, since we're not caching
         if render_html {
             let html_val = sycamore::render_to_string(|cx| {
                 template.render_for_template_server(
-                    page_props,
+                    path_with_locale,
+                    state.clone(),
                     global_state.clone(),
                     cx,
                     &translator,
@@ -629,11 +614,11 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         // The HTML is currently built with the wrong state, so we have to update it
         let (html_val, head_val, state) = render_amalgamated_state(
             template,
+            build_info,
             &translator,
-            path,
             global_state,
-            states.build_state.unwrap(),
-            states.request_state.unwrap(),
+            states.build_state,
+            states.request_state,
             render_html,
         )
         .await?;
@@ -642,21 +627,18 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         state
     } else {
         // We do have multiple states, but there's no resolution function, so we have to
-        // prefer request state That means we have to build the page for it,
+        // prefer request state
+        // That means we have to build the page for it,
         // since we haven't yet
         let state = states.request_state;
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: path_with_locale,
-            state: state.clone(),
-        };
         let head_val =
-            template.render_head_str(page_props.clone(), global_state.clone(), &translator);
+            template.render_head_str(state.clone(), global_state.clone(), &translator);
         // We should only render the HTML if necessary, since we're not caching
         if render_html {
             let html_val = sycamore::render_to_string(|cx| {
                 template.render_for_template_server(
-                    page_props,
+                    path_with_locale,
+                    state.clone(),
                     global_state.clone(),
                     cx,
                     &translator,
@@ -676,13 +658,13 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     let res = if render_html {
         PageData {
             content: html,
-            state,
+            state: state.state,
             head,
         }
     } else {
         PageData {
             content: String::new(),
-            state,
+            state: state.state,
             head,
         }
     };

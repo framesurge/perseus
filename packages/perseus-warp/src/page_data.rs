@@ -1,11 +1,5 @@
 use fmterr::fmt_err;
-use perseus::{
-    errors::err_to_status_code,
-    i18n::TranslationsManager,
-    internal::PageDataPartial,
-    server::{get_page_for_template, GetPageProps, ServerOptions},
-    stores::{ImmutableStore, MutableStore},
-};
+use perseus::{errors::err_to_status_code, i18n::TranslationsManager, internal::PageDataPartial, server::{get_page_for_template, GetPageProps, ServerOptions}, stores::{ImmutableStore, MutableStore}, template::TemplateState};
 use serde::Deserialize;
 use std::sync::Arc;
 use warp::http::Response;
@@ -72,13 +66,13 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
         match page_data {
             Ok(page_data) => {
                 let partial_page_data = PageDataPartial {
-                    state: page_data.state,
+                    state: page_data.state.clone(),
                     head: page_data.head,
                 };
                 let mut http_res = Response::builder().status(200);
                 // http_res.content_type("text/html");
                 // Generate and add HTTP headers
-                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
+                for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                     http_res = http_res.header(key.unwrap(), val);
                 }
 

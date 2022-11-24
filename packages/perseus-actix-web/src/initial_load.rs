@@ -1,18 +1,10 @@
 use crate::conv_req::convert_req;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
-use perseus::{
-    errors::{err_to_status_code, ServerError},
-    i18n::{TranslationsManager, Translator},
-    router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
-    server::{
+use perseus::{ErrorPages, SsrNode, errors::{err_to_status_code, ServerError}, i18n::{TranslationsManager, Translator}, router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic}, server::{
         build_error_page, get_page_for_template, get_path_slice, GetPageProps, HtmlShell,
         ServerOptions,
-    },
-    stores::{ImmutableStore, MutableStore},
-    utils::get_path_prefix_server,
-    ErrorPages, SsrNode,
-};
+    }, stores::{ImmutableStore, MutableStore}, template::TemplateState, utils::get_path_prefix_server};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -137,7 +129,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             let mut http_res = HttpResponse::Ok();
             http_res.content_type("text/html");
             // Generate and add HTTP headers
-            for (key, val) in template.get_headers(page_data.state) {
+            for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                 http_res.insert_header((key.unwrap(), val));
             }
 

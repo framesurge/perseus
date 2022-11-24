@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::i18n::detect_locale;
 use crate::router::{match_route, RouteManager};
 use crate::router::{RouteInfo, RouteVerdict, RouterLoadState};
-use crate::template::{PageProps, RenderCtx, TemplateNodeType};
+use crate::template::{RenderCtx, TemplateNodeType, TemplateState};
 use crate::utils::checkpoint;
 use fmterr::fmt_err;
 use sycamore::prelude::*;
@@ -160,10 +160,6 @@ pub(crate) fn get_initial_view<'a>(
                     }
 
                     let path = template.get_path();
-                    let page_props = PageProps {
-                        path: path_with_locale.clone(),
-                        state,
-                    };
                     // Pre-emptively declare the page interactive since all we do from this point
                     // is hydrate
                     checkpoint("page_interactive");
@@ -174,7 +170,7 @@ pub(crate) fn get_initial_view<'a>(
                     });
                     // Render the actual template to the root (done imperatively due to child
                     // scopes)
-                    template.render_for_template_client(page_props, cx, route_manager, translator);
+                    template.render_for_template_client(state, cx, route_manager, translator);
 
                     InitialView::Success
                 }
@@ -259,9 +255,9 @@ pub(crate) enum InitialView {
 /// could also be an error that the server has rendered.
 #[derive(Debug)]
 enum InitialState {
-    /// A non-error initial state has been injected. This could be `None`, since
+    /// A non-error initial state has been injected. This could be empty, since
     /// not all pages have state.
-    Present(Option<String>),
+    Present(TemplateState),
     /// An initial state has been injected that indicates an error.
     Error(ErrorPageData),
     /// No initial state has been injected (or if it has, it's been deliberately
@@ -283,31 +279,35 @@ fn get_initial_state() -> InitialState {
         Some(state_str) => state_str,
         None => return InitialState::NotPresent,
     };
-    // On the server-side, we encode a `None` value directly (otherwise it will be
-    // some convoluted stringified JSON)
-    if state_str == "None" {
-        InitialState::Present(None)
-    } else if state_str.starts_with("error-") {
-        // We strip the prefix and escape any tab/newline control characters (inserted
-        // by `fmterr`) Any others are user-inserted, and this is documented
-        let err_page_data_str = state_str
-            .strip_prefix("error-")
-            .unwrap()
-            .replace('\n', "\\n")
-            .replace('\t', "\\t");
-        // There will be error page data encoded after `error-`
-        let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str) {
-            Ok(render_cfg) => render_cfg,
-            // If there's a serialization error, we'll create a whole new error (500)
-            Err(err) => ErrorPageData {
-                url: "[current]".to_string(),
-                status: 500,
-                err: format!("couldn't serialize error from server: '{}'", err),
-            },
-        };
-        InitialState::Error(err_page_data)
-    } else {
-        InitialState::Present(Some(state_str))
+    match TemplateState::from_str(&state_str) {
+        Ok(state) => if state_str.starts_with("error-") {
+            // We strip the prefix and escape any tab/newline control characters (inserted
+            // by `fmterr`) Any others are user-inserted, and this is documented
+            let err_page_data_str = state_str
+                .strip_prefix("error-")
+                .unwrap()
+                .replace('\n', "\\n")
+                .replace('\t', "\\t");
+            // There will be error page data encoded after `error-`
+            let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str) {
+                Ok(render_cfg) => render_cfg,
+                // If there's a serialization error, we'll create a whole new error (500)
+                Err(err) => ErrorPageData {
+                    url: "[current]".to_string(),
+                    status: 500,
+                    err: format!("couldn't serialize error from server: '{}'", err),
+                },
+            };
+            InitialState::Error(err_page_data)
+        } else {
+            InitialState::Present(state)
+        },
+        // An actual error means the state was provided, but it was malformed, so we'll render an error page
+        Err(err) => InitialState::Error(ErrorPageData {
+            url: "[current]".to_string(),
+            status: 500,
+            err: format!("couldn't serialize page data from server: '{}'", err),
+        }),
     }
 }
 

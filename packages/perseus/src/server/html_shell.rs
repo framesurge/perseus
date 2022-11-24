@@ -161,11 +161,7 @@ impl HtmlShell {
         // make any more trips The app shell will unset this after usage so it
         // doesn't contaminate later non-initial loads Error pages (above) will
         // set this to `error`
-        let initial_state = if let Some(state) = &page_data.state {
-            escape_page_data(state)
-        } else {
-            "None".to_string()
-        };
+        let initial_state = escape_page_data(&page_data.state.to_string());
         let global_state = if let Some(state) = global_state {
             escape_page_data(state)
         } else {

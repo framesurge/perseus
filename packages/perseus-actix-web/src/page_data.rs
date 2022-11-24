@@ -1,13 +1,7 @@
 use crate::conv_req::convert_req;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
-use perseus::{
-    errors::err_to_status_code,
-    i18n::TranslationsManager,
-    internal::PageDataPartial,
-    server::{get_page_for_template, GetPageProps, ServerOptions},
-    stores::{ImmutableStore, MutableStore},
-};
+use perseus::{errors::err_to_status_code, i18n::TranslationsManager, internal::PageDataPartial, server::{get_page_for_template, GetPageProps, ServerOptions}, stores::{ImmutableStore, MutableStore}, template::TemplateState};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -75,13 +69,13 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
         match page_data {
             Ok(page_data) => {
                 let partial_page_data = PageDataPartial {
-                    state: page_data.state,
+                    state: page_data.state.clone(),
                     head: page_data.head,
                 };
                 let mut http_res = HttpResponse::Ok();
                 http_res.content_type("text/html");
                 // Generate and add HTTP headers
-                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
+                for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                     http_res.insert_header((key.unwrap(), val));
                 }
 

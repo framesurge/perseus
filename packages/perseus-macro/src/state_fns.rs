@@ -113,7 +113,7 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
             #[cfg(target_arch = "wasm32")]
             #vis fn #name() {}
             #[cfg(not(target_arch = "wasm32"))]
-            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
+            #vis async fn #name(info: ::perseus::template::StateGeneratorInfo<::perseus::template::UnknownStateType>) -> ::perseus::RenderFnResultWithCause<::perseus::template::TemplateState> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
                 #(#attrs)*
@@ -123,9 +123,8 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
                 // Call the user's function with the usual arguments and then serialize the result to a string
                 // We only serialize the `Ok` outcome, errors are left as-is
                 // We also assume that this will serialize correctly
-                let build_state = #name(path, locale).await;
-                let build_state_with_str = build_state.map(|val| ::serde_json::to_string(&val).unwrap());
-                build_state_with_str
+                // TODO
+                let build_state = #name(info).await
             }
         },
         // This one only exists to appease the server-side/client-side division
@@ -145,7 +144,7 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
             #[cfg(target_arch = "wasm32")]
             #vis fn #name() {}
             #[cfg(not(target_arch = "wasm32"))]
-            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, req: ::perseus::Request) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
+            #vis async fn #name(info: ::perseus::template::StateGeneratorInfo<::perseus::template::UnknownStateType>, req: ::perseus::Request) -> ::perseus::RenderFnResultWithCause<::perseus::template::TemplateState> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<CustomTemplatePropsType>`
                 #(#attrs)*
@@ -161,51 +160,31 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
             }
         },
         // Always synchronous
-        StateFnType::SetHeaders => {
-            if args.len() == 1 {
-                quote! {
-                    // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
-                    #[cfg(target_arch = "wasm32")]
-                    #vis fn #name() {}
-                    #[cfg(not(target_arch = "wasm32"))]
-                    #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
-                        // The user's function
-                        // We can assume the return type to be `HeaderMap`
-                        #(#attrs)*
-                        fn #name #generics(#args) -> #return_type {
-                            #block
-                        }
-                        // Deserialize the props and then call the user's function
-                        // Their function is taking state, so this must be defined
-                        let props_de = ::serde_json::from_str(&props.unwrap()).unwrap();
-                        #name(props_de)
-                    }
+        StateFnType::SetHeaders => quote! {
+            // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
+            #[cfg(target_arch = "wasm32")]
+            #vis fn #name() {}
+            #[cfg(not(target_arch = "wasm32"))]
+            #vis fn #name(props: ::perseus::template::TemplateState) -> ::perseus::http::header::HeaderMap {
+                // The user's function
+                // We can assume the return type to be `HeaderMap`
+                #(#attrs)*
+                fn #name #generics(#args) -> #return_type {
+                    #block
                 }
-            } else {
-                quote! {
-                    // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
-                    #[cfg(target_arch = "wasm32")]
-                    #vis fn #name() {}
-                    #[cfg(not(target_arch = "wasm32"))]
-                    #vis fn #name(props: ::std::option::Option<::std::string::String>) -> ::perseus::http::header::HeaderMap {
-                        // The user's function
-                        // We can assume the return type to be `HeaderMap`
-                        #(#attrs)*
-                        fn #name #generics() -> #return_type {
-                            #block
-                        }
-                        #name()
-                    }
-                }
+                // Deserialize the props and then call the user's function
+                // Their function is taking state, so this must be defined
+                let props_de = ::serde_json::from_str(&props.unwrap()).unwrap();
+                #name(props_de)
             }
-        }
+        },
         // Always synchronous
         StateFnType::AmalgamateStates => quote! {
             // We create a normal version of the function and one to appease the handlers in Wasm (which expect functions that take no arguments, etc.)
             #[cfg(target_arch = "wasm32")]
             #vis fn #name() {}
             #[cfg(not(target_arch = "wasm32"))]
-            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, build_state: ::std::string::String, request_state: ::std::string::String) -> ::perseus::RenderFnResultWithCause<::std::string::String> {
+            #vis async fn #name(info: ::perseus::template::StateGeneratorInfo<::perseus::template::UnknownStateType>, build_state: ::std::string::String, request_state: ::std::string::String) -> ::perseus::RenderFnResultWithCause<::perseus::template::TemplateState> {
                 // The user's function
                 // We can assume the return type to be `RenderFnResultWithCause<Option<CustomTemplatePropsType>>`
                 #(#attrs)*
@@ -218,9 +197,8 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
                 // Call the user's function with the usual arguments and then serialize the result to a string
                 // We only serialize the `Ok(Some(_))` outcome, errors are left as-is
                 // We also assume that this will serialize correctly
-                let amalgamated_state = #name(path, locale, build_state_de, request_state_de).await;
-                let amalgamated_state_with_str = amalgamated_state.map(|val| ::serde_json::to_string(&val).unwrap());
-                amalgamated_state_with_str
+                // TODO
+                let amalgamated_state = #name(info, build_state_de, request_state_de).await
             }
         },
         StateFnType::GlobalBuildState => quote! {
@@ -251,8 +229,15 @@ pub fn state_fn_impl(input: StateFn, fn_type: StateFnType) -> TokenStream {
             // This normal version is identical to the user's (we know it won't have any arguments, and we know its return type)
             // We use the user's return type to prevent unused imports warnings in their code
             #[cfg(not(target_arch = "wasm32"))]
-            #vis async fn #name(path: ::std::string::String, locale: ::std::string::String, req: ::perseus::Request) -> #return_type {
-                #block
+            #vis async fn #name(info: ::perseus::template::StateGeneratorInfo<::perseus::template::UnknownStateType>, req: ::perseus::Request) -> #return_type {
+                // The user's function
+                #(#attrs)*
+                async fn #name #generics(#args) -> #return_type {
+                    #block
+                }
+
+                // TODO
+                #name(info).await
             }
         },
     }

@@ -1,5 +1,6 @@
 #[cfg(target_arch = "wasm32")]
 use super::TemplateNodeType;
+use super::TemplateStateWithType;
 use crate::errors::*;
 use crate::router::{RouterLoadState, RouterState};
 use crate::state::{
@@ -544,7 +545,7 @@ impl RenderCtx {
             self.get_active_global_state::<R>()
         }
     }
-    /// Registers a serialized and unreactive state string to the page state
+    /// Registers a deserialized and unreactive [`TemplateState`] to the page state
     /// store, returning a fully reactive version.
     ///
     /// **Warning:** if the page has already been registered in the page state
@@ -553,10 +554,10 @@ impl RenderCtx {
     /// occurs, something has gone horribly wrong, and panics will almost
     /// certainly follow. (Basically, this should *never* happen. If you're
     /// not using the macros, you may need to be careful of this.)
-    pub fn register_page_state_str<R>(
+    pub fn register_page_state_value<R>(
         &self,
         url: &str,
-        state_str: &str,
+        state: TemplateStateWithType<R::Unrx>,
     ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
     where
         R: Clone + AnyFreeze + MakeUnrx,
@@ -566,7 +567,7 @@ impl RenderCtx {
     {
         // Deserialize it (we know nothing about the calling situation, so we assume it
         // could be invalid, hence the fallible return type)
-        let unrx = serde_json::from_str::<R::Unrx>(state_str)
+        let unrx = state.to_concrete()
             .map_err(|err| ClientError::StateInvalid { source: err })?;
         let rx = unrx.make_rx();
         // Potential silent failure (see above)

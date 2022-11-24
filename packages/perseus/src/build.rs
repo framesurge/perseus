@@ -3,8 +3,8 @@
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
 use crate::stores::{ImmutableStore, MutableStore};
-use crate::template::Template;
-use crate::template::{PageProps, TemplateMap};
+use crate::template::{BuildPaths, StateGeneratorInfo, Template, TemplateState};
+use crate::template::TemplateMap;
 use crate::translator::Translator;
 use crate::utils::minify;
 use futures::future::try_join_all;
@@ -45,23 +45,32 @@ pub async fn build_template(
     // Handle static path generation
     // Because we iterate over the paths, we need a base path if we're not
     // generating custom ones (that'll be overridden if needed)
-    let paths = match template.uses_build_paths() {
-        true => template
-            .get_build_paths()
-            .await?
+    let (paths, build_extra) = match template.uses_build_paths() {
+        true => {
+            let BuildPaths { paths, extra } = template
+                .get_build_paths()
+                .await?;
             // Trim away any trailing `/`s so we don't insert them into the render config
             // That makes rendering an index page from build paths impossible (see #39)
-            .iter()
-            .map(|p| match p.strip_suffix('/') {
-                Some(stripped) => stripped.to_string(),
-                None => p.to_string(),
-            })
-            .collect(),
+            let paths = paths
+                .iter()
+                .map(|p| match p.strip_suffix('/') {
+                    Some(stripped) => stripped.to_string(),
+                    None => p.to_string(),
+                })
+                .collect();
+            (paths, extra)
+        },
         false => {
             single_page = true;
-            vec![String::new()]
+            (vec![String::new()], TemplateState::empty())
         }
     };
+
+    // Write the extra build state information to a file now so it can be accessed by request state handlers and the like down the line
+    immutable_store
+        .write(&format!("static/{}.extra.json", template_path), &build_extra.state.to_string())
+        .await?;
 
     // Iterate through the paths to generate initial states if needed
     // Note that build paths pages on incrementally generable pages will use the
@@ -74,6 +83,7 @@ pub async fn build_template(
             translator,
             (immutable_store, mutable_store),
             global_state,
+            &build_extra,
         );
         futs.push(fut);
     }
@@ -90,6 +100,7 @@ async fn gen_state_for_path(
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     global_state: &Option<String>,
+    build_extra: &TemplateState,
 ) -> Result<(), ServerError> {
     let template_path = template.get_path();
     // If needed, we'll construct a full path that's URL encoded so we can easily
@@ -126,6 +137,12 @@ async fn gen_state_for_path(
         locale => format!("{}/{}", locale, &full_path_without_locale),
     };
 
+    let build_info = StateGeneratorInfo {
+        path: full_path_without_locale.clone(),
+        locale: translator.get_locale(),
+        extra: build_extra.clone(),
+    };
+
     // Handle static initial state generation
     // We'll only write a static state if one is explicitly generated
     // If the template revalidates, use a mutable store, otherwise use an immutable
@@ -134,24 +151,20 @@ async fn gen_state_for_path(
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
         let initial_state = template
-            .get_build_state(full_path_without_locale.clone(), translator.get_locale())
+            .get_build_state(build_info)
             .await?;
         // Write that initial state to a static JSON file
         mutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),
-                &initial_state,
+                &initial_state.state.to_string(),
             )
             .await?;
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: full_path_with_locale.clone(),
-            state: Some(initial_state),
-        };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
-                page_props.clone(),
+                full_path_with_locale.clone(),
+                initial_state.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -165,7 +178,7 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
+        let head_str = template.render_head_str(initial_state, global_state.clone(), translator);
         minify(&head_str, true)?;
         mutable_store
             .write(
@@ -177,24 +190,20 @@ async fn gen_state_for_path(
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
         let initial_state = template
-            .get_build_state(full_path_without_locale.clone(), translator.get_locale())
+            .get_build_state(build_info)
             .await?;
         // Write that initial state to a static JSON file
         immutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),
-                &initial_state,
+                &initial_state.state.to_string(),
             )
             .await?;
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: full_path_with_locale.clone(),
-            state: Some(initial_state),
-        };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
-                page_props.clone(),
+                full_path_with_locale.clone(),
+                initial_state.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -208,7 +217,7 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
+        let head_str = template.render_head_str(initial_state, global_state.clone(), translator);
         immutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -246,20 +255,16 @@ async fn gen_state_for_path(
     // It's safe to add a property to the render options here because `.is_basic()`
     // will only return true if path generation is not being used (or anything else)
     if template.is_basic() {
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: full_path_with_locale,
-            state: None,
-        };
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
-                page_props.clone(),
+                full_path_with_locale,
+                TemplateState::empty(),
                 global_state.clone(),
                 cx,
                 translator,
             )
         });
-        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
+        let head_str = template.render_head_str(TemplateState::empty(), global_state.clone(), translator);
         // Write that prerendered HTML to a static file
         immutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)

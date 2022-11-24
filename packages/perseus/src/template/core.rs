@@ -1,13 +1,20 @@
 // This file contains logic to define how templates are rendered
 
+use std::any::TypeId;
+use std::marker::PhantomData;
+
 #[cfg(not(target_arch = "wasm32"))]
 use super::default_headers;
-use super::PageProps;
 #[cfg(not(target_arch = "wasm32"))]
 use super::RenderCtx;
 use crate::errors::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::make_async_trait;
+use crate::state::AnyFreeze;
+use crate::state::MakeRx;
+use crate::state::MakeRxRef;
+use crate::state::MakeUnrx;
+use crate::state::RxRef;
 use crate::translator::Translator;
 use crate::utils::provide_context_signal_replace;
 #[cfg(not(target_arch = "wasm32"))]
@@ -26,11 +33,94 @@ use crate::SsrNode;
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::header::HeaderMap;
+use serde::Deserialize;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use serde_json::Value;
 use sycamore::prelude::Scope;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::prelude::View;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
+
+/// A marker for when the type of template state is unknown.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+pub struct UnknownStateType;
+
+/// A wrapper for template state stored as a [`Value`]. This loses the underlying
+/// type information, but allows for serialization. This is a necessary compromise,
+/// since, without types being first-class citizens in Rust, full template type management
+/// appears presently impossible.
+#[derive(Clone, Debug)]
+pub struct TemplateStateWithType<T: Serialize + DeserializeOwned> {
+    /// The underlying state, stored as a [`Value`].
+    pub(crate) state: Value,
+    /// The user's actual type.
+    ty: PhantomData<T>,
+}
+impl<T: Serialize + DeserializeOwned + 'static> TemplateStateWithType<T> {
+    /// Convert the template state into its underlying concrete type, when that type is known.
+    pub fn to_concrete(self) -> Result<T, serde_json::Error> {
+        serde_json::from_value(self.state)
+    }
+    /// Creates a new empty template state.
+    pub fn empty() -> Self {
+        Self {
+            state: Value::Null,
+            ty: PhantomData,
+        }
+    }
+    /// Checks if this state is empty. This not only checks for states created as `Value::Null`, but also
+    /// those created with `()` explicitly set as their underlying type.
+    pub fn is_empty(&self) -> bool {
+        self.state.is_null() || TypeId::of::<T>() == TypeId::of::<()>()
+    }
+    /// Creates a new template state by deserializing from a string.
+    pub fn from_str(s: &str) -> Result<Self, serde_json::Error> {
+        let state = Self {
+            state: serde_json::from_str(s)?,
+            ty: PhantomData,
+        };
+        Ok(state)
+    }
+    /// Creates a new template state from a pre-deserialized [`Value`].
+    ///
+    /// Note that end users should almost always prefer `::from_str()`, and this is intended primarily
+    /// for server integrations.
+    pub fn from_value(v: Value) -> Self {
+        Self {
+            state: v,
+            ty: PhantomData,
+        }
+    }
+}
+impl TemplateStateWithType<UnknownStateType> {
+    /// Transform this into a [`TemplateStateWithType`] where the type is known. Once this is done,
+    /// `.to_concrete()` can be used to get this type out of the container.
+    pub fn add_type<T: Serialize + DeserializeOwned>(self) -> TemplateStateWithType<T> {
+        TemplateStateWithType {
+            state: self.state,
+            ty: PhantomData,
+        }
+    }
+}
+
+// Any user state shoudl be able to be made into this with a simple `.into()` for ergonomics
+impl<T: Serialize + DeserializeOwned> From<T> for TemplateState {
+    fn from(state: T) -> Self {
+        Self {
+            // This will happen at Perseus build-time (and should never happen unless the user uses non-string map types)
+            state: serde_json::to_value(state).expect("serializing template state failed (this is almost certainly due to non-string map keys in your types, which can't be serialized by serde)"),
+            ty: PhantomData,
+        }
+    }
+}
+
+/// A type alias for template state that has been converted into a [`Value`] without
+/// retaining the information of the original type, which is done internally to eliminate
+/// the need for generics, which cannot be used internally in Perseus for user state. The actual
+/// type is restored at the last minute when it's needed.
+pub type TemplateState = TemplateStateWithType<UnknownStateType>;
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error
@@ -51,43 +141,65 @@ pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + 
 /// [`blame_err!`](crate::blame_err).
 pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
 
+/// The output of the build seed system, which should be generated by a user function for
+/// each template.
+pub struct BuildPaths {
+    /// The paths to render underneath this template, without the template name or leading forward slashes.
+    pub paths: Vec<String>,
+    /// Any additional state, of an arbitrary type, to be passed to all future state generation. This can
+    /// be used to avoid unnecessary duplicate filesystem reads, or the like.
+    ///
+    /// The exact type information from this is deliberately discarded.
+    pub extra: TemplateState,
+}
+
+/// The information any function that generates state will be provided.
+#[derive(Clone)]
+pub struct StateGeneratorInfo<T: Serialize + DeserializeOwned> {
+    /// The path it is generating for, not including the template name or locale.
+    ///
+    /// **Warning:** previous versions of Perseus used to prefix this with the template name,
+    /// and this is no longer done, for convenience of handling.
+    pub path: String,
+    /// The locale it is generating for.
+    pub locale: String,
+    /// Any extra data from the template's build seed.
+    pub extra: TemplateStateWithType<T>,
+}
+
 // A series of asynchronous closure traits that prevent the user from having to
 // pin their functions
 #[cfg(not(target_arch = "wasm32"))]
-make_async_trait!(GetBuildPathsFnType, RenderFnResult<Vec<String>>);
+make_async_trait!(GetBuildPathsFnType, RenderFnResult<BuildPaths>);
 // The build state strategy needs an error cause if it's invoked from
 // incremental
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GetBuildStateFnType,
-    RenderFnResultWithCause<String>,
-    path: String,
-    locale: String
+    RenderFnResultWithCause<TemplateState>,
+    info: StateGeneratorInfo<UnknownStateType>
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GetRequestStateFnType,
-    RenderFnResultWithCause<String>,
-    path: String,
-    locale: String,
+    RenderFnResultWithCause<TemplateState>,
+    info: StateGeneratorInfo<UnknownStateType>,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     ShouldRevalidateFnType,
     RenderFnResultWithCause<bool>,
-    path: String,
-    locale: String,
+    info: StateGeneratorInfo<UnknownStateType>,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     AmalgamateStatesFnType,
-    RenderFnResultWithCause<String>,
-    path: String,
-    locale: String,
-    build_state: String,
-    request_state: String
+    RenderFnResultWithCause<TemplateState>,
+    info: StateGeneratorInfo<UnknownStateType>,
+    build_state: TemplateState,
+    request_state: TemplateState
 );
 
 // A series of closure types that should not be typed out more than once
@@ -96,16 +208,16 @@ make_async_trait!(
 /// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
 /// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
 pub type TemplateFn<G> =
-    Box<dyn for<'a> Fn(Scope<'a>, RouteManager<'a, G>, PageProps) + Send + Sync>;
+    Box<dyn for<'a> Fn(Scope<'a>, RouteManager<'a, G>, TemplateState, String) + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
 /// string, rather than a reactive template).
 #[cfg(not(target_arch = "wasm32"))]
-pub type HeadFn = Box<dyn Fn(Scope, PageProps) -> View<SsrNode> + Send + Sync>;
+pub type HeadFn = Box<dyn Fn(Scope, TemplateState) -> View<SsrNode> + Send + Sync>;
 #[cfg(not(target_arch = "wasm32"))]
 /// The type of functions that modify HTTP response headers.
-pub type SetHeadersFn = Box<dyn Fn(Option<String>) -> HeaderMap + Send + Sync>;
+pub type SetHeadersFn = Box<dyn Fn(TemplateState) -> HeaderMap + Send + Sync>;
 /// The type of functions that get build paths.
 #[cfg(not(target_arch = "wasm32"))]
 pub type GetBuildPathsFn = Box<dyn GetBuildPathsFnType + Send + Sync>;
@@ -165,9 +277,11 @@ pub struct Template<G: Html> {
     /// create sensible cache control headers.
     #[cfg(not(target_arch = "wasm32"))]
     set_headers: SetHeadersFn,
-    /// A function that gets the paths to render for at built-time. If
-    /// `incremental_generation` is `true`, more paths can be rendered at
-    /// request time on top of these.
+    /// A function that generates the information to begin building a template.
+    /// This is responsible for generating all the paths that will built for that template
+    /// at build-time (which may later be extended with incremental generation), along
+    /// with the generation of any extra state that may be collectively shared by other
+    /// state generating functions.
     #[cfg(not(target_arch = "wasm32"))]
     get_build_paths: Option<GetBuildPathsFn>,
     /// Defines whether or not any new paths that match this template will be
@@ -230,7 +344,7 @@ impl<G: Html> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_, _, _| {}),
+            template: Box::new(|_, _, _, _| {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(not(target_arch = "wasm32"))]
             head: Box::new(|cx, _| sycamore::view! { cx, }),
@@ -261,7 +375,8 @@ impl<G: Html> Template<G> {
     #[allow(clippy::too_many_arguments)]
     pub fn render_for_template_client<'a>(
         &self,
-        props: PageProps,
+        path: String,
+        state: TemplateState,
         cx: Scope<'a>,
         route_manager: &'a RouteManager<'a, G>,
         // Taking a reference here involves a serious risk of runtime panics, unfortunately (it's
@@ -273,7 +388,7 @@ impl<G: Html> Template<G> {
         // we have to do is provide the translator, replacing whatever is present
         provide_context_signal_replace(cx, translator);
 
-        (self.template)(cx, route_manager.clone(), props);
+        (self.template)(cx, route_manager.clone(), state, path);
     }
     /// Executes the user-given function that renders the template on the
     /// server-side ONLY. This automatically initializes an isolated global
@@ -281,7 +396,8 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn render_for_template_server<'a>(
         &self,
-        props: PageProps,
+        path: String,
+        state: TemplateState,
         global_state: Option<String>,
         cx: Scope<'a>,
         translator: &Translator,
@@ -298,7 +414,7 @@ impl<G: Html> Template<G> {
         let route_manager = RouteManager::new(cx);
         // We don't need to clean up the page disposer, because the child scope will be
         // removed properly when the `cx` this function was given is terminated
-        (self.template)(cx, route_manager.clone(), props);
+        (self.template)(cx, route_manager.clone(), state, path);
 
         let view_rc = route_manager.view.take();
         // TODO Valid to unwrap here? (We should be the only reference holder, since we
@@ -312,7 +428,7 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn render_head_str(
         &self,
-        props: PageProps,
+        state: TemplateState,
         global_state: Option<String>,
         translator: &Translator,
     ) -> String {
@@ -325,12 +441,12 @@ impl<G: Html> Template<G> {
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
             // We don't want to generate hydration keys for the head because it is static.
-            with_no_hydration_context(|| (self.head)(cx, props))
+            with_no_hydration_context(|| (self.head)(cx, state))
         })
     }
     /// Gets the list of templates that should be prerendered for at build-time.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn get_build_paths(&self) -> Result<Vec<String>, ServerError> {
+    pub async fn get_build_paths(&self) -> Result<BuildPaths, ServerError> {
         if let Some(get_build_paths) = &self.get_build_paths {
             let res = get_build_paths.call().await;
             match res {
@@ -358,11 +474,10 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_build_state(
         &self,
-        path: String,
-        locale: String,
-    ) -> Result<String, ServerError> {
+        info: StateGeneratorInfo<UnknownStateType>,
+    ) -> Result<TemplateState, ServerError> {
         if let Some(get_build_state) = &self.get_build_state {
-            let res = get_build_state.call(path, locale).await;
+            let res = get_build_state.call(info).await;
             match res {
                 Ok(res) => Ok(res),
                 Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
@@ -389,12 +504,11 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_request_state(
         &self,
-        path: String,
-        locale: String,
+        info: StateGeneratorInfo<UnknownStateType>,
         req: Request,
-    ) -> Result<String, ServerError> {
+    ) -> Result<TemplateState, ServerError> {
         if let Some(get_request_state) = &self.get_request_state {
-            let res = get_request_state.call(path, locale, req).await;
+            let res = get_request_state.call(info, req).await;
             match res {
                 Ok(res) => Ok(res),
                 Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
@@ -422,14 +536,13 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn amalgamate_states(
         &self,
-        path: String,
-        locale: String,
-        build_state: String,
-        request_state: String,
-    ) -> Result<String, ServerError> {
+        info: StateGeneratorInfo<UnknownStateType>,
+        build_state: TemplateState,
+        request_state: TemplateState,
+    ) -> Result<TemplateState, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamate_states {
             let res = amalgamate_states
-                .call(path, locale, build_state, request_state)
+                .call(info, build_state, request_state)
                 .await;
             match res {
                 Ok(res) => Ok(res),
@@ -456,12 +569,11 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn should_revalidate(
         &self,
-        path: String,
-        locale: String,
+        info: StateGeneratorInfo<UnknownStateType>,
         req: Request,
     ) -> Result<bool, ServerError> {
         if let Some(should_revalidate) = &self.should_revalidate {
-            let res = should_revalidate.call(path, locale, req).await;
+            let res = should_revalidate.call(info, req).await;
             match res {
                 Ok(res) => Ok(res),
                 Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
@@ -483,7 +595,7 @@ impl<G: Html> Template<G> {
     /// into any successful HTTP responses for this template, and they have
     /// the power to override.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_headers(&self, state: Option<String>) -> HeaderMap {
+    pub fn get_headers(&self, state: TemplateState) -> HeaderMap {
         (self.set_headers)(state)
     }
 
@@ -574,11 +686,61 @@ impl<G: Html> Template<G> {
     /// some state (use the `#[perseus::template]` macro for serialization
     /// convenience) and/or some global state, and then it must return a
     /// Sycamore [`View`].
-    pub fn template<F>(mut self, val: F) -> Template<G>
+    pub fn template<F, S, I, R>(mut self, val: F) -> Template<G>
     where
-        F: for<'a> Fn(Scope<'a>, RouteManager<'a, G>, PageProps) + Send + Sync + 'static,
+        F: for<'a> Fn(Scope<'a>, <<R as RxRef>::RxNonRef as MakeRxRef>::RxRef<'a>) -> View<G> + Send + Sync + 'static,
+        S: MakeRx<Rx = I> + Serialize + DeserializeOwned,
+        I: MakeUnrx<Unrx = S> + AnyFreeze + for<'a> MakeRxRef<RxRef<'a> = R> + Clone,
+        R: RxRef<RxNonRef = I>,
+        // // We need this so that the compiler understands that the reactive version of the
+        // // unreactive version of `R` has the same properties as `R` itself
+        // <<<S as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx:
+        //     Clone + AnyFreeze + MakeUnrx + MakeRxRef,
+        // <S as RxRef>::RxNonRef: MakeUnrx + AnyFreeze + Clone,
+        // <<<<S as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef = S
     {
-        self.template = Box::new(val);
+        self.template = Box::new(move |app_cx, mut route_manager, template_state, path| {
+            // Make sure now that there is actually state
+            if template_state.is_empty() {
+                // This will happen at build-time
+                panic!(
+                    "the template for path `{}` takes state, but no state was found (you probably forgot to write a state generating function, like `get_build_state`)",
+                    &path,
+                );
+            }
+            // Declare a type on the untyped state (this doesn't perform any conversions, but the type we declare may be invalid)
+            let typed_state = template_state.add_type::<S>();
+
+            // Get an intermediate state type by checking against frozen state, active state, etc.
+            let intermediate_state = {
+                // Check if properties of the reactive type are already in the page state store
+                // If they are, we'll use them (so state persists for templates across the whole app)
+                let render_ctx = RenderCtx::from_ctx(app_cx);
+                // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
+                match render_ctx.get_active_or_frozen_page_state::<I>(&path) {
+                    // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
+                    ::std::option::Option::Some(existing_state) => existing_state,
+                    // Again, frozen state has been dealt with already, so we'll fall back to generated state
+                    ::std::option::Option::None => {
+                        // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking).
+                        // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message.
+                        // If this returns an error, we know the state was of the incorrect type (there is literally nothing we can do about this, and it's best to fail-fast
+                        // and render nothing, hoping that this will appear at build-time)
+                        match render_ctx.register_page_state_value::<I>(&path, typed_state) {
+                            Ok(state) => state,
+                            Err(err) => panic!("unrecoverable error in template state derivation: {:#?}", err),
+                        }
+                    }
+                }
+            };
+
+            let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+                let ref_struct = intermediate_state.to_ref_struct(child_cx);
+                let view = val(child_cx, ref_struct);
+                route_manager.update_view(view);
+            });
+            route_manager.update_disposer(disposer);
+        });
         self
     }
 
@@ -588,7 +750,7 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn head(
         mut self,
-        val: impl Fn(Scope, PageProps) -> View<SsrNode> + Send + Sync + 'static,
+        val: impl Fn(Scope, TemplateState) -> View<SsrNode> + Send + Sync + 'static,
     ) -> Template<G> {
         // Headers are always prerendered on the server-side
         self.head = Box::new(val);
@@ -607,7 +769,7 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn set_headers_fn(
         mut self,
-        val: impl Fn(Option<String>) -> HeaderMap + Send + Sync + 'static,
+        val: impl Fn(TemplateState) -> HeaderMap + Send + Sync + 'static,
     ) -> Template<G> {
         self.set_headers = Box::new(val);
         self
