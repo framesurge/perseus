@@ -31,32 +31,11 @@ pub fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
 }
 
 #[perseus::build_state]
-pub fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<IndexPageState> {
-    let name: String = get_name()
-        .await?
-        .into_iter()
-        .next()
-        .map(|test| test.thing)
-        .unwrap()?
-        .to_string();
-
-    Ok(IndexPageState { greeting: name })
+pub async fn get_build_state(
+    _path: String,
+    _locale: String,
+) -> RenderFnResultWithCause<IndexPageState> {
+    Ok(IndexPageState {
+        greeting: "Hello World!".to_string(),
+    })
 }
-
-async fn get_name() -> std::io::Result<Vec<Test>> {
-    todo!()
-}
-
-struct Test {
-    thing: std::io::Result<String>,
-}
-
-// #[perseus::build_state]
-// pub async fn get_build_state(
-//     _path: String,
-//     _locale: String,
-// ) -> RenderFnResultWithCause<IndexPageState> {
-//     Ok(IndexPageState {
-//         greeting: "Hello World!".to_string(),
-//     })
-// }

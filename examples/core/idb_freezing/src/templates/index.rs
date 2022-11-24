@@ -1,9 +1,10 @@
+use crate::global_state::AppStateRx;
 use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-use crate::global_state::AppStateRx;
-
-#[perseus::make_rx(IndexPropsRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "IndexPropsRx")]
 pub struct IndexProps {
     username: String,
 }

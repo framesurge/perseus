@@ -1,7 +1,6 @@
+use crate::global_state::AppStateRx;
 use perseus::prelude::*;
 use sycamore::prelude::*;
-
-use crate::global_state::AppStateRx;
 
 // Note that this template takes no state of its own in this example, but it
 // certainly could

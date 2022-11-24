@@ -1,11 +1,13 @@
 // This page exists mostly for testing revalidation together with incremental
 // generation (because the two work in complex ways together)
 
-use perseus::{RenderFnResult, RenderFnResultWithCause, Template};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use sycamore::prelude::{view, Html, Scope, View};
+use sycamore::prelude::*;
 
-#[perseus::make_rx(PageStateRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "PageStateRx")]
 pub struct PageState {
     pub time: String,
 }

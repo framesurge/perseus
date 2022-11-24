@@ -275,7 +275,9 @@ pub fn engine_main(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// Fields that have nested reactivity should also use this derive macro.
 #[proc_macro_derive(ReactiveState, attributes(rx))]
 pub fn reactive_state(input: TokenStream) -> TokenStream {
-    let input = match ReactiveStateDeriveInput::from_derive_input(&syn::parse_macro_input!(input as DeriveInput)) {
+    let input = match ReactiveStateDeriveInput::from_derive_input(&syn::parse_macro_input!(
+        input as DeriveInput
+    )) {
         Ok(input) => input,
         Err(err) => return err.write_errors().into(),
     };
