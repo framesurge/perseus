@@ -59,7 +59,7 @@ pub struct TemplateStateWithType<T: Serialize + DeserializeOwned> {
 impl<T: Serialize + DeserializeOwned + 'static> TemplateStateWithType<T> {
     /// Convert the template state into its underlying concrete type, when that
     /// type is known.
-    pub fn to_concrete(self) -> Result<T, serde_json::Error> {
+    pub(crate) fn to_concrete(self) -> Result<T, serde_json::Error> {
         serde_json::from_value(self.state)
     }
     /// Creates a new empty template state.
@@ -76,7 +76,7 @@ impl<T: Serialize + DeserializeOwned + 'static> TemplateStateWithType<T> {
         self.state.is_null() || TypeId::of::<T>() == TypeId::of::<()>()
     }
     /// Creates a new template state by deserializing from a string.
-    pub fn from_str(s: &str) -> Result<Self, serde_json::Error> {
+    pub(crate) fn from_str(s: &str) -> Result<Self, serde_json::Error> {
         let state = Self {
             state: serde_json::from_str(s)?,
             ty: PhantomData,
@@ -96,7 +96,7 @@ impl<T: Serialize + DeserializeOwned + 'static> TemplateStateWithType<T> {
     /// Transform this into a [`TemplateStateWithType`] with a different type.
     /// Once this is done, `.to_concrete()` can be used to get this type out
     /// of the container.
-    pub fn change_type<U: Serialize + DeserializeOwned>(self) -> TemplateStateWithType<U> {
+    pub(crate) fn change_type<U: Serialize + DeserializeOwned>(self) -> TemplateStateWithType<U> {
         TemplateStateWithType {
             state: self.state,
             ty: PhantomData,
@@ -171,19 +171,37 @@ pub struct StateGeneratorInfo<B: Serialize + DeserializeOwned + Send + Sync> {
     /// The locale it is generating for.
     pub locale: String,
     /// Any extra data from the template's build seed.
-    pub extra: TemplateStateWithType<B>,
+    pub(crate) extra: TemplateStateWithType<B>,
 }
 impl<B: Serialize + DeserializeOwned + Send + Sync + 'static> StateGeneratorInfo<B> {
     /// Transform the underlying [`TemplateStateWithType`] into one with a
     /// different type. Once this is done, `.to_concrete()` can be used to
     /// get this type out of the container.
-    pub fn change_type<U: Serialize + DeserializeOwned + Send + Sync>(
-        self,
-    ) -> StateGeneratorInfo<U> {
+    #[cfg(not(target_arch = "wasm32"))] // Just to silence clippy (if you need to remove this, do)
+    fn change_type<U: Serialize + DeserializeOwned + Send + Sync>(self) -> StateGeneratorInfo<U> {
         StateGeneratorInfo {
             path: self.path,
             locale: self.locale,
             extra: self.extra.change_type(),
+        }
+    }
+    /// Get the extra build state as an owned type.
+    ///
+    /// # Panics
+    /// Hypothetically, if there were a failure in the Perseus core such that
+    /// your extra build state ended up being malformed, this would panic.
+    /// However, this should never happen, as there are multiplr layers of
+    /// checks before this that should catch such an event. If this panics,
+    /// and if keeps panicking after `perseus clean`, please report it as a
+    /// bug (assuming all your types are correct).
+    pub fn get_extra(&self) -> B {
+        match B::deserialize(&self.extra.state) {
+            Ok(extra) => extra,
+            // This should never happen...
+            Err(err) => panic!(
+                "unrecoverable extra build state extraction failure: {:#?}",
+                err
+            ),
         }
     }
 }
