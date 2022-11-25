@@ -10,6 +10,7 @@ use perseus::{
         ServerOptions,
     },
     stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
     utils::get_path_prefix_server,
     ErrorPages, SsrNode,
 };
@@ -44,7 +45,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
-    global_state: web::Data<Option<String>>,
+    global_state: web::Data<TemplateState>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
@@ -137,7 +138,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
             let mut http_res = HttpResponse::Ok();
             http_res.content_type("text/html");
             // Generate and add HTTP headers
-            for (key, val) in template.get_headers(page_data.state) {
+            for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                 http_res.insert_header((key.unwrap(), val));
             }
 

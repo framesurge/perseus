@@ -2,12 +2,13 @@ use crate::errors::*;
 use crate::page_data::PageDataPartial;
 use crate::router::{RouteManager, RouteVerdict, RouterLoadState};
 use crate::state::PssContains;
-use crate::template::{PageProps, RenderCtx, Template, TemplateNodeType};
+use crate::template::{RenderCtx, Template, TemplateNodeType, TemplateState};
 use crate::utils::checkpoint;
 use crate::utils::fetch;
 use crate::utils::get_path_prefix_client;
 use crate::utils::replace_head;
 use fmterr::fmt_err;
+use serde_json::Value;
 use std::rc::Rc;
 use sycamore::prelude::*;
 
@@ -168,13 +169,13 @@ pub(crate) async fn get_subsequent_view(
         }
         // We have everything locally, so we can move right ahead!
         PssContains::All => Ok(PageDataPartial {
-            state: Some("PSS".to_string()), /* The macros will preferentially use the PSS state,
-                                             * so this will never be parsed */
+            state: Value::Null, /* The macros will preferentially use the PSS state,
+                                 * so this will never be parsed */
             head: pss.get_head(&path).unwrap(),
         }),
         // We only have document metadata, but the page definitely takes no state, so we're fine
         PssContains::HeadNoState => Ok(PageDataPartial {
-            state: None,
+            state: Value::Null,
             head: pss.get_head(&path).unwrap(),
         }),
         // The page's data has been preloaded at some other time
@@ -251,20 +252,22 @@ pub(crate) async fn get_subsequent_view(
         }
     };
 
-    let page_props = PageProps {
-        path: path_with_locale.clone(),
-        state: page_data.state,
-    };
     let template_name = template.get_path();
     // Pre-emptively update the router state
     checkpoint("page_interactive");
     // Update the router state
     router_state.set_load_state(RouterLoadState::Loaded {
         template_name,
-        path: path_with_locale,
+        path: path_with_locale.clone(),
     });
     // Now return the view that should be rendered
-    template.render_for_template_client(page_props, cx, route_manager, translator);
+    template.render_for_template_client(
+        path_with_locale,
+        TemplateState::from_value(page_data.state),
+        cx,
+        route_manager,
+        translator,
+    );
     SubsequentView::Success
 }
 

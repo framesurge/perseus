@@ -1,14 +1,16 @@
-use perseus::{Html, RenderFnResultWithCause, Template};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[perseus::make_rx(IndexPageStateRx)]
-pub struct IndexPageState {
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "IndexPageStateRx")]
+struct IndexPageState {
     server_ip: String,
     browser_ip: Option<String>,
 }
 
 #[perseus::template]
-pub fn index_page<'a, G: Html>(
+fn index_page<'a, G: Html>(
     cx: Scope<'a>,
     IndexPageStateRx {
         server_ip,
@@ -62,14 +64,11 @@ pub fn index_page<'a, G: Html>(
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template(index_page)
+        .template_with_state(index_page)
 }
 
-#[perseus::build_state]
-pub async fn get_build_state(
-    _path: String,
-    _locale: String,
-) -> RenderFnResultWithCause<IndexPageState> {
+#[engine_only_fn]
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
     // We'll cache the result with `try_cache_res`, which means we only make the
     // request once, and future builds will use the cached result (speeds up
     // development)

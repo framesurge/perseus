@@ -1,12 +1,12 @@
-use perseus::{state::GlobalStateCreator, RenderFnResult};
+use perseus::{prelude::*, state::GlobalStateCreator};
 use serde::{Deserialize, Serialize};
 
 pub fn get_global_state_creator() -> GlobalStateCreator {
     GlobalStateCreator::new().build_state_fn(get_build_state)
 }
 
-#[perseus::global_build_state]
-pub async fn get_build_state() -> RenderFnResult<AppState> {
+#[engine_only_fn]
+async fn get_build_state() -> RenderFnResult<AppState> {
     Ok(AppState {
         // We explicitly tell the first page that no login state has been checked yet
         auth: AuthData {
@@ -16,10 +16,11 @@ pub async fn get_build_state() -> RenderFnResult<AppState> {
     })
 }
 
-#[perseus::make_rx(AppStateRx)]
-#[rx::nested("auth", AuthDataRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "AppStateRx")]
 pub struct AppState {
     /// Authentication data accessible to all pages.
+    #[rx(nested)]
     pub auth: AuthData,
 }
 
@@ -37,7 +38,8 @@ pub enum LoginState {
 /// Authentication data for the app.
 // In a real app, you might store privileges here, or user preferences, etc. (all the things you'd
 // need to have available constantly and everywhere)
-#[perseus::make_rx(AuthDataRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "AuthDataRx")]
 pub struct AuthData {
     /// The actual login status.
     pub state: LoginState,

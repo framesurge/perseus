@@ -71,7 +71,7 @@ pub enum ClientError {
     },
     // If the user is using the template macros, this should never be emitted because we can
     // ensure that the generated state is valid
-    #[error("tried to deserialize invalid state")]
+    #[error("tried to deserialize invalid state (it was not malformed, but the state was not of the declared type)")]
     StateInvalid {
         #[source]
         source: serde_json::Error,
@@ -111,6 +111,21 @@ pub enum ServerError {
         #[source]
         source: std::string::FromUtf8Error,
     },
+    #[error("the template '{template_name}' had no helper build state written to the immutable store (the store has been tampered with, and the app must be rebuilt)")]
+    MissingBuildExtra { template_name: String },
+    #[error("the template '{template_name}' had invalid helper build state written to the immutable store (the store has been tampered with, and the app must be rebuilt)")]
+    InvalidBuildExtra {
+        template_name: String,
+        #[source]
+        source: serde_json::Error,
+    },
+    #[error("page state was encountered that could not be deserialized into serde_json::Value (the store has been tampered with, and the app must be rebuilt)")]
+    InvalidPageState {
+        #[source]
+        source: serde_json::Error,
+    },
+    #[error("the template name did not prefix the path (this request was severely malformed)")]
+    TemplateNameNotInPath,
     #[error(transparent)]
     GlobalStateError(#[from] GlobalStateError),
     #[error(transparent)]

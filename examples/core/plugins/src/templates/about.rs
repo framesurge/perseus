@@ -1,16 +1,15 @@
-use perseus::Template;
-use sycamore::prelude::{view, Html, Scope, SsrNode, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 // This page will actually be replaced entirely by a plugin!
-#[perseus::template]
-pub fn about_page<G: Html>(cx: Scope) -> View<G> {
+fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "About." }
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope) -> View<SsrNode> {
+#[engine_only_fn]
+fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "About Page | Perseus Example – Plugins" }
     }

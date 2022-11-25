@@ -10,6 +10,7 @@ use perseus::{
     internal::PageDataPartial,
     server::{get_page_for_template, GetPageProps, ServerOptions},
     stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
     Request,
 };
 use serde::Deserialize;
@@ -39,7 +40,7 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
-    global_state: Arc<Option<String>>,
+    global_state: Arc<TemplateState>,
 ) -> (StatusCode, HeaderMap, String) {
     // Separate the locale from the rest of the page name
     let locale = &path_parts[0];
@@ -92,13 +93,13 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
         match page_data {
             Ok(page_data) => {
                 let partial_page_data = PageDataPartial {
-                    state: page_data.state,
+                    state: page_data.state.clone(),
                     head: page_data.head,
                 };
                 // http_res.content_type("text/html");
                 // Generate and add HTTP headers
                 let mut header_map = HeaderMap::new();
-                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
+                for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                     header_map.insert(key.unwrap(), val);
                 }
 

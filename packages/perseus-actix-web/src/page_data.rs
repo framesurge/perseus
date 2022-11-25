@@ -7,6 +7,7 @@ use perseus::{
     internal::PageDataPartial,
     server::{get_page_for_template, GetPageProps, ServerOptions},
     stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
 };
 use serde::Deserialize;
 
@@ -25,7 +26,7 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
-    global_state: web::Data<Option<String>>,
+    global_state: web::Data<TemplateState>,
     web::Query(query_params): web::Query<PageDataReq>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
@@ -75,13 +76,13 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
         match page_data {
             Ok(page_data) => {
                 let partial_page_data = PageDataPartial {
-                    state: page_data.state,
+                    state: page_data.state.clone(),
                     head: page_data.head,
                 };
                 let mut http_res = HttpResponse::Ok();
                 http_res.content_type("text/html");
                 // Generate and add HTTP headers
-                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
+                for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                     http_res.insert_header((key.unwrap(), val));
                 }
 

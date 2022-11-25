@@ -8,6 +8,7 @@ use perseus::{
         ServerOptions,
     },
     stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
     utils::get_path_prefix_server,
     ErrorPages, SsrNode,
 };
@@ -41,7 +42,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
-    global_state: Arc<Option<String>>,
+    global_state: Arc<TemplateState>,
 ) -> Response<String> {
     let error_pages = &opts.error_pages;
     let path = match urlencoding::decode(path.as_str()) {
@@ -122,7 +123,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             let mut http_res = Response::builder().status(200);
             // http_res.content_type("text/html");
             // Generate and add HTTP headers
-            for (key, val) in template.get_headers(page_data.state) {
+            for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                 http_res = http_res.header(key.unwrap(), val);
             }
 

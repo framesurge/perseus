@@ -1,17 +1,19 @@
 // This page exists mostly for testing revalidation together with incremental
 // generation (because the two work in complex ways together)
 
-use perseus::{RenderFnResult, RenderFnResultWithCause, Template};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use sycamore::prelude::{view, Html, Scope, View};
+use sycamore::prelude::*;
 
-#[perseus::make_rx(PageStateRx)]
-pub struct PageState {
-    pub time: String,
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "PageStateRx")]
+struct PageState {
+    time: String,
 }
 
 #[perseus::template]
-pub fn revalidation_and_incremental_generation_page<'a, G: Html>(
+fn revalidation_and_incremental_generation_page<'a, G: Html>(
     cx: Scope<'a>,
     state: PageStateRx<'a>,
 ) -> View<G> {
@@ -22,7 +24,7 @@ pub fn revalidation_and_incremental_generation_page<'a, G: Html>(
 
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("revalidation_and_incremental_generation")
-        .template(revalidation_and_incremental_generation_page)
+        .template_with_state(revalidation_and_incremental_generation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
         .revalidate_after(Duration::new(5, 0))
         // This is an alternative method of revalidation that uses logic, which will be executed
@@ -39,25 +41,27 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // This will get the system time when the app was built
-#[perseus::build_state]
-pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
+#[engine_only_fn]
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         time: format!("{:?}", std::time::SystemTime::now()),
     })
 }
 
-#[perseus::build_paths]
-pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
-    Ok(vec!["test".to_string(), "blah/test/blah".to_string()])
+#[engine_only_fn]
+async fn get_build_paths() -> RenderFnResult<BuildPaths> {
+    Ok(BuildPaths {
+        paths: vec!["test".to_string(), "blah/test/blah".to_string()],
+        extra: ().into(),
+    })
 }
 
 // This will run every time `.revalidate_after()` permits the page to be
 // revalidated This acts as a secondary check, and can perform arbitrary logic
 // to check if we should actually revalidate a page
-#[perseus::should_revalidate]
-pub async fn should_revalidate(
-    _path: String,
-    _locale: String,
+#[engine_only_fn]
+async fn should_revalidate(
+    _info: StateGeneratorInfo<()>,
     _req: perseus::Request,
 ) -> RenderFnResultWithCause<bool> {
     // For simplicity's sake, this will always say we should revalidate, but you

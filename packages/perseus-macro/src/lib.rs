@@ -12,94 +12,16 @@ documentation, and this should mostly be used as a secondary reference source. Y
 */
 
 mod entrypoint;
-mod head;
 mod rx_state;
-mod state_fns;
 mod template;
 mod test;
 
-use darling::FromMeta;
+use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
 use quote::quote;
-use state_fns::StateFnType;
-use syn::{DeriveInput, ItemStruct, Path};
+use syn::{parse_macro_input, DeriveInput, ItemFn, Path, Signature};
 
-/// Annotates functions used for generating state at build time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for build state
-/// functions.
-#[proc_macro_attribute]
-pub fn build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::BuildState).into()
-}
-
-/// Annotates functions used for generating paths at build time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for build paths
-/// functions.
-#[proc_macro_attribute]
-pub fn build_paths(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::BuildPaths).into()
-}
-
-/// Annotates functions used for generating global state at build time to
-/// support automatic serialization/deserialization of app state and
-/// client/server division. This supersedes the old `autoserde` macro for global
-/// build state functions.
-#[proc_macro_attribute]
-pub fn global_build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::GlobalBuildState).into()
-}
-
-/// Annotates functions used for generating state at request time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for request state
-/// functions.
-#[proc_macro_attribute]
-pub fn request_state(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::RequestState).into()
-}
-
-/// Annotates functions used for generating state at build time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for build state
-/// functions.
-#[proc_macro_attribute]
-pub fn set_headers(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::SetHeaders).into()
-}
-
-/// Annotates functions used for amalgamating build-time and request-time states
-/// to support automatic serialization/deserialization of app state and
-/// client/server division. This supersedes the old `autoserde` macro for state
-/// amalgamation functions.
-#[proc_macro_attribute]
-pub fn amalgamate_states(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::AmalgamateStates).into()
-}
-
-/// Annotates functions used for checking if a template should revalidate and
-/// request-time states to support automatic serialization/deserialization
-/// of app state and client/server division. This supersedes the old `autoserde`
-/// macro for revalidation determination functions.
-#[proc_macro_attribute]
-pub fn should_revalidate(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::ShouldRevalidate).into()
-}
+use crate::rx_state::ReactiveStateDeriveInput;
 
 // TODO(0.5.x) Remove this entirely
 #[doc(hidden)]
@@ -111,58 +33,25 @@ pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// The new version of `#[template]` designed for reactive state. This can
-/// interface automatically with global state, and will automatically provide
-/// Sycamore `#[component]` annotations. To use this, you don't need to provide
-/// anything other than an optional custom type parameter letter (by default,
-/// `G` will be used). Unlike with the original macro, this will automatically
-/// handle component names internally.
+/// A helper macro for templates that use reactive state. Once, this was needed
+/// on all Perseus templates, however, today, templates that take no state, or
+/// templates that take unreactive state, can be provided as normal functions
+/// to the methods `.template()` and `.template_with_unreactive_state()`
+/// respectively, on Perseus' `Template` type.
 ///
-/// The first argument your template function can take is state generated for it
-/// (e.g. by the *build state* strategy), but the reactive version (created with
-/// `#[make_rx]` usually). From this, Perseus can infer the other required types
-/// and automatically make your state reactive for you.
+/// The only function of this macro is to convert the provided intermediate
+/// reactive type to a reference reactive type (see the book to learn more about
+/// Perseus' state platform).
 ///
-/// The second argument your template function can take is a global state
-/// generated with the `GlobalStateCreator`. You should also provide the
-/// reactive type here, and Perseus will do all the rest in the background.
+/// For those coming from Sycamore, be aware that Perseus templates are *not*
+/// Sycamore components, they are normal functions that return a Sycamore
+/// `View<G>`.
 ///
-/// Labels a function as a Perseus template, automatically managing its state
-/// and integrating it into your app. Functions annotated with this macro
-/// take at least one argument for Sycamore's reactive scope, and then a
-/// possible other argument for some state they generate with a rendering
-/// strategy (e.g. *build state*, generated when you build your app, see the
-/// book for more). That state is expected to be reactive (see [`make_rx`]),
-/// although, if you use `#[template(unreactive)]`, you can use any state that
-/// has been annotated with [`UnreactiveState`] to make it clear to Perseus not
-/// to expect something reactive.
-///
-/// Although you can make a Perseus app without using this macro, this isn't
-/// recommended, since Perseus passes around state in your app as `String`s and
-/// `dyn Any`s, meaning there is a large amount of overhead to actually using
-/// the state you expect. This macro will automatically handle all that overhead
-/// for you, making the process of building your app *significantly* smoother!
-///
-/// *Note: in previous versions of Perseus, there was a `template_rx` macro,
-/// which has become this. The old unreactive `template` macro has become
-/// `#[template(unreactive)]`. For thos used to using Sycamore `#[component]`
-/// annotation on their pages, this is no longer required. Note also that global
-/// state is now accessed through the `.get_global_state()` method on Perseus'
-/// `RenderCtx`.*
+/// *Note:* this macro will eventually be removed entirely.
 #[proc_macro_attribute]
-pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn template(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template::TemplateFn);
-    let is_reactive = args.to_string() != "unreactive";
-    template::template_impl(parsed, is_reactive).into()
-}
-
-/// Labels a function as a Perseus head function, which is very similar to a
-/// template, but for the HTML metadata in the document `<head>`.
-#[proc_macro_attribute]
-pub fn head(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as head::HeadFn);
-
-    head::head_impl(parsed).into()
+    template::template_impl(parsed).into()
 }
 
 /// Marks the given function as a Perseus test. Functions marked with this
@@ -267,85 +156,20 @@ pub fn engine_main(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// and implement a `.make_rx()` method on the original that allows turning an
 /// instance of the unreactive `struct` into an instance of the reactive one.
 ///
-/// This macro automatically derives `serde::Serialize` and `serde::Deserialize`
-/// on the original `struct`, so do NOT add these yourself, or errors will
-/// occur. Note that you can still use Serde helper macros (e.g. `#[serde(rename
-/// = "testField")]`) as usual. `Clone` will also be derived on both the
-/// original and the new `struct`, so do NOT try to derive it yourself.
-///
 /// If one of your fields is itself a `struct`, by default it will just be
 /// wrapped in a `Signal`, but you can also enable nested fine-grained
-/// reactivity by adding the `#[rx::nested("field_name", FieldTypeRx)]` helper
-/// attribute to the `struct` (not the field, that isn't supported by Rust yet),
-/// where `field_name` is the name of the field you want to use instead
-/// reactivity on, and `FieldTypeRx` is the wrapper type that will be expected.
-/// This should be created by using this macro on the original `struct` type.
-///
-/// Note that this will be deprecated or significantly altered by Sycamore's new
-/// observables system (when it's released). For that reason, this doesn't
-/// support more advanced features like leaving some fields unreactive, this is
-/// an all-or-nothing solution for now.
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// use serde::{Serialize, Deserialize};
-/// use perseus::make_rx;
-/// // We need this trait in scope to manually invoke `.make_rx()`
-/// use perseus::state::MakeRx;
-///
-/// #[make_rx(TestRx)]
-/// // Notice that we don't need to derive `Serialize`,`Deserialize`, or `Clone`, the macro does it for us
-/// #[rx::nested("nested", NestedRx)]
-/// struct Test {
-///     #[serde(rename = "foo_test")]
-///     foo: String,
-///     bar: u16,
-///     // This will get simple reactivity
-///     baz: Baz,
-///     // This will get fine-grained reactivity
-///     // We use the unreactive type in the declaration, and tell the macro what the reactive type is in the annotation above
-///     nested: Nested
-/// }
-/// // On unreactive types, we'll need to derive `Serialize` and `Deserialize` as usual
-/// #[derive(Serialize, Deserialize, Clone)]
-/// struct Baz {
-///     test: String
-/// }
-/// #[perseus_macro::make_rx(NestedRx)]
-/// struct Nested {
-///     test: String
-/// }
-///
-/// let new = Test {
-///     foo: "foo".to_string(),
-///     bar: 5,
-///     baz: Baz {
-///         // We won't be able to `.set()` this
-///         test: "test".to_string()
-///     },
-///     nested: Nested {
-///         // We will be able to `.set()` this
-///         test: "nested".to_string()
-///     }
-/// }.make_rx();
-/// // Simple reactivity
-/// new.bar.set(6);
-/// // Simple reactivity on a `struct`
-/// new.baz.set(Baz {
-///     test: "updated".to_string()
-/// });
-/// // Nested reactivity on a `struct`
-/// new.nested.test.set("updated".to_string());
-/// // Our own derivations still remain
-/// let _new_2 = new.clone();
-/// ```
-#[proc_macro_attribute]
-pub fn make_rx(args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as ItemStruct);
-    let name = syn::parse_macro_input!(args as syn::Ident);
+/// reactivity by adding the `#[rx(nested)]` helper macro to the field.
+/// Fields that have nested reactivity should also use this derive macro.
+#[proc_macro_derive(ReactiveState, attributes(rx))]
+pub fn reactive_state(input: TokenStream) -> TokenStream {
+    let input = match ReactiveStateDeriveInput::from_derive_input(&syn::parse_macro_input!(
+        input as DeriveInput
+    )) {
+        Ok(input) => input,
+        Err(err) => return err.write_errors().into(),
+    };
 
-    rx_state::make_rx_impl(parsed, name).into()
+    rx_state::make_rx_impl(input).into()
 }
 
 /// Marks the annotated code as only to be run as part of the engine (the
@@ -370,6 +194,31 @@ pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_2: proc_macro2::TokenStream = input.into();
     quote! {
         #[cfg(target_arch = "wasm32")]
+        #input_2
+    }
+    .into()
+}
+
+/// A convenience macro that makes sure the given function is only defined on
+/// the engine-side, creating an empty function on the browser-side. Perseus
+/// implicitly expects most of your state generation functions to be defined in
+/// this way (though you certainly don't have to use this macro).
+///
+/// Note that this will convert `async` functions to non-`async` functions.
+#[proc_macro_attribute]
+pub fn engine_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_2: proc_macro2::TokenStream = input.clone().into();
+    let ItemFn {
+        vis,
+        sig: Signature { ident, .. },
+        ..
+    } = parse_macro_input!(input as ItemFn);
+
+    quote! {
+        #[cfg(target_arch = "wasm32")]
+        #vis fn #ident () {}
+        // One the engine-side, the function is unmodified
+        #[cfg(not(target_arch = "wasm32"))]
         #input_2
     }
     .into()

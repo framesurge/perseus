@@ -2,8 +2,7 @@ use perseus::prelude::*;
 use perseus::router::RouterLoadState;
 use sycamore::prelude::*;
 
-#[perseus::template]
-pub fn router_state_page<G: Html>(cx: Scope) -> View<G> {
+fn router_state_page<G: Html>(cx: Scope) -> View<G> {
     let load_state = RenderCtx::from_ctx(cx).router.get_load_state(cx);
     // This uses Sycamore's `create_memo` to create a state that will update
     // whenever the router state changes

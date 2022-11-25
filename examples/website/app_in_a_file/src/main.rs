@@ -1,4 +1,5 @@
-use perseus::{Html, PerseusApp, RenderFnResultWithCause, Template};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
 // Initialize our app with the `perseus_warp` package's default server (fully
@@ -9,7 +10,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         // Create a new template at `index`, which maps to our landing page
         .template(|| {
             Template::new("index")
-                .template(index_page)
+                .template_with_state(index_page)
                 .build_state_fn(get_index_build_state)
         })
         .template(|| Template::new("about").template(about_page))
@@ -31,17 +32,17 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, props: IndexPropsRx<'a>) -> View<G> {
     }
 }
 
-#[perseus::make_rx(IndexPropsRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "IndexPropsRx")]
 struct IndexProps {
     name: String,
 }
 
 // This function will be run when you build your app, to generate default state
 // ahead-of-time
-#[perseus::build_state]
+#[engine_only_fn]
 async fn get_index_build_state(
-    _path: String,
-    _locale: String,
+    _info: StateGeneratorInfo<()>,
 ) -> RenderFnResultWithCause<IndexProps> {
     let props = IndexProps {
         name: "User".to_string(),
@@ -50,7 +51,6 @@ async fn get_index_build_state(
 }
 // EXCERPT_END
 
-#[perseus::template]
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "This is an example webapp created with Perseus!" }

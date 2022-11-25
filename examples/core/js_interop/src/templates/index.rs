@@ -3,8 +3,7 @@ use sycamore::prelude::{view, Scope, View};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[perseus::template]
-pub fn index_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         // We'll use JS to change this message manually
         p(id = "message") { "Hello World!" }

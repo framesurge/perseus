@@ -1,15 +1,16 @@
+use crate::global_state::AppStateRx;
 use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-use crate::global_state::AppStateRx;
-
-#[perseus::make_rx(IndexPropsRx)]
-pub struct IndexProps {
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "IndexPropsRx")]
+struct IndexProps {
     username: String,
 }
 
 #[perseus::template]
-pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
+fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());
     let thaw_status = create_signal(cx, String::new());
@@ -90,14 +91,11 @@ pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template(index_page)
+        .template_with_state(index_page)
 }
 
-#[perseus::build_state]
-pub async fn get_build_state(
-    _path: String,
-    _locale: String,
-) -> RenderFnResultWithCause<IndexProps> {
+#[engine_only_fn]
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexProps> {
     Ok(IndexProps {
         username: "".to_string(),
     })

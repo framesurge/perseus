@@ -1,8 +1,7 @@
-use perseus::{Html, Template};
-use sycamore::prelude::{view, Scope, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
-#[perseus::template]
-pub fn index_page<G: Html>(cx: Scope) -> View<G> {
+fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "Hello World!" }
         a(href = "about", id = "about-link") { "About!" }

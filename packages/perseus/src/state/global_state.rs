@@ -3,13 +3,19 @@ use super::{Freeze, MakeRx, MakeUnrx};
 #[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
 use crate::make_async_trait;
-use crate::template::RenderFnResult;
+use crate::template::{RenderFnResult, TemplateState};
 use crate::utils::AsyncFnReturn;
 use futures::Future;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-make_async_trait!(GlobalStateCreatorFnType, RenderFnResult<String>);
+make_async_trait!(GlobalStateCreatorFnType, RenderFnResult<TemplateState>);
+make_async_trait!(
+    GlobalStateCreatorUserFnType<S: Serialize + DeserializeOwned + MakeRx>,
+    RenderFnResult<S>
+);
 /// The type of functions that generate global state. These will generate a
 /// `String` for their custom global state type.
 #[cfg(not(target_arch = "wasm32"))]
@@ -40,11 +46,21 @@ impl GlobalStateCreator {
     }
     /// Adds a function to generate global state at build-time.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn build_state_fn(
+    pub fn build_state_fn<S>(
         mut self,
-        val: impl GlobalStateCreatorFnType + Send + Sync + 'static,
-    ) -> Self {
-        self.build = Some(Box::new(val));
+        val: impl GlobalStateCreatorUserFnType<S> + Clone + Send + Sync + 'static,
+    ) -> Self
+    where
+        S: Serialize + DeserializeOwned + MakeRx,
+    {
+        self.build = Some(Box::new(move || {
+            let val = val.clone();
+            async move {
+                let user_state = val.call().await?;
+                let template_state: TemplateState = user_state.into();
+                Ok(template_state)
+            }
+        }));
         self
     }
     /// Adds a function to generate global state at build-time.
@@ -54,17 +70,17 @@ impl GlobalStateCreator {
     }
 
     /// Gets the global state at build-time. If no function was registered to
-    /// this, we'll return `None`.
+    /// this, we'll return an empty template state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn get_build_state(&self) -> Result<Option<String>, GlobalStateError> {
+    pub async fn get_build_state(&self) -> Result<TemplateState, GlobalStateError> {
         if let Some(get_server_state) = &self.build {
             let res = get_server_state.call().await;
             match res {
-                Ok(res) => Ok(Some(res)),
+                Ok(res) => Ok(res),
                 Err(err) => Err(GlobalStateError::BuildGenerationFailed { source: err }),
             }
         } else {
-            Ok(None)
+            Ok(TemplateState::empty())
         }
     }
 }
@@ -87,7 +103,7 @@ pub enum GlobalStateType {
     /// The global state has been deserialized and loaded, and is ready for use.
     Loaded(Box<dyn AnyFreeze>),
     /// The global state is in string form from the server.
-    Server(String),
+    Server(TemplateState),
     /// There was no global state provided by the server.
     None,
 }
@@ -121,7 +137,7 @@ impl Freeze for GlobalStateType {
         match &self {
             Self::Loaded(state) => state.freeze(),
             // There's no point in serializing state that was sent from the server, since we can
-            // easily get it again later (it definitionally hasn't changed)
+            // easily get it again later (it can't possibly have been changed on the browser-side)
             Self::Server(_) => "Server".to_string(),
             Self::None => "None".to_string(),
         }

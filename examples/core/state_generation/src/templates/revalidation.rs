@@ -1,13 +1,15 @@
-use perseus::{RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Html, Scope, View};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
+use sycamore::prelude::*;
 
-#[perseus::make_rx(PageStateRx)]
-pub struct PageState {
-    pub time: String,
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "PageStateRx")]
+struct PageState {
+    time: String,
 }
 
 #[perseus::template]
-pub fn revalidation_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
+fn revalidation_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
     view! { cx,
         p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }
     }
@@ -15,7 +17,7 @@ pub fn revalidation_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> 
 
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("revalidation")
-        .template(revalidation_page)
+        .template_with_state(revalidation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
         .revalidate_after("5s")
         // This is an alternative method of revalidation that uses logic, which will be executed
@@ -28,8 +30,8 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // This will get the system time when the app was built
-#[perseus::build_state]
-pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<PageState> {
+#[engine_only_fn]
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         time: format!("{:?}", std::time::SystemTime::now()),
     })
@@ -38,10 +40,10 @@ pub async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWi
 // This will run every time `.revalidate_after()` permits the page to be
 // revalidated This acts as a secondary check, and can perform arbitrary logic
 // to check if we should actually revalidate a page
-#[perseus::should_revalidate]
-pub async fn should_revalidate(
-    _path: String,
-    _locale: String,
+#[engine_only_fn]
+async fn should_revalidate(
+    // This takes the same arguments as request state
+    _info: StateGeneratorInfo<()>,
     _req: perseus::Request,
 ) -> RenderFnResultWithCause<bool> {
     // For simplicity's sake, this will always say we should revalidate, but you

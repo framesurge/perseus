@@ -82,9 +82,10 @@ impl Parse for TemplateFn {
                     }
                     args.push(arg.clone())
                 }
-                // We can have anywhere between 1 and 3 arguments (scope, ?state, ?global state)
-                if args.len() > 3 || args.is_empty() {
-                    return Err(syn::Error::new_spanned(&sig.inputs, "template functions accept either one or two arguments (reactive scope; then one optional for custom properties)"));
+                // We can have 2 arguments only (scope, state)
+                // Any other kind of template doesn't need this macro
+                if args.len() != 2 {
+                    return Err(syn::Error::new_spanned(&sig.inputs, "you only need to use `[#template]` if you're using reactive state (which requires two arguments)"));
                 }
 
                 Ok(Self {
@@ -127,7 +128,7 @@ fn remove_lifetimes(ty: &Type) -> Type {
     }
 }
 
-pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
+pub fn template_impl(input: TemplateFn) -> TokenStream {
     let TemplateFn {
         block,
         // We know that these are all typed (none are `self`)
@@ -141,157 +142,32 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
 
     let component_name = Ident::new(&(name.to_string() + "_component"), Span::call_site());
 
-    if fn_args.len() == 2 && is_reactive {
-        // Get the argument for the reactive scope
-        let cx_arg = &fn_args[0];
-        // There's an argument for page properties that needs to have state extracted,
-        // so the wrapper will deserialize it We'll also make it reactive and
-        // add it to the page state store
-        let arg = &fn_args[1];
-        let rx_props_ty = match arg {
-            FnArg::Typed(PatType { ty, .. }) => remove_lifetimes(ty),
-            FnArg::Receiver(_) => unreachable!(),
-        };
-        let name_string = name.to_string();
-        quote! {
-            #vis fn #name<'__perseus_cx, G: ::sycamore::prelude::Html>(
-                cx: ::sycamore::prelude::Scope<'__perseus_cx>,
-                mut route_manager: ::perseus::router::RouteManager<'__perseus_cx, G>,
-                props: ::perseus::template::PageProps
-            ) {
-                use ::perseus::state::{MakeRx, MakeRxRef, RxRef};
+    // Get the argument for the reactive scope
+    let cx_arg = &fn_args[0];
+    // There's an argument for page properties that needs to have state extracted,
+    // so the wrapper will deserialize it We'll also make it reactive and
+    // add it to the page state store
+    let arg = &fn_args[1];
+    let rx_props_ty = match arg {
+        FnArg::Typed(PatType { ty, .. }) => remove_lifetimes(ty),
+        FnArg::Receiver(_) => unreachable!(),
+    };
+    quote! {
+        #vis fn #name<G: ::sycamore::prelude::Html>(
+            cx: ::sycamore::prelude::Scope,
+            state: <#rx_props_ty as ::perseus::state::RxRef>::RxNonRef
+        ) -> #return_type {
+            use ::perseus::state::MakeRxRef;
 
-                // The user's function, with Sycamore component annotations and the like preserved
-                // We know this won't be async because Sycamore doesn't allow that
-                #(#attrs)*
-                #[::sycamore::component]
-                fn #component_name #generics(#cx_arg, #arg) -> #return_type {
-                    #block
-                }
-
-                let props = {
-                    // Check if properties of the reactive type are already in the page state store
-                    // If they are, we'll use them (so state persists for templates across the whole app)
-                    let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
-                    // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user decalred are defined inside the above function, which we
-                    // aren't inside!
-                    match render_ctx.get_active_or_frozen_page_state::<<#rx_props_ty as RxRef>::RxNonRef>(&props.path) {
-                            // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
-                        ::std::option::Option::Some(existing_state) => existing_state,
-                        // Again, frozen state has been dealt with already, so we'll fall back to generated state
-                        ::std::option::Option::None => {
-                            // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
-                            // We also assume that any state we have is valid because it comes from the server
-                            // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
-                            render_ctx.register_page_state_str::<<#rx_props_ty as RxRef>::RxNonRef>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
-                        }
-                    }
-                };
-
-                let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
-                    let view = #component_name(child_cx, props.to_ref_struct(cx));
-                    route_manager.update_view(view);
-                });
-                route_manager.update_disposer(disposer);
+            // The user's function, with Sycamore component annotations and the like preserved
+            // We know this won't be async because Sycamore doesn't allow that
+            #(#attrs)*
+            #[::sycamore::component]
+            fn #component_name #generics(#cx_arg, #arg) -> #return_type {
+                #block
             }
+
+            #component_name(cx, state.to_ref_struct(cx))
         }
-    } else if fn_args.len() == 2 && !is_reactive {
-        // This template takes state that isn't reactive (but it must implement
-        // `UnreactiveState`) Get the argument for the reactive scope
-        let cx_arg = &fn_args[0];
-        // There's an argument for page properties that needs to have state extracted,
-        // so the wrapper will deserialize it
-        // We'll also make it reactive and add it to the page state store
-        let arg = &fn_args[1];
-        let props_ty = match arg {
-            // This type isn't reactive, so we shouldn't need to remove lifetimes (this also acts as
-            // a way of ensuring that users don't mix unreactive with reactive
-            // accidentally, since this part should lead to compile-time errors)
-            FnArg::Typed(PatType { ty, .. }) => ty,
-            FnArg::Receiver(_) => unreachable!(),
-        };
-        let name_string = name.to_string();
-        quote! {
-            #vis fn #name<'__perseus_cx, G: ::sycamore::prelude::Html>(
-                cx: ::sycamore::prelude::Scope<'__perseus_cx>,
-                mut route_manager: ::perseus::router::RouteManager<'__perseus_cx, G>,
-                props: ::perseus::template::PageProps
-            ) {
-                use ::perseus::state::{MakeRx, MakeRxRef, RxRef, MakeUnrx};
-
-                // The user's function, with Sycamore component annotations and the like preserved
-                // We know this won't be async because Sycamore doesn't allow that
-                #(#attrs)*
-                #[::sycamore::component]
-                fn #component_name #generics(#cx_arg, #arg) -> #return_type {
-                    #block
-                }
-
-                let props = {
-                    // Check if properties of the reactive type are already in the page state store
-                    // If they are, we'll use them (so state persists for templates across the whole app)
-                    let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
-                    // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user decalred are defined inside the above function, which we
-                    // aren't inside!
-                    // We're taking normal, unwrapped types, so we use the fact that anything implementing
-                    // `UnreactiveState` can be turned into `UnreactiveStateWrapper` reactively to manage this
-                    match render_ctx.get_active_or_frozen_page_state::<<#props_ty as MakeRx>::Rx>(&props.path) {
-                            // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
-                        ::std::option::Option::Some(existing_state) => existing_state,
-                        // Again, frozen state has been dealt with already, so we'll fall back to generated state
-                        ::std::option::Option::None => {
-                            // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
-                            // We also assume that any state we have is valid because it comes from the server
-                            // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
-                            render_ctx.register_page_state_str::<<#props_ty as MakeRx>::Rx>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
-                        }
-                    }
-                };
-
-                // The `.make_unrx()` function will just convert back to the user's type
-                let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
-                    let view = #component_name(child_cx, props.make_unrx());
-                    route_manager.update_view(view);
-                });
-                route_manager.update_disposer(disposer);
-            }
-        }
-    } else if fn_args.len() == 1 {
-        // Get the argument for the reactive scope
-        let cx_arg = &fn_args[0];
-        // There are no arguments except for the scope
-        quote! {
-            // BUG Need to enforce that `cx` and `route_manager` have the same lifetime...
-            #vis fn #name<'__perseus_cx, G: ::sycamore::prelude::Html>(
-                cx: ::sycamore::prelude::Scope<'__perseus_cx>,
-                mut route_manager: ::perseus::router::RouteManager<'__perseus_cx, G>,
-                props: ::perseus::template::PageProps
-            ) {
-                use ::perseus::state::{MakeRx, MakeRxRef};
-
-                // The user's function, with Sycamore component annotations and the like preserved
-                // We know this won't be async because Sycamore doesn't allow that
-                #(#attrs)*
-                #[::sycamore::component]
-                fn #component_name #generics(#cx_arg) -> #return_type {
-                    #block
-                }
-
-                // Declare that this page will never take any state to enable full caching
-                let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
-                render_ctx.register_page_no_state(&props.path);
-
-                let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
-                    let view = #component_name(child_cx);
-                    route_manager.update_view(view);
-                });
-                route_manager.update_disposer(disposer);
-            }
-        }
-    } else {
-        // We filtered out this possibility in the function parsing
-        unreachable!()
     }
 }
