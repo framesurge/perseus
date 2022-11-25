@@ -285,39 +285,36 @@ fn get_initial_state() -> InitialState {
         Some(state_str) => state_str,
         None => return InitialState::NotPresent,
     };
-    match TemplateState::from_str(&state_str) {
-        Ok(state) => {
-            if state_str.starts_with("error-") {
-                // We strip the prefix and escape any tab/newline control characters (inserted
-                // by `fmterr`) Any others are user-inserted, and this is documented
-                let err_page_data_str = state_str
-                    .strip_prefix("error-")
-                    .unwrap()
-                    .replace('\n', "\\n")
-                    .replace('\t', "\\t");
-                // There will be error page data encoded after `error-`
-                let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str)
-                {
-                    Ok(render_cfg) => render_cfg,
-                    // If there's a serialization error, we'll create a whole new error (500)
-                    Err(err) => ErrorPageData {
-                        url: "[current]".to_string(),
-                        status: 500,
-                        err: format!("couldn't serialize error from server: '{}'", err),
-                    },
-                };
-                InitialState::Error(err_page_data)
-            } else {
-                InitialState::Present(state)
-            }
+    if state_str.starts_with("error-") {
+        // We strip the prefix and escape any tab/newline control characters (inserted
+        // by `fmterr`) Any others are user-inserted, and this is documented
+        let err_page_data_str = state_str
+            .strip_prefix("error-")
+            .unwrap()
+            .replace('\n', "\\n")
+            .replace('\t', "\\t");
+        // There will be error page data encoded after `error-`
+        let err_page_data = match serde_json::from_str::<ErrorPageData>(&err_page_data_str) {
+            Ok(render_cfg) => render_cfg,
+            // If there's a serialization error, we'll create a whole new error (500)
+            Err(err) => ErrorPageData {
+                url: "[current]".to_string(),
+                status: 500,
+                err: format!("couldn't serialize error from server: '{}'", err),
+            },
+        };
+        InitialState::Error(err_page_data)
+    } else {
+        match TemplateState::from_str(&state_str) {
+            Ok(state) => InitialState::Present(state),
+            // An actual error means the state was provided, but it was malformed, so we'll render
+            // an error page
+            Err(err) => InitialState::Error(ErrorPageData {
+                url: "[current]".to_string(),
+                status: 500,
+                err: format!("couldn't serialize page data from server: '{}'", err),
+            }),
         }
-        // An actual error means the state was provided, but it was malformed, so we'll render an
-        // error page
-        Err(err) => InitialState::Error(ErrorPageData {
-            url: "[current]".to_string(),
-            status: 500,
-            err: format!("couldn't serialize page data from server: '{}'", err),
-        }),
     }
 }
 

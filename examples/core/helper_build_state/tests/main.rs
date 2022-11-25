@@ -7,8 +7,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         page: &str,
         c: &mut Client,
     ) -> Result<(), fantoccini::error::CmdError> {
-        c.goto(&format!("http://localhost:8080{}", page))
-            .await?;
+        c.goto(&format!("http://localhost:8080{}", page)).await?;
         wait_for_checkpoint!("initial_state_present", 0, c);
         // There should be a heading with the slug
         let heading = c.find(Locator::Css("h1")).await?.text().await?;

@@ -383,10 +383,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         }
     };
     let build_info = StateGeneratorInfo {
-        path: path
-            .strip_prefix(&format!("{}/", template.get_path()))
-            .ok_or(ServerError::TemplateNameNotInPath)?
-            .to_string(),
+        path: path.to_string(),
         locale: locale.to_string(),
         extra: build_extra,
     };
