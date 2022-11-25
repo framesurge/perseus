@@ -12,96 +12,16 @@ documentation, and this should mostly be used as a secondary reference source. Y
 */
 
 mod entrypoint;
-mod head;
 mod rx_state;
-mod state_fns;
 mod template;
 mod test;
 
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
 use quote::quote;
-use state_fns::StateFnType;
-use syn::{DeriveInput, Path};
+use syn::{DeriveInput, ItemFn, Path, Signature, parse_macro_input};
 
 use crate::rx_state::ReactiveStateDeriveInput;
-
-/// Annotates functions used for generating state at build time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for build state
-/// functions.
-#[proc_macro_attribute]
-pub fn build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::BuildState).into()
-}
-
-/// Annotates functions used for generating paths at build time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for build paths
-/// functions.
-#[proc_macro_attribute]
-pub fn build_paths(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::BuildPaths).into()
-}
-
-/// Annotates functions used for generating global state at build time to
-/// support automatic serialization/deserialization of app state and
-/// client/server division. This supersedes the old `autoserde` macro for global
-/// build state functions.
-#[proc_macro_attribute]
-pub fn global_build_state(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::GlobalBuildState).into()
-}
-
-/// Annotates functions used for generating state at request time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for request state
-/// functions.
-#[proc_macro_attribute]
-pub fn request_state(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::RequestState).into()
-}
-
-/// Annotates functions used for generating state at build time to support
-/// automatic serialization/deserialization of app state and client/server
-/// division. This supersedes the old `autoserde` macro for build state
-/// functions.
-#[proc_macro_attribute]
-pub fn set_headers(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::SetHeaders).into()
-}
-
-/// Annotates functions used for amalgamating build-time and request-time states
-/// to support automatic serialization/deserialization of app state and
-/// client/server division. This supersedes the old `autoserde` macro for state
-/// amalgamation functions.
-#[proc_macro_attribute]
-pub fn amalgamate_states(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::AmalgamateStates).into()
-}
-
-/// Annotates functions used for checking if a template should revalidate and
-/// request-time states to support automatic serialization/deserialization
-/// of app state and client/server division. This supersedes the old `autoserde`
-/// macro for revalidation determination functions.
-#[proc_macro_attribute]
-pub fn should_revalidate(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as state_fns::StateFn);
-
-    state_fns::state_fn_impl(parsed, StateFnType::ShouldRevalidate).into()
-}
 
 // TODO(0.5.x) Remove this entirely
 #[doc(hidden)]
@@ -156,15 +76,6 @@ pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template::TemplateFn);
     let is_reactive = args.to_string() != "unreactive";
     template::template_impl(parsed, is_reactive).into()
-}
-
-/// Labels a function as a Perseus head function, which is very similar to a
-/// template, but for the HTML metadata in the document `<head>`.
-#[proc_macro_attribute]
-pub fn head(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as head::HeadFn);
-
-    head::head_impl(parsed).into()
 }
 
 /// Marks the given function as a Perseus test. Functions marked with this
@@ -307,6 +218,34 @@ pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_2: proc_macro2::TokenStream = input.into();
     quote! {
         #[cfg(target_arch = "wasm32")]
+        #input_2
+    }
+    .into()
+}
+
+/// A convenience macro that makes sure the given function is only defined on the engine-side,
+/// creating an empty function on the browser-side. Perseus implicitly expects most of
+/// your state generation functions to be defined in this way (though you certainly don't
+/// have to use this macro).
+///
+/// Note that this will convert `async` functions to non-`async` functions.
+#[proc_macro_attribute]
+pub fn engine_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_2: proc_macro2::TokenStream = input.clone().into();
+    let ItemFn {
+        vis,
+        sig: Signature {
+            ident,
+            ..
+        },
+        ..
+    } = parse_macro_input!(input as ItemFn);
+
+    quote! {
+        #[cfg(target_arch = "wasm32")]
+        #vis fn #ident () {}
+        // One the engine-side, the function is unmodified
+        #[cfg(not(target_arch = "wasm32"))]
         #input_2
     }
     .into()

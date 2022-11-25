@@ -21,6 +21,7 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G
     }
 }
 
+#[engine_only_fn]
 fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "Index Page" }
@@ -34,6 +35,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .build_state_fn(get_build_state)
 }
 
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
     Ok(IndexPageState {
         username: "".to_string(),

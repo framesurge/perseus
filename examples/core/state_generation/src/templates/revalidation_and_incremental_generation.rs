@@ -41,12 +41,14 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // This will get the system time when the app was built
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         time: format!("{:?}", std::time::SystemTime::now()),
     })
 }
 
+#[engine_only_fn]
 async fn get_build_paths() -> RenderFnResult<BuildPaths> {
     Ok(BuildPaths {
         paths: vec!["test".to_string(), "blah/test/blah".to_string()],
@@ -57,6 +59,7 @@ async fn get_build_paths() -> RenderFnResult<BuildPaths> {
 // This will run every time `.revalidate_after()` permits the page to be
 // revalidated This acts as a secondary check, and can perform arbitrary logic
 // to check if we should actually revalidate a page
+#[engine_only_fn]
 async fn should_revalidate(
     _info: StateGeneratorInfo<()>,
     _req: perseus::Request,

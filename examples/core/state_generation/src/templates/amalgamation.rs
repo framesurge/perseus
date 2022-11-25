@@ -25,6 +25,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template_with_state(amalgamation_page)
 }
 
+#[engine_only_fn]
 async fn amalgamate_states(
     // This takes the same information as build state, request state, etc.
     _info: StateGeneratorInfo<()>,
@@ -39,12 +40,14 @@ async fn amalgamate_states(
     })
 }
 
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         message: "Hello from the build process!".to_string(),
     })
 }
 
+#[engine_only_fn]
 async fn get_request_state(
     _info: StateGeneratorInfo<()>,
     _req: Request,

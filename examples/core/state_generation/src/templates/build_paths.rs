@@ -33,6 +33,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 // We take in `StateGeneratorInfo`, which has the path we're generating for
 // (*not* including the template name), along with the locale, and some
 // arbitrary helper state (which we're not using, hence the `()`)
+#[engine_only_fn]
 async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     let title = info.path.clone();
     let content = format!(
@@ -52,6 +53,7 @@ async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCaus
 // Note also that there's almost no point in using build paths without build
 // state, as every page would come out exactly the same (unless you
 // differentiated them on the client...)
+#[engine_only_fn]
 async fn get_build_paths() -> RenderFnResult<BuildPaths> {
     Ok(BuildPaths {
         // These are the paths we want to generate for, with an empty string being at the root of

@@ -33,6 +33,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template_with_state(post_page)
 }
 
+#[engine_only_fn]
 async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PostPageState> {
     // This is just an example
     let title = urlencoding::decode(&info.path).unwrap();
@@ -47,6 +48,7 @@ async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCaus
     })
 }
 
+#[engine_only_fn]
 async fn get_build_paths() -> RenderFnResult<BuildPaths> {
     Ok(BuildPaths {
         paths: vec![

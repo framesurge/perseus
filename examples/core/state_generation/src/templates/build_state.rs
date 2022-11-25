@@ -27,6 +27,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 // a server or the like here (see the `demo/fetching` example), along with any
 // helper state we generated with build paths (which we aren't using, hence the
 // `()`)
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         greeting: "Hello World!".to_string(),

@@ -25,6 +25,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template_with_state(request_state_page)
 }
 
+#[engine_only_fn]
 async fn get_request_state(
     // We get all the same info as build state in here
     _info: StateGeneratorInfo<()>,

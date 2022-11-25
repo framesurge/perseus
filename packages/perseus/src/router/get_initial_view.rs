@@ -166,11 +166,11 @@ pub(crate) fn get_initial_view<'a>(
                     // Update the router state
                     router_state.set_load_state(RouterLoadState::Loaded {
                         template_name: path,
-                        path: path_with_locale,
+                        path: path_with_locale.clone(),
                     });
                     // Render the actual template to the root (done imperatively due to child
                     // scopes)
-                    template.render_for_template_client(state, cx, route_manager, translator);
+                    template.render_for_template_client(path_with_locale, state, cx, route_manager, translator);
 
                     InitialView::Success
                 }

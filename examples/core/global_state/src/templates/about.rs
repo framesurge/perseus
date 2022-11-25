@@ -15,6 +15,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
+#[engine_only_fn]
 fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "About Page" }

@@ -50,6 +50,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template_with_state(index_page)
 }
 
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexProps> {
     Ok(IndexProps {
         username: "".to_string(),

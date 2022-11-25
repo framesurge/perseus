@@ -258,10 +258,11 @@ pub(crate) async fn get_subsequent_view(
     // Update the router state
     router_state.set_load_state(RouterLoadState::Loaded {
         template_name,
-        path: path_with_locale,
+        path: path_with_locale.clone(),
     });
     // Now return the view that should be rendered
     template.render_for_template_client(
+        path_with_locale,
         TemplateState::from_value(page_data.state),
         cx,
         route_manager,

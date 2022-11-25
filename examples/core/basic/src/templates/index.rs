@@ -23,12 +23,14 @@ pub fn get_template<G: Html>() -> Template<G> {
         .head_with_state(head)
 }
 
+#[engine_only_fn]
 fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
     view! { cx,
         title { "Index Page | Perseus Example – Basic" }
     }
 }
 
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
     Ok(IndexPageState {
         greeting: "Hello World!".to_string(),

@@ -42,6 +42,7 @@ struct Post {
 
 // EXCERPT_START
 // This function will be run for each path under `/post/` to generate its state
+#[engine_only_fn]
 async fn get_build_state(
     StateGeneratorInfo { path, .. }: StateGeneratorInfo<()>,
 ) -> RenderFnResultWithCause<Post> {
@@ -59,6 +60,7 @@ async fn get_build_state(
     };
     Ok(props)
 }
+#[engine_only_fn]
 async fn get_build_paths() -> RenderFnResult<BuildPaths> {
     Ok(BuildPaths {
         // These will all become URLs at `/post/<name>`

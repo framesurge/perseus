@@ -5,7 +5,6 @@ use std::marker::PhantomData;
 
 #[cfg(not(target_arch = "wasm32"))]
 use super::default_headers;
-#[cfg(not(target_arch = "wasm32"))]
 use super::RenderCtx;
 use crate::errors::*;
 #[cfg(not(target_arch = "wasm32"))]
@@ -14,7 +13,6 @@ use crate::state::AnyFreeze;
 use crate::state::MakeRx;
 use crate::state::MakeRxRef;
 use crate::state::MakeUnrx;
-use crate::state::RxRef;
 use crate::translator::Translator;
 use crate::utils::provide_context_signal_replace;
 #[cfg(not(target_arch = "wasm32"))]
@@ -38,7 +36,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 use sycamore::prelude::Scope;
-#[cfg(not(target_arch = "wasm32"))]
 use sycamore::prelude::View;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
@@ -748,14 +745,7 @@ impl<G: Html> Template<G> {
         // R: RxRef<RxNonRef = <S as MakeRx>::Rx>
     {
         self.template = Box::new(move |app_cx, mut route_manager, template_state, path| {
-            // Make sure now that there is actually state
-            if template_state.is_empty() {
-                // This will happen at build-time
-                panic!(
-                    "the template for path `{}` takes state, but no state was found (you probably forgot to write a state generating function, like `get_build_state`)",
-                    &path,
-                );
-            }
+            let state_empty = template_state.is_empty();
             // Declare a type on the untyped state (this doesn't perform any conversions,
             // but the type we declare may be invalid)
             let typed_state = template_state.change_type::<S>();
@@ -778,6 +768,15 @@ impl<G: Html> Template<G> {
                     // Again, frozen state has been dealt with already, so we'll fall back to
                     // generated state
                     None => {
+                        // Make sure now that there is actually state
+                        if state_empty {
+                            // This will happen at build-time
+                            panic!(
+                                "the template for path `{}` takes state, but no state was found (you probably forgot to write a state generating function, like `get_build_state`)",
+                                &path,
+                            );
+                        }
+
                         // Again, the render context can do the heavy lifting for us (this returns
                         // what we need, and can do type checking). The user
                         // really should have a generation function, but if they don't then they'd
@@ -885,8 +884,21 @@ impl<G: Html> Template<G> {
     /// Sets the document `<head>` rendering function to use. The [`View`]
     /// produced by this will only be rendered on the engine-side, and will
     /// *not* be reactive (since it only contains metadata).
+    ///
+    /// This is for heads that do not require state. Those that do should use
+    /// `.head_with_state()` instead.
     #[cfg(target_arch = "wasm32")]
     pub fn head(self, _val: impl Fn() + 'static) -> Template<G> {
+        self
+    }
+    /// Sets the document `<head>` rendering function to use. The [`View`]
+    /// produced by this will only be rendered on the engine-side, and will
+    /// *not* be reactive (since it only contains metadata).
+    ///
+    /// This is for heads that do require state. Those that do not should use
+    /// `.head()` instead.
+    #[cfg(target_arch = "wasm32")]
+    pub fn head_with_state(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 

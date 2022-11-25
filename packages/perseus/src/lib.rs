@@ -74,13 +74,22 @@ pub use sycamore_futures::spawn_local_scoped;
 pub use wasm_bindgen_futures::spawn_local;
 /// All HTTP requests use empty bodies for simplicity of passing them around.
 /// They'll never need payloads (value in path requested).
+///
+/// **Warning:** on the browser-side, this is defined as `()`.
 #[cfg(not(target_arch = "wasm32"))]
 pub type Request = HttpRequest<()>;
+/// All HTTP requests use empty bodies for simplicity of passing them around.
+/// They'll never need payloads (value in path requested).
+///
+/// **Warning:** on the browser-side, this is defined as `()`.
+#[cfg(target_arch = "wasm32")]
+pub type Request = ();
+
 #[cfg(feature = "macros")]
 pub use perseus_macro::{
-    amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
-    global_build_state, head, main, main_export, request_state, set_headers, should_revalidate,
-    template, template_rx, test, ReactiveState, UnreactiveState,
+    browser, browser_main, engine, engine_main,
+    main, main_export,
+    template, template_rx, test, ReactiveState, UnreactiveState, engine_only_fn
 };
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace};
@@ -124,14 +133,14 @@ pub mod prelude {
     pub use crate::web_log;
     #[cfg(feature = "macros")]
     pub use crate::{
-        amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
-        global_build_state, head, main, main_export, request_state, set_headers, should_revalidate,
-        template, template_rx, test, ReactiveState, UnreactiveState,
+        browser, browser_main, engine, engine_main,
+        main, main_export,
+        template, template_rx, test, ReactiveState, UnreactiveState, engine_only_fn
     };
     pub use crate::{
         blame_err, make_blamed_err, BuildPaths, ErrorCause, ErrorPages, GenericErrorWithCause,
-        PerseusApp, PerseusRoot, RenderCtx, RenderFnResult, RenderFnResultWithCause, Request,
-        StateGeneratorInfo, Template,
+        PerseusApp, PerseusRoot, RenderCtx, RenderFnResult, RenderFnResultWithCause,
+        StateGeneratorInfo, Template, Request
     };
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};

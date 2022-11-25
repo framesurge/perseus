@@ -41,6 +41,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 // This will be executed at build-time for all the paths in `get_build_paths()`,
 // and then again for any other paths that a user might request while the app is
 // live
+#[engine_only_fn]
 async fn get_build_state(
     StateGeneratorInfo { path, .. }: StateGeneratorInfo<()>,
 ) -> RenderFnResultWithCause<PageState> {
@@ -63,6 +64,7 @@ async fn get_build_state(
 }
 
 // See `../build_paths.rs` for an explanation of this
+#[engine_only_fn]
 async fn get_build_paths() -> RenderFnResult<BuildPaths> {
     Ok(BuildPaths {
         paths: vec!["test".to_string(), "blah/test/blah".to_string()],

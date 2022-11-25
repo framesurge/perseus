@@ -40,6 +40,7 @@ struct IndexProps {
 
 // This function will be run when you build your app, to generate default state
 // ahead-of-time
+#[engine_only_fn]
 async fn get_index_build_state(
     _info: StateGeneratorInfo<()>,
 ) -> RenderFnResultWithCause<IndexProps> {

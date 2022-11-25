@@ -30,6 +30,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // This will get the system time when the app was built
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {
         time: format!("{:?}", std::time::SystemTime::now()),
@@ -39,6 +40,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCau
 // This will run every time `.revalidate_after()` permits the page to be
 // revalidated This acts as a secondary check, and can perform arbitrary logic
 // to check if we should actually revalidate a page
+#[engine_only_fn]
 async fn should_revalidate(
     // This takes the same arguments as request state
     _info: StateGeneratorInfo<()>,

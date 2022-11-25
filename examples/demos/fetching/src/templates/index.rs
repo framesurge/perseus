@@ -67,6 +67,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .template_with_state(index_page)
 }
 
+#[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
     // We'll cache the result with `try_cache_res`, which means we only make the
     // request once, and future builds will use the cached result (speeds up
