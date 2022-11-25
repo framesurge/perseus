@@ -33,49 +33,25 @@ pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// The new version of `#[template]` designed for reactive state. This can
-/// interface automatically with global state, and will automatically provide
-/// Sycamore `#[component]` annotations. To use this, you don't need to provide
-/// anything other than an optional custom type parameter letter (by default,
-/// `G` will be used). Unlike with the original macro, this will automatically
-/// handle component names internally.
+/// A helper macro for templates that use reactive state. Once, this was needed
+/// on all Perseus templates, however, today, templates that take no state, or
+/// templates that take unreactive state, can be provided as normal functions
+/// to the methods `.template()` and `.template_with_unreactive_state()`
+/// respectively, on Perseus' `Template` type.
 ///
-/// The first argument your template function can take is state generated for it
-/// (e.g. by the *build state* strategy), but the reactive version (created with
-/// `#[make_rx]` usually). From this, Perseus can infer the other required types
-/// and automatically make your state reactive for you.
+/// The only function of this macro is to convert the provided intermediate
+/// reactive type to a reference reactive type (see the book to learn more about
+/// Perseus' state platform).
 ///
-/// The second argument your template function can take is a global state
-/// generated with the `GlobalStateCreator`. You should also provide the
-/// reactive type here, and Perseus will do all the rest in the background.
+/// For those coming from Sycamore, be aware that Perseus templates are *not*
+/// Sycamore components, they are normal functions that return a Sycamore
+/// `View<G>`.
 ///
-/// Labels a function as a Perseus template, automatically managing its state
-/// and integrating it into your app. Functions annotated with this macro
-/// take at least one argument for Sycamore's reactive scope, and then a
-/// possible other argument for some state they generate with a rendering
-/// strategy (e.g. *build state*, generated when you build your app, see the
-/// book for more). That state is expected to be reactive (see [`make_rx`]),
-/// although, if you use `#[template(unreactive)]`, you can use any state that
-/// has been annotated with [`UnreactiveState`] to make it clear to Perseus not
-/// to expect something reactive.
-///
-/// Although you can make a Perseus app without using this macro, this isn't
-/// recommended, since Perseus passes around state in your app as `String`s and
-/// `dyn Any`s, meaning there is a large amount of overhead to actually using
-/// the state you expect. This macro will automatically handle all that overhead
-/// for you, making the process of building your app *significantly* smoother!
-///
-/// *Note: in previous versions of Perseus, there was a `template_rx` macro,
-/// which has become this. The old unreactive `template` macro has become
-/// `#[template(unreactive)]`. For those used to using Sycamore `#[component]`
-/// annotation on their pages, this is no longer required. Note also that global
-/// state is now accessed through the `.get_global_state()` method on Perseus'
-/// `RenderCtx`.*
+/// *Note:* this macro will eventually be removed entirely.
 #[proc_macro_attribute]
-pub fn template(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn template(_args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as template::TemplateFn);
-    let is_reactive = args.to_string() != "unreactive";
-    template::template_impl(parsed, is_reactive).into()
+    template::template_impl(parsed).into()
 }
 
 /// Marks the given function as a Perseus test. Functions marked with this
