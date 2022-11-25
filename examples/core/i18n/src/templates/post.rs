@@ -1,9 +1,7 @@
-use perseus::prelude::*;
-use serde::{Deserialize, Serialize};
-use sycamore::prelude::*;
+use perseus::{link, RenderFnResult, RenderFnResultWithCause, Template};
+use sycamore::prelude::{view, Html, Scope, View};
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "PostPageStateRx")]
+#[perseus::make_rx(PostPageStateRx)]
 pub struct PostPageState {
     title: String,
     content: String,

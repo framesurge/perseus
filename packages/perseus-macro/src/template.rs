@@ -174,7 +174,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                     // If they are, we'll use them (so state persists for templates across the whole app)
                     let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
                     // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user declared are defined inside the above function, which we
+                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user decalred are defined inside the above function, which we
                     // aren't inside!
                     match render_ctx.get_active_or_frozen_page_state::<<#rx_props_ty as RxRef>::RxNonRef>(&props.path) {
                             // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
@@ -233,7 +233,7 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                     // If they are, we'll use them (so state persists for templates across the whole app)
                     let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
                     // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user declared are defined inside the above function, which we
+                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user decalred are defined inside the above function, which we
                     // aren't inside!
                     // We're taking normal, unwrapped types, so we use the fact that anything implementing
                     // `UnreactiveState` can be turned into `UnreactiveStateWrapper` reactively to manage this

@@ -1,9 +1,7 @@
-use perseus::prelude::*;
-use serde::{Deserialize, Serialize};
+use perseus::{Html, RenderFnResultWithCause, Template};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "IndexPageStateRx")]
+#[perseus::make_rx(IndexPageStateRx)]
 pub struct IndexPageState {
     server_ip: String,
     browser_ip: Option<String>,
