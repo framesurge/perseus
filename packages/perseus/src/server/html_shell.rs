@@ -2,6 +2,7 @@ use fmterr::fmterr;
 
 use crate::error_pages::ErrorPageData;
 use crate::page_data::PageData;
+use crate::template::TemplateState;
 use crate::utils::minify;
 use std::collections::HashMap;
 use std::{env, fmt};
@@ -154,7 +155,7 @@ impl HtmlShell {
     pub fn page_data(
         mut self,
         page_data: &PageData,
-        global_state: &Option<String>,
+        global_state: &TemplateState,
         translations: &str,
     ) -> Self {
         // Interpolate a global variable of the state so the app shell doesn't have to
@@ -162,11 +163,7 @@ impl HtmlShell {
         // doesn't contaminate later non-initial loads Error pages (above) will
         // set this to `error`
         let initial_state = escape_page_data(&page_data.state.to_string());
-        let global_state = if let Some(state) = global_state {
-            escape_page_data(state)
-        } else {
-            "None".to_string()
-        };
+        let global_state = escape_page_data(&global_state.state.to_string());
         let translations = escape_page_data(translations);
 
         // We put this at the very end of the head (after the delimiter comment) because

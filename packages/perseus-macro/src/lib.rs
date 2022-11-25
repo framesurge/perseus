@@ -19,7 +19,7 @@ mod test;
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, ItemFn, Path, Signature, parse_macro_input};
+use syn::{parse_macro_input, DeriveInput, ItemFn, Path, Signature};
 
 use crate::rx_state::ReactiveStateDeriveInput;
 
@@ -223,10 +223,10 @@ pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// A convenience macro that makes sure the given function is only defined on the engine-side,
-/// creating an empty function on the browser-side. Perseus implicitly expects most of
-/// your state generation functions to be defined in this way (though you certainly don't
-/// have to use this macro).
+/// A convenience macro that makes sure the given function is only defined on
+/// the engine-side, creating an empty function on the browser-side. Perseus
+/// implicitly expects most of your state generation functions to be defined in
+/// this way (though you certainly don't have to use this macro).
 ///
 /// Note that this will convert `async` functions to non-`async` functions.
 #[proc_macro_attribute]
@@ -234,10 +234,7 @@ pub fn engine_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_2: proc_macro2::TokenStream = input.clone().into();
     let ItemFn {
         vis,
-        sig: Signature {
-            ident,
-            ..
-        },
+        sig: Signature { ident, .. },
         ..
     } = parse_macro_input!(input as ItemFn);
 

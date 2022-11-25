@@ -5,8 +5,8 @@ pub fn get_global_state_creator() -> GlobalStateCreator {
     GlobalStateCreator::new().build_state_fn(get_build_state)
 }
 
-#[perseus::global_build_state]
-pub async fn get_build_state() -> RenderFnResult<AppState> {
+#[engine_only_fn]
+async fn get_build_state() -> RenderFnResult<AppState> {
     Ok(AppState {
         // We explicitly tell the first page that no login state has been checked yet
         auth: AuthData {

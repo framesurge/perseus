@@ -42,7 +42,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
-    global_state: Arc<Option<String>>,
+    global_state: Arc<TemplateState>,
 ) -> Response<String> {
     let error_pages = &opts.error_pages;
     let path = match urlencoding::decode(path.as_str()) {

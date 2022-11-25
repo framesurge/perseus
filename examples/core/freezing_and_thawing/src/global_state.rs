@@ -11,8 +11,8 @@ pub struct AppState {
     pub test: String,
 }
 
-#[perseus::global_build_state]
-pub async fn get_build_state() -> RenderFnResult<AppState> {
+#[engine_only_fn]
+async fn get_build_state() -> RenderFnResult<AppState> {
     Ok(AppState {
         test: "Hello World!".to_string(),
     })

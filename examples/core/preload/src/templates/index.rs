@@ -1,5 +1,5 @@
-use perseus::Template;
-use sycamore::prelude::{view, Html, Scope, SsrNode, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     // We can't preload pages on the engine-side

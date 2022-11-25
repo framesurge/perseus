@@ -40,7 +40,7 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
-    global_state: Arc<Option<String>>,
+    global_state: Arc<TemplateState>,
 ) -> (StatusCode, HeaderMap, String) {
     // Separate the locale from the rest of the page name
     let locale = &path_parts[0];

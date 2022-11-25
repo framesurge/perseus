@@ -1,6 +1,6 @@
 use crate::components::layout::Layout;
-use perseus::Template;
-use sycamore::prelude::{view, Html, Scope, SsrNode, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,

@@ -450,7 +450,7 @@ impl<G: Html> Template<G> {
         &self,
         path: String,
         state: TemplateState,
-        global_state: Option<String>,
+        global_state: TemplateState,
         cx: Scope<'a>,
         translator: &Translator,
     ) -> View<G> {
@@ -481,7 +481,7 @@ impl<G: Html> Template<G> {
     pub fn render_head_str(
         &self,
         state: TemplateState,
-        global_state: Option<String>,
+        global_state: TemplateState,
         translator: &Translator,
     ) -> String {
         sycamore::render_to_string(|cx| {

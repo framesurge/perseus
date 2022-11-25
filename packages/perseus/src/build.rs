@@ -21,7 +21,7 @@ pub async fn build_template(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     exporting: bool,
 ) -> Result<(Vec<String>, bool), ServerError> {
     let mut single_page = false;
@@ -101,7 +101,7 @@ async fn gen_state_for_path(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     build_extra: &TemplateState,
 ) -> Result<(), ServerError> {
     let template_path = template.get_path();
@@ -285,7 +285,7 @@ pub async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     exporting: bool,
 ) -> Result<HashMap<String, String>, ServerError> {
     let mut render_cfg = HashMap::new();
@@ -340,7 +340,7 @@ pub async fn build_templates_for_locale(
     templates: &TemplateMap<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     exporting: bool,
 ) -> Result<(), ServerError> {
     // The render configuration stores a list of pages to the root paths of their
@@ -378,7 +378,7 @@ pub async fn build_templates_and_translator_for_locale(
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     exporting: bool,
 ) -> Result<(), ServerError> {
     let translator = translations_manager
@@ -410,7 +410,7 @@ pub struct BuildProps<'a, M: MutableStore, T: TranslationsManager> {
     /// A translations manager.
     pub translations_manager: &'a T,
     /// A stringified global state.
-    pub global_state: &'a Option<String>,
+    pub global_state: &'a TemplateState,
     /// Whether or not we're exporting after this build (changes behavior
     /// slightly).
     pub exporting: bool,

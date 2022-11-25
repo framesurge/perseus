@@ -45,7 +45,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
-    global_state: web::Data<Option<String>>,
+    global_state: web::Data<TemplateState>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;

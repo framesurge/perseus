@@ -53,7 +53,7 @@ pub struct ExportProps<'a, T: TranslationsManager> {
     /// The server-side path prefix/
     pub path_prefix: String,
     /// A stringified global state.
-    pub global_state: &'a Option<String>,
+    pub global_state: &'a TemplateState,
 }
 
 /// Exports your app to static files, which can be served from anywhere, without
@@ -139,7 +139,7 @@ pub async fn export_path(
     html_shell: &HtmlShell,
     immutable_store: &ImmutableStore,
     path_prefix: String,
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     translations_manager: &impl TranslationsManager,
 ) -> Result<(), ServerError> {
     // We need the encoded path to reference flattened build artifacts

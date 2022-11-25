@@ -1,5 +1,5 @@
-use perseus::{Html, Template};
-use sycamore::prelude::{view, Scope, SsrNode, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,

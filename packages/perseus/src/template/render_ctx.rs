@@ -1,6 +1,6 @@
 #[cfg(target_arch = "wasm32")]
 use super::TemplateNodeType;
-use super::TemplateStateWithType;
+use super::{TemplateState, TemplateStateWithType};
 use crate::errors::*;
 use crate::router::{RouterLoadState, RouterState};
 use crate::state::{
@@ -108,14 +108,15 @@ impl Freeze for RenderCtx {
 impl RenderCtx {
     /// Initializes a new `RenderCtx` on the server-side with the given global
     /// state.
-    pub(crate) fn server(global_state: Option<String>) -> Self {
+    pub(crate) fn server(global_state: TemplateState) -> Self {
         Self {
             router: RouterState::default(),
             page_state_store: PageStateStore::new(0), /* There will be no need for the PSS on the
                                                        * server-side */
-            global_state: match global_state {
-                Some(global_state) => GlobalState::new(GlobalStateType::Server(global_state)),
-                None => GlobalState::new(GlobalStateType::None),
+            global_state: if !global_state.is_empty() {
+                GlobalState::new(GlobalStateType::Server(global_state))
+            } else {
+                GlobalState::new(GlobalStateType::None)
             },
             frozen_app: Rc::new(RefCell::new(None)),
         }
@@ -578,9 +579,9 @@ impl RenderCtx {
     }
     /// Registers a serialized and unreactive state string as the new active
     /// global state, returning a fully reactive version.
-    fn register_global_state_str<R>(
+    fn register_global_state_value<R>(
         &self,
-        state_str: &str,
+        state: TemplateStateWithType<R::Unrx>,
     ) -> Result<<R::Unrx as MakeRx>::Rx, ClientError>
     where
         R: Clone + AnyFreeze + MakeUnrx,
@@ -590,7 +591,8 @@ impl RenderCtx {
     {
         // Deserialize it (we know nothing about the calling situation, so we assume it
         // could be invalid, hence the fallible return type)
-        let unrx = serde_json::from_str::<R::Unrx>(state_str)
+        let unrx = state
+            .to_concrete()
             .map_err(|err| ClientError::StateInvalid { source: err })?;
         let rx = unrx.make_rx();
         let mut active_global_state = self.global_state.0.borrow_mut();
@@ -671,11 +673,13 @@ impl RenderCtx {
         } else {
             // There was nothing, so we'll load from the server
             let global_state_ty = self.global_state.0.borrow();
-            if let GlobalStateType::Server(server_str) = &*global_state_ty {
-                let server_str = server_str.to_string();
+            if let GlobalStateType::Server(server_state) = &*global_state_ty {
+                let server_state = server_state.clone();
+                let server_state =
+                    server_state.change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
                 // The registration borrows mutably, so we have to drop here
                 drop(global_state_ty);
-                self.register_global_state_str::<<R as RxRef>::RxNonRef>(&server_str)?
+                self.register_global_state_value::<<R as RxRef>::RxNonRef>(server_state)?
             } else {
                 // We bailed on `None` earlier, and `.get_active_or_frozen_global_state()`
                 // would've caught `Loaded`
@@ -693,8 +697,11 @@ impl RenderCtx {
 /// Gets the global state injected by the server, if there was any. If there are
 /// errors in this, we can return `None` and not worry about it, they'll be
 /// handled by the initial state.
+///
+/// Note that apps without global state will get `Some(..)` of an empty template
+/// state here.
 #[cfg(target_arch = "wasm32")]
-fn get_global_state() -> Option<String> {
+fn get_global_state() -> Option<TemplateState> {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_GLOBAL_STATE");
     let js_obj = match val_opt {
         Some(js_obj) => js_obj,
@@ -705,10 +712,9 @@ fn get_global_state() -> Option<String> {
         Some(state_str) => state_str,
         None => return None,
     };
-    // On the server-side, we encode a `None` value directly (otherwise it will be
-    // some convoluted stringified JSON)
-    match state_str.as_str() {
-        "None" => None,
-        state_str => Some(state_str.to_string()),
+    match TemplateState::from_str(&state_str) {
+        Ok(state) => Some(state),
+        // TODO Is this really valid now?
+        Err(_) => None,
     }
 }

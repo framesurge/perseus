@@ -49,7 +49,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
-    global_state: Arc<Option<String>>,
+    global_state: Arc<TemplateState>,
 ) -> (StatusCode, HeaderMap, Html<String>) {
     let error_pages = &opts.error_pages;
     let path = http_req.uri().path().to_string();

@@ -132,7 +132,7 @@ async fn render_amalgamated_state(
     template: &Template<SsrNode>,
     build_info: StateGeneratorInfo<UnknownStateType>,
     translator: &Translator,
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     build_state: TemplateState,
     request_state: TemplateState,
     render_html: bool,
@@ -252,7 +252,7 @@ async fn revalidate(
     build_info: StateGeneratorInfo<UnknownStateType>,
     translator: &Translator,
     path_encoded: &str,
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     mutable_store: &impl MutableStore,
 ) -> Result<(String, String, TemplateState), ServerError> {
     let path_with_locale = get_path_with_locale(&build_info.path, &translator);
@@ -317,7 +317,7 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
     /// The request data.
     pub req: Request,
     /// The stringified global state to use in the render process.
-    pub global_state: &'a Option<String>,
+    pub global_state: &'a TemplateState,
     /// An immutable store.
     pub immutable_store: &'a ImmutableStore,
     /// A mutable store.

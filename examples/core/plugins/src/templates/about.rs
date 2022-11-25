@@ -1,5 +1,5 @@
-use perseus::Template;
-use sycamore::prelude::{view, Html, Scope, SsrNode, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
 // This page will actually be replaced entirely by a plugin!
 fn about_page<G: Html>(cx: Scope) -> View<G> {
