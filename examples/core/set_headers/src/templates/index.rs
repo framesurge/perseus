@@ -1,9 +1,7 @@
-use perseus::prelude::*;
-use serde::{Deserialize, Serialize};
-use sycamore::prelude::*;
+use perseus::{Html, RenderFnResultWithCause, Template};
+use sycamore::prelude::{view, Scope, SsrNode, View};
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "PageStateRx")]
+#[perseus::make_rx(PageStateRx)]
 struct PageState {
     greeting: String,
 }

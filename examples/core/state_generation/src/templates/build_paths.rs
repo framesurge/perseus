@@ -1,9 +1,7 @@
-use perseus::prelude::*;
-use serde::{Deserialize, Serialize};
-use sycamore::prelude::*;
+use perseus::{RenderFnResult, RenderFnResultWithCause, Template};
+use sycamore::prelude::{view, Html, Scope, View};
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "PageStateRx")]
+#[perseus::make_rx(PageStateRx)]
 pub struct PageState {
     title: String,
     content: String,
@@ -59,6 +57,6 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
         "".to_string(),
         "test".to_string(),
         "blah/test/blah".to_string(),
-        "a test".to_string(), // Perseus can even handle paths with special characters!
+        "a test".to_string(), // Perseus caan even handle paths with special characters!
     ])
 }

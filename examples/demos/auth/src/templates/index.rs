@@ -1,7 +1,6 @@
+use crate::global_state::*;
 use perseus::prelude::*;
 use sycamore::prelude::*;
-
-use crate::global_state::*;
 
 #[perseus::template]
 fn index_view<'a, G: Html>(cx: Scope<'a>) -> View<G> {

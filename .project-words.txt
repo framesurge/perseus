@@ -100,7 +100,6 @@ TTFB
 unbuilt
 unergonomic
 unfetched
-uninteractive
 unlocalized
 unminified
 unreactive

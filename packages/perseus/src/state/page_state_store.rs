@@ -43,7 +43,7 @@ pub struct PageStateStore {
     max_size: usize,
     /// A list of pages that will be kept in the store no matter what. This can
     /// be used to maintain the states of essential pages regardless of how
-    /// much the user has traveled through the site. The *vast* majority of
+    /// much the user has travelled through the site. The *vast* majority of
     /// use-cases for this would be better fulfilled by using global state, and
     /// this API is *highly* likely to be misused! If at all possible, use
     /// global state!
@@ -53,7 +53,7 @@ pub struct PageStateStore {
     /// be globally preloaded; any pages that should only be preloaded for a
     /// specific route should be placed in `route_preloaded` instead.
     preloaded: Rc<RefCell<HashMap<String, PageDataPartial>>>,
-    /// Pages that have been preloaded for the current route, which should be
+    /// Pages that have been prelaoded for the current route, which should be
     /// cleared on a route change.
     route_preloaded: Rc<RefCell<HashMap<String, PageDataPartial>>>,
 }

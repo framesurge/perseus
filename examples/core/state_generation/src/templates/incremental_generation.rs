@@ -1,12 +1,10 @@
 // This is exactly the same as the build paths example except for a few lines
 // and some names
 
-use perseus::prelude::*;
-use serde::{Deserialize, Serialize};
-use sycamore::prelude::*;
+use perseus::{blame_err, RenderFnResult, RenderFnResultWithCause, Template};
+use sycamore::prelude::{view, Html, Scope, View};
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "PageStateRx")]
+#[perseus::make_rx(PageStateRx)]
 pub struct PageState {
     title: String,
     content: String,

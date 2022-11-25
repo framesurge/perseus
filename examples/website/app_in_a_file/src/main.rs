@@ -1,5 +1,4 @@
-use perseus::prelude::*;
-use serde::{Deserialize, Serialize};
+use perseus::{Html, PerseusApp, RenderFnResultWithCause, Template};
 use sycamore::prelude::*;
 
 // Initialize our app with the `perseus_warp` package's default server (fully
@@ -32,8 +31,7 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, props: IndexPropsRx<'a>) -> View<G> {
     }
 }
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "IndexPropsRx")]
+#[perseus::make_rx(IndexPropsRx)]
 struct IndexProps {
     name: String,
 }
