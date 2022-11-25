@@ -37,7 +37,7 @@ struct HelperState(String);
 async fn get_build_state(
     info: StateGeneratorInfo<HelperState>,
 ) -> RenderFnResultWithCause<PageState> {
-    let title = info.path.clone();
+    let title = format!("Path: {}", &info.path);
     let content = format!(
         "This post's original slug was '{}'. Extra state: {}",
         &title,
