@@ -1,4 +1,5 @@
-use perseus::{blame_err, Html, PerseusApp, RenderFnResult, RenderFnResultWithCause, Template};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use sycamore::prelude::*;
 
@@ -31,7 +32,8 @@ fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostRx<'a>) -> View<G> {
 }
 // EXCERPT_END
 
-#[perseus::make_rx(PostRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "PostRx")]
 struct Post {
     title: String,
     author: String,

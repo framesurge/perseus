@@ -1,7 +1,9 @@
-use perseus::{Html, RenderFnResultWithCause, Template};
-use sycamore::prelude::{view, Scope, SsrNode, View};
+use perseus::prelude::*;
+use serde::{Deserialize, Serialize};
+use sycamore::prelude::*;
 
-#[perseus::make_rx(IndexPageStateRx)]
+#[derive(Serialize, Deserialize, ReactiveState)]
+#[rx(alias = "IndexPageStateRx")]
 pub struct IndexPageState {
     pub username: String,
 }

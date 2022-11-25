@@ -121,7 +121,7 @@ impl Freeze for GlobalStateType {
         match &self {
             Self::Loaded(state) => state.freeze(),
             // There's no point in serializing state that was sent from the server, since we can
-            // easily get it again later (it definitionally hasn't changed)
+            // easily get it again later (it can't possibly have been changed on the browser-side)
             Self::Server(_) => "Server".to_string(),
             Self::None => "None".to_string(),
         }
