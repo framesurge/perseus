@@ -13,6 +13,7 @@ use crate::state::AnyFreeze;
 use crate::state::MakeRx;
 use crate::state::MakeRxRef;
 use crate::state::MakeUnrx;
+use crate::state::UnreactiveState;
 use crate::translator::Translator;
 use crate::utils::provide_context_signal_replace;
 #[cfg(not(target_arch = "wasm32"))]
@@ -807,6 +808,77 @@ impl<G: Html> Template<G> {
         });
         self
     }
+    /// Sets the template rendering function to use, if the template takes
+    /// unreactive state.
+    pub fn template_with_unreactive_state<F, S>(mut self, val: F) -> Template<G>
+    where
+        F: Fn(Scope, S) -> View<G> + Send + Sync + 'static,
+        S: MakeRx + Serialize + DeserializeOwned + UnreactiveState,
+        <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
+    {
+        self.template = Box::new(move |app_cx, mut route_manager, template_state, path| {
+            let state_empty = template_state.is_empty();
+            // Declare a type on the untyped state (this doesn't perform any conversions,
+            // but the type we declare may be invalid)
+            let typed_state = template_state.change_type::<S>();
+
+            // Get an intermediate state type by checking against frozen state, active
+            // state, etc.
+            let intermediate_state = {
+                // Check if properties of the reactive type are already in the page state store
+                // If they are, we'll use them (so state persists for templates across the whole
+                // app)
+                let render_ctx = RenderCtx::from_ctx(app_cx);
+                // The render context will automatically handle prioritizing frozen or active
+                // state for us for this page as long as we have a reactive state type, which we
+                // do!
+                match render_ctx.get_active_or_frozen_page_state::<<S as MakeRx>::Rx>(&path) {
+                    // If we navigated back to this page, and it's still in the PSS, the given state
+                    // will be a dummy, but we don't need to worry because it's never checked if
+                    // this evaluates
+                    Some(existing_state) => existing_state,
+                    // Again, frozen state has been dealt with already, so we'll fall back to
+                    // generated state
+                    None => {
+                        // Make sure now that there is actually state
+                        if state_empty {
+                            // This will happen at build-time
+                            panic!(
+                                "the template for path `{}` takes state, but no state was found (you probably forgot to write a state generating function, like `get_build_state`)",
+                                &path,
+                            );
+                        }
+
+                        // Again, the render context can do the heavy lifting for us (this returns
+                        // what we need, and can do type checking). The user
+                        // really should have a generation function, but if they don't then they'd
+                        // get a panic, so give them a nice error message.
+                        // If this returns an error, we know the state was of the incorrect type
+                        // (there is literally nothing we can do about this, and it's best to
+                        // fail-fast and render nothing, hoping that this
+                        // will appear at build-time)
+                        match render_ctx
+                            .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state)
+                        {
+                            Ok(state) => state,
+                            Err(err) => panic!(
+                                "unrecoverable error in template state derivation: {:#?}",
+                                err
+                            ),
+                        }
+                    }
+                }
+            };
+
+            let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+                let view = val(child_cx, intermediate_state.make_unrx());
+                route_manager.update_view(view);
+            });
+            route_manager.update_disposer(disposer);
+        });
+        self
+    }
+
     /// Sets the template rendering function to use for templates that take no
     /// state. Templates that do take state should use
     /// `.template_with_state()` instead.
