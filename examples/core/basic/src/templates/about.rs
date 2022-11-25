@@ -1,15 +1,13 @@
 use perseus::Template;
 use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 
-#[perseus::template]
-pub fn about_page<G: Html>(cx: Scope) -> View<G> {
+fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "About." }
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope) -> View<SsrNode> {
+fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "About Page | Perseus Example – Basic" }
     }

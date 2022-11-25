@@ -10,7 +10,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         // Create a new template at `index`, which maps to our landing page
         .template(|| {
             Template::new("index")
-                .template(index_page)
+                .template_with_state(index_page)
                 .build_state_fn(get_index_build_state)
         })
         .template(|| Template::new("about").template(about_page))
@@ -40,10 +40,8 @@ struct IndexProps {
 
 // This function will be run when you build your app, to generate default state
 // ahead-of-time
-#[perseus::build_state]
 async fn get_index_build_state(
-    _path: String,
-    _locale: String,
+    _info: StateGeneratorInfo<()>,
 ) -> RenderFnResultWithCause<IndexProps> {
     let props = IndexProps {
         name: "User".to_string(),
@@ -52,7 +50,6 @@ async fn get_index_build_state(
 }
 // EXCERPT_END
 
-#[perseus::template]
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "This is an example webapp created with Perseus!" }

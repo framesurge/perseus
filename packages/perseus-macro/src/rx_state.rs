@@ -229,7 +229,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     //         // Extract field name and wrapper type (we know this only has two
     // elements)         let field_name = match meta_list.first().unwrap() {
     //             NestedMeta::Lit(Lit::Str(s)) =>
-    // Ident::new(s.value().as_str(), Span::call_site()),             
+    // Ident::new(s.value().as_str(), Span::call_site()),
     // NestedMeta::Lit(val) => {                 return
     // Err(syn::Error::new_spanned(                     val,
     //                     "first argument must be string literal field name",
@@ -245,7 +245,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     //         let wrapper_ty = match meta_list.last().unwrap() {
     //             // TODO Is this `.unwrap()` actually safe to use?
     //             NestedMeta::Meta(meta) =>
-    // &meta.path().segments.first().unwrap().ident,             
+    // &meta.path().segments.first().unwrap().ident,
     // NestedMeta::Lit(val) => {                 return
     // Err(syn::Error::new_spanned(                     val,
     //                     "second argument must be reactive wrapper type",
@@ -294,14 +294,14 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     //             let orig_ty = &field.ty;
     //             // Check if this field was registered as one to use nested
     // reactivity             let wrapper_ty =
-    // nested_fields_map.get(field.ident.as_ref().unwrap());             
+    // nested_fields_map.get(field.ident.as_ref().unwrap());
     // field.ty = if let Some(wrapper_ty) = wrapper_ty {                 let
-    // mid_wrapper_ty = Ident::new(                     
-    // &(wrapper_ty.to_string() + "PerseusRxIntermediary"),                 
+    // mid_wrapper_ty = Ident::new(
+    // &(wrapper_ty.to_string() + "PerseusRxIntermediary"),
     // Span::call_site(),                 );
     //                 syn::Type::Verbatim(quote!(#mid_wrapper_ty))
     //             } else {
-    //                 
+    //
     // syn::Type::Verbatim(quote!(::sycamore::prelude::RcSignal<#orig_ty>))
     //             };
     //             // Remove any `serde` attributes (Serde can't be used with
@@ -331,7 +331,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     //             let orig_ty = &field.ty;
     //             // Check if this field was registered as one to use nested
     // reactivity             let wrapper_ty =
-    // nested_fields_map.get(field.ident.as_ref().unwrap());             
+    // nested_fields_map.get(field.ident.as_ref().unwrap());
     // field.ty = if let Some(wrapper_ty) = wrapper_ty {                 //
     // If we don't make this a reference, nested properties have to be cloned
     // (not                 // nice for ergonomics) TODO Check back on this,
@@ -380,7 +380,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     //             } else {
     //                 field_assignments.extend(quote! {
     //                     #field_name:
-    // ::sycamore::prelude::create_rc_signal(self.#field_name),             
+    // ::sycamore::prelude::create_rc_signal(self.#field_name),
     // });             }
     //         }
     //         quote! {
@@ -440,7 +440,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     //             } else {
     //                 // We can `.clone()` the field because we implement
     // `Clone` on both the new and                 // the original
-    // `struct`s, meaning all fields must also be `Clone`                 
+    // `struct`s, meaning all fields must also be `Clone`
     // field_assignments.extend(quote! {                     #field_name:
     // (*self.#field_name.get_untracked()).clone(),                 });
     //             }

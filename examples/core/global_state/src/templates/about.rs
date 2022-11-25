@@ -3,8 +3,7 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-#[perseus::template]
-pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+fn about_page<G: Html>(cx: Scope) -> View<G> {
     let global_state = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
 
     view! { cx,
@@ -16,8 +15,7 @@ pub fn about_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope) -> View<SsrNode> {
+fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "About Page" }
     }

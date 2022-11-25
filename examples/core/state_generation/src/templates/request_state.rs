@@ -4,12 +4,12 @@ use sycamore::prelude::*;
 
 #[derive(Serialize, Deserialize, ReactiveState)]
 #[rx(alias = "PageStateRx")]
-pub struct PageState {
+struct PageState {
     ip: String,
 }
 
 #[perseus::template]
-pub fn request_state_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
+fn request_state_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
     view! { cx,
         p {
             (
@@ -22,16 +22,15 @@ pub fn request_state_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) ->
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("request_state")
         .request_state_fn(get_request_state)
-        .template(request_state_page)
+        .template_with_state(request_state_page)
 }
 
-#[perseus::request_state]
-pub async fn get_request_state(
-    _path: String,
-    _locale: String,
-    // Unlike in build state, in request state we get access to the information that the user sent
-    // with their HTTP request IN this example, we extract the browser's reporting of their IP
-    // address and display it to them
+async fn get_request_state(
+    // We get all the same info as build state in here
+    _info: StateGeneratorInfo<()>,
+    // Unlike in build state, in request state we *also* get access to the information that the
+    // user sent with their HTTP request IN this example, we extract the browser's reporting of
+    // their IP address and display it to them
     req: Request,
 ) -> RenderFnResultWithCause<PageState> {
     Ok(PageState {

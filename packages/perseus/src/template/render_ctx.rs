@@ -545,8 +545,8 @@ impl RenderCtx {
             self.get_active_global_state::<R>()
         }
     }
-    /// Registers a deserialized and unreactive [`TemplateState`] to the page state
-    /// store, returning a fully reactive version.
+    /// Registers a deserialized and unreactive [`TemplateState`] to the page
+    /// state store, returning a fully reactive version.
     ///
     /// **Warning:** if the page has already been registered in the page state
     /// store as not being able to receive state, this will silently fail
@@ -567,7 +567,8 @@ impl RenderCtx {
     {
         // Deserialize it (we know nothing about the calling situation, so we assume it
         // could be invalid, hence the fallible return type)
-        let unrx = state.to_concrete()
+        let unrx = state
+            .to_concrete()
             .map_err(|err| ClientError::StateInvalid { source: err })?;
         let rx = unrx.make_rx();
         // Potential silent failure (see above)

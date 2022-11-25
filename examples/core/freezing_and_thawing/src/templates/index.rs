@@ -5,12 +5,12 @@ use sycamore::prelude::*;
 
 #[derive(Serialize, Deserialize, ReactiveState)]
 #[rx(alias = "IndexPropsRx")]
-pub struct IndexProps {
+struct IndexProps {
     username: String,
 }
 
 #[perseus::template]
-pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
+fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
     let frozen_app = create_signal(cx, String::new());
@@ -47,14 +47,10 @@ pub fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template(index_page)
+        .template_with_state(index_page)
 }
 
-#[perseus::build_state]
-pub async fn get_build_state(
-    _path: String,
-    _locale: String,
-) -> RenderFnResultWithCause<IndexProps> {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexProps> {
     Ok(IndexProps {
         username: "".to_string(),
     })

@@ -7,7 +7,7 @@ use sycamore::prelude::*;
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new().template(|| {
         Template::new("post")
-            .template(post_page)
+            .template_with_state(post_page)
             .build_paths_fn(get_build_paths)
             .build_state_fn(get_build_state)
             // Reload every blog post every day, in case it's changed
@@ -42,8 +42,9 @@ struct Post {
 
 // EXCERPT_START
 // This function will be run for each path under `/post/` to generate its state
-#[perseus::build_state]
-async fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCause<Post> {
+async fn get_build_state(
+    StateGeneratorInfo { path, .. }: StateGeneratorInfo<()>,
+) -> RenderFnResultWithCause<Post> {
     let raw_post = match get_post_for_path(path) {
         Ok(post) => post,
         // If the user sends us some bogus path with incremental generation,
@@ -58,13 +59,17 @@ async fn get_build_state(path: String, _locale: String) -> RenderFnResultWithCau
     };
     Ok(props)
 }
-async fn get_build_paths() -> RenderFnResult<Vec<String>> {
-    // These will all become URLs at `/post/<name>`
-    Ok(vec![
-        "welcome".to_string(),
-        "really-popular-post".to_string(),
-        "foobar".to_string(),
-    ])
+async fn get_build_paths() -> RenderFnResult<BuildPaths> {
+    Ok(BuildPaths {
+        // These will all become URLs at `/post/<name>`
+        paths: vec![
+            "welcome".to_string(),
+            "really-popular-post".to_string(),
+            "foobar".to_string(),
+        ],
+        // Perseus supports helper state, but we don't need it here
+        extra: ().into(),
+    })
 }
 // EXCERPT_END
 

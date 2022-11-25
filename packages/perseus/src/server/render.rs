@@ -2,7 +2,9 @@ use crate::errors::*;
 use crate::i18n::TranslationsManager;
 use crate::page_data::PageData;
 use crate::stores::{ImmutableStore, MutableStore};
-use crate::template::{StateGeneratorInfo, States, Template, TemplateMap, TemplateState, UnknownStateType};
+use crate::template::{
+    StateGeneratorInfo, States, Template, TemplateMap, TemplateState, UnknownStateType,
+};
 use crate::translator::Translator;
 use crate::Request;
 use crate::SsrNode;
@@ -63,7 +65,8 @@ async fn render_build_state(
         .read(&format!("static/{}.json", path_encoded))
         .await
     {
-        Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidPageState { source: err })?,
+        Ok(state) => TemplateState::from_str(&state)
+            .map_err(|err| ServerError::InvalidPageState { source: err })?,
         Err(_) => TemplateState::empty(),
     };
 
@@ -95,7 +98,8 @@ async fn render_build_state_for_mutable(
         .read(&format!("static/{}.json", path_encoded))
         .await
     {
-        Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidPageState { source: err })?,
+        Ok(state) => TemplateState::from_str(&state)
+            .map_err(|err| ServerError::InvalidPageState { source: err })?,
         Err(_) => TemplateState::empty(),
     };
 
@@ -114,9 +118,7 @@ async fn get_request_state(
 ) -> Result<TemplateState, ServerError> {
     // Generate the initial state (this may generate an error, but there's no file
     // that can't exist)
-    let state = template
-        .get_request_state(build_info, req)
-        .await?;
+    let state = template.get_request_state(build_info, req).await?;
 
     Ok(state)
 }
@@ -139,11 +141,7 @@ async fn render_amalgamated_state(
     // Generate the initial state (this may generate an error, but there's no file
     // that can't exist)
     let state = template
-        .amalgamate_states(
-            build_info,
-            build_state,
-            request_state,
-        )
+        .amalgamate_states(build_info, build_state, request_state)
         .await?;
 
     let html = if render_html {
@@ -236,9 +234,7 @@ async fn should_revalidate(
 
     // Now run the user's custom revalidation logic
     if template.revalidates_with_logic() {
-        should_revalidate = template
-            .should_revalidate(build_info, req)
-            .await?;
+        should_revalidate = template.should_revalidate(build_info, req).await?;
     }
     Ok(should_revalidate)
 }
@@ -262,9 +258,7 @@ async fn revalidate(
     let path_with_locale = get_path_with_locale(&build_info.path, &translator);
     // We need to regenerate and cache this page for future usage (until the next
     // revalidation)
-    let state = template
-        .get_build_state(build_info)
-        .await?;
+    let state = template.get_build_state(build_info).await?;
     let html = sycamore::render_to_string(|cx| {
         template.render_for_template_server(
             path_with_locale,
@@ -374,13 +368,25 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         .read(&format!("static/{}.extra.json", template.get_path()))
         .await
     {
-        Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidBuildExtra { template_name: template.get_path(), source: err })?,
+        Ok(state) => {
+            TemplateState::from_str(&state).map_err(|err| ServerError::InvalidBuildExtra {
+                template_name: template.get_path(),
+                source: err,
+            })?
+        }
         // If this happens, then the immutable store has been tampered with, since
         // the build logic generates some kind of state for everything
-        Err(_) => return Err(ServerError::MissingBuildExtra { template_name: template.get_path() }),
+        Err(_) => {
+            return Err(ServerError::MissingBuildExtra {
+                template_name: template.get_path(),
+            })
+        }
     };
     let build_info = StateGeneratorInfo {
-        path: path.strip_prefix(&format!("{}/", template.get_path())).ok_or(ServerError::TemplateNameNotInPath)?.to_string(),
+        path: path
+            .strip_prefix(&format!("{}/", template.get_path()))
+            .ok_or(ServerError::TemplateNameNotInPath)?
+            .to_string(),
         locale: locale.to_string(),
         extra: build_extra,
     };
@@ -446,7 +452,8 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                             .read(&format!("static/{}.json", path_encoded))
                             .await
                         {
-                            Ok(state) => TemplateState::from_str(&state).map_err(|err| ServerError::InvalidPageState { source: err })?,
+                            Ok(state) => TemplateState::from_str(&state)
+                                .map_err(|err| ServerError::InvalidPageState { source: err })?,
                             Err(_) => TemplateState::empty(),
                         };
                     }
@@ -458,9 +465,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     // `render_html` is `false`) Even if we're going to
                     // amalgamate later, we still have to perform incremental
                     // caching, which means a potentially unnecessary page build
-                    let state = template
-                            .get_build_state(build_info.clone())
-                            .await?;
+                    let state = template.get_build_state(build_info.clone()).await?;
                     let html_val = sycamore::render_to_string(|cx| {
                         template.render_for_template_server(
                             path_with_locale.clone(),
@@ -587,8 +592,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         // the template with it now
         let state = states.get_defined()?;
 
-        let head_val =
-            template.render_head_str(state.clone(), global_state.clone(), &translator);
+        let head_val = template.render_head_str(state.clone(), global_state.clone(), &translator);
         head = head_val;
         // We should only render the HTML if necessary, since we're not caching
         if render_html {
@@ -631,8 +635,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         // That means we have to build the page for it,
         // since we haven't yet
         let state = states.request_state;
-        let head_val =
-            template.render_head_str(state.clone(), global_state.clone(), &translator);
+        let head_val = template.render_head_str(state.clone(), global_state.clone(), &translator);
         // We should only render the HTML if necessary, since we're not caching
         if render_html {
             let html_val = sycamore::render_to_string(|cx| {

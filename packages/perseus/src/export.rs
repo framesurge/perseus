@@ -21,9 +21,12 @@ pub async fn get_static_page_data(
         .read(&format!("static/{}.head.html", path))
         .await?;
     let state = match has_state {
-        true => serde_json::from_str(&immutable_store
-            .read(&format!("static/{}.json", path))
-            .await?).map_err(|err| ServerError::InvalidPageState { source: err })?,
+        true => serde_json::from_str(
+            &immutable_store
+                .read(&format!("static/{}.json", path))
+                .await?,
+        )
+        .map_err(|err| ServerError::InvalidPageState { source: err })?,
         false => TemplateState::empty().state,
     };
     // Create an instance of `PageData`

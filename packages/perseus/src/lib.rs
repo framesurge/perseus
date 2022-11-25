@@ -90,7 +90,10 @@ pub use crate::{
     error_pages::ErrorPages,
     errors::{ErrorCause, GenericErrorWithCause},
     init::*,
-    template::{RenderCtx, RenderFnResult, RenderFnResultWithCause, Template},
+    template::{
+        BuildPaths, RenderCtx, RenderFnResult, RenderFnResultWithCause, StateGeneratorInfo,
+        Template,
+    },
 };
 // Browser-side only
 #[cfg(target_arch = "wasm32")]
@@ -126,8 +129,9 @@ pub mod prelude {
         template, template_rx, test, ReactiveState, UnreactiveState,
     };
     pub use crate::{
-        blame_err, make_blamed_err, ErrorCause, ErrorPages, GenericErrorWithCause, PerseusApp,
-        PerseusRoot, RenderCtx, RenderFnResult, RenderFnResultWithCause, Request, Template,
+        blame_err, make_blamed_err, BuildPaths, ErrorCause, ErrorPages, GenericErrorWithCause,
+        PerseusApp, PerseusRoot, RenderCtx, RenderFnResult, RenderFnResultWithCause, Request,
+        StateGeneratorInfo, Template,
     };
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};

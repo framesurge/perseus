@@ -3,8 +3,8 @@
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
 use crate::stores::{ImmutableStore, MutableStore};
-use crate::template::{BuildPaths, StateGeneratorInfo, Template, TemplateState};
 use crate::template::TemplateMap;
+use crate::template::{BuildPaths, StateGeneratorInfo, Template, TemplateState};
 use crate::translator::Translator;
 use crate::utils::minify;
 use futures::future::try_join_all;
@@ -47,9 +47,7 @@ pub async fn build_template(
     // generating custom ones (that'll be overridden if needed)
     let (paths, build_extra) = match template.uses_build_paths() {
         true => {
-            let BuildPaths { paths, extra } = template
-                .get_build_paths()
-                .await?;
+            let BuildPaths { paths, extra } = template.get_build_paths().await?;
             // Trim away any trailing `/`s so we don't insert them into the render config
             // That makes rendering an index page from build paths impossible (see #39)
             let paths = paths
@@ -60,16 +58,20 @@ pub async fn build_template(
                 })
                 .collect();
             (paths, extra)
-        },
+        }
         false => {
             single_page = true;
             (vec![String::new()], TemplateState::empty())
         }
     };
 
-    // Write the extra build state information to a file now so it can be accessed by request state handlers and the like down the line
+    // Write the extra build state information to a file now so it can be accessed
+    // by request state handlers and the like down the line
     immutable_store
-        .write(&format!("static/{}.extra.json", template_path), &build_extra.state.to_string())
+        .write(
+            &format!("static/{}.extra.json", template_path),
+            &build_extra.state.to_string(),
+        )
         .await?;
 
     // Iterate through the paths to generate initial states if needed
@@ -150,9 +152,7 @@ async fn gen_state_for_path(
     if template.uses_build_state() && template.revalidates() {
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
-        let initial_state = template
-            .get_build_state(build_info)
-            .await?;
+        let initial_state = template.get_build_state(build_info).await?;
         // Write that initial state to a static JSON file
         mutable_store
             .write(
@@ -189,9 +189,7 @@ async fn gen_state_for_path(
     } else if template.uses_build_state() {
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
-        let initial_state = template
-            .get_build_state(build_info)
-            .await?;
+        let initial_state = template.get_build_state(build_info).await?;
         // Write that initial state to a static JSON file
         immutable_store
             .write(
@@ -264,7 +262,8 @@ async fn gen_state_for_path(
                 translator,
             )
         });
-        let head_str = template.render_head_str(TemplateState::empty(), global_state.clone(), translator);
+        let head_str =
+            template.render_head_str(TemplateState::empty(), global_state.clone(), translator);
         // Write that prerendered HTML to a static file
         immutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)

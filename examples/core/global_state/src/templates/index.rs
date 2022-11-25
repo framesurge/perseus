@@ -4,8 +4,7 @@ use sycamore::prelude::*;
 
 // Note that this template takes no state of its own in this example, but it
 // certainly could
-#[perseus::template]
-pub fn index_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+fn index_page<G: Html>(cx: Scope) -> View<G> {
     // We access the global state through the render context, extracted from
     // Sycamore's context system
     let global_state = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
@@ -19,8 +18,7 @@ pub fn index_page<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope) -> View<SsrNode> {
+fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "Index Page" }
     }

@@ -1,5 +1,12 @@
 use fmterr::fmt_err;
-use perseus::{errors::err_to_status_code, i18n::TranslationsManager, internal::PageDataPartial, server::{get_page_for_template, GetPageProps, ServerOptions}, stores::{ImmutableStore, MutableStore}, template::TemplateState};
+use perseus::{
+    errors::err_to_status_code,
+    i18n::TranslationsManager,
+    internal::PageDataPartial,
+    server::{get_page_for_template, GetPageProps, ServerOptions},
+    stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
+};
 use serde::Deserialize;
 use std::sync::Arc;
 use warp::http::Response;

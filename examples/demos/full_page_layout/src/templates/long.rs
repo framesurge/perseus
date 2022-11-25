@@ -2,8 +2,7 @@ use crate::components::layout::Layout;
 use perseus::Template;
 use sycamore::prelude::{view, Html, Scope, SsrNode, View};
 
-#[perseus::template]
-pub fn long_page<G: Html>(cx: Scope) -> View<G> {
+fn long_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         Layout(title = "Long") {
             // Anything we put in here will be rendered inside the `<main>` block of the layout
@@ -16,8 +15,7 @@ pub fn long_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope) -> View<SsrNode> {
+fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "Long Page" }
     }

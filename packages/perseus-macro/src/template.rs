@@ -152,14 +152,12 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
             FnArg::Typed(PatType { ty, .. }) => remove_lifetimes(ty),
             FnArg::Receiver(_) => unreachable!(),
         };
-        let name_string = name.to_string();
         quote! {
-            #vis fn #name<'__perseus_cx, G: ::sycamore::prelude::Html>(
-                cx: ::sycamore::prelude::Scope<'__perseus_cx>,
-                mut route_manager: ::perseus::router::RouteManager<'__perseus_cx, G>,
-                props: ::perseus::template::PageProps
-            ) {
-                use ::perseus::state::{MakeRx, MakeRxRef, RxRef};
+            #vis fn #name<G: ::sycamore::prelude::Html>(
+                cx: ::sycamore::prelude::Scope,
+                state: <#rx_props_ty as ::perseus::state::RxRef>::RxNonRef
+            ) -> #return_type {
+                use ::perseus::state::MakeRxRef;
 
                 // The user's function, with Sycamore component annotations and the like preserved
                 // We know this won't be async because Sycamore doesn't allow that
@@ -169,31 +167,8 @@ pub fn template_impl(input: TemplateFn, is_reactive: bool) -> TokenStream {
                     #block
                 }
 
-                let props = {
-                    // Check if properties of the reactive type are already in the page state store
-                    // If they are, we'll use them (so state persists for templates across the whole app)
-                    let render_ctx = ::perseus::RenderCtx::from_ctx(cx);
-                    // The render context will automatically handle prioritizing frozen or active state for us for this page as long as we have a reactive state type, which we do!
-                    // We need there to be no lifetimes in `rx_props_ty` here, since the lifetimes the user declared are defined inside the above function, which we
-                    // aren't inside!
-                    match render_ctx.get_active_or_frozen_page_state::<<#rx_props_ty as RxRef>::RxNonRef>(&props.path) {
-                            // If we navigated back to this page, and it's still in the PSS, the given state will be a dummy, but we don't need to worry because it's never checked if this evaluates
-                        ::std::option::Option::Some(existing_state) => existing_state,
-                        // Again, frozen state has been dealt with already, so we'll fall back to generated state
-                        ::std::option::Option::None => {
-                            // Again, the render context can do the heavy lifting for us (this returns what we need, and can do type checking)
-                            // We also assume that any state we have is valid because it comes from the server
-                            // The user really should have a generation function, but if they don't then they'd get a panic, so give them a nice error message
-                            render_ctx.register_page_state_str::<<#rx_props_ty as RxRef>::RxNonRef>(&props.path, &props.state.unwrap_or_else(|| panic!("template `{}` takes a state, but no state generation functions were provided (please add at least one to use state)", #name_string))).unwrap()
-                        }
-                    }
-                };
-
-                let disposer = ::sycamore::reactive::create_child_scope(cx, |child_cx| {
-                    let view = #component_name(child_cx, props.to_ref_struct(cx));
-                    route_manager.update_view(view);
-                });
-                route_manager.update_disposer(disposer);
+                let ref_struct = state.to_ref_struct(cx);
+                #component_name(cx, ref_struct)
             }
         }
     } else if fn_args.len() == 2 && !is_reactive {

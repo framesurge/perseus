@@ -1,8 +1,17 @@
 use fmterr::fmt_err;
-use perseus::{ErrorPages, SsrNode, errors::{err_to_status_code, ServerError}, i18n::{TranslationsManager, Translator}, router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic}, server::{
+use perseus::{
+    errors::{err_to_status_code, ServerError},
+    i18n::{TranslationsManager, Translator},
+    router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
+    server::{
         build_error_page, get_page_for_template, get_path_slice, GetPageProps, HtmlShell,
         ServerOptions,
-    }, stores::{ImmutableStore, MutableStore}, template::TemplateState, utils::get_path_prefix_server};
+    },
+    stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
+    utils::get_path_prefix_server,
+    ErrorPages, SsrNode,
+};
 use std::{collections::HashMap, rc::Rc, sync::Arc};
 use warp::{http::Response, path::FullPath};
 

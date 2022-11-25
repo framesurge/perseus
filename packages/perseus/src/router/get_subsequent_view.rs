@@ -8,9 +8,9 @@ use crate::utils::fetch;
 use crate::utils::get_path_prefix_client;
 use crate::utils::replace_head;
 use fmterr::fmt_err;
+use serde_json::Value;
 use std::rc::Rc;
 use sycamore::prelude::*;
-use serde_json::Value;
 
 pub(crate) struct GetSubsequentViewProps<'a> {
     /// The app's reactive scope.
@@ -170,7 +170,7 @@ pub(crate) async fn get_subsequent_view(
         // We have everything locally, so we can move right ahead!
         PssContains::All => Ok(PageDataPartial {
             state: Value::Null, /* The macros will preferentially use the PSS state,
-                                             * so this will never be parsed */
+                                 * so this will never be parsed */
             head: pss.get_head(&path).unwrap(),
         }),
         // We only have document metadata, but the page definitely takes no state, so we're fine
@@ -261,7 +261,12 @@ pub(crate) async fn get_subsequent_view(
         path: path_with_locale,
     });
     // Now return the view that should be rendered
-    template.render_for_template_client(TemplateState::from_value(page_data.state), cx, route_manager, translator);
+    template.render_for_template_client(
+        TemplateState::from_value(page_data.state),
+        cx,
+        route_manager,
+        translator,
+    );
     SubsequentView::Success
 }
 

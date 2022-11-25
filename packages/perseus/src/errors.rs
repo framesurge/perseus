@@ -112,9 +112,7 @@ pub enum ServerError {
         source: std::string::FromUtf8Error,
     },
     #[error("the template '{template_name}' had no helper build state written to the immutable store (the store has been tampered with, and the app must be rebuilt)")]
-    MissingBuildExtra {
-        template_name: String,
-    },
+    MissingBuildExtra { template_name: String },
     #[error("the template '{template_name}' had invalid helper build state written to the immutable store (the store has been tampered with, and the app must be rebuilt)")]
     InvalidBuildExtra {
         template_name: String,
