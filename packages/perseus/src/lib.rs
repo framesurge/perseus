@@ -59,7 +59,6 @@ mod client;
 #[cfg(not(target_arch = "wasm32"))]
 mod export;
 mod init;
-mod macros;
 mod page_data;
 mod translator;
 
