@@ -12,9 +12,20 @@ pub enum Error {
     #[cfg(not(target_arch = "wasm32"))]
     #[error(transparent)]
     ServerError(#[from] ServerError),
-    #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+    #[cfg(not(target_arch = "wasm32"))]
     #[error(transparent)]
     EngineError(#[from] EngineError),
+    // Plugin errors could come from literally anywhere, and could have entirely arbitrary data
+    #[error(transparent)]
+    PluginError(#[from] PluginError),
+}
+
+#[derive(Error, Debug)]
+#[error("plugin '{name}' returned an error (this is unlikely to be Perseus' fault)")]
+pub struct PluginError {
+    pub name: String,
+    #[source]
+    pub source: Box<dyn std::error::Error>,
 }
 
 /// Errors that can occur in the server-side engine system (responsible for

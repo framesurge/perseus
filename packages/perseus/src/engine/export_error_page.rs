@@ -1,6 +1,10 @@
 use crate::{
-    errors::EngineError, i18n::TranslationsManager, plugins::PluginAction,
-    server::build_error_page, stores::MutableStore, PerseusApp, PerseusAppBase, SsrNode,
+    errors::{EngineError, Error},
+    i18n::TranslationsManager,
+    plugins::PluginAction,
+    server::build_error_page,
+    stores::MutableStore,
+    PerseusApp, PerseusAppBase, SsrNode,
 };
 use std::{fs, rc::Rc};
 
@@ -16,25 +20,30 @@ pub async fn export_error_page(
     app: PerseusAppBase<SsrNode, impl MutableStore, impl TranslationsManager>,
     code: u16,
     output: &str,
-) -> Result<(), Rc<EngineError>> {
+) -> Result<(), Rc<Error>> {
     let plugins = app.get_plugins();
 
     let error_pages = app.get_atomic_error_pages();
     // Prepare the HTML shell
     let index_view_str = app.get_index_view_str();
-    let root_id = app.get_root();
-    let immutable_store = app.get_immutable_store();
+    let root_id = app.get_root().map_err(|err| Rc::new(err.into()))?;
+    let immutable_store = app
+        .get_immutable_store()
+        .map_err(|err| Rc::new(err.into()))?;
     // We assume the app has already been built before running this (so the render
     // config must be available) It doesn't matter if the type parameters here
     // are wrong, this function doesn't use them
     let html_shell =
-        PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins).await;
+        PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins)
+            .await
+            .map_err(|err| Rc::new(err.into()))?;
 
     plugins
         .functional_actions
         .export_error_page_actions
         .before_export_error_page
-        .run((code, output.to_string()), plugins.get_plugin_data());
+        .run((code, output.to_string()), plugins.get_plugin_data())
+        .map_err(|err| Rc::new(err.into()))?;
 
     // Build that error page as the server does
     let err_page_str = build_error_page("", code, "", None, &error_pages, &html_shell);
@@ -47,12 +56,13 @@ pub async fn export_error_page(
                 source: err,
                 dest: output.to_string(),
             };
-            let err = Rc::new(err);
+            let err: Rc<Error> = Rc::new(err.into());
             plugins
                 .functional_actions
                 .export_error_page_actions
                 .after_failed_write
-                .run(err.clone(), plugins.get_plugin_data());
+                .run(err.clone(), plugins.get_plugin_data())
+                .map_err(|err| Rc::new(err.into()))?;
             return Err(err);
         }
     };
@@ -61,7 +71,8 @@ pub async fn export_error_page(
         .functional_actions
         .export_error_page_actions
         .after_successful_export_error_page
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())
+        .map_err(|err| Rc::new(err.into()))?;
 
     Ok(())
 }

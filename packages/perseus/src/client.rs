@@ -1,3 +1,4 @@
+use crate::errors::PluginError;
 use crate::{
     checkpoint,
     plugins::PluginAction,
@@ -5,6 +6,7 @@ use crate::{
     template::TemplateNodeType,
 };
 use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
+use fmterr::fmt_err;
 use std::collections::HashMap;
 use wasm_bindgen::JsValue;
 
@@ -22,7 +24,6 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
 ) -> Result<(), JsValue> {
     let mut app = app();
-    let plugins = app.get_plugins();
     let panic_handler = app.take_panic_handler();
 
     checkpoint("begin");
@@ -38,11 +39,28 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         }
     }));
 
+    let res = client_core(app);
+    if let Err(err) = res {
+        // This will go to the panic handler we defined above
+        // Unfortunately, at this stage, we really can't do anything else
+        panic!("plugin error: {}", fmt_err(&err));
+    }
+
+    Ok(())
+}
+
+/// This executes the actual underlying browser-side logic, including
+/// instantiating the user's app. This is broken out due to plugin fallibility.
+fn client_core<M: MutableStore, T: TranslationsManager>(
+    app: PerseusAppBase<TemplateNodeType, M, T>,
+) -> Result<(), PluginError> {
+    let plugins = app.get_plugins();
+
     plugins
         .functional_actions
         .client_actions
         .start
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())?;
     checkpoint("initial_plugins_complete");
 
     // Get the root we'll be injecting the router into
@@ -50,15 +68,15 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         .unwrap()
         .document()
         .unwrap()
-        .query_selector(&format!("#{}", app.get_root()))
+        .query_selector(&format!("#{}", app.get_root()?))
         .unwrap()
         .unwrap();
 
     // Set up the properties we'll pass to the router
     let router_props = PerseusRouterProps {
-        locales: app.get_locales(),
+        locales: app.get_locales()?,
         error_pages: app.get_error_pages(),
-        templates: app.get_templates_map(),
+        templates: app.get_templates_map()?,
         render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
         pss_max_size: app.get_pss_max_size(),
     };

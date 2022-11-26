@@ -109,7 +109,13 @@ where
         EngineOperation::Serve => {
             // To reduce friction for default servers and user-made servers, we
             // automatically do the boilerplate that all servers would have to do
-            let props = get_props(app());
+            let props = match get_props(app()) {
+                Ok(props) => props,
+                Err(err) => {
+                    eprintln!("{}", fmt_err(&err));
+                    return 1;
+                }
+            };
             // This returns a `(String, u16)` of the host and port for maximum compatibility
             let addr = get_host_and_port();
             // In production, give the user a heads up that something's actually happening
@@ -123,10 +129,12 @@ where
             serve_fn(props, addr).await;
             0
         }
-        EngineOperation::Tinker => {
-            // This is infallible (though plugins could panic)
-            super::engine_tinker(app());
-            0
-        }
+        EngineOperation::Tinker => match super::engine_tinker(app()) {
+            Ok(_) => 0,
+            Err(err) => {
+                eprintln!("{}", fmt_err(&err));
+                1
+            }
+        },
     }
 }

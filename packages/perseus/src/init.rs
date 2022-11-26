@@ -1,3 +1,4 @@
+use crate::errors::PluginError;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
@@ -602,13 +603,15 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
     // Getters
     /// Gets the HTML ID of the `<div>` at which to insert Perseus.
-    pub fn get_root(&self) -> String {
-        self.plugins
+    pub fn get_root(&self) -> Result<String, PluginError> {
+        let root = self
+            .plugins
             .control_actions
             .settings_actions
             .set_app_root
-            .run((), self.plugins.get_plugin_data())
-            .unwrap_or_else(|| self.root.to_string())
+            .run((), self.plugins.get_plugin_data())?
+            .unwrap_or_else(|| self.root.to_string());
+        Ok(root)
     }
     /// Gets the directory containing static assets to be hosted under the URL
     /// `/.perseus/static/`.
@@ -642,7 +645,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         root: &str,
         immutable_store: &ImmutableStore,
         plugins: &Plugins<G>,
-    ) -> HtmlShell {
+    ) -> Result<HtmlShell, PluginError> {
         // Construct an HTML shell
         let mut html_shell = HtmlShell::new(
             index_view_str,
@@ -662,7 +665,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .settings_actions
             .html_shell_actions
             .set_shell
-            .run((), plugins.get_plugin_data())
+            .run((), plugins.get_plugin_data())?
             .unwrap_or(html_shell.shell);
         html_shell.shell = shell_str;
         // For convenience, we alias the HTML shell functional actions
@@ -676,7 +679,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.head_before_boundary.push(
             hsf_actions
                 .add_to_head_before_boundary
-                .run((), plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())?
                 .values()
                 .flatten()
                 .cloned()
@@ -685,7 +688,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.scripts_before_boundary.push(
             hsf_actions
                 .add_to_scripts_before_boundary
-                .run((), plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())?
                 .values()
                 .flatten()
                 .cloned()
@@ -694,7 +697,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.head_after_boundary.push(
             hsf_actions
                 .add_to_head_after_boundary
-                .run((), plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())?
                 .values()
                 .flatten()
                 .cloned()
@@ -703,7 +706,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.scripts_after_boundary.push(
             hsf_actions
                 .add_to_scripts_after_boundary
-                .run((), plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())?
                 .values()
                 .flatten()
                 .cloned()
@@ -712,7 +715,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.before_content.push(
             hsf_actions
                 .add_to_before_content
-                .run((), plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())?
                 .values()
                 .flatten()
                 .cloned()
@@ -721,18 +724,18 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell.after_content.push(
             hsf_actions
                 .add_to_after_content
-                .run((), plugins.get_plugin_data())
+                .run((), plugins.get_plugin_data())?
                 .values()
                 .flatten()
                 .cloned()
                 .collect(),
         );
 
-        html_shell
+        Ok(html_shell)
     }
     /// Gets the templates in an `Rc`-based `HashMap` for non-concurrent access.
     #[cfg(target_arch = "wasm32")]
-    pub fn get_templates_map(&self) -> TemplateMap<G> {
+    pub fn get_templates_map(&self) -> Result<TemplateMap<G>, PluginError> {
         // One the browser-side, this is already a `TemplateMap` internally
         let mut map = self.templates.clone();
 
@@ -742,7 +745,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .functional_actions
             .settings_actions
             .add_templates
-            .run((), self.plugins.get_plugin_data());
+            .run((), self.plugins.get_plugin_data())?;
         for (_plugin_name, plugin_templates) in extra_templates {
             // Turn that vector into a template map by extracting the template root paths as
             // keys
@@ -751,12 +754,12 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             }
         }
 
-        map
+        Ok(map)
     }
     /// Gets the templates in an `Arc`-based `HashMap` for concurrent access.
     /// This should only be relevant on the server-side.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_templates_map(&self) -> ArcTemplateMap<G> {
+    pub fn get_atomic_templates_map(&self) -> Result<ArcTemplateMap<G>, PluginError> {
         // One the engine-side, this is already an `ArcTemplateMap` internally
         let mut map = self.templates.clone();
 
@@ -766,7 +769,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .functional_actions
             .settings_actions
             .add_templates
-            .run((), self.plugins.get_plugin_data());
+            .run((), self.plugins.get_plugin_data())?;
         for (_plugin_name, plugin_templates) in extra_templates {
             // Turn that vector into a template map by extracting the template root paths as
             // keys
@@ -775,7 +778,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             }
         }
 
-        map
+        Ok(map)
     }
     /// Gets the [`ErrorPages`] used in the app. This returns an `Rc`.
     #[cfg(target_arch = "wasm32")]
@@ -799,14 +802,16 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self.global_state_creator.clone()
     }
     /// Gets the locales information.
-    pub fn get_locales(&self) -> Locales {
+    pub fn get_locales(&self) -> Result<Locales, PluginError> {
         let locales = self.locales.clone();
-        self.plugins
+        let locales = self
+            .plugins
             .control_actions
             .settings_actions
             .set_locales
-            .run(locales.clone(), self.plugins.get_plugin_data())
-            .unwrap_or(locales)
+            .run(locales.clone(), self.plugins.get_plugin_data())?
+            .unwrap_or(locales);
+        Ok(locales)
     }
     /// Gets the server-side [`TranslationsManager`]. Like the mutable store,
     /// this can't be modified by plugins due to trait complexities.
@@ -822,14 +827,16 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Gets the [`ImmutableStore`].
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_immutable_store(&self) -> ImmutableStore {
+    pub fn get_immutable_store(&self) -> Result<ImmutableStore, PluginError> {
         let immutable_store = self.immutable_store.clone();
-        self.plugins
+        let immutable_store = self
+            .plugins
             .control_actions
             .settings_actions
             .set_immutable_store
-            .run(immutable_store.clone(), self.plugins.get_plugin_data())
-            .unwrap_or(immutable_store)
+            .run(immutable_store.clone(), self.plugins.get_plugin_data())?
+            .unwrap_or(immutable_store);
+        Ok(immutable_store)
     }
     /// Gets the [`MutableStore`]. This can't be modified by plugins due to
     /// trait complexities, so plugins should instead expose a function that
@@ -850,7 +857,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// accidentally serve an arbitrary in a production environment where a path
     /// may point to somewhere evil, like an alias to `/etc/passwd`).
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_static_aliases(&self) -> HashMap<String, String> {
+    pub fn get_static_aliases(&self) -> Result<HashMap<String, String>, PluginError> {
         let mut static_aliases = self.static_aliases.clone();
         // This will return a map of plugin name to another map of static aliases that
         // that plugin produced
@@ -859,7 +866,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .functional_actions
             .settings_actions
             .add_static_aliases
-            .run((), self.plugins.get_plugin_data());
+            .run((), self.plugins.get_plugin_data())?;
         for (_plugin_name, aliases) in extra_static_aliases {
             let new_aliases: HashMap<String, String> = aliases
                 .iter()
@@ -893,7 +900,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             scoped_static_aliases.insert(url, new_path);
         }
 
-        scoped_static_aliases
+        Ok(scoped_static_aliases)
     }
     /// Takes the user-set panic handler out and returns it as an owned value,
     /// allowing it to be used as an actual panic hook.

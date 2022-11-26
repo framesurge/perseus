@@ -1,3 +1,4 @@
+use crate::errors::PluginError;
 use crate::i18n::TranslationsManager;
 use crate::plugins::PluginAction;
 use crate::server::{ServerOptions, ServerProps};
@@ -33,7 +34,7 @@ pub(crate) fn get_host_and_port() -> (String, u16) {
 /// errors! You have been warned!
 pub(crate) fn get_props<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
-) -> ServerProps<M, T> {
+) -> Result<ServerProps<M, T>, PluginError> {
     if !cfg!(debug_assertions) {
         let binary_loc = env::current_exe().unwrap();
         let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close
@@ -47,12 +48,12 @@ pub(crate) fn get_props<M: MutableStore, T: TranslationsManager>(
         .functional_actions
         .server_actions
         .before_serve
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())?;
 
     let static_dir_path = app.get_static_dir();
 
-    let app_root = app.get_root();
-    let immutable_store = app.get_immutable_store();
+    let app_root = app.get_root()?;
+    let immutable_store = app.get_immutable_store()?;
     let index_view_str = app.get_index_view_str();
     // By the time this binary is being run, the app has already been built be the
     // CLI (hopefully!), so we can depend on access to the render config
@@ -61,7 +62,7 @@ pub(crate) fn get_props<M: MutableStore, T: TranslationsManager>(
         &app_root,
         &immutable_store,
         &plugins,
-    ));
+    ))?;
 
     let opts = ServerOptions {
         // We don't support setting some attributes from `wasm-pack` through plugins/`PerseusApp`
@@ -73,8 +74,8 @@ pub(crate) fn get_props<M: MutableStore, T: TranslationsManager>(
         // This probably won't exist, but on the off chance that the user needs to support older
         // browsers, we'll provide it anyway
         wasm_js_bundle: "dist/pkg/perseus_engine_bg.wasm.js".to_string(),
-        templates_map: app.get_atomic_templates_map(),
-        locales: app.get_locales(),
+        templates_map: app.get_atomic_templates_map()?,
+        locales: app.get_locales()?,
         root_id: app_root,
         snippets: "dist/pkg/snippets".to_string(),
         error_pages: app.get_atomic_error_pages(),
@@ -84,14 +85,14 @@ pub(crate) fn get_props<M: MutableStore, T: TranslationsManager>(
         } else {
             None
         },
-        static_aliases: app.get_static_aliases(),
+        static_aliases: app.get_static_aliases()?,
     };
 
-    ServerProps {
+    Ok(ServerProps {
         opts,
         immutable_store,
         mutable_store: app.get_mutable_store(),
         global_state_creator: app.get_global_state_creator(),
         translations_manager: block_on(app.get_translations_manager()),
-    }
+    })
 }
