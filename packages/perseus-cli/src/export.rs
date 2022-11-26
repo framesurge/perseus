@@ -85,7 +85,9 @@ macro_rules! copy_directory {
             }
         }
         #[cfg(windows)]
-        if std::os::windows::fs::symlink_dir($target.join($from), $target.join($to_symlink)).is_err() {
+        if std::os::windows::fs::symlink_dir($target.join($from), $target.join($to_symlink))
+            .is_err()
+        {
             // That failed, try a usual copy
             if let Err(err) = fs_extra::dir::copy(
                 $target.join($from),
