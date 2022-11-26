@@ -37,7 +37,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
     let title = info.path.clone();
     let content = format!(
-        "This is a post entitled '{}'. Its original slug was '{}'.",
+        "This is a post entitled 'build_paths/{}'. Its original slug was 'build_paths/{}'.",
         &title, &info.path
     );
 
