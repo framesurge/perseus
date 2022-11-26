@@ -3,7 +3,7 @@ use crate::i18n::{Locales, TranslationsManager};
 use crate::page_data::PageDataPartial;
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
-use crate::template::{TemplateMap, TemplateState};
+use crate::template::{ArcTemplateMap, TemplateState};
 use crate::{page_data::PageData, SsrNode};
 use futures::future::{try_join, try_join_all};
 
@@ -41,7 +41,7 @@ pub async fn get_static_page_data(
 #[derive(Debug)]
 pub struct ExportProps<'a, T: TranslationsManager> {
     /// All the templates in the app.
-    pub templates: &'a TemplateMap<SsrNode>,
+    pub templates: &'a ArcTemplateMap<SsrNode>,
     /// The HTML shell to use.
     pub html_shell: HtmlShell,
     /// The locales data for the app.
@@ -134,7 +134,7 @@ pub async fn create_translation_file(
 #[allow(clippy::too_many_arguments)]
 pub async fn export_path(
     (path, template_path): (String, String),
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     locales: &Locales,
     html_shell: &HtmlShell,
     immutable_store: &ImmutableStore,

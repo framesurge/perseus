@@ -5,7 +5,7 @@ use sycamore::prelude::*;
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
-    PerseusApp::new().template(|| {
+    PerseusApp::new().template(
         Template::new("post")
             .template_with_state(post_page)
             .build_paths_fn(get_build_paths)
@@ -15,8 +15,8 @@ pub fn main<G: Html>() -> PerseusApp<G> {
             // If the user requests a page we haven't created yet, still
             // pass it to `get_build_state()` and cache the output for
             // future users (lazy page building)
-            .incremental_generation()
-    })
+            .incremental_generation(),
+    )
 }
 
 // EXCERPT_START

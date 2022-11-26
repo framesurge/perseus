@@ -6,9 +6,9 @@ use perseus::{Html, PerseusApp, PerseusRoot};
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
-        .template(crate::templates::index::get_template)
-        .template(crate::templates::about::get_template)
-        .error_pages(crate::error_pages::get_error_pages)
+        .template(crate::templates::index::get_template())
+        .template(crate::templates::about::get_template())
+        .error_pages(crate::error_pages::get_error_pages())
         .index_view(|cx| {
             sycamore::view! { cx,
                 // We don't need a `<!DOCTYPE html>`, that's added automatically by Perseus (though that can be overridden if you really want by using `.index_view_str()`)

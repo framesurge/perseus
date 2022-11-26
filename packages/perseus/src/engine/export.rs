@@ -77,7 +77,7 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
             return Err(err);
         }
     };
-    let templates_map = app.get_templates_map();
+    let templates_map = app.get_atomic_templates_map();
     let index_view_str = app.get_index_view_str();
     let root_id = app.get_root();
     // This consumes `self`, so we get it finally

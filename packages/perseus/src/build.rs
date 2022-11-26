@@ -3,7 +3,7 @@
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
 use crate::stores::{ImmutableStore, MutableStore};
-use crate::template::TemplateMap;
+use crate::template::ArcTemplateMap;
 use crate::template::{BuildPaths, StateGeneratorInfo, Template, TemplateState};
 use crate::translator::Translator;
 use crate::utils::minify;
@@ -337,7 +337,7 @@ pub async fn build_template_and_get_cfg(
 /// for this. You should only build the most commonly used locales here (the
 /// rest should be built on demand).
 pub async fn build_templates_for_locale(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     global_state: &TemplateState,
@@ -374,7 +374,7 @@ pub async fn build_templates_for_locale(
 
 /// Gets a translator and builds templates for a single locale.
 pub async fn build_templates_and_translator_for_locale(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
@@ -400,7 +400,7 @@ pub async fn build_templates_and_translator_for_locale(
 #[derive(Debug)]
 pub struct BuildProps<'a, M: MutableStore, T: TranslationsManager> {
     /// All the templates in the app.
-    pub templates: &'a TemplateMap<SsrNode>,
+    pub templates: &'a ArcTemplateMap<SsrNode>,
     /// The app's locales data.
     pub locales: &'a Locales,
     /// An immutable store.

@@ -128,19 +128,6 @@ pub struct FunctionalPluginSettingsActions<G: Html> {
     /// generic about Sycamore rendering backends. Note that these have the
     /// power to override the user's templates.
     pub add_templates: FunctionalPluginAction<(), Vec<crate::Template<G>>>,
-    /// Adds additional error pages. This must return a map of HTTP status codes
-    /// to error page templates. Note that these have the power to override
-    /// the user's error pages.
-    pub add_error_pages: FunctionalPluginAction<
-        (),
-        HashMap<
-            u16,
-            (
-                crate::error_pages::ErrorPageTemplate<G>,
-                crate::error_pages::ErrorPageHeadTemplate,
-            ),
-        >,
-    >,
     /// Actions pertaining to the HTML shell, in their own category for
     /// cleanliness (as there are quite a few).
     pub html_shell_actions: FunctionalPluginHtmlShellActions,
@@ -150,7 +137,6 @@ impl<G: Html> Default for FunctionalPluginSettingsActions<G> {
         Self {
             add_static_aliases: FunctionalPluginAction::default(),
             add_templates: FunctionalPluginAction::default(),
-            add_error_pages: FunctionalPluginAction::default(),
             html_shell_actions: FunctionalPluginHtmlShellActions::default(),
         }
     }

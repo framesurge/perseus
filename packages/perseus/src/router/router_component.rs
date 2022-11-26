@@ -108,7 +108,7 @@ async fn set_view<'a>(
 #[derive(Debug, Prop)]
 pub(crate) struct PerseusRouterProps {
     /// The error pages the app is using.
-    pub error_pages: ErrorPages<TemplateNodeType>,
+    pub error_pages: Rc<ErrorPages<TemplateNodeType>>,
     /// The locales settings the app is using.
     pub locales: Locales,
     /// The templates the app is using.
@@ -149,7 +149,7 @@ pub(crate) fn perseus_router(
         locales,   // Pretty light
         templates, // Already has `Rc`s
         Rc::new(render_cfg),
-        Rc::new(error_pages),
+        error_pages, // Already in an `Rc` itself
     )
     .set_ctx(cx);
 

@@ -19,7 +19,7 @@ pub async fn export_error_page(
 ) -> Result<(), Rc<EngineError>> {
     let plugins = app.get_plugins();
 
-    let error_pages = app.get_error_pages();
+    let error_pages = app.get_atomic_error_pages();
     // Prepare the HTML shell
     let index_view_str = app.get_index_view_str();
     let root_id = app.get_root();

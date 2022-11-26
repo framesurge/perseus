@@ -149,14 +149,13 @@ use perseus::{Html, PerseusApp};
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
-        .template(crate::templates::index::get_template)
+        .template(crate::templates::index::get_template())
 }"#;
 static DFLT_INIT_MOD_RS: &str = r#"pub mod index;"#;
-static DFLT_INIT_INDEX_RS: &str = r#"use perseus::Template;
-use sycamore::prelude::{view, Html, Scope, SsrNode, View};
+static DFLT_INIT_INDEX_RS: &str = r#"use perseus::prelude::*;
+use sycamore::prelude::*;
 
-#[perseus::template]
-pub fn index_page<G: Html>(cx: Scope) -> View<G> {
+fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         // Don't worry, there are much better ways of styling in Perseus!
         div(style = "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 95vh;") {
@@ -170,8 +169,8 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope) -> View<SsrNode> {
+#[engine_only_fn]
+fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "Welcome to Perseus!" }
     }

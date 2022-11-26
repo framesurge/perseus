@@ -102,8 +102,8 @@ impl<G: Html> ErrorPages<G> {
     /// Adds a new page for the given status code. If a page was already defined
     /// for the given code, it will be updated by the mechanics of
     /// the internal `HashMap`. This differs from `.add_page()` in that it takes
-    /// an `Rc`, which can be useful for plugins.
-    pub fn add_page_rc(
+    /// a `Box`, which can be useful for plugins.
+    pub fn add_page_boxed(
         &mut self,
         status: u16,
         page: ErrorPageTemplate<G>,

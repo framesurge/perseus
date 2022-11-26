@@ -2,13 +2,16 @@
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
 #[cfg(not(target_arch = "wasm32"))]
+use crate::template::ArcTemplateMap;
+#[cfg(target_arch = "wasm32")]
+use crate::template::TemplateMap;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::utils::get_path_prefix_server;
 use crate::{
     i18n::{Locales, TranslationsManager},
     plugins::{PluginAction, Plugins},
     state::GlobalStateCreator,
     stores::MutableStore,
-    template::TemplateMap,
     ErrorPages, Html, SsrNode, Template,
 };
 use futures::Future;
@@ -46,21 +49,6 @@ static DFLT_INDEX_VIEW: &str = r#"
 /// is no longer allowed).
 // TODO What's a sensible value here?
 static DFLT_PSS_MAX_SIZE: usize = 25;
-
-// This is broken out for debug implementation ease
-struct TemplateGetters<G: Html>(Vec<Box<dyn Fn() -> Template<G>>>);
-impl<G: Html> std::fmt::Debug for TemplateGetters<G> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TemplateGetters").finish()
-    }
-}
-// This is broken out for debug implementation ease
-struct ErrorPagesGetter<G: Html>(Box<dyn Fn() -> ErrorPages<G>>);
-impl<G: Html> std::fmt::Debug for ErrorPagesGetter<G> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ErrorPagesGetters").finish()
-    }
-}
 
 /// The different types of translations managers that can be stored. This allows
 /// us to store dummy translations managers directly, without holding futures.
@@ -111,11 +99,15 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// A list of function that produce templates for the app to use. These are
     /// stored as functions so that they can be called an arbitrary number of
     /// times.
-    // From this, we can construct the necessary kind of template map (we can call the user-given
-    // functions an arbitrary number of times)
-    template_getters: TemplateGetters<G>,
+    #[cfg(target_arch = "wasm32")]
+    templates: TemplateMap<G>,
+    #[cfg(not(target_arch = "wasm32"))]
+    templates: ArcTemplateMap<G>,
     /// The app's error pages.
-    error_pages: ErrorPagesGetter<G>,
+    #[cfg(target_arch = "wasm32")]
+    error_pages: Rc<ErrorPages<G>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    error_pages: Arc<ErrorPages<G>>,
     /// The maximum size for the page state store.
     pss_max_size: usize,
     /// The global state creator for the app.
@@ -280,10 +272,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             root: "root".to_string(),
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
-            template_getters: TemplateGetters(Vec::new()),
+            templates: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
-            error_pages: ErrorPagesGetter(Box::new(ErrorPages::default)),
+            error_pages: Default::default(),
             pss_max_size: DFLT_PSS_MAX_SIZE,
             #[cfg(not(target_arch = "wasm32"))]
             global_state_creator: Arc::new(GlobalStateCreator::default()),
@@ -324,10 +316,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             root: "root".to_string(),
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
-            template_getters: TemplateGetters(Vec::new()),
+            templates: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
-            error_pages: ErrorPagesGetter(Box::new(ErrorPages::default)),
+            error_pages: Default::default(),
             pss_max_size: DFLT_PSS_MAX_SIZE,
             // By default, we'll disable i18n (as much as I may want more websites to support more
             // languages...)
@@ -373,21 +365,38 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ///
     /// Usually, it's preferred to run `.template()` once for each template,
     /// rather than manually constructing this more inconvenient type.
-    pub fn templates(mut self, val: Vec<Box<dyn Fn() -> Template<G>>>) -> Self {
-        self.template_getters.0 = val;
+    pub fn templates(mut self, val: Vec<Template<G>>) -> Self {
+        for template in val.into_iter() {
+            #[cfg(target_arch = "wasm32")]
+            self.templates
+                .insert(template.get_path(), Rc::new(template));
+            #[cfg(not(target_arch = "wasm32"))]
+            self.templates
+                .insert(template.get_path(), Arc::new(template));
+        }
         self
     }
     /// Adds a single new template to the app (convenience function). This takes
     /// a *function that returns a template* (for internal reasons).
     ///
     /// See [`Template`] for further details.
-    pub fn template(mut self, val: impl Fn() -> Template<G> + 'static) -> Self {
-        self.template_getters.0.push(Box::new(val));
+    pub fn template(mut self, val: Template<G>) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        self.templates.insert(val.get_path(), Rc::new(val));
+        #[cfg(not(target_arch = "wasm32"))]
+        self.templates.insert(val.get_path(), Arc::new(val));
         self
     }
     /// Sets the app's error pages. See [`ErrorPages`] for further details.
-    pub fn error_pages(mut self, val: impl Fn() -> ErrorPages<G> + 'static) -> Self {
-        self.error_pages = ErrorPagesGetter(Box::new(val));
+    pub fn error_pages(mut self, val: ErrorPages<G>) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.error_pages = Rc::new(val);
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.error_pages = Arc::new(val);
+        }
         self
     }
     /// Sets the app's [`GlobalStateCreator`].
@@ -722,14 +731,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         html_shell
     }
     /// Gets the templates in an `Rc`-based `HashMap` for non-concurrent access.
+    #[cfg(target_arch = "wasm32")]
     pub fn get_templates_map(&self) -> TemplateMap<G> {
-        let mut map = HashMap::new();
-
-        // Now add the templates the user provided
-        for template_getter in self.template_getters.0.iter() {
-            let template = template_getter();
-            map.insert(template.get_path(), Rc::new(template));
-        }
+        // One the browser-side, this is already a `TemplateMap` internally
+        let mut map = self.templates.clone();
 
         // This will return a map of plugin name to a vector of templates to add
         let extra_templates = self
@@ -751,14 +756,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Gets the templates in an `Arc`-based `HashMap` for concurrent access.
     /// This should only be relevant on the server-side.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_templates_map(&self) -> crate::template::ArcTemplateMap<G> {
-        let mut map = HashMap::new();
-
-        // Now add the templates the user provided
-        for template_getter in self.template_getters.0.iter() {
-            let template = template_getter();
-            map.insert(template.get_path(), std::sync::Arc::new(template));
-        }
+    pub fn get_atomic_templates_map(&self) -> ArcTemplateMap<G> {
+        // One the engine-side, this is already an `ArcTemplateMap` internally
+        let mut map = self.templates.clone();
 
         // This will return a map of plugin name to a vector of templates to add
         let extra_templates = self
@@ -771,28 +771,21 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // Turn that vector into a template map by extracting the template root paths as
             // keys
             for template in plugin_templates {
-                map.insert(template.get_path(), std::sync::Arc::new(template));
+                map.insert(template.get_path(), Arc::new(template));
             }
         }
 
         map
     }
     /// Gets the [`ErrorPages`] used in the app. This returns an `Rc`.
-    pub fn get_error_pages(&self) -> ErrorPages<G> {
-        let mut error_pages = (self.error_pages.0)();
-        let extra_error_pages = self
-            .plugins
-            .functional_actions
-            .settings_actions
-            .add_error_pages
-            .run((), self.plugins.get_plugin_data());
-        for (_plugin_name, plugin_error_pages) in extra_error_pages {
-            for (status, error_page) in plugin_error_pages {
-                error_pages.add_page_rc(status, error_page.0, error_page.1);
-            }
-        }
-
-        error_pages
+    #[cfg(target_arch = "wasm32")]
+    pub fn get_error_pages(&self) -> Rc<ErrorPages<G>> {
+        self.error_pages.clone()
+    }
+    /// Gets the [`ErrorPages`] used in the app. This returns an `Arc`.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn get_atomic_error_pages(&self) -> Arc<ErrorPages<G>> {
+        self.error_pages.clone()
     }
     /// Gets the maximum number of pages that can be stored in the page state
     /// store before the oldest are evicted.
