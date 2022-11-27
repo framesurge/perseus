@@ -87,7 +87,7 @@ pub type Request = ();
 #[cfg(feature = "macros")]
 pub use perseus_macro::{
     browser, browser_main, engine, engine_main, engine_only_fn, main, main_export, template,
-    template_rx, test, ReactiveState, UnreactiveState,
+    template_rx, test, ReactiveState, UnreactiveState, browser_only_fn,
 };
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace};
@@ -101,6 +101,7 @@ pub use crate::{
         BuildPaths, RenderCtx, RenderFnResult, RenderFnResultWithCause, StateGeneratorInfo,
         Template,
     },
+    state::{RxResult, RxResultRef},
 };
 // Browser-side only
 #[cfg(target_arch = "wasm32")]
@@ -132,12 +133,12 @@ pub mod prelude {
     pub use crate::{
         blame_err, make_blamed_err, BuildPaths, ErrorCause, ErrorPages, GenericErrorWithCause,
         PerseusApp, PerseusRoot, RenderCtx, RenderFnResult, RenderFnResultWithCause, Request,
-        StateGeneratorInfo, Template,
+        StateGeneratorInfo, Template, RxResult,
     };
     #[cfg(feature = "macros")]
     pub use crate::{
         browser, browser_main, engine, engine_main, engine_only_fn, main, main_export, template,
-        template_rx, test, ReactiveState, UnreactiveState,
+        template_rx, test, ReactiveState, UnreactiveState, browser_only_fn,
     };
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};

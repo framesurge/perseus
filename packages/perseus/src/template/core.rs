@@ -756,6 +756,9 @@ impl<G: Html> Template<G> {
     /// Sets the template rendering function to use, if the template takes
     /// state. Templates that do not take state should use `.template()`
     /// instead.
+    ///
+    /// The closure wrapping this performs will automatically handle suspense
+    /// state.
     pub fn template_with_state<F, S, I>(mut self, val: F) -> Template<G>
     where
         F: Fn(Scope, I) -> View<G> + Send + Sync + 'static,
@@ -818,6 +821,9 @@ impl<G: Html> Template<G> {
             };
 
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+                // Compute suspended states
+                #[cfg(target_arch = "wasm32")]
+                intermediate_state.compute_suspense(child_cx);
                 // let ref_struct = intermediate_state.to_ref_struct(child_cx);
                 let view = val(child_cx, intermediate_state);
                 route_manager.update_view(view);

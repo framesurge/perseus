@@ -27,6 +27,21 @@ pub struct ReactiveStateField {
     /// reactive itself, enabling nested reactivity.
     #[darling(default)]
     nested: bool,
+    /// This is used to mark fields that have a browser-side handler dedicated
+    /// to modifying their value asynchronously. When the page is loaded, the
+    /// provided modifier function will be called with an `RcSignal` of this field's type
+    /// (even if this is used with `#[rx(nested)]`!).
+    ///
+    /// The reason handlers are only allowed to work with individual fields is to
+    /// enable fine-grained error handling, by forcing users to handle the possibility
+    /// that each of their handlers comes up with an error.
+    ///
+    /// Note that the handler function specified must be asynchronous, but it will be
+    /// placed in an abortable future: when the user leaves this page, any ongoing
+    /// handlers will be *immmediately* short-circuited. (You shouldn't have to worry
+    /// about this unless you're doing something very advanced.)
+    #[darling(default)]
+    suspense: Option<Ident>,
 
     ident: Option<Ident>,
     vis: Visibility,
@@ -54,6 +69,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     let mut intermediate_field_makers = quote!();
     let mut ref_field_makers = quote!(); // These start at the intermediate
     let mut unrx_field_makers = quote!();
+    let mut suspense_commands = quote!();
     for field in fields.iter() {
         let old_ty = field.ty.to_token_stream();
         let field_ident = field.ident.as_ref().unwrap(); // It's a `struct`, so this is defined
@@ -78,6 +94,22 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             ref_field_makers.extend(quote! { #field_ident: self.#field_ident.to_ref_struct(cx), });
             unrx_field_makers
                 .extend(quote! { #field_ident: self.#field_ident.clone().make_unrx(), });
+
+            // Handle suspended fields
+            if let Some(handler) = &field.suspense {
+                // This line calls a utility function that does ergonomic error handling
+                suspense_commands.extend(quote! {
+                    // The `nested` part makes this expect `RxResult`
+                    ::perseus::state::compute_nested_suspense(
+                        cx,
+                        self.#field_ident.clone(),
+                        #handler(
+                            cx,
+                            self.#field_ident.clone().to_ref_struct(cx),
+                        ),
+                    );
+                });
+            }
         } else {
             intermediate_fields.extend(quote! {
                 #field_attrs
@@ -93,9 +125,25 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             ref_field_makers.extend(
                 quote! { #field_ident: ::sycamore::prelude::create_ref(cx, self.#field_ident), },
             );
+            // All fields must be `Clone`
             unrx_field_makers
                 .extend(quote! { #field_ident: (*self.#field_ident.get_untracked()).clone(), });
-            // All fields must be `Clone`
+
+            // Handle suspended fields (we don't care if they're nested, the user can worry about that (probably using `RxResult` or similar))
+            if let Some(handler) = &field.suspense {
+                // This line calls a utility function that does ergonomic error handling
+                 suspense_commands.extend(quote! {
+                    // The `nested` part makes this expect `RxResult`
+                    ::perseus::state::compute_suspense(
+                        cx,
+                        self.#field_ident.clone(),
+                        #handler(
+                            cx,
+                            ::sycamore::prelude::create_ref(cx, self.#field_ident.clone()),
+                        ),
+                    );
+                });
+            }
         }
     }
 
@@ -154,6 +202,10 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 Self::Unrx {
                     #unrx_field_makers
                 }
+            }
+            #[cfg(target_arch = "wasm32")]
+            fn compute_suspense<'a>(&self, cx: ::sycamore::prelude::Scope<'a>) {
+                #suspense_commands
             }
         }
         impl ::perseus::state::Freeze for #intermediate_ident {
