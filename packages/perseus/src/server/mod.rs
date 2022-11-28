@@ -9,14 +9,12 @@ mod get_render_cfg;
 mod html_shell;
 mod options;
 mod render;
-mod delayed;
 
 pub use build_error_page::build_error_page;
 pub use get_render_cfg::get_render_cfg;
 pub use html_shell::HtmlShell;
 pub use options::{ServerOptions, ServerProps};
 pub use render::{get_page, get_page_for_template, GetPageProps};
-pub use delayed::get_delayed_state;
 
 /// Removes empty elements from a path, which is important due to double
 /// slashes. This returns a vector of the path's components;

@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::{any::Any, collections::HashMap};
+use std::any::Any;
 use sycamore::prelude::Scope;
-
-use crate::template::TemplateState;
 
 /// A trait for `struct`s that can be made reactive. Typically, this will be
 /// derived with the `#[make_rx]` macro, though it can be implemented manually
@@ -15,19 +13,6 @@ pub trait MakeRx {
     type Rx: MakeUnrx;
     /// Transforms an instance of the `struct` into its reactive version.
     fn make_rx(self) -> Self::Rx;
-    /// Splits `Self` into a delayed component and a non-delayed component. States
-    /// that don't have delayed components should simply return `(HashMap::new(), self)`
-    /// for this, although states with delayed parts should return `self`, with the
-    /// delayed parts set to `Delayed`, and then all the actual delayed components
-    /// as a map of keys [`TemplateState`]s, where each key is unique to the page for
-    /// the delayed field (i.e. two different pages may have the same key `foo`, but
-    /// one single page **must not** have two keys `foo` for itself, which is most
-    /// likely to happen if simply using field names, when there are nested `struct`s).
-    ///
-    /// Non-unique keys will result in runtime failures to parse delayed state.
-    /// Note that you won't have to worry about this if you use the `ReactiveState`
-    /// derive macro.
-    fn split_delayed(self) -> (HashMap<String, TemplateState>, Self);
 }
 
 /// A trait for reactive `struct`s that can be made un-reactive. This is the
@@ -140,10 +125,6 @@ impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> MakeRx 
     type Rx = UnreactiveStateWrapper<T>;
     fn make_rx(self) -> Self::Rx {
         UnreactiveStateWrapper(self)
-    }
-    // There's no such thing as delaying for unreactive state
-    fn split_delayed(self) -> (HashMap<String, TemplateState>, Self) {
-        (HashMap::new(), self)
     }
 }
 // And let it be converted back

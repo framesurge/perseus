@@ -1,4 +1,3 @@
-use crate::delayed::delayed_handler;
 use crate::initial_load::initial_load_handler;
 use crate::page_data::page_handler;
 use crate::{
@@ -103,12 +102,6 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(translations_manager.clone())
         .and(global_state.clone())
         .then(page_handler);
-    // Handle getting delayed state fragments
-    let delayed = warp::path!(".perseus" / "delayed" / String / ..)
-        .and(warp::path::tail())
-        .and(immutable_store.clone())
-        .and(mutable_store.clone())
-        .then(delayed_handler);
     // Handle initial loads (we use a wildcard for this)
     let initial_loads = warp::any()
         .and(warp::path::full())
@@ -132,6 +125,5 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .or(static_aliases)
         .or(translations)
         .or(page_data)
-        .or(delayed)
         .or(initial_loads)
 }

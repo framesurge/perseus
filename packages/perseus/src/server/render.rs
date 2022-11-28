@@ -107,49 +107,27 @@ async fn render_build_state_for_mutable(
 }
 /// Renders a template that generated its state at request-time. Note that
 /// revalidation and incremental generation have no impact on SSR-rendered
-/// pages.
+/// pages. This does everything at request-time, and so doesn't need a mutable
+/// or immutable store.
 ///
 /// As this involves state computation, this only returns the state.
-///
-/// This will automatically write any delayed state to the mutable store,
-/// returning only undelayed state.
 async fn get_request_state(
     template: &Template<SsrNode>,
     build_info: StateGeneratorInfo<UnknownStateType>,
     req: Request,
-    path_encoded: &str,
-    mutable_store: &impl MutableStore,
 ) -> Result<TemplateState, ServerError> {
     // Generate the initial state (this may generate an error, but there's no file
     // that can't exist)
     let state = template.get_request_state(build_info, req).await?;
 
-    // Write each of the delayed states to its own extra file
-    for (key, delayed_state) in state.delayed.into_iter() {
-        let delayed_path = format!(
-            "static/delayed/{}-{}.json",
-            path_encoded,
-            key
-        );
-        // Note: theoretically, this might fail if there are non-Unicode characters in the `struct`/field names, since
-        // those are used by the macros to create a unique key
-        mutable_store
-            .write(
-                &delayed_path,
-                &delayed_state.state.to_string(),
-            )
-            .await?;
-    }
-
-    Ok(state.undelayed)
+    Ok(state)
 }
 /// Renders a template that wants to amalgamate build state with request state.
+/// This does everything at request-time, and so doesn't need a mutable or
+/// immutable store.
 ///
 /// As this is always the final item, this returns a body and head along with
 /// the state.
-///
-/// This will automatically write any delayed state to the mutable store,
-/// returning only undelayed state.
 async fn render_amalgamated_state(
     template: &Template<SsrNode>,
     build_info: StateGeneratorInfo<UnknownStateType>,
@@ -157,8 +135,6 @@ async fn render_amalgamated_state(
     global_state: &TemplateState,
     build_state: TemplateState,
     request_state: TemplateState,
-    path_encoded: &str,
-    mutable_store: &impl MutableStore,
     render_html: bool,
 ) -> Result<(String, String, TemplateState), ServerError> {
     let path_with_locale = get_path_with_locale(&build_info.path, &translator);
@@ -172,7 +148,7 @@ async fn render_amalgamated_state(
         sycamore::render_to_string(|cx| {
             template.render_for_template_server(
                 path_with_locale,
-                state.undelayed.clone(),
+                state.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -181,26 +157,9 @@ async fn render_amalgamated_state(
     } else {
         String::new()
     };
-    let head = template.render_head_str(state.undelayed.clone(), global_state.clone(), translator);
+    let head = template.render_head_str(state.clone(), global_state.clone(), translator);
 
-    // Write each of the delayed states to its own extra file
-    for (key, delayed_state) in state.delayed.into_iter() {
-        let delayed_path = format!(
-            "static/delayed/{}-{}.json",
-            path_encoded,
-            key
-        );
-        // Note: theoretically, this might fail if there are non-Unicode characters in the `struct`/field names, since
-        // those are used by the macros to create a unique key
-        mutable_store
-            .write(
-                &delayed_path,
-                &delayed_state.state.to_string(),
-            )
-            .await?;
-    }
-
-    Ok((html, head, state.undelayed))
+    Ok((html, head, state))
 }
 /// Checks if a template that uses incremental generation has already been
 /// cached. If the template was prerendered by *build paths*, then it will have
@@ -288,9 +247,6 @@ async fn should_revalidate(
 ///
 /// This receives no directive about not rendering content HTML, since it
 /// has to for future caching anyway.
-///
-/// This will automatically write any delayed state to the mutable store,
-/// returning only undelayed state.
 async fn revalidate(
     template: &Template<SsrNode>,
     build_info: StateGeneratorInfo<UnknownStateType>,
@@ -306,13 +262,13 @@ async fn revalidate(
     let html = sycamore::render_to_string(|cx| {
         template.render_for_template_server(
             path_with_locale,
-            state.undelayed.clone(),
+            state.clone(),
             global_state.clone(),
             cx,
             translator,
         )
     });
-    let head = template.render_head_str(state.undelayed.clone(), global_state.clone(), translator);
+    let head = template.render_head_str(state.clone(), global_state.clone(), translator);
     // Handle revalidation, we need to parse any given time strings into datetimes
     // We don't need to worry about revalidation that operates by logic, that's
     // request-time only
@@ -334,7 +290,7 @@ async fn revalidate(
     mutable_store
         .write(
             &format!("static/{}.json", path_encoded),
-            &state.undelayed.state.to_string(),
+            &state.state.to_string(),
         )
         .await?;
     mutable_store
@@ -344,24 +300,7 @@ async fn revalidate(
         .write(&format!("static/{}.head.html", path_encoded), &head)
         .await?;
 
-    // Write each of the delayed states to its own extra file
-    for (key, delayed_state) in state.delayed.into_iter() {
-        let delayed_path = format!(
-            "static/delayed/{}-{}.json",
-            path_encoded,
-            key
-        );
-        // Note: theoretically, this might fail if there are non-Unicode characters in the `struct`/field names, since
-        // those are used by the macros to create a unique key
-        mutable_store
-            .write(
-                &delayed_path,
-                &delayed_state.state.to_string(),
-            )
-            .await?;
-    }
-
-    Ok((html, head, state.undelayed))
+    Ok((html, head, state))
 }
 
 /// The properties required to get data for a page.
@@ -396,9 +335,6 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
 ///
 /// If `render_html` is set to `false` here, then no content HTML will be
 /// generated (designed for subsequent loads).
-///
-/// This will not return delayed state, but, if any new delayed state is generated,
-/// it will be written to the appropriate store for later fetching by the client.
 pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     GetPageProps {
         raw_path,
@@ -523,21 +459,21 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 // All this uses the mutable store because this will be done at runtime
                 None => {
                     // We need to generate and cache this page for future usage (even if
-                    // `render_html` is `false`). Even if we're going to
+                    // `render_html` is `false`) Even if we're going to
                     // amalgamate later, we still have to perform incremental
-                    // caching, which means a potentially unnecessary page build.
+                    // caching, which means a potentially unnecessary page build
                     let state = template.get_build_state(build_info.clone()).await?;
                     let html_val = sycamore::render_to_string(|cx| {
                         template.render_for_template_server(
                             path_with_locale.clone(),
-                            state.undelayed.clone(),
+                            state.clone(),
                             global_state.clone(),
                             cx,
                             &translator,
                         )
                     });
                     let head_val =
-                        template.render_head_str(state.undelayed.clone(), global_state.clone(), &translator);
+                        template.render_head_str(state.clone(), global_state.clone(), &translator);
                     // Handle revalidation, we need to parse any given time strings into datetimes
                     // We don't need to worry about revalidation that operates by logic, that's
                     // request-time only Obviously we don't need to revalidate
@@ -561,7 +497,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     mutable_store
                         .write(
                             &format!("static/{}.json", path_encoded),
-                            &state.undelayed.state.to_string(),
+                            &state.state.to_string(),
                         )
                         .await?;
                     // Write that prerendered HTML to a static file
@@ -572,24 +508,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                         .write(&format!("static/{}.head.html", path_encoded), &head_val)
                         .await?;
 
-                    // Write each of the delayed states to its own extra file
-                    for (key, delayed_state) in state.delayed.into_iter() {
-                        let delayed_path = format!(
-                            "static/delayed/{}-{}.json",
-                            path_encoded,
-                            key
-                        );
-                        // Note: theoretically, this might fail if there are non-Unicode characters in the `struct`/field names, since
-                        // those are used by the macros to create a unique key
-                        mutable_store
-                            .write(
-                                &delayed_path,
-                                &delayed_state.state.to_string(),
-                            )
-                            .await?;
-                    }
-
-                    states.build_state = state.undelayed;
+                    states.build_state = state;
                     html = html_val;
                     head = head_val;
                 }
@@ -653,7 +572,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         // page will be built soon If we're not, and there's no build state,
         // then we still need to build, which we'll do after we've checked for
         // amalgamation
-        let state = get_request_state(template, build_info.clone(), req_2, &path_encoded, mutable_store).await?;
+        let state = get_request_state(template, build_info.clone(), req_2).await?;
         states.request_state = state;
     }
 
@@ -701,8 +620,6 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
             global_state,
             states.build_state,
             states.request_state,
-            &path_encoded,
-            mutable_store,
             render_html,
         )
         .await?;
