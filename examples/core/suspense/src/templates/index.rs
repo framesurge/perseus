@@ -2,6 +2,11 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
+use gloo_timers::future::sleep;
+#[cfg(target_arch = "wasm32")]
+use std::time::Duration;
+
 #[derive(Serialize, Deserialize, ReactiveState)]
 #[rx(alias = "IndexPageStateRx")]
 struct IndexPageState {
@@ -44,7 +49,7 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G
     });
     let second_greeting = create_memo(cx, move || match &*state.test.get() {
         // We don't particularly want `Rc<Rc<T>>`, hence this clone (but either will work)
-        Ok(test) => (&*test.second_greeting.get()).clone(),
+        Ok(test) => (*test.second_greeting.get()).clone(),
         Err(_) => "Error!".to_string(),
     });
     let third_greeting = create_memo(cx, move || match &*state.other_test.third_greeting.get() {
@@ -54,9 +59,9 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G
     });
 
     view! { cx,
-        p { (greeting.get()) }
-        p { (second_greeting.get()) }
-        p { (third_greeting.get()) }
+        p(id = "first") { (greeting.get()) }
+        p(id = "second") { (second_greeting.get()) }
+        p(id = "third") { (third_greeting.get()) }
     }
 }
 
@@ -72,6 +77,9 @@ async fn greeting_handler<'a>(
     _cx: Scope<'a>,
     greeting: &'a RcSignal<Result<String, SerdeInfallible>>,
 ) -> Result<(), SerdeInfallible> {
+    // Here, we're just waiting for a second before continuing, just to show a delay
+    // (and so that Perseus isn't too fast for the tests of this example...)
+    sleep(Duration::from_secs(1)).await;
     // This is very simple, but we could easily perform network requests etc. here
     greeting.set(Ok("Hello from the handler!".to_string()));
     Ok(())
@@ -85,6 +93,7 @@ async fn test_handler<'a>(
     _cx: Scope<'a>,
     test: RxResultRef<'a, Test, String>,
 ) -> Result<(), String> {
+    sleep(Duration::from_secs(1)).await;
     // Unfortunately, this verbosity is necessary until `Try` is stabilized so we
     // can have custom implementations of the `?` operator.
     let test = match &*test.get() {
@@ -101,6 +110,7 @@ async fn other_test_handler<'a>(
     _cx: Scope<'a>,
     greeting: &'a RcSignal<Result<String, SerdeInfallible>>,
 ) -> Result<(), SerdeInfallible> {
+    sleep(Duration::from_secs(1)).await;
     // This is very simple, but we could easily perform network requests etc. here
     greeting.set(Ok("Hello again again from the handler!".to_string()));
     Ok(())

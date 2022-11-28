@@ -1,4 +1,4 @@
-use super::{rx_state::RxResultIntermediate, Freeze, MakeRx, MakeRxRef, MakeUnrx};
+use super::{rx_result::RxResultIntermediate, Freeze, MakeRx, MakeRxRef, MakeUnrx};
 use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::prelude::{RcSignal, Scope};

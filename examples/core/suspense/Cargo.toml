@@ -22,3 +22,4 @@ perseus-warp = { package = "perseus-integration", path = "../../../packages/pers
 # perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-timers = { version = "0.2", features = [ "futures" ] } # Just for this example to show that handlers are truly async
