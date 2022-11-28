@@ -227,8 +227,8 @@ pub fn engine_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
 
 /// A convenience macro that makes sure the given function is only defined on
 /// the browser-side, creating an empty function on the engine-side. Perseus
-/// implicitly expects your browser-side state modification functions to be defined in
-/// this way (though you certainly don't have to use this macro).
+/// implicitly expects your browser-side state modification functions to be
+/// defined in this way (though you certainly don't have to use this macro).
 ///
 /// Note that this will convert `async` functions to non-`async` functions on
 /// the engine-side (your function will be left alone on the browser-side).

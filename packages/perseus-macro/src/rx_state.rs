@@ -29,17 +29,18 @@ pub struct ReactiveStateField {
     nested: bool,
     /// This is used to mark fields that have a browser-side handler dedicated
     /// to modifying their value asynchronously. When the page is loaded, the
-    /// provided modifier function will be called with an `RcSignal` of this field's type
-    /// (even if this is used with `#[rx(nested)]`!).
+    /// provided modifier function will be called with an `RcSignal` of this
+    /// field's type (even if this is used with `#[rx(nested)]`!).
     ///
-    /// The reason handlers are only allowed to work with individual fields is to
-    /// enable fine-grained error handling, by forcing users to handle the possibility
-    /// that each of their handlers comes up with an error.
+    /// The reason handlers are only allowed to work with individual fields is
+    /// to enable fine-grained error handling, by forcing users to handle
+    /// the possibility that each of their handlers comes up with an error.
     ///
-    /// Note that the handler function specified must be asynchronous, but it will be
-    /// placed in an abortable future: when the user leaves this page, any ongoing
-    /// handlers will be *immmediately* short-circuited. (You shouldn't have to worry
-    /// about this unless you're doing something very advanced.)
+    /// Note that the handler function specified must be asynchronous, but it
+    /// will be placed in an abortable future: when the user leaves this
+    /// page, any ongoing handlers will be *immmediately* short-circuited.
+    /// (You shouldn't have to worry about this unless you're doing
+    /// something very advanced.)
     #[darling(default)]
     suspense: Option<Ident>,
 
@@ -109,6 +110,12 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                         ),
                     );
                 });
+            } else {
+                // If this field is not suspended, it might have suspended children, which we
+                // should be sure to compute
+                suspense_commands.extend(quote! {
+                    self.#field_ident.compute_suspense(cx);
+                })
             }
         } else {
             intermediate_fields.extend(quote! {
@@ -129,10 +136,11 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             unrx_field_makers
                 .extend(quote! { #field_ident: (*self.#field_ident.get_untracked()).clone(), });
 
-            // Handle suspended fields (we don't care if they're nested, the user can worry about that (probably using `RxResult` or similar))
+            // Handle suspended fields (we don't care if they're nested, the user can worry
+            // about that (probably using `RxResult` or similar))
             if let Some(handler) = &field.suspense {
                 // This line calls a utility function that does ergonomic error handling
-                 suspense_commands.extend(quote! {
+                suspense_commands.extend(quote! {
                     // The `nested` part makes this expect `RxResult`
                     ::perseus::state::compute_suspense(
                         cx,
@@ -205,6 +213,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             }
             #[cfg(target_arch = "wasm32")]
             fn compute_suspense<'a>(&self, cx: ::sycamore::prelude::Scope<'a>) {
+                use ::perseus::state::MakeRxRef; // Needs to be in scope
                 #suspense_commands
             }
         }
