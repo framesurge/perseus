@@ -10,6 +10,7 @@ use crate::errors::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::make_async_trait;
 use crate::state::AnyFreeze;
+use crate::state::DelayedParts;
 use crate::state::MakeRx;
 use crate::state::MakeRxRef;
 use crate::state::MakeUnrx;
@@ -215,13 +216,13 @@ make_async_trait!(GetBuildPathsFnType, RenderFnResult<BuildPaths>);
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GetBuildStateFnType,
-    RenderFnResultWithCause<TemplateState>,
+    RenderFnResultWithCause<DelayedParts>,
     info: StateGeneratorInfo<UnknownStateType>
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GetRequestStateFnType,
-    RenderFnResultWithCause<TemplateState>,
+    RenderFnResultWithCause<DelayedParts>,
     info: StateGeneratorInfo<UnknownStateType>,
     req: Request
 );
@@ -235,7 +236,7 @@ make_async_trait!(
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     AmalgamateStatesFnType,
-    RenderFnResultWithCause<TemplateState>,
+    RenderFnResultWithCause<DelayedParts>,
     info: StateGeneratorInfo<UnknownStateType>,
     build_state: TemplateState,
     request_state: TemplateState
@@ -546,7 +547,7 @@ impl<G: Html> Template<G> {
     pub async fn get_build_state(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
-    ) -> Result<TemplateState, ServerError> {
+    ) -> Result<DelayedParts, ServerError> {
         if let Some(get_build_state) = &self.get_build_state {
             let res = get_build_state.call(info).await;
             match res {
@@ -577,7 +578,7 @@ impl<G: Html> Template<G> {
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
         req: Request,
-    ) -> Result<TemplateState, ServerError> {
+    ) -> Result<DelayedParts, ServerError> {
         if let Some(get_request_state) = &self.get_request_state {
             let res = get_request_state.call(info, req).await;
             match res {
@@ -610,7 +611,7 @@ impl<G: Html> Template<G> {
         info: StateGeneratorInfo<UnknownStateType>,
         build_state: TemplateState,
         request_state: TemplateState,
-    ) -> Result<TemplateState, ServerError> {
+    ) -> Result<DelayedParts, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamate_states {
             let res = amalgamate_states
                 .call(info, build_state, request_state)
@@ -759,7 +760,7 @@ impl<G: Html> Template<G> {
     ///
     /// The closure wrapping this performs will automatically handle suspense
     /// state.
-    pub fn template_with_state<F, S, I>(mut self, val: F) -> Template<G>
+    pub fn template_with_state<F, S, I>(mut self, val: F) -> Self
     where
         F: Fn(Scope, I) -> View<G> + Send + Sync + 'static,
         S: MakeRx<Rx = I> + Serialize + DeserializeOwned,
@@ -834,7 +835,7 @@ impl<G: Html> Template<G> {
     }
     /// Sets the template rendering function to use, if the template takes
     /// unreactive state.
-    pub fn template_with_unreactive_state<F, S>(mut self, val: F) -> Template<G>
+    pub fn template_with_unreactive_state<F, S>(mut self, val: F) -> Self
     where
         F: Fn(Scope, S) -> View<G> + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState,
@@ -906,7 +907,7 @@ impl<G: Html> Template<G> {
     /// Sets the template rendering function to use for templates that take no
     /// state. Templates that do take state should use
     /// `.template_with_state()` instead.
-    pub fn template<F>(mut self, val: F) -> Template<G>
+    pub fn template<F>(mut self, val: F) -> Self
     where
         F: Fn(Scope) -> View<G> + Send + Sync + 'static,
     {
@@ -934,7 +935,7 @@ impl<G: Html> Template<G> {
     pub fn head_with_state<S>(
         mut self,
         val: impl Fn(Scope, S) -> View<SsrNode> + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
     {
@@ -973,7 +974,7 @@ impl<G: Html> Template<G> {
     pub fn head(
         mut self,
         val: impl Fn(Scope) -> View<SsrNode> + Send + Sync + 'static,
-    ) -> Template<G> {
+    ) -> Self {
         self.head = Box::new(move |cx, _template_state| val(cx));
         self
     }
@@ -984,7 +985,7 @@ impl<G: Html> Template<G> {
     /// This is for heads that do not require state. Those that do should use
     /// `.head_with_state()` instead.
     #[cfg(target_arch = "wasm32")]
-    pub fn head(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn head(self, _val: impl Fn() + 'static) -> Self {
         self
     }
     /// Sets the document `<head>` rendering function to use. The [`View`]
@@ -1004,7 +1005,7 @@ impl<G: Html> Template<G> {
     pub fn set_headers_fn<S>(
         mut self,
         val: impl Fn(S) -> HeaderMap + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
     {
@@ -1036,7 +1037,7 @@ impl<G: Html> Template<G> {
     /// Sets the function to set headers. This will override Perseus' inbuilt
     /// header defaults.
     #[cfg(target_arch = "wasm32")]
-    pub fn set_headers_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn set_headers_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -1045,25 +1046,25 @@ impl<G: Html> Template<G> {
     pub fn build_paths_fn(
         mut self,
         val: impl GetBuildPathsFnType + Send + Sync + 'static,
-    ) -> Template<G> {
+    ) -> Self {
         self.get_build_paths = Some(Box::new(val));
         self
     }
     /// Enables the *build paths* strategy with the given function.
     #[cfg(target_arch = "wasm32")]
-    pub fn build_paths_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn build_paths_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
     /// Enables the *incremental generation* strategy.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn incremental_generation(mut self) -> Template<G> {
+    pub fn incremental_generation(mut self) -> Self {
         self.incremental_generation = true;
         self
     }
     /// Enables the *incremental generation* strategy.
     #[cfg(target_arch = "wasm32")]
-    pub fn incremental_generation(self) -> Template<G> {
+    pub fn incremental_generation(self) -> Self {
         self
     }
 
@@ -1072,7 +1073,7 @@ impl<G: Html> Template<G> {
     pub fn build_state_fn<S, B>(
         mut self,
         val: impl GetBuildStateUserFnType<S, B> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
@@ -1083,8 +1084,12 @@ impl<G: Html> Template<G> {
                 async move {
                     let user_info = info.change_type::<B>();
                     let user_state = val.call(user_info).await?;
-                    let template_state: TemplateState = user_state.into();
-                    Ok(template_state)
+                    let (delayed, undelayed) = user_state.split_delayed();
+                    let undelayed: TemplateState = undelayed.into();
+                    Ok(DelayedParts {
+                        delayed,
+                        undelayed,
+                    })
                 }
             },
         ));
@@ -1092,7 +1097,7 @@ impl<G: Html> Template<G> {
     }
     /// Enables the *build state* strategy with the given function.
     #[cfg(target_arch = "wasm32")]
-    pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -1101,7 +1106,7 @@ impl<G: Html> Template<G> {
     pub fn request_state_fn<S, B>(
         mut self,
         val: impl GetRequestStateUserFnType<S, B> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
@@ -1112,8 +1117,12 @@ impl<G: Html> Template<G> {
                 async move {
                     let user_info = info.change_type::<B>();
                     let user_state = val.call(user_info, req).await?;
-                    let template_state: TemplateState = user_state.into();
-                    Ok(template_state)
+                    let (delayed, undelayed) = user_state.split_delayed();
+                    let undelayed: TemplateState = undelayed.into();
+                    Ok(DelayedParts {
+                        delayed,
+                        undelayed,
+                    })
                 }
             },
         ));
@@ -1121,7 +1130,7 @@ impl<G: Html> Template<G> {
     }
     /// Enables the *request state* strategy with the given function.
     #[cfg(target_arch = "wasm32")]
-    pub fn request_state_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn request_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -1131,7 +1140,7 @@ impl<G: Html> Template<G> {
     pub fn should_revalidate_fn<B>(
         mut self,
         val: impl ShouldRevalidateUserFnType<B> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
     {
@@ -1149,7 +1158,7 @@ impl<G: Html> Template<G> {
     /// Enables the *revalidation* strategy (logic variant) with the given
     /// function.
     #[cfg(target_arch = "wasm32")]
-    pub fn should_revalidate_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn should_revalidate_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -1165,7 +1174,7 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn revalidate_after<I: PerseusDuration>(mut self, val: I) -> Template<G> {
+    pub fn revalidate_after<I: PerseusDuration>(mut self, val: I) -> Self {
         let computed_duration = match val.into_computed() {
             Ok(val) => val,
             // This is fine, because this will be checked when we try to build the app (i.e. it'll
@@ -1187,7 +1196,7 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(target_arch = "wasm32")]
-    pub fn revalidate_after<I: PerseusDuration>(self, _val: I) -> Template<G> {
+    pub fn revalidate_after<I: PerseusDuration>(self, _val: I) -> Self {
         self
     }
 
@@ -1201,7 +1210,7 @@ impl<G: Html> Template<G> {
     pub fn amalgamate_states_fn<S, B>(
         mut self,
         val: impl AmalgamateStatesUserFnType<S, B> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + Send + Sync + 'static,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
@@ -1233,8 +1242,12 @@ impl<G: Html> Template<G> {
                     let user_state = val
                         .call(user_info, user_build_state, user_request_state)
                         .await?;
-                    let template_state: TemplateState = user_state.into();
-                    Ok(template_state)
+                    let (delayed, undelayed) = user_state.split_delayed();
+                    let undelayed: TemplateState = undelayed.into();
+                    Ok(DelayedParts {
+                        delayed,
+                        undelayed,
+                    })
                 }
             },
         ));
@@ -1247,7 +1260,7 @@ impl<G: Html> Template<G> {
     /// and this will be run just after the request state function
     /// completes. See [`States`] for further details.
     #[cfg(target_arch = "wasm32")]
-    pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 }

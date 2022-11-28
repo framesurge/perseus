@@ -16,6 +16,7 @@ mod page_data;
 mod perseus_routes;
 mod static_content;
 mod translations;
+mod delayed;
 
 pub use crate::perseus_routes::perseus_routes;
 #[cfg(feature = "dflt-server")]

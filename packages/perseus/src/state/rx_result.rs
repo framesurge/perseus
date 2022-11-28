@@ -2,7 +2,7 @@ use crate::template::TemplateState;
 
 use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx, RxRef};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
 
 /// A wrapper for fallible reactive state.
@@ -51,13 +51,13 @@ where
 
     // We'll just defer to the underlying type if it's `Ok`
     // TODO See notes
-    fn split_delayed(self) -> (Vec<TemplateState>, Self) {
+    fn split_delayed(self) -> (HashMap<String, TemplateState>, Self) {
         match self.0 {
             Ok(state) => {
                 let split = state.split_delayed();
                 (split.0, Self(Ok(split.1)))
             },
-            Err(err) => (Vec::new(), Self(Err(err)))
+            Err(err) => (HashMap::new(), Self(Err(err)))
         }
     }
 }

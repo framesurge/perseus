@@ -153,18 +153,18 @@ async fn gen_state_for_path(
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
         let initial_state = template.get_build_state(build_info).await?;
-        // Write that initial state to a static JSON file
+        // Write the undelayed initial state to a static JSON file
         mutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),
-                &initial_state.state.to_string(),
+                &initial_state.undelayed.state.to_string(),
             )
             .await?;
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
                 full_path_with_locale.clone(),
-                initial_state.clone(),
+                initial_state.undelayed.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -178,7 +178,7 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(initial_state, global_state.clone(), translator);
+        let head_str = template.render_head_str(initial_state.undelayed, global_state.clone(), translator);
         minify(&head_str, true)?;
         mutable_store
             .write(
@@ -186,22 +186,38 @@ async fn gen_state_for_path(
                 &head_str,
             )
             .await?;
+        // Write each of the delayed states to its own extra file
+        for (key, delayed_state) in initial_state.delayed.into_iter() {
+            let delayed_path = format!(
+                "static/delayed/{}-{}.json",
+                full_path_encoded,
+                key
+            );
+            // Note: theoretically, this might fail if there are non-Unicode characters in the `struct`/field names, since
+            // those are used by the macros to create a unique key
+            mutable_store
+                .write(
+                    &delayed_path,
+                    &delayed_state.state.to_string(),
+                )
+                .await?;
+        }
     } else if template.uses_build_state() {
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
         let initial_state = template.get_build_state(build_info).await?;
-        // Write that initial state to a static JSON file
+        // Write the undelayed initial state to a static JSON file
         immutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),
-                &initial_state.state.to_string(),
+                &initial_state.undelayed.state.to_string(),
             )
             .await?;
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
                 full_path_with_locale.clone(),
-                initial_state.clone(),
+                initial_state.undelayed.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -215,13 +231,30 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(initial_state, global_state.clone(), translator);
+        let head_str = template.render_head_str(initial_state.undelayed, global_state.clone(), translator);
+        minify(&head_str, true)?;
         immutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
                 &head_str,
             )
             .await?;
+        // Write each of the delayed states to its own extra file
+        for (key, delayed_state) in initial_state.delayed.into_iter() {
+            let delayed_path = format!(
+                "static/delayed/{}-{}.json",
+                full_path_encoded,
+                key
+            );
+            // Note: theoretically, this might fail if there are non-Unicode characters in the `struct`/field names, since
+            // those are used by the macros to create a unique key
+            immutable_store
+                .write(
+                    &delayed_path,
+                    &delayed_state.state.to_string(),
+                )
+                .await?;
+        }
     }
 
     // Handle revalidation, we need to parse any given time strings into datetimes
@@ -252,6 +285,8 @@ async fn gen_state_for_path(
     // If the template is very basic, prerender without any state
     // It's safe to add a property to the render options here because `.is_basic()`
     // will only return true if path generation is not being used (or anything else)
+    //
+    // Note that basic templates cannot have delayed state, since they have no state at all
     if template.is_basic() {
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(

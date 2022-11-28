@@ -71,6 +71,13 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             "you can only make `struct`s reactive with this macro (`enum` capability will be added in a future release, for now you'll have to implement it manually)"
         ).to_compile_error(),
     };
+    let ReactiveStateDeriveInput {
+        ident,
+        vis,
+        attrs: attrs_vec,
+        alias,
+        ..
+    } = input;
     // Now go through them and create what we want for both the intermediate and the
     // reactive `struct`s
     let mut intermediate_fields = quote!();
@@ -145,9 +152,17 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 delay_fields.extend(quote! {
                     // We delay whole nested blocks just as we would delay single fields
                     #field_ident: {
-                        delayed_states.push(self.#field_ident);
-                        ::perseus::state::Delayed::Waiting
-                    }
+                        // This will take out the `Ready` value and replace it with `Waiting`
+                        let delayed = self.#field_ident.take();
+                        // The user must instantiate each delayed field as `Ready`
+                        if delayed.is_none() {
+                            panic!("field '#field_ident' of state type '#ident' is delayed, and must be instantiated as `Delayed::Ready()` (see the book for details)");
+                        }
+                        // This must be per-page unique (and hopefully all unicode...)
+                        let key = "#ident_#field_ident";
+                        delayed_states.insert(key, delayed);
+                        self.#field_ident // Delayed::Waiting
+                    },
                 });
             } else {
                 // Handle the possibility that some of the nested fields might be delayed
@@ -156,7 +171,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                         let (delayed, new_self) = self.#field_ident.split_delayed();
                         delayed_states.extend(delayed);
                         new_self
-                    }
+                    },
                 });
             }
 
@@ -199,21 +214,26 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             if field.delayed {
                 delay_fields.extend(quote! {
                     #field_ident: {
-                        delayed_states.push(self.#field_ident);
-                        ::perseus::state::Delayed::Waiting
-                    }
+                        // This will take out the `Ready` value and replace it with `Waiting`
+                        let delayed = self.#field_ident.take();
+                        // The user must instantiate each delayed field as `Ready`
+                        if delayed.is_none() {
+                            panic!("field '#field_ident' of state type '#ident' is delayed, and must be instantiated as `Delayed::Ready()` (see the book for details)");
+                        }
+                        // This must be per-page unique (and hopefully all unicode...)
+                        let key = "#ident_#field_ident";
+                        delayed_states.insert(key, delayed);
+                        self.#field_ident // Delayed::Waiting
+                    },
                 });
+            } else {
+                delay_fields.extend(quote! {
+                    #field_ident: self.#field_ident,
+                })
             }
         }
     }
 
-    let ReactiveStateDeriveInput {
-        ident,
-        vis,
-        attrs: attrs_vec,
-        alias,
-        ..
-    } = input;
     let mut attrs = quote!();
     for attr in attrs_vec.iter() {
         attrs.extend(attr.to_token_stream());
