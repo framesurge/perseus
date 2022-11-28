@@ -43,6 +43,14 @@ pub struct ReactiveStateField {
     /// something very advanced.)
     #[darling(default)]
     suspense: Option<Ident>,
+    /// Whether or not this field is 'delayed', meaning it will be generated as
+    /// usual on the engine-side, but then not transmitted to the client. Instead,
+    /// it will be placed in a separate file and the client will asynchronously fetch
+    /// it only after the page has been loaded. This is sometimes a good option for
+    /// extremely large states, so that the page can be sent to the user as quickly
+    /// as possible.
+    #[darling(default)]
+    delayed: bool,
 
     ident: Option<Ident>,
     vis: Visibility,
@@ -71,6 +79,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     let mut ref_field_makers = quote!(); // These start at the intermediate
     let mut unrx_field_makers = quote!();
     let mut suspense_commands = quote!();
+    let mut delay_fields = quote!();
     for field in fields.iter() {
         let old_ty = field.ty.to_token_stream();
         let field_ident = field.ident.as_ref().unwrap(); // It's a `struct`, so this is defined
@@ -96,6 +105,14 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             unrx_field_makers
                 .extend(quote! { #field_ident: self.#field_ident.clone().make_unrx(), });
 
+            // Expressly forbid mixing suspense and delays
+            if field.suspense.is_some() && field.delayed {
+                return syn::Error::new_spanned(
+                    field_ident,
+                    "suspended state cannot be used with delayed state; please pick one of the two, or split your state into a nested object where one field is suspended and the other is delayed"
+                ).to_compile_error();
+            }
+
             // Handle suspended fields
             if let Some(handler) = &field.suspense {
                 // This line calls a utility function that does ergonomic error handling
@@ -117,6 +134,32 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                     self.#field_ident.compute_suspense(cx);
                 })
             }
+
+            // Handle delayed fields
+            if field.delayed {
+                // This whole nested block is delayed, so we will ignore any delays in its components
+                // (otherwise we'd have lower-level delay handlers trying to write before the top-level has
+                // been finalised, which is a *terrible* idea).
+                // We also won't try to run any suspense handlers in here, which would be another terrible
+                // idea for the same reason.
+                delay_fields.extend(quote! {
+                    // We delay whole nested blocks just as we would delay single fields
+                    #field_ident: {
+                        delayed_states.push(self.#field_ident);
+                        ::perseus::state::Delayed::Waiting
+                    }
+                });
+            } else {
+                // Handle the possibility that some of the nested fields might be delayed
+                delay_fields.extend(quote! {
+                    #field_ident: {
+                        let (delayed, new_self) = self.#field_ident.split_delayed();
+                        delayed_states.extend(delayed);
+                        new_self
+                    }
+                });
+            }
+
         } else {
             intermediate_fields.extend(quote! {
                 #field_attrs
@@ -136,8 +179,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             unrx_field_makers
                 .extend(quote! { #field_ident: (*self.#field_ident.get_untracked()).clone(), });
 
-            // Handle suspended fields (we don't care if they're nested, the user can worry
-            // about that (probably using `RxResult` or similar))
+            // Handle suspended fields
             if let Some(handler) = &field.suspense {
                 // This line calls a utility function that does ergonomic error handling
                 suspense_commands.extend(quote! {
@@ -150,6 +192,16 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                             ::sycamore::prelude::create_ref(cx, self.#field_ident.clone()),
                         ),
                     );
+                });
+            }
+
+            // Handle delayed fields
+            if field.delayed {
+                delay_fields.extend(quote! {
+                    #field_ident: {
+                        delayed_states.push(self.#field_ident);
+                        ::perseus::state::Delayed::Waiting
+                    }
                 });
             }
         }
@@ -201,6 +253,14 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 Self::Rx {
                     #intermediate_field_makers
                 }
+            }
+            fn split_delayed(self) -> (::std::vec::Vec<::perseus::template::TemplateState>, Self) {
+                let mut delayed_states = Vec::new();
+                let delayed_self = Self {
+                    #delay_fields
+                };
+
+                (delayed_states, delayed_self)
             }
         }
         impl ::perseus::state::MakeUnrx for #intermediate_ident {

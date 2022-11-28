@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::any::Any;
 use sycamore::prelude::Scope;
 
+use crate::template::TemplateState;
+
 /// A trait for `struct`s that can be made reactive. Typically, this will be
 /// derived with the `#[make_rx]` macro, though it can be implemented manually
 /// if you have more niche requirements.
@@ -13,6 +15,12 @@ pub trait MakeRx {
     type Rx: MakeUnrx;
     /// Transforms an instance of the `struct` into its reactive version.
     fn make_rx(self) -> Self::Rx;
+    /// Splits `Self` into a delayed component and a non-delayed component. States
+    /// that don't have delayed components should simply return `(Vec::new(), self)`
+    /// for this, although states with delayed parts should return `self`, with the
+    /// delayed parts set to `Delayed`, and then all the actual delayed components
+    /// as a list of [`TemplateState`]s.
+    fn split_delayed(self) -> (Vec<TemplateState>, Self);
 }
 
 /// A trait for reactive `struct`s that can be made un-reactive. This is the
@@ -125,6 +133,10 @@ impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> MakeRx 
     type Rx = UnreactiveStateWrapper<T>;
     fn make_rx(self) -> Self::Rx {
         UnreactiveStateWrapper(self)
+    }
+    // There's no such thing as delaying for unreactive state
+    fn split_delayed(self) -> (Vec<TemplateState>, Self) {
+        (Vec::new(), self)
     }
 }
 // And let it be converted back

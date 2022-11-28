@@ -1,3 +1,5 @@
+use crate::template::TemplateState;
+
 use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx, RxRef};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
@@ -44,6 +46,18 @@ where
         match self.0 {
             Ok(state) => RxResultIntermediate(create_rc_signal(Ok(state.make_rx()))),
             Err(err) => RxResultIntermediate(create_rc_signal(Err(err))),
+        }
+    }
+
+    // We'll just defer to the underlying type if it's `Ok`
+    // TODO See notes
+    fn split_delayed(self) -> (Vec<TemplateState>, Self) {
+        match self.0 {
+            Ok(state) => {
+                let split = state.split_delayed();
+                (split.0, Self(Ok(split.1)))
+            },
+            Err(err) => (Vec::new(), Self(Err(err)))
         }
     }
 }
