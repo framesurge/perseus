@@ -7,6 +7,8 @@ mod rx_state;
 mod suspense;
 
 pub use freeze::{FrozenApp, PageThawPrefs, ThawPrefs};
+#[cfg(not(target_arch = "wasm32"))]
+pub use global_state::get_built_global_state;
 pub use global_state::{GlobalState, GlobalStateCreator, GlobalStateType};
 pub use page_state_store::{PageStateStore, PssContains, PssEntry, PssState};
 pub use rx_result::{RxResult, RxResultIntermediate, RxResultRef, SerdeInfallible};

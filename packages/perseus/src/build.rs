@@ -2,6 +2,7 @@
 
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
+use crate::state::GlobalStateCreator;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::ArcTemplateMap;
 use crate::template::{BuildPaths, StateGeneratorInfo, Template, TemplateState};
@@ -373,22 +374,51 @@ pub async fn build_templates_for_locale(
 }
 
 /// Gets a translator and builds templates for a single locale.
+///
+/// This will also build the global state for this locale.
 pub async fn build_templates_and_translator_for_locale(
     templates: &ArcTemplateMap<SsrNode>,
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
-    global_state: &TemplateState,
+    gsc: &GlobalStateCreator,
     exporting: bool,
 ) -> Result<(), ServerError> {
     let translator = translations_manager
-        .get_translator_for_locale(locale)
+        .get_translator_for_locale(locale.to_string())
         .await?;
+
+    let global_state = if gsc.uses_build_state() {
+        // Generate the global state and write it to a file
+        let global_state = gsc.get_build_state(locale).await?;
+        immutable_store
+            .write("static/global_state.json", &global_state.state.to_string())
+            .await?;
+        global_state
+    } else {
+        // If there's no build-time handler, we'll give an empty state. This will
+        // be very unexpected if the user is generating at request-time, since all
+        // the pages they have at build-time will be unable to access the global state.
+        // We could either completely disable build-time rendering when there's
+        // request-time global state generation, or we could give the user smart
+        // errors and let them manage this problem themselves by gating their
+        // usage of global state at build-time, since `.try_get_global_state()`
+        // will give a clear `Ok(None)` at build-time. For speed, the latter
+        // approach has been chosen.
+        //
+        // This is one of the biggest 'gotchas' in Perseus, and is clearly documented!
+        TemplateState::empty()
+    };
+
+    if exporting && (gsc.uses_request_state() || gsc.can_amalgamate_states()) {
+        return Err(ExportError::GlobalStateNotExportable.into());
+    }
+
     build_templates_for_locale(
         templates,
         &translator,
         (immutable_store, mutable_store),
-        global_state,
+        &global_state,
         exporting,
     )
     .await?;
@@ -409,8 +439,8 @@ pub struct BuildProps<'a, M: MutableStore, T: TranslationsManager> {
     pub mutable_store: &'a M,
     /// A translations manager.
     pub translations_manager: &'a T,
-    /// A stringified global state.
-    pub global_state: &'a TemplateState,
+    /// The global state creator.
+    pub global_state_creator: &'a GlobalStateCreator,
     /// Whether or not we're exporting after this build (changes behavior
     /// slightly).
     pub exporting: bool,
@@ -426,7 +456,7 @@ pub async fn build_app<M: MutableStore, T: TranslationsManager>(
         immutable_store,
         mutable_store,
         translations_manager,
-        global_state,
+        global_state_creator,
         exporting,
     }: BuildProps<'_, M, T>,
 ) -> Result<(), ServerError> {
@@ -439,7 +469,7 @@ pub async fn build_app<M: MutableStore, T: TranslationsManager>(
             locale.to_string(),
             (immutable_store, mutable_store),
             translations_manager,
-            global_state,
+            global_state_creator,
             exporting,
         ));
     }

@@ -138,8 +138,6 @@ pub enum ServerError {
     #[error("the template name did not prefix the path (this request was severely malformed)")]
     TemplateNameNotInPath,
     #[error(transparent)]
-    GlobalStateError(#[from] GlobalStateError),
-    #[error(transparent)]
     StoreError(#[from] StoreError),
     #[error(transparent)]
     TranslationsManagerError(#[from] TranslationsManagerError),
@@ -163,16 +161,6 @@ pub fn err_to_status_code(err: &ServerError) -> u16 {
         // Any other errors go to a 500, they'll be misconfigurations or internal server errors
         _ => 500,
     }
-}
-
-/// Errors that can occur with regards to global state.
-#[derive(Error, Debug)]
-pub enum GlobalStateError {
-    #[error("couldn't generate global state at build time")]
-    BuildGenerationFailed {
-        #[source]
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
 }
 
 /// Errors that can occur while reading from or writing to a mutable or
@@ -249,10 +237,12 @@ pub enum BuildError {
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Error, Debug)]
 pub enum ExportError {
-    #[error("template '{template_name}' can't be exported because it depends on strategies that can't be run at build-time (only build state and build paths can be use din exportable templates)")]
+    #[error("template '{template_name}' can't be exported because it depends on strategies that can't be run at build-time (only build state and build paths can be used in exportable templates)")]
     TemplateNotExportable { template_name: String },
     #[error("template '{template_name}' wasn't found in built artifacts (run `perseus clean --dist` if this persists)")]
     TemplateNotFound { template_name: String },
+    #[error("your app can't be exported because its global state depends on strategies that can't be run at build time (only build state can be used in exportable apps)")]
+    GlobalStateNotExportable,
 }
 
 /// Errors that can occur while serving an app. These are integration-agnostic.

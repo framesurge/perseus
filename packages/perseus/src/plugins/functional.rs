@@ -187,8 +187,6 @@ pub struct FunctionalPluginBuildActions {
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build process if it fails.
     pub after_failed_build: FunctionalPluginAction<Rc<Error>, ()>,
-    /// Runs after the build process if it failed to generate global state.
-    pub after_failed_global_state_creation: FunctionalPluginAction<Rc<Error>, ()>,
 }
 /// Functional actions that pertain to the export process.
 #[cfg(not(target_arch = "wasm32"))]
@@ -215,10 +213,6 @@ pub struct FunctionalPluginExportActions {
     pub after_failed_static_alias_file_copy: FunctionalPluginAction<Rc<Error>, ()>,
     /// Runs after the export process if it completes successfully.
     pub after_successful_export: FunctionalPluginAction<(), ()>,
-    /// Runs after the export process if it failed to generate global state.
-    /// Note that the error here will always be a `GlobalStateError`, but it
-    /// must be processed as a `ServerError` due to ownership constraints.
-    pub after_failed_global_state_creation: FunctionalPluginAction<Rc<Error>, ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
 #[cfg(not(target_arch = "wasm32"))]

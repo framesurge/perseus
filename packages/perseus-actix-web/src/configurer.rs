@@ -6,6 +6,7 @@ use actix_web::{web, HttpRequest};
 use perseus::{
     i18n::TranslationsManager,
     server::{get_render_cfg, ServerOptions, ServerProps},
+    state::get_built_global_state,
     stores::MutableStore,
 };
 
@@ -49,11 +50,9 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         .expect("Couldn't get render configuration!");
     let index_with_render_cfg = opts.html_shell.clone();
     // Generate the global state
-    // The user will get a more detailed error message in the build process
-    let global_state = global_state_creator
-        .get_build_state()
+    let global_state = get_built_global_state(&immutable_store)
         .await
-        .expect("Couldn't generate global state.");
+        .expect("couldn't get pre-built global state or placeholder (the app's build artifacts have almost certainly been corrupted)");
 
     move |cfg: &mut web::ServiceConfig| {
         cfg
@@ -66,6 +65,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
             .app_data(web::Data::new(opts.clone()))
             .app_data(web::Data::new(index_with_render_cfg.clone()))
             .app_data(web::Data::new(global_state.clone()))
+            .app_data(web::Data::new(global_state_creator.clone()))
             // TODO chunk JS and Wasm bundles
             // These allow getting the basic app code (not including the static data)
             // This contains everything in the spirit of a pseudo-SPA

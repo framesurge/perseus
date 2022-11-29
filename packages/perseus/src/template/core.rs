@@ -627,7 +627,7 @@ impl<G: Html> Template<G> {
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: self.path.clone(),
-                feature_name: "request_state".to_string(),
+                feature_name: "amalgamate_states".to_string(),
             }
             .into())
         }
@@ -1212,7 +1212,7 @@ impl<G: Html> Template<G> {
                   request_state: TemplateState| {
                 let val = val.clone();
                 async move {
-                    // Amalgamanation logic will only be called if both states are indeed defined
+                    // Amalgamation logic will only be called if both states are indeed defined
                     let typed_build_state = build_state.change_type::<S>();
                     let user_build_state = match typed_build_state.to_concrete() {
                         Ok(state) => state,

@@ -1,8 +1,7 @@
 use crate::build::{build_app, BuildProps};
 use crate::errors::Error;
 use crate::{
-    errors::ServerError, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore,
-    PerseusAppBase, SsrNode,
+    i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore, PerseusAppBase, SsrNode,
 };
 use std::rc::Rc;
 
@@ -28,21 +27,7 @@ pub async fn build<M: MutableStore, T: TranslationsManager>(
         .map_err(|err| Rc::new(err.into()))?;
     let mutable_store = app.get_mutable_store();
     let locales = app.get_locales().map_err(|err| Rc::new(err.into()))?;
-    // Generate the global state
     let gsc = app.get_global_state_creator();
-    let global_state = match gsc.get_build_state().await {
-        Ok(global_state) => global_state,
-        Err(err) => {
-            let err: Rc<Error> = Rc::new(ServerError::GlobalStateError(err).into());
-            plugins
-                .functional_actions
-                .build_actions
-                .after_failed_global_state_creation
-                .run(err.clone(), plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
-            return Err(err);
-        }
-    };
 
     // Build the site for all the common locales (done in parallel)
     // All these parameters can be modified by `PerseusApp` and plugins, so there's
@@ -60,7 +45,7 @@ pub async fn build<M: MutableStore, T: TranslationsManager>(
         immutable_store: &immutable_store,
         mutable_store: &mutable_store,
         translations_manager: &translations_manager,
-        global_state: &global_state,
+        global_state_creator: &gsc,
         exporting: false,
     })
     .await;

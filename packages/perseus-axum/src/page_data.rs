@@ -9,6 +9,7 @@ use perseus::{
     i18n::TranslationsManager,
     internal::PageDataPartial,
     server::{get_page_for_template, GetPageProps, ServerOptions},
+    state::GlobalStateCreator,
     stores::{ImmutableStore, MutableStore},
     template::TemplateState,
     Request,
@@ -41,6 +42,7 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
     global_state: Arc<TemplateState>,
+    gsc: Arc<GlobalStateCreator>,
 ) -> (StatusCode, HeaderMap, String) {
     // Separate the locale from the rest of the page name
     let locale = &path_parts[0];
@@ -85,13 +87,14 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
                 immutable_store: &immutable_store,
                 mutable_store: &mutable_store,
                 translations_manager: &translations_manager,
+                global_state_creator: &gsc,
             },
             template,
             false,
         )
         .await;
         match page_data {
-            Ok(page_data) => {
+            Ok((page_data, _)) => {
                 let partial_page_data = PageDataPartial {
                     state: page_data.state.clone(),
                     head: page_data.head,
