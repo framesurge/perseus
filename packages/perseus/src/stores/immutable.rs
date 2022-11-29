@@ -45,12 +45,19 @@ impl ImmutableStore {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn read(&self, name: &str) -> Result<String, StoreError> {
         let asset_path = format!("{}/{}", self.root_path, name);
-        let mut file = File::open(&asset_path)
-            .await
-            .map_err(|err| StoreError::ReadFailed {
-                name: asset_path.clone(),
-                source: err.into(),
-            })?;
+        let file_res = File::open(&asset_path).await;
+        let mut file = match file_res {
+            Ok(file) => file,
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                return Err(StoreError::NotFound { name: asset_path })
+            }
+            Err(err) => {
+                return Err(StoreError::ReadFailed {
+                    name: asset_path,
+                    source: err.into(),
+                })
+            }
+        };
         let metadata = file.metadata().await;
 
         match metadata {
