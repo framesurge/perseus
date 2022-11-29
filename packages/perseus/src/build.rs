@@ -2,9 +2,10 @@
 
 use crate::errors::*;
 use crate::i18n::{Locales, TranslationsManager};
+use crate::state::GlobalStateCreator;
 use crate::stores::{ImmutableStore, MutableStore};
-use crate::template::Template;
-use crate::template::{PageProps, TemplateMap};
+use crate::template::ArcTemplateMap;
+use crate::template::{BuildPaths, StateGeneratorInfo, Template, TemplateState};
 use crate::translator::Translator;
 use crate::utils::minify;
 use futures::future::try_join_all;
@@ -21,7 +22,7 @@ pub async fn build_template(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     exporting: bool,
 ) -> Result<(Vec<String>, bool), ServerError> {
     let mut single_page = false;
@@ -45,23 +46,34 @@ pub async fn build_template(
     // Handle static path generation
     // Because we iterate over the paths, we need a base path if we're not
     // generating custom ones (that'll be overridden if needed)
-    let paths = match template.uses_build_paths() {
-        true => template
-            .get_build_paths()
-            .await?
+    let (paths, build_extra) = match template.uses_build_paths() {
+        true => {
+            let BuildPaths { paths, extra } = template.get_build_paths().await?;
             // Trim away any trailing `/`s so we don't insert them into the render config
             // That makes rendering an index page from build paths impossible (see #39)
-            .iter()
-            .map(|p| match p.strip_suffix('/') {
-                Some(stripped) => stripped.to_string(),
-                None => p.to_string(),
-            })
-            .collect(),
+            let paths = paths
+                .iter()
+                .map(|p| match p.strip_suffix('/') {
+                    Some(stripped) => stripped.to_string(),
+                    None => p.to_string(),
+                })
+                .collect();
+            (paths, extra)
+        }
         false => {
             single_page = true;
-            vec![String::new()]
+            (vec![String::new()], TemplateState::empty())
         }
     };
+
+    // Write the extra build state information to a file now so it can be accessed
+    // by request state handlers and the like down the line
+    immutable_store
+        .write(
+            &format!("static/{}.extra.json", template_path),
+            &build_extra.state.to_string(),
+        )
+        .await?;
 
     // Iterate through the paths to generate initial states if needed
     // Note that build paths pages on incrementally generable pages will use the
@@ -74,6 +86,7 @@ pub async fn build_template(
             translator,
             (immutable_store, mutable_store),
             global_state,
+            &build_extra,
         );
         futs.push(fut);
     }
@@ -89,7 +102,8 @@ async fn gen_state_for_path(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
+    build_extra: &TemplateState,
 ) -> Result<(), ServerError> {
     let template_path = template.get_path();
     // If needed, we'll construct a full path that's URL encoded so we can easily
@@ -126,6 +140,12 @@ async fn gen_state_for_path(
         locale => format!("{}/{}", locale, &full_path_without_locale),
     };
 
+    let build_info = StateGeneratorInfo {
+        path: full_path_without_locale.clone(),
+        locale: translator.get_locale(),
+        extra: build_extra.clone(),
+    };
+
     // Handle static initial state generation
     // We'll only write a static state if one is explicitly generated
     // If the template revalidates, use a mutable store, otherwise use an immutable
@@ -133,25 +153,19 @@ async fn gen_state_for_path(
     if template.uses_build_state() && template.revalidates() {
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
-        let initial_state = template
-            .get_build_state(full_path_without_locale.clone(), translator.get_locale())
-            .await?;
+        let initial_state = template.get_build_state(build_info).await?;
         // Write that initial state to a static JSON file
         mutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),
-                &initial_state,
+                &initial_state.state.to_string(),
             )
             .await?;
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: full_path_with_locale.clone(),
-            state: Some(initial_state),
-        };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
-                page_props.clone(),
+                full_path_with_locale.clone(),
+                initial_state.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -165,7 +179,7 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
+        let head_str = template.render_head_str(initial_state, global_state.clone(), translator);
         minify(&head_str, true)?;
         mutable_store
             .write(
@@ -176,25 +190,19 @@ async fn gen_state_for_path(
     } else if template.uses_build_state() {
         // We pass in the path to get a state (including the template path for
         // consistency with the incremental logic)
-        let initial_state = template
-            .get_build_state(full_path_without_locale.clone(), translator.get_locale())
-            .await?;
+        let initial_state = template.get_build_state(build_info).await?;
         // Write that initial state to a static JSON file
         immutable_store
             .write(
                 &format!("static/{}.json", full_path_encoded),
-                &initial_state,
+                &initial_state.state.to_string(),
             )
             .await?;
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: full_path_with_locale.clone(),
-            state: Some(initial_state),
-        };
         // Prerender the template using that state
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
-                page_props.clone(),
+                full_path_with_locale.clone(),
+                initial_state.clone(),
                 global_state.clone(),
                 cx,
                 translator,
@@ -208,7 +216,7 @@ async fn gen_state_for_path(
         // Prerender the document `<head>` with that state
         // If the page also uses request state, amalgamation will be applied as for the
         // normal content
-        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
+        let head_str = template.render_head_str(initial_state, global_state.clone(), translator);
         immutable_store
             .write(
                 &format!("static/{}.head.html", full_path_encoded),
@@ -246,20 +254,17 @@ async fn gen_state_for_path(
     // It's safe to add a property to the render options here because `.is_basic()`
     // will only return true if path generation is not being used (or anything else)
     if template.is_basic() {
-        // Assemble the page properties
-        let page_props = PageProps {
-            path: full_path_with_locale,
-            state: None,
-        };
         let prerendered = sycamore::render_to_string(|cx| {
             template.render_for_template_server(
-                page_props.clone(),
+                full_path_with_locale,
+                TemplateState::empty(),
                 global_state.clone(),
                 cx,
                 translator,
             )
         });
-        let head_str = template.render_head_str(page_props, global_state.clone(), translator);
+        let head_str =
+            template.render_head_str(TemplateState::empty(), global_state.clone(), translator);
         // Write that prerendered HTML to a static file
         immutable_store
             .write(&format!("static/{}.html", full_path_encoded), &prerendered)
@@ -281,7 +286,7 @@ pub async fn build_template_and_get_cfg(
     template: &Template<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     exporting: bool,
 ) -> Result<HashMap<String, String>, ServerError> {
     let mut render_cfg = HashMap::new();
@@ -333,10 +338,10 @@ pub async fn build_template_and_get_cfg(
 /// for this. You should only build the most commonly used locales here (the
 /// rest should be built on demand).
 pub async fn build_templates_for_locale(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     translator: &Translator,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     exporting: bool,
 ) -> Result<(), ServerError> {
     // The render configuration stores a list of pages to the root paths of their
@@ -369,22 +374,51 @@ pub async fn build_templates_for_locale(
 }
 
 /// Gets a translator and builds templates for a single locale.
+///
+/// This will also build the global state for this locale.
 pub async fn build_templates_and_translator_for_locale(
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     locale: String,
     (immutable_store, mutable_store): (&ImmutableStore, &impl MutableStore),
     translations_manager: &impl TranslationsManager,
-    global_state: &Option<String>,
+    gsc: &GlobalStateCreator,
     exporting: bool,
 ) -> Result<(), ServerError> {
     let translator = translations_manager
-        .get_translator_for_locale(locale)
+        .get_translator_for_locale(locale.to_string())
         .await?;
+
+    let global_state = if gsc.uses_build_state() {
+        // Generate the global state and write it to a file
+        let global_state = gsc.get_build_state(locale).await?;
+        immutable_store
+            .write("static/global_state.json", &global_state.state.to_string())
+            .await?;
+        global_state
+    } else {
+        // If there's no build-time handler, we'll give an empty state. This will
+        // be very unexpected if the user is generating at request-time, since all
+        // the pages they have at build-time will be unable to access the global state.
+        // We could either completely disable build-time rendering when there's
+        // request-time global state generation, or we could give the user smart
+        // errors and let them manage this problem themselves by gating their
+        // usage of global state at build-time, since `.try_get_global_state()`
+        // will give a clear `Ok(None)` at build-time. For speed, the latter
+        // approach has been chosen.
+        //
+        // This is one of the biggest 'gotchas' in Perseus, and is clearly documented!
+        TemplateState::empty()
+    };
+
+    if exporting && (gsc.uses_request_state() || gsc.can_amalgamate_states()) {
+        return Err(ExportError::GlobalStateNotExportable.into());
+    }
+
     build_templates_for_locale(
         templates,
         &translator,
         (immutable_store, mutable_store),
-        global_state,
+        &global_state,
         exporting,
     )
     .await?;
@@ -396,7 +430,7 @@ pub async fn build_templates_and_translator_for_locale(
 #[derive(Debug)]
 pub struct BuildProps<'a, M: MutableStore, T: TranslationsManager> {
     /// All the templates in the app.
-    pub templates: &'a TemplateMap<SsrNode>,
+    pub templates: &'a ArcTemplateMap<SsrNode>,
     /// The app's locales data.
     pub locales: &'a Locales,
     /// An immutable store.
@@ -405,8 +439,8 @@ pub struct BuildProps<'a, M: MutableStore, T: TranslationsManager> {
     pub mutable_store: &'a M,
     /// A translations manager.
     pub translations_manager: &'a T,
-    /// A stringified global state.
-    pub global_state: &'a Option<String>,
+    /// The global state creator.
+    pub global_state_creator: &'a GlobalStateCreator,
     /// Whether or not we're exporting after this build (changes behavior
     /// slightly).
     pub exporting: bool,
@@ -422,7 +456,7 @@ pub async fn build_app<M: MutableStore, T: TranslationsManager>(
         immutable_store,
         mutable_store,
         translations_manager,
-        global_state,
+        global_state_creator,
         exporting,
     }: BuildProps<'_, M, T>,
 ) -> Result<(), ServerError> {
@@ -435,7 +469,7 @@ pub async fn build_app<M: MutableStore, T: TranslationsManager>(
             locale.to_string(),
             (immutable_store, mutable_store),
             translations_manager,
-            global_state,
+            global_state_creator,
             exporting,
         ));
     }

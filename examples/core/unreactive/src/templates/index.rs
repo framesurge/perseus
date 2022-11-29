@@ -8,7 +8,7 @@ use sycamore::prelude::*;
 // wrapper for this unreactive type, allowing it to work with Perseus;
 // rather strict state platform (this is just a marker trait though)
 #[derive(Serialize, Deserialize, Clone, UnreactiveState)]
-pub struct IndexPageState {
+struct IndexPageState {
     pub greeting: String,
 }
 
@@ -17,8 +17,7 @@ pub struct IndexPageState {
 // Otherwise, you can do everything in this macro that you can do with a
 // reactive template! Caching, preloading, reactive global state, etc. are all
 // supported.
-#[perseus::template(unreactive)]
-pub fn index_page<G: Html>(cx: Scope, state: IndexPageState) -> View<G> {
+fn index_page<G: Html>(cx: Scope, state: IndexPageState) -> View<G> {
     view! { cx,
         p { (state.greeting) }
         a(href = "about") { "About" }
@@ -28,22 +27,19 @@ pub fn index_page<G: Html>(cx: Scope, state: IndexPageState) -> View<G> {
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template(index_page)
-        .head(head)
+        .template_with_unreactive_state(index_page)
+        .head_with_state(head)
 }
 
-#[perseus::head]
-pub fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
+#[engine_only_fn]
+fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
     view! { cx,
         title { "Index Page" }
     }
 }
 
-#[perseus::build_state]
-pub async fn get_build_state(
-    _path: String,
-    _locale: String,
-) -> RenderFnResultWithCause<IndexPageState> {
+#[engine_only_fn]
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
     Ok(IndexPageState {
         greeting: "Hello World!".to_string(),
     })

@@ -125,26 +125,18 @@ impl ClientTranslationsManager {
                 let asset_url = format!("{}/.perseus/translations/{}", path_prefix, locale);
                 // If this doesn't exist, then it's a 404 (we went here by explicit navigation
                 // after checking the locale, so that's a bug)
-                let translations_str = fetch(&asset_url).await;
+                let translations_str = fetch(&asset_url).await?;
                 let translator = match translations_str {
-                    Ok(translations_str) => match translations_str {
-                        Some(translations_str) => {
-                            // All good, turn the translations into a translator
-                            self.get_translator_for_translations_str(locale, &translations_str)?
-                        }
-                        // If we get a 404 for a supported locale, that's an exception
-                        None => panic!(
-                            "server returned 404 for translations for known supported locale '{}'",
-                            locale
-                        ),
-                    },
-                    Err(err) => match err {
-                        not_ok_err @ ClientError::FetchError(FetchError::NotOk { .. }) => {
-                            return Err(not_ok_err)
-                        }
-                        // No other errors should be returned
-                        _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
-                    },
+                    Some(translations_str) => {
+                        // All good, turn the translations into a translator
+                        self.get_translator_for_translations_str(locale, &translations_str)?
+                    }
+                    // If we get a 404 for a supported locale, that's an exception
+                    None => {
+                        return Err(ClientError::ValidLocaleNotProvided {
+                            locale: locale.to_string(),
+                        })
+                    }
                 };
                 // This caches and returns the translator
                 Ok(self.cache_translator(translator))

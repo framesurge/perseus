@@ -20,7 +20,6 @@ documentation, and this should mostly be used as a secondary reference source. Y
 
 #![deny(missing_docs)]
 // #![deny(missing_debug_implementations)] // TODO Pending sycamore-rs/sycamore#412
-#![forbid(unsafe_code)]
 #![recursion_limit = "256"] // TODO Do we need this anymore?
 
 /// Utilities for working with the engine-side, particularly with regards to
@@ -60,7 +59,6 @@ mod client;
 #[cfg(not(target_arch = "wasm32"))]
 mod export;
 mod init;
-mod macros;
 mod page_data;
 mod translator;
 
@@ -75,13 +73,21 @@ pub use sycamore_futures::spawn_local_scoped;
 pub use wasm_bindgen_futures::spawn_local;
 /// All HTTP requests use empty bodies for simplicity of passing them around.
 /// They'll never need payloads (value in path requested).
+///
+/// **Warning:** on the browser-side, this is defined as `()`.
 #[cfg(not(target_arch = "wasm32"))]
 pub type Request = HttpRequest<()>;
+/// All HTTP requests use empty bodies for simplicity of passing them around.
+/// They'll never need payloads (value in path requested).
+///
+/// **Warning:** on the browser-side, this is defined as `()`.
+#[cfg(target_arch = "wasm32")]
+pub type Request = ();
+
 #[cfg(feature = "macros")]
 pub use perseus_macro::{
-    amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
-    global_build_state, head, main, main_export, make_rx, request_state, set_headers,
-    should_revalidate, template, template_rx, test, UnreactiveState,
+    browser, browser_main, browser_only_fn, engine, engine_main, engine_only_fn, main, main_export,
+    template, template_rx, test, ReactiveState, UnreactiveState,
 };
 pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
 pub use sycamore_router::{navigate, navigate_replace};
@@ -91,7 +97,11 @@ pub use crate::{
     error_pages::ErrorPages,
     errors::{ErrorCause, GenericErrorWithCause},
     init::*,
-    template::{RenderCtx, RenderFnResult, RenderFnResultWithCause, Template},
+    state::{RxResult, RxResultRef, SerdeInfallible},
+    template::{
+        BuildPaths, RenderCtx, RenderFnResult, RenderFnResultWithCause, StateGeneratorInfo,
+        Template,
+    },
 };
 // Browser-side only
 #[cfg(target_arch = "wasm32")]
@@ -120,16 +130,16 @@ pub mod prelude {
     #[cfg(not(target_arch = "wasm32"))]
     pub use crate::utils::{cache_fallible_res, cache_res};
     pub use crate::web_log;
+    pub use crate::{
+        blame_err, make_blamed_err, BuildPaths, ErrorCause, ErrorPages, GenericErrorWithCause,
+        PerseusApp, PerseusRoot, RenderCtx, RenderFnResult, RenderFnResultWithCause, Request,
+        RxResult, RxResultRef, SerdeInfallible, StateGeneratorInfo, Template,
+    };
     #[cfg(feature = "macros")]
     pub use crate::{
-        amalgamate_states, browser, browser_main, build_paths, build_state, engine, engine_main,
-        global_build_state, head, main, main_export, make_rx, request_state, set_headers,
-        should_revalidate, template, template_rx, test, UnreactiveState,
+        browser, browser_main, browser_only_fn, engine, engine_main, engine_only_fn, main,
+        main_export, template, template_rx, test, ReactiveState, UnreactiveState,
     };
-    #[cfg(feature = "i18n")]
+    #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};
-    pub use crate::{
-        ErrorCause, ErrorPages, GenericErrorWithCause, PerseusApp, PerseusRoot, RenderCtx,
-        RenderFnResult, RenderFnResultWithCause, Template,
-    };
 }

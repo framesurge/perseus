@@ -1,8 +1,7 @@
-use perseus::Template;
-use sycamore::prelude::{view, Html, Scope, SsrNode, View};
+use perseus::prelude::*;
+use sycamore::prelude::*;
 
-#[perseus::template]
-pub fn index_page<G: Html>(cx: Scope) -> View<G> {
+fn index_page<G: Html>(cx: Scope) -> View<G> {
     // We can't preload pages on the engine-side
     #[cfg(target_arch = "wasm32")]
     {
@@ -22,8 +21,8 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope) -> View<SsrNode> {
+#[engine_only_fn]
+fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "Index Page" }
     }

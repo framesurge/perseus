@@ -16,16 +16,16 @@ pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
                 .register_plugin("test-plugin", |_, _| {
                     let mut map = std::collections::HashMap::new();
                     map.insert("/Cargo.toml".to_string(), "Cargo.toml".to_string());
-                    map
+                    Ok(map)
                 });
             actions.settings_actions.add_templates.register_plugin(
                 "test-plugin",
                 |_, plugin_data| {
                     if let Some(plugin_data) = plugin_data.downcast_ref::<TestPluginData>() {
                         let about_page_greeting = plugin_data.about_page_greeting.to_string();
-                        vec![Template::new("about").template(
-                            move |cx, _| sycamore::view! { cx,  p { (about_page_greeting) } },
-                        )]
+                        Ok(vec![Template::new("about").template(move |cx| {
+                            sycamore::view! { cx,  p { (about_page_greeting) } }
+                        })])
                     } else {
                         unreachable!()
                     }
@@ -38,6 +38,7 @@ pub fn get_test_plugin<G: perseus::Html>() -> Plugin<G, TestPluginData> {
                 let test = "[package]\name = \"test\"";
                 let parsed: toml::Value = toml::from_str(test).unwrap();
                 println!("{}", toml::to_string(&parsed).unwrap());
+                Ok(())
             });
             actions
         },

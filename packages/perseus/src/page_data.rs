@@ -1,14 +1,13 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 /// Represents the data necessary to render a page, including document metadata.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PageData {
     /// Prerendered HTML content.
     pub content: String,
-    /// The state for hydration. This is kept as a string for ease of typing.
-    /// Some pages may not need state or generate it in another way, so this
-    /// might be `None`.
-    pub state: Option<String>,
+    /// The state for hydration.
+    pub state: Value,
     /// The string to interpolate into the document's `<head>`.
     pub head: String,
 }
@@ -20,10 +19,8 @@ pub struct PageData {
 /// Note that this still contains the `<head>`.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PageDataPartial {
-    /// The state for hydration. This is kept as a string for ease of typing.
-    /// Some pages may not need state or generate it in another way, so this
-    /// might be `None`.
-    pub state: Option<String>,
+    /// The state for hydration.
+    pub state: Value,
     /// The string to interpolate into the document's `<head>`.
     pub head: String,
 }

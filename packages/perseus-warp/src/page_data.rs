@@ -4,7 +4,9 @@ use perseus::{
     i18n::TranslationsManager,
     internal::PageDataPartial,
     server::{get_page_for_template, GetPageProps, ServerOptions},
+    state::GlobalStateCreator,
     stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
 };
 use serde::Deserialize;
 use std::sync::Arc;
@@ -33,7 +35,8 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
-    global_state: Arc<Option<String>>,
+    global_state: Arc<TemplateState>,
+    gsc: Arc<GlobalStateCreator>,
 ) -> Response<String> {
     let templates = &opts.templates_map;
     // Check if the locale is supported
@@ -64,21 +67,22 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
                 immutable_store: &immutable_store,
                 mutable_store: &mutable_store,
                 translations_manager: &translations_manager,
+                global_state_creator: &gsc,
             },
             template,
             false,
         )
         .await;
         match page_data {
-            Ok(page_data) => {
+            Ok((page_data, _)) => {
                 let partial_page_data = PageDataPartial {
-                    state: page_data.state,
+                    state: page_data.state.clone(),
                     head: page_data.head,
                 };
                 let mut http_res = Response::builder().status(200);
                 // http_res.content_type("text/html");
                 // Generate and add HTTP headers
-                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
+                for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                     http_res = http_res.header(key.unwrap(), val);
                 }
 

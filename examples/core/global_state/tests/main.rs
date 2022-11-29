@@ -12,13 +12,13 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
 
     // The initial text should be "Hello World!"
     let mut greeting = c.find(Locator::Css("p")).await?;
-    assert_eq!(greeting.text().await?, "Hello World!");
+    assert_eq!(greeting.text().await?, "Message from the builder: 'Hello from the build process!' Message from the server: 'Hello from the server!'");
     // Now type some text in, and it should be reactively reflected straight away
     c.find(Locator::Css("input"))
         .await?
         .send_keys(" Extra text.")
         .await?;
-    assert_eq!(greeting.text().await?, "Hello World! Extra text.");
+    assert_eq!(greeting.text().await?, "Message from the builder: 'Hello from the build process!' Message from the server: 'Hello from the server!' Extra text.");
 
     // Go to the about page and make sure the changed greeting is reflected there
     // too This tests that the global state is accessible from all pages
@@ -29,7 +29,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     wait_for_checkpoint!("page_interactive", 1, c);
 
     let greeting = c.find(Locator::Css("p")).await?.text().await?;
-    assert_eq!(greeting, "Hello World! Extra text.");
+    assert_eq!(greeting, "Message from the builder: 'Hello from the build process!' Message from the server: 'Hello from the server!' Extra text.");
 
     Ok(())
 }

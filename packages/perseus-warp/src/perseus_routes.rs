@@ -7,6 +7,7 @@ use crate::{
     translations::translations_handler,
 };
 use perseus::server::{get_render_cfg, ServerProps};
+use perseus::state::get_built_global_state;
 use perseus::{i18n::TranslationsManager, stores::MutableStore};
 use std::sync::Arc;
 use warp::Filter;
@@ -28,10 +29,9 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .expect("Couldn't get render configuration!");
     let index_with_render_cfg = opts.html_shell.clone();
     // Generate the global state
-    let global_state = global_state_creator
-        .get_build_state()
+    let global_state = get_built_global_state(&immutable_store)
         .await
-        .expect("Couldn't generate global state.");
+        .expect("couldn't get pre-built global state or placeholder (the app's build artifacts have almost certainly been corrupted)");
 
     // Handle static files
     let js_bundle = warp::path!(".perseus" / "bundle.js")
@@ -85,6 +85,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let render_cfg = warp::any().map(move || render_cfg.clone());
     let global_state = Arc::new(global_state);
     let global_state = warp::any().map(move || global_state.clone());
+    let gsc = warp::any().map(move || global_state_creator.clone());
 
     // Handle getting translations
     let translations = warp::path!(".perseus" / "translations" / String)
@@ -101,6 +102,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(mutable_store.clone())
         .and(translations_manager.clone())
         .and(global_state.clone())
+        .and(gsc.clone())
         .then(page_handler);
     // Handle initial loads (we use a wildcard for this)
     let initial_loads = warp::any()
@@ -113,6 +115,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(mutable_store)
         .and(translations_manager)
         .and(global_state)
+        .and(gsc)
         .then(initial_load_handler);
 
     // Now put all those routes together in the final thing (the user will add this

@@ -12,9 +12,20 @@ pub enum Error {
     #[cfg(not(target_arch = "wasm32"))]
     #[error(transparent)]
     ServerError(#[from] ServerError),
-    #[cfg(all(feature = "builder", not(target_arch = "wasm32")))]
+    #[cfg(not(target_arch = "wasm32"))]
     #[error(transparent)]
     EngineError(#[from] EngineError),
+    // Plugin errors could come from literally anywhere, and could have entirely arbitrary data
+    #[error(transparent)]
+    PluginError(#[from] PluginError),
+}
+
+#[derive(Error, Debug)]
+#[error("plugin '{name}' returned an error (this is unlikely to be Perseus' fault)")]
+pub struct PluginError {
+    pub name: String,
+    #[source]
+    pub source: Box<dyn std::error::Error>,
 }
 
 /// Errors that can occur in the server-side engine system (responsible for
@@ -71,11 +82,13 @@ pub enum ClientError {
     },
     // If the user is using the template macros, this should never be emitted because we can
     // ensure that the generated state is valid
-    #[error("tried to deserialize invalid state")]
+    #[error("tried to deserialize invalid state (it was not malformed, but the state was not of the declared type)")]
     StateInvalid {
         #[source]
         source: serde_json::Error,
     },
+    #[error("server informed us that a valid locale was invald (this almost certainly requires a hard reload)")]
+    ValidLocaleNotProvided { locale: String },
     #[error("the given path for preloading leads to a locale detection page; you probably wanted to wrap the path in `link!(...)`")]
     PreloadLocaleDetection,
     #[error("the given path for preloading was not found")]
@@ -109,8 +122,21 @@ pub enum ServerError {
         #[source]
         source: std::string::FromUtf8Error,
     },
-    #[error(transparent)]
-    GlobalStateError(#[from] GlobalStateError),
+    #[error("the template '{template_name}' had no helper build state written to the immutable store (the store has been tampered with, and the app must be rebuilt)")]
+    MissingBuildExtra { template_name: String },
+    #[error("the template '{template_name}' had invalid helper build state written to the immutable store (the store has been tampered with, and the app must be rebuilt)")]
+    InvalidBuildExtra {
+        template_name: String,
+        #[source]
+        source: serde_json::Error,
+    },
+    #[error("page state was encountered that could not be deserialized into serde_json::Value (the store has been tampered with, and the app must be rebuilt)")]
+    InvalidPageState {
+        #[source]
+        source: serde_json::Error,
+    },
+    #[error("the template name did not prefix the path (this request was severely malformed)")]
+    TemplateNameNotInPath,
     #[error(transparent)]
     StoreError(#[from] StoreError),
     #[error(transparent)]
@@ -135,16 +161,6 @@ pub fn err_to_status_code(err: &ServerError) -> u16 {
         // Any other errors go to a 500, they'll be misconfigurations or internal server errors
         _ => 500,
     }
-}
-
-/// Errors that can occur with regards to global state.
-#[derive(Error, Debug)]
-pub enum GlobalStateError {
-    #[error("couldn't generate global state at build time")]
-    BuildGenerationFailed {
-        #[source]
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
 }
 
 /// Errors that can occur while reading from or writing to a mutable or
@@ -221,10 +237,12 @@ pub enum BuildError {
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Error, Debug)]
 pub enum ExportError {
-    #[error("template '{template_name}' can't be exported because it depends on strategies that can't be run at build-time (only build state and build paths can be use din exportable templates)")]
+    #[error("template '{template_name}' can't be exported because it depends on strategies that can't be run at build-time (only build state and build paths can be used in exportable templates)")]
     TemplateNotExportable { template_name: String },
     #[error("template '{template_name}' wasn't found in built artifacts (run `perseus clean --dist` if this persists)")]
     TemplateNotFound { template_name: String },
+    #[error("your app can't be exported because its global state depends on strategies that can't be run at build time (only build state can be used in exportable apps)")]
+    GlobalStateNotExportable,
 }
 
 /// Errors that can occur while serving an app. These are integration-agnostic.

@@ -1,9 +1,9 @@
 use crate::error_pages::ErrorPageData;
 use crate::errors::*;
 use crate::i18n::detect_locale;
-use crate::router::match_route;
+use crate::router::{match_route, RouteManager};
 use crate::router::{RouteInfo, RouteVerdict, RouterLoadState};
-use crate::template::{PageProps, RenderCtx, TemplateNodeType};
+use crate::template::{RenderCtx, TemplateNodeType, TemplateState};
 use crate::utils::checkpoint;
 use fmterr::fmt_err;
 use sycamore::prelude::*;
@@ -23,9 +23,10 @@ use web_sys::Element;
 /// Note that this will automatically update the router state just before it
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
-pub(crate) fn get_initial_view(
-    cx: Scope,
+pub(crate) fn get_initial_view<'a>(
+    cx: Scope<'a>,
     path: String, // The full path, not the template path (but parsed a little)
+    route_manager: &'a RouteManager<'a, TemplateNodeType>,
 ) -> InitialView {
     let render_ctx = RenderCtx::from_ctx(cx);
     let router_state = &render_ctx.router;
@@ -54,7 +55,7 @@ pub(crate) fn get_initial_view(
             // Since we're not requesting anything from the server, we don't need to worry about
             // whether it's an incremental match or not
             was_incremental_match: _,
-        }) => InitialView::View({
+        }) => {
             let path_with_locale = match locale.as_str() {
                 "xx-XX" => path.clone(),
                 locale => format!("{}/{}", locale, &path),
@@ -93,7 +94,7 @@ pub(crate) fn get_initial_view(
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                 path: path_with_locale.clone(),
                             });
-                            return InitialView::View(error_pages.get_view_and_render_head(
+                            return InitialView::Error(error_pages.get_view_and_render_head(
                                 cx,
                                 "*",
                                 500,
@@ -110,39 +111,74 @@ pub(crate) fn get_initial_view(
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                 path: path_with_locale.clone(),
                             });
-                            return InitialView::View(match &err {
-                                // These errors happen because we couldn't get a translator, so they certainly don't get one
-                                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => error_pages.get_view_and_render_head(cx, url, *status, &fmt_err(&err), None),
-                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None),
-                                ClientError::LocaleNotSupported { .. } => error_pages.get_view_and_render_head(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
-                                // No other errors should be returned
-                                _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                            return InitialView::Error(match &err {
+                                // These errors happen because we couldn't get a translator, so they
+                                // certainly don't get one
+                                ClientError::FetchError(FetchError::NotOk {
+                                    url, status, ..
+                                }) => error_pages.get_view_and_render_head(
+                                    cx,
+                                    url,
+                                    *status,
+                                    &fmt_err(&err),
+                                    None,
+                                ),
+                                ClientError::FetchError(FetchError::SerFailed { url, .. }) => {
+                                    error_pages.get_view_and_render_head(
+                                        cx,
+                                        url,
+                                        500,
+                                        &fmt_err(&err),
+                                        None,
+                                    )
+                                }
+                                ClientError::LocaleNotSupported { .. } => error_pages
+                                    .get_view_and_render_head(
+                                        cx,
+                                        &format!("/{}/...", locale),
+                                        404,
+                                        &fmt_err(&err),
+                                        None,
+                                    ),
+                                // No other errors should be returned, but we'll give any a 400
+                                _ => error_pages.get_view_and_render_head(
+                                    cx,
+                                    &format!("/{}/...", locale),
+                                    400,
+                                    &fmt_err(&err),
+                                    None,
+                                ),
                             });
                         }
                     };
 
                     #[cfg(feature = "cache-initial-load")]
                     {
-                        // Cache the page's head in the PSS (getting it as realiably as we can)
+                        // Cache the page's head in the PSS (getting it as reliably as we can)
                         let head_str = get_head();
                         pss.add_head(&path, head_str);
                     }
 
                     let path = template.get_path();
-                    let page_props = PageProps {
-                        path: path_with_locale.clone(),
-                        state,
-                    };
                     // Pre-emptively declare the page interactive since all we do from this point
                     // is hydrate
                     checkpoint("page_interactive");
                     // Update the router state
                     router_state.set_load_state(RouterLoadState::Loaded {
                         template_name: path,
-                        path: path_with_locale,
+                        path: path_with_locale.clone(),
                     });
-                    // Return the actual template, for rendering/hydration
-                    template.render_for_template_client(page_props, cx, translator)
+                    // Render the actual template to the root (done imperatively due to child
+                    // scopes)
+                    template.render_for_template_client(
+                        path_with_locale,
+                        state,
+                        cx,
+                        route_manager,
+                        translator,
+                    );
+
+                    InitialView::Success
                 }
                 // We have an error that the server sent down, so we should just return that error
                 // view
@@ -152,7 +188,7 @@ pub(crate) fn get_initial_view(
                         path: path_with_locale.clone(),
                     });
                     // We don't need to replace the head, because the server's handled that for us
-                    error_pages.get_view(cx, &url, status, &err, None)
+                    InitialView::Error(error_pages.get_view(cx, &url, status, &err, None))
                 }
                 // The entire purpose of this function is to work with the initial state, so if this
                 // is true, then we have a problem
@@ -164,17 +200,17 @@ pub(crate) fn get_initial_view(
                     router_state.set_load_state(RouterLoadState::ErrorLoaded {
                         path: path_with_locale.clone(),
                     });
-                    error_pages.get_view_and_render_head(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None)
+                    InitialView::Error(error_pages.get_view_and_render_head(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None))
                 }
             }
-        }),
+        }
         // If the user is using i18n, then they'll want to detect the locale on any paths
         // missing a locale Those all go to the same system that redirects to the
         // appropriate locale Note that `container` doesn't exist for this scenario
         RouteVerdict::LocaleDetection(path) => {
             InitialView::Redirect(detect_locale(path.clone(), &locales))
         }
-        RouteVerdict::NotFound => InitialView::View({
+        RouteVerdict::NotFound => InitialView::Error({
             checkpoint("not_found");
             if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
                 router_state.set_load_state(RouterLoadState::ErrorLoaded { path: url.clone() });
@@ -202,8 +238,14 @@ pub(crate) fn get_initial_view(
 /// A representation of the possible outcomes of getting the view for the
 /// initial load.
 pub(crate) enum InitialView {
-    /// A view is available to be rendered/hydrated.
-    View(View<TemplateNodeType>),
+    /// The page has been successfully rendered and sent through the given
+    /// signal.
+    ///
+    /// Due to the use of child scopes, we can't just return a actual view,
+    /// this has to be done imperatively.
+    Success,
+    /// An error view has been produced, which should replace the current view.
+    Error(View<TemplateNodeType>),
     /// We need to redirect somewhere else, and the path to redirect to is
     /// attached.
     ///
@@ -219,9 +261,9 @@ pub(crate) enum InitialView {
 /// could also be an error that the server has rendered.
 #[derive(Debug)]
 enum InitialState {
-    /// A non-error initial state has been injected. This could be `None`, since
+    /// A non-error initial state has been injected. This could be empty, since
     /// not all pages have state.
-    Present(Option<String>),
+    Present(TemplateState),
     /// An initial state has been injected that indicates an error.
     Error(ErrorPageData),
     /// No initial state has been injected (or if it has, it's been deliberately
@@ -243,11 +285,7 @@ fn get_initial_state() -> InitialState {
         Some(state_str) => state_str,
         None => return InitialState::NotPresent,
     };
-    // On the server-side, we encode a `None` value directly (otherwise it will be
-    // some convoluted stringified JSON)
-    if state_str == "None" {
-        InitialState::Present(None)
-    } else if state_str.starts_with("error-") {
+    if state_str.starts_with("error-") {
         // We strip the prefix and escape any tab/newline control characters (inserted
         // by `fmterr`) Any others are user-inserted, and this is documented
         let err_page_data_str = state_str
@@ -267,7 +305,16 @@ fn get_initial_state() -> InitialState {
         };
         InitialState::Error(err_page_data)
     } else {
-        InitialState::Present(Some(state_str))
+        match TemplateState::from_str(&state_str) {
+            Ok(state) => InitialState::Present(state),
+            // An actual error means the state was provided, but it was malformed, so we'll render
+            // an error page
+            Err(err) => InitialState::Error(ErrorPageData {
+                url: "[current]".to_string(),
+                status: 500,
+                err: format!("couldn't serialize page data from server: '{}'", err),
+            }),
+        }
     }
 }
 
@@ -295,11 +342,13 @@ fn get_translations() -> Option<String> {
 /// comment (which prevents any JS that was loaded later from being included).
 /// This is not guaranteed to always get exactly the original head, but it's
 /// pretty good, and prevents unnecessary network requests, while enabling the
-/// caching of initially laoded pages.
+/// caching of initially loaded pages.
 #[cfg(feature = "cache-initial-load")]
 fn get_head() -> String {
     let document = web_sys::window().unwrap().document().unwrap();
     // Get the current head
+    // The server sends through a head, so we can guarantee that one is present (and
+    // it's mandated for custom initial views)
     let head_node = document.query_selector("head").unwrap().unwrap();
     // Get all the elements after the head boundary (otherwise we'd be duplicating
     // the initial stuff)

@@ -98,6 +98,13 @@ pub enum ExportError {
         #[source]
         source: std::io::Error,
     },
+    #[error("couldn't copy directory from '{from}' to '{to}' for exporting")]
+    MoveDirFailed {
+        to: String,
+        from: String,
+        #[source]
+        source: fs_extra::error::Error,
+    },
     // We need to execute in exports
     #[error(transparent)]
     ExecutionError(#[from] ExecutionError),

@@ -3,7 +3,7 @@ use crate::i18n::{Locales, TranslationsManager};
 use crate::page_data::PageDataPartial;
 use crate::server::{get_render_cfg, HtmlShell};
 use crate::stores::ImmutableStore;
-use crate::template::TemplateMap;
+use crate::template::{ArcTemplateMap, TemplateState};
 use crate::{page_data::PageData, SsrNode};
 use futures::future::{try_join, try_join_all};
 
@@ -21,12 +21,13 @@ pub async fn get_static_page_data(
         .read(&format!("static/{}.head.html", path))
         .await?;
     let state = match has_state {
-        true => Some(
-            immutable_store
+        true => serde_json::from_str(
+            &immutable_store
                 .read(&format!("static/{}.json", path))
                 .await?,
-        ),
-        false => None,
+        )
+        .map_err(|err| ServerError::InvalidPageState { source: err })?,
+        false => TemplateState::empty().state,
     };
     // Create an instance of `PageData`
     Ok(PageData {
@@ -40,7 +41,7 @@ pub async fn get_static_page_data(
 #[derive(Debug)]
 pub struct ExportProps<'a, T: TranslationsManager> {
     /// All the templates in the app.
-    pub templates: &'a TemplateMap<SsrNode>,
+    pub templates: &'a ArcTemplateMap<SsrNode>,
     /// The HTML shell to use.
     pub html_shell: HtmlShell,
     /// The locales data for the app.
@@ -52,7 +53,7 @@ pub struct ExportProps<'a, T: TranslationsManager> {
     /// The server-side path prefix/
     pub path_prefix: String,
     /// A stringified global state.
-    pub global_state: &'a Option<String>,
+    pub global_state: &'a TemplateState,
 }
 
 /// Exports your app to static files, which can be served from anywhere, without
@@ -133,12 +134,12 @@ pub async fn create_translation_file(
 #[allow(clippy::too_many_arguments)]
 pub async fn export_path(
     (path, template_path): (String, String),
-    templates: &TemplateMap<SsrNode>,
+    templates: &ArcTemplateMap<SsrNode>,
     locales: &Locales,
     html_shell: &HtmlShell,
     immutable_store: &ImmutableStore,
     path_prefix: String,
-    global_state: &Option<String>,
+    global_state: &TemplateState,
     translations_manager: &impl TranslationsManager,
 ) -> Result<(), ServerError> {
     // We need the encoded path to reference flattened build artifacts

@@ -7,7 +7,9 @@ use perseus::{
         build_error_page, get_page_for_template, get_path_slice, GetPageProps, HtmlShell,
         ServerOptions,
     },
+    state::GlobalStateCreator,
     stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
     utils::get_path_prefix_server,
     ErrorPages, SsrNode,
 };
@@ -41,7 +43,8 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     immutable_store: Arc<ImmutableStore>,
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
-    global_state: Arc<Option<String>>,
+    global_state: Arc<TemplateState>,
+    gsc: Arc<GlobalStateCreator>,
 ) -> Response<String> {
     let error_pages = &opts.error_pages;
     let path = match urlencoding::decode(path.as_str()) {
@@ -88,12 +91,13 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                     immutable_store: &immutable_store,
                     mutable_store: &mutable_store,
                     translations_manager: &translations_manager,
+                    global_state_creator: &gsc,
                 },
                 template,
                 true,
             )
             .await;
-            let page_data = match page_data {
+            let (page_data, global_state) = match page_data {
                 Ok(page_data) => page_data,
                 // We parse the error to return an appropriate status code
                 Err(err) => {
@@ -122,7 +126,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
             let mut http_res = Response::builder().status(200);
             // http_res.content_type("text/html");
             // Generate and add HTTP headers
-            for (key, val) in template.get_headers(page_data.state) {
+            for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                 http_res = http_res.header(key.unwrap(), val);
             }
 

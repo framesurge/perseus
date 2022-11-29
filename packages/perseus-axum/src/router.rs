@@ -8,8 +8,11 @@ use axum::{
     Router,
 };
 use closure::closure;
-use perseus::server::{get_render_cfg, ServerProps};
 use perseus::{i18n::TranslationsManager, stores::MutableStore};
+use perseus::{
+    server::{get_render_cfg, ServerProps},
+    state::get_built_global_state,
+};
 use std::sync::Arc;
 use tower_http::services::{ServeDir, ServeFile};
 
@@ -29,10 +32,9 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         .expect("Couldn't get render configuration!");
     let index_with_render_cfg = opts.html_shell.clone();
     // Generate the global state
-    let global_state = global_state_creator
-        .get_build_state()
+    let global_state = get_built_global_state(&immutable_store)
         .await
-        .expect("Couldn't generate global state.");
+        .expect("couldn't get pre-built global state or placeholder (the app's build artifacts have almost certainly been corrupted)");
 
     let immutable_store = Arc::new(immutable_store);
     let mutable_store = Arc::new(mutable_store);
@@ -74,6 +76,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
                 clone mutable_store,
                 clone translations_manager,
                 clone global_state,
+                clone global_state_creator,
                 |path, query, http_req|
                     page_handler::<M, T>(
                         path,
@@ -83,7 +86,8 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
                         immutable_store,
                         mutable_store,
                         translations_manager,
-                        global_state
+                        global_state,
+                        global_state_creator,
                     )
             )
         ));
@@ -112,6 +116,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         clone mutable_store,
         clone translations_manager,
         clone global_state,
+        clone global_state_creator,
         |http_req|
         initial_load_handler::<M, T>(
             http_req,
@@ -121,7 +126,8 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             immutable_store,
             mutable_store,
             translations_manager,
-            global_state
+            global_state,
+            global_state_creator,
         )
     )))
 }

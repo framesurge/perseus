@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
-        .template(|| Template::new("index").template(index_page))
+        .template(Template::new("index").template(index_page))
         // EXCERPT_START
         .locales_and_translations_manager(
             "en-US",             // Default locale
@@ -18,7 +18,6 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 // `/es-ES`, or `/fr-FR` based on the user's locale settings in their browser,
 // all automatically. If nothing matches, the default locale (`en-US`) will be
 // used.
-#[perseus::template]
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         h1 { (t!("greeting", cx)) }

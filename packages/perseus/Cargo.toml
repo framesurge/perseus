@@ -40,6 +40,7 @@ minify-html-onepass = "0.10.1"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 rexie = { version = "0.2", optional = true }
 js-sys = { version = "0.3", optional = true }
+# Note that this is not needed in production, but that can't be specified, so it will just be compiled away to nothing
 console_error_panic_hook = { version = "0.1.6", optional = true }
 # TODO review feature flags here
 web-sys = { version = "0.3", features = [ "Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window" ] }

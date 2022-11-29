@@ -1,9 +1,9 @@
-use crate::global_state::*;
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-#[perseus::template]
-fn index_view<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+use crate::global_state::*;
+
+fn index_view<G: Html>(cx: Scope) -> View<G> {
     let AppStateRx { auth } = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
 
     let AuthDataRx { state, username } = auth;

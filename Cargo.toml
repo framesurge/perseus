@@ -6,11 +6,6 @@ members = [
     "examples/comprehensive/*",
     "examples/website/*",
     "website",
-    # We have the CLI subcrates as workspace members so we can actively develop on them
-    # They also can't be a workspace until nested workspaces are supported
-    # "examples/core/basic/.perseus",
-    # "examples/core/basic/.perseus/server",
-    # "examples/core/basic/.perseus/builder"
 ]
 resolver = "2"
 

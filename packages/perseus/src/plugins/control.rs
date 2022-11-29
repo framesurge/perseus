@@ -1,3 +1,4 @@
+use crate::errors::PluginError;
 use crate::plugins::*;
 use std::any::Any;
 use std::collections::HashMap;
@@ -15,26 +16,38 @@ pub struct ControlPluginAction<A, R> {
 }
 impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
     /// Runs the single registered runner for the action.
-    fn run(&self, action_data: A, plugin_data: &HashMap<String, Box<dyn Any + Send>>) -> Option<R> {
+    fn run(
+        &self,
+        action_data: A,
+        plugin_data: &HashMap<String, Box<dyn Any + Send>>,
+    ) -> Result<Option<R>, PluginError> {
         // If no runner is defined, this won't have any effect (same as functional
         // actions with no registered runners)
-        self.runner.as_ref().map(|runner| {
-            runner(
-                &action_data,
-                // We must have data registered for every active plugin (even if it's empty)
-                &**plugin_data.get(&self.controller_name).unwrap_or_else(|| {
-                    panic!(
-                        "no plugin data for registered plugin {}",
-                        &self.controller_name
-                    )
-                }),
-            )
-        })
+        self.runner
+            .as_ref()
+            .map(|runner| {
+                runner(
+                    &action_data,
+                    // We must have data registered for every active plugin (even if it's empty)
+                    &**plugin_data.get(&self.controller_name).unwrap_or_else(|| {
+                        panic!(
+                            "no plugin data for registered plugin {}",
+                            &self.controller_name
+                        )
+                    }),
+                )
+                .map_err(|err| PluginError {
+                    name: self.controller_name.to_string(),
+                    source: err,
+                })
+            })
+            // Turn `Option<Result<T, E>>` -> `Result<Option<T>, E>`
+            .transpose()
     }
     fn register_plugin(
         &mut self,
         name: &str,
-        runner: impl Fn(&A, &(dyn Any + Send)) -> R + Send + 'static,
+        runner: impl Fn(&A, &(dyn Any + Send)) -> Result<R, Box<dyn std::error::Error>> + Send + 'static,
     ) {
         self.register_plugin_box(name, Box::new(runner))
     }

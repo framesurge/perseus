@@ -1,6 +1,6 @@
 use crate::build::{build_app, BuildProps};
-use crate::errors::ServerError;
 use crate::export::{export_app, ExportProps};
+use crate::state::get_built_global_state;
 use crate::{
     plugins::{PluginAction, Plugins},
     utils::get_path_prefix_server,
@@ -23,12 +23,19 @@ use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 /// Note that this expects to be run in the root of the project.
 pub async fn export<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
-) -> Result<(), Rc<EngineError>> {
+) -> Result<(), Rc<Error>> {
     let plugins = app.get_plugins();
-    let static_aliases = app.get_static_aliases();
+    let static_aliases = app
+        .get_static_aliases()
+        .map_err(|err| Rc::new(err.into()))?;
     // This won't have any trailing slashes (they're stripped by the immutable store
     // initializer)
-    let dest = format!("{}/exported", app.get_immutable_store().get_path());
+    let dest = format!(
+        "{}/exported",
+        app.get_immutable_store()
+            .map_err(|err| Rc::new(err.into()))?
+            .get_path()
+    );
     let static_dir = app.get_static_dir();
 
     build_and_export(app).await?;
@@ -40,7 +47,8 @@ pub async fn export<M: MutableStore, T: TranslationsManager>(
         .functional_actions
         .export_actions
         .after_successful_export
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())
+        .map_err(|err| Rc::new(err.into()))?;
 
     Ok(())
 }
@@ -50,36 +58,28 @@ pub async fn export<M: MutableStore, T: TranslationsManager>(
 /// `PerseusApp`.
 async fn build_and_export<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
-) -> Result<(), Rc<EngineError>> {
+) -> Result<(), Rc<Error>> {
     let plugins = app.get_plugins();
 
     plugins
         .functional_actions
         .build_actions
         .before_build
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())
+        .map_err(|err| Rc::new(err.into()))?;
 
-    let immutable_store = app.get_immutable_store();
+    let immutable_store = app
+        .get_immutable_store()
+        .map_err(|err| Rc::new(err.into()))?;
     // We don't need this in exporting, but the build process does
     let mutable_store = app.get_mutable_store();
-    let locales = app.get_locales();
-    // Generate the global state
     let gsc = app.get_global_state_creator();
-    let global_state = match gsc.get_build_state().await {
-        Ok(global_state) => global_state,
-        Err(err) => {
-            let err: Rc<EngineError> = Rc::new(ServerError::GlobalStateError(err).into());
-            plugins
-                .functional_actions
-                .export_actions
-                .after_failed_global_state_creation
-                .run(err.clone(), plugins.get_plugin_data());
-            return Err(err);
-        }
-    };
-    let templates_map = app.get_templates_map();
+    let locales = app.get_locales().map_err(|err| Rc::new(err.into()))?;
+    let templates_map = app
+        .get_atomic_templates_map()
+        .map_err(|err| Rc::new(err.into()))?;
     let index_view_str = app.get_index_view_str();
-    let root_id = app.get_root();
+    let root_id = app.get_root().map_err(|err| Rc::new(err.into()))?;
     // This consumes `self`, so we get it finally
     let translations_manager = app.get_translations_manager().await;
 
@@ -92,30 +92,38 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
         immutable_store: &immutable_store,
         mutable_store: &mutable_store,
         translations_manager: &translations_manager,
-        global_state: &global_state,
+        global_state_creator: &gsc,
         exporting: true,
     })
     .await;
     if let Err(err) = build_res {
-        let err: Rc<EngineError> = Rc::new(err.into());
+        let err: Rc<Error> = Rc::new(err.into());
         plugins
             .functional_actions
             .export_actions
             .after_failed_build
-            .run(err.clone(), plugins.get_plugin_data());
+            .run(err.clone(), plugins.get_plugin_data())
+            .map_err(|err| Rc::new(err.into()))?;
         return Err(err);
     }
     plugins
         .functional_actions
         .export_actions
         .after_successful_build
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())
+        .map_err(|err| Rc::new(err.into()))?;
+    // Get the global state that should've just been written
+    let global_state = get_built_global_state(&immutable_store)
+        .await
+        .map_err(|err| Rc::new(err.into()))?;
     // The app has now been built, so we can safely instantiate the HTML shell
     // (which needs access to the render config, generated in the above build step)
     // It doesn't matter if the type parameters here are wrong, this function
     // doesn't use them
     let index_view =
-        PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins).await;
+        PerseusApp::get_html_shell(index_view_str, &root_id, &immutable_store, &plugins)
+            .await
+            .map_err(|err| Rc::new(err.into()))?;
     // Turn the build artifacts into self-contained static files
     let export_res = export_app(ExportProps {
         templates: &templates_map,
@@ -128,12 +136,13 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
     })
     .await;
     if let Err(err) = export_res {
-        let err: Rc<EngineError> = Rc::new(err.into());
+        let err: Rc<Error> = Rc::new(err.into());
         plugins
             .functional_actions
             .export_actions
             .after_failed_export
-            .run(err.clone(), plugins.get_plugin_data());
+            .run(err.clone(), plugins.get_plugin_data())
+            .map_err(|err| Rc::new(err.into()))?;
         return Err(err);
     }
 
@@ -152,7 +161,7 @@ fn copy_static_aliases(
     plugins: &Plugins<SsrNode>,
     static_aliases: &HashMap<String, String>,
     dest: &str,
-) -> Result<(), Rc<EngineError>> {
+) -> Result<(), Rc<Error>> {
     // Loop through any static aliases and copy them in too
     // Unlike with the server, these could override pages!
     // We'll copy from the alias to the path (it could be a directory or a file)
@@ -168,12 +177,13 @@ fn copy_static_aliases(
                     to,
                     from: path.to_string(),
                 };
-                let err = Rc::new(err);
+                let err: Rc<Error> = Rc::new(err.into());
                 plugins
                     .functional_actions
                     .export_actions
                     .after_failed_static_alias_dir_copy
-                    .run(err.clone(), plugins.get_plugin_data());
+                    .run(err.clone(), plugins.get_plugin_data())
+                    .map_err(|err| Rc::new(err.into()))?;
                 return Err(err);
             }
         } else if let Err(err) = fs::copy(&from, &to) {
@@ -182,12 +192,13 @@ fn copy_static_aliases(
                 to,
                 from: path.to_string(),
             };
-            let err = Rc::new(err);
+            let err: Rc<Error> = Rc::new(err.into());
             plugins
                 .functional_actions
                 .export_actions
                 .after_failed_static_alias_file_copy
-                .run(err.clone(), plugins.get_plugin_data());
+                .run(err.clone(), plugins.get_plugin_data())
+                .map_err(|err| Rc::new(err.into()))?;
             return Err(err);
         }
     }
@@ -202,7 +213,7 @@ fn copy_static_dir(
     plugins: &Plugins<SsrNode>,
     static_dir_raw: &str,
     dest: &str,
-) -> Result<(), Rc<EngineError>> {
+) -> Result<(), Rc<Error>> {
     // Copy the `static` directory into the export package if it exists
     // If the user wants extra, they can use static aliases, plugins are unnecessary
     // here
@@ -218,12 +229,13 @@ fn copy_static_dir(
                 path: static_dir_raw.to_string(),
                 dest: dest.to_string(),
             };
-            let err = Rc::new(err);
+            let err: Rc<Error> = Rc::new(err.into());
             plugins
                 .functional_actions
                 .export_actions
                 .after_failed_static_copy
-                .run(err.clone(), plugins.get_plugin_data());
+                .run(err.clone(), plugins.get_plugin_data())
+                .map_err(|err| Rc::new(err.into()))?;
             return Err(err);
         }
     }

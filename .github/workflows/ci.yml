@@ -102,6 +102,16 @@ jobs:
               if: steps.cache.outputs.cache-hit != 'true'
               run: cargo install bonnie rust-script
 
+            # Also cache all the other Cargo files, since plenty of CI runs won't involve different dependencies
+            - uses: actions/cache@v3
+              with:
+                path: |
+                  ~/.cargo/registry/index/
+                  ~/.cargo/registry/cache/
+                  ~/.cargo/git/db/
+                  target/
+                key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+
             # # Also cache the apt packages we need for testing
             # - uses: awalsh128/cache-apt-pkgs-action@latest
             #   with:

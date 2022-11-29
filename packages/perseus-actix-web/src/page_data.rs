@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::conv_req::convert_req;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use fmterr::fmt_err;
@@ -6,7 +8,9 @@ use perseus::{
     i18n::TranslationsManager,
     internal::PageDataPartial,
     server::{get_page_for_template, GetPageProps, ServerOptions},
+    state::GlobalStateCreator,
     stores::{ImmutableStore, MutableStore},
+    template::TemplateState,
 };
 use serde::Deserialize;
 
@@ -25,7 +29,8 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
     immutable_store: web::Data<ImmutableStore>,
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
-    global_state: web::Data<Option<String>>,
+    global_state: web::Data<TemplateState>,
+    gsc: web::Data<Arc<GlobalStateCreator>>,
     web::Query(query_params): web::Query<PageDataReq>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
@@ -67,21 +72,22 @@ pub async fn page_data<M: MutableStore, T: TranslationsManager>(
                 immutable_store: immutable_store.get_ref(),
                 mutable_store: mutable_store.get_ref(),
                 translations_manager: translations_manager.get_ref(),
+                global_state_creator: gsc.get_ref(),
             },
             template,
             false, // For subsequent loads, we don't want to render content (the client can do it)
         )
         .await;
         match page_data {
-            Ok(page_data) => {
+            Ok((page_data, _)) => {
                 let partial_page_data = PageDataPartial {
-                    state: page_data.state,
+                    state: page_data.state.clone(),
                     head: page_data.head,
                 };
                 let mut http_res = HttpResponse::Ok();
                 http_res.content_type("text/html");
                 // Generate and add HTTP headers
-                for (key, val) in template.get_headers(partial_page_data.state.clone()) {
+                for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
                     http_res.insert_header((key.unwrap(), val));
                 }
 

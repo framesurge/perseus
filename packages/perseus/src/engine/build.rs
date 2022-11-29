@@ -1,10 +1,7 @@
 use crate::build::{build_app, BuildProps};
+use crate::errors::Error;
 use crate::{
-    errors::{EngineError, ServerError},
-    i18n::TranslationsManager,
-    plugins::PluginAction,
-    stores::MutableStore,
-    PerseusAppBase, SsrNode,
+    i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore, PerseusAppBase, SsrNode,
 };
 use std::rc::Rc;
 
@@ -15,37 +12,29 @@ use std::rc::Rc;
 /// Note that this expects to be run in the root of the project.
 pub async fn build<M: MutableStore, T: TranslationsManager>(
     app: PerseusAppBase<SsrNode, M, T>,
-) -> Result<(), Rc<EngineError>> {
+) -> Result<(), Rc<Error>> {
     let plugins = app.get_plugins();
 
     plugins
         .functional_actions
         .build_actions
         .before_build
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())
+        .map_err(|err| Rc::new(err.into()))?;
 
-    let immutable_store = app.get_immutable_store();
+    let immutable_store = app
+        .get_immutable_store()
+        .map_err(|err| Rc::new(err.into()))?;
     let mutable_store = app.get_mutable_store();
-    let locales = app.get_locales();
-    // Generate the global state
+    let locales = app.get_locales().map_err(|err| Rc::new(err.into()))?;
     let gsc = app.get_global_state_creator();
-    let global_state = match gsc.get_build_state().await {
-        Ok(global_state) => global_state,
-        Err(err) => {
-            let err: Rc<EngineError> = Rc::new(ServerError::GlobalStateError(err).into());
-            plugins
-                .functional_actions
-                .build_actions
-                .after_failed_global_state_creation
-                .run(err.clone(), plugins.get_plugin_data());
-            return Err(err);
-        }
-    };
 
     // Build the site for all the common locales (done in parallel)
     // All these parameters can be modified by `PerseusApp` and plugins, so there's
     // no point in having a plugin opportunity here
-    let templates_map = app.get_templates_map();
+    let templates_map = app
+        .get_atomic_templates_map()
+        .map_err(|err| Rc::new(err.into()))?;
 
     // We have to get the translations manager last, because it consumes everything
     let translations_manager = app.get_translations_manager().await;
@@ -56,17 +45,18 @@ pub async fn build<M: MutableStore, T: TranslationsManager>(
         immutable_store: &immutable_store,
         mutable_store: &mutable_store,
         translations_manager: &translations_manager,
-        global_state: &global_state,
+        global_state_creator: &gsc,
         exporting: false,
     })
     .await;
     if let Err(err) = res {
-        let err: Rc<EngineError> = Rc::new(err.into());
+        let err: Rc<Error> = Rc::new(err.into());
         plugins
             .functional_actions
             .build_actions
             .after_failed_build
-            .run(err.clone(), plugins.get_plugin_data());
+            .run(err.clone(), plugins.get_plugin_data())
+            .map_err(|err| Rc::new(err.into()))?;
 
         Err(err)
     } else {
@@ -74,7 +64,8 @@ pub async fn build<M: MutableStore, T: TranslationsManager>(
             .functional_actions
             .build_actions
             .after_successful_build
-            .run((), plugins.get_plugin_data());
+            .run((), plugins.get_plugin_data())
+            .map_err(|err| Rc::new(err.into()))?;
 
         Ok(())
     }

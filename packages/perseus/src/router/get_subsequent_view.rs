@@ -1,19 +1,22 @@
 use crate::errors::*;
 use crate::page_data::PageDataPartial;
-use crate::router::{RouteVerdict, RouterLoadState};
+use crate::router::{RouteManager, RouteVerdict, RouterLoadState};
 use crate::state::PssContains;
-use crate::template::{PageProps, RenderCtx, Template, TemplateNodeType};
+use crate::template::{RenderCtx, Template, TemplateNodeType, TemplateState};
 use crate::utils::checkpoint;
 use crate::utils::fetch;
 use crate::utils::get_path_prefix_client;
 use crate::utils::replace_head;
 use fmterr::fmt_err;
+use serde_json::Value;
 use std::rc::Rc;
 use sycamore::prelude::*;
 
 pub(crate) struct GetSubsequentViewProps<'a> {
     /// The app's reactive scope.
     pub cx: Scope<'a>,
+    /// The app's route manager.
+    pub route_manager: &'a RouteManager<'a, TemplateNodeType>,
     /// The path we're rendering for (not the template path, the full path,
     /// though parsed a little).
     pub path: String,
@@ -41,17 +44,17 @@ pub(crate) struct GetSubsequentViewProps<'a> {
 /// Note that this will automatically update the router state just before it
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
-// TODO Eliminate all panics in this function
 pub(crate) async fn get_subsequent_view(
     GetSubsequentViewProps {
         cx,
+        route_manager,
         path,
         template,
         was_incremental_match,
         locale,
         route_verdict,
     }: GetSubsequentViewProps<'_>,
-) -> View<TemplateNodeType> {
+) -> SubsequentView {
     let render_ctx = RenderCtx::from_ctx(cx);
     let router_state = &render_ctx.router;
     let translations_manager = &render_ctx.translations_manager;
@@ -108,12 +111,18 @@ pub(crate) async fn get_subsequent_view(
                                 pss.add_head(&path, page_data.head.to_string());
                                 Ok(page_data)
                             }
-                            // If the page failed to serialize, an exception has occurred
+                            // If the page failed to serialize, it's a server error
                             Err(err) => {
                                 router_state.set_load_state(RouterLoadState::ErrorLoaded {
                                     path: path_with_locale.clone(),
                                 });
-                                panic!("page data couldn't be serialized: '{}'", err)
+                                Err(error_pages.get_view_and_render_head(
+                                    cx,
+                                    &asset_url,
+                                    500,
+                                    &fmt_err(&err),
+                                    None,
+                                ))
                             }
                         }
                     }
@@ -146,21 +155,27 @@ pub(crate) async fn get_subsequent_view(
                                 None,
                             ))
                         }
-                        // No other errors should be returned
-                        _ => panic!("expected 'AssetNotOk' error, found other unacceptable error"),
+                        // No other errors should be returned, but we'll give any a 400
+                        _ => Err(error_pages.get_view_and_render_head(
+                            cx,
+                            &asset_url,
+                            400,
+                            &fmt_err(&err),
+                            None,
+                        )),
                     }
                 }
             }
         }
         // We have everything locally, so we can move right ahead!
         PssContains::All => Ok(PageDataPartial {
-            state: Some("PSS".to_string()), /* The macros will preferentially use the PSS state,
-                                             * so this will never be parsed */
+            state: Value::Null, /* The macros will preferentially use the PSS state,
+                                 * so this will never be parsed */
             head: pss.get_head(&path).unwrap(),
         }),
         // We only have document metadata, but the page definitely takes no state, so we're fine
         PssContains::HeadNoState => Ok(PageDataPartial {
-            state: None,
+            state: Value::Null,
             head: pss.get_head(&path).unwrap(),
         }),
         // The page's data has been preloaded at some other time
@@ -176,7 +191,7 @@ pub(crate) async fn get_subsequent_view(
     // Any errors will be prepared error pages ready for return
     let page_data = match page_data {
         Ok(page_data) => page_data,
-        Err(view) => return view,
+        Err(view) => return SubsequentView::Error(view),
     };
 
     // Interpolate the metadata directly into the document's `<head>`
@@ -194,28 +209,71 @@ pub(crate) async fn get_subsequent_view(
                 path: path_with_locale.clone(),
             });
             match &err {
-                // These errors happen because we couldn't get a translator, so they certainly don't get one
-                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => return error_pages.get_view_and_render_head(cx, url, *status, &fmt_err(&err), None),
-                ClientError::FetchError(FetchError::SerFailed { url, .. }) => return error_pages.get_view_and_render_head(cx, url, 500, &fmt_err(&err), None),
-                ClientError::LocaleNotSupported { locale } => return error_pages.get_view_and_render_head(cx, &format!("/{}/...", locale), 404, &fmt_err(&err), None),
-                // No other errors should be returned
-                _ => panic!("expected 'AssetNotOk'/'AssetSerFailed'/'LocaleNotSupported' error, found other unacceptable error")
+                // These errors happen because we couldn't get a translator, so they certainly don't
+                // get one
+                ClientError::FetchError(FetchError::NotOk { url, status, .. }) => {
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
+                        cx,
+                        url,
+                        *status,
+                        &fmt_err(&err),
+                        None,
+                    ))
+                }
+                ClientError::FetchError(FetchError::SerFailed { url, .. }) => {
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
+                        cx,
+                        url,
+                        500,
+                        &fmt_err(&err),
+                        None,
+                    ))
+                }
+                ClientError::LocaleNotSupported { locale } => {
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
+                        cx,
+                        &format!("/{}/...", locale),
+                        404,
+                        &fmt_err(&err),
+                        None,
+                    ))
+                }
+                // No other errors should be returned, but we'll give any a 400
+                _ => {
+                    return SubsequentView::Error(error_pages.get_view_and_render_head(
+                        cx,
+                        &format!("/{}/...", locale),
+                        400,
+                        &fmt_err(&err),
+                        None,
+                    ))
+                }
             }
         }
     };
 
-    let page_props = PageProps {
-        path: path_with_locale.clone(),
-        state: page_data.state,
-    };
     let template_name = template.get_path();
     // Pre-emptively update the router state
     checkpoint("page_interactive");
     // Update the router state
     router_state.set_load_state(RouterLoadState::Loaded {
         template_name,
-        path: path_with_locale,
+        path: path_with_locale.clone(),
     });
     // Now return the view that should be rendered
-    template.render_for_template_client(page_props, cx, translator)
+    template.render_for_template_client(
+        path_with_locale,
+        TemplateState::from_value(page_data.state),
+        cx,
+        route_manager,
+        translator,
+    );
+    SubsequentView::Success
+}
+
+pub(crate) enum SubsequentView {
+    /// The page view *has been* rendered *and* displayed.
+    Success,
+    /// An error view was rendered, and shoudl now be displayed.
+    Error(View<TemplateNodeType>),
 }

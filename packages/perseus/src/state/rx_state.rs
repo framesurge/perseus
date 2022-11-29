@@ -27,6 +27,31 @@ pub trait MakeUnrx {
     /// with the unreactive, meaning greater inference and fewer arguments
     /// that the user needs to provide to macros.
     fn make_unrx(self) -> Self::Unrx;
+    /// Calls all handlers on suspended state, spawning scoped futures for each
+    /// of them (the futures *must* be scoped to prevent the same handler
+    /// being run multiple times concurrently if a user leaves the page and
+    /// then comes back).
+    ///
+    /// This has no return type, since it simply spawns futures for each of the
+    /// user's handlers. Each handler must have the following function
+    /// signature:
+    ///
+    /// ```
+    /// Fn(Scope<'a>, RxRef<'a>);
+    /// ```
+    ///
+    /// Here, `RxRef` denotes the reference `struct` their template would be
+    /// provided with. In the case of an individual, non-nested field, this
+    /// will be `&'a Signal<T>`, where `T` is the type of the field.
+    ///
+    /// Fallible handlers should operate on fields with type `Result<T, E>` so
+    /// they can propagate errors directly back to the user's template code.
+    ///
+    /// If you're implementing `MakeUnrx` manually, you can usually leave the
+    /// body of this function empty unless you're using the suspended state
+    /// system.
+    #[cfg(target_arch = "wasm32")]
+    fn compute_suspense<'a>(&self, cx: Scope<'a>);
 }
 
 /// A trait for reactive `struct`s that can be made to use `&'a Signal`s
@@ -110,6 +135,9 @@ impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> MakeUnr
     fn make_unrx(self) -> Self::Unrx {
         self.0
     }
+    // Suspense is not allowed on unreactive state
+    #[cfg(target_arch = "wasm32")]
+    fn compute_suspense(&self, _cx: Scope) {}
 }
 // And, since the underlying type can be serialized, implement `Freeze`
 impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> Freeze

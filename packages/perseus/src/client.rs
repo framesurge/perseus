@@ -1,13 +1,14 @@
+use crate::errors::PluginError;
 use crate::{
     checkpoint,
     plugins::PluginAction,
     router::{perseus_router, PerseusRouterProps},
     template::TemplateNodeType,
 };
+use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
+use fmterr::fmt_err;
 use std::collections::HashMap;
 use wasm_bindgen::JsValue;
-
-use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 
 /// The entrypoint into the app itself. This will be compiled to Wasm and
 /// actually executed, rendering the rest of the app. Runs the app in the
@@ -22,18 +23,44 @@ use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
     app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
 ) -> Result<(), JsValue> {
-    let app = app();
-    let plugins = app.get_plugins();
+    let mut app = app();
+    let panic_handler = app.take_panic_handler();
 
     checkpoint("begin");
-    // Panics should always go to the console
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+    // Handle panics (this works for unwinds and aborts)
+    std::panic::set_hook(Box::new(move |panic_info| {
+        // Print to the console in development
+        #[cfg(debug_assertions)]
+        console_error_panic_hook::hook(panic_info);
+        // If the user wants a little warning dialogue, create that
+        if let Some(panic_handler) = &panic_handler {
+            panic_handler(panic_info);
+        }
+    }));
+
+    let res = client_core(app);
+    if let Err(err) = res {
+        // This will go to the panic handler we defined above
+        // Unfortunately, at this stage, we really can't do anything else
+        panic!("plugin error: {}", fmt_err(&err));
+    }
+
+    Ok(())
+}
+
+/// This executes the actual underlying browser-side logic, including
+/// instantiating the user's app. This is broken out due to plugin fallibility.
+fn client_core<M: MutableStore, T: TranslationsManager>(
+    app: PerseusAppBase<TemplateNodeType, M, T>,
+) -> Result<(), PluginError> {
+    let plugins = app.get_plugins();
 
     plugins
         .functional_actions
         .client_actions
         .start
-        .run((), plugins.get_plugin_data());
+        .run((), plugins.get_plugin_data())?;
     checkpoint("initial_plugins_complete");
 
     // Get the root we'll be injecting the router into
@@ -41,15 +68,15 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         .unwrap()
         .document()
         .unwrap()
-        .query_selector(&format!("#{}", app.get_root()))
+        .query_selector(&format!("#{}", app.get_root()?))
         .unwrap()
         .unwrap();
 
     // Set up the properties we'll pass to the router
     let router_props = PerseusRouterProps {
-        locales: app.get_locales(),
+        locales: app.get_locales()?,
         error_pages: app.get_error_pages(),
-        templates: app.get_templates_map(),
+        templates: app.get_templates_map()?,
         render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
         pss_max_size: app.get_pss_max_size(),
     };
@@ -61,6 +88,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 
     // This top-level context is what we use for everything, allowing page state to
     // be registered and stored for the lifetime of the app
+    // Note: root lifetime creation occurs here
     #[cfg(feature = "hydrate")]
     sycamore::hydrate_to(move |cx| perseus_router(cx, router_props), &root);
     #[cfg(not(feature = "hydrate"))]

@@ -1,6 +1,7 @@
 use super::*;
 #[cfg(not(target_arch = "wasm32"))]
-use crate::errors::EngineError;
+use crate::errors::Error;
+use crate::errors::PluginError;
 use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
@@ -18,7 +19,7 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
         &self,
         action_data: A,
         plugin_data: &HashMap<String, Box<dyn Any + Send>>,
-    ) -> HashMap<String, R> {
+    ) -> Result<HashMap<String, R>, PluginError> {
         let mut returns = HashMap::new();
         for (plugin_name, runner) in &self.runners {
             let ret = runner(
@@ -27,16 +28,20 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
                 &**plugin_data.get(plugin_name).unwrap_or_else(|| {
                     panic!("no plugin data for registered plugin {}", plugin_name)
                 }),
-            );
+            )
+            .map_err(|err| PluginError {
+                name: plugin_name.to_string(),
+                source: err,
+            })?;
             returns.insert(plugin_name.to_string(), ret);
         }
 
-        returns
+        Ok(returns)
     }
     fn register_plugin(
         &mut self,
         name: &str,
-        runner: impl Fn(&A, &(dyn Any + Send)) -> R + Send + 'static,
+        runner: impl Fn(&A, &(dyn Any + Send)) -> Result<R, Box<dyn std::error::Error>> + Send + 'static,
     ) {
         self.register_plugin_box(name, Box::new(runner))
     }
@@ -128,19 +133,6 @@ pub struct FunctionalPluginSettingsActions<G: Html> {
     /// generic about Sycamore rendering backends. Note that these have the
     /// power to override the user's templates.
     pub add_templates: FunctionalPluginAction<(), Vec<crate::Template<G>>>,
-    /// Adds additional error pages. This must return a map of HTTP status codes
-    /// to error page templates. Note that these have the power to override
-    /// the user's error pages.
-    pub add_error_pages: FunctionalPluginAction<
-        (),
-        HashMap<
-            u16,
-            (
-                crate::error_pages::ErrorPageTemplate<G>,
-                crate::error_pages::ErrorPageHeadTemplate,
-            ),
-        >,
-    >,
     /// Actions pertaining to the HTML shell, in their own category for
     /// cleanliness (as there are quite a few).
     pub html_shell_actions: FunctionalPluginHtmlShellActions,
@@ -150,7 +142,6 @@ impl<G: Html> Default for FunctionalPluginSettingsActions<G> {
         Self {
             add_static_aliases: FunctionalPluginAction::default(),
             add_templates: FunctionalPluginAction::default(),
-            add_error_pages: FunctionalPluginAction::default(),
             html_shell_actions: FunctionalPluginHtmlShellActions::default(),
         }
     }
@@ -195,9 +186,7 @@ pub struct FunctionalPluginBuildActions {
     /// Runs after the build process if it completes successfully.
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build process if it fails.
-    pub after_failed_build: FunctionalPluginAction<Rc<EngineError>, ()>,
-    /// Runs after the build process if it failed to generate global state.
-    pub after_failed_global_state_creation: FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_build: FunctionalPluginAction<Rc<Error>, ()>,
 }
 /// Functional actions that pertain to the export process.
 #[cfg(not(target_arch = "wasm32"))]
@@ -209,25 +198,21 @@ pub struct FunctionalPluginExportActions {
     /// successfully.
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build stage in the export process if it fails.
-    pub after_failed_build: FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_build: FunctionalPluginAction<Rc<Error>, ()>,
     /// Runs after the export process if it fails.
-    pub after_failed_export: FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_export: FunctionalPluginAction<Rc<Error>, ()>,
     /// Runs if copying the static directory failed.
-    pub after_failed_static_copy: FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_static_copy: FunctionalPluginAction<Rc<Error>, ()>,
     /// Runs if copying a static alias that was a directory failed. The argument
     /// to this is a tuple of the from and to locations of the copy, along with
     /// the error.
-    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<Rc<Error>, ()>,
     /// Runs if copying a static alias that was a file failed. The argument to
     /// this is a tuple of the from and to locations of the copy, along with the
     /// error.
-    pub after_failed_static_alias_file_copy: FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_static_alias_file_copy: FunctionalPluginAction<Rc<Error>, ()>,
     /// Runs after the export process if it completes successfully.
     pub after_successful_export: FunctionalPluginAction<(), ()>,
-    /// Runs after the export process if it failed to generate global state.
-    /// Note that the error here will always be a `GlobalStateError`, but it
-    /// must be processed as a `ServerError` due to ownership constraints.
-    pub after_failed_global_state_creation: FunctionalPluginAction<Rc<EngineError>, ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
 #[cfg(not(target_arch = "wasm32"))]
@@ -240,7 +225,7 @@ pub struct FunctionalPluginExportErrorPageActions {
     /// Runs after a error page was exported successfully.
     pub after_successful_export_error_page: FunctionalPluginAction<(), ()>,
     /// Runs if writing to the output file failed. Error and filename are given.
-    pub after_failed_write: FunctionalPluginAction<Rc<EngineError>, ()>,
+    pub after_failed_write: FunctionalPluginAction<Rc<Error>, ()>,
 }
 /// Functional actions that pertain to the server.
 #[derive(Default, Debug)]
