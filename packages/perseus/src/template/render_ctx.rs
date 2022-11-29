@@ -632,7 +632,8 @@ impl RenderCtx {
             Clone + AnyFreeze + MakeUnrx + MakeRxRef,
         <R as RxRef>::RxNonRef: MakeUnrx + AnyFreeze + Clone,
     {
-        self.try_get_global_state::<R>(cx).unwrap().unwrap()
+        // Warn the user about the perils of having no build-time global state handler
+        self.try_get_global_state::<R>(cx).unwrap().expect("you requested global state, but none exists for this app (if you;re generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
     }
     /// The underlying logic for `.get_global_state()`, except this will return
     /// `None` if the app does not have global state.

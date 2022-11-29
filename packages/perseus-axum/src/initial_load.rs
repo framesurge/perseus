@@ -12,6 +12,7 @@ use perseus::{
         build_error_page, get_page_for_template, get_path_slice, GetPageProps, HtmlShell,
         ServerOptions,
     },
+    state::GlobalStateCreator,
     stores::{ImmutableStore, MutableStore},
     template::TemplateState,
     utils::get_path_prefix_server,
@@ -50,6 +51,7 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
     mutable_store: Arc<M>,
     translations_manager: Arc<T>,
     global_state: Arc<TemplateState>,
+    gsc: Arc<GlobalStateCreator>,
 ) -> (StatusCode, HeaderMap, Html<String>) {
     let error_pages = &opts.error_pages;
     let path = http_req.uri().path().to_string();
@@ -99,12 +101,13 @@ pub async fn initial_load_handler<M: MutableStore, T: TranslationsManager>(
                     immutable_store: &immutable_store,
                     mutable_store: &mutable_store,
                     translations_manager: &translations_manager,
+                    global_state_creator: &gsc,
                 },
                 template,
                 true,
             )
             .await;
-            let page_data = match page_data {
+            let (page_data, global_state) = match page_data {
                 Ok(page_data) => page_data,
                 // We parse the error to return an appropriate status code
                 Err(err) => {

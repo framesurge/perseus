@@ -1,6 +1,6 @@
 use crate::build::{build_app, BuildProps};
-use crate::errors::ServerError;
 use crate::export::{export_app, ExportProps};
+use crate::state::get_built_global_state;
 use crate::{
     plugins::{PluginAction, Plugins},
     utils::get_path_prefix_server,
@@ -73,22 +73,8 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
         .map_err(|err| Rc::new(err.into()))?;
     // We don't need this in exporting, but the build process does
     let mutable_store = app.get_mutable_store();
-    let locales = app.get_locales().map_err(|err| Rc::new(err.into()))?;
-    // Generate the global state
     let gsc = app.get_global_state_creator();
-    let global_state = match gsc.get_build_state().await {
-        Ok(global_state) => global_state,
-        Err(err) => {
-            let err: Rc<Error> = Rc::new(ServerError::GlobalStateError(err).into());
-            plugins
-                .functional_actions
-                .export_actions
-                .after_failed_global_state_creation
-                .run(err.clone(), plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
-            return Err(err);
-        }
-    };
+    let locales = app.get_locales().map_err(|err| Rc::new(err.into()))?;
     let templates_map = app
         .get_atomic_templates_map()
         .map_err(|err| Rc::new(err.into()))?;
@@ -106,7 +92,7 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
         immutable_store: &immutable_store,
         mutable_store: &mutable_store,
         translations_manager: &translations_manager,
-        global_state: &global_state,
+        global_state_creator: &gsc,
         exporting: true,
     })
     .await;
@@ -125,6 +111,10 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
         .export_actions
         .after_successful_build
         .run((), plugins.get_plugin_data())
+        .map_err(|err| Rc::new(err.into()))?;
+    // Get the global state that should've just been written
+    let global_state = get_built_global_state(&immutable_store)
+        .await
         .map_err(|err| Rc::new(err.into()))?;
     // The app has now been built, so we can safely instantiate the HTML shell
     // (which needs access to the render config, generated in the above build step)

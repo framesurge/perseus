@@ -9,13 +9,14 @@ use perseus::{
         build_error_page, get_page_for_template, get_path_slice, GetPageProps, HtmlShell,
         ServerOptions,
     },
+    state::GlobalStateCreator,
     stores::{ImmutableStore, MutableStore},
     template::TemplateState,
     utils::get_path_prefix_server,
     ErrorPages, SsrNode,
 };
-use std::collections::HashMap;
 use std::rc::Rc;
+use std::{collections::HashMap, sync::Arc};
 
 /// Builds on the internal Perseus primitives to provide a utility function that
 /// returns an `HttpResponse` automatically.
@@ -46,6 +47,7 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
     mutable_store: web::Data<M>,
     translations_manager: web::Data<T>,
     global_state: web::Data<TemplateState>,
+    gsc: web::Data<Arc<GlobalStateCreator>>,
 ) -> HttpResponse {
     let templates = &opts.templates_map;
     let error_pages = &opts.error_pages;
@@ -104,12 +106,13 @@ pub async fn initial_load<M: MutableStore, T: TranslationsManager>(
                     immutable_store: immutable_store.get_ref(),
                     mutable_store: mutable_store.get_ref(),
                     translations_manager: translations_manager.get_ref(),
+                    global_state_creator: gsc.get_ref(),
                 },
                 template,
                 true, // This is an initial load, so we do want the content rendered/fetched
             )
             .await;
-            let page_data = match page_data {
+            let (page_data, global_state) = match page_data {
                 Ok(page_data) => page_data,
                 // We parse the error to return an appropriate status code
                 Err(err) => {

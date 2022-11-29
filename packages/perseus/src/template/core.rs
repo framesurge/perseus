@@ -627,7 +627,7 @@ impl<G: Html> Template<G> {
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: self.path.clone(),
-                feature_name: "request_state".to_string(),
+                feature_name: "amalgamate_states".to_string(),
             }
             .into())
         }
@@ -756,6 +756,9 @@ impl<G: Html> Template<G> {
     /// Sets the template rendering function to use, if the template takes
     /// state. Templates that do not take state should use `.template()`
     /// instead.
+    ///
+    /// The closure wrapping this performs will automatically handle suspense
+    /// state.
     pub fn template_with_state<F, S, I>(mut self, val: F) -> Template<G>
     where
         F: Fn(Scope, I) -> View<G> + Send + Sync + 'static,
@@ -818,6 +821,9 @@ impl<G: Html> Template<G> {
             };
 
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+                // Compute suspended states
+                #[cfg(target_arch = "wasm32")]
+                intermediate_state.compute_suspense(child_cx);
                 // let ref_struct = intermediate_state.to_ref_struct(child_cx);
                 let view = val(child_cx, intermediate_state);
                 route_manager.update_view(view);
@@ -1206,7 +1212,7 @@ impl<G: Html> Template<G> {
                   request_state: TemplateState| {
                 let val = val.clone();
                 async move {
-                    // Amalgamanation logic will only be called if both states are indeed defined
+                    // Amalgamation logic will only be called if both states are indeed defined
                     let typed_build_state = build_state.change_type::<S>();
                     let user_build_state = match typed_build_state.to_concrete() {
                         Ok(state) => state,

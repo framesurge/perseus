@@ -1,6 +1,7 @@
 use crate::errors::*;
 use crate::i18n::TranslationsManager;
 use crate::page_data::PageData;
+use crate::state::GlobalStateCreator;
 use crate::stores::{ImmutableStore, MutableStore};
 use crate::template::{
     StateGeneratorInfo, States, Template, TemplateMap, TemplateState, UnknownStateType,
@@ -316,8 +317,16 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
     pub was_incremental_match: bool,
     /// The request data.
     pub req: Request,
-    /// The stringified global state to use in the render process.
+    /// The pre-built global state. If the app does not generate global state
+    /// at build-time, then this will be an empty state. Importantly, we may
+    /// render request-time global state, or even amalgamate that with
+    /// build-time state.
+    ///
+    /// See `build.rs` for further details of the quirks involved in this
+    /// system.
     pub global_state: &'a TemplateState,
+    /// The global state creator.
+    pub global_state_creator: &'a GlobalStateCreator,
     /// An immutable store.
     pub immutable_store: &'a ImmutableStore,
     /// A mutable store.
@@ -333,6 +342,9 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
 /// revalidation and incremental generation, it uses both mutable and immutable
 /// stores.
 ///
+/// This returns the [`PageData`] and the global state (which may have been
+/// recomputed at request-time).
+///
 /// If `render_html` is set to `false` here, then no content HTML will be
 /// generated (designed for subsequent loads).
 pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
@@ -341,22 +353,47 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         locale,
         was_incremental_match,
         req,
-        global_state,
+        global_state: built_global_state,
+        global_state_creator: gsc,
         immutable_store,
         mutable_store,
         translations_manager,
     }: GetPageProps<'_, M, T>,
     template: &Template<SsrNode>,
     render_html: bool,
-) -> Result<PageData, ServerError> {
+) -> Result<(PageData, TemplateState), ServerError> {
     // Since `Request` is not actually `Clone`able, we hack our way around needing
-    // it twice An `Rc` won't work because of future constraints, and an `Arc`
+    // it three times
+    // An `Rc` won't work because of future constraints, and an `Arc`
     // seems a little unnecessary
+    // TODO This is ridiculous
     let req_2 = clone_req(&req);
+    let req_3 = clone_req(&req);
     // Get a translator for this locale (for sanity we hope the manager is caching)
     let translator = translations_manager
         .get_translator_for_locale(locale.to_string())
         .await?;
+
+    // If necessary, generate request-time global state
+    let built_global_state = built_global_state.clone();
+    let global_state = if gsc.uses_request_state() {
+        let req_state = gsc.get_request_state(locale.to_string(), req_3).await?;
+        // If we have a non-empty build-time state, we'll need to amalgamate
+        if !built_global_state.is_empty() {
+            if gsc.can_amalgamate_states() {
+                gsc.amalgamate_states(locale.to_string(), built_global_state, req_state)
+                    .await?
+            } else {
+                // No amalgamation capability, requesttime state takes priority
+                req_state
+            }
+        } else {
+            req_state
+        }
+    } else {
+        // This global state is purely generated at build-time (or nonexistent)
+        built_global_state
+    };
 
     let path = raw_path;
     // Remove `/` from the path by encoding it as a URL (that's what we store) and
@@ -428,7 +465,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                             build_info.clone(),
                             &translator,
                             &path_encoded,
-                            global_state,
+                            &global_state,
                             mutable_store,
                         )
                         .await?;
@@ -533,7 +570,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     build_info.clone(),
                     &translator,
                     &path_encoded,
-                    global_state,
+                    &global_state,
                     mutable_store,
                 )
                 .await?;
@@ -617,7 +654,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
             template,
             build_info,
             &translator,
-            global_state,
+            &global_state,
             states.build_state,
             states.request_state,
             render_html,
@@ -669,17 +706,20 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         }
     };
 
-    Ok(res)
+    Ok((res, global_state))
 }
 
 /// Gets the HTML/JSON data for the given page path. This will call
 /// SSG/SSR/etc., whatever is needed for that page.
+///
+/// This returns the [`PageData`] and the global state (which may have been
+/// recomputed at request-time).
 pub async fn get_page<M: MutableStore, T: TranslationsManager>(
     props: GetPageProps<'_, M, T>,
     template_name: &str,
     templates: &TemplateMap<SsrNode>,
     render_html: bool,
-) -> Result<PageData, ServerError> {
+) -> Result<(PageData, TemplateState), ServerError> {
     let path = props.raw_path;
     // Get the template to use
     let template = templates.get(template_name);

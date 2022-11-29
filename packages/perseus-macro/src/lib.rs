@@ -204,7 +204,8 @@ pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// implicitly expects most of your state generation functions to be defined in
 /// this way (though you certainly don't have to use this macro).
 ///
-/// Note that this will convert `async` functions to non-`async` functions.
+/// Note that this will convert `async` functions to non-`async` functions on
+/// the browser-side (your function will be left alone on the engine-side).
 #[proc_macro_attribute]
 pub fn engine_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_2: proc_macro2::TokenStream = input.clone().into();
@@ -217,8 +218,34 @@ pub fn engine_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
     quote! {
         #[cfg(target_arch = "wasm32")]
         #vis fn #ident () {}
-        // One the engine-side, the function is unmodified
+        // On the engine-side, the function is unmodified
         #[cfg(not(target_arch = "wasm32"))]
+        #input_2
+    }
+    .into()
+}
+
+/// A convenience macro that makes sure the given function is only defined on
+/// the browser-side, creating an empty function on the engine-side. Perseus
+/// implicitly expects your browser-side state modification functions to be
+/// defined in this way (though you certainly don't have to use this macro).
+///
+/// Note that this will convert `async` functions to non-`async` functions on
+/// the engine-side (your function will be left alone on the browser-side).
+#[proc_macro_attribute]
+pub fn browser_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_2: proc_macro2::TokenStream = input.clone().into();
+    let ItemFn {
+        vis,
+        sig: Signature { ident, .. },
+        ..
+    } = parse_macro_input!(input as ItemFn);
+
+    quote! {
+        #[cfg(not(target_arch = "wasm32"))]
+        #vis fn #ident () {}
+        // One the browser-side, the function is unmodified
+        #[cfg(target_arch = "wasm32")]
         #input_2
     }
     .into()
