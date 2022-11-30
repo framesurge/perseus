@@ -52,7 +52,8 @@ pub async fn page_handler<M: MutableStore, T: TranslationsManager>(
         .collect::<Vec<&str>>()
         .join("/");
     // Axum's paths have leading slashes
-    let path = path.strip_prefix('/').unwrap();
+    // As of 0.6, they do not always have slashes, see #1086 in tokio-rs/axum
+    let path = path.strip_prefix('/').unwrap_or(&path);
 
     let templates = &opts.templates_map;
     // Check if the locale is supported
