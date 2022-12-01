@@ -1,7 +1,5 @@
 use crate::get_router;
-use perseus::{
-    i18n::TranslationsManager, server::ServerProps, stores::MutableStore, PerseusAppBase, SsrNode,
-};
+use perseus::{i18n::TranslationsManager, server::ServerProps, stores::MutableStore};
 use std::net::SocketAddr;
 
 /// Creates and starts the default Perseus server with Axum. This should be run

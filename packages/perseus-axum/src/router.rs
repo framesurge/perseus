@@ -93,7 +93,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         ));
     // Only add the static content directory route if such a directory is being used
     if let Some(static_dir) = static_dir {
-        router = router.nest(
+        router = router.nest_service(
             "/.perseus/static",
             get_service(ServeDir::new(static_dir)).handle_error(handle_fs_error),
         )
@@ -108,7 +108,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         );
     }
     // And add the fallback for initial loads
-    router.fallback(get(closure!(
+    router.fallback_service(get(closure!(
         clone opts,
         clone html_shell,
         clone render_cfg,
