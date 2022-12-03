@@ -1,10 +1,9 @@
 use crate::plugins::*;
-use crate::Html;
 use std::any::Any;
 use std::marker::PhantomData;
 
-type FunctionalActionsRegistrar<G> =
-    Box<dyn Fn(FunctionalPluginActions<G>) -> FunctionalPluginActions<G>>;
+type FunctionalActionsRegistrar =
+    Box<dyn Fn(FunctionalPluginActions) -> FunctionalPluginActions>;
 type ControlActionsRegistrar = Box<dyn Fn(ControlPluginActions) -> ControlPluginActions>;
 
 /// The environments a plugin can run in. These will affect Wasm bundle size.
@@ -26,14 +25,14 @@ pub enum PluginEnv {
 
 /// A Perseus plugin. This must be exported by all plugin crates so the user can
 /// register the plugin easily.
-pub struct Plugin<G: Html, D: Any + Send> {
+pub struct Plugin<D: Any + Send> {
     /// The machine name of the plugin, which will be used as a key in a HashMap
     /// with many other plugins. This should be the public crate name in all
     /// cases.
     pub name: String,
     /// A function that will be provided functional actions. It should then
     /// register runners from the plugin for every action that it takes.
-    pub functional_actions_registrar: FunctionalActionsRegistrar<G>,
+    pub functional_actions_registrar: FunctionalActionsRegistrar,
     /// A function that will be provided control actions. It should then
     /// register runners from the plugin for every action that it takes.
     pub control_actions_registrar: ControlActionsRegistrar,
@@ -42,7 +41,7 @@ pub struct Plugin<G: Html, D: Any + Send> {
 
     plugin_data_type: PhantomData<D>,
 }
-impl<G: Html, D: Any + Send> std::fmt::Debug for Plugin<G, D> {
+impl<D: Any + Send> std::fmt::Debug for Plugin<D> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Plugin")
             .field("name", &self.name)
@@ -50,12 +49,12 @@ impl<G: Html, D: Any + Send> std::fmt::Debug for Plugin<G, D> {
             .finish()
     }
 }
-impl<G: Html, D: Any + Send> Plugin<G, D> {
+impl<D: Any + Send> Plugin<D> {
     /// Creates a new plugin with a name, functional actions, control actions,
     /// and whether or not the plugin is tinker-only.
     pub fn new(
         name: &str,
-        functional_actions_registrar: impl Fn(FunctionalPluginActions<G>) -> FunctionalPluginActions<G>
+        functional_actions_registrar: impl Fn(FunctionalPluginActions) -> FunctionalPluginActions
             + 'static,
         control_actions_registrar: impl Fn(ControlPluginActions) -> ControlPluginActions + 'static,
         env: PluginEnv,

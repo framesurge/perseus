@@ -69,7 +69,7 @@ impl<A, R> std::fmt::Debug for FunctionalPluginAction<A, R> {
 /// Actions designed to be compatible with other plugins such that two plugins
 /// can execute the same action.
 #[derive(Debug)]
-pub struct FunctionalPluginActions<G: Html> {
+pub struct FunctionalPluginActions {
     /// The all-powerful action that can modify the Perseus engine itself.
     /// Because modifying the code you're running doesn't work with compiled
     /// languages like Rust, this has its own command in the CLI, `perseus
@@ -85,7 +85,7 @@ pub struct FunctionalPluginActions<G: Html> {
     pub tinker: FunctionalPluginAction<(), ()>,
     /// Actions pertaining to the modification of settings created with
     /// `PerseusApp`.
-    pub settings_actions: FunctionalPluginSettingsActions<G>,
+    pub settings_actions: FunctionalPluginSettingsActions,
     /// Actions pertaining to the build process.
     #[cfg(not(target_arch = "wasm32"))]
     pub build_actions: FunctionalPluginBuildActions,
@@ -100,11 +100,11 @@ pub struct FunctionalPluginActions<G: Html> {
     /// Actions pertaining to the client-side code.
     pub client_actions: FunctionalPluginClientActions,
 }
-impl<G: Html> Default for FunctionalPluginActions<G> {
+impl Default for FunctionalPluginActions {
     fn default() -> Self {
         Self {
             tinker: FunctionalPluginAction::default(),
-            settings_actions: FunctionalPluginSettingsActions::<G>::default(),
+            settings_actions: FunctionalPluginSettingsActions::default(),
             #[cfg(not(target_arch = "wasm32"))]
             build_actions: FunctionalPluginBuildActions::default(),
             #[cfg(not(target_arch = "wasm32"))]
@@ -120,7 +120,7 @@ impl<G: Html> Default for FunctionalPluginActions<G> {
 /// Functional actions that pertain to altering the settings exported from
 /// `PerseusApp`.
 #[derive(Debug)]
-pub struct FunctionalPluginSettingsActions<G: Html> {
+pub struct FunctionalPluginSettingsActions {
     /// Adds additional static aliases. Note that a static alias is a mapping of
     /// a URL path to a filesystem path (relative to the project root).
     /// These will be vetted to ensure they don't access anything outside the
@@ -128,20 +128,14 @@ pub struct FunctionalPluginSettingsActions<G: Html> {
     /// not run. Note that these have the power to override the user's static
     /// aliases.
     pub add_static_aliases: FunctionalPluginAction<(), HashMap<String, String>>,
-    /// Adds additional templates. These will be applied to both the templates
-    /// map and the templates list (separate entities), and they must be
-    /// generic about Sycamore rendering backends. Note that these have the
-    /// power to override the user's templates.
-    pub add_templates: FunctionalPluginAction<(), Vec<crate::Template<G>>>,
     /// Actions pertaining to the HTML shell, in their own category for
     /// cleanliness (as there are quite a few).
     pub html_shell_actions: FunctionalPluginHtmlShellActions,
 }
-impl<G: Html> Default for FunctionalPluginSettingsActions<G> {
+impl Default for FunctionalPluginSettingsActions {
     fn default() -> Self {
         Self {
             add_static_aliases: FunctionalPluginAction::default(),
-            add_templates: FunctionalPluginAction::default(),
             html_shell_actions: FunctionalPluginHtmlShellActions::default(),
         }
     }

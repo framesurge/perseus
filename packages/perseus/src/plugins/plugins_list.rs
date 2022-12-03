@@ -10,27 +10,27 @@ type PluginDataMap = HashMap<String, Box<dyn Any + Send>>;
 /// Due to the sheer number and complexity of nested fields, this is best
 /// transferred in an `Rc`, which unfortunately results in double indirection
 /// for runner functions.
-pub struct Plugins<G: Html> {
+pub struct Plugins {
     /// The functional actions that this plugin takes. This is defined by
     /// default such that all actions are assigned to a default, and so they
     /// can all be run without long chains of matching `Option<T>`s.
-    pub functional_actions: FunctionalPluginActions<G>,
+    pub functional_actions: FunctionalPluginActions,
     /// The control actions that this plugin takes. This is defined by default
     /// such that all actions are assigned to a default, and so they can all
     /// be run without long chains of matching `Option<T>`s.
     pub control_actions: ControlPluginActions,
     plugin_data: PluginDataMap,
 }
-impl<G: Html> Default for Plugins<G> {
+impl Default for Plugins {
     fn default() -> Self {
         Self {
-            functional_actions: FunctionalPluginActions::<G>::default(),
+            functional_actions: FunctionalPluginActions::default(),
             control_actions: ControlPluginActions::default(),
             plugin_data: HashMap::default(),
         }
     }
 }
-impl<G: Html> std::fmt::Debug for Plugins<G> {
+impl std::fmt::Debug for Plugins {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Plugins")
             .field("functional_actions", &self.functional_actions)
@@ -38,7 +38,7 @@ impl<G: Html> std::fmt::Debug for Plugins<G> {
             .finish()
     }
 }
-impl<G: Html> Plugins<G> {
+impl Plugins {
     /// Creates a new instance of `Plugins`, with no actions taken by any
     /// plugins, and the data map empty.
     pub fn new() -> Self {
@@ -55,7 +55,7 @@ impl<G: Html> Plugins<G> {
         #[cfg_attr(target_arch = "wasm32", allow(unused_mut))] mut self,
         // This is a function so that it never gets called if we're compiling for Wasm, which means
         // Rust eliminates it as dead code!
-        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin: impl Fn() -> Plugin<G, D>
+        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin: impl Fn() -> Plugin<D>
             + Send,
         #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin_data: D,
     ) -> Self {
@@ -94,7 +94,7 @@ impl<G: Html> Plugins<G> {
     pub fn plugin_with_client_privilege<D: Any + Send>(
         mut self,
         // This is a function to preserve a similar API interface with `.plugin()`
-        plugin: impl Fn() -> Plugin<G, D> + Send,
+        plugin: impl Fn() -> Plugin<D> + Send,
         plugin_data: D,
     ) -> Self {
         let plugin = plugin();

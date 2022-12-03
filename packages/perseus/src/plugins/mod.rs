@@ -13,8 +13,8 @@ pub use plugins_list::Plugins;
 /// A helper function for plugins that don't take any functional actions. This
 /// just inserts and empty registrar.
 pub fn empty_functional_actions_registrar<G: crate::Html>(
-    _: FunctionalPluginActions<G>,
-) -> FunctionalPluginActions<G> {
+    _: FunctionalPluginActions,
+) -> FunctionalPluginActions {
     FunctionalPluginActions::default()
 }
 
