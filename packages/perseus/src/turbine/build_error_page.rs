@@ -1,4 +1,4 @@
-use super::HtmlShell;
+use crate::server::HtmlShell;
 use crate::error_pages::{ErrorPageData, ErrorPages};
 use crate::translator::Translator;
 use crate::SsrNode;

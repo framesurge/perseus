@@ -1,15 +1,17 @@
+use std::collections::HashMap;
+
 use crate::errors::*;
 use crate::i18n::TranslationsManager;
 use crate::page_data::PageData;
 use crate::state::GlobalStateCreator;
 use crate::stores::{ImmutableStore, MutableStore};
-use crate::template::{
-    StateGeneratorInfo, States, Template, TemplateMap, TemplateState, UnknownStateType,
-};
+use crate::template::{ArcCapsuleMap, ArcTemplateMap, StateGeneratorInfo, States, Template, TemplateMap, TemplateState, UnknownStateType, WidgetStates};
 use crate::translator::Translator;
 use crate::Request;
 use crate::SsrNode;
 use chrono::{DateTime, Utc};
+use futures::FutureExt;
+use futures::future::{BoxFuture, try_join_all};
 
 /// Clones a `Request` from its internal parts.
 fn clone_req(raw: &Request) -> Request {
@@ -333,6 +335,8 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
     pub mutable_store: &'a M,
     /// A translations manager.
     pub translations_manager: &'a T,
+    /// A map of all the app's templates, including capsules.
+    pub templates: &'a ArcTemplateMap<SsrNode>,
 }
 
 /// Internal logic behind [`get_page`]. The only differences are that this takes
@@ -346,8 +350,15 @@ pub struct GetPageProps<'a, M: MutableStore, T: TranslationsManager> {
 /// recomputed at request-time).
 ///
 /// If `render_html` is set to `false` here, then no content HTML will be
-/// generated (designed for subsequent loads).
-pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
+/// generated (designed for subsequent loads), and any capsule dependencies
+/// will *not* be built (state will be built in total isolation, see the book
+/// for details).
+///
+/// This will return an error if the dependency tree for this template has not yet been resolved.
+///
+/// The `full_global_state` parameter should only be provided in recursions, and should be
+/// `None` otherwise.
+pub fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     GetPageProps {
         raw_path,
         locale,
@@ -358,10 +369,46 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         immutable_store,
         mutable_store,
         translations_manager,
+        templates,
     }: GetPageProps<'_, M, T>,
     template: &Template<SsrNode>,
     render_html: bool,
-) -> Result<(PageData, TemplateState), ServerError> {
+    // Whether or not the caller was this function itself
+    is_recursion: bool,
+    full_global_state: Option<&TemplateState>,
+) -> BoxFuture<'static, Result<(PageData, TemplateState, WidgetStates), ServerError>> {
+    async move {
+
+    }.boxed()
+}
+
+// Purely internal representation
+struct State {
+    state: TemplateState,
+    head: String,
+}
+
+/// Gets the state of a page/widget, without performing any rendering. This is intended
+/// for purely internal use for recursion, and end users should use `get_page_state()`.
+async fn get_state_internal<M: MutableStore, T: TranslationsManager>(
+    GetPageProps {
+        raw_path,
+        locale,
+        was_incremental_match,
+        req,
+        immutable_store,
+        mutable_store,
+        translations_manager,
+        templates,
+        // We ignore the global state components, since we're given the prepared global state
+        global_state: _,
+        global_state_creator: _,
+    }: GetPageProps<'_, M, T>,
+    template: &Template<SsrNode>,
+    // If this is provided, we'll ignore whatever build-time global state was provided (since
+    // there's no point determining the global state multiple times in a recursion)
+    global_state: &TemplateState,
+) -> Result<State, ServerError> {
     // Since `Request` is not actually `Clone`able, we hack our way around needing
     // it three times
     // An `Rc` won't work because of future constraints, and an `Arc`
@@ -374,33 +421,70 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
         .get_translator_for_locale(locale.to_string())
         .await?;
 
-    // If necessary, generate request-time global state
-    let built_global_state = built_global_state.clone();
-    let global_state = if gsc.uses_request_state() {
-        let req_state = gsc.get_request_state(locale.to_string(), req_3).await?;
-        // If we have a non-empty build-time state, we'll need to amalgamate
-        if !built_global_state.is_empty() {
-            if gsc.can_amalgamate_states() {
-                gsc.amalgamate_states(locale.to_string(), built_global_state, req_state)
-                    .await?
-            } else {
-                // No amalgamation capability, requesttime state takes priority
-                req_state
-            }
-        } else {
-            req_state
-        }
-    } else {
-        // This global state is purely generated at build-time (or nonexistent)
-        built_global_state
-    };
+    // // If we're rendering HTML, we'll need to include all non-delayed widget dependencies, and therefore
+    // // we need to know their states, so recursively build down the dependency tree
+    // let mut widget_states = HashMap::new();
+    // if is_recursion {
+    //     // We need this block so the read lock is safely dropped before we spawn any futures, otherwise they aren't `Send`
+    //     let resolved_deps = {
+    //         let resolved_deps_raw = template.resolved_widgets.read().unwrap();
+    //         if resolved_deps_raw.is_none() {
+    //             return Err(ServerError::DepTreeNotResolved);
+    //         }
+    //         resolved_deps_raw.unwrap().clone()
+    //     };
+    //     let mut futs = Vec::new();
+    //     for widget in template.widgets.iter() {
+    //         // The resolved dependencies are built from the widgets, so this will exist
+    //         let resolved = resolved_deps.get(widget).unwrap();
+    //         let resolved = resolved.clone();
+    //         // Similarly, this would already have failed if it didn't exist
+    //         let capsule = templates.get(&resolved.capsule_name).unwrap();
+    //         // Build the capsule
+    //         let fut = get_page_for_template(
+    //             GetPageProps {
+    //                 raw_path: &widget,
+    //                 locale: &resolved.locale,
+    //                 was_incremental_match: resolved.was_incremental_match,
+    //                 req: clone_req(&req), // TODO
+    //                 global_state: built_global_state, // This will be paid no mind
+    //                 global_state_creator: gsc,
+    //                 immutable_store,
+    //                 mutable_store,
+    //                 translations_manager,
+    //                 templates,
+    //             },
+    //             capsule,
+    //             false, // No matter what the top-level caller wanted, we do NOT want to build HTML for the capsules, that will be done by the capsule HOC
+    //             true, // We are recursing
+    //             Some(&global_state), // To avoid double-building for request state etc.
+    //         );
+    //         futs.push(fut);
+    //         // Now build all the dependencies in parallel
+    //         // TODO Prevent double-building dependencies here with a cache (the same dependency won't ever be built in parallel unless it's double-specified)
+    //         let results = try_join_all(futs).await?;
+    //         for (dep_data, _, dep_widget_states) in results.into_iter() {
+    //             let dep_widget_states = match dep_widget_states {
+    //                 WidgetStates::Map(map) => map,
+    //                 // It's this function, we know
+    //                 _ => unreachable!(),
+    //             };
+    //             // Now add all the states generated by any further recursions that made (into its own dependencies) to our dependency map
+    //             widget_states.extend(dep_widget_states);
+    //             // And add all the states from the dependencies of the template/capsule we're actually building for
+    //             widget_states.insert(widget.to_string(), TemplateState::from_value(dep_data.state));
+    //         }
+    //     }
+    // }
+    // // This now has the entire dependency tree in it, and can be inserted into context so that widgets can actually be built
+    // let widget_states = WidgetStates::Map(widget_states);
 
     let path = raw_path;
     // Remove `/` from the path by encoding it as a URL (that's what we store) and
     // add the locale
     let path_encoded = format!("{}-{}", locale, urlencoding::encode(path));
 
-    // Get the extra build data for this template
+    // Get the extra build data for this template (this will always exist)
     let build_extra = match immutable_store
         .read(&format!("static/{}.extra.json", template.get_path()))
         .await
@@ -458,7 +542,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                         build_info.clone(),
                         req,
                     )
-                    .await?
+                        .await?
                     {
                         let (html_val, head_val, state) = revalidate(
                             template,
@@ -468,7 +552,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                             &global_state,
                             mutable_store,
                         )
-                        .await?;
+                            .await?;
                         // That revalidation will have returned a body and head, which we can
                         // provisionally use
                         html = html_val;
@@ -563,7 +647,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 build_info.clone(),
                 req,
             )
-            .await?
+                .await?
             {
                 let (html_val, head_val, state) = revalidate(
                     template,
@@ -573,7 +657,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                     &global_state,
                     mutable_store,
                 )
-                .await?;
+                    .await?;
                 // That revalidation will have produced a head and body, which we can
                 // provisionally use
                 html = html_val;
@@ -585,7 +669,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
                 // This is just fetching, not computing
                 let (html_val, head_val, state) =
                     render_build_state_for_mutable(&path_encoded, mutable_store, render_html)
-                        .await?;
+                    .await?;
                 html = html_val;
                 head = head_val;
                 states.build_state = state;
@@ -659,7 +743,7 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
             states.request_state,
             render_html,
         )
-        .await?;
+            .await?;
         html = html_val;
         head = head_val;
         state
@@ -709,32 +793,119 @@ pub async fn get_page_for_template<M: MutableStore, T: TranslationsManager>(
     Ok((res, global_state))
 }
 
-/// Gets the HTML/JSON data for the given page path. This will call
-/// SSG/SSR/etc., whatever is needed for that page.
+/// Gets the full global state from the state generated at build-time and the generator itself.
 ///
-/// This returns the [`PageData`] and the global state (which may have been
-/// recomputed at request-time).
-pub async fn get_page<M: MutableStore, T: TranslationsManager>(
-    props: GetPageProps<'_, M, T>,
-    template_name: &str,
-    templates: &TemplateMap<SsrNode>,
-    render_html: bool,
-) -> Result<(PageData, TemplateState), ServerError> {
-    let path = props.raw_path;
-    // Get the template to use
-    let template = templates.get(template_name);
-    let template = match template {
-        Some(template) => template,
-        // This shouldn't happen because the client should already have performed checks against the
-        // render config, but it's handled anyway
-        None => {
-            return Err(ServeError::PageNotFound {
-                path: path.to_string(),
+/// This should only be called once per API call.
+async fn get_full_global_state<'a>(
+    built_state: &'a TemplateState,
+    gsc: &'a GlobalStateCreator,
+    locale: &'a str,
+    req: Request,
+) -> Result<TemplateState, ServerError> {
+    let global_state = if gsc.uses_request_state() {
+        let req_state = gsc.get_request_state(locale.to_string(), req).await?;
+        // If we have a non-empty build-time state, we'll need to amalgamate
+        if !built_state.is_empty() {
+            if gsc.can_amalgamate_states() {
+                gsc.amalgamate_states(locale.to_string(), built_state.clone(), req_state)
+                   .await?
+            } else {
+                // No amalgamation capability, request time state takes priority
+                req_state
             }
-            .into())
+        } else {
+            req_state
         }
+    } else {
+        // This global state is purely generated at build-time (or nonexistent)
+        built_state.clone()
     };
 
-    let res = get_page_for_template(props, template, render_html).await?;
-    Ok(res)
+    Ok(global_state)
 }
+
+/// Gets the state of a page/widget, without performing any rendering.
+///
+/// This returns a tuple of the page state (with empty contents) and the
+/// full global state which may have been updated from what was provided
+/// (which was from build-time). Note that this is *all* request-specific.
+pub async fn get_state<M: MutableStore, T: TranslationsManager>(
+    props: GetPageProps<'_, M, T>,
+    template: &Template<SsrNode>,
+) -> Result<(PageData, TemplateState), ServerError> {
+    // Get the up-to-date global state
+    let global_state = get_full_global_state(
+        props.global_state,
+        props.global_state_creator,
+        props.locale,
+        clone_req(&props.req),
+    ).await?;
+
+    let state = get_state_internal(props, template, &global_state).await?;
+    Ok((PageData {
+        head: state.head,
+        state: state.state.state,
+        content: String::new(),
+    }, global_state))
+}
+
+/// Gets the state and contents of a page/widget, without performing any rendering.
+///
+/// This returns a tuple of the page state and the
+/// full global state which may have been updated from what was provided
+/// (which was from build-time). Note that this is *all* request-specific.
+///
+/// When rendering contents, we need to resolve all the underlying widgets,
+/// which involves a substantial degree of recursion. If there are infinite dependency
+/// loops, they may not be detected until this function call!
+pub async fn get_page_full<M: MutableStore, T: TranslationsManager>(
+    props: GetPageProps<'_, M, T>,
+    template: &Template<SsrNode>,
+) -> Result<(PageData, TemplateState), ServerError> {
+    // Get the up-to-date global state
+    let global_state = get_full_global_state(
+        props.global_state,
+        props.global_state_creator,
+        props.locale,
+        clone_req(&props.req),
+    ).await?;
+
+    // Check if there's a
+
+    // The state/head is not dependent on any widgets, the contents are
+    let state = get_page_state_internal(props, template, &global_state).await?;
+
+    todo!()
+}
+
+// /// Gets the HTML/JSON data for the given page path. This will call
+// /// SSG/SSR/etc., whatever is needed for that page.
+// ///
+// /// This returns the [`PageData`] and the global state (which may have been
+// /// recomputed at request-time).
+// pub async fn get_page<M: MutableStore, T: TranslationsManager>(
+//     props: GetPageProps<'_, M, T>,
+//     template_name: &str,
+//     templates: &TemplateMap<SsrNode>,
+//     render_html: bool,
+// ) -> Result<(PageData, TemplateState), ServerError> {
+//     let path = props.raw_path;
+//     // Get the template to use
+//     let template = templates.get(template_name);
+//     let template = match template {
+//         Some(template) => template,
+//         // This shouldn't happen because the client should already have performed checks against the
+//         // render config, but it's handled anyway
+//         None => {
+//             return Err(ServeError::PageNotFound {
+//                 path: path.to_string(),
+//             }
+//             .into())
+//         }
+//     };
+
+//     // We provide no built global state here because we aren't recursing
+//     let res = get_page_for_template(props, template, render_html, false, None).await?;
+//     // We don't need to know the states of any underlying dependencies
+//     Ok((res.0, res.1))
+// }

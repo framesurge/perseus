@@ -52,15 +52,18 @@ pub mod template;
 /// General utilities that may be useful while building Perseus apps.
 pub mod utils;
 
-#[cfg(not(target_arch = "wasm32"))]
-mod build;
+// #[cfg(not(target_arch = "wasm32"))]
+// mod build;
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
 mod client;
-#[cfg(not(target_arch = "wasm32"))]
-mod export;
+// #[cfg(not(target_arch = "wasm32"))]
+// mod export;
 mod init;
 mod page_data;
 mod translator;
+/// The core of the Perseus state generation system.
+#[cfg(not(target_arch = "wasm32"))]
+pub mod turbine;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
@@ -100,7 +103,7 @@ pub use crate::{
     state::{RxResult, RxResultRef, SerdeInfallible},
     template::{
         BuildPaths, RenderCtx, RenderFnResult, RenderFnResultWithCause, StateGeneratorInfo,
-        Template,
+        Template, Capsule
     },
 };
 // Browser-side only
@@ -113,7 +116,7 @@ pub use client::{run_client, ClientReturn};
 #[cfg(not(target_arch = "wasm32"))]
 pub mod internal {
     pub use crate::page_data::*;
-    pub use crate::{build::*, export::*};
+    // pub use crate::{build::*, export::*};
 }
 /// Internal utilities for logging. These are just re-exports so that users
 /// don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
@@ -133,7 +136,7 @@ pub mod prelude {
     pub use crate::{
         blame_err, make_blamed_err, BuildPaths, ErrorCause, ErrorPages, GenericErrorWithCause,
         PerseusApp, PerseusRoot, RenderCtx, RenderFnResult, RenderFnResultWithCause, Request,
-        RxResult, RxResultRef, SerdeInfallible, StateGeneratorInfo, Template,
+        RxResult, RxResultRef, SerdeInfallible, StateGeneratorInfo, Template, Capsule,
     };
     #[cfg(feature = "macros")]
     pub use crate::{

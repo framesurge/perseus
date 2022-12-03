@@ -1,9 +1,11 @@
 // This file contains functions exclusive to the default engine systems
 
-use super::serve::{get_host_and_port, get_props};
+use super::serve::get_host_and_port;
 use super::EngineOperation;
+use crate::server::ServerOptions;
+use crate::turbine::Turbine;
 use crate::{
-    i18n::TranslationsManager, server::ServerProps, stores::MutableStore, PerseusAppBase, SsrNode,
+    i18n::TranslationsManager, stores::MutableStore, PerseusAppBase, SsrNode,
 };
 use fmterr::fmt_err;
 use futures::Future;
@@ -19,7 +21,7 @@ where
     T: TranslationsManager,
     A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 {
-    let serve_fn = |_, _| async {
+    let serve_fn = |_, _, _| async {
         panic!("`run_dflt_engine_export_only` cannot run a server; you should use `run_dflt_engine` instead and import a server integration (e.g. `perseus-warp`)")
     };
     run_dflt_engine(op, app, serve_fn).await
@@ -47,7 +49,7 @@ where
 pub async fn run_dflt_engine<M, T, F, A>(
     op: EngineOperation,
     app: A,
-    serve_fn: impl Fn(ServerProps<M, T>, (String, u16)) -> F,
+    serve_fn: impl Fn(Turbine<M, T>, ServerOptions, (String, u16)) -> F,
 ) -> i32
 where
     M: MutableStore,
@@ -55,15 +57,24 @@ where
     F: Future<Output = ()>,
     A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 {
+    // The turbine is the core of Perseus' state generation system
+    let mut turbine = match Turbine::try_from(app()) {
+        Ok(turbine) => turbine,
+        Err(err) => {
+            eprintln!("{}", fmt_err(&err));
+            return 1
+        }
+    };
+
     match op {
-        EngineOperation::Build => match super::engine_build(app()).await {
+        EngineOperation::Build => match turbine.build().await {
             Ok(_) => 0,
             Err(err) => {
                 eprintln!("{}", fmt_err(&*err));
                 1
             }
         },
-        EngineOperation::Export => match super::engine_export(app()).await {
+        EngineOperation::Export => match turbine.export().await {
             Ok(_) => 0,
             Err(err) => {
                 eprintln!("{}", fmt_err(&*err));
@@ -98,7 +109,7 @@ where
                     return 1;
                 }
             };
-            match super::engine_export_error_page(app(), code, output).await {
+            match turbine.export_error_page(code, output).await {
                 Ok(_) => 0,
                 Err(err) => {
                     eprintln!("{}", fmt_err(&*err));
@@ -107,15 +118,27 @@ where
             }
         }
         EngineOperation::Serve => {
-            // To reduce friction for default servers and user-made servers, we
-            // automatically do the boilerplate that all servers would have to do
-            let props = match get_props(app()) {
-                Ok(props) => props,
+            // Assume the app has already been built and prepare the turbine
+            match turbine.populate_after_build().await {
+                Ok(_) => (),
                 Err(err) => {
-                    eprintln!("{}", fmt_err(&err));
+                    // Because so many people (including me) have made this mistake
+                    eprintln!("{} (if you're running `perseus snoop serve`, make sure you've run `perseus snoop build` first!)", fmt_err(&err));
                     return 1;
                 }
             };
+
+            // In production, automatically set the working directory
+            // to be the parent of the actual binary. This means that disabling
+            // debug assertions in development will lead to utterly incomprehensible
+            // errors! You have been warned!
+            if !cfg!(debug_assertions) {
+                let binary_loc = env::current_exe().unwrap();
+                let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close
+                // to sanity
+                env::set_current_dir(binary_dir).unwrap();
+            }
+
             // This returns a `(String, u16)` of the host and port for maximum compatibility
             let addr = get_host_and_port();
             // In production, give the user a heads up that something's actually happening
@@ -126,10 +149,11 @@ where
                 port = &addr.1
             );
 
-            serve_fn(props, addr).await;
+            // We have access to default server options when `dflt-engine` is enabled
+            serve_fn(turbine, ServerOptions::default(), addr).await;
             0
         }
-        EngineOperation::Tinker => match super::engine_tinker(app()) {
+        EngineOperation::Tinker => match turbine.tinker() {
             Ok(_) => 0,
             Err(err) => {
                 eprintln!("{}", fmt_err(&err));

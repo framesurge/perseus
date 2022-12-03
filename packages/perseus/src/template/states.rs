@@ -26,7 +26,8 @@ impl States {
     }
     /// Gets the only defined state if only one is defined. If no states are
     /// defined, this will just return `None`. If both are defined,
-    /// this will return an error.
+    /// this will return an error. (Under no other conditions may this
+    /// ever return an error.)
     pub fn get_defined(&self) -> Result<TemplateState, ServeError> {
         if self.both_defined() {
             return Err(ServeError::BothStatesDefined);

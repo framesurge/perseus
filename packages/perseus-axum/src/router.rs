@@ -8,7 +8,7 @@ use axum::{
     Router,
 };
 use closure::closure;
-use perseus::{i18n::TranslationsManager, stores::MutableStore};
+use perseus::{i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::Turbine};
 use perseus::{
     server::{get_render_cfg, ServerProps},
     state::get_built_global_state,
@@ -19,29 +19,10 @@ use tower_http::services::{ServeDir, ServeFile};
 /// Gets the `Router` needed to configure an existing Axum app for Perseus, and
 /// should be provided after any other routes, as they include a wildcard route.
 pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'static>(
-    ServerProps {
-        opts,
-        immutable_store,
-        mutable_store,
-        translations_manager,
-        global_state_creator,
-    }: ServerProps<M, T>,
+    turbine: Turbine<M, T>,
+    opts: ServerOptions,
 ) -> Router {
-    let render_cfg = get_render_cfg(&immutable_store)
-        .await
-        .expect("Couldn't get render configuration!");
-    let index_with_render_cfg = opts.html_shell.clone();
-    // Generate the global state
-    let global_state = get_built_global_state(&immutable_store)
-        .await
-        .expect("couldn't get pre-built global state or placeholder (the app's build artifacts have almost certainly been corrupted)");
-
-    let immutable_store = Arc::new(immutable_store);
-    let mutable_store = Arc::new(mutable_store);
-    let translations_manager = Arc::new(translations_manager);
-    let html_shell = Arc::new(index_with_render_cfg);
-    let render_cfg = Arc::new(render_cfg);
-    let global_state = Arc::new(global_state);
+    let turbine = Arc::new(turbine);
 
     let static_dir = opts.static_dir.clone();
     let static_aliases = opts.static_aliases.clone();
@@ -63,7 +44,6 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             "/.perseus/snippets/*path",
             get_service(ServeDir::new(opts.snippets.clone())).handle_error(handle_fs_error),
         );
-    let opts = Arc::new(opts);
     let mut router = router
         .route(
             "/.perseus/translations/:locale",

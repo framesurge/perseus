@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -8,6 +10,12 @@ pub struct PageData {
     pub content: String,
     /// The state for hydration.
     pub state: Value,
+    /// The states of all the widgets involved in rendering this page. This will not
+    /// include the states of delayed widgets.
+    ///
+    /// This is a map of widget path to capsule name and state, preventing the need to
+    /// run route resolution algorithms on the browser-side.
+    pub widget_states: HashMap<String, (String, Value)>,
     /// The string to interpolate into the document's `<head>`.
     pub head: String,
 }

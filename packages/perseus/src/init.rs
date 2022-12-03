@@ -1,6 +1,6 @@
-use crate::errors::PluginError;
+use crate::{errors::PluginError, template::{ArcCapsuleMap, Capsule, CapsuleMap}};
 #[cfg(not(target_arch = "wasm32"))]
-use crate::server::{get_render_cfg, HtmlShell};
+use crate::server::HtmlShell;
 use crate::stores::ImmutableStore;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::ArcTemplateMap;
@@ -97,13 +97,17 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
     /// injected.
     root: String,
-    /// A list of function that produce templates for the app to use. These are
-    /// stored as functions so that they can be called an arbitrary number of
-    /// times.
+    /// A list of all the templates that the app uses, including the underlying templates
+    /// beneath all its capsules.
     #[cfg(target_arch = "wasm32")]
     templates: TemplateMap<G>,
     #[cfg(not(target_arch = "wasm32"))]
     templates: ArcTemplateMap<G>,
+    /// A list of all the capsules' fallback functions that the app will use.
+    #[cfg(target_arch = "wasm32")]
+    capsules: CapsuleMap<G>,
+    #[cfg(not(target_arch = "wasm32"))]
+    capsules: ArcCapsuleMap<G>,
     /// The app's error pages.
     #[cfg(target_arch = "wasm32")]
     error_pages: Rc<ErrorPages<G>>,
@@ -122,7 +126,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     #[cfg(not(target_arch = "wasm32"))]
     static_aliases: HashMap<String, String>,
     /// The plugins the app uses.
-    plugins: Rc<Plugins<G>>,
+    plugins: Arc<Plugins<G>>,
     /// The app's immutable store.
     #[cfg(not(target_arch = "wasm32"))]
     immutable_store: ImmutableStore,
@@ -274,6 +278,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
             templates: HashMap::new(),
+            capsules: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
             error_pages: Default::default(),
@@ -291,7 +296,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             #[cfg(not(target_arch = "wasm32"))]
             static_aliases: HashMap::new(),
             // By default, we won't use any plugins
-            plugins: Rc::new(Plugins::new()),
+            plugins: Arc::new(Plugins::new()),
             #[cfg(not(target_arch = "wasm32"))]
             immutable_store: ImmutableStore::new("./dist".to_string()),
             #[cfg(not(target_arch = "wasm32"))]
@@ -318,6 +323,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
             templates: HashMap::new(),
+            capsules: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
             error_pages: Default::default(),
@@ -361,8 +367,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
         self
     }
-    /// Sets all the app's templates. This takes a vector of boxed functions
-    /// that return templates.
+    /// Sets all the app's templates. This takes a vector of templates.
     ///
     /// Usually, it's preferred to run `.template()` once for each template,
     /// rather than manually constructing this more inconvenient type.
@@ -386,6 +391,41 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self.templates.insert(val.get_path(), Rc::new(val));
         #[cfg(not(target_arch = "wasm32"))]
         self.templates.insert(val.get_path(), Arc::new(val));
+        self
+    }
+    /// Sets all the app's capsules. This takes a vector of capsules.
+    ///
+    /// Usually, it's preferred to run `.capsule()` once for each capsule,
+    /// rather than manually constructing this more inconvenient type.
+    pub fn capsules(mut self, val: Vec<Capsule<G>>) -> Self {
+        for capsule in val.into_iter() {
+            self = self.capsule(capsule);
+        }
+        self
+    }
+    /// Adds a single new template to the app (convenience function). This takes
+    /// a *function that returns a template* (for internal reasons).
+    ///
+    /// **Warning:** the capsule map system is non-obvious in Perseus: all [`Capsule`]s
+    /// are split into their underlying templates and their fallback views (the two
+    /// things that make up a capsule), and the former are added to the map of all
+    /// other templates, while the latter are added to a special [`CapsuleMap`].
+    ///
+    /// See [`Capsule`] for further details.
+    pub fn capsule(mut self, val: Capsule<G>) -> Self {
+        let path = val.get_path().clone();
+        let fallback = match val.fallback {
+            Some(fallback) => fallback,
+            None => panic!("capsule '{}' has no fallback (please register one)", val.get_path()),
+        };
+        #[cfg(target_arch = "wasm32")]
+        self.templates.insert(path.clone(), Rc::new(val.template));
+        #[cfg(not(target_arch = "wasm32"))]
+        self.templates.insert(path.clone(), Arc::new(val.template));
+        #[cfg(target_arch = "wasm32")]
+        self.capsules.insert(path, Rc::new(fallback));
+        #[cfg(not(target_arch = "wasm32"))]
+        self.capsules.insert(path, Arc::new(fallback));
         self
     }
     /// Sets the app's error pages. See [`ErrorPages`] for further details.
@@ -510,7 +550,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Sets the plugins that the app will use. See [`Plugins`] for
     /// further details.
     pub fn plugins(mut self, val: Plugins<G>) -> Self {
-        self.plugins = Rc::new(val);
+        self.plugins = Arc::new(val);
         self
     }
     /// Sets the [`MutableStore`] for the app to use, which you would change for
@@ -643,6 +683,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     pub async fn get_html_shell(
         index_view_str: String,
         root: &str,
+        render_cfg: &HashMap<String, String>,
         immutable_store: &ImmutableStore,
         plugins: &Plugins<G>,
     ) -> Result<HtmlShell, PluginError> {
@@ -650,11 +691,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         let mut html_shell = HtmlShell::new(
             index_view_str,
             root,
-            // TODO Handle this properly (good enough for now because that's what we were already
-            // doing)
-            &get_render_cfg(immutable_store)
-                .await
-                .expect("Couldn't get render configuration!"),
+            render_cfg,
             &get_path_prefix_server(),
         );
 
@@ -780,6 +817,21 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         Ok(map)
     }
+    /// Gets the capsule fallbacks in an `Rc`-based `HashMap` for non-concurrent access.
+    ///
+    /// Note that the templates that underlie each capsule are stored in the template map!
+    #[cfg(target_arch = "wasm32")]
+    pub fn get_capsules_map(&self) -> CapsuleMap<G> {
+        self.capsules.clone()
+    }
+    /// Gets the capsule fallbacks in an `Arc`-based `HashMap` for concurrent access.
+    /// This should only be relevant on the server-side.
+    ///
+    /// Note that the templates that underlie each capsule are stored in the template map!
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn get_atomic_capsules_map(&self) -> ArcCapsuleMap<G> {
+        self.capsules.clone()
+    }
     /// Gets the [`ErrorPages`] used in the app. This returns an `Rc`.
     #[cfg(target_arch = "wasm32")]
     pub fn get_error_pages(&self) -> Rc<ErrorPages<G>> {
@@ -845,10 +897,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     pub fn get_mutable_store(&self) -> M {
         self.mutable_store.clone()
     }
-    /// Gets the plugins registered for the app. These are passed around and
-    /// used in a way that doesn't require them to be concurrently accessible,
-    /// and so are provided in an `Rc`.
-    pub fn get_plugins(&self) -> Rc<Plugins<G>> {
+    /// Gets the plugins registered for the app.
+    pub fn get_plugins(&self) -> Arc<Plugins<G>> {
         self.plugins.clone()
     }
     /// Gets the static aliases. This will check all provided resource paths to

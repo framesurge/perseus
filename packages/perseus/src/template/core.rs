@@ -1,8 +1,13 @@
 // This file contains logic to define how templates are rendered
 
 use std::any::TypeId;
+use std::fmt::Display;
 use std::marker::PhantomData;
-
+use std::sync::Arc;
+use std::sync::RwLock;
+use super::ArcCapsuleMap;
+use super::ArcTemplateMap;
+use super::CapsuleMap;
 #[cfg(not(target_arch = "wasm32"))]
 use super::default_headers;
 use super::RenderCtx;
@@ -40,6 +45,10 @@ use sycamore::prelude::Scope;
 use sycamore::prelude::View;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::utils::hydrate::with_no_hydration_context;
+use std::collections::HashMap;
+use crate::i18n::Locales;
+#[cfg(not(target_arch = "wasm32"))]
+use super::render_ctx::RenderMode;
 
 /// A marker for when the type of template state is unknown.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
@@ -204,6 +213,23 @@ impl<B: Serialize + DeserializeOwned + Send + Sync + 'static> StateGeneratorInfo
             ),
         }
     }
+}
+
+/// A widget dependency that has been resolved to the details needed to actually render it.
+/// These are held through interior mutability by templates.
+#[derive(Clone, Debug)]
+pub(crate) struct ResolvedWidgetDependency {
+    /// The full path of the widget.
+    pub(crate) path: String,
+    /// The name of the capsule that created the widget.
+    pub(crate) capsule_name: String,
+    /// The locale for which this resolution was performed. (Hypothetically, in some
+    /// custom builds, a page may only exist for some locales; Perseus doesn't actually
+    /// prohibit this behavior.)
+    pub(crate) locale: String,
+    /// Whether or not the widget was an incremental match from the capsule, which the
+    /// server will need to know when rendering.
+    pub(crate) was_incremental_match: bool,
 }
 
 // A series of asynchronous closure traits that prevent the user from having to
@@ -397,6 +423,42 @@ pub struct Template<G: Html> {
     /// generated, request state will be prioritized.
     #[cfg(not(target_arch = "wasm32"))]
     amalgamate_states: Option<AmalgamateStatesFn>,
+
+    // /// The widget dependencies of this template, expressed as their paths
+    // /// (not including `__capsule/`, which is used internally). Note that
+    // /// capsules may also have capsule dependencies.
+    // ///
+    // /// **Warning:** if a capsule can only be rendered using request-state,
+    // /// then this applies to any templates that depend on it as well, even
+    // /// if they could otherwise be rendered at build-time.
+    // pub(crate) widgets: Vec<String>,
+    // /// The delayed widget dependencies of this template.
+    // ///
+    // /// These will not impact the render times of the template whatsoever, since
+    // /// they are loaded asynchronously from the browser *after* the rest of the page
+    // /// has been loaded.
+    // pub(crate) delayed_widgets: Vec<String>,
+    // /// The widget dependencies of this template, after they've been resolved. This
+    // /// is designed with multithreaded interior mutability in mind, but it can be used
+    // /// easily on the browser-side as well as the engine-side.
+    // ///
+    // /// This will not include the dependency resolutions of any delayed widgets, since
+    // /// they will never need to be resolved through this system (they'll be resolved
+    // /// through the usual routing system on the browser-side when they're fetched).
+    // ///
+    // /// This is represented as a map of the provided widget names to their resolutions.
+    // pub(crate) resolved_widgets: Arc<RwLock<Option<HashMap<String, ResolvedWidgetDependency>>>>,
+    /// Whether or not this template is actually a capsule. This impacts some
+    /// aspects of internal handling.
+    ///
+    /// Do NOT manually change this unless you really know what you're doing!
+    pub(crate) is_capsule: bool,
+    /// Whether or not this template's pages can have their builds rescheduled
+    /// from build-time to request-time if they depend on capsules that aren't ready
+    /// with state at build-time. This is included as a precaution to seemingly erroneous
+    /// performance changes with pages. If rescheduling is needed and it hasn't been explicitly
+    /// allowed, an error will be returned from the build process.
+    pub(crate) can_be_rescheduled: bool,
 }
 impl<G: Html> std::fmt::Debug for Template<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -436,6 +498,12 @@ impl<G: Html> Template<G> {
             revalidate_after: None,
             #[cfg(not(target_arch = "wasm32"))]
             amalgamate_states: None,
+            // widgets: Vec::new(),
+            // delayed_widgets: Vec::new(),
+            // resolved_widgets: Arc::default(),
+            // There is no mechanism to set this to `true`, except through the `Capsule` struct
+            is_capsule: false,
+            can_be_rescheduled: false,
         }
     }
 
@@ -465,11 +533,12 @@ impl<G: Html> Template<G> {
     /// server-side ONLY. This automatically initializes an isolated global
     /// state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn render_for_template_server<'a>(
+    pub(crate) fn render_for_template_server<'a>(
         &self,
         path: String,
         state: TemplateState,
         global_state: TemplateState,
+        mode: RenderMode,
         cx: Scope<'a>,
         translator: &Translator,
     ) -> View<G> {
@@ -478,10 +547,31 @@ impl<G: Html> Template<G> {
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
-        let _ = RenderCtx::server(global_state).set_ctx(cx);
+        let _ = RenderCtx::server(global_state, mode).set_ctx(cx);
         // And now provide a translator separately
         provide_context_signal_replace(cx, translator.clone());
         // Similarly, we can invent a route manager on the spot
+        let route_manager = RouteManager::new(cx);
+        // We don't need to clean up the page disposer, because the child scope will be
+        // removed properly when the `cx` this function was given is terminated
+        (self.template)(cx, route_manager.clone(), state, path);
+
+        let view_rc = route_manager.view.take();
+        // TODO Valid to unwrap here? (We should be the only reference holder, since we
+        // created it...)
+        Rc::try_unwrap(view_rc).unwrap()
+    }
+    /// Executes the user-given function that renders the capsule on the server-side
+    /// ONLY. This takes the scope from a previous call of `.render_for_template_server()`,
+    /// assuming the render context and translator have already been fully instantiated.
+    pub(crate) fn render_widget_for_template_server<'a>(
+        &self,
+        path: String,
+        state: TemplateState,
+        cx: Scope<'a>,
+    ) -> View<G> {
+        use std::rc::Rc;
+
         let route_manager = RouteManager::new(cx);
         // We don't need to clean up the page disposer, because the child scope will be
         // removed properly when the `cx` this function was given is terminated
@@ -508,7 +598,7 @@ impl<G: Html> Template<G> {
             // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             // We don't need any page state store here
-            let _ = RenderCtx::server(global_state).set_ctx(cx);
+            let _ = RenderCtx::server(global_state, RenderMode::Head).set_ctx(cx);
             // And now provide a translator separately
             provide_context_signal_replace(cx, translator.clone());
             // We don't want to generate hydration keys for the head because it is static.
@@ -676,11 +766,18 @@ impl<G: Html> Template<G> {
     /// only be one page rendered, and it will occupy that root position.
     ///
     /// Note that this will automatically transform `index` to an empty string.
+    ///
+    /// Note that this will prepend `__capsule/` to any capsules automatically.
     pub fn get_path(&self) -> String {
-        if self.path == "index" {
+        let base = if self.path == "index" {
             String::new()
         } else {
             self.path.clone()
+        };
+        if self.is_capsule {
+            format!("__capsule/{}", base)
+        } else {
+            base
         }
     }
     /// Gets the interval after which the template will next revalidate.
@@ -746,6 +843,184 @@ impl<G: Html> Template<G> {
             && !self.revalidates()
             && !self.uses_incremental()
     }
+    // /// Returns a boolean as to whether or not this template should be rendered at build time.
+    // /// Its state will still be generated if it can be (that's separate to this), but, if this
+    // /// template has dependencies that won't have state ready at build-time, then it can't be
+    // /// rendered until their state has been generated.
+    // ///
+    // /// This behavior can be overriden by explicitly delaying a capsule's use, since the render
+    // /// times of delayed capsules are irrelevant to final template rendering. See the book for
+    // /// details.
+    // ///
+    // /// If all the non-delayed capsules can be built at build-time, then this is safe
+    // /// for then too, provided it either has no state, or generates at least some state at build-time.
+    // ///
+    // /// This will return an error if the template's dependencies, and their dependencies, and theirs, and so on,
+    // /// have not all been resolved. (The easiest way to do this is to resolve the dependencies of all
+    // /// entries in the template map, which will include capsules.)
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn should_be_rendered_at_build_time(&self, templates: &ArcTemplateMap<G>) -> Result<bool, ServerError> {
+    //     // Bail early if this template itself does not use build state
+    //     if !self.uses_build_state() && !self.is_basic() {
+    //         return Ok(false);
+    //     }
+    //     // Now move on to the dependencies
+    //     let resolved_deps_opt = self.resolved_widgets.read().unwrap();
+    //     if let Some(resolved_deps) = &*resolved_deps_opt {
+    //         let mut deps_buildable = true;
+    //         for widget in self.widgets.iter() {
+    //             // Get the resolution of this widget
+    //             // The resolution was mapped directly from the originals, we will have an entry for every widget
+    //             let resolution = resolved_deps.get(widget).unwrap();
+    //             // The resolution system would also have checked all these
+    //             let capsule = templates.get(&resolution.capsule_name).unwrap();
+    //             // We're about to recurse
+    //             drop(resolved_deps);
+    //             drop(resolved_deps_opt);
+    //             if !capsule.should_be_rendered_at_build_time(templates)? {
+    //                 deps_buildable = false;
+    //                 break;
+    //             }
+    //         }
+    //         Ok(deps_buildable)
+    //     } else {
+    //         return Err(ServerError::DepTreeNotResolved);
+    //     }
+    // }
+    // /// Resolves the capsule dependencies of this template to the necessary details to render
+    // /// them. This is necessary because, just like full templates, capsules can render many
+    // /// 'widgets' (through build paths), the paths of which have to be resolved.
+    // ///
+    // /// This will resolve both delayed and non-delayed capsules. Note that this invokes the
+    // /// full routing algorithm an arbitrary number of times, and should be done at a computationally appropriate time
+    // /// (especially on the browser-side).
+    // ///
+    // /// This takes the capsules as a tempalte map so they can be handed to the routing system.
+    // ///
+    // /// This will return an error if any of the dependencies could not be resolved.
+    // ///
+    // /// If the dependencies have already been resolved, this will not overwrite them.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn resolve_deps_for_locale(
+    //     &self,
+    //     locale: &str,
+    //     templates: &ArcTemplateMap<G>,
+    //     render_cfg: &HashMap<String, String>,
+    //     locales: &Locales,
+    // ) -> Result<(), ServerError> {
+    //     use crate::{router::{RouteVerdictAtomic, match_route_atomic}, server::get_path_slice};
+
+    //     let resolved_deps = self.resolved_widgets.read().unwrap();
+    //     if resolved_deps.is_some() {
+    //         return Ok(());
+    //     }
+    //     drop(resolved_deps);
+
+    //     let mut resolved_deps = HashMap::new();
+    //     for widget_path in self.widgets.iter() {
+    //         let localized_path = format!("{}/{}", locale, widget_path);
+    //         let path_slice = get_path_slice(&localized_path);
+    //         let verdict = match_route_atomic(
+    //             &path_slice,
+    //             render_cfg,
+    //             templates,
+    //             locales
+    //         );
+    //         match verdict {
+    //             RouteVerdictAtomic::Found(route_info) => {
+    //                 let resolved_dep = ResolvedWidgetDependency {
+    //                     capsule_name: route_info.template.get_path(),
+    //                     path: route_info.path,
+    //                     was_incremental_match: route_info.was_incremental_match,
+    //                     locale: route_info.locale,
+    //                 };
+    //                 resolved_deps.insert(widget_path.to_string(), resolved_dep);
+    //             },
+    //             RouteVerdictAtomic::LocaleDetection(_) => return Err(ServerError::ResolveDepLocaleRedirection {
+    //                 locale: locale.to_string(),
+    //                 template_name: self.get_path(),
+    //                 widget: widget_path.to_string(),
+    //             }),
+    //             RouteVerdictAtomic::NotFound => return Err(ServerError::ResolveDepNotFound {
+    //                 locale: locale.to_string(),
+    //                 template_name: self.get_path(),
+    //                 widget: widget_path.to_string(),
+    //             }),
+    //         };
+    //     }
+
+    //     // Modify the internal list, propagating any panics
+    //     *self.resolved_widgets.write().unwrap() = Some(resolved_deps);
+
+    //     Ok(())
+    // }
+    // /// Resolves the capsule dependencies of this template to the necessary details to render
+    // /// them. This is necessary because, just like full templates, capsules can render many
+    // /// 'widgets' (through build paths), the paths of which have to be resolved.
+    // ///
+    // /// This will resolve both delayed and non-delayed capsules. Note that this invokes the
+    // /// full routing algorithm an arbitrary number of times, and should be done at a computationally appropriate time
+    // /// (especially on the browser-side).
+    // ///
+    // /// This takes the capsules as a tempalte map so they can be handed to the routing system.
+    // ///
+    // /// This will return an error if any of the dependencies could not be resolved.
+    // ///
+    // /// If the dependencies have already been resolved, this will not overwrite them.
+    // #[cfg(target_arch = "wasm32")]
+    // pub fn resolve_deps_for_locale(
+    //     &self,
+    //     locale: &str,
+    //     templates: &TemplateMap<G>,
+    //     render_cfg: &HashMap<String, String>,
+    //     locales: &Locales,
+    // ) -> Result<(), ServerError> {
+    //     use crate::{router::{RouteVerdict, match_route}, server::get_path_slice};
+
+    //     let resolved_deps = self.resolved_widgets.read().unwrap();
+    //     if resolved_deps.is_some() {
+    //         return Ok(());
+    //     }
+    //     drop(resolved_deps);
+
+    //     let mut resolved_deps = Vec::new();
+    //     for widget_path in self.widgets.iter() {
+    //         let localized_path = format!("{}/{}", locale, widget_path);
+    //         let path_slice = get_path_slice(&localized_path);
+    //         let verdict = match_route(
+    //             &path_slice,
+    //             render_cfg,
+    //             templates,
+    //             locales
+    //         );
+    //         match verdict {
+    //             RouteVerdict::Found(route_info) => {
+    //                 let resolved_dep = ResolvedWidgetDependency {
+    //                     capsule_name: route_info.template.get_path(),
+    //                     path: route_info.path,
+    //                     was_incremental_match: route_info.was_incremental_match,
+    //                     locale: route_info.locale,
+    //                 };
+    //                 resolved_deps.push(resolved_dep);
+    //             },
+    //             RouteVerdict::LocaleDetection(_) => return Err(ServerError::ResolveDepLocaleRedirection {
+    //                 locale: locale.to_string(),
+    //                 template_name: self.get_path(),
+    //                 widget: widget_path.to_string(),
+    //             }),
+    //             RouteVerdict::NotFound => return Err(ServerError::ResolveDepNotFound {
+    //                 locale: locale.to_string(),
+    //                 template_name: self.get_path(),
+    //                 widget: widget_path.to_string(),
+    //             }),
+    //         };
+    //     }
+
+    //     // Modify the internal list, propagating any panics
+    //     *self.resolved_widgets.write().unwrap() = Some(resolved_deps);
+
+    //     Ok(())
+    // }
 
     // Builder setters
     // The server-only ones have a different version for Wasm that takes in an empty
@@ -1250,6 +1525,68 @@ impl<G: Html> Template<G> {
     pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Template<G> {
         self
     }
+    /// Allow the building of this page's templates to be rescheduled from build-tim
+    /// to request-time.
+    ///
+    /// A page whose state isn't generated at request-tim and isn't revalidated can
+    /// be rendered at build-time, unless it depends on capsules that don't have those
+    /// properties. If a page that could be rendered at build-time were to render
+    /// with a widget that revalidates later, that prerender would be invalidated later,
+    /// leading to render errors. If that situation arises, and this hasn't been set,
+    /// building will return an error.
+    ///
+    /// If you receive one of those errors, it's almost always absolutely fine to enable this,
+    /// as the performance hit will usually be negligible. If you notice a substantial difference
+    /// though, you may wish to reconsider.
+    pub fn allow_rescheduling(mut self) -> Self {
+        self.can_be_rescheduled = true;
+        self
+    }
+
+    // /// Declares all the widget dependencies for this template at once. Usually,
+    // /// it will be more convenient to call `.uses_widget()` multiple times.
+    // pub fn uses_widgets(mut self, val: Vec<String>) -> Self {
+    //     self.widgets.extend(val);
+    //     self
+    // }
+    // /// Declares a single widget dependency for this template. This will be used
+    // /// to determine how this template should be rendered (e.g. if it could be rendered
+    // /// at build-time itself, but uses a request-time-rendered widget, then it will
+    // /// have to be rendered at request-time as well; latest render wins by necessity).
+    // ///
+    // /// Note that this method can be called on [`Widget`]s as well, since widgets can
+    // /// themselves use widgets.
+    // ///
+    // /// This function takes the path of the widget, as provided to `Widget::new()`. This
+    // /// may overlap with the name of some other template in your app, but this is fine, since
+    // /// Perseus internally prepends `__widget/` to all widget names.
+    // ///
+    // /// Any widget declared here **must** also be registered as a widget for the entire app.
+    // pub fn uses_widget(mut self, val: impl Into<String> + Display) -> Self {
+    //     self.widgets.push(val.to_string());
+    //     self
+    // }
+
+    // /// Declares all the delayed widget dependencies for this template at once. Usually,
+    // /// it will be more convenient to call `.uses_delayed_widget()` multiple times.
+    // pub fn uses_delayed_widgets(mut self, val: Vec<String>) -> Self {
+    //     self.delayed_widgets.extend(val);
+    //     self
+    // }
+    // /// Identical to `.uses_widget()`, except this registers the given widget as a *delayed*
+    // /// widget dependency, meaning it will *not* be included in initial loads. That is, when
+    // /// a user comes to this page from the outside internet, they will see everything except the
+    // /// delayed widgets, which will be filled in asynchronously once the rest of the page has been
+    // /// loaded. This can be especially useful if you have very content-heavy widgets, and you
+    // /// want to maximize page load times.
+    // ///
+    // /// The decision to delay a widget's loading should be made after reading the relevant
+    // /// documentation in the Perseus book, and only with proper testing (if applied without
+    // /// measure, delaying widgetsmay actually slow down page loads).
+    // pub fn uses_delayed_widget(mut self, val: impl Into<String> + Display) -> Self {
+    //     self.delayed_widgets.push(val.to_string());
+    //     self
+    // }
 }
 
 // The engine needs to know whether or not to use hydration, this is how we pass

@@ -28,6 +28,7 @@ pub async fn build<M: MutableStore, T: TranslationsManager>(
     let mutable_store = app.get_mutable_store();
     let locales = app.get_locales().map_err(|err| Rc::new(err.into()))?;
     let gsc = app.get_global_state_creator();
+    let capsule_fallbacks = app.get_atomic_capsules_map();
 
     // Build the site for all the common locales (done in parallel)
     // All these parameters can be modified by `PerseusApp` and plugins, so there's
@@ -41,6 +42,7 @@ pub async fn build<M: MutableStore, T: TranslationsManager>(
 
     let res = build_app(BuildProps {
         templates: &templates_map,
+        capsule_fallbacks: &capsule_fallbacks,
         locales: &locales,
         immutable_store: &immutable_store,
         mutable_store: &mutable_store,

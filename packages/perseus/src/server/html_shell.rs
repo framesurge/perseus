@@ -163,6 +163,8 @@ impl HtmlShell {
         // doesn't contaminate later non-initial loads Error pages (above) will
         // set this to `error`
         let initial_state = escape_page_data(&page_data.state.to_string());
+        // We know the form of this, and it won't fail
+        let initial_widget_states = escape_page_data(&serde_json::to_string(&page_data.widget_states).unwrap());
         let global_state = escape_page_data(&global_state.state.to_string());
         let translations = escape_page_data(translations);
 
@@ -170,6 +172,8 @@ impl HtmlShell {
         // it doesn't matter if it's expunged on subsequent loads
         let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`;", initial_state);
         self.scripts_after_boundary.push(initial_state);
+        let initial_widget_states = format!("window.__PERSEUS_INITIAL_WIDGET_STATES = `{}`;", initial_widget_states);
+        self.scripts_after_boundary.push(initial_widget_states);
         // But we'll need the global state as a variable until a template accesses it,
         // so we'll keep it around (even though it should actually instantiate validly
         // and not need this after the initial load)

@@ -135,8 +135,26 @@ pub enum ServerError {
         #[source]
         source: serde_json::Error,
     },
+    #[error("attempting to resolve dependency '{widget}' in locale '{locale}' produced a locale redirection verdict (this shouldn't be possible)")]
+    ResolveDepLocaleRedirection {
+        widget: String,
+        locale: String,
+    },
+    #[error("attempting to resolve dependency '{widget}' in locale '{locale}' produced a not found verdict (did you mistype the widget path?)")]
+    ResolveDepNotFound {
+        widget: String,
+        locale: String,
+    },
+    #[error("template '{template_name}' cannot be built at build-time due to one or more of its dependencies having state that may change later; to allow this template to be built later, add `.allow_rescheduling()` to your template definition")]
+    TemplateCannotBeRescheduled {
+        template_name: String,
+    },
+    // This is a serious error in programming
+    #[error("a dependency tree was not resolved, but a function expecting it to have been was called (this is a server-side error)")]
+    DepTreeNotResolved,
     #[error("the template name did not prefix the path (this request was severely malformed)")]
     TemplateNameNotInPath,
+
     #[error(transparent)]
     StoreError(#[from] StoreError),
     #[error(transparent)]
@@ -228,7 +246,7 @@ pub enum BuildError {
     InvalidDatetimeIntervalIndicator { indicator: String },
     #[error("asset 'render_cfg.json' invalid or corrupted (try cleaning all assets)")]
     RenderCfgInvalid {
-        #[from]
+        #[source]
         source: serde_json::Error,
     },
 }
@@ -243,19 +261,21 @@ pub enum ExportError {
     TemplateNotFound { template_name: String },
     #[error("your app can't be exported because its global state depends on strategies that can't be run at build time (only build state can be used in exportable apps)")]
     GlobalStateNotExportable,
+    #[error("template '{template_name} can't be exported because one or more of its widget dependencies use state generation strategies that can't be run at build-time")]
+    DependenciesNotExportable { template_name: String },
 }
 
 /// Errors that can occur while serving an app. These are integration-agnostic.
 #[derive(Error, Debug)]
 pub enum ServeError {
-    #[error("page at '{path}' not found")]
+    #[error("page/widget at '{path}' not found")]
     PageNotFound { path: String },
     #[error("both build and request states were defined for a template when only one or fewer were expected (should it be able to amalgamate states?)")]
     BothStatesDefined,
     #[cfg(not(target_arch = "wasm32"))]
     #[error("couldn't parse revalidation datetime (try cleaning all assets)")]
     BadRevalidate {
-        #[from]
+        #[source]
         source: chrono::ParseError,
     },
 }

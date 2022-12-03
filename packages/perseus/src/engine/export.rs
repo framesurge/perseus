@@ -78,6 +78,7 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
     let templates_map = app
         .get_atomic_templates_map()
         .map_err(|err| Rc::new(err.into()))?;
+    let capsule_fallbacks = app.get_atomic_capsules_map();
     let index_view_str = app.get_index_view_str();
     let root_id = app.get_root().map_err(|err| Rc::new(err.into()))?;
     // This consumes `self`, so we get it finally
@@ -88,6 +89,7 @@ async fn build_and_export<M: MutableStore, T: TranslationsManager>(
     // before we can proceed on to exporting
     let build_res = build_app(BuildProps {
         templates: &templates_map,
+        capsule_fallbacks: &capsule_fallbacks,
         locales: &locales,
         immutable_store: &immutable_store,
         mutable_store: &mutable_store,
