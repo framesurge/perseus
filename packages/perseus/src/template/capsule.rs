@@ -17,7 +17,7 @@ pub struct Capsule<G: Html> {
     ///
     /// Note that this starts as `None`, but, if it's not set, `PerseusApp` will panic. So, for later
     /// code, this can be assumed to be always `Some`.
-    pub(crate) fallback: Option<Box<dyn Fn(Scope) -> View<G>>>,
+    pub(crate) fallback: Option<Box<dyn Fn(Scope) -> View<G> + Send + Sync>>,
 }
 impl<G: Html> std::fmt::Debug for Capsule<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -50,7 +50,7 @@ impl<G: Html> Capsule<G> {
     ///
     /// **Warning:** if you do not set a fallback view for a capsule, your app will not compile!
     // TODO This function should take properties
-    pub fn fallback(mut self, view: impl Fn (Scope) -> View<G> + 'static) -> Self {
+    pub fn fallback(mut self, view: impl Fn (Scope) -> View<G> + Send + Sync + 'static) -> Self {
         self.fallback = Some(Box::new(view));
         self
     }

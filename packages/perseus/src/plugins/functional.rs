@@ -2,11 +2,10 @@ use super::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::errors::Error;
 use crate::errors::PluginError;
-use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
 #[cfg(not(target_arch = "wasm32"))]
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// An action which can be taken by many plugins. When run, a functional action
 /// will return a map of plugin names to their return types.
@@ -18,7 +17,7 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
     fn run(
         &self,
         action_data: A,
-        plugin_data: &HashMap<String, Box<dyn Any + Send>>,
+        plugin_data: &HashMap<String, Box<dyn Any + Send + Sync>>,
     ) -> Result<HashMap<String, R>, PluginError> {
         let mut returns = HashMap::new();
         for (plugin_name, runner) in &self.runners {
@@ -41,7 +40,7 @@ impl<A, R> PluginAction<A, R, HashMap<String, R>> for FunctionalPluginAction<A, 
     fn register_plugin(
         &mut self,
         name: &str,
-        runner: impl Fn(&A, &(dyn Any + Send)) -> Result<R, Box<dyn std::error::Error>> + Send + 'static,
+        runner: impl Fn(&A, &(dyn Any + Send + Sync)) -> Result<R, Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
     ) {
         self.register_plugin_box(name, Box::new(runner))
     }
@@ -180,7 +179,7 @@ pub struct FunctionalPluginBuildActions {
     /// Runs after the build process if it completes successfully.
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build process if it fails.
-    pub after_failed_build: FunctionalPluginAction<Rc<Error>, ()>,
+    pub after_failed_build: FunctionalPluginAction<Arc<Error>, ()>,
 }
 /// Functional actions that pertain to the export process.
 #[cfg(not(target_arch = "wasm32"))]
@@ -192,19 +191,19 @@ pub struct FunctionalPluginExportActions {
     /// successfully.
     pub after_successful_build: FunctionalPluginAction<(), ()>,
     /// Runs after the build stage in the export process if it fails.
-    pub after_failed_build: FunctionalPluginAction<Rc<Error>, ()>,
+    pub after_failed_build: FunctionalPluginAction<Arc<Error>, ()>,
     /// Runs after the export process if it fails.
-    pub after_failed_export: FunctionalPluginAction<Rc<Error>, ()>,
+    pub after_failed_export: FunctionalPluginAction<Arc<Error>, ()>,
     /// Runs if copying the static directory failed.
-    pub after_failed_static_copy: FunctionalPluginAction<Rc<Error>, ()>,
+    pub after_failed_static_copy: FunctionalPluginAction<Arc<Error>, ()>,
     /// Runs if copying a static alias that was a directory failed. The argument
     /// to this is a tuple of the from and to locations of the copy, along with
     /// the error.
-    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<Rc<Error>, ()>,
+    pub after_failed_static_alias_dir_copy: FunctionalPluginAction<Arc<Error>, ()>,
     /// Runs if copying a static alias that was a file failed. The argument to
     /// this is a tuple of the from and to locations of the copy, along with the
     /// error.
-    pub after_failed_static_alias_file_copy: FunctionalPluginAction<Rc<Error>, ()>,
+    pub after_failed_static_alias_file_copy: FunctionalPluginAction<Arc<Error>, ()>,
     /// Runs after the export process if it completes successfully.
     pub after_successful_export: FunctionalPluginAction<(), ()>,
 }
@@ -219,7 +218,7 @@ pub struct FunctionalPluginExportErrorPageActions {
     /// Runs after a error page was exported successfully.
     pub after_successful_export_error_page: FunctionalPluginAction<(), ()>,
     /// Runs if writing to the output file failed. Error and filename are given.
-    pub after_failed_write: FunctionalPluginAction<Rc<Error>, ()>,
+    pub after_failed_write: FunctionalPluginAction<Arc<Error>, ()>,
 }
 /// Functional actions that pertain to the server.
 #[derive(Default, Debug)]

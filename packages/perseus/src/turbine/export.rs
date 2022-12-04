@@ -1,14 +1,15 @@
-use std::{collections::HashMap, fs, path::PathBuf, rc::Rc};
+use std::{collections::HashMap, fs, path::PathBuf, rc::Rc, sync::Arc};
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::future::{try_join, try_join_all};
 use serde_json::Value;
-use crate::{PerseusApp, errors::*, i18n::TranslationsManager, internal::{PageData, PageDataPartial}, plugins::PluginAction, server::HtmlShell, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
+use sycamore::web::SsrNode;
+use crate::{PerseusAppBase, errors::*, i18n::TranslationsManager, internal::{PageData, PageDataPartial}, plugins::PluginAction, server::HtmlShell, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
 use super::Turbine;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Exports your app to a series of static files. If any templates/capsules
     /// in your app use request-time-only functionality, this will fail.
-    pub async fn export(&mut self) -> Result<(), Rc<Error>> {
+    pub async fn export(&mut self) -> Result<(), Arc<Error>> {
         // Note that this function uses different plugin actions from a pure build
         self
             .plugins
@@ -16,17 +17,17 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .export_actions
             .before_export
             .run((), self.plugins.get_plugin_data())
-            .map_err(|err| Rc::new(err.into()))?;
+            .map_err(|err| Arc::new(err.into()))?;
         let res = self.build_internal(true).await; // We mark that we will be exporting
         if let Err(err) = res {
-            let err: Rc<Error> = Rc::new(err.into());
+            let err: Arc<Error> = Arc::new(err.into());
             self
                 .plugins
                 .functional_actions
                 .export_actions
                 .after_failed_build
                 .run(err.clone(), self.plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
+                .map_err(|err| Arc::new(err.into()))?;
 
             return Err(err);
         } else {
@@ -36,7 +37,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .export_actions
                 .after_successful_build
                 .run((), self.plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
+                .map_err(|err| Arc::new(err.into()))?;
         }
 
         // By now, the global states have been written for each locale, along with the render configuration (that's all in memory and in the immutable store)
@@ -49,25 +50,17 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .immutable_store
                .get_path()
         );
-        // The app has now been built, so we can safely instantiate the HTML shell
-        // (which needs access to the render config, generated in the above build step)
-        // It doesn't matter if the type parameters here are wrong, this function
-        // doesn't use them
-        let html_shell =
-            PerseusApp::get_html_shell(self.index_view_str.to_string(), &self.root_id, &self.render_cfg, &self.immutable_store, &self.plugins)
-            .await
-            .map_err(|err| Rc::new(err.into()))?;
         // Turn the build artifacts into self-contained static files
-        let export_res = self.export_internal(html_shell).await;
+        let export_res = self.export_internal().await;
         if let Err(err) = export_res {
-            let err: Rc<Error> = Rc::new(err.into());
+            let err: Arc<Error> = Arc::new(err.into());
             self
                 .plugins
                 .functional_actions
                 .export_actions
                 .after_failed_export
                 .run(err.clone(), self.plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
+                .map_err(|err| Arc::new(err.into()))?;
 
             Err(err)
         } else {
@@ -80,18 +73,18 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .export_actions
                 .after_successful_export
                 .run((), self.plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
+                .map_err(|err| Arc::new(err.into()))?;
 
             Ok(())
         }
     }
 
     // TODO Warnings for render cancellations in exported apps
-    async fn export_internal(&self, html_shell: HtmlShell) -> Result<(), ServerError> {
+    async fn export_internal(&self) -> Result<(), ServerError> {
         // Loop over every pair in the render config
         let mut export_futs = Vec::new();
         for (path, template_path) in self.render_cfg.iter() {
-            export_futs.push(self.export_path(path, template_path, &html_shell));
+            export_futs.push(self.export_path(path, template_path));
         }
         // If we're using i18n, loop through the locales to create translations files
         let mut translations_futs = Vec::new();
@@ -109,7 +102,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         Ok(())
     }
     /// This exports for all locales, or for none if the app doesn't use i18n.
-    async fn export_path(&self, path: &str, template_path: &str, html_shell: &HtmlShell) -> Result<(), ServerError> {
+    async fn export_path(&self, path: &str, template_path: &str) -> Result<(), ServerError> {
+        // We assume we've already built the app, which would have populated this
+        let html_shell = self.html_shell.as_ref().unwrap();
+
         let path_prefix = get_path_prefix_server();
         // We need the encoded path to reference flattened build artifacts
         // But we don't create a flattened system with exporting, everything is properly
@@ -299,7 +295,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// The error type here is a tuple of the location the asset was copied from,
     /// the location it was copied to, and the error in that process (which could be
     /// from `io` or `fs_extra`).
-    fn copy_static_aliases(&self, dest: &str) -> Result<(), Rc<Error>> {
+    fn copy_static_aliases(&self, dest: &str) -> Result<(), Arc<Error>> {
         // Loop through any static aliases and copy them in too
         // Unlike with the server, these could override pages!
         // We'll copy from the alias to the path (it could be a directory or a file)
@@ -315,14 +311,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         to,
                         from: path.to_string(),
                     };
-                    let err: Rc<Error> = Rc::new(err.into());
+                    let err: Arc<Error> = Arc::new(err.into());
                     self
                         .plugins
                         .functional_actions
                         .export_actions
                         .after_failed_static_alias_dir_copy
                         .run(err.clone(), self.plugins.get_plugin_data())
-                        .map_err(|err| Rc::new(err.into()))?;
+                        .map_err(|err| Arc::new(err.into()))?;
                     return Err(err);
                 }
             } else if let Err(err) = fs::copy(&from, &to) {
@@ -331,14 +327,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     to,
                     from: path.to_string(),
                 };
-                let err: Rc<Error> = Rc::new(err.into());
+                let err: Arc<Error> = Arc::new(err.into());
                 self
                     .plugins
                     .functional_actions
                     .export_actions
                     .after_failed_static_alias_file_copy
                     .run(err.clone(), self.plugins.get_plugin_data())
-                    .map_err(|err| Rc::new(err.into()))?;
+                    .map_err(|err| Arc::new(err.into()))?;
                 return Err(err);
             }
         }
@@ -348,30 +344,29 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Copies the directory containing static data to be put in `/.perseus/static/`
     /// (URL). This takes in both the location of the static directory and the
     /// destination directory for exported files.
-    fn copy_static_dir(&self, dest: &str) -> Result<(), Rc<Error>> {
+    fn copy_static_dir(&self, dest: &str) -> Result<(), Arc<Error>> {
         // Copy the `static` directory into the export package if it exists
         // If the user wants extra, they can use static aliases, plugins are unnecessary
         // here
-        let static_dir = PathBuf::from(&self.static_dir);
-        if static_dir.exists() {
+        if self.static_dir.exists() {
             if let Err(err) = copy_dir(
-                &static_dir,
+                &self.static_dir,
                 format!("{}/.perseus/", dest),
                 &CopyOptions::new(),
             ) {
                 let err = EngineError::CopyStaticDirError {
                     source: err,
-                    path: self.static_dir.to_string(),
+                    path: self.static_dir.to_string_lossy().to_string(),
                     dest: dest.to_string(),
                 };
-                let err: Rc<Error> = Rc::new(err.into());
+                let err: Arc<Error> = Arc::new(err.into());
                 self
                     .plugins
                     .functional_actions
                     .export_actions
                     .after_failed_static_copy
                     .run(err.clone(), self.plugins.get_plugin_data())
-                    .map_err(|err| Rc::new(err.into()))?;
+                    .map_err(|err| Arc::new(err.into()))?;
                 return Err(err);
             }
         }

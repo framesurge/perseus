@@ -3,7 +3,7 @@ use crate::Html;
 use std::any::Any;
 use std::collections::HashMap;
 
-type PluginDataMap = HashMap<String, Box<dyn Any + Send>>;
+type PluginDataMap = HashMap<String, Box<dyn Any + Send + Sync>>;
 
 /// A representation of all the plugins used by an app.
 ///
@@ -51,12 +51,12 @@ impl Plugins {
     /// server-side (including tinker-time and the build process).
     // We allow unused variables and the like for linting because otherwise any
     // errors in Wasm compilation will show these up, which is annoying
-    pub fn plugin<D: Any + Send>(
+    pub fn plugin<D: Any + Send + Sync>(
         #[cfg_attr(target_arch = "wasm32", allow(unused_mut))] mut self,
         // This is a function so that it never gets called if we're compiling for Wasm, which means
         // Rust eliminates it as dead code!
         #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin: impl Fn() -> Plugin<D>
-            + Send,
+            + Send + Sync,
         #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin_data: D,
     ) -> Self {
         // If we're compiling for Wasm, plugins that don't run on the client side
@@ -71,7 +71,7 @@ impl Plugins {
                 panic!("attempted to register plugin that can run on the client with `.plugin()`, this plugin should be registered with `.plugin_with_client_privilege()` (this will increase your final bundle size)")
             }
             // Insert the plugin data
-            let plugin_data: Box<dyn Any + Send> = Box::new(plugin_data);
+            let plugin_data: Box<dyn Any + Send + Sync> = Box::new(plugin_data);
             let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
             // If there was an old value, there are two plugins with the same name, which is
             // very bad (arbitrarily inconsistent behavior overriding)
@@ -91,10 +91,10 @@ impl Plugins {
     /// compilation feasible and to emphasize to users what's increasing their
     /// bundle sizes. Note that this should also be used for plugins that
     /// run on both the client and server.
-    pub fn plugin_with_client_privilege<D: Any + Send>(
+    pub fn plugin_with_client_privilege<D: Any + Send + Sync>(
         mut self,
         // This is a function to preserve a similar API interface with `.plugin()`
-        plugin: impl Fn() -> Plugin<D> + Send,
+        plugin: impl Fn() -> Plugin<D> + Send + Sync,
         plugin_data: D,
     ) -> Self {
         let plugin = plugin();
@@ -104,7 +104,7 @@ impl Plugins {
             panic!("attempted to register plugin that doesn't ever run on the client with `.plugin_with_client_privilege()`, you should use `.plugin()` instead")
         }
         // Insert the plugin data
-        let plugin_data: Box<dyn Any + Send> = Box::new(plugin_data);
+        let plugin_data: Box<dyn Any + Send + Sync> = Box::new(plugin_data);
         let res = self.plugin_data.insert(plugin.name.clone(), plugin_data);
         // If there was an old value, there are two plugins with the same name, which is
         // very bad (arbitrarily inconsistent behavior overriding)

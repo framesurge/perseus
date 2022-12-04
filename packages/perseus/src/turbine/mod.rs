@@ -7,15 +7,19 @@
 mod build;
 mod export;
 mod serve;
+/// This has the actual API endpoints.
+mod server;
 mod export_error_page;
 mod tinker;
 
 mod build_error_page;
 
-use std::{collections::HashMap, sync::Arc};
+pub use server::ApiResponse;
+
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use futures::executor::block_on;
 use sycamore::web::SsrNode;
-use crate::{ErrorPages, PerseusAppBase, errors::*, i18n::{Locales, TranslationsManager}, plugins::Plugins, state::GlobalStateCreator, stores::{ImmutableStore, MutableStore}, template::{ArcCapsuleMap, ArcTemplateMap, TemplateState}};
+use crate::{ErrorPages, PerseusAppBase, errors::*, i18n::{Locales, TranslationsManager}, plugins::Plugins, server::HtmlShell, state::GlobalStateCreator, stores::{ImmutableStore, MutableStore}, template::{ArcCapsuleMap, ArcTemplateMap, TemplateState}};
 
 /// The Perseus state generator.
 pub struct Turbine<M: MutableStore, T: TranslationsManager> {
@@ -34,11 +38,13 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     translations_manager: T,
     /// The global state creator.
     global_state_creator: Arc<GlobalStateCreator>,
-    plugins: Arc<Plugins<SsrNode>>,
+    plugins: Arc<Plugins>,
     index_view_str: String,
     root_id: String,
-    static_dir: String,
-    static_aliases: HashMap<String, String>,
+    /// This is stored as a `PathBuf` so we can easily check whether or not it exists.
+    pub static_dir: PathBuf,
+    /// The app's static aliases.
+    pub static_aliases: HashMap<String, String>,
     // --- These may not be populated at creation ---
     /// The app's render configuration, a map of paths in the app to the names of
     /// the templates that generated them. (Since templates can have multiple `/`
@@ -47,6 +53,8 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// A map of locale to global state. This is kept cached throughout the build process,
     /// since every template we build will require it to be provided through context.
     global_states_by_locale: HashMap<String, TemplateState>,
+    /// The HTML shell that can be used for constructing the full pages this app returns.
+    html_shell: Option<HtmlShell>,
 }
 
 // We want to be able to create a turbine straight from an app base
@@ -54,7 +62,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
     type Error = PluginError;
 
     fn try_from(app: PerseusAppBase<SsrNode, M, T>) -> Result<Self, Self::Error> {
-        let templates = app.get_atomic_templates_map().unwrap(); // TODO Remove template plugin actions
+        let templates = app.get_atomic_templates_map();
         let capsule_fallbacks = app.get_atomic_capsules_map();
         let locales = app.get_locales()?;
         let immutable_store = app.get_immutable_store()?;
@@ -80,7 +88,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
             plugins,
             index_view_str,
             root_id,
-            static_dir,
+            static_dir: PathBuf::from(&static_dir),
             static_aliases,
             error_pages,
             translations_manager,
@@ -88,6 +96,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
             // If we're going from a `PerseusApp`, these will be filled in later
             render_cfg: HashMap::new(),
             global_states_by_locale: HashMap::new(),
+            html_shell: None,
         })
     }
 }
@@ -123,6 +132,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             global_states_by_locale.insert(locale.to_string(), global_state);
         }
         self.global_states_by_locale = global_states_by_locale;
+
+        let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
+            self.index_view_str.to_string(),
+            &self.root_id,
+            &self.render_cfg,
+            &self.immutable_store,
+            &self.plugins,
+        ).await?;
+        self.html_shell = Some(html_shell);
 
         Ok(())
     }

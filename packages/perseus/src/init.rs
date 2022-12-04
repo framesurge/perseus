@@ -126,7 +126,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     #[cfg(not(target_arch = "wasm32"))]
     static_aliases: HashMap<String, String>,
     /// The plugins the app uses.
-    plugins: Arc<Plugins<G>>,
+    plugins: Arc<Plugins>,
     /// The app's immutable store.
     #[cfg(not(target_arch = "wasm32"))]
     immutable_store: ImmutableStore,
@@ -549,7 +549,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Sets the plugins that the app will use. See [`Plugins`] for
     /// further details.
-    pub fn plugins(mut self, val: Plugins<G>) -> Self {
+    pub fn plugins(mut self, val: Plugins) -> Self {
         self.plugins = Arc::new(val);
         self
     }
@@ -685,7 +685,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         root: &str,
         render_cfg: &HashMap<String, String>,
         immutable_store: &ImmutableStore,
-        plugins: &Plugins<G>,
+        plugins: &Plugins,
     ) -> Result<HtmlShell, PluginError> {
         // Construct an HTML shell
         let mut html_shell = HtmlShell::new(
@@ -772,50 +772,14 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Gets the templates in an `Rc`-based `HashMap` for non-concurrent access.
     #[cfg(target_arch = "wasm32")]
-    pub fn get_templates_map(&self) -> Result<TemplateMap<G>, PluginError> {
-        // One the browser-side, this is already a `TemplateMap` internally
-        let mut map = self.templates.clone();
-
-        // This will return a map of plugin name to a vector of templates to add
-        let extra_templates = self
-            .plugins
-            .functional_actions
-            .settings_actions
-            .add_templates
-            .run((), self.plugins.get_plugin_data())?;
-        for (_plugin_name, plugin_templates) in extra_templates {
-            // Turn that vector into a template map by extracting the template root paths as
-            // keys
-            for template in plugin_templates {
-                map.insert(template.get_path(), Rc::new(template));
-            }
-        }
-
-        Ok(map)
+    pub fn get_templates_map(&self) -> TemplateMap<G> {
+        self.templates.clone()
     }
     /// Gets the templates in an `Arc`-based `HashMap` for concurrent access.
     /// This should only be relevant on the server-side.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_templates_map(&self) -> Result<ArcTemplateMap<G>, PluginError> {
-        // One the engine-side, this is already an `ArcTemplateMap` internally
-        let mut map = self.templates.clone();
-
-        // This will return a map of plugin name to a vector of templates to add
-        let extra_templates = self
-            .plugins
-            .functional_actions
-            .settings_actions
-            .add_templates
-            .run((), self.plugins.get_plugin_data())?;
-        for (_plugin_name, plugin_templates) in extra_templates {
-            // Turn that vector into a template map by extracting the template root paths as
-            // keys
-            for template in plugin_templates {
-                map.insert(template.get_path(), Arc::new(template));
-            }
-        }
-
-        Ok(map)
+    pub fn get_atomic_templates_map(&self) -> ArcTemplateMap<G> {
+        self.templates.clone()
     }
     /// Gets the capsule fallbacks in an `Rc`-based `HashMap` for non-concurrent access.
     ///
@@ -898,7 +862,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self.mutable_store.clone()
     }
     /// Gets the plugins registered for the app.
-    pub fn get_plugins(&self) -> Arc<Plugins<G>> {
+    pub fn get_plugins(&self) -> Arc<Plugins> {
         self.plugins.clone()
     }
     /// Gets the static aliases. This will check all provided resource paths to

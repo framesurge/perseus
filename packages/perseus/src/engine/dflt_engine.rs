@@ -17,8 +17,8 @@ use std::env;
 /// `panic!` after building everything.
 pub async fn run_dflt_engine_export_only<M, T, A>(op: EngineOperation, app: A) -> i32
 where
-    M: MutableStore,
-    T: TranslationsManager,
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
     A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 {
     let serve_fn = |_, _, _| async {
@@ -49,11 +49,11 @@ where
 pub async fn run_dflt_engine<M, T, F, A>(
     op: EngineOperation,
     app: A,
-    serve_fn: impl Fn(Turbine<M, T>, ServerOptions, (String, u16)) -> F,
+    serve_fn: impl Fn(&'static Turbine<M, T>, ServerOptions, (String, u16)) -> F,
 ) -> i32
 where
-    M: MutableStore,
-    T: TranslationsManager,
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
     F: Future<Output = ()>,
     A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
 {
@@ -149,8 +149,13 @@ where
                 port = &addr.1
             );
 
+            // This actively and intentionally leaks the entire turbine to avoid the overhead of an `Arc`, since we're guaranteed to need an immutable
+            // reference to it for the server (we do this here so integration authors don't have to).
+            // Since this only runs once, there is no accumulation of unused memory, so this shouldn't be a problem.
+            let turbine_static = Box::leak(Box::new(turbine));
+
             // We have access to default server options when `dflt-engine` is enabled
-            serve_fn(turbine, ServerOptions::default(), addr).await;
+            serve_fn(turbine_static, ServerOptions::default(), addr).await;
             0
         }
         EngineOperation::Tinker => match turbine.tinker() {

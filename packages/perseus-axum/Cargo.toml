@@ -15,7 +15,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 
 [dependencies]
 perseus = { path = "../perseus", version = "0.4.0-beta.11" }
-axum = "0.6"
+axum = { version = "0.6", features = [ "macros" ] } # TODO temporary!
 tower = "0.4"
 tower-http = { version = "0.3", features = [ "fs" ] }
 urlencoding = "2.1"

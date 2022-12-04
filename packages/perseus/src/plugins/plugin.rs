@@ -25,7 +25,7 @@ pub enum PluginEnv {
 
 /// A Perseus plugin. This must be exported by all plugin crates so the user can
 /// register the plugin easily.
-pub struct Plugin<D: Any + Send> {
+pub struct Plugin<D: Any + Send + Sync> {
     /// The machine name of the plugin, which will be used as a key in a HashMap
     /// with many other plugins. This should be the public crate name in all
     /// cases.
@@ -41,7 +41,7 @@ pub struct Plugin<D: Any + Send> {
 
     plugin_data_type: PhantomData<D>,
 }
-impl<D: Any + Send> std::fmt::Debug for Plugin<D> {
+impl<D: Any + Send + Sync> std::fmt::Debug for Plugin<D> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Plugin")
             .field("name", &self.name)
@@ -49,7 +49,7 @@ impl<D: Any + Send> std::fmt::Debug for Plugin<D> {
             .finish()
     }
 }
-impl<D: Any + Send> Plugin<D> {
+impl<D: Any + Send + Sync> Plugin<D> {
     /// Creates a new plugin with a name, functional actions, control actions,
     /// and whether or not the plugin is tinker-only.
     pub fn new(

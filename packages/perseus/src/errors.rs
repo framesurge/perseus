@@ -25,7 +25,7 @@ pub enum Error {
 pub struct PluginError {
     pub name: String,
     #[source]
-    pub source: Box<dyn std::error::Error>,
+    pub source: Box<dyn std::error::Error + Send + Sync>,
 }
 
 /// Errors that can occur in the server-side engine system (responsible for
@@ -165,6 +165,8 @@ pub enum ServerError {
     ExportError(#[from] ExportError),
     #[error(transparent)]
     ServeError(#[from] ServeError),
+    #[error(transparent)]
+    PluginError(#[from] PluginError),
 }
 /// Converts a server error into an HTTP status code.
 #[cfg(not(target_arch = "wasm32"))]

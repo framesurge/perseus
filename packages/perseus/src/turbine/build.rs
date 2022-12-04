@@ -1,33 +1,33 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 use futures::future::try_join_all;
 use sycamore::web::SsrNode;
-use crate::{BuildPaths, StateGeneratorInfo, Template, errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore, template::{RenderMode, RenderStatus, TemplateState}, utils::minify};
+use crate::{BuildPaths, PerseusAppBase, StateGeneratorInfo, Template, errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore, template::{RenderMode, RenderStatus, TemplateState}, utils::minify};
 use super::Turbine;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Builds your whole app for being run on a server. Do not use this function
     /// if you want to export your app.
     ///
-    /// This returns an `Rc<Error>`, since any errors are passed to plugin actions
+    /// This returns an `Arc<Error>`, since any errors are passed to plugin actions
     /// for further processing.
-    pub async fn build(&mut self) -> Result<(), Rc<Error>> {
+    pub async fn build(&mut self) -> Result<(), Arc<Error>> {
         self
             .plugins
             .functional_actions
             .build_actions
             .before_build
             .run((), self.plugins.get_plugin_data())
-            .map_err(|err| Rc::new(err.into()))?;
+            .map_err(|err| Arc::new(err.into()))?;
         let res = self.build_internal(false).await;
         if let Err(err) = res {
-            let err: Rc<Error> = Rc::new(err.into());
+            let err: Arc<Error> = Arc::new(err.into());
             self
                 .plugins
                 .functional_actions
                 .build_actions
                 .after_failed_build
                 .run(err.clone(), self.plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
+                .map_err(|err| Arc::new(err.into()))?;
 
             Err(err)
         } else {
@@ -37,7 +37,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .build_actions
                 .after_successful_build
                 .run((), self.plugins.get_plugin_data())
-                .map_err(|err| Rc::new(err.into()))?;
+                .map_err(|err| Arc::new(err.into()))?;
 
             Ok(())
         }
@@ -95,6 +95,16 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .write("render_conf.json", &serde_json::to_string(&render_cfg).unwrap())
             .await?;
         self.render_cfg = render_cfg;
+
+        // And build the HTML shell (so that this does the exact same thing as instantiating from files)
+        let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
+            self.index_view_str.to_string(),
+            &self.root_id,
+            &self.render_cfg,
+            &self.immutable_store,
+            &self.plugins,
+        ).await?;
+        self.html_shell = Some(html_shell);
 
         Ok(())
     }
@@ -343,39 +353,50 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .await?;
             }
 
-            // Construct the render mode we're using, which is needed because we don't
-            // know what dependencies are in a page/widget until we actually render it,
-            // which means we might find some that can't be built at build-time.
-            let render_status = Rc::new(RefCell::new(RenderStatus::Ok));
-            let widget_states = Rc::new(RefCell::new(HashMap::new()));
-            let mode = RenderMode::Build {
-                render_status: render_status.clone(),
-                widget_render_cfg: self.render_cfg.clone(),
-                templates: self.templates.clone(),
-                immutable_store: self.immutable_store.clone(),
-                widget_states: widget_states.clone(),
+            // Weird block creation because this has to be `Send`able later for serving
+            let (prerendered, render_status, widget_states) = {
+                // Construct the render mode we're using, which is needed because we don't
+                // know what dependencies are in a page/widget until we actually render it,
+                // which means we might find some that can't be built at build-time.
+                let render_status = Rc::new(RefCell::new(RenderStatus::Ok));
+                let widget_states = Rc::new(RefCell::new(HashMap::new()));
+                let mode = RenderMode::Build {
+                    render_status: render_status.clone(),
+                    widget_render_cfg: self.render_cfg.clone(),
+                    templates: self.templates.clone(),
+                    immutable_store: self.immutable_store.clone(),
+                    widget_states: widget_states.clone(),
+                };
+
+                // Now prerender the actual content
+                let prerendered = sycamore::render_to_string(|cx| {
+                    entity.render_for_template_server(
+                        full_path_with_locale.clone(),
+                        state,
+                        global_state.clone(),
+                        mode.clone(),
+                        cx,
+                        &translator,
+                    )
+                });
+                let render_status = render_status.take();
+
+                // With the prerender over, all references to this have been dropped
+                let widget_states = Rc::try_unwrap(widget_states).unwrap().into_inner();
+                // We know this is a `HashMap<String, (String, Value)>`, which will work
+                let widget_states = serde_json::to_string(&widget_states).unwrap();
+
+                (
+                    prerendered,
+                    render_status,
+                    widget_states,
+                )
             };
 
-            // Now prerender the actual content
-            let prerendered = sycamore::render_to_string(|cx| {
-                entity.render_for_template_server(
-                    full_path_with_locale.clone(),
-                    state,
-                    global_state.clone(),
-                    mode.clone(),
-                    cx,
-                    &translator,
-                )
-            });
             // Check how the render went
-            match render_status.take() {
+            match render_status {
                 RenderStatus::Ok => {
                     let prerendered = minify(&prerendered, true)?;
-                    // With the prerender over, all references to this have been dropped
-                    let widget_states = Rc::try_unwrap(widget_states).unwrap().into_inner();
-                    // We know this is a `HashMap<String, (String, Value)>`, which will work
-                    let widget_states = serde_json::to_string(&widget_states).unwrap();
-
                     // Write that prerendered HTML to a static file (whose presence is used to indicate
                     // that this page/widget was fine to be built at build-time, and will not change
                     // at request-time; therefore this will be blindly returned at request-time).

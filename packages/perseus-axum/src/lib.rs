@@ -12,10 +12,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 // them straight out of Axum and then just delete the bodies
 #[cfg(feature = "dflt-server")]
 mod dflt_server;
-mod initial_load;
-mod page_data;
 mod router;
-mod translations;
 
 pub use crate::router::get_router;
 #[cfg(feature = "dflt-server")]

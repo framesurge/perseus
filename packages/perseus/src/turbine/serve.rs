@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, pin::Pin, rc::Rc};
 
 use chrono::{DateTime, Utc};
-use futures::{Future, FutureExt, future::try_join_all};
+use futures::{Future, FutureExt, future::{BoxFuture, try_join_all}};
 use serde_json::Value;
 use sycamore::web::SsrNode;
 
@@ -20,8 +20,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// may have. If this is used to get the state of a capsule, the head will of course be
     /// empty.
     ///
-    /// This returns a tuple of the state and head, along with the updated global state, which
-    /// will be needed in determining the headers to render.
+    /// This assumes the given locale is actually supported.
     pub async fn get_state_for_path(
         &self,
         path: &str, // This must not contain the locale, but it *will* contain the entity name
@@ -29,19 +28,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         entity_name: &str,
         was_incremental: bool,
         req: Request,
-    ) -> Result<(PageDataPartial, TemplateState), ServerError> {
-        let (
-            StateAndHead { state, head },
-            global_state
-        ) = self.get_state_for_path_internal(path, locale, entity_name, was_incremental, req, None, None).await?;
+    ) -> Result<PageDataPartial, ServerError> {
+        let StateAndHead { state, head } = self.get_state_for_path_internal(path, locale, entity_name, was_incremental, req, None, None).await?;
 
-        Ok((
-            PageDataPartial {
-                state: state.state,
-                head,
-            },
-            global_state,
-        ))
+        Ok(PageDataPartial {
+            state: state.state,
+            head,
+        })
     }
     /// Gets the full page data for the given path. This will generate the state, render the head, and render
     /// the content of the page, resolving all widget dependencies.
@@ -62,17 +55,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         &self,
         path: &str,
         locale: &str,
-        entity_name: &str,
+        template: &Template<SsrNode>,
         was_incremental: bool,
         req: Request,
     ) -> Result<(PageData, TemplateState), ServerError> {
         // Get the latest global state, which we'll share around
         let global_state = self.get_full_global_state_for_locale(locale, clone_req(&req)).await?;
-        // We'll need the template (this is an initial load, so it's not a capsule) multiple times
-        let template = self.templates.get(entity_name).ok_or(ServeError::PageNotFound { path: path.to_string() })?;
-        // TODO Return not found if this is actually a capsule (terrible idea!!!)
-        // Begin by generating the state for this page (we don't need to clone the global state, because this will give it back)
-        let (page_state, global_state) = self.get_state_for_path_internal(path, locale, entity_name, was_incremental, clone_req(&req), Some(template), Some(global_state)).await?;
+        // Begin by generating the state for this page
+        let page_state = self.get_state_for_path_internal(path, locale, &template.get_path(), was_incremental, clone_req(&req), Some(template), Some(global_state.clone())).await?;
 
         // Yes, this is created twice; no, we don't care
         // If we're interacting with the stores, this is the path this page/widget will be under
@@ -177,7 +167,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         global_state: TemplateState,
         req: &'a Request,
         translator: &'a Translator
-    ) -> Pin<Box<dyn Future<Output = Result<(HashMap<String, (String, TemplateState)>, String), ServerError>> + 'a>> {
+    ) -> BoxFuture<'a, Result<(HashMap<String, (String, TemplateState)>, String), ServerError>> {
         // Misleadingly, this only has the locale if we're using i18n!
         let full_path_with_locale = match locale.as_str() {
             "xx-XX" => path.to_string(),
@@ -269,7 +259,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         ).await?;
 
                         // Return the tuples that'll go into `widget_states`
-                        Ok((widget_path, (capsule_name, state.0.state)))
+                        Ok((widget_path, (capsule_name, state.state)))
                     });
                 }
                 let tuples = try_join_all(futs).await?;
@@ -287,10 +277,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     translator
                 ).await
             }
-        }.boxed_local()
+        }.boxed()
     }
 
     /// The internal version allows sharing a global state so we don't constantly regenerate it in recursion.
+    ///
+    /// This assumes the given locale is supported.
     async fn get_state_for_path_internal(
         &self,
         path: &str, // This must not contain the locale, but it *will* contain the entity name
@@ -301,9 +293,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // If these are `None`, we'll generate them
         entity: Option<&Template<SsrNode>>, // Not for recursion, just convenience
         global_state: Option<TemplateState>,
-    ) -> Result<(StateAndHead, TemplateState), ServerError> {
-        // TODO Check if locale supported
-
+    ) -> Result<StateAndHead, ServerError> {
         // This could be very different from the build-time global state
         let global_state = match global_state {
             Some(global_state) => global_state,
@@ -332,14 +322,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .read(&format!("static/{}.json", &path_encoded))
                 .await?;
 
-            return Ok((
+            return Ok(
                 StateAndHead {
                     // No, this state is never written anywhere at build-time
                     state: TemplateState::empty(),
                     head
-                },
-                global_state,
-            ));
+                });
         }
 
         // No matter what we end up doing, we're probably going to need this (which will always exist)
@@ -499,17 +487,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             String::new()
         };
 
-        Ok((
+        Ok(
             StateAndHead {
                 state: final_state,
                 head: head_str,
-            },
-            global_state
-        ))
+            })
     }
 
     /// Checks timestamps and runs user-provided logic to determine if the given widget/path should
-    /// revalidatde at the present time.
+    /// revalidate at the present time.
     async fn page_or_widget_should_revalidate(
         &self,
         path_encoded: &str,
