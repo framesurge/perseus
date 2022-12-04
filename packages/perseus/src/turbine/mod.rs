@@ -14,7 +14,7 @@ mod tinker;
 
 mod build_error_page;
 
-pub use server::ApiResponse;
+pub use server::{ApiResponse, SubsequentLoadQueryParams};
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use futures::executor::block_on;

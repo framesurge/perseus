@@ -15,17 +15,8 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 
 [dependencies]
 perseus = { path = "../perseus", version = "0.4.0-beta.11" }
-axum = { version = "0.6", features = [ "macros" ] } # TODO temporary!
-tower = "0.4"
+axum = "0.6"
 tower-http = { version = "0.3", features = [ "fs" ] }
-urlencoding = "2.1"
-serde = "1"
-serde_json = "1"
-thiserror = "1"
-fmterr = "0.1"
-futures = "0.3"
-sycamore = { version = "^0.8.1", features = ["ssr"] }
-closure = "0.3"
 
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
