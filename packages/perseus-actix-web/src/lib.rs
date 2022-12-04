@@ -149,6 +149,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
 /// be run in a `main()` function annotated with `#[tokio::main]` (which
 /// requires the `macros` and `rt-multi-thread` features on the `tokio`
 /// dependency).
+#[cfg(feature = "dflt-server")]
 pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
