@@ -1,7 +1,7 @@
 use super::{RouteInfo, RouteInfoAtomic, RouteVerdict, RouteVerdictAtomic};
 use crate::i18n::Locales;
 use crate::template::{ArcTemplateMap, Template, TemplateMap};
-use crate::Html;
+use crate::{Html, PathMaybeWithLocale, PathWithoutLocale};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -123,7 +123,7 @@ pub fn match_route<G: Html>(
     locales: &Locales,
 ) -> RouteVerdict<G> {
     let path_vec = path_slice.to_vec();
-    let path_joined = path_vec.join("/"); // This should not have a leading forward slash, it's used for asset fetching by
+    let path_joined = PathMaybeWithLocale(path_vec.join("/")); // This should not have a leading forward slash, it's used for asset fetching by
                                           // the app shell
 
     let verdict;
@@ -135,7 +135,7 @@ pub fn match_route<G: Html>(
         if locales.is_supported(locale) {
             // We'll assume this has already been i18ned (if one of your routes has the same
             // name as a supported locale, ffs)
-            let path_without_locale = path_slice[1..].to_vec().join("/");
+            let path_without_locale = PathWithoutLocale(path_slice[1..].to_vec().join("/"));
             // Get the template to use
             let (template, was_incremental_match) =
                 get_template_for_path(&path_without_locale, render_cfg, templates);
@@ -155,13 +155,17 @@ pub fn match_route<G: Html>(
             // This will result in a redirect, and the actual template to use will be
             // determined after that We'll just pass through the path to be
             // redirected to (after it's had a locale placed in front)
+            let path_joined = PathWithoutLocale(path_joined.0);
             verdict = RouteVerdict::LocaleDetection(path_joined)
         }
     } else if locales.using_i18n {
         // If we're here, then we're using i18n, but we're at the root path, which is a
         // locale detection point
+        let path_joined = PathWithoutLocale(path_joined.0);
         verdict = RouteVerdict::LocaleDetection(path_joined);
     } else {
+        // We're not using i18n
+        let path_joined = PathWithoutLocale(path_joined.0);
         // Get the template to use
         let (template, was_incremental_match) =
             get_template_for_path(&path_joined, render_cfg, templates);
@@ -192,7 +196,7 @@ pub fn match_route_atomic<'a, G: Html>(
     locales: &Locales,
 ) -> RouteVerdictAtomic<'a, G> {
     let path_vec: Vec<&str> = path_slice.to_vec();
-    let path_joined = path_vec.join("/"); // This should not have a leading forward slash, it's used for asset fetching by
+    let path_joined = PathMaybeWithLocale(path_vec.join("/")); // This should not have a leading forward slash, it's used for asset fetching by
                                           // the app shell
 
     let verdict;
@@ -204,7 +208,7 @@ pub fn match_route_atomic<'a, G: Html>(
         if locales.is_supported(locale) {
             // We'll assume this has already been i18ned (if one of your routes has the same
             // name as a supported locale, ffs)
-            let path_without_locale = path_slice[1..].to_vec().join("/");
+            let path_without_locale = PathWithoutLocale(path_slice[1..].to_vec().join("/"));
             // Get the template to use
             let (template, was_incremental_match) =
                 get_template_for_path_atomic(&path_without_locale, render_cfg, templates);
@@ -224,13 +228,17 @@ pub fn match_route_atomic<'a, G: Html>(
             // This will result in a redirect, and the actual template to use will be
             // determined after that We'll just pass through the path to be
             // redirected to (after it's had a locale placed in front)
+            let path_joined = PathWithoutLocale(path_joined.0);
             verdict = RouteVerdictAtomic::LocaleDetection(path_joined)
         }
     } else if locales.using_i18n {
         // If we're here, then we're using i18n, but we're at the root path, which is a
         // locale detection point
+            let path_joined = PathWithoutLocale(path_joined.0);
         verdict = RouteVerdictAtomic::LocaleDetection(path_joined);
     } else {
+        // We're not using i18n
+        let path_joined = PathWithoutLocale(path_joined.0);
         // Get the template to use
         let (template, was_incremental_match) =
             get_template_for_path_atomic(&path_joined, render_cfg, templates);

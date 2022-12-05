@@ -1,5 +1,5 @@
 use crate::template::Template;
-use crate::Html;
+use crate::{Html, PathWithoutLocale};
 use std::rc::Rc;
 
 /// Information about a route, which, combined with error pages and a
@@ -7,8 +7,8 @@ use std::rc::Rc;
 /// and the rendering of a page.
 #[derive(Debug, Clone)]
 pub struct RouteInfo<G: Html> {
-    /// The actual path of the route.
-    pub path: String,
+    /// The actual path of the route. This does *not* include the locale!
+    pub path: PathWithoutLocale,
     /// The template that will be used. The app shell will derive props and a
     /// translator to pass to the template function.
     pub template: Rc<Template<G>>,
@@ -31,7 +31,10 @@ pub enum RouteVerdict<G: Html> {
     NotFound,
     /// The given route maps to the locale detector, which will redirect the
     /// user to the attached path (in the appropriate locale).
-    LocaleDetection(String),
+    ///
+    /// The attached path will have the appropriate locale prepended during the
+    /// detection process.
+    LocaleDetection(PathWithoutLocale),
 }
 
 /// Information about a route, which, combined with error pages and a
@@ -43,8 +46,8 @@ pub enum RouteVerdict<G: Html> {
 /// compatible with Perseus on the client-side, only on the server-side.
 #[derive(Debug)]
 pub struct RouteInfoAtomic<'a, G: Html> {
-    /// The actual path of the route.
-    pub path: String,
+    /// The actual path of the route. This does *not* include the locale!
+    pub path: PathWithoutLocale,
     /// The template that will be used. The app shell will derive props and a
     /// translator to pass to the template function.
     pub template: &'a Template<G>,
@@ -73,5 +76,8 @@ pub enum RouteVerdictAtomic<'a, G: Html> {
     NotFound,
     /// The given route maps to the locale detector, which will redirect the
     /// user to the attached path (in the appropriate locale).
-    LocaleDetection(String),
+    ///
+    /// The attached path will have the appropriate locale prepended during the
+    /// detection process.
+    LocaleDetection(PathWithoutLocale),
 }

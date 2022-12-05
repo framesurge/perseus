@@ -5,7 +5,7 @@ use futures::{Future, FutureExt, future::{BoxFuture, try_join_all}};
 use serde_json::Value;
 use sycamore::web::SsrNode;
 
-use crate::{Request, StateGeneratorInfo, Template, errors::*, i18n::{TranslationsManager, Translator}, internal::{PageData, PageDataPartial}, router::{RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::{RenderMode, States, TemplateState, UnknownStateType}};
+use crate::{PathMaybeWithLocale, PathWithoutLocale, PurePath, Request, StateGeneratorInfo, Template, errors::*, i18n::{TranslationsManager, Translator}, internal::{PageData, PageDataPartial}, router::{RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::{RenderMode, States, TemplateState, UnknownStateType}};
 use super::Turbine;
 
 /// This is `PageDataPartial`, but it keeps the state as `TemplateState` for internal convenience.
@@ -23,7 +23,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// This assumes the given locale is actually supported.
     pub async fn get_state_for_path(
         &self,
-        path: &str, // This must not contain the locale, but it *will* contain the entity name
+        path: PathWithoutLocale,
         locale: &str,
         entity_name: &str,
         was_incremental: bool,
@@ -53,7 +53,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// before proceeding to the next one.
     pub async fn get_initial_load_for_path(
         &self,
-        path: &str,
+        path: PathWithoutLocale,
         locale: &str,
         template: &Template<SsrNode>,
         was_incremental: bool,
@@ -62,11 +62,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Get the latest global state, which we'll share around
         let global_state = self.get_full_global_state_for_locale(locale, clone_req(&req)).await?;
         // Begin by generating the state for this page
-        let page_state = self.get_state_for_path_internal(path, locale, &template.get_path(), was_incremental, clone_req(&req), Some(template), Some(global_state.clone())).await?;
+        let page_state = self.get_state_for_path_internal(path.clone(), locale, &template.get_path(), was_incremental, clone_req(&req), Some(template), Some(global_state.clone())).await?;
 
         // Yes, this is created twice; no, we don't care
         // If we're interacting with the stores, this is the path this page/widget will be under
-        let path_encoded = format!("{}-{}", locale, urlencoding::encode(path));
+        let path_encoded = format!("{}-{}", locale, urlencoding::encode(&path));
 
         // The page state generation process will have updated any prerendered fragments of this page, which means they're guaranteed to
         // be up-to-date. Importantly, if any of the dependencies weren't build-safe, or if the page uses request-state (which means,
@@ -125,7 +125,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // This will block
             let (final_widget_states, prerendered) = self.render_all(
                 HashMap::new(), // This starts empty
-                path.to_string(),
+                path,
                 locale.to_string(),
                 page_state.state.clone(),
                 template,
@@ -159,8 +159,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // we can just run the exact same render over and over again, getting to a new layer each time, since,
         // if a widget finds its state in this, it'll use it. This will be progressively accumulated over
         // many layers.
+        //
+        // This is not path-typed, but the keys are `PathWithoutLocale`s.
         widget_states: HashMap<String, (String, TemplateState)>,
-        path: String,
+        path: PathWithoutLocale,
         locale: String,
         state: TemplateState,
         entity: &'a Template<SsrNode>, // This will recurse, so this could be a template of capsule
@@ -169,10 +171,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         translator: &'a Translator
     ) -> BoxFuture<'a, Result<(HashMap<String, (String, TemplateState)>, String), ServerError>> {
         // Misleadingly, this only has the locale if we're using i18n!
-        let full_path_with_locale = match locale.as_str() {
-            "xx-XX" => path.to_string(),
-            locale => format!("{}/{}", &locale, &path),
-        };
+        let full_path = PathMaybeWithLocale::new(&path, &locale);
 
         // We put this in an `Rc` so it can be put in the context and given to multiple widgets, but it will
         // never be changed (we could have a lot of states here, so we want to minimize cloning where possible)
@@ -194,7 +193,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // back.
         let prerendered = sycamore::render_to_string(|cx| {
             entity.render_for_template_server(
-                full_path_with_locale.clone(),
+                full_path,
                 state.clone(),
                 global_state.clone(),
                 mode.clone(),
@@ -225,7 +224,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     futs.push(async move {
                         // Resolve the route
                         // Get a route verdict to determine the capsule this widget path maps to
-                        let localized_widget_path = format!("{}/{}", &locale, &widget_path);
+                        let localized_widget_path = PathMaybeWithLocale::new(&widget_path, &locale);
                         let path_slice = get_path_slice(&localized_widget_path);
                         let verdict = match_route_atomic(
                             &path_slice,
@@ -248,7 +247,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
                         // Now build the state
                         let state = self.get_state_for_path_internal(
-                            &widget_path,
+                            widget_path.clone(),
                             &locale,
                             &capsule_name,
                             route_info.was_incremental_match,
@@ -259,7 +258,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         ).await?;
 
                         // Return the tuples that'll go into `widget_states`
-                        Ok((widget_path, (capsule_name, state.state)))
+                        Ok((widget_path.0, (capsule_name, state.state)))
                     });
                 }
                 let tuples = try_join_all(futs).await?;
@@ -285,7 +284,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// This assumes the given locale is supported.
     async fn get_state_for_path_internal(
         &self,
-        path: &str, // This must not contain the locale, but it *will* contain the entity name
+        path: PathWithoutLocale, // This must not contain the locale, but it *will* contain the entity name
         locale: &str,
         entity_name: &str,
         was_incremental: bool,
@@ -306,12 +305,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         };
 
         // If we're interacting with the stores, this is the path this page/widget will be under
-        let path_encoded = format!("{}-{}", locale, urlencoding::encode(path));
+        let path_encoded = format!("{}-{}", locale, urlencoding::encode(&path));
 
         // Any work we do with the build logic will expect the path without the template name, so we need to
         // strip it (this could only fail if we'd mismatches the path to the entity name, which would be
         // either a malformed request or a *critical* Perseus routing bug)
-        let pure_path = path.strip_prefix(entity_name).ok_or(ServerError::TemplateNameNotInPath)?;
+        let pure_path = PurePath(path.strip_prefix(&format!("{}/", entity_name)).ok_or(ServerError::TemplateNameNotInPath)?.to_string());
 
         // If the entity is basic (i.e. has no state), bail early
         if entity.is_basic() {
@@ -390,7 +389,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let should_revalidate = self.page_or_widget_should_revalidate(&path_encoded, &entity, build_info.clone(), clone_req(&req)).await?;
                 if should_revalidate {
                     // We need to rebuild, which we can do with the build-time logic
-                    self.build_path_or_widget_for_locale(pure_path.to_string(), &entity, &build_extra, locale, global_state.clone(), false).await?;
+                    self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, locale, global_state.clone(), false).await?;
                 } else {
                     // We don't need to revalidate, so whatever is in the immutable store is valid
                 }
@@ -400,13 +399,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // dependencies aren't build-safe. Of course, we can guarantee if we're actually generating it now that
                 // it won't be revalidating.
                 // We can provide the most up-to-date global state to this
-                self.build_path_or_widget_for_locale(pure_path.to_string(), &entity, &build_extra, locale, global_state.clone(), false).await?;
+                self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, locale, global_state.clone(), false).await?;
             }
         } else {
             let should_revalidate = self.page_or_widget_should_revalidate(&path_encoded, &entity, build_info.clone(), clone_req(&req)).await?;
             if should_revalidate {
                 // We need to rebuild, which we can do with the build-time logic
-                self.build_path_or_widget_for_locale(pure_path.to_string(), &entity, &build_extra, locale, global_state.clone(), false).await?;
+                self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, locale, global_state.clone(), false).await?;
             } else {
                 // We don't need to revalidate, so whatever is in the immutable store is valid
             }

@@ -1,3 +1,4 @@
+use crate::PathMaybeWithLocale;
 use crate::page_data::PageDataPartial;
 use crate::state::AnyFreeze;
 use std::cell::RefCell;
@@ -11,10 +12,7 @@ use std::rc::Rc;
 /// with this entirely independently of Perseus' state interface, though this
 /// isn't recommended.
 ///
-/// Note that the same pages in different locales will have different entries
-/// here. If you need to store state for a page across locales, you should use
-/// the global state system instead. For apps not using i18n, the page URL will
-/// not include any locale.
+/// Paths in this store will have their locales prepended if the app uses i18n.
 // WARNING: Never allow users to manually modify the internal maps/orderings of this,
 // or the eviction protocols will become very confused!
 #[derive(Clone)]
@@ -27,17 +25,24 @@ pub struct PageStateStore {
     /// This also stores the head string for each page, which means we don't
     /// need to re-request old pages from the server whatsoever, minimizing
     /// requests.
+    ///
+    /// Note that this stores both pages and capsules.
     // Technically, this should be `Any + Clone`, but that's not possible without something like
     // `dyn_clone`, and we don't need it because we can restrict on the methods instead!
-    map: Rc<RefCell<HashMap<String, PssEntry>>>,
+    map: Rc<RefCell<HashMap<PathMaybeWithLocale, PssEntry>>>,
     /// The order in which pages were submitted to the store. This is used to
     /// evict the state of old pages to prevent Perseus sites from becoming
     /// massive in the browser's memory and slowing the user's browser down.
-    order: Rc<RefCell<Vec<String>>>,
+    ///
+    /// This will *not* store capsules.
+    order: Rc<RefCell<Vec<PathMaybeWithLocale>>>,
     /// The maximum size of the store before pages are evicted, specified in
     /// terms of a number of pages. Note that this pays no attention to the
     /// size in memory of individual pages (which should be dropped manually
     /// if this is a concern).
+    ///
+    /// This will only apply to the number of pages stored! If one page depends on
+    /// 300 capsules, they will be completely ignored!
     ///
     /// Note: whatever you set here will impact HSR.
     max_size: usize,
@@ -47,15 +52,22 @@ pub struct PageStateStore {
     /// use-cases for this would be better fulfilled by using global state, and
     /// this API is *highly* likely to be misused! If at all possible, use
     /// global state!
-    keep_list: Rc<RefCell<Vec<String>>>,
-    /// A list of pages whose data have been manually preloaded to minimize
+    // TODO Can widgets be specified here?
+    keep_list: Rc<RefCell<Vec<PathMaybeWithLocale>>>,
+    /// A list of pages/widgets whose data have been manually preloaded to minimize
     /// future network requests. This list is intended for pages that are to
     /// be globally preloaded; any pages that should only be preloaded for a
     /// specific route should be placed in `route_preloaded` instead.
-    preloaded: Rc<RefCell<HashMap<String, PageDataPartial>>>,
-    /// Pages that have been preloaded for the current route, which should be
-    /// cleared on a route change.
-    route_preloaded: Rc<RefCell<HashMap<String, PageDataPartial>>>,
+    ///
+    /// Note that this is used to store the 'preloaded' widgets from the server
+    /// in initial loads, before the actual `Widget` components take them up
+    /// for rendering.
+    preloaded: Rc<RefCell<HashMap<PathMaybeWithLocale, PageDataPartial>>>,
+    /// Pages/widgets that have been preloaded for the current route, which should be
+    /// cleared on a route change. This is broken out to allow future preloading
+    /// based on heuristics for a given page, which should be dumped if none of
+    /// the pages are actually used.
+    route_preloaded: Rc<RefCell<HashMap<PathMaybeWithLocale, PageDataPartial>>>,
 }
 impl PageStateStore {
     /// Creates a new, empty page state store with the given maximum size. After
@@ -78,7 +90,7 @@ impl PageStateStore {
     /// returned.
     ///
     /// This will NOT return any document metadata, if any exists.
-    pub fn get_state<T: AnyFreeze + Clone>(&self, url: &str) -> Option<T> {
+    pub fn get_state<T: AnyFreeze + Clone>(&self, url: &PathMaybeWithLocale) -> Option<T> {
         let map = self.map.borrow();
         match map.get(url) {
             Some(entry) => {
@@ -94,7 +106,7 @@ impl PageStateStore {
         }
     }
     /// Gets the document metadata registered for a URL, if it exists.
-    pub fn get_head(&self, url: &str) -> Option<String> {
+    pub fn get_head(&self, url: &PathMaybeWithLocale) -> Option<String> {
         let map = self.map.borrow();
         match map.get(url) {
             Some(entry) => entry.head.as_ref().map(|v| v.to_string()),
@@ -106,13 +118,14 @@ impl PageStateStore {
     /// be overridden, but any document metadata will be preserved.
     ///
     /// This will be added to the end of the `order` property, and any previous
-    /// entries of it in that list will be removed.
+    /// entries of it in that list will be removed, unless it is specified to
+    /// be a widget.
     ///
     /// If there's already an entry for the given URL that has been marked as
     /// not accepting state, this will return `false`, and the entry will
     /// not be added. This *must* be handled for correctness.
     #[must_use]
-    pub fn add_state<T: AnyFreeze + Clone>(&self, url: &str, val: T) -> bool {
+    pub fn add_state<T: AnyFreeze + Clone>(&self, url: &PathMaybeWithLocale, val: T, is_widget: bool) -> bool {
         let mut map = self.map.borrow_mut();
         // We want to modify any existing entries to avoid wiping out document metadata
         if let Some(entry) = map.get_mut(url) {
@@ -124,24 +137,19 @@ impl PageStateStore {
             if !new_entry.set_state(Box::new(val)) {
                 return false;
             }
-            map.insert(url.to_string(), new_entry);
+            map.insert(url.clone(), new_entry);
         }
         let mut order = self.order.borrow_mut();
         // If we haven't been told to keep this page, enter it in the order list so it
-        // can be evicted later
-        if !self.keep_list.borrow().iter().any(|x| x == url) {
+        // can be evicted later (unless it's a widget)
+        if !self.keep_list.borrow().iter().any(|x| x == url) && !is_widget {
             // Get rid of any previous mentions of this page in the order list
             order.retain(|stored_url| stored_url != url);
-            order.push(url.to_string());
+            order.push(url.clone());
             // If we've used up the maximum size yet, we should get rid of the oldest pages
-            if order.len() > self.max_size {
-                // Because this is called on every addition, we can safely assume that it's only
-                // one over
-                let old_url = order.remove(0);
-                map.remove(&old_url); // This will only occur for pages that
-                                      // aren't in the keep list, since those
-                                      // don't even appear in `order`
-            }
+            drop(order);
+            drop(map);
+            self.evict_page_if_needed();
         }
         // If we got to here, then there were no issues with not accepting state
         true
@@ -151,7 +159,7 @@ impl PageStateStore {
     ///
     /// This will be added to the end of the `order` property, and any previous
     /// entries of it in that list will be removed.
-    pub fn add_head(&self, url: &str, head: String) {
+    pub fn add_head(&self, url: &PathMaybeWithLocale, head: String, is_widget: bool) {
         let mut map = self.map.borrow_mut();
         // We want to modify any existing entries to avoid wiping out state
         if let Some(entry) = map.get_mut(url) {
@@ -159,30 +167,25 @@ impl PageStateStore {
         } else {
             let mut new_entry = PssEntry::default();
             new_entry.set_head(head);
-            map.insert(url.to_string(), new_entry);
+            map.insert(url.clone(), new_entry);
         }
         let mut order = self.order.borrow_mut();
         // If we haven't been told to keep this page, enter it in the order list so it
-        // can be evicted later
-        if !self.keep_list.borrow().iter().any(|x| x == url) {
+        // can be evicted later (unless it's a widget)
+        if !self.keep_list.borrow().iter().any(|x| x == url) && !is_widget {
             // Get rid of any previous mentions of this page in the order list
             order.retain(|stored_url| stored_url != url);
-            order.push(url.to_string());
+            order.push(url.clone());
             // If we've used up the maximum size yet, we should get rid of the oldest pages
-            if order.len() > self.max_size {
-                // Because this is called on every addition, we can safely assume that it's only
-                // one over
-                let old_url = order.remove(0);
-                map.remove(&old_url); // This will only occur for pages that
-                                      // aren't in the keep list, since those
-                                      // don't even appear in `order`
-            }
+            drop(order);
+            drop(map);
+            self.evict_page_if_needed();
         }
     }
     /// Sets the given entry as not being able to take any state. Any future
     /// attempt to register state for it will lead to silent failures and/or
     /// panics.
-    pub fn set_state_never(&self, url: &str) {
+    pub fn set_state_never(&self, url: &PathMaybeWithLocale, is_widget: bool) {
         let mut map = self.map.borrow_mut();
         // If there's no entry for this URl yet, we'll create it
         if let Some(entry) = map.get_mut(url) {
@@ -190,11 +193,23 @@ impl PageStateStore {
         } else {
             let mut new_entry = PssEntry::default();
             new_entry.set_state_never();
-            map.insert(url.to_string(), new_entry);
+            map.insert(url.clone(), new_entry);
+        }
+        let mut order = self.order.borrow_mut();
+        // If we haven't been told to keep this page, enter it in the order list so it
+        // can be evicted later (unless it's a widget)
+        if !self.keep_list.borrow().iter().any(|x| x == url) && !is_widget {
+            // Get rid of any previous mentions of this page in the order list
+            order.retain(|stored_url| stored_url != url);
+            order.push(url.clone());
+            // If we've used up the maximum size yet, we should get rid of the oldest pages
+            drop(order);
+            drop(map);
+            self.evict_page_if_needed();
         }
     }
     /// Checks if the state contains an entry for the given URL.
-    pub fn contains(&self, url: &str) -> PssContains {
+    pub fn contains(&self, url: &PathMaybeWithLocale) -> PssContains {
         let map = self.map.borrow();
         let contains = match map.get(url) {
             Some(entry) => match entry.state {
@@ -229,7 +244,10 @@ impl PageStateStore {
             _ => contains,
         }
     }
-    /// Preloads the given URL from the server and adds it to the PSS.
+    /// Preloads the given URL from the server and adds it to the PSS. This expects
+    /// a path that does *not* contain the present locale, as the locale is provided
+    /// separately. The two are concatenated appropriately for locale-specific preloading
+    /// in apps that use it.
     ///
     /// This function has no effect on the server-side.
     ///
@@ -239,16 +257,13 @@ impl PageStateStore {
     #[cfg(target_arch = "wasm32")]
     pub(crate) async fn preload(
         &self,
-        path: &str,
+        path: &PathWithoutLocale,
         locale: &str,
         template_path: &str,
         was_incremental_match: bool,
         is_route_preload: bool,
     ) -> Result<(), crate::errors::ClientError> {
-        use crate::{
-            errors::FetchError,
-            utils::{fetch, get_path_prefix_client},
-        };
+        use crate::{PathWithoutLocale, errors::FetchError, utils::{fetch, get_path_prefix_client}};
 
         // If we already have the page loaded fully in the PSS, abort immediately
         if let PssContains::All | PssContains::HeadNoState | PssContains::Preloaded =
@@ -265,9 +280,10 @@ impl PageStateStore {
         //     false => path.to_string(),
         // };
         let path_norm = path.to_string();
+        let path_with_locale = format!("{}/{}", locale, path);
         // Get the static page data (head and state)
         let asset_url = format!(
-            "{}/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",
+            "{}/.perseus/page/{}/{}.json?entity_name={}&was_incremental_match={}",
             get_path_prefix_client(),
             locale,
             path_norm,
@@ -292,7 +308,7 @@ impl PageStateStore {
                 } else {
                     self.route_preloaded.borrow_mut()
                 };
-                preloaded.insert(path.to_string(), page_data);
+                preloaded.insert(path_with_locale, page_data);
                 Ok(())
             }
             None => Err(FetchError::NotFound {
@@ -307,7 +323,7 @@ impl PageStateStore {
     /// Note that this will delete the preloaded page from the preload cache,
     /// since it's expected to be parsed and rendered immediately. It should
     /// also have its head entered in the PSS.
-    pub fn get_preloaded(&self, url: &str) -> Option<PageDataPartial> {
+    pub fn get_preloaded(&self, url: &PathMaybeWithLocale) -> Option<PageDataPartial> {
         let mut preloaded = self.preloaded.borrow_mut();
         let mut route_preloaded = self.route_preloaded.borrow_mut();
         if let Some(page_data) = preloaded.remove(url) {
@@ -319,9 +335,9 @@ impl PageStateStore {
     /// Clears all the routes that were preloaded for the last route, keeping
     /// only those listed (this should be used to make sure we don't have to
     /// double-preload things).
-    pub fn cycle_route_preloaded(&self, keep_urls: &[&str]) {
+    pub fn cycle_route_preloaded(&self, keep_urls: &[&PathMaybeWithLocale]) {
         let mut preloaded = self.route_preloaded.borrow_mut();
-        preloaded.retain(|url, _| keep_urls.iter().any(|keep_url| keep_url == url));
+        preloaded.retain(|url, _| keep_urls.iter().any(|keep_url| *keep_url == url));
     }
     /// Forces the store to keep a certain page. This will prevent it from being
     /// evicted from the store, regardless of how many other pages are
@@ -330,13 +346,13 @@ impl PageStateStore {
     /// Warning: in the *vast* majority of cases, your use-case for this will be
     /// far better served by the global state system! (If you use this with
     /// mutable state, you are quite likely to shoot yourself in the foot.)
-    pub fn force_keep(&self, url: &str) {
+    pub fn force_keep(&self, url: &PathMaybeWithLocale) {
         let mut order = self.order.borrow_mut();
         // Get rid of any previous mentions of this page in the order list (which will
         // prevent this page from ever being evicted)
         order.retain(|stored_url| stored_url != url);
         let mut keep_list = self.keep_list.borrow_mut();
-        keep_list.push(url.to_string());
+        keep_list.push(url.clone());
     }
     /// Forcibly removes a page from the store. Generally, you should never need
     /// to use this function, but it's provided for completeness. This could
@@ -345,11 +361,49 @@ impl PageStateStore {
     /// not work (since it relies on the state freezing system).
     ///
     /// This returns the page's state, if it was found.
-    pub fn force_remove(&self, url: &str) -> Option<PssEntry> {
+    ///
+    /// Note: this will safely preserve the invariants of the store (as opposed
+    /// to manual removal).
+    pub fn force_remove(&self, url: &PathMaybeWithLocale) -> Option<PssEntry> {
         let mut order = self.order.borrow_mut();
         order.retain(|stored_url| stored_url != url);
         let mut map = self.map.borrow_mut();
         map.remove(url)
+    }
+    /// Evicts the oldest page in the store if we've reached the order limit. This
+    /// will also traverse the rest of the store to evict any widgets that were only used
+    /// by that page.
+    ///
+    /// This assumes that any references to parts of the store have been dropped, as this
+    /// will mutably interact with a number of them.
+    ///
+    /// Note that this will never affect paths in the keep list, since they don't actually
+    /// appear in `self.order`.
+    fn evict_page_if_needed(&self) {
+        let mut order = self.order.borrow_mut();
+        let mut map = self.map.borrow_mut();
+        let keep_list = self.keep_list.borrow();
+        if order.len() > self.max_size {
+            // Because this is called on every addition, we can safely assume that it's only
+            // one over
+            let old_url = order.remove(0);
+            // Assuming there's been no tampering, this will be fine
+            let PssEntry { dependencies, .. } = map.remove(&old_url).unwrap();
+            // We want to remove any widgets that this page used that no other page is using
+            for dep in dependencies.into_iter() {
+                // First, make sure this isn't in the keep list
+                if !keep_list.contains(&dep) {
+                    // Invariants say this will be present in both
+                    let entry = map.get_mut(&dep).unwrap();
+                    // We've evicted this page, so it's no longer a dependent
+                    entry.dependents.retain(|v| v != &old_url);
+                    if entry.dependents.is_empty() {
+                        // Evict this widget
+                        map.remove(&dep).unwrap();
+                    }
+                }
+            }
+        }
     }
 }
 impl PageStateStore {
@@ -358,8 +412,11 @@ impl PageStateStore {
     /// metadata, which will be re-requested from the server. (There is no
     /// point in freezing that, since it can't be unique for the user's page
     /// interactions, as it's added directly as the server sends it.)
+    ///
+    /// Note that the typed path system uses transparent serialization, and has
+    /// no additional storage cost.
     // TODO Avoid literally cloning all the page states here if possible
-    pub fn freeze_to_hash_map(&self) -> HashMap<String, String> {
+    pub fn freeze_to_hash_map(&self) -> HashMap<PathMaybeWithLocale, String> {
         let map = self.map.borrow();
         let mut str_map = HashMap::new();
         for (k, entry) in map.iter() {
@@ -367,7 +424,7 @@ impl PageStateStore {
             // usage)
             if let PssState::Some(state) = &entry.state {
                 let v_str = state.freeze();
-                str_map.insert(k.to_string(), v_str);
+                str_map.insert(k.clone(), v_str);
             }
         }
 
@@ -392,6 +449,23 @@ pub struct PssEntry {
     /// The document metadata of the page, which can be cached to prevent future
     /// requests to the server.
     head: Option<String>,
+    /// A list of widgets this page depends on, by their path. This allows quick
+    /// indexing of the widgets that should potentially be evicted when the page
+    /// using them is evicted. (Note that widgets are only evicted when all pages
+    /// that depend on them have all been evicted.)
+    ///
+    /// As there is never a centralized list of the dependencies of any given page,
+    /// this will be gradually filled out as the page is rendered. (This is why it
+    /// is critical that pages are pure functions on the state they use with respect
+    /// to the widgets on which they depend.)
+    dependencies: Vec<PathMaybeWithLocale>,
+    /// A list of dependents by path. For pages, this will always be empty.
+    ///
+    /// This is used by widgets to declare the pages that depend on them, creating
+    /// the reverse of the `dependencies` path. This is used so we can quickly iterate
+    /// through each of the widgets a page uses when we're about to evict it and
+    /// remove only those that aren't being used by any other pages.
+    dependents: Vec<PathMaybeWithLocale>,
 }
 impl Default for PssEntry {
     fn default() -> Self {
@@ -399,6 +473,8 @@ impl Default for PssEntry {
             // There could be state later
             state: PssState::None,
             head: None,
+            dependencies: Vec::new(),
+            dependents: Vec::new(),
         }
     }
 }
@@ -419,6 +495,14 @@ impl PssEntry {
     /// Adds document metadata to this entry.
     pub fn set_head(&mut self, head: String) {
         self.head = Some(head);
+    }
+    /// Declares a widget that this page/widget depends on, by its path.
+    fn add_dependency(&mut self, path: PathMaybeWithLocale) {
+        self.dependencies.push(path);
+    }
+    /// Declares a page/widget that this widget is used by, by its path.
+    fn add_dependent(&mut self, path: PathMaybeWithLocale) {
+        self.dependents.push(path);
     }
     /// Adds state to this entry. This will return false and do nothing if the
     /// entry has been marked as never being able to accept state.

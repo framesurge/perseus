@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::i18n::detect_locale;
 use crate::router::{match_route, RouteManager};
 use crate::router::{RouteInfo, RouteVerdict, RouterLoadState};
-use crate::template::{RenderCtx, TemplateNodeType, TemplateState};
+use crate::template::{RenderCtx, TemplateNodeType, TemplateState, PreloadInfo};
 use crate::utils::checkpoint;
 use fmterr::fmt_err;
 use sycamore::prelude::*;
@@ -174,6 +174,10 @@ pub(crate) fn get_initial_view<'a>(
                         path_with_locale,
                         state,
                         cx,
+                        PreloadInfo {
+                            locale,
+                            was_incremental_match,
+                        },
                         route_manager,
                         translator,
                     );

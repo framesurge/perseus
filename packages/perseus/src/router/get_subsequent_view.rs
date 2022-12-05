@@ -44,6 +44,9 @@ pub(crate) struct GetSubsequentViewProps<'a> {
 /// Note that this will automatically update the router state just before it
 /// returns, meaning that any errors that may occur after this function has been
 /// called need to reset the router state to be an error.
+///
+/// Note that this is only ever used for pages, widgets are handled separately
+/// by the `Widget` component.
 pub(crate) async fn get_subsequent_view(
     GetSubsequentViewProps {
         cx,
@@ -89,7 +92,7 @@ pub(crate) async fn get_subsequent_view(
             let path_norm = path.to_string();
             // Get the static page data (head and state)
             let asset_url = format!(
-                "{}/.perseus/page/{}/{}.json?template_name={}&was_incremental_match={}",
+                "{}/.perseus/page/{}/{}.json?entity_name={}&was_incremental_match={}",
                 get_path_prefix_client(),
                 locale,
                 path_norm,
@@ -265,6 +268,10 @@ pub(crate) async fn get_subsequent_view(
         path_with_locale,
         TemplateState::from_value(page_data.state),
         cx,
+        PreloadInfo {
+            locale,
+            was_incremental_match,
+        },
         route_manager,
         translator,
     );

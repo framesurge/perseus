@@ -11,6 +11,8 @@ use super::CapsuleMap;
 #[cfg(not(target_arch = "wasm32"))]
 use super::default_headers;
 use super::RenderCtx;
+use crate::PathMaybeWithLocale;
+use crate::PathWithLocale;
 use crate::errors::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::make_async_trait;
@@ -18,6 +20,7 @@ use crate::state::AnyFreeze;
 use crate::state::MakeRx;
 use crate::state::MakeRxRef;
 use crate::state::MakeUnrx;
+use crate::state::PssContains;
 use crate::state::UnreactiveState;
 use crate::translator::Translator;
 use crate::utils::provide_context_signal_replace;
@@ -298,13 +301,19 @@ make_async_trait!(
     request_state: S
 );
 
+/// An internal subset of `RouteInfo` that stores the details needed for preloading.
+pub(crate) struct PreloadInfo {
+    pub(crate) locale: String,
+    pub(crate) was_incremental_match: bool,
+}
+
 // A series of closure types that should not be typed out more than once
 /// The type of functions that are given a state and render a page. If you've
 /// defined state for your page, it's safe to `.unwrap()` the given `Option`
 /// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
 /// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
-pub type TemplateFn<G> =
-    Box<dyn for<'a> Fn(Scope<'a>, RouteManager<'a, G>, TemplateState, String) + Send + Sync>;
+type TemplateFn<G> =
+    Box<dyn for<'a> Fn(Scope<'a>, RouteManager<'a, G>, PreloadInfo, TemplateState, PathMaybeWithLocale) + Send + Sync>;
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
@@ -477,7 +486,7 @@ impl<G: Html> Template<G> {
     pub fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            template: Box::new(|_, _, _, _| {}),
+            template: Box::new(|_, _, _, _, _| {}),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(not(target_arch = "wasm32"))]
             head: Box::new(|cx, _| sycamore::view! { cx, }),
@@ -510,13 +519,16 @@ impl<G: Html> Template<G> {
     // Render executors
     /// Executes the user-given function that renders the template on the
     /// client-side ONLY. This takes in an existing global state.
+    ///
+    /// This should NOT be used to render widgets!
     #[cfg(target_arch = "wasm32")]
     #[allow(clippy::too_many_arguments)]
     pub fn render_for_template_client<'a>(
         &self,
-        path: String,
+        path: PathMaybeWithLocale,
         state: TemplateState,
         cx: Scope<'a>,
+        preload_info: PreloadInfo,
         route_manager: &'a RouteManager<'a, G>,
         // Taking a reference here involves a serious risk of runtime panics, unfortunately (it's
         // simpler to own it at this point, and we clone it anyway internally)
@@ -527,7 +539,30 @@ impl<G: Html> Template<G> {
         // we have to do is provide the translator, replacing whatever is present
         provide_context_signal_replace(cx, translator);
 
-        (self.template)(cx, route_manager.clone(), state, path);
+        (self.template)(cx, route_manager.clone(), preload_info, state, path);
+    }
+    /// Executes the user-given function that renders the *widget* on the
+    /// client-side ONLY. This takes in an existing global state.
+    ///
+    /// This should NOT be used to render pages!
+    #[cfg(target_arch = "wasm32")]
+    #[allow(clippy::too_many_arguments)]
+    pub fn render_widget_for_template_client<'a>(
+        &self,
+        path: PathMaybeWithLocale,
+        state: TemplateState,
+        cx: Scope<'a>,
+        preload_info: PreloadInfo,
+    ) -> View<G> {
+        // The render context and translator are all fully instantiated, so we create a route manager
+        // so we can reuse the template code, which we'll then return verbatim
+        let route_manager = RouteManager::new(cx);
+
+        // The template state is ignored by widgets, they fetch it themselves asynchronously
+        (self.template)(cx, route_manager.clone(), preload_info, TemplateState::empty(), path);
+
+        // Now return that view (the only references to the route manager have been dropped)
+        (*route_manager.view.get_untracked()).clone()
     }
     /// Executes the user-given function that renders the template on the
     /// server-side ONLY. This automatically initializes an isolated global
@@ -535,10 +570,10 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn render_for_template_server<'a>(
         &self,
-        path: String,
+        path: PathMaybeWithLocale,
         state: TemplateState,
         global_state: TemplateState,
-        mode: RenderMode,
+        mode: RenderMode<SsrNode>,
         cx: Scope<'a>,
         translator: &Translator,
     ) -> View<G> {
@@ -552,9 +587,14 @@ impl<G: Html> Template<G> {
         provide_context_signal_replace(cx, translator.clone());
         // Similarly, we can invent a route manager on the spot
         let route_manager = RouteManager::new(cx);
+        // This is used for widget preloading, which doesn't occur on the engine-side
+        let preload_info = PreloadInfo {
+            locale: String::new(),
+            was_incremental_match: false,
+        };
         // We don't need to clean up the page disposer, because the child scope will be
         // removed properly when the `cx` this function was given is terminated
-        (self.template)(cx, route_manager.clone(), state, path);
+        (self.template)(cx, route_manager.clone(), preload_info, state, path);
 
         let view_rc = route_manager.view.take();
         // TODO Valid to unwrap here? (We should be the only reference holder, since we
@@ -566,16 +606,21 @@ impl<G: Html> Template<G> {
     /// assuming the render context and translator have already been fully instantiated.
     pub(crate) fn render_widget_for_template_server<'a>(
         &self,
-        path: String,
+        path: PathMaybeWithLocale,
         state: TemplateState,
         cx: Scope<'a>,
     ) -> View<G> {
         use std::rc::Rc;
 
-        let route_manager = RouteManager::new(cx);
+        let route_manager = RouteManager::new(cx);;
+        // This is used for widget preloading, which doesn't occur on the engine-side
+        let preload_info = PreloadInfo {
+            locale: String::new(),
+            was_incremental_match: false,
+        };
         // We don't need to clean up the page disposer, because the child scope will be
         // removed properly when the `cx` this function was given is terminated
-        (self.template)(cx, route_manager.clone(), state, path);
+        (self.template)(cx, route_manager.clone(), preload_info, state, path);
 
         let view_rc = route_manager.view.take();
         // TODO Valid to unwrap here? (We should be the only reference holder, since we
@@ -1037,11 +1082,11 @@ impl<G: Html> Template<G> {
     pub fn template_with_state<F, S, I>(mut self, val: F) -> Template<G>
     where
         F: Fn(Scope, I) -> View<G> + Send + Sync + 'static,
-        S: MakeRx<Rx = I> + Serialize + DeserializeOwned,
+        S: MakeRx<Rx = I> + Serialize + DeserializeOwned + 'static,
         I: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
         // R: RxRef<RxNonRef = <S as MakeRx>::Rx>
     {
-        self.template = Box::new(move |app_cx, mut route_manager, template_state, path| {
+        self.template = Box::new(move |app_cx, mut route_manager, preload_info, template_state, path| {
             let state_empty = template_state.is_empty();
             // Declare a type on the untyped state (this doesn't perform any conversions,
             // but the type we declare may be invalid)
@@ -1056,21 +1101,21 @@ impl<G: Html> Template<G> {
                 let render_ctx = RenderCtx::from_ctx(app_cx);
                 // The render context will automatically handle prioritizing frozen or active
                 // state for us for this page as long as we have a reactive state type, which we
-                // do!
-                match render_ctx.get_active_or_frozen_page_state::<<S as MakeRx>::Rx>(&path) {
+                // do! (note that this works perfectly with capsules)
+                match render_ctx.get_active_or_frozen_page_state::<<S as MakeRx>::Rx>(&path, self.is_capsule) {
                     // If we navigated back to this page, and it's still in the PSS, the given state
                     // will be a dummy, but we don't need to worry because it's never checked if
                     // this evaluates
                     Some(existing_state) => existing_state,
                     // Again, frozen state has been dealt with already, so we'll fall back to
                     // generated state
-                    None => {
+                    None if !self.is_capsule => {
                         // Make sure now that there is actually state
                         if state_empty {
                             // This will happen at build-time
                             panic!(
                                 "the template for path `{}` takes state, but no state was found (you probably forgot to write a state generating function, like `get_build_state`)",
-                                &path,
+                                &*path,
                             );
                         }
 
@@ -1083,7 +1128,7 @@ impl<G: Html> Template<G> {
                         // fail-fast and render nothing, hoping that this
                         // will appear at build-time)
                         match render_ctx
-                            .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state)
+                            .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state, self.is_capsule)
                         {
                             Ok(state) => state,
                             Err(err) => panic!(
@@ -1091,7 +1136,107 @@ impl<G: Html> Template<G> {
                                 err
                             ),
                         }
-                    }
+                    },
+                    // If this is a capsule though, the state we've been given is a dummy, and
+                    // we'll need to manually request it, rendering a `Suspense` in the meantime.
+                    None if self.is_capsule => {
+                        let pss = &render_ctx.page_state_store;
+                        // If this is an initial load, the state will have been preloaded for us already. If it's
+                        // subsequent or if we're a delayed widget, it won't have been.
+                        match pss.contains(&path) {
+                            // This indicates either that the widget was used by a previous page,
+                            // or that this is an initial load
+                            PssContains::Preloaded => {
+                                let page_data = pss.get_preloaded(&path).unwrap();
+                                // Register the head, otherwise it will never be registered and the page will
+                                // never properly show up in the PSS (meaning future preload
+                                // calls will go through, creating unnecessary network requests). Note that
+                                // this is guaranteed to be empty for a widget.
+                                assert!(page_data.head.is_empty(), "widget had defined head");
+                                pss.add_head(&path, page_data.head.to_string(), self.is_capsule);
+                                let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
+                                // Register the state properly
+                                match render_ctx
+                                    .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state, self.is_capsule)
+                                {
+                                    Ok(state) => state,
+                                    Err(err) => panic!(
+                                        "unrecoverable error in widget state derivation: {:#?}",
+                                        err
+                                    ),
+                                }
+                            },
+                            PssContains::None => {
+                                use sycamore::suspense::Suspense;
+
+                                // We need to manually fetch the state, which involves wrapping the user's
+                                // function in a Sycamore `Suspense`. To do that, we'll do everything manually,
+                                // and return directly.
+                                let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+                                    let suspended_view = {
+                                        // Use the preload info that's been passed through to preload the page (when
+                                        // this future is done, if it was successful, the widget will have been preloaded)
+                                        let path_without_locale = match preload_info.locale.as_str() {
+                                            "xx-XX" => path.to_string(),
+                                            locale => path.strip_prefix(&format!("{}/", locale)).unwrap().to_string()
+                                        };
+                                        // pss.preload(
+                                        //     &path_without_locale,
+                                        //     &preload_info.locale,
+                                        //     &self.get_path(),
+                                        //     preload_info.was_incremental_match,
+                                        //     false, // This is not a route-specific preload (it will be cleared in a moment anyway)
+                                        // );
+
+                                        // The preload has completed, so the state is in the PSS
+                                        let page_data = pss.get_preloaded(&path).unwrap();
+                                        // Register the head, otherwise it will never be registered and the page will
+                                        // never properly show up in the PSS (meaning future preload
+                                        // calls will go through, creating unnecessary network requests). Note that
+                                        // this is guaranteed to be empty for a widget.
+                                        assert!(page_data.head.is_empty(), "widget had defined head");
+                                        pss.add_head(&path, page_data.head.to_string(), self.is_capsule);
+                                        let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
+                                        // Register the state properly
+                                        let intermediate_state = match render_ctx
+                                            .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state, self.is_capsule)
+                                        {
+                                            Ok(state) => state,
+                                            Err(err) => panic!(
+                                                "unrecoverable error in widget state derivation: {:#?}",
+                                                err
+                                            ),
+                                        };
+
+                                        // Compute suspended states
+                                        #[cfg(target_arch = "wasm32")]
+                                        intermediate_state.compute_suspense(child_cx);
+
+                                        val(child_cx, intermediate_state)
+                                    };
+
+                                    // let view = sycamore::prelude::view! { child_cx,
+                                    //     Suspense(
+                                    //         fallback = todo!("capsule fallback view")
+                                    //     ) {
+                                    //         (suspended_view)
+                                    //     }
+                                    // };
+
+                                    // route_manager.update_view(view);
+                                });
+                                route_manager.update_disposer(disposer);
+
+                                // We've done everything manually, so return to prevent the default
+                                return;
+                            }
+                            // Widgets have no head, so only have a head is impossible. They're also always registered
+                            // with empty heads, so having just a state is impossible. Finally, there can't be everything,
+                            // or `.get_active_or_frozen_page_state()` would have returned active state.
+                            PssContains::Head | PssContains::HeadNoState | PssContains::State | PssContains::All => unreachable!(),
+                        }
+                    },
+                    _ => unreachable!()
                 }
             };
 
@@ -1115,7 +1260,7 @@ impl<G: Html> Template<G> {
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
-        self.template = Box::new(move |app_cx, mut route_manager, template_state, path| {
+        self.template = Box::new(move |app_cx, mut route_manager, preload_info, template_state, path| {
             let state_empty = template_state.is_empty();
             // Declare a type on the untyped state (this doesn't perform any conversions,
             // but the type we declare may be invalid)
@@ -1131,20 +1276,20 @@ impl<G: Html> Template<G> {
                 // The render context will automatically handle prioritizing frozen or active
                 // state for us for this page as long as we have a reactive state type, which we
                 // do!
-                match render_ctx.get_active_or_frozen_page_state::<<S as MakeRx>::Rx>(&path) {
+                match render_ctx.get_active_or_frozen_page_state::<<S as MakeRx>::Rx>(&path, self.is_capsule) {
                     // If we navigated back to this page, and it's still in the PSS, the given state
                     // will be a dummy, but we don't need to worry because it's never checked if
                     // this evaluates
                     Some(existing_state) => existing_state,
                     // Again, frozen state has been dealt with already, so we'll fall back to
                     // generated state
-                    None => {
+                    None if !self.is_capsule => {
                         // Make sure now that there is actually state
                         if state_empty {
                             // This will happen at build-time
                             panic!(
                                 "the template for path `{}` takes state, but no state was found (you probably forgot to write a state generating function, like `get_build_state`)",
-                                &path,
+                                &*path,
                             );
                         }
 
@@ -1157,7 +1302,7 @@ impl<G: Html> Template<G> {
                         // fail-fast and render nothing, hoping that this
                         // will appear at build-time)
                         match render_ctx
-                            .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state)
+                            .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state, self.is_capsule)
                         {
                             Ok(state) => state,
                             Err(err) => panic!(
@@ -1165,7 +1310,11 @@ impl<G: Html> Template<G> {
                                 err
                             ),
                         }
-                    }
+                    },
+                    None if self.is_capsule => {
+                        todo!()
+                    },
+                    _ => unreachable!()
                 }
             };
 
@@ -1185,10 +1334,10 @@ impl<G: Html> Template<G> {
     where
         F: Fn(Scope) -> View<G> + Send + Sync + 'static,
     {
-        self.template = Box::new(move |app_cx, mut route_manager, _template_state, path| {
+        self.template = Box::new(move |app_cx, mut route_manager, _preload_info, _template_state, path| {
             // Declare that this page will never take any state to enable full caching
             let render_ctx = RenderCtx::from_ctx(app_cx);
-            render_ctx.register_page_no_state(&path);
+            render_ctx.register_page_no_state(&path, self.is_capsule);
 
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
                 let view = val(child_cx);

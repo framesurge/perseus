@@ -1,4 +1,4 @@
-use crate::{Request, errors::{ServerError, err_to_status_code}, i18n::TranslationsManager, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
+use crate::{PathWithoutLocale, Request, errors::{ServerError, err_to_status_code}, i18n::TranslationsManager, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
 use super::{Turbine, build_error_page::build_error_page};
 use fmterr::fmt_err;
 use http::{HeaderMap, HeaderValue, StatusCode, header::HeaderName};
@@ -86,7 +86,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// is expected to end in `.json` (needed for compatibility with the exporting system).
     pub async fn get_subsequent_load(
         &self,
-        raw_path: &str,
+        raw_path: &str, // No locale
         locale: &str,
         entity_name: &str,
         was_incremental_match: bool,
@@ -102,7 +102,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 None => return ApiResponse::err(StatusCode::BAD_REQUEST, "paths must end in `.json`")
             };
 
-            let page_data_partial = self.get_state_for_path(path, locale, entity_name, was_incremental_match, req).await;
+            let page_data_partial = self.get_state_for_path(PathWithoutLocale(path.to_string()), locale, entity_name, was_incremental_match, req).await;
             let page_data_partial = match page_data_partial {
                 Ok(partial) => partial,
                 Err(err) => {
@@ -131,10 +131,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// page.
     pub async fn get_initial_load(
         &self,
-        raw_path: &str, // This includes the locale!
+        raw_path: &str, // `PathMaybeWithLocale`
         req: Request,
     ) -> ApiResponse {
-        // Decode the URL so we can work with spaces and special chaaracters
+        // Decode the URL so we can work with spaces and special characters
         let raw_path = match urlencoding::decode(&raw_path) {
             Ok(path) => path.to_string(),
             // Yes, this would get an encoded path, but if it's *that* malformed, they deserve it
@@ -153,7 +153,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 was_incremental_match,
             }) => {
                 // This returns both the page data and the most up-to-date global state
-                let res = self.get_initial_load_for_path(&path, &locale, template, was_incremental_match, req).await;
+                let res = self.get_initial_load_for_path(path, &locale, template, was_incremental_match, req).await;
                 let (page_data, global_state) = match res {
                     Ok(data) => data,
                     Err(err) => return self.html_err(raw_path, err_to_status_code(&err), &fmt_err(&err)),
@@ -204,7 +204,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                             "{}/{}/{}",
                             get_path_prefix_server(),
                             &self.locales.default,
-                            redirect_path,
+                            // This is a `PathWithoutLocale`
+                            redirect_path.0,
                         )
                     )
                     .to_string();

@@ -14,6 +14,8 @@ use std::rc::Rc;
 /// This doesn't inject translations of any sort, deliberately, since
 /// we can't ensure that they would even exist --- this is used for all
 /// types of server-side errors.
+///
+/// Note that this is only ever used for pages, never widgets.
 pub fn build_error_page(
     url: &str,
     status: u16,

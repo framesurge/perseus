@@ -1,5 +1,5 @@
 use super::RouteVerdict;
-use crate::template::TemplateNodeType;
+use crate::{PathMaybeWithLocale, PathWithLocale, router::RouteInfo, template::TemplateNodeType};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
@@ -70,6 +70,23 @@ impl RouterState {
     pub fn reload(&self) {
         self.reload_commander
             .set(!*self.reload_commander.get_untracked())
+    }
+    /// Gets the current path within the app, including the locale if the app is using i18n.
+    /// This will not have a leading/trailing forward slash.
+    ///
+    /// If you're executing this from within a page, it will always be `Some(..)`.
+    /// `None` will be returned if no page has been rendered yet (if you managed
+    /// to call this from a plugin...), or, more likely, if an error occurred (i.e.
+    /// this will probably be `None` in error pages, which are given the path anyway),
+    /// or if we're diverting to a localized version of the current path (in which case
+    /// your code should not be running).
+    pub fn get_path(&self) -> Option<PathMaybeWithLocale> {
+        let verdict = self.last_verdict.borrow();
+        if let Some(RouteVerdict::Found(RouteInfo { path, locale, .. })) = &*verdict {
+            Some(PathMaybeWithLocale::new(path, locale))
+        } else {
+            None
+        }
     }
 }
 

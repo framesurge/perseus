@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 use futures::future::try_join_all;
 use sycamore::web::SsrNode;
-use crate::{BuildPaths, PerseusAppBase, StateGeneratorInfo, Template, errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore, template::{RenderMode, RenderStatus, TemplateState}, utils::minify};
+use crate::{BuildPaths, PathMaybeWithLocale, PathWithoutLocale, PerseusAppBase, PurePath, StateGeneratorInfo, Template, errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore, template::{RenderMode, RenderStatus, TemplateState}, utils::minify};
 use super::Turbine;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
@@ -216,7 +216,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             let mut path_futs = Vec::new();
             for path in paths.into_iter() {
                 for locale in self.locales.get_all() {
-                    let path = path.clone();
+                    let path = PurePath(path.clone());
                     // We created these from the same loop as we render each path for each locale from, so this is safe to `.unwrap()`
                     let global_state = self.global_states_by_locale.get(locale).unwrap().clone();
                     path_futs.push(self.build_path_or_widget_for_locale(path, entity, &extra, locale, global_state, exporting));
@@ -236,7 +236,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// up-to-date global state.
     pub(super) async fn build_path_or_widget_for_locale(
         &self,
-        path: String,
+        path: PurePath,
         entity: &Template<SsrNode>,
         extra: &TemplateState,
         locale: &str,
@@ -248,11 +248,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .get_translator_for_locale(locale.to_string())
             .await?;
 
-        let full_path_without_locale = match entity.uses_build_paths() {
-            true => format!("{}/{}", &entity.get_path(), path),
+        let full_path_without_locale = PathWithoutLocale(match entity.uses_build_paths() {
+            true => format!("{}/{}", &entity.get_path(), path.0),
             // We don't want to concatenate the name twice if we don't have to
             false => entity.get_path(),
-        };
+        });
         // Create the encoded path, which always includes the locale (even if it's `xx-XX` in a non-i18n app)
         //
         // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
@@ -265,10 +265,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // If it's `xx-XX`, we should just have it without the locale (this may be
         // interacted with by users)
         let locale = translator.get_locale();
-        let full_path_with_locale = match locale.as_str() {
-            "xx-XX" => full_path_without_locale.clone(),
-            locale => format!("{}/{}", locale, &full_path_without_locale),
-        };
+        let full_path = PathMaybeWithLocale::new(&full_path_without_locale, &locale);
 
         // First, if this page revalidates, write a timestamp about when it was built to the
         // mutable store (this will be updated to keep track)
@@ -293,7 +290,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         } else if entity.uses_build_state() {
             let build_state = entity.get_build_state(
                 StateGeneratorInfo {
-                    path: full_path_without_locale.clone(),
+                    path: (*full_path_without_locale).clone(),
                     locale: translator.get_locale(),
                     extra: extra.clone(),
                 }
@@ -371,7 +368,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // Now prerender the actual content
                 let prerendered = sycamore::render_to_string(|cx| {
                     entity.render_for_template_server(
-                        full_path_with_locale.clone(),
+                        full_path.clone(),
                         state,
                         global_state.clone(),
                         mode.clone(),

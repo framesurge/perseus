@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::PathMaybeWithLocale;
+
 /// A representation of a frozen app.
 ///
 /// This is only `Clone` for fault tolerance. Do NOT ever clone this unless you
@@ -14,7 +16,7 @@ pub struct FrozenApp {
     pub route: String,
     /// The frozen page state store. We store this as a `HashMap` as this level
     /// so that we can avoid another deserialization.
-    pub page_state_store: HashMap<String, String>,
+    pub page_state_store: HashMap<PathMaybeWithLocale, String>,
 }
 
 /// The user's preferences on state thawing.
