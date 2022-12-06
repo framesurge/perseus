@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::{fs, rc::Rc};
 use sycamore::web::SsrNode;
 use crate::PerseusAppBase;
+use crate::error_pages::ErrorPageLocation;
 use crate::{errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore};
 use super::Turbine;
 use super::build_error_page::build_error_page;
@@ -20,7 +21,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .map_err(|err| Arc::new(err.into()))?;
 
         // Build that error page as the server does
-        let err_page_str = build_error_page("", code, "", None, &self.error_pages, &html_shell);
+        let err_page_str = build_error_page(ErrorPageLocation::Current, code, "", None, &self.error_pages, &html_shell);
 
         // Write that to the given output location (this will be relative to wherever the user executed from)
         match fs::write(&output, err_page_str) {

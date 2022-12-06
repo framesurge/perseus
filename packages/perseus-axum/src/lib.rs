@@ -9,7 +9,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 
 use axum::{Router, body::Body, extract::{Path, Query}, http::{StatusCode, Request}, response::{Response, IntoResponse}, routing::{get, get_service}};
-use perseus::{i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
+use perseus::{PathMaybeWithLocale, PathWithoutLocale, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
 use tower_http::services::{ServeDir, ServeFile};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 
@@ -84,7 +84,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
                                                        let req = Request::from_parts(http_req.into_parts().0, ());
 
                                                        ApiResponse(turbine.get_subsequent_load(
-                                                           &raw_path,
+                                                           PathWithoutLocale(raw_path),
                                                            locale,
                                                            &entity_name,
                                                            was_incremental_match,
@@ -110,7 +110,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         let path = http_req.uri().path().to_string();
         let http_req = Request::from_parts(http_req.into_parts().0, ());
 
-        ApiResponse(turbine.get_initial_load(&path, http_req).await)
+        ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(path), http_req).await)
     }))
 }
 

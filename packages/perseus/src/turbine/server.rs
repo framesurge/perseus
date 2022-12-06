@@ -1,4 +1,4 @@
-use crate::{PathWithoutLocale, Request, errors::{ServerError, err_to_status_code}, i18n::TranslationsManager, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
+use crate::{PathMaybeWithLocale, PathWithoutLocale, Request, error_pages::ErrorPageLocation, errors::{ServerError, err_to_status_code}, i18n::TranslationsManager, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
 use super::{Turbine, build_error_page::build_error_page};
 use fmterr::fmt_err;
 use http::{HeaderMap, HeaderValue, StatusCode, header::HeaderName};
@@ -86,7 +86,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// is expected to end in `.json` (needed for compatibility with the exporting system).
     pub async fn get_subsequent_load(
         &self,
-        raw_path: &str, // No locale
+        raw_path: PathWithoutLocale,
         locale: &str,
         entity_name: &str,
         was_incremental_match: bool,
@@ -97,12 +97,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Parse the path
             let raw_path = raw_path.strip_prefix('/').unwrap_or(&raw_path);
             let raw_path = raw_path.strip_suffix('/').unwrap_or(&raw_path);
-            let path = match raw_path.strip_suffix(".json") {
-                Some(path) => path,
+            let path = PathWithoutLocale(match raw_path.strip_suffix(".json") {
+                Some(path) => path.to_string(),
                 None => return ApiResponse::err(StatusCode::BAD_REQUEST, "paths must end in `.json`")
-            };
+            });
 
-            let page_data_partial = self.get_state_for_path(PathWithoutLocale(path.to_string()), locale, entity_name, was_incremental_match, req).await;
+            let page_data_partial = self.get_state_for_path(path, locale, entity_name, was_incremental_match, req).await;
             let page_data_partial = match page_data_partial {
                 Ok(partial) => partial,
                 Err(err) => {
@@ -131,19 +131,19 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// page.
     pub async fn get_initial_load(
         &self,
-        raw_path: &str, // `PathMaybeWithLocale`
+        raw_path: PathMaybeWithLocale,
         req: Request,
     ) -> ApiResponse {
         // Decode the URL so we can work with spaces and special characters
         let raw_path = match urlencoding::decode(&raw_path) {
             Ok(path) => path.to_string(),
             // Yes, this would get an encoded path, but if it's *that* malformed, they deserve it
-            Err(err) => return self.html_err(raw_path, 400, &fmt_err(&ServerError::UrlDecodeFailed { source: err }))
+            Err(err) => return self.html_err(ErrorPageLocation::Path(raw_path), 400, &fmt_err(&ServerError::UrlDecodeFailed { source: err }))
         };
-        let raw_path = raw_path.as_str();
+        let raw_path = PathMaybeWithLocale(raw_path.as_str().to_string());
 
         // Run the routing algorithm to figure out what to do here
-        let path_slice = get_path_slice(raw_path);
+        let path_slice = get_path_slice(&raw_path);
         let verdict = match_route_atomic(&path_slice, &self.render_cfg, &self.templates, &self.locales);
         match verdict {
             RouteVerdictAtomic::Found(RouteInfoAtomic {
@@ -156,7 +156,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let res = self.get_initial_load_for_path(path, &locale, template, was_incremental_match, req).await;
                 let (page_data, global_state) = match res {
                     Ok(data) => data,
-                    Err(err) => return self.html_err(raw_path, err_to_status_code(&err), &fmt_err(&err)),
+                    Err(err) => return self.html_err(ErrorPageLocation::Path(raw_path), err_to_status_code(&err), &fmt_err(&err)),
                 };
 
                 // Get the translations to interpolate into the page
@@ -169,7 +169,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     // We know for sure that this locale is supported, so there's been an internal
                     // server error if it can't be found
                     Err(err) => {
-                        return self.html_err(raw_path, 500, &fmt_err(&err));
+                        return self.html_err(ErrorPageLocation::Path(raw_path), 500, &fmt_err(&err));
                     }
                 };
 
@@ -213,7 +213,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // This isn't an error, but that's how this API expresses it (302 redirect)
                 ApiResponse::err(StatusCode::FOUND, &html)
             },
-            RouteVerdictAtomic::NotFound => self.html_err(raw_path, 404, "page not found"),
+            RouteVerdictAtomic::NotFound => self.html_err(ErrorPageLocation::Path(raw_path), 404, "page not found"),
         }
     }
 
@@ -221,8 +221,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// a translator.
     ///
     /// This assumes that the app has already been actually built.
-    fn html_err(&self, url: &str, code: u16, msg: &str) -> ApiResponse {
-        let html = build_error_page(url, code, msg, None, &self.error_pages, self.html_shell.as_ref().unwrap());
+    fn html_err(&self, loc: ErrorPageLocation, code: u16, msg: &str) -> ApiResponse {
+        let html = build_error_page(loc, code, msg, None, &self.error_pages, self.html_shell.as_ref().unwrap());
         // This can construct a 404 if needed
         ApiResponse::err(StatusCode::from_u16(code).unwrap(), &html)
     }

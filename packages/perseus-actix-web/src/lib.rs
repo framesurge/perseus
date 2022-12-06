@@ -10,7 +10,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 
 use actix_files::Files;
 use actix_web::{HttpRequest, HttpResponse, Responder, web};
-use perseus::{i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}, Request, http::StatusCode};
+use perseus::{PathMaybeWithLocale, PathWithoutLocale, Request, http::StatusCode, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 
 // ----- Request conversion implementation -----
@@ -84,7 +84,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
             .route(
                 "/.perseus/page/{locale}/{filename:.*}.json",
                 web::get().to(move |http_req: HttpRequest, web::Query(query_params): web::Query<SubsequentLoadQueryParams>| async move {
-                    let raw_path = http_req.match_info().query("filename");
+                    let raw_path = http_req.match_info().query("filename").to_string();
                     let locale = http_req.match_info().query("locale");
                     let SubsequentLoadQueryParams { entity_name, was_incremental_match } = query_params;
                     let http_req = match convert_req(&http_req) {
@@ -93,7 +93,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
                     };
 
                     ApiResponse(turbine.get_subsequent_load(
-                        &raw_path,
+                        PathWithoutLocale(raw_path),
                         locale,
                         &entity_name,
                         was_incremental_match,
@@ -110,12 +110,12 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         }
         // --- Initial load handler ---
         cfg.route("{route:.*}", web::get().to(move |http_req: HttpRequest| async move {
-            let raw_path = http_req.path();
+            let raw_path = http_req.path().to_string();
             let http_req = match convert_req(&http_req) {
                 Ok(req) => req,
                 Err(err) => return ApiResponse(PerseusApiResponse::err(StatusCode::BAD_REQUEST, &err))
             };
-            ApiResponse(turbine.get_initial_load(&raw_path, http_req).await)
+            ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(raw_path), http_req).await)
         }));
     }
 }

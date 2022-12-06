@@ -1,5 +1,5 @@
 use super::RouteVerdict;
-use crate::{PathMaybeWithLocale, PathWithLocale, router::RouteInfo, template::TemplateNodeType};
+use crate::{PathMaybeWithLocale, PathWithLocale, error_pages::ErrorPageLocation, router::RouteInfo, template::TemplateNodeType};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
@@ -101,13 +101,13 @@ pub enum RouterLoadState {
         template_name: String,
         /// The full path to the new page being loaded (including the locale, if
         /// we're using i18n).
-        path: String,
+        path: PathMaybeWithLocale,
     },
     /// An error page has been loaded.
     ErrorLoaded {
-        /// The full path to the page we intended to load, on which the error
-        /// occurred (including the locale, if we're using i18n).
-        path: String,
+        /// The full path to the page we intended to load. This is specified
+        /// the way error pages specify their paths.
+        location: ErrorPageLocation,
     },
     /// A new page is being loaded, and will soon replace whatever is currently
     /// loaded. The name of the new template is attached.
@@ -116,7 +116,7 @@ pub enum RouterLoadState {
         template_name: String,
         /// The full path to the new page being loaded (including the locale, if
         /// we're using i18n).
-        path: String,
+        path: PathMaybeWithLocale,
     },
     /// We're on the server, and there is no router. Whatever you render based
     /// on this state will appear when the user first loads the page, before

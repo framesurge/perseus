@@ -1,5 +1,5 @@
 use crate::server::HtmlShell;
-use crate::error_pages::{ErrorPageData, ErrorPages};
+use crate::error_pages::{ErrorPageData, ErrorPageLocation, ErrorPages};
 use crate::translator::Translator;
 use crate::SsrNode;
 use std::rc::Rc;
@@ -17,7 +17,7 @@ use std::rc::Rc;
 ///
 /// Note that this is only ever used for pages, never widgets.
 pub fn build_error_page(
-    url: &str,
+    location: ErrorPageLocation,
     status: u16,
     // This should already have been transformed into a string (with a source chain etc.)
     err: &str,
@@ -25,13 +25,13 @@ pub fn build_error_page(
     error_pages: &ErrorPages<SsrNode>,
     html_shell: &HtmlShell,
 ) -> String {
-    let error_html = error_pages.render_to_string(url, status, err, translator.clone());
-    let error_head = error_pages.render_head(url, status, err, translator);
+    let error_html = error_pages.render_to_string(location.clone(), status, err, translator.clone());
+    let error_head = error_pages.render_head(location.clone(), status, err, translator);
     // We create a JSON representation of the data necessary to hydrate the error
     // page on the client-side Right now, translators are never included in
     // transmitted error pages
     let error_page_data = ErrorPageData {
-        url: url.to_string(),
+        location,
         status,
         err: err.to_string(),
     };

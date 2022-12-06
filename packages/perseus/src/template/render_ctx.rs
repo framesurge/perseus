@@ -168,14 +168,13 @@ impl Freeze for RenderCtx {
         let frozen_app = FrozenApp {
             global_state: self.global_state.0.borrow().freeze(),
             route: match &*self.router.get_load_state_rc().get_untracked() {
-                RouterLoadState::Loaded { path, .. } => path,
-                RouterLoadState::Loading { path, .. } => path,
-                RouterLoadState::ErrorLoaded { path } => path,
+                RouterLoadState::Loaded { path, .. } => Some(path.clone()),
+                RouterLoadState::Loading { path, .. } => Some(path.clone()),
                 // If we encounter this during re-hydration, we won't try to set the URL in the
                 // browser
-                RouterLoadState::Server => "SERVER",
-            }
-            .to_string(),
+                RouterLoadState::ErrorLoaded { .. } => None,
+                RouterLoadState::Server => None,
+            },
             page_state_store: self.page_state_store.freeze_to_hash_map(),
         };
         serde_json::to_string(&frozen_app).unwrap()
@@ -264,7 +263,6 @@ impl RenderCtx {
     #[cfg(target_arch = "wasm32")]
     pub fn preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &PathMaybeWithLocale) {
         use fmterr::fmt_err;
-        let url = url.to_string();
 
         crate::spawn_local_scoped(cx, async move {
             if let Err(err) = self.try_preload(&url).await {
@@ -292,7 +290,6 @@ impl RenderCtx {
     #[cfg(target_arch = "wasm32")]
     pub fn route_preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &PathMaybeWithLocale) {
         use fmterr::fmt_err;
-        let url = url.to_string();
 
         crate::spawn_local_scoped(cx, async move {
             if let Err(err) = self.try_route_preload(&url).await {
@@ -317,7 +314,7 @@ impl RenderCtx {
     /// Preloads the given URL from the server and caches it, preventing
     /// future network requests to fetch that page.
     #[cfg(target_arch = "wasm32")]
-    async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
+    async fn _preload(&self, path: &PathMaybeWithLocale, is_route_preload: bool) -> Result<(), ClientError> {
         use crate::router::{match_route, RouteVerdict};
 
         let path_segments = path
@@ -365,6 +362,9 @@ impl RenderCtx {
     /// However, if the frozen state for an individual page is invalid, it will
     /// be silently ignored in favor of either the active state or the
     /// server-provided state.
+    ///
+    /// If the app was last frozen while on an error page, this will not attempt
+    /// to change the current route.
     pub fn thaw(&self, new_frozen_app: &str, thaw_prefs: ThawPrefs) -> Result<(), ClientError> {
         let new_frozen_app: FrozenApp = serde_json::from_str(new_frozen_app)
             .map_err(|err| ClientError::ThawFailed { source: err })?;
@@ -378,22 +378,25 @@ impl RenderCtx {
 
         // Check if we're on the same page now as we were at freeze-time
         let curr_route = match &*self.router.get_load_state_rc().get_untracked() {
-                RouterLoadState::Loaded { path, .. } => path.to_string(),
-                RouterLoadState::Loading { path, .. } => path.to_string(),
-                RouterLoadState::ErrorLoaded { path } => path.to_string(),
+                RouterLoadState::Loaded { path, .. } => path.clone(),
+                RouterLoadState::Loading { path, .. } => path.clone(),
+                // We're in an error state, so we have no choice but to go to the old route
+                RouterLoadState::ErrorLoaded { location } => todo!("thawing while in an error state is not yet implemented"),
                 // The user is trying to thaw on the server, which is an absolutely horrific idea (we should be generating state, and loops could happen)
                 RouterLoadState::Server => panic!("attempted to thaw frozen state on server-side (you can only do this in the browser)"),
             };
         // We handle the possibility that the page tried to reload before it had been
         // made interactive here (we'll just reload wherever we are)
-        if curr_route == route || route == "SERVER" {
-            // We'll need to imperatively instruct the router to reload the current page
-            // (Sycamore can't do this yet) We know the last verdict will be
-            // available because the only way we can be here is if we have a page
-            self.router.reload();
+        if let Some(route) = route {
+            // If we're on the same page, just reload, otherwise go to the frozen route
+            if curr_route == route {
+                self.router.reload();
+            } else {
+                navigate(&route);
+            }
         } else {
-            // We aren't, navigate to the old route as usual
-            navigate(&route);
+            // The page froze before hydration, so we'll jsut reload
+            self.router.reload();
         }
 
         Ok(())

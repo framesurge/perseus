@@ -1,3 +1,4 @@
+use crate::PathMaybeWithLocale;
 use crate::translator::Translator;
 #[cfg(target_arch = "wasm32")]
 use crate::utils::replace_head;
@@ -17,7 +18,7 @@ use sycamore::view::View;
 /// translator is not available or couldn't be instantiated, so you'll need to
 /// rely on symbols or the like in these cases.
 pub type ErrorPageTemplate<G> =
-    Box<dyn Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
+    Box<dyn Fn(Scope, ErrorPageLocation, u16, String, Option<Rc<Translator>>) -> View<G> + Send + Sync>;
 /// The function the user must provide to render the document `<head>`
 /// associated with a certain error page. Note that this will only be rendered
 /// on the server-side, and will be completely unreactive, being directly
@@ -65,11 +66,11 @@ impl<G: Html> ErrorPages<G> {
     /// will be used when an error occurs whose status code has not been
     /// explicitly handled by some other error page.
     pub fn new(
-        fallback_page: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G>
+        fallback_page: impl Fn(Scope, ErrorPageLocation, u16, String, Option<Rc<Translator>>) -> View<G>
             + Send
             + Sync
             + 'static,
-        fallback_head: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<SsrNode>
+        fallback_head: impl Fn(Scope, ErrorPageLocation, u16, String, Option<Rc<Translator>>) -> View<SsrNode>
             + Send
             + Sync
             + 'static,
@@ -87,11 +88,11 @@ impl<G: Html> ErrorPages<G> {
     pub fn add_page(
         &mut self,
         status: u16,
-        page: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<G>
+        page: impl Fn(Scope, ErrorPageLocation, u16, String, Option<Rc<Translator>>) -> View<G>
             + Send
             + Sync
             + 'static,
-        head: impl Fn(Scope, String, u16, String, Option<Rc<Translator>>) -> View<SsrNode>
+        head: impl Fn(Scope, ErrorPageLocation, u16, String, Option<Rc<Translator>>) -> View<SsrNode>
             + Send
             + Sync
             + 'static,
@@ -124,13 +125,13 @@ impl<G: Html> ErrorPages<G> {
     pub fn get_view(
         &self,
         cx: Scope,
-        url: &str,
+        loc: ErrorPageLocation,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
     ) -> View<G> {
         let template_fn = self.get_template_fn(status);
-        template_fn(cx, url.to_string(), status, err.to_string(), translator)
+        template_fn(cx, loc, status, err.to_string(), translator)
     }
     /// Gets the `View<G>` to render the content and automatically renders and
     /// replaces the document `<head>` appropriately.
@@ -138,7 +139,7 @@ impl<G: Html> ErrorPages<G> {
     pub fn get_view_and_render_head(
         &self,
         cx: Scope,
-        url: &str,
+        loc: ErrorPageLocation,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
@@ -153,7 +154,7 @@ impl<G: Html> ErrorPages<G> {
     /// abruptly.
     pub fn render_head(
         &self,
-        url: &str,
+        loc: ErrorPageLocation,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
@@ -164,7 +165,7 @@ impl<G: Html> ErrorPages<G> {
         };
         sycamore::render_to_string(|cx| {
             with_no_hydration_context(|| {
-                head_fn(cx, url.to_string(), status, err.to_string(), translator)
+                head_fn(cx, loc, status, err.to_string(), translator)
             })
         })
     }
@@ -184,7 +185,7 @@ impl<G: Html> ErrorPages<G> {
 //         let template_fn = self.get_template_fn(status);
 //         // Render that to the given container
 //         sycamore::render_to(
-//             |_| template_fn(cx, url.to_string(), status, err.to_string(),
+//             |_| template_fn(cx, loc, status, err.to_string(),
 // translator),             container,
 //         );
 //     }
@@ -204,7 +205,7 @@ impl<G: Html> ErrorPages<G> {
 //         container: &Element,
 //     ) {
 //         let template_fn = self.get_template_fn(status);
-//         let hydrate_view = template_fn(cx, url.to_string(), status,
+//         let hydrate_view = template_fn(cx, loc, status,
 // err.to_string(), translator);         // TODO Now convert that `HydrateNode`
 // to a `DomNode`         let dom_view = hydrate_view;
 //         // Render that to the given container
@@ -226,7 +227,7 @@ impl<G: Html> ErrorPages<G> {
 //         let template_fn = self.get_template_fn(status);
 //         // Render that to the given container
 //         sycamore::hydrate_to(
-//             |_| template_fn(cx, url.to_string(), status, err.to_string(),
+//             |_| template_fn(cx, loc, status, err.to_string(),
 // translator),             container,
 //         );
 //     }
@@ -238,7 +239,7 @@ impl ErrorPages<SsrNode> {
     /// internal one.
     pub fn render_to_string(
         &self,
-        url: &str,
+        loc: ErrorPageLocation,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
@@ -246,7 +247,7 @@ impl ErrorPages<SsrNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::render_to_string(|cx| {
-            template_fn(cx, url.to_string(), status, err.to_string(), translator)
+            template_fn(cx, loc, status, err.to_string(), translator)
         })
     }
     /// Renders the error page to a string, using the given reactive scope. Note
@@ -255,7 +256,7 @@ impl ErrorPages<SsrNode> {
     pub fn render_to_string_scoped(
         &self,
         cx: Scope,
-        url: &str,
+        loc: ErrorPageLocation,
         status: u16,
         err: &str,
         translator: Option<Rc<Translator>>,
@@ -263,7 +264,7 @@ impl ErrorPages<SsrNode> {
         let template_fn = self.get_template_fn(status);
         // Render that to the given container
         sycamore::render_to_string(|_| {
-            template_fn(cx, url.to_string(), status, err.to_string(), translator)
+            template_fn(cx, loc, status, err.to_string(), translator)
         })
     }
 }
@@ -273,9 +274,9 @@ impl<G: Html> Default for ErrorPages<G> {
     #[cfg(debug_assertions)]
     fn default() -> Self {
         let mut error_pages = Self::new(
-            |cx, url, status, err, _| {
+            |cx, _, status, err, _| {
                 view! { cx,
-                    p { (format!("An error with HTTP code {} occurred at '{}': '{}'.", status, url, err)) }
+                    p { (format!("An error with HTTP code {} occurred: '{}'.", status, err)) }
                 }
             },
             |cx, _, _, _, _| {
@@ -311,10 +312,29 @@ impl<G: Html> Default for ErrorPages<G> {
 /// that server-side rendered error pages can be hydrated on the client-side.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ErrorPageData {
-    /// The URL for the error.
-    pub url: String,
+    /// The location at which the error occurred.
+    pub location: ErrorPageLocation,
     /// THe HTTP status code that corresponds with the error.
     pub status: u16,
     /// The actual error message as a string.
     pub err: String,
+}
+
+/// The possible locations that might be provided to an error page.
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub enum ErrorPageLocation {
+    /// A properly formed Perseus path.
+    Path(PathMaybeWithLocale),
+    /// The current path. Note that this will not always be used for the
+    /// current path if it can expressed fully. This most commonly appears
+    /// in error pages that have been exported, and in severe serialization
+    /// errors.
+    Current,
+    /// This error is not page-specific, and represents a critical violation
+    /// of Perseus' trans-network invariants. For instance, we assume that the
+    /// server will give us correctly formed state. If this doesn't happen, we can't
+    /// take any action. An invariant violation like this would cause a panic
+    /// if it weren't network-based, since it's entirely plausible for there to be
+    /// some kind of network error that leads to malformed state being received.
+    Core,
 }

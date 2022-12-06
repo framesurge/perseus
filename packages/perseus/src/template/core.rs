@@ -550,7 +550,6 @@ impl<G: Html> Template<G> {
     pub fn render_widget_for_template_client<'a>(
         &self,
         path: PathMaybeWithLocale,
-        state: TemplateState,
         cx: Scope<'a>,
         preload_info: PreloadInfo,
     ) -> View<G> {

@@ -12,8 +12,9 @@ pub struct FrozenApp {
     /// The frozen global state. If it was never initialized, this will be
     /// `None`.
     pub global_state: String,
-    /// The frozen route.
-    pub route: String,
+    /// The frozen route. This will be `None` if the app hadn't properly hydrated when it
+    /// was frozen.
+    pub route: Option<PathMaybeWithLocale>,
     /// The frozen page state store. We store this as a `HashMap` as this level
     /// so that we can avoid another deserialization.
     pub page_state_store: HashMap<PathMaybeWithLocale, String>,

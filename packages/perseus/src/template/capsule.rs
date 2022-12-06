@@ -128,13 +128,12 @@ pub fn Widget<G: Html>(cx: Scope, path: &str) -> View<G> {
 /// The internal browser-side logic for widgets.
 #[cfg(target_arch = "wasm32")]
 fn browser_widget(cx: Scope, path: PathWithoutLocale) -> View<TemplateNodeType> {
+    use crate::PathMaybeWithLocale;
+
     let render_ctx = RenderCtx::from_ctx(cx);
     let translator = use_context::<Signal<Translator>>(cx).get_untracked();
     let locale = translator.get_locale();
-    let localized_path = match locale.as_str() {
-        "xx-XX" => path.to_string(),
-        locale => format!("{}/{}", locale, path)
-    };
+    let localized_path = PathMaybeWithLocale::new(&path, &locale);
     // This has the locale, and is used as the identifier for the calling page in the PSS.
     // This will be `Some(..)` as long as we're not running in an error page (in which case
     // we should immediately terminate anyway) or the like.

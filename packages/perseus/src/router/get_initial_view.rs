@@ -1,4 +1,4 @@
-use crate::error_pages::ErrorPageData;
+use crate::error_pages::{ErrorPageData, ErrorPageLocation};
 use crate::errors::*;
 use crate::i18n::detect_locale;
 use crate::router::{match_route, RouteManager};
@@ -56,14 +56,11 @@ pub(crate) fn get_initial_view<'a>(
             // whether it's an incremental match or not
             was_incremental_match: _,
         }) => {
-            let path_with_locale = match locale.as_str() {
-                "xx-XX" => path.clone(),
-                locale => format!("{}/{}", locale, &path),
-            };
+            let full_path = PathMaybeWithLocale::new(&path, &locale);
             // Update the router state
             router_state.set_load_state(RouterLoadState::Loading {
                 template_name: template.get_path(),
-                path: path_with_locale.clone(),
+                path: full_path.clone(),
             });
             router_state.set_last_verdict(verdict.clone());
 
@@ -92,11 +89,11 @@ pub(crate) fn get_initial_view<'a>(
                         Some(translations_str) => translations_str,
                         None => {
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
-                                path: path_with_locale.clone(),
+                                location: ErrorPageLocation::Path(full_path.clone()),
                             });
                             return InitialView::Error(error_pages.get_view_and_render_head(
                                 cx,
-                                "*",
+                                ErrorPageLocation::Core,
                                 500,
                                 "expected translations in global variable, but none found",
                                 None,
@@ -109,7 +106,7 @@ pub(crate) fn get_initial_view<'a>(
                         Ok(translator) => translator,
                         Err(err) => {
                             router_state.set_load_state(RouterLoadState::ErrorLoaded {
-                                path: path_with_locale.clone(),
+                                location: ErrorPageLocation::Path(full_path.clone()),
                             });
                             return InitialView::Error(match &err {
                                 // These errors happen because we couldn't get a translator, so they
@@ -156,7 +153,7 @@ pub(crate) fn get_initial_view<'a>(
                     {
                         // Cache the page's head in the PSS (getting it as reliably as we can)
                         let head_str = get_head();
-                        pss.add_head(&path, head_str);
+                        pss.add_head(&full_path, head_str, false); // We know this is a page
                     }
 
                     let path = template.get_path();
@@ -166,16 +163,16 @@ pub(crate) fn get_initial_view<'a>(
                     // Update the router state
                     router_state.set_load_state(RouterLoadState::Loaded {
                         template_name: path,
-                        path: path_with_locale.clone(),
+                        path: full_path.clone(),
                     });
                     // Render the actual template to the root (done imperatively due to child
                     // scopes)
                     template.render_for_template_client(
-                        path_with_locale,
+                        full_path,
                         state,
                         cx,
                         PreloadInfo {
-                            locale,
+                            locale: locale.to_string(),
                             was_incremental_match,
                         },
                         route_manager,
@@ -186,13 +183,13 @@ pub(crate) fn get_initial_view<'a>(
                 }
                 // We have an error that the server sent down, so we should just return that error
                 // view
-                InitialState::Error(ErrorPageData { url, status, err }) => {
+                InitialState::Error(ErrorPageData { location, status, err }) => {
                     checkpoint("initial_state_error");
                     router_state.set_load_state(RouterLoadState::ErrorLoaded {
-                        path: path_with_locale.clone(),
+                        location: ErrorPageLocation::Path(full_path.clone()),
                     });
                     // We don't need to replace the head, because the server's handled that for us
-                    InitialView::Error(error_pages.get_view(cx, &url, status, &err, None))
+                    InitialView::Error(error_pages.get_view(cx, location, status, &err, None))
                 }
                 // The entire purpose of this function is to work with the initial state, so if this
                 // is true, then we have a problem
@@ -202,9 +199,9 @@ pub(crate) fn get_initial_view<'a>(
                 InitialState::NotPresent => {
                     checkpoint("initial_state_error");
                     router_state.set_load_state(RouterLoadState::ErrorLoaded {
-                        path: path_with_locale.clone(),
+                        location: ErrorPageLocation::Path(full_path.clone()),
                     });
-                    InitialView::Error(error_pages.get_view_and_render_head(cx, "*", 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None))
+                    InitialView::Error(error_pages.get_view_and_render_head(cx, ErrorPageLocation::Core, 400, "expected initial state render, found subsequent load (highly likely to be a core perseus bug)", None))
                 }
             }
         }
@@ -216,8 +213,8 @@ pub(crate) fn get_initial_view<'a>(
         }
         RouteVerdict::NotFound => InitialView::Error({
             checkpoint("not_found");
-            if let InitialState::Error(ErrorPageData { url, status, err }) = get_initial_state() {
-                router_state.set_load_state(RouterLoadState::ErrorLoaded { path: url.clone() });
+            if let InitialState::Error(ErrorPageData { location, status, err }) = get_initial_state() {
+                router_state.set_load_state(RouterLoadState::ErrorLoaded { location: location.clone() });
                 // If this is an error from an initial state page, then we'll hydrate whatever's
                 // already there
                 //
@@ -225,15 +222,11 @@ pub(crate) fn get_initial_view<'a>(
                 // provide no translator (and one certainly won't exist in context)
                 // But we don't need to replace the head, since the server will have already
                 // done that
-                error_pages.get_view(cx, &url, status, &err, None)
+                error_pages.get_view(cx, location, status, &err, None)
             } else {
-                // TODO Update the router state
-                // router_state.set_load_state(RouterLoadState::ErrorLoaded {
-                //     path: path_with_locale.clone()
-                // });
-                // Given that were only handling the initial load, this should really never
-                // happen...
-                error_pages.get_view_and_render_head(cx, "", 404, "not found", None)
+                // Our router is saying the page wasn't found, but the server disagrees. There is no way
+                // to reconcile this, but it's a critical error.
+                error_pages.get_view_and_render_head(cx, ErrorPageLocation::Core, 404, "client/server router mismatch (client thinks page doesn't exist, server disagrees)", None)
             }
         }),
     }
@@ -302,7 +295,7 @@ fn get_initial_state() -> InitialState {
             Ok(render_cfg) => render_cfg,
             // If there's a serialization error, we'll create a whole new error (500)
             Err(err) => ErrorPageData {
-                url: "[current]".to_string(),
+                location: ErrorPageLocation::Core,
                 status: 500,
                 err: format!("couldn't serialize error from server: '{}'", err),
             },
@@ -314,7 +307,7 @@ fn get_initial_state() -> InitialState {
             // An actual error means the state was provided, but it was malformed, so we'll render
             // an error page
             Err(err) => InitialState::Error(ErrorPageData {
-                url: "[current]".to_string(),
+                location: ErrorPageLocation::Core,
                 status: 500,
                 err: format!("couldn't serialize page data from server: '{}'", err),
             }),
