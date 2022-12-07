@@ -1,7 +1,7 @@
 use super::{RouteInfo, RouteInfoAtomic, RouteVerdict, RouteVerdictAtomic};
 use crate::i18n::Locales;
 use crate::template::{ArcTemplateMap, Template, TemplateMap};
-use crate::{Html, PathMaybeWithLocale, PathWithoutLocale};
+use crate::{Html, path::*};
 use std::collections::HashMap;
 use std::rc::Rc;
 

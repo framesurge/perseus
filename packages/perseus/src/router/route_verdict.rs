@@ -1,5 +1,5 @@
 use crate::template::Template;
-use crate::{Html, PathWithoutLocale};
+use crate::{Html, path::PathWithoutLocale};
 use std::rc::Rc;
 
 /// Information about a route, which, combined with error pages and a

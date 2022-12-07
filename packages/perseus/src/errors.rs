@@ -124,7 +124,10 @@ pub enum ClientInvariantError {
     InvalidState {
         #[source]
         source: serde_json::Error,
-    }
+    },
+    // Invariant because the user would have had to call something like `.template_with_state()` for this to happen
+    #[error("no state was found for a page/widget that expected state (you might have forgotten to write a state generation function, like `get_build_state`)")]
+    NoState,
 }
 
 /// Errors that can occur in the browser as a result of attempting to thaw provided state.
@@ -216,6 +219,9 @@ pub enum ServerError {
     ServeError(#[from] ServeError),
     #[error(transparent)]
     PluginError(#[from] PluginError),
+    // This can occur in state acquisition failures during prerendering
+    #[error(transparent)]
+    ClientError(#[from] ClientError)
 }
 /// Converts a server error into an HTTP status code.
 #[cfg(not(target_arch = "wasm32"))]

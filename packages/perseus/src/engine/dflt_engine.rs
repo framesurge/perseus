@@ -5,7 +5,7 @@ use super::EngineOperation;
 use crate::server::ServerOptions;
 use crate::turbine::Turbine;
 use crate::{
-    i18n::TranslationsManager, stores::MutableStore, PerseusAppBase, SsrNode,
+    i18n::TranslationsManager, stores::MutableStore, init::PerseusAppBase, SsrNode,
 };
 use fmterr::fmt_err;
 use futures::Future;

@@ -2,7 +2,7 @@ use fmterr::fmterr;
 
 use crate::error_pages::ErrorPageData;
 use crate::page_data::PageData;
-use crate::template::TemplateState;
+use crate::state::TemplateState;
 use crate::utils::minify;
 use std::collections::HashMap;
 use std::{env, fmt};

@@ -13,7 +13,7 @@ use crate::{
     plugins::{PluginAction, Plugins},
     state::GlobalStateCreator,
     stores::MutableStore,
-    ErrorPages, Html, SsrNode, Template,
+    error_pages::ErrorPages, Html, SsrNode, template::Template,
 };
 use futures::Future;
 #[cfg(target_arch = "wasm32")]

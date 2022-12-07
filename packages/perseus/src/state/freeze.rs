@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::PathMaybeWithLocale;
+use crate::path::PathMaybeWithLocale;
 use super::global_state::FrozenGlobalState;
 
 /// A representation of a frozen app.

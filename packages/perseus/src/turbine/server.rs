@@ -1,4 +1,4 @@
-use crate::{PathMaybeWithLocale, PathWithoutLocale, Request, error_pages::ErrorPageLocation, errors::{ServerError, err_to_status_code}, i18n::TranslationsManager, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
+use crate::{path::{PathMaybeWithLocale, PathWithoutLocale}, Request, error_pages::ErrorPageLocation, errors::{ServerError, err_to_status_code}, i18n::TranslationsManager, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, state::TemplateState, utils::get_path_prefix_server};
 use super::{Turbine, build_error_page::build_error_page};
 use fmterr::fmt_err;
 use http::{HeaderMap, HeaderValue, StatusCode, header::HeaderName};
@@ -183,7 +183,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let mut response = ApiResponse::ok(&final_html);
 
                 // Generate and add HTTP headers
-                for (key, val) in template.get_headers(TemplateState::from_value(page_data.state)) {
+                let headers = match template.get_headers(TemplateState::from_value(page_data.state)) {
+                    Ok(headers) => headers,
+                    Err(err) => return self.html_err(ErrorPageLocation::Path(raw_path), err_to_status_code(&err), &fmt_err(&err))
+                };
+                for (key, val) in headers {
                     response.add_header(key.unwrap(), val);
                 }
 

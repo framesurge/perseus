@@ -1,4 +1,4 @@
-use crate::PathMaybeWithLocale;
+use crate::path::PathMaybeWithLocale;
 use crate::translator::Translator;
 #[cfg(target_arch = "wasm32")]
 use crate::utils::replace_head;

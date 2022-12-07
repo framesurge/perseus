@@ -11,7 +11,7 @@ pub type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
 #[doc(hidden)]
 macro_rules! make_async_trait {
     (
-        $name:tt
+        $vis:vis $name:ident
         // This is capable of supporting HRTBs, though that's no longer needed. Left in for future cases.
         $(< $( $g_name:ident $( : $g_restr_1:tt $( + $g_restr_extra:tt )* $( - for<$g_lt:lifetime> $g_restr_hrtb:tt<$g_lt_1:lifetime> )* )? $(,)? )+ >)?,
         $return_ty:ty

@@ -1,4 +1,4 @@
-use crate::PathMaybeWithLocale;
+use crate::path::PathMaybeWithLocale;
 use crate::errors::{ClientError, ClientInvariantError};
 use crate::page_data::PageDataPartial;
 use crate::state::AnyFreeze;
@@ -148,8 +148,8 @@ impl PageStateStore {
             drop(map);
             self.evict_page_if_needed();
         }
-        // If we got to here, then there were no issues with not accepting state
-        true
+
+        Ok(())
     }
     /// Adds document metadata to the entry in the store for the given URL,
     /// creating it if it doesn't exist.

@@ -3,9 +3,11 @@ use std::{cell::RefCell, collections::HashMap, pin::Pin, rc::Rc};
 use chrono::{DateTime, Utc};
 use futures::{Future, FutureExt, future::{BoxFuture, try_join_all}};
 use serde_json::Value;
-use sycamore::web::SsrNode;
+use sycamore::{prelude::create_scope_immediate, utils::hydrate::with_hydration_context, view::View, web::SsrNode};
 
-use crate::{PathMaybeWithLocale, PathWithoutLocale, PurePath, Request, StateGeneratorInfo, Template, errors::*, i18n::{TranslationsManager, Translator}, internal::{PageData, PageDataPartial}, router::{RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, template::{RenderMode, States, TemplateState, UnknownStateType}};
+use crate::{Request, errors::*, i18n::{TranslationsManager, Translator}, internal::{PageData, PageDataPartial}, path::*, router::{RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, state::StateGeneratorInfo, stores::MutableStore, template::States, template::Template};
+use crate::state::{TemplateState, UnknownStateType};
+use crate::reactor::RenderMode;
 use super::Turbine;
 
 /// This is `PageDataPartial`, but it keeps the state as `TemplateState` for internal convenience.
@@ -132,7 +134,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 global_state.clone(),
                 &req,
                 &translator,
-            ).await?;
+            )?.await?;
             // Convert the `TemplateState`s into `Value`s
             let final_widget_states = final_widget_states
                 .into_iter()
@@ -169,7 +171,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         global_state: TemplateState,
         req: &'a Request,
         translator: &'a Translator
-    ) -> BoxFuture<'a, Result<(HashMap<String, (String, TemplateState)>, String), ServerError>> {
+    ) -> Result<BoxFuture<'a, Result<(HashMap<String, (String, TemplateState)>, String), ServerError>>, ServerError> {
         // Misleadingly, this only has the locale if we're using i18n!
         let full_path = PathMaybeWithLocale::new(&path, &locale);
 
@@ -191,15 +193,23 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Start the first render. This registers all our mode stuff on `cx`,
         // which is dropped when this is done. So, we can safely get the widget states
         // back.
-        let prerendered = sycamore::render_to_string(|cx| {
-            entity.render_for_template_server(
-                full_path,
-                state.clone(),
-                global_state.clone(),
-                mode.clone(),
-                cx,
-                &translator,
-            )
+        // Now prerender the actual content (a bit roundabout for error handling)
+        let mut prerender_view = Ok(View::empty());
+        create_scope_immediate(|cx| {
+            prerender_view = with_hydration_context(|| {
+                entity.render_for_template_server(
+                    full_path.clone(),
+                    state,
+                    global_state.clone(),
+                    mode.clone(),
+                    cx,
+                    &translator,
+                )
+            });
+        });
+        let prerender_view = prerender_view?;
+        let prerendered = sycamore::render_to_string(|_| {
+            prerender_view
         });
         // As explained above, this should never fail, because all references have been dropped
         let mut widget_states = Rc::try_unwrap(widget_states_rc).unwrap();
@@ -208,7 +218,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // we'll need to build all their states.
         let mut accumulator = Rc::try_unwrap(unresolved_widget_accumulator).unwrap().into_inner();
 
-        async move {
+        let fut = async move {
             if accumulator.is_empty() {
                 Ok((widget_states, prerendered))
             } else {
@@ -274,9 +284,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     global_state,
                     req,
                     translator
-                ).await
+                )?.await
             }
-        }.boxed()
+        }.boxed();
+        Ok(fut)
     }
 
     /// The internal version allows sharing a global state so we don't constantly regenerate it in recursion.

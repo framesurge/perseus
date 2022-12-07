@@ -1,6 +1,6 @@
 use serde::{Serialize, de::DeserializeOwned};
 use sycamore::web::Html;
-use crate::{PathMaybeWithLocale, errors::{ClientError, ClientInvariantError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx}, template::TemplateState};
+use crate::{path::PathMaybeWithLocale, errors::{ClientError, ClientInvariantError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, TemplateState}};
 use super::Reactor;
 
 // Explicitly prevent the user from trying to freeze on the engine-side
@@ -95,7 +95,8 @@ impl<G: Html> Reactor<G> {
     /// the server if necessary.
     ///
     /// This will return an invariant error if the provided server state is invalid, since
-    /// it's assumed to have actually come from the server.
+    /// it's assumed to have actually come from the server. It is also expected that the given
+    /// path does actually take state!
     ///
     /// This should not be used for capsules!
     pub(crate) fn get_page_state<S>(
@@ -104,24 +105,28 @@ impl<G: Html> Reactor<G> {
         server_state: TemplateState,
     ) -> Result<S::Rx, ClientError>
     where
-        S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S: MakeRx + Serialize + DeserializeOwned,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
-        if let Some(held_state) = self.get_held_state::<S>(url, false) {
-            held_state
+        if let Some(held_state) = self.get_held_state::<S>(url, false)? {
+            Ok(held_state)
         } else {
-            // Fall back to the state we were given, first
-            // giving it a type (this just sets a phantom type parameter)
-            let typed_state = server_state.change_type::<S>();
-            // This attempts a deserialization from a `Value`, which could fail
-            let unrx = typed_state
-                .to_concrete()
-                .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
-            let rx = unrx.make_rx();
-            // Add that to the state store as the new active state
-            self.state_store.add_state(url, rx, false)?;
+            if server_state.is_empty() {
+                Err(ClientInvariantError::NoState.into())
+            } else {
+                // Fall back to the state we were given, first
+                // giving it a type (this just sets a phantom type parameter)
+                let typed_state = server_state.change_type::<S>();
+                // This attempts a deserialization from a `Value`, which could fail
+                let unrx = typed_state
+                    .to_concrete()
+                    .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+                let rx = unrx.make_rx();
+                // Add that to the state store as the new active state
+                self.state_store.add_state(url, rx, false)?;
 
-            Ok(rx)
+                Ok(rx)
+            }
         }
     }
     // TODO Version of the above for widgets
@@ -129,7 +134,7 @@ impl<G: Html> Reactor<G> {
     /// cached fully, preventing unnecessary network requests. Any future
     /// attempt to set state will lead to errors (with logical exceptions for HSR).
     pub fn register_no_state(&self, url: &PathMaybeWithLocale, is_widget: bool) {
-        self.page_state_store.set_state_never(url, is_widget);
+        self.state_store.set_state_never(url, is_widget);
     }
 
     /// Determines if the given path (page or capsule) should use the state given by the server,
@@ -149,7 +154,7 @@ impl<G: Html> Reactor<G> {
     fn get_held_state<S>(&self, url: &PathMaybeWithLocale, is_widget: bool) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         // See if we can get both the active and frozen states
         let frozen_app_full = self.frozen_app.borrow();
@@ -181,9 +186,9 @@ impl<G: Html> Reactor<G> {
     fn get_held_state<S>(&self, _url: &PathMaybeWithLocale, _is_widget: bool) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
-        None
+        Ok(None)
     }
 
     /// Attempts to the get the active state for a page or widget. Of course, this does not
@@ -191,7 +196,7 @@ impl<G: Html> Reactor<G> {
     fn get_active_state<S>(&self, url: &PathMaybeWithLocale) -> Option<S::Rx>
     where
         S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         self.state_store
             .get_state::<S::Rx>(url)
@@ -203,7 +208,7 @@ impl<G: Html> Reactor<G> {
     fn get_frozen_state_and_register<S>(&self, url: &PathMaybeWithLocale, is_widget: bool) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         let frozen_app_full = self.frozen_app.borrow();
         if let Some((frozen_app, thaw_prefs, is_hsr)) = &*frozen_app_full {

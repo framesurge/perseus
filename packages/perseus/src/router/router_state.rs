@@ -1,5 +1,5 @@
 use super::RouteVerdict;
-use crate::{PathMaybeWithLocale, PathWithLocale, error_pages::ErrorPageLocation, router::RouteInfo, template::TemplateNodeType};
+use crate::{path::PathMaybeWithLocale, error_pages::ErrorPageLocation, router::RouteInfo, template::TemplateNodeType};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};

@@ -6,12 +6,14 @@ mod global_state;
 #[cfg(not(target_arch = "wasm32"))]
 mod render_mode;
 
+pub(crate) use render_mode::{RenderMode, RenderStatus};
+
+use crate::i18n::Translator;
 use std::{cell::{Cell, RefCell}, collections::HashMap, rc::Rc};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
-use sycamore::{prelude::use_context, web::Html};
-use crate::{ErrorPages, PerseusAppBase, errors::{ClientInvariantError, PluginError}, i18n::{Locales, TranslationsManager}, plugins::Plugins, router::RouterState, state::{FrozenApp, GlobalState, GlobalStateType, PageStateStore, ThawPrefs}, stores::MutableStore, template::{RenderMode, TemplateMap, TemplateState}};
-
+use sycamore::{prelude::{Scope, provide_context, use_context}, web::Html};
+use crate::{error_pages::ErrorPages, init::PerseusAppBase, errors::{ClientInvariantError, PluginError}, i18n::{Locales, TranslationsManager}, plugins::Plugins, router::RouterState, state::{FrozenApp, GlobalState, GlobalStateType, PageStateStore, ThawPrefs, TemplateState}, stores::MutableStore, template::TemplateMap};
 
 /// The core of Perseus' browser-side systems. This forms a central point for all the Perseus state and rendering logic
 /// to operate from. In your own code, this will always be available in the Sycamore context system.
@@ -25,6 +27,10 @@ pub struct Reactor<G: Html> {
     /// The user-provided global state, stored with similar mechanics to the state store,
     /// although optimised.
     global_state: GlobalState,
+    /// The currently active translator.
+    ///
+    /// This will only be `None` for a short moment, before the initial load.
+    translator: RefCell<Option<Translator>>,
 
     // --- Browser-side only ---
     /// A previous state the app was once in, still serialized. This will be
@@ -61,7 +67,7 @@ pub struct Reactor<G: Html> {
 
     // --- Engine-side only ---
     #[cfg(not(target_arch = "wasm32"))]
-    render_mode: RenderMode<G>,
+    pub(crate) render_mode: RenderMode<G>,
 }
 
 // This uses window variables set by the HTML shell, so it should never be used on the engine-side
@@ -104,7 +110,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             // This instantiates as if for the engine-side, but it will rapidly be changed
             router_state: RouterState::default(),
             state_store: PageStateStore::new(pss_max_size),
-            global_state: todo!(),
+            global_state,
+            translator: RefCell::new(None),
             // This will be filled out by a `.thaw()` call or HSR
             frozen_app: Rc::new(RefCell::new(None)),
             is_first: Cell::new(true),
@@ -117,14 +124,13 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
     }
 }
 
-#[cfg(target_arch = "wasm32")]
 impl<G: Html> Reactor<G> {
     /// Adds `self` to the given Sycamore scope as context.
     ///
     /// # Panics
     /// This will panic if any other reactor is found in the context.
     pub(crate) fn add_self_to_cx(self, cx: Scope) {
-        provide_context(cx, self)
+        provide_context(cx, self);
     }
     /// Gets a [`Reactor`] out of the given Sycamore scope's context.
     ///
@@ -138,7 +144,7 @@ impl<G: Html> Reactor<G> {
 #[cfg(not(target_arch = "wasm32"))]
 impl<G: Html> Reactor<G> {
     /// Initializes a new [`Reactor`] on the engine-side.
-    pub(crate) fn engine(global_state: TemplateState, mode: RenderMode<G>) -> Self {
+    pub(crate) fn engine(global_state: TemplateState, mode: RenderMode<G>, translator: &Translator) -> Self {
         Self {
             router_state: RouterState::default(),
             state_store: PageStateStore::new(0), /* There will be no need for the state store on the
@@ -148,7 +154,8 @@ impl<G: Html> Reactor<G> {
             } else {
                 GlobalState::new(GlobalStateType::None)
             },
-            render_mode: mode
+            render_mode: mode,
+            translator: RefCell::new(Some(translator.clone()))
         }
     }
 }

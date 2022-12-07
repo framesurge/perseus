@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::{fs, rc::Rc};
 use sycamore::web::SsrNode;
-use crate::PerseusAppBase;
+use crate::init::PerseusAppBase;
 use crate::error_pages::ErrorPageLocation;
 use crate::{errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore};
 use super::Turbine;

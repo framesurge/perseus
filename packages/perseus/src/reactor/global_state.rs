@@ -1,13 +1,14 @@
-use fluent_bundle::resolver::Scope;
 use serde::{Serialize, de::DeserializeOwned};
-use sycamore::web::Html;
-use crate::{PathMaybeWithLocale, errors::{ClientError, ClientInvariantError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef}, template::TemplateState};
+use sycamore::{prelude::Scope, web::Html};
+use crate::{path::PathMaybeWithLocale, errors::{ClientError, ClientInvariantError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef, TemplateState}};
 use super::Reactor;
 
 // These methods are used for acquiring the global state on both the browser-side and the engine-side
 impl<G: Html> Reactor<G> {
     // TODO Fix these type bounds
-    /// Gets the global state.
+    /// Gets the global state. Note that this can only be used for reactive
+    /// global state, since Perseus always expects your global state to be
+    /// reactive.
     ///
     /// # Panics
     /// This will panic if the app has no global state. If you don't know
@@ -21,7 +22,7 @@ impl<G: Html> Reactor<G> {
     ) -> R
     where
         R: RxRef,
-        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef = R>,
+        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
         <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>
     {
         // Warn the user about the perils of having no build-time global state handler
@@ -38,7 +39,7 @@ impl<G: Html> Reactor<G> {
     ) -> Result<Option<R>, ClientError>
     where
         R: RxRef,
-        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef = R>,
+        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
         <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>,
     {
         let global_state_ty = self.global_state.0.borrow();
@@ -47,7 +48,7 @@ impl<G: Html> Reactor<G> {
             return Ok(None);
         }
 
-        let intermediate_state = if let Some(held_state) = self.get_held_global_state::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>() {
+        let intermediate_state = if let Some(held_state) = self.get_held_global_state::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>()? {
             held_state
         } else {
             // We'll get the server-given global state
@@ -74,7 +75,7 @@ impl<G: Html> Reactor<G> {
             }
         };
 
-        Ok(intermediate_state.to_ref_struct(cx))
+        Ok(Some(intermediate_state.to_ref_struct(cx)))
     }
 
     /// Determines if the global state should use the state given by the server,
@@ -91,7 +92,7 @@ impl<G: Html> Reactor<G> {
     fn get_held_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         // See if we can get both the active and frozen states
         let frozen_app_full = self.frozen_app.borrow();
@@ -122,10 +123,10 @@ impl<G: Html> Reactor<G> {
     #[cfg(not(target_arch = "wasm32"))]
     fn get_held_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
-        S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S: MakeRx + Serialize + DeserializeOwned,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
-        None
+        Ok(None)
     }
 
     /// Attempts to the get the active global state. Of course, this does not
@@ -134,10 +135,11 @@ impl<G: Html> Reactor<G> {
     /// still an invariant failure).
     fn get_active_global_state<S>(&self, url: &PathMaybeWithLocale) -> Result<Option<S::Rx>, ClientError>
     where
-        S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S: MakeRx + Serialize + DeserializeOwned,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
-        self.global_state.0.borrow().parse_active::<S::Rx>()
+        // This just attempts a downcast to `S::Rx`
+        self.global_state.0.borrow().parse_active::<S>()
     }
     /// Attempts to extract the frozen global state from any currently registered frozen
     /// app, registering what it finds. This assumes that the thaw preferences have already been
@@ -148,7 +150,7 @@ impl<G: Html> Reactor<G> {
     fn get_frozen_global_state_and_register<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         let frozen_app_full = self.frozen_app.borrow();
         if let Some((frozen_app, thaw_prefs, is_hsr)) = &*frozen_app_full {
@@ -205,6 +207,4 @@ impl<G: Html> Reactor<G> {
             Ok(None)
         }
     }
-
-
 }

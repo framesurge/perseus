@@ -1,6 +1,5 @@
 use crate::errors::*;
-
-use super::TemplateState;
+use crate::state::TemplateState;
 
 /// Represents all the different states that can be generated for a single
 /// template, allowing amalgamation logic to be run with the knowledge

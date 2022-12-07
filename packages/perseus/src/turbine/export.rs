@@ -3,7 +3,7 @@ use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::future::{try_join, try_join_all};
 use serde_json::Value;
 use sycamore::web::SsrNode;
-use crate::{PerseusAppBase, errors::*, i18n::TranslationsManager, internal::{PageData, PageDataPartial}, plugins::PluginAction, server::HtmlShell, stores::MutableStore, template::TemplateState, utils::get_path_prefix_server};
+use crate::{init::PerseusAppBase, errors::*, i18n::TranslationsManager, internal::{PageData, PageDataPartial}, plugins::PluginAction, server::HtmlShell, stores::MutableStore, state::TemplateState, utils::get_path_prefix_server};
 use super::Turbine;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {

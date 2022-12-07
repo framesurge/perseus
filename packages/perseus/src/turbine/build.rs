@@ -1,7 +1,18 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 use futures::future::try_join_all;
-use sycamore::web::SsrNode;
-use crate::{BuildPaths, PathMaybeWithLocale, PathWithoutLocale, PerseusAppBase, PurePath, StateGeneratorInfo, Template, errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore, template::{RenderMode, RenderStatus, TemplateState}, utils::minify};
+use sycamore::{prelude::create_scope_immediate, utils::hydrate::with_hydration_context, view::View, web::SsrNode};
+use crate::{
+    state::{BuildPaths, StateGeneratorInfo, TemplateState},
+    path::*,
+    init::PerseusAppBase,
+    errors::*,
+    i18n::TranslationsManager,
+    plugins::PluginAction,
+    stores::MutableStore,
+    reactor::{RenderMode, RenderStatus},
+    template::Template,
+    utils::minify
+};
 use super::Turbine;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
@@ -365,16 +376,23 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     widget_states: widget_states.clone(),
                 };
 
-                // Now prerender the actual content
-                let prerendered = sycamore::render_to_string(|cx| {
-                    entity.render_for_template_server(
-                        full_path.clone(),
-                        state,
-                        global_state.clone(),
-                        mode.clone(),
-                        cx,
-                        &translator,
-                    )
+                // Now prerender the actual content (a bit roundabout for error handling)
+                let mut prerender_view = Ok(View::empty());
+                create_scope_immediate(|cx| {
+                    prerender_view = with_hydration_context(|| {
+                        entity.render_for_template_server(
+                            full_path.clone(),
+                            state,
+                            global_state.clone(),
+                            mode.clone(),
+                            cx,
+                            &translator,
+                        )
+                    });
+                });
+                let prerender_view = prerender_view?;
+                let prerendered = sycamore::render_to_string(|_| {
+                    prerender_view
                 });
                 let render_status = render_status.take();
 

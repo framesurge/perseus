@@ -1,12 +1,13 @@
 use super::rx_state::AnyFreeze;
-use super::{Freeze, MakeRx, MakeUnrx};
+use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx};
 #[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
 use crate::errors::{ClientError, ClientInvariantError};
 use crate::stores::ImmutableStore;
-use crate::template::{RenderFnResult, TemplateState};
+use crate::template::RenderFnResult;
+use super::TemplateState;
 use crate::utils::AsyncFnReturn;
-use crate::{make_async_trait, RenderFnResultWithCause, Request};
+use crate::{make_async_trait, template::RenderFnResultWithCause, Request};
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -328,17 +329,19 @@ impl GlobalStateType {
     pub fn parse_active<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         match &self {
             // If there's an issue deserializing to this type, we'll fall back to the server
-            Self::Loaded(any) => any
-                .as_any()
-                .downcast_ref::<S::Rx>()
-                .ok_or(ClientInvariantError::GlobalStateDowncast)
-                .cloned(),
-            Self::Server(_) => None,
-            Self::None => None,
+            Self::Loaded(any) => {
+                let rx = any
+                    .as_any()
+                    .downcast_ref::<S::Rx>()
+                    .ok_or(ClientInvariantError::GlobalStateDowncast)?
+                    .clone();
+                Ok(Some(rx))
+            },
+            Self::Server(_) | Self::None => Ok(None),
         }
     }
 }
@@ -349,7 +352,7 @@ impl std::fmt::Debug for GlobalState {
 }
 
 /// Frozen global state.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) enum FrozenGlobalState {
     /// There is state that should be instantiated.
     Some(String),

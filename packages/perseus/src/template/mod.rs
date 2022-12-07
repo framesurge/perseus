@@ -6,8 +6,11 @@ mod default_headers;
 mod states;
 mod templates_map;
 mod capsule;
+mod widget_component;
+mod fn_types;
 
-pub use self::core::*; /* There are a lot of render function traits in here, there's no
+pub use self::core::*;
+pub use fn_types::*; /* There are a lot of render function traits in here, there's no
                         * point in spelling them all out */
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use default_headers::default_headers;
@@ -16,4 +19,5 @@ pub(crate) use default_headers::default_headers;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use states::States;
 pub use templates_map::{ArcTemplateMap, TemplateMap, ArcCapsuleMap, CapsuleMap};
-pub use capsule::{Capsule, Widget};
+pub use capsule::Capsule;
+pub use widget_component::Widget;
