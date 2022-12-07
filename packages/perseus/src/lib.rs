@@ -64,6 +64,9 @@ mod translator;
 /// The core of the Perseus state generation system.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod turbine;
+/// The core of the Perseus browser-side system. This is used on the engine-side as well
+/// for rendering.
+pub mod reactor;
 
 use std::ops::Deref;
 

@@ -66,33 +66,82 @@ pub enum EngineError {
 }
 
 /// Errors that can occur in the browser.
+///
+/// **Important:** any changes to this `enum` constitute a breaking change,
+/// since users match this in their error pages. Changes in underlying
+/// `enum`s are not considered breaking (e.g. introducing a new invariant error).
 #[derive(Error, Debug)]
 pub enum ClientError {
-    #[error("locale '{locale}' is not supported")]
-    LocaleNotSupported { locale: String },
-    /// This converts from a `JsValue` or the like.
-    #[error("the following error occurred while interfacing with JavaScript: {0}")]
-    Js(String),
     #[error(transparent)]
-    FetchError(#[from] FetchError),
-    #[error("invalid frozen state provided")]
-    ThawFailed {
+    PluginError(#[from] PluginError),
+    #[error(transparent)]
+    InvariantError(#[from] ClientInvariantError),
+    #[error(transparent)]
+    ThawError(#[from] ClientThawError),
+
+    // #[error("locale '{locale}' is not supported")]
+    // LocaleNotSupported { locale: String },
+    // /// This converts from a `JsValue` or the like.
+    // #[error("the following error occurred while interfacing with JavaScript: {0}")]
+    // Js(String),
+    // #[error(transparent)]
+    // FetchError(#[from] FetchError),
+    // ,
+    // // If the user is using the template macros, this should never be emitted because we can
+    // // ensure that the generated state is valid
+    // #[error("tried to deserialize invalid state (it was not malformed, but the state was not of the declared type)")]
+    // StateInvalid {
+    //     #[source]
+    //     source: serde_json::Error,
+    // },
+    // #[error("server informed us that a valid locale was invald (this almost certainly requires a hard reload)")]
+    // ValidLocaleNotProvided { locale: String },
+    // #[error("the given path for preloading leads to a locale detection page; you probably wanted to wrap the path in `link!(...)`")]
+    // PreloadLocaleDetection,
+    // #[error("the given path for preloading was not found")]
+    // PreloadNotFound,
+}
+
+/// Errors that can occur in the browser from certain invariants not being upheld. These
+/// should be extremely rare, but, since we don't control what HTML the browser gets, we avoid
+/// panicking in these cases.
+///
+/// Note that some of these invariants may be broken by an app's own code, such as invalid global
+/// state downcasting.
+#[derive(Debug, Error)]
+pub enum ClientInvariantError {
+    #[error("the render configuration was not found, or was malformed")]
+    RenderCfg,
+    #[error("the global state was not found, or was malformed (even apps not using global state should have an empty one injected)")]
+    GlobalState,
+    // This won't be triggered for HSR
+    #[error("attempted to register state on a page/capsule that had been previously declared as having no state")]
+    IllegalStateRegistration,
+    #[error("attempted to downcast reactive global state to the incorrect type (this is an error)")]
+    GlobalStateDowncast,
+    // This is technically a typing error, but we do the typing internally, so this should be impossible
+    #[error("invalid page/widget state found")]
+    InvalidState {
+        #[source]
+        source: serde_json::Error,
+    }
+}
+
+/// Errors that can occur in the browser as a result of attempting to thaw provided state.
+#[derive(Debug, Error)]
+pub enum ClientThawError {
+    #[error("invalid frozen page/widget state")]
+    InvalidFrozenState {
         #[source]
         source: serde_json::Error,
     },
-    // If the user is using the template macros, this should never be emitted because we can
-    // ensure that the generated state is valid
-    #[error("tried to deserialize invalid state (it was not malformed, but the state was not of the declared type)")]
-    StateInvalid {
+    #[error("invalid frozen global state")]
+    InvalidFrozenGlobalState {
         #[source]
         source: serde_json::Error,
     },
-    #[error("server informed us that a valid locale was invald (this almost certainly requires a hard reload)")]
-    ValidLocaleNotProvided { locale: String },
-    #[error("the given path for preloading leads to a locale detection page; you probably wanted to wrap the path in `link!(...)`")]
-    PreloadLocaleDetection,
-    #[error("the given path for preloading was not found")]
-    PreloadNotFound,
+    #[error("this app uses global state, but the provided frozen state declared itself to have no global state")]
+    NoFrozenGlobalState
 }
 
 /// Errors that can occur in the build process or while the server is running.

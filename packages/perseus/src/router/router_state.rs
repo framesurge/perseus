@@ -49,7 +49,10 @@ impl RouterState {
         self.load_state.clone() // TODO Better approach than cloning here?
     }
     /// Sets the load state of the router.
-    pub fn set_load_state(&self, new: RouterLoadState) {
+    ///
+    /// The router state upholds a number of invariants, and allowing the user
+    /// control of this could lead to unreachable code being executed.
+    pub(crate) fn set_load_state(&self, new: RouterLoadState) {
         self.load_state.set(new);
     }
     /// Gets the last verdict.
@@ -57,7 +60,10 @@ impl RouterState {
         (*self.last_verdict.borrow()).clone()
     }
     /// Sets the last verdict.
-    pub fn set_last_verdict(&self, new: RouteVerdict<TemplateNodeType>) {
+    ///
+    /// The router state upholds a number of invariants, and allowing the user
+    /// control of this could lead to unreachable code being executed.
+    pub(crate) fn set_last_verdict(&self, new: RouteVerdict<TemplateNodeType>) {
         let mut last_verdict = self.last_verdict.borrow_mut();
         *last_verdict = Some(new);
     }

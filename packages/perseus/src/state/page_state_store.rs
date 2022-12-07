@@ -1,4 +1,5 @@
 use crate::PathMaybeWithLocale;
+use crate::errors::{ClientError, ClientInvariantError};
 use crate::page_data::PageDataPartial;
 use crate::state::AnyFreeze;
 use std::cell::RefCell;
@@ -122,21 +123,17 @@ impl PageStateStore {
     /// be a widget.
     ///
     /// If there's already an entry for the given URL that has been marked as
-    /// not accepting state, this will return `false`, and the entry will
-    /// not be added. This *must* be handled for correctness.
-    #[must_use]
-    pub fn add_state<T: AnyFreeze + Clone>(&self, url: &PathMaybeWithLocale, val: T, is_widget: bool) -> bool {
+    /// not accepting state, this will return an error, and the entry will
+    /// not be added. When this is called for HSR purposes, this should be taken
+    /// with a grain of salt, as documented on `.set_state()` for [`PssEntry`].
+    pub fn add_state<T: AnyFreeze + Clone>(&self, url: &PathMaybeWithLocale, val: T, is_widget: bool) -> Result<(), ClientError> {
         let mut map = self.map.borrow_mut();
         // We want to modify any existing entries to avoid wiping out document metadata
         if let Some(entry) = map.get_mut(url) {
-            if !entry.set_state(Box::new(val)) {
-                return false;
-            }
+            entry.set_state(Box::new(val))?
         } else {
             let mut new_entry = PssEntry::default();
-            if !new_entry.set_state(Box::new(val)) {
-                return false;
-            }
+            new_entry.set_state(Box::new(val))?;
             map.insert(url.clone(), new_entry);
         }
         let mut order = self.order.borrow_mut();
@@ -481,14 +478,10 @@ impl Default for PssEntry {
 impl PssEntry {
     /// Declare that this entry will *never* have state. This should be done by
     /// macros that definitively know the structure of a page. This action
-    /// is irrevocable, since a page cannot transition from never taking state
-    /// to taking some later in Perseus.
+    /// is revocable under HSR conditions only.
     ///
     /// Note that this will not be preserved in freezing (allowing greater
     /// flexibility of HSR).
-    ///
-    /// **Warning:** manually calling in the wrong context this may lead to the
-    /// complete failure of your application!
     pub fn set_state_never(&mut self) {
         self.state = PssState::Never;
     }
@@ -504,15 +497,22 @@ impl PssEntry {
     fn add_dependent(&mut self, path: PathMaybeWithLocale) {
         self.dependents.push(path);
     }
-    /// Adds state to this entry. This will return false and do nothing if the
-    /// entry has been marked as never being able to accept state.
-    #[must_use]
-    pub fn set_state(&mut self, state: Box<dyn AnyFreeze>) -> bool {
+    /// Adds state to this entry. This will return an error if this entry has previously
+    /// been marked as having no state.
+    ///
+    /// If we're setting state for HSR, this function's should be interpreted with caution:
+    /// if the user has added state to a template/capsule that previously didn't have state,
+    /// then nothing in the code will try to set it to never having had state (and there will
+    /// be nothing in the frozen state for it), which is fine; but, if they *removed* state
+    /// from an entity that previously had it, this will return an error to the HSR thaw attempt
+    /// (whcih will try to add the old state back). In that case, the error should be discarded
+    /// by the caller, who should accept the changed data model.
+    pub fn set_state(&mut self, state: Box<dyn AnyFreeze>) -> Result<(), ClientError> {
         if let PssState::Never = self.state {
-            false
+            Err(ClientInvariantError::IllegalStateRegistration.into())
         } else {
             self.state = PssState::Some(state);
-            true
+            Ok(())
         }
     }
 }

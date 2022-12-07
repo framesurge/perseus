@@ -1,4 +1,5 @@
 use crate::errors::PluginError;
+use crate::reactor::Reactor;
 use crate::{
     checkpoint,
     plugins::PluginAction,
@@ -20,9 +21,12 @@ use wasm_bindgen::JsValue;
 ///
 /// For consistency with `run_dflt_engine`, this takes a function that returns
 /// the `PerseusApp`.
+///
+/// Note that, by the time this, or any of our code, is executing, the user can
+/// already see something due to engine-side rendering.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
     app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
-) -> Result<(), JsValue> {
+) {
     let mut app = app();
     let panic_handler = app.take_panic_handler();
 
@@ -39,30 +43,6 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         }
     }));
 
-    let res = client_core(app);
-    if let Err(err) = res {
-        // This will go to the panic handler we defined above
-        // Unfortunately, at this stage, we really can't do anything else
-        panic!("plugin error: {}", fmt_err(&err));
-    }
-
-    Ok(())
-}
-
-/// This executes the actual underlying browser-side logic, including
-/// instantiating the user's app. This is broken out due to plugin fallibility.
-fn client_core<M: MutableStore, T: TranslationsManager>(
-    app: PerseusAppBase<TemplateNodeType, M, T>,
-) -> Result<(), PluginError> {
-    let plugins = app.get_plugins();
-
-    plugins
-        .functional_actions
-        .client_actions
-        .start
-        .run((), plugins.get_plugin_data())?;
-    checkpoint("initial_plugins_complete");
-
     // Get the root we'll be injecting the router into
     let root = web_sys::window()
         .unwrap()
@@ -72,59 +52,33 @@ fn client_core<M: MutableStore, T: TranslationsManager>(
         .unwrap()
         .unwrap();
 
-    // Set up the properties we'll pass to the router
-    let router_props = PerseusRouterProps {
-        locales: app.get_locales()?,
-        error_pages: app.get_error_pages(),
-        templates: app.get_templates_map(),
-        render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
-        pss_max_size: app.get_pss_max_size(),
+    // Get the error pages, just in case the reactor can't be instantiated
+    let error_pages = app.get_error_pages();
+
+    // Create the reactor
+    match Reactor::try_from(app) {
+        Ok(reactor) => {
+            // We can use the reactor to render the whole app properly
+            #[cfg(feature = "hydrate")]
+                sycamore::hydrate_to(move |cx| perseus_router(cx, reactor), &root);
+            #[cfg(not(feature = "hydrate"))]
+            {
+                // We have to delete the existing content before we can render the new stuff
+                // (which should be the same)
+                root.set_inner_html("");
+                sycamore::render_to(move |cx| perseus_router(cx, reactor), &root);
+            }
+        },
+        Err(err) => {
+            // We don't have a reactor, but we can recover to an error page. A reactor failure
+            // can't occur on the engine-side, which means, even if we should be using hydration,
+            // it's useless. We're rendering a fresh error.
+            root.set_inner_html("");
+            sycamore::render_to(move |cx| Reactor::handle_critical_error(cx, err, error_pages), &root);
+        }
     };
-
-    // At this point, the user can already see something from the server-side
-    // rendering, so we now have time to figure out exactly what to render.
-    // Having done that, we can render/hydrate, depending on the feature flags.
-    // All that work is done inside the router.
-
-    // This top-level context is what we use for everything, allowing page state to
-    // be registered and stored for the lifetime of the app
-    // Note: root lifetime creation occurs here
-    #[cfg(feature = "hydrate")]
-    sycamore::hydrate_to(move |cx| perseus_router(cx, router_props), &root);
-    #[cfg(not(feature = "hydrate"))]
-    {
-        // We have to delete the existing content before we can render the new stuff
-        // (which should be the same)
-        root.set_inner_html("");
-        sycamore::render_to(move |cx| perseus_router(cx, router_props), &root);
-    }
-
-    Ok(())
 }
 
 /// A convenience type wrapper for the type returned by nearly all client-side
 /// entrypoints.
 pub type ClientReturn = Result<(), JsValue>;
-
-/// Gets the render configuration from the JS global variable
-/// `__PERSEUS_RENDER_CFG`, which should be inlined by the server. This will
-/// return `None` on any error (not found, serialization failed, etc.), which
-/// should reasonably lead to a `panic!` in the caller.
-fn get_render_cfg() -> Option<HashMap<String, String>> {
-    let val_opt = web_sys::window().unwrap().get("__PERSEUS_RENDER_CFG");
-    let js_obj = match val_opt {
-        Some(js_obj) => js_obj,
-        None => return None,
-    };
-    // The object should only actually contain the string value that was injected
-    let cfg_str = match js_obj.as_string() {
-        Some(cfg_str) => cfg_str,
-        None => return None,
-    };
-    let render_cfg = match serde_json::from_str::<HashMap<String, String>>(&cfg_str) {
-        Ok(render_cfg) => render_cfg,
-        Err(_) => return None,
-    };
-
-    Some(render_cfg)
-}

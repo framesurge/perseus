@@ -2,13 +2,14 @@ use super::rx_state::AnyFreeze;
 use super::{Freeze, MakeRx, MakeUnrx};
 #[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
+use crate::errors::{ClientError, ClientInvariantError};
 use crate::stores::ImmutableStore;
 use crate::template::{RenderFnResult, TemplateState};
 use crate::utils::AsyncFnReturn;
 use crate::{make_async_trait, RenderFnResultWithCause, Request};
 use futures::Future;
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -313,42 +314,31 @@ pub enum GlobalStateType {
     Loaded(Box<dyn AnyFreeze>),
     /// The global state is in string form from the server.
     Server(TemplateState),
-    /// There was no global state provided by the server.
+    /// The global state provided by the server was empty, indicating that this
+    /// app does not use global state.
     None,
 }
 impl GlobalStateType {
     /// Parses the global state into the given reactive type if possible. If the
     /// state from the server hasn't been parsed yet, this will return
-    /// `None`.
+    /// `None`. This will return an error if a type mismatch occurred.
     ///
     /// In other words, this will only return something if the global state has
     /// already been requested and loaded.
-    pub fn parse_active<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
+    pub fn parse_active<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
-        // We need this so that the compiler understands that the reactive version of the
-        // unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        S: MakeRx,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
     {
         match &self {
             // If there's an issue deserializing to this type, we'll fall back to the server
             Self::Loaded(any) => any
                 .as_any()
-                .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
+                .downcast_ref::<S::Rx>()
+                .ok_or(ClientInvariantError::GlobalStateDowncast)
                 .cloned(),
             Self::Server(_) => None,
             Self::None => None,
-        }
-    }
-}
-impl Freeze for GlobalStateType {
-    fn freeze(&self) -> String {
-        match &self {
-            Self::Loaded(state) => state.freeze(),
-            // There's no point in serializing state that was sent from the server, since we can
-            // easily get it again later (it can't possibly have been changed on the browser-side)
-            Self::Server(_) => "Server".to_string(),
-            Self::None => "None".to_string(),
         }
     }
 }
@@ -358,34 +348,30 @@ impl std::fmt::Debug for GlobalState {
     }
 }
 
-// /// A representation of global state parsed into a specific type.
-// pub enum ParsedGlobalState<R> {
-//     /// The global state has been deserialized and loaded, and is ready for
-// use.     Loaded(R),
-//     /// We couldn't parse to the desired reactive type.
-//     ParseError,
-//     /// The global state is in string form from the server.
-//     Server(String),
-//     /// There was no global state provided by the server.
-//     None,
-// }
-
-/// A utility function for getting the global state that has already been built
-/// at build-time. If there was none built, then this will return an empty
-/// [`TemplateState`] (hence, a `StoreError::NotFound` is impossible from this
-/// function).
-#[cfg(not(target_arch = "wasm32"))]
-pub async fn get_built_global_state(
-    immutable_store: &ImmutableStore,
-) -> Result<TemplateState, ServerError> {
-    let res = immutable_store.read("static/global_state.json").await;
-    match res {
-        Ok(state) => {
-            let state = TemplateState::from_str(&state)
-                .map_err(|err| ServerError::InvalidPageState { source: err })?;
-            Ok(state)
+/// Frozen global state.
+#[derive(Serialize, Deserialize)]
+pub(crate) enum FrozenGlobalState {
+    /// There is state that should be instantiated.
+    Some(String),
+    /// The global state had not been modified from the engine-side. In this
+    /// case, we don't bother storing the frozen state, since it can be trivially
+    /// re-instantiated.
+    Server,
+    /// There was no global state.
+    None,
+    /// The frozen global state has already been used. This could be used to
+    /// ignore a global state in the frozen version of an app that does use
+    /// global state (as opposed to using `None` in such an app, which would
+    /// cause an invariant error), however thaw preferences exsit for exactly
+    /// this purpose.
+    Used,
+}
+impl From<&GlobalStateType> for FrozenGlobalState {
+    fn from(val: &GlobalStateType) -> Self {
+        match val {
+            GlobalStateType::Loaded(state) => Self::Some(state.freeze()),
+            GlobalStateType::None => Self::None,
+            GlobalStateType::Server(_) => Self::Server,
         }
-        Err(StoreError::NotFound { .. }) => Ok(TemplateState::empty()),
-        Err(err) => Err(err.into()),
     }
 }

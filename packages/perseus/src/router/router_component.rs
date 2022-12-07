@@ -1,16 +1,7 @@
-use crate::{
-    checkpoint,
-    i18n::detect_locale,
-    i18n::Locales,
-    router::{
+use crate::{ErrorPages, checkpoint, i18n::Locales, i18n::detect_locale, reactor::Reactor, router::{
         get_initial_view, get_subsequent_view, GetSubsequentViewProps, InitialView,
         RouterLoadState, SubsequentView,
-    },
-    router::{PerseusRoute, RouteInfo, RouteManager, RouteVerdict},
-    template::{RenderCtx, TemplateMap, TemplateNodeType},
-    utils::get_path_prefix_client,
-    ErrorPages,
-};
+    }, router::{PerseusRoute, RouteInfo, RouteManager, RouteVerdict}, template::{RenderCtx, TemplateMap, TemplateNodeType}, utils::get_path_prefix_client};
 use std::collections::HashMap;
 use std::rc::Rc;
 use sycamore::{
@@ -130,28 +121,12 @@ pub(crate) struct PerseusRouterProps {
 /// with `cx` as the first argument, allowing the `AppRoute` generic
 /// creates with `create_app_root!` to be provided easily. That given `cx`
 /// property will be used for all context registration in the app.
-#[component]
 pub(crate) fn perseus_router(
     cx: Scope,
-    PerseusRouterProps {
-        error_pages,
-        locales,
-        templates,
-        render_cfg,
-        pss_max_size,
-    }: PerseusRouterProps,
+    reactor: Reactor<TemplateNodeType>,
 ) -> View<TemplateNodeType> {
-    // Now create an instance of `RenderCtx`, which we'll insert into context and
-    // use everywhere throughout the app (this contains basically everything Perseus
-    // needs in terms of infrastructure)
-    let render_ctx = RenderCtx::new(
-        pss_max_size,
-        locales,   // Pretty light
-        templates, // Already has `Rc`s
-        Rc::new(render_cfg),
-        error_pages, // Already in an `Rc` itself
-    )
-    .set_ctx(cx);
+    // Put the reactor into context so pages can access it easily
+    reactor.add_self_to_cx(cx);
 
     // Create the route manager (note: this is cheap to clone)
     let route_manager = RouteManager::new(cx);

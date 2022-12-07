@@ -126,7 +126,10 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     #[cfg(not(target_arch = "wasm32"))]
     static_aliases: HashMap<String, String>,
     /// The plugins the app uses.
+    #[cfg(not(target_arch = "wasm32"))]
     plugins: Arc<Plugins>,
+    #[cfg(target_arch = "wasm32")]
+    plugins: Rc<Plugins>,
     /// The app's immutable store.
     #[cfg(not(target_arch = "wasm32"))]
     immutable_store: ImmutableStore,
@@ -862,7 +865,13 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self.mutable_store.clone()
     }
     /// Gets the plugins registered for the app.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_plugins(&self) -> Arc<Plugins> {
+        self.plugins.clone()
+    }
+    /// Gets the plugins registered for the app.
+    #[cfg(target_arch = "wasm32")]
+    pub fn get_plugins(&self) -> Rc<Plugins> {
         self.plugins.clone()
     }
     /// Gets the static aliases. This will check all provided resource paths to
