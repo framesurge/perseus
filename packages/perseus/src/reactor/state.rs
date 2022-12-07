@@ -114,7 +114,7 @@ impl<G: Html> Reactor<G> {
             // giving it a type (this just sets a phantom type parameter)
             let typed_state = server_state.change_type::<S>();
             // This attempts a deserialization from a `Value`, which could fail
-            let unrx = state
+            let unrx = typed_state
                 .to_concrete()
                 .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
             let rx = unrx.make_rx();

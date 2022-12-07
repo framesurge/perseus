@@ -1,6 +1,7 @@
+use fluent_bundle::resolver::Scope;
 use serde::{Serialize, de::DeserializeOwned};
 use sycamore::web::Html;
-use crate::{PathMaybeWithLocale, errors::{ClientError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef}, template::TemplateState};
+use crate::{PathMaybeWithLocale, errors::{ClientError, ClientInvariantError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef}, template::TemplateState};
 use super::Reactor;
 
 // These methods are used for acquiring the global state on both the browser-side and the engine-side
@@ -17,14 +18,11 @@ impl<G: Html> Reactor<G> {
     pub fn get_global_state<'a, R>(
         &self,
         cx: Scope<'a>,
-    ) -> <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>
+    ) -> R
     where
         R: RxRef,
-        // We need this so that the compiler understands that the reactive version of the
-        // unreactive version of `R` has the same properties as `R` itself
-        <<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx:
-            Clone + AnyFreeze + MakeUnrx + MakeRxRef,
-        <R as RxRef>::RxNonRef: MakeUnrx + AnyFreeze + Clone,
+        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef = R>,
+        <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>
     {
         // Warn the user about the perils of having no build-time global state handler
         self.try_get_global_state::<R>(cx).unwrap().expect("you requested global state, but none exists for this app (if you;re generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
@@ -37,20 +35,11 @@ impl<G: Html> Reactor<G> {
     pub fn try_get_global_state<'a, R>(
         &self,
         cx: Scope<'a>,
-    ) -> Result<
-        Option<
-            // Note: I am sorry.
-            <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>,
-        >,
-        ClientError,
-    >
+    ) -> Result<Option<R>, ClientError>
     where
         R: RxRef,
-        // We need this so that the compiler understands that the reactive version of the
-        // unreactive version of `R` has the same properties as `R` itself
-        <<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx:
-            Clone + AnyFreeze + MakeUnrx + MakeRxRef,
-        <R as RxRef>::RxNonRef: MakeUnrx + AnyFreeze + Clone,
+        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef = R>,
+        <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>,
     {
         let global_state_ty = self.global_state.0.borrow();
         // Bail early if the app doesn't support global state
@@ -65,9 +54,9 @@ impl<G: Html> Reactor<G> {
             if let GlobalStateType::Server(server_state) = &*global_state_ty {
                 // Fall back to the state we were given, first
                 // giving it a type (this just sets a phantom type parameter)
-                let typed_state = server_state.change_type::<S>();
+                let typed_state = server_state.change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
                 // This attempts a deserialization from a `Value`, which could fail
-                let unrx = state
+                let unrx = typed_state
                     .to_concrete()
                     .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
                 let rx = unrx.make_rx();
@@ -85,7 +74,7 @@ impl<G: Html> Reactor<G> {
             }
         };
 
-        Ok(rx.to_ref_struct(cx))
+        Ok(intermediate_state.to_ref_struct(cx))
     }
 
     /// Determines if the global state should use the state given by the server,
