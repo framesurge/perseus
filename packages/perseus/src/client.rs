@@ -8,6 +8,8 @@ use crate::{
 };
 use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
 use fmterr::fmt_err;
+use sycamore::prelude::create_scope;
+use sycamore::utils::hydrate::with_hydration_context;
 use std::collections::HashMap;
 use wasm_bindgen::JsValue;
 
@@ -33,6 +35,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     checkpoint("begin");
 
     // Handle panics (this works for unwinds and aborts)
+    // TODO New system
     std::panic::set_hook(Box::new(move |panic_info| {
         // Print to the console in development
         #[cfg(debug_assertions)]
@@ -43,40 +46,55 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         }
     }));
 
-    // Get the root we'll be injecting the router into
-    let root = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .query_selector(&format!("#{}", app.get_root()?))
-        .unwrap()
-        .unwrap();
+    let plugins = app.get_plugins();
 
-    // Get the error pages, just in case the reactor can't be instantiated
-    let error_pages = app.get_error_pages();
+    // This variable acts as a signal to determine whether or not there was a show-stopping failure that
+    // should trigger root scope disposal (terminating Perseus and rendering the app inoperable)
+    let mut running;
+    // === IF THIS DISPOSER IS CALLED, PERSEUS WILL TERMINATE! ===
+    let app_disposer = create_scope(|cx| {
+        let core = move || {
+            // Get the error views, just in case the reactor can't be instantiated
+            let error_views = app.get_error_views();
 
-    // Create the reactor
-    match Reactor::try_from(app) {
-        Ok(reactor) => {
-            // We can use the reactor to render the whole app properly
-            #[cfg(feature = "hydrate")]
-                sycamore::hydrate_to(move |cx| perseus_router(cx, reactor), &root);
-            #[cfg(not(feature = "hydrate"))]
-            {
-                // We have to delete the existing content before we can render the new stuff
-                // (which should be the same)
-                root.set_inner_html("");
-                sycamore::render_to(move |cx| perseus_router(cx, reactor), &root);
-            }
-        },
-        Err(err) => {
-            // We don't have a reactor, but we can recover to an error page. A reactor failure
-            // can't occur on the engine-side, which means, even if we should be using hydration,
-            // it's useless. We're rendering a fresh error.
-            root.set_inner_html("");
-            sycamore::render_to(move |cx| Reactor::handle_critical_error(cx, err, error_pages), &root);
-        }
-    };
+            // Create the reactor
+            match Reactor::try_from(app) {
+                Ok(reactor) => {
+                    // We're away!
+                    running = reactor.start(cx);
+                },
+                Err(err) => {
+                    // We don't have a reactor, so render a critical popup error, hoping the user can
+                    // see something prerendered that makes sense (this displays and everything)
+                    Reactor::handle_critical_error(cx, err, &error_views);
+                    // We can't do anything without a reactor
+                    running = false;
+                }
+            };
+        };
+
+        // If we're using hydration, everything has to be done inside a hydration context (because of all the
+        // custom view handling)
+        #[cfg(feature = "hydrate")]
+        with_hydration_context(|| core());
+        #[cfg(not(feature = "hydrate"))]
+        core();
+    });
+
+    // If we failed, terminate
+    if !running {
+        // SAFETY We're outside the app's scope.
+        unsafe { app_disposer.dispose() }
+        // This is one of the best places in Perseus for crash analytics
+        plugins
+            .functional_actions
+            .client_actions
+            .crash
+            .run((), plugins.get_plugin_data())
+            .expect("plugin action on crash failed");
+
+        // Goodbye, dear friends.
+    }
 }
 
 /// A convenience type wrapper for the type returned by nearly all client-side

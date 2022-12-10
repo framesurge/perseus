@@ -235,4 +235,16 @@ pub struct FunctionalPluginClientActions {
     /// Runs before anything else in the browser. Note that this runs after
     /// panics have been set to go to the console.
     pub start: FunctionalPluginAction<(), ()>,
+    /// Runs in the event of a full Perseus crash. This is not a panic, but
+    /// the experience of a critical error that prevents the instantiation of
+    /// a reactor, router, or the like. This is an *excellent* opportunity for
+    /// analytics to report that your app has completely failed (although the
+    /// user will have been neatly prompted).
+    ///
+    /// If this panics, there isn't any explicit problem, but it's a bit rude
+    /// to kick your app when it's down, don't you think? That said, the whole
+    /// thing's about to blow up anyway.
+    ///
+    /// Any error responses here will lead to a panic.
+    pub crash: FunctionalPluginAction<(), ()>,
 }

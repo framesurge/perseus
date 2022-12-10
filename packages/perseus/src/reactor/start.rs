@@ -1,4 +1,5 @@
 use sycamore::web::Html;
+use web_sys::Element;
 use crate::{checkpoint, error_views::ErrorPosition, reactor::InitialView, utils::{render_or_hydrate, replace_head}};
 
 // We don't want to bring in a styling library, so we do this the old-fashioned
@@ -200,22 +201,9 @@ impl<G: Html> Reactor<G> {
 
         // --- Error handlers ---
 
-        // Create and get the element in which we'll render popup errors
-        let popup_error_root = {
-            let document = web_sys::window()
-                .unwrap()
-                .document()
-                .unwrap();
-            let err_div = document.create_element("div").unwrap();
-            // The user can style using this
-            err_dir.set_id("__perseus_popup_error");
-            let body_elem: Element = document.body().unwrap().into();
-            body_elem
-                .append_with_node_1(&err_div.clone().into())
-                .unwrap();
-            err_div
-        };
-        // Now set up the handlers to actually render this (the scope will keep
+        // Broken out for ease if the reactor can't be created
+        let popup_err_root = Self::create_popup_err_elem();
+        // Now set up the handlers to actually render popup errors (the scope will keep
         // reactivity going as long as it isn't dropped). Popup errors do *not*
         // get access to a router or the like. Ever time `popup_err_view` is
         // updated, this will update too.
@@ -326,5 +314,21 @@ impl<G: Html> Reactor<G> {
 
         // If we successfully got here, the app is running!
         true
+    }
+
+    /// Creates the element for popup errors (used in both full startup and critical failures).
+    pub(crate) fn create_popup_err_elem() -> Element {
+        let document = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap();
+        let err_div = document.create_element("div").unwrap();
+        // The user can style using this
+        err_dir.set_id("__perseus_popup_error");
+        let body_elem: Element = document.body().unwrap().into();
+        body_elem
+            .append_with_node_1(&err_div.clone().into())
+            .unwrap();
+        err_div
     }
 }
