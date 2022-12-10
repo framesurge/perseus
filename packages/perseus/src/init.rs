@@ -683,7 +683,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// is, it's necessitated, otherwise exporting would try to access the built
     /// app before it had actually been built.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn get_html_shell(
+    pub(crate) async fn get_html_shell(
         index_view_str: String,
         root: &str,
         render_cfg: &HashMap<String, String>,
@@ -807,7 +807,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_atomic_error_views(&self) -> Arc<ErrorViews<G>> {
-        self.error_pages.clone()
+        self.error_views.clone()
     }
     /// Gets the maximum number of pages that can be stored in the page state
     /// store before the oldest are evicted.

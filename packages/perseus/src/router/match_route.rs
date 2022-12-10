@@ -147,7 +147,7 @@ pub fn match_route<G: Html>(
                     template,
                     was_incremental_match,
                 }),
-                None => RouteVerdict::NotFound,
+                None => RouteVerdict::NotFound { locale: locale.to_string() },
             };
         } else {
             // If the locale isn't supported, we assume that it's part of a route that still
@@ -177,7 +177,7 @@ pub fn match_route<G: Html>(
                 template,
                 was_incremental_match,
             }),
-            None => RouteVerdict::NotFound,
+            None => RouteVerdict::NotFound { locale: "xx-XX".to_string() },
         };
     }
 
@@ -220,7 +220,7 @@ pub fn match_route_atomic<'a, G: Html>(
                     template,
                     was_incremental_match,
                 }),
-                None => RouteVerdictAtomic::NotFound,
+                None => RouteVerdictAtomic::NotFound { locale: locale.to_string() },
             };
         } else {
             // If the locale isn't supported, we assume that it's part of a route that still
@@ -250,7 +250,7 @@ pub fn match_route_atomic<'a, G: Html>(
                 template,
                 was_incremental_match,
             }),
-            None => RouteVerdictAtomic::NotFound,
+            None => RouteVerdictAtomic::NotFound { locale: "xx-XX".to_string() },
         };
     }
 

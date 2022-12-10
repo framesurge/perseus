@@ -12,7 +12,7 @@ mod options;
 
 // pub use build_error_page::build_error_page;
 // pub use get_render_cfg::get_render_cfg;
-pub use html_shell::HtmlShell;
+pub(crate) use html_shell::HtmlShell;
 pub use options::ServerOptions;
 // pub use render::{get_page, get_page_for_template, GetPageProps};
 

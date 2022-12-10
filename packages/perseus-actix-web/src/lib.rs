@@ -10,7 +10,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 
 use actix_files::Files;
 use actix_web::{HttpRequest, HttpResponse, Responder, web};
-use perseus::{PathMaybeWithLocale, PathWithoutLocale, Request, http::StatusCode, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
+use perseus::{path::*, Request, http::StatusCode, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 
 // ----- Request conversion implementation -----
@@ -94,8 +94,8 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
 
                     ApiResponse(turbine.get_subsequent_load(
                         PathWithoutLocale(raw_path),
-                        locale,
-                        &entity_name,
+                        locale.to_string(),
+                        entity_name,
                         was_incremental_match,
                         http_req
                     ).await.into())

@@ -26,12 +26,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     pub async fn get_state_for_path(
         &self,
         path: PathWithoutLocale,
-        locale: &str,
+        locale: String,
         entity_name: &str,
         was_incremental: bool,
         req: Request,
     ) -> Result<PageDataPartial, ServerError> {
-        let StateAndHead { state, head } = self.get_state_for_path_internal(path, locale, entity_name, was_incremental, req, None, None).await?;
+        let translator = self.translations_manager.get_translator_for_locale(locale).await?;
+        let StateAndHead { state, head } = self.get_state_for_path_internal(path, &translator, entity_name, was_incremental, req, None, None).await?;
 
         Ok(PageDataPartial {
             state: state.state,
@@ -40,6 +41,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     }
     /// Gets the full page data for the given path. This will generate the state, render the head, and render
     /// the content of the page, resolving all widget dependencies.
+    ///
+    /// This takes a translator to allow the caller to derive it in a way that respects the likely need to
+    /// know the translations string as well, for error page interpolation.
     ///
     /// Like `.get_state_for_path()`, this returns the page data and the global state in a tuple.
     ///
@@ -56,15 +60,16 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     pub async fn get_initial_load_for_path(
         &self,
         path: PathWithoutLocale,
-        locale: &str,
+        translator: &Translator,
         template: &Template<SsrNode>,
         was_incremental: bool,
         req: Request,
     ) -> Result<(PageData, TemplateState), ServerError> {
+        let locale = translator.get_locale();
         // Get the latest global state, which we'll share around
-        let global_state = self.get_full_global_state_for_locale(locale, clone_req(&req)).await?;
+        let global_state = self.get_full_global_state_for_locale(&locale, clone_req(&req)).await?;
         // Begin by generating the state for this page
-        let page_state = self.get_state_for_path_internal(path.clone(), locale, &template.get_path(), was_incremental, clone_req(&req), Some(template), Some(global_state.clone())).await?;
+        let page_state = self.get_state_for_path_internal(path.clone(), translator, &template.get_path(), was_incremental, clone_req(&req), Some(template), Some(global_state.clone())).await?;
 
         // Yes, this is created twice; no, we don't care
         // If we're interacting with the stores, this is the path this page/widget will be under
@@ -118,12 +123,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 widget_states,
             }, global_state))
         } else {
-            // It's time for layer-by-layer dependency resolution, but we need a translator first
-            let translator = self
-                    .translations_manager
-                    .get_translator_for_locale(locale.to_string())
-                    .await?;
-
             // This will block
             let (final_widget_states, prerendered) = self.render_all(
                 HashMap::new(), // This starts empty
@@ -199,7 +198,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             prerender_view = with_hydration_context(|| {
                 entity.render_for_template_server(
                     full_path.clone(),
-                    state,
+                    state.clone(),
                     global_state.clone(),
                     mode.clone(),
                     cx,
@@ -248,7 +247,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                                 locale: locale.to_string(),
                                 widget: widget_path.to_string(),
                             }),
-                            RouteVerdictAtomic::NotFound => return Err(ServerError::ResolveDepNotFound {
+                            RouteVerdictAtomic::NotFound { .. } => return Err(ServerError::ResolveDepNotFound {
                                 locale: locale.to_string(),
                                 widget: widget_path.to_string(),
                             }),
@@ -258,7 +257,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         // Now build the state
                         let state = self.get_state_for_path_internal(
                             widget_path.clone(),
-                            &locale,
+                            translator,
                             &capsule_name,
                             route_info.was_incremental_match,
                             clone_req(req),
@@ -296,7 +295,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     async fn get_state_for_path_internal(
         &self,
         path: PathWithoutLocale, // This must not contain the locale, but it *will* contain the entity name
-        locale: &str,
+        translator: &Translator,
         entity_name: &str,
         was_incremental: bool,
         req: Request,
@@ -304,10 +303,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         entity: Option<&Template<SsrNode>>, // Not for recursion, just convenience
         global_state: Option<TemplateState>,
     ) -> Result<StateAndHead, ServerError> {
+        let locale = translator.get_locale();
         // This could be very different from the build-time global state
         let global_state = match global_state {
             Some(global_state) => global_state,
-            None => self.get_full_global_state_for_locale(locale, clone_req(&req)).await?
+            None => self.get_full_global_state_for_locale(&locale, clone_req(&req)).await?
         };
 
         let entity = match entity {
@@ -400,7 +400,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let should_revalidate = self.page_or_widget_should_revalidate(&path_encoded, &entity, build_info.clone(), clone_req(&req)).await?;
                 if should_revalidate {
                     // We need to rebuild, which we can do with the build-time logic
-                    self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, locale, global_state.clone(), false).await?;
+                    self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, &locale, global_state.clone(), false).await?;
                 } else {
                     // We don't need to revalidate, so whatever is in the immutable store is valid
                 }
@@ -410,13 +410,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // dependencies aren't build-safe. Of course, we can guarantee if we're actually generating it now that
                 // it won't be revalidating.
                 // We can provide the most up-to-date global state to this
-                self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, locale, global_state.clone(), false).await?;
+                self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, &locale, global_state.clone(), false).await?;
             }
         } else {
             let should_revalidate = self.page_or_widget_should_revalidate(&path_encoded, &entity, build_info.clone(), clone_req(&req)).await?;
             if should_revalidate {
                 // We need to rebuild, which we can do with the build-time logic
-                self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, locale, global_state.clone(), false).await?;
+                self.build_path_or_widget_for_locale(pure_path, &entity, &build_extra, &locale, global_state.clone(), false).await?;
             } else {
                 // We don't need to revalidate, so whatever is in the immutable store is valid
             }
@@ -471,13 +471,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // render it ourselves. Of course, capsules don't have heads.
         let head_str = if !entity.is_capsule {
             if entity.uses_request_state() {
-                // We only need a translator if we actually have to render the head, so we
-                // won't get it until now
-                let translator = self
-                    .translations_manager
-                    .get_translator_for_locale(locale.to_string())
-                    .await?;
-                entity.render_head_str(final_state.clone(), global_state.clone(), &translator)
+                entity.render_head_str(final_state.clone(), global_state.clone(), &translator)?
             } else {
                 // The im/mutable store was updated by the last whole block (since any incremental generation
                 // or revalidation would have re-written the head if request state isn't being used)

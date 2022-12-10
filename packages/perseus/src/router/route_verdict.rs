@@ -27,8 +27,15 @@ pub enum RouteVerdict<G: Html> {
     /// The given route was found, and route information is attached.
     Found(RouteInfo<G>),
     /// The given route was not found, and a `404 Not Found` page should be
-    /// shown.
-    NotFound,
+    /// shown. In apps using i18n, an invalid page without a locale will
+    /// first be redirected, before being later resolved as 404. Hence,
+    /// we can always provide a locale here, allowing the error view to be
+    /// appropriately translated. (I.e. there will never be a non-localized
+    /// 404 page in Perseus.)
+    NotFound {
+        /// The active locale.
+        locale: String,
+    },
     /// The given route maps to the locale detector, which will redirect the
     /// user to the attached path (in the appropriate locale).
     ///
@@ -73,7 +80,10 @@ pub enum RouteVerdictAtomic<'a, G: Html> {
     Found(RouteInfoAtomic<'a, G>),
     /// The given route was not found, and a `404 Not Found` page should be
     /// shown.
-    NotFound,
+    NotFound {
+        /// The active locale.
+        locale: String
+    },
     /// The given route maps to the locale detector, which will redirect the
     /// user to the attached path (in the appropriate locale).
     ///

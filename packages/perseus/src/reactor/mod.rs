@@ -15,17 +15,36 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use initial_load::InitialView;
 
-#[cfg(target_arch = "wasm32")]
-use crate::i18n::ClientTranslationsManager;
-use crate::{i18n::Translator, router::PageDisposer};
+// --- Common imports ---
 use std::{cell::{Cell, RefCell}, collections::HashMap, rc::Rc};
-use serde::{Serialize, de::DeserializeOwned};
-use serde_json::Value;
-use sycamore::{prelude::{RcSignal, Scope, create_rc_signal, provide_context, use_context}, web::Html};
-use crate::{error_views::ErrorViews, init::PerseusAppBase, errors::{ClientInvariantError, PluginError}, i18n::{Locales, TranslationsManager}, plugins::Plugins, router::RouterState, state::{FrozenApp, GlobalState, GlobalStateType, PageStateStore, ThawPrefs, TemplateState}, stores::MutableStore, template::TemplateMap};
+use sycamore::{prelude::{Scope, provide_context, use_context}, web::Html};
+use crate::{router::RouterState, state::{GlobalState, GlobalStateType, PageStateStore, TemplateState}};
 
+// --- Engine-side imports ---
+#[cfg(not(target_arch = "wasm32"))]
+use crate::i18n::Translator;
+
+// --- Browser-side imports ---
+#[cfg(target_arch = "wasm32")]
+use crate::{
+    i18n::{ClientTranslationsManager, Locales, TranslationsManager},
+    router::PageDisposer,
+    error_views::ErrorViews,
+    init::PerseusAppBase,
+    errors::{ClientInvariantError, PluginError},
+    plugins::Plugins,
+    state::{FrozenApp, ThawPrefs},
+    stores::MutableStore,
+    template::TemplateMap,
+};
 #[cfg(target_arch = "wasm32")]
 use self::widget_disposers::WidgetDisposers;
+#[cfg(target_arch = "wasm32")]
+use sycamore::reactive::{RcSignal, create_rc_signal};
+#[cfg(target_arch = "wasm32")]
+use serde::{Serialize, de::DeserializeOwned};
+#[cfg(target_arch = "wasm32")]
+use serde_json::Value;
 
 /// The core of Perseus' browser-side systems. This forms a central point for all the Perseus state and rendering logic
 /// to operate from. In your own code, this will always be available in the Sycamore context system.
@@ -207,9 +226,15 @@ impl<G: Html> Reactor<G> {
     pub fn try_get_translator(&self) -> Option<Translator> {
         self.translations_manager.get_translator()
     }
+    /// Gets the currently active translator.
+    ///
+    /// On the browser-side, this will return `None` under some error conditions,
+    /// or before the initial load.
+    ///
+    /// On the engine-side, this will return `None` under certain error conditions.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn try_get_translator(&self) -> Option<Translator> {
-        self.translator.cloned()
+        self.translator.clone()
     }
     /// Gets the currently active translator. Under some conditions, this will panic:
     /// `.try_get_translator()` is available as a non-panicking alternative.

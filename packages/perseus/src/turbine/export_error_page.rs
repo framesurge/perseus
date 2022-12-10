@@ -1,11 +1,10 @@
 use std::sync::Arc;
 use std::{fs, rc::Rc};
 use sycamore::web::SsrNode;
+use crate::error_views::ServerErrorData;
 use crate::init::PerseusAppBase;
-use crate::error_pages::ErrorPageLocation;
 use crate::{errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore};
 use super::Turbine;
-use super::build_error_page::build_error_page;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Exports the error page of the given exit code to the given path.
@@ -21,7 +20,18 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .map_err(|err| Arc::new(err.into()))?;
 
         // Build that error page as the server does
-        let err_page_str = build_error_page(ErrorPageLocation::Current, code, "", None, &self.error_pages, &html_shell);
+        let err_page_str = self.build_error_page(
+            ServerErrorData {
+                status: code,
+                // Hopefully, this error will appear in a context that makes sense (e.g. a 404). Exporting
+                // a 500 page doesn't make a great deal of sense on most static serving infrastructure (they'll have
+                // their own).
+                msg: "app was exported, no further details available".to_string(),
+            },
+            // Localizing exported error pages is not currently supported. However, if a locale is available
+            // in the browser, it will be used to override whatever was rendered from this.
+            None
+        );
 
         // Write that to the given output location (this will be relative to wherever the user executed from)
         match fs::write(&output, err_page_str) {

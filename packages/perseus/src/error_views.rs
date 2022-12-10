@@ -1,4 +1,6 @@
-use sycamore::{prelude::{Scope, create_scope_immediate, try_use_context}, utils::hydrate::{with_hydration_context, with_no_hydration_context}, view::View, web::{Html, SsrNode}};
+use fmterr::fmt_err;
+use serde::{Deserialize, Serialize};
+use sycamore::{prelude::{Scope, create_scope_immediate, try_use_context, view}, utils::hydrate::{with_hydration_context, with_no_hydration_context}, view::View, web::{Html, SsrNode}};
 use crate::{errors::{ClientError, ExportError}, i18n::Translator, reactor::{Reactor, RenderMode}, state::TemplateState};
 
 /// The error handling system of an app. In Perseus, errors come in several forms,
@@ -19,16 +21,26 @@ pub struct ErrorViews<G: Html> {
     subsequent_load_determinant: Box<dyn Fn(&ClientError) -> bool + Send + Sync>,
 }
 impl<G: Html> ErrorViews<G> {
-    /// Sets the universal error handler. This will be provided a [`ClientError`] to match against,
+    /// Creates an error handling system for your app with the given handler function. This will be provided a [`ClientError`] to match against,
     /// along with an [`ErrorContext`], which tells you what you have available to you (since, in
     /// some critical errors, you might not even have a translator).
     ///
     /// The function given to this should return a tuple of two `View`s: the first to be placed in document `<head>`, and the second
     /// for the body. For views with `ErrorPosition::Popup` or `ErrorPosition::Widget`, the head view will be ignored,
     /// and would usually be returned as `View::empty()`.
-    pub fn handler_fn(&mut self, val: impl Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<G>, View<G>) + Send + Sync + 'static) -> &mut Self {
-        self.handler = Box::new(val);
-        self
+    pub fn new(handler: impl Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<G>, View<G>) + Send + Sync + 'static) -> Self {
+        Self {
+            handler: Box::new(handler),
+            // Sensible defaults are fine here
+            subsequent_load_determinant: Box::new(|err| {
+                match err {
+                    // Any errors from the server should take up the whole page
+                    ClientError::ServerError { .. } => true,
+                    // Anything else is internal-ish (e.g. a fetch failure would be a network failure, so we keep the user where they are)
+                    _ => false,
+                }
+            })
+        }
     }
     /// Sets the function that determines if an error on a *subsequent load* should be presented to
     /// the user as taking up the whole page, or just being in a little popup. Usually, you can leave
@@ -98,8 +110,8 @@ impl ErrorViews<SsrNode> {
     ) -> (String, String) {
         // We need to create an engine-side reactor
         let reactor = Reactor::<SsrNode>::engine(global_state, RenderMode::Error, translator);
-        let mut body_str;
-        let mut head_str;
+        let mut body_str = String::new();
+        let mut head_str = String::new();
         create_scope_immediate(|cx| {
             reactor.add_self_to_cx(cx);
             // Depending on whether or not we had a translator, we can figure out the capabilities
@@ -184,6 +196,7 @@ pub enum ErrorPosition {
 /// *will* return one of these.
 ///
 /// This `struct` is embedded in the HTML provided to the client, allowing it to be extracted and rendered.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct ServerErrorData {
     /// The HTTP status code of the error (since these errors are always transmitted
     /// from server to client).
@@ -206,6 +219,40 @@ impl ServerErrorData {
         Ok(Self {
             status,
             msg: reason_str.to_string(),
+        })
+    }
+}
+
+// --- Default error views (development only) ---
+#[cfg(debug_assertions)] // This will fail production compilation neatly
+impl<G: Html> Default for ErrorViews<G> {
+    fn default() -> Self {
+        // Because this is an unlocalized, extremely simple default, we don't care about capabilities or positioning
+        Self::new(|cx, err, _, _| {
+            match err {
+                // Special case for 404 due to its frequency
+                ClientError::ServerError { status, .. } if *status == 404 => {
+                    (
+                        view! { cx,
+                            title { "Page not found" }
+                        },
+                        view! { cx,
+
+                        }
+                    )
+                },
+                err => {
+                    let err_msg = fmt_err(err);
+                    (
+                        view! { cx,
+                            title { "Error" }
+                        },
+                        view! { cx,
+                            (format!("An error occurred: {}", err_msg))
+                        }
+                    )
+                }
+            }
         })
     }
 }

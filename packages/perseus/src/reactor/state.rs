@@ -105,7 +105,7 @@ impl<G: Html> Reactor<G> {
         server_state: TemplateState,
     ) -> Result<S::Rx, ClientError>
     where
-        S: MakeRx + Serialize + DeserializeOwned,
+        S: MakeRx + Serialize + DeserializeOwned + 'static,
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         if let Some(held_state) = self.get_held_state::<S>(url, false)? {
@@ -123,7 +123,7 @@ impl<G: Html> Reactor<G> {
                     .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
                 let rx = unrx.make_rx();
                 // Add that to the state store as the new active state
-                self.state_store.add_state(url, rx, false)?;
+                self.state_store.add_state(url, rx.clone(), false)?;
 
                 Ok(rx)
             }

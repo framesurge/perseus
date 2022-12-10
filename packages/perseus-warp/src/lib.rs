@@ -13,7 +13,7 @@ mod static_content;
 use crate::static_content::{serve_file, static_aliases_filter};
 
 use std::{path::PathBuf, sync::Arc};
-use perseus::{PathMaybeWithLocale, PathWithoutLocale, Request, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
+use perseus::{path::*, Request, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 use perseus::http;
 use warp::{Filter, Rejection, Reply, path::{FullPath, Tail}, reply::Response};
@@ -107,8 +107,8 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
               http_req: Request| async move {
                   ApiResponse(turbine.get_subsequent_load(
                       PathWithoutLocale(path.as_str().to_string()),
-                      &locale,
-                      &entity_name,
+                      locale,
+                      entity_name,
                       was_incremental_match,
                       http_req
                   ).await.into())

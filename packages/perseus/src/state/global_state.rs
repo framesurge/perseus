@@ -353,7 +353,7 @@ impl std::fmt::Debug for GlobalState {
 
 /// Frozen global state.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) enum FrozenGlobalState {
+pub enum FrozenGlobalState {
     /// There is state that should be instantiated.
     Some(String),
     /// The global state had not been modified from the engine-side. In this

@@ -1,5 +1,5 @@
-use crate::{path::{PathMaybeWithLocale, PathWithoutLocale}, Request, error_pages::ErrorPageLocation, errors::{ServerError, err_to_status_code}, i18n::TranslationsManager, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, stores::MutableStore, state::TemplateState, utils::get_path_prefix_server};
-use super::{Turbine, build_error_page::build_error_page};
+use crate::{Request, error_views::ServerErrorData, errors::{ServerError, err_to_status_code}, i18n::{TranslationsManager, Translator}, path::{PathMaybeWithLocale, PathWithoutLocale}, router::{RouteInfoAtomic, RouteVerdictAtomic, match_route_atomic}, server::get_path_slice, state::TemplateState, stores::MutableStore, utils::get_path_prefix_server};
+use super::Turbine;
 use fmterr::fmt_err;
 use http::{HeaderMap, HeaderValue, StatusCode, header::HeaderName};
 use serde::{Deserialize, Serialize};
@@ -87,13 +87,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     pub async fn get_subsequent_load(
         &self,
         raw_path: PathWithoutLocale,
-        locale: &str,
-        entity_name: &str,
+        locale: String,
+        entity_name: String,
         was_incremental_match: bool,
         req: Request,
     ) -> ApiResponse {
         // Check if the locale is supported
-        if self.locales.is_supported(locale) {
+        if self.locales.is_supported(&locale) {
             // Parse the path
             let raw_path = raw_path.strip_prefix('/').unwrap_or(&raw_path);
             let raw_path = raw_path.strip_suffix('/').unwrap_or(&raw_path);
@@ -102,7 +102,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 None => return ApiResponse::err(StatusCode::BAD_REQUEST, "paths must end in `.json`")
             });
 
-            let page_data_partial = self.get_state_for_path(path, locale, entity_name, was_incremental_match, req).await;
+            let page_data_partial = self.get_state_for_path(path, locale, &entity_name, was_incremental_match, req).await;
             let page_data_partial = match page_data_partial {
                 Ok(partial) => partial,
                 Err(err) => {
@@ -137,8 +137,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Decode the URL so we can work with spaces and special characters
         let raw_path = match urlencoding::decode(&raw_path) {
             Ok(path) => path.to_string(),
-            // Yes, this would get an encoded path, but if it's *that* malformed, they deserve it
-            Err(err) => return self.html_err(ErrorPageLocation::Path(raw_path), 400, &fmt_err(&ServerError::UrlDecodeFailed { source: err }))
+            Err(err) => return self.html_err(400, fmt_err(&ServerError::UrlDecodeFailed { source: err }), None)
         };
         let raw_path = PathMaybeWithLocale(raw_path.as_str().to_string());
 
@@ -152,25 +151,32 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 locale,
                 was_incremental_match,
             }) => {
-                // This returns both the page data and the most up-to-date global state
-                let res = self.get_initial_load_for_path(path, &locale, template, was_incremental_match, req).await;
-                let (page_data, global_state) = match res {
-                    Ok(data) => data,
-                    Err(err) => return self.html_err(ErrorPageLocation::Path(raw_path), err_to_status_code(&err), &fmt_err(&err)),
-                };
-
                 // Get the translations to interpolate into the page
-                let translations = self
+                let translations_str = self
                     .translations_manager
-                    .get_translations_str_for_locale(locale)
+                    .get_translations_str_for_locale(locale.clone())
                     .await;
-                let translations = match translations {
+                let translations_str = match translations_str {
                     Ok(translations) => translations,
                     // We know for sure that this locale is supported, so there's been an internal
                     // server error if it can't be found
                     Err(err) => {
-                        return self.html_err(ErrorPageLocation::Path(raw_path), 500, &fmt_err(&err));
+                        return self.html_err(500, fmt_err(&err), None);
                     }
+                };
+
+                // We can use those to get a translator efficiently
+                let translator = match self.translations_manager.get_translator_for_translations_str(locale, translations_str.clone()).await {
+                    Ok(translator) => translator,
+                    // We need to give a proper translator to the error pages, which we can't
+                    Err(err) => return self.html_err(500, fmt_err(&err), None),
+                };
+
+                // This returns both the page data and the most up-to-date global state
+                let res = self.get_initial_load_for_path(path, &translator, template, was_incremental_match, req).await;
+                let (page_data, global_state) = match res {
+                    Ok(data) => data,
+                    Err(err) => return self.html_err(err_to_status_code(&err), fmt_err(&err), Some((&translator, &translations_str))),
                 };
 
                 let final_html = self
@@ -178,14 +184,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .as_ref()
                     .unwrap()
                     .clone()
-                    .page_data(&page_data, &global_state, &translations)
+                    .page_data(&page_data, &global_state, &translations_str)
                     .to_string();
                 let mut response = ApiResponse::ok(&final_html);
 
                 // Generate and add HTTP headers
                 let headers = match template.get_headers(TemplateState::from_value(page_data.state)) {
                     Ok(headers) => headers,
-                    Err(err) => return self.html_err(ErrorPageLocation::Path(raw_path), err_to_status_code(&err), &fmt_err(&err))
+                    // The pointlessness of returning an error here is well documented
+                    Err(err) => return self.html_err(err_to_status_code(&err), fmt_err(&err), Some((&translator, &translations_str))),
                 };
                 for (key, val) in headers {
                     response.add_header(key.unwrap(), val);
@@ -217,7 +224,31 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // This isn't an error, but that's how this API expresses it (302 redirect)
                 ApiResponse::err(StatusCode::FOUND, &html)
             },
-            RouteVerdictAtomic::NotFound => self.html_err(ErrorPageLocation::Path(raw_path), 404, "page not found"),
+            // Any unlocalized 404s would go to a redirect first
+            RouteVerdictAtomic::NotFound { locale } => {
+                // Get the translations to interpolate into the page
+                let translations_str = self
+                    .translations_manager
+                    .get_translations_str_for_locale(locale.clone())
+                    .await;
+                let translations_str = match translations_str {
+                    Ok(translations) => translations,
+                    // We know for sure that this locale is supported, so there's been an internal
+                    // server error if it can't be found
+                    Err(err) => {
+                        return self.html_err(500, fmt_err(&err), None);
+                    }
+                };
+
+                // We can use those to get a translator efficiently
+                let translator = match self.translations_manager.get_translator_for_translations_str(locale, translations_str.clone()).await {
+                    Ok(translator) => translator,
+                    // We need to give a proper translator to the error pages, which we can't
+                    Err(err) => return self.html_err(500, fmt_err(&err), None),
+                };
+
+                self.html_err(404, "page not found".to_string(), Some((&translator, &translations_str)))
+            },
         }
     }
 
@@ -225,9 +256,16 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// a translator.
     ///
     /// This assumes that the app has already been actually built.
-    fn html_err(&self, loc: ErrorPageLocation, code: u16, msg: &str) -> ApiResponse {
-        let html = build_error_page(loc, code, msg, None, &self.error_pages, self.html_shell.as_ref().unwrap());
+    ///
+    /// # Panics
+    /// This will panic implicitly if the given status code is invalid.
+    fn html_err(&self, status: u16, msg: String, i18n_data: Option<(&Translator, &str)>) -> ApiResponse {
+        let err_data = ServerErrorData {
+            status,
+            msg,
+        };
+        let html = self.build_error_page(err_data, i18n_data);
         // This can construct a 404 if needed
-        ApiResponse::err(StatusCode::from_u16(code).unwrap(), &html)
+        ApiResponse::err(StatusCode::from_u16(status).unwrap(), &html)
     }
 }

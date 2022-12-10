@@ -341,7 +341,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 state.clone(),
                 global_state.clone(),
                 &translator
-            );
+            )?;
             let head_str = minify(&head_str, true)?;
             if entity.revalidates() {
                 self

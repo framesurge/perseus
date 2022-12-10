@@ -7,24 +7,24 @@ use sycamore::{prelude::{RcSignal, Scope, Signal, create_rc_signal, create_signa
 /// If you're using the `#[template]` macro and the like, you will never need to
 /// use this. If you're not using the macros for some reason, you shoudl consult
 /// their code to make sure you use this correctly.
-#[derive(Clone, Copy, Default)]
-pub(crate) struct PageDisposer {
+#[derive(Clone, Default)]
+pub(crate) struct PageDisposer<'app> {
     /// The underlying `ScopeDisposer`. This will initially be `None` before any
     /// views have been rendered.
     ///
     /// There is no way to get this underlying scope disposer, it can only be
     /// set. Hence, we prevent there ever being multiple references to the
     /// underlying `Signal`.
-    disposer: RcSignal<Option<ScopeDisposer>>,
+    disposer: RcSignal<Option<ScopeDisposer<'app>>>,
 }
-impl PageDisposer {
+impl<'app> PageDisposer<'app> {
     /// Updates the undelrying data structure to hold the given disposer, taking
     /// any previous disposer and disposing it.
     ///
     /// # Safety
     /// This must not be called inside the scope in which the previous disposer
     /// was created.
-    pub(crate) unsafe fn update(&self, new_disposer: ScopeDisposer) {
+    pub(crate) unsafe fn update(&self, new_disposer: ScopeDisposer<'app>) {
         // Dispose of any old disposers
         if self.disposer.get().is_some() {
             let old_disposer_rc = self.disposer.take();

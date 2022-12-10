@@ -57,7 +57,8 @@ mod client;
 mod init;
 mod page_data;
 mod translator;
-mod path;
+/// Utilities for working with typed paths.
+pub mod path;
 /// The core of the Perseus state generation system.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod turbine;

@@ -55,7 +55,7 @@ impl<G: Html> Reactor<G> {
             if let GlobalStateType::Server(server_state) = &*global_state_ty {
                 // Fall back to the state we were given, first
                 // giving it a type (this just sets a phantom type parameter)
-                let typed_state = server_state.change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
+                let typed_state = server_state.clone().change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
                 // This attempts a deserialization from a `Value`, which could fail
                 let unrx = typed_state
                     .to_concrete()

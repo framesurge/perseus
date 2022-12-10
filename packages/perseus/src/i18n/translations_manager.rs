@@ -54,6 +54,18 @@ pub trait TranslationsManager: std::fmt::Debug + Clone + Send + Sync {
         &self,
         locale: String,
     ) -> Result<String, TranslationsManagerError>;
+    /// Gets a translator for the given locale and translations string. This is
+    /// intended as an internal convenience method to minimize extra computation
+    /// when both a translations string and a translator are required for the same
+    /// locale.
+    ///
+    /// **Warning:** providing a mismatched translations string and locale to this
+    /// function will lead to chaos.
+    async fn get_translator_for_translations_str(
+        &self,
+        locale: String,
+        translations_str: String,
+    ) -> Result<Translator, TranslationsManagerError>;
     /// Creates a new instance of this translations manager, as a dummy for apps
     /// that aren't using i18n at all. This may seem pointless, but it's needed
     /// for trait completeness and to support certain engine middleware
@@ -127,7 +139,7 @@ impl FsTranslationsManager {
     /// have their translations read from disk on every request. If fetching
     /// translations for any of the given locales fails, this will panic
     /// (locales to be cached should always be hardcoded).
-    // TODO performance analysis of manual caching strategy
+    // TODO Performance analysis of manual caching strategy
     pub async fn new(root_path: String, locales_to_cache: Vec<String>, file_ext: String) -> Self {
         // Initialize a new instance without any caching first
         let mut manager = Self {
@@ -237,6 +249,21 @@ impl TranslationsManager for FsTranslationsManager {
             self.get_translations_str_for_locale(locale.clone()).await?
         };
         // We expect the translations defined there, but not the locale itself
+        let translator = Translator::new(locale.clone(), translations_str).map_err(|err| {
+            TranslationsManagerError::SerializationFailed {
+                locale: locale.clone(),
+                source: err.into(),
+            }
+        })?;
+
+        Ok(translator)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    async fn get_translator_for_translations_str(
+        &self,
+        locale: String,
+        translations_str: String,
+    ) -> Result<Translator, TranslationsManagerError> {
         let translator = Translator::new(locale.clone(), translations_str).map_err(|err| {
             TranslationsManagerError::SerializationFailed {
                 locale: locale.clone(),

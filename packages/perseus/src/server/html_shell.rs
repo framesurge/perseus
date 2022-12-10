@@ -1,6 +1,5 @@
 use fmterr::fmterr;
-
-use crate::error_pages::ErrorPageData;
+use crate::error_views::ServerErrorData;
 use crate::page_data::PageData;
 use crate::state::TemplateState;
 use crate::utils::minify;
@@ -23,7 +22,7 @@ fn escape_page_data(data: &str) -> String {
 /// scripts and content defined by the user, components of the Perseus core, and
 /// plugins.
 #[derive(Clone, Debug)]
-pub struct HtmlShell {
+pub(crate) struct HtmlShell {
     /// The actual shell content, on which interpolations will be performed.
     pub shell: String,
     /// Additional contents of the head before the interpolation boundary.
@@ -53,7 +52,7 @@ pub struct HtmlShell {
 impl HtmlShell {
     /// Initializes the HTML shell by interpolating necessary scripts into it
     /// and adding the render configuration.
-    pub fn new(
+    pub(crate) fn new(
         shell: String,
         root_id: &str,
         render_cfg: &HashMap<String, String>,
@@ -152,7 +151,7 @@ impl HtmlShell {
     /// translator can be derived on the client-side. These are provided in
     /// a window variable to avoid page interactivity requiring a network
     /// request to get them.
-    pub fn page_data(
+    pub(crate) fn page_data(
         mut self,
         page_data: &PageData,
         global_state: &TemplateState,
@@ -209,7 +208,7 @@ impl HtmlShell {
     ///
     /// Further, this will preload the Wasm binary, making redirection snappier
     /// (but initial load slower), a tradeoff that generally improves UX.
-    pub fn locale_redirection_fallback(mut self, redirect_url: &str) -> Self {
+    pub(crate) fn locale_redirection_fallback(mut self, redirect_url: &str) -> Self {
         // This will be used if JavaScript is completely disabled (it's then the site's
         // responsibility to show a further message)
         let dumb_redirect = format!(
@@ -268,15 +267,15 @@ impl HtmlShell {
 
     /// Interpolates page error data into the shell in the event of a failure.
     ///
-    /// Importantly, this makes no assumptions about the availability of
-    /// translations, so error pages rendered from here will not be
-    /// internationalized.
-    // TODO Provide translations where we can at least?
-    pub fn error_page(
+    /// This takes an optional translations string if it's available, injecting it
+    /// if possible. If the reactor finds this variable to be empty on an error
+    /// extracted from the initial state variable, it will assume the error is unlocalized.
+    pub(crate) fn error_page(
         mut self,
-        error_page_data: &ErrorPageData,
+        error_page_data: &ServerErrorData,
         error_html: &str,
         error_head: &str,
+        translations_str: Option<&str>,
     ) -> Self {
         let error = serde_json::to_string(error_page_data).unwrap();
         let state_var = format!(
@@ -284,6 +283,12 @@ impl HtmlShell {
             escape_page_data(&error),
         );
         self.scripts_after_boundary.push(state_var);
+
+        if let Some(translations) = translations_str {
+            let translations = format!("window.__PERSEUS_TRANSLATIONS = `{}`;", translations);
+            self.scripts_after_boundary.push(translations);
+        }
+
         self.head_after_boundary.push(error_head.to_string());
         self.content = error_html.into();
 

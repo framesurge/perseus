@@ -1,5 +1,5 @@
 use super::RouteVerdict;
-use crate::{path::PathMaybeWithLocale, error_pages::ErrorPageLocation, router::RouteInfo, template::TemplateNodeType};
+use crate::{path::PathMaybeWithLocale, router::RouteInfo, template::TemplateNodeType};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
@@ -109,11 +109,11 @@ pub enum RouterLoadState {
         /// we're using i18n).
         path: PathMaybeWithLocale,
     },
-    /// An error page has been loaded.
+    /// An error page has been loaded. Note that this will not account for any
+    /// popup errors.
     ErrorLoaded {
-        /// The full path to the page we intended to load. This is specified
-        /// the way error pages specify their paths.
-        location: ErrorPageLocation,
+        /// The path of this error.
+        path: PathMaybeWithLocale,
     },
     /// A new page is being loaded, and will soon replace whatever is currently
     /// loaded. The name of the new template is attached.

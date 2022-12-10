@@ -142,7 +142,7 @@ impl<G: Html> Template<G> {
             // Run the user's code in a child scope so any effects they start are killed when the page ends (otherwise we
             // basically get a series of continuous pseudo-memory leaks, which can also cause accumulations of listeners
             // on things like the router state)
-            let mut view;
+            let mut view = View::empty();
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
                 // Compute suspended states
                 #[cfg(target_arch = "wasm32")]
@@ -159,7 +159,7 @@ impl<G: Html> Template<G> {
     pub fn template_with_unreactive_state<F, S>(mut self, val: F) -> Template<G>
     where
         F: Fn(Scope, S) -> View<G> + Send + Sync + 'static,
-        S: MakeRx + Serialize + DeserializeOwned + UnreactiveState,
+        S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
         self.template = Box::new(move |app_cx, preload_info, template_state, path| {
@@ -171,7 +171,7 @@ impl<G: Html> Template<G> {
                 reactor.get_page_state::<S>(&path, template_state)?
             };
 
-            let mut view;
+            let mut view = View::empty();
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
                 // We go back from the unreactive state type wrapper to the base type (since it's unreactive)
                 view = val(child_cx, intermediate_state.make_unrx());
@@ -193,7 +193,7 @@ impl<G: Html> Template<G> {
             // Declare that this page will never take any state to enable full caching
             reactor.register_no_state(&path, self.is_capsule);
 
-            let mut view;
+            let mut view = View::empty();
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
                 view = val(child_cx);
             });

@@ -9,7 +9,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 
 use axum::{Router, body::Body, extract::{Path, Query}, http::{StatusCode, Request}, response::{Response, IntoResponse}, routing::{get, get_service}};
-use perseus::{PathMaybeWithLocale, PathWithoutLocale, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
+use perseus::{path::*, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
 use tower_http::services::{ServeDir, ServeFile};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 
@@ -85,8 +85,8 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
 
                                                        ApiResponse(turbine.get_subsequent_load(
                                                            PathWithoutLocale(raw_path),
-                                                           locale,
-                                                           &entity_name,
+                                                           locale.to_string(),
+                                                           entity_name,
                                                            was_incremental_match,
                                                            req
                                                        ).await.into())
