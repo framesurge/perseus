@@ -26,8 +26,6 @@ documentation, and this should mostly be used as a secondary reference source. Y
 /// setting up the entrypoint for your app's build/export/server processes.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod engine;
-/// Utilities surrounding [`ErrorPages`] and their management.
-pub mod error_pages;
 pub mod errors;
 /// Utilities for internationalization, the process of making your app available
 /// in multiple languages.
@@ -51,6 +49,8 @@ pub mod stores;
 pub mod template;
 /// General utilities that may be useful while building Perseus apps.
 pub mod utils;
+/// Utilities surrounding `ErrorViews` and their management.
+pub mod error_views;
 
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
 mod client;
@@ -110,7 +110,7 @@ pub mod log {
 /// A series of imports needed by most Perseus apps, in some form. This should
 /// be used in conjunction with the Sycamore prelude.
 pub mod prelude {
-    pub use crate::error_pages::ErrorPages;
+    pub use crate::error_views::ErrorViews;
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};
     pub use crate::init::*;
     pub use crate::state::{RxResult, RxResultRef, SerdeInfallible, BuildPaths, StateGeneratorInfo};

@@ -13,7 +13,7 @@ use crate::{
     plugins::{PluginAction, Plugins},
     state::GlobalStateCreator,
     stores::MutableStore,
-    error_pages::ErrorPages, Html, SsrNode, template::Template,
+    error_views::ErrorViews, Html, SsrNode, template::Template,
 };
 use futures::Future;
 #[cfg(target_arch = "wasm32")]
@@ -110,9 +110,9 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     capsules: ArcCapsuleMap<G>,
     /// The app's error pages.
     #[cfg(target_arch = "wasm32")]
-    error_pages: Rc<ErrorPages<G>>,
+    error_views: Rc<ErrorViews<G>>,
     #[cfg(not(target_arch = "wasm32"))]
-    error_pages: Arc<ErrorPages<G>>,
+    error_views: Arc<ErrorViews<G>>,
     /// The maximum size for the page state store.
     pss_max_size: usize,
     /// The global state creator for the app.
@@ -282,9 +282,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // possible (and it's more convenient to call `.template()` for each one)
             templates: HashMap::new(),
             capsules: HashMap::new(),
-            // We do offer default error pages, but they'll panic if they're called for production
+            // We do offer default error views, but they'll panic if they're called for production
             // building
-            error_pages: Default::default(),
+            error_views: Default::default(),
             pss_max_size: DFLT_PSS_MAX_SIZE,
             #[cfg(not(target_arch = "wasm32"))]
             global_state_creator: Arc::new(GlobalStateCreator::default()),
@@ -329,7 +329,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             capsules: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
-            error_pages: Default::default(),
+            error_views: Default::default(),
             pss_max_size: DFLT_PSS_MAX_SIZE,
             // By default, we'll disable i18n (as much as I may want more websites to support more
             // languages...)
@@ -431,15 +431,15 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self.capsules.insert(path, Arc::new(fallback));
         self
     }
-    /// Sets the app's error pages. See [`ErrorPages`] for further details.
-    pub fn error_pages(mut self, val: ErrorPages<G>) -> Self {
+    /// Sets the app's error views. See [`ErrorViews`] for further details.
+    pub fn error_pages(mut self, val: ErrorViews<G>) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
-            self.error_pages = Rc::new(val);
+            self.error_views = Rc::new(val);
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            self.error_pages = Arc::new(val);
+            self.error_views = Arc::new(val);
         }
         self
     }
@@ -799,14 +799,14 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     pub fn get_atomic_capsules_map(&self) -> ArcCapsuleMap<G> {
         self.capsules.clone()
     }
-    /// Gets the [`ErrorPages`] used in the app. This returns an `Rc`.
+    /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
     #[cfg(target_arch = "wasm32")]
-    pub fn get_error_pages(&self) -> Rc<ErrorPages<G>> {
+    pub fn get_error_views(&self) -> Rc<ErrorPages<G>> {
         self.error_pages.clone()
     }
-    /// Gets the [`ErrorPages`] used in the app. This returns an `Arc`.
+    /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_error_pages(&self) -> Arc<ErrorPages<G>> {
+    pub fn get_atomic_error_views(&self) -> Arc<ErrorViews<G>> {
         self.error_pages.clone()
     }
     /// Gets the maximum number of pages that can be stored in the page state

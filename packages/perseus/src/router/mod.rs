@@ -11,6 +11,8 @@ mod route_verdict;
 #[cfg(target_arch = "wasm32")]
 mod router_component;
 mod router_state;
+#[cfg(target_arch = "wasm32")]
+mod render;
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) use app_route::PerseusRoute;

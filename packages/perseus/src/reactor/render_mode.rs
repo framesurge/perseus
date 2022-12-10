@@ -66,4 +66,6 @@ pub(crate) enum RenderMode<G: Html> {
     },
     /// We're rendering a head, where widgets are not allowed.
     Head,
+    /// We're rendering an error, where widgets are not allowed.
+    Error,
 }

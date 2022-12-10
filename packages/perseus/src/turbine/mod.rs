@@ -19,13 +19,14 @@ pub use server::{ApiResponse, SubsequentLoadQueryParams};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use futures::executor::block_on;
 use sycamore::web::SsrNode;
-use crate::{error_pages::ErrorPages, init::PerseusAppBase, errors::*, i18n::{Locales, TranslationsManager}, plugins::Plugins, server::HtmlShell, state::{GlobalStateCreator, TemplateState}, stores::{ImmutableStore, MutableStore}, template::{ArcCapsuleMap, ArcTemplateMap}};
+use crate::{error_views::ErrorViews, init::PerseusAppBase, errors::*, i18n::{Locales, TranslationsManager}, plugins::Plugins, server::HtmlShell, state::{GlobalStateCreator, TemplateState}, stores::{ImmutableStore, MutableStore}, template::{ArcCapsuleMap, ArcTemplateMap}};
 
 /// The Perseus state generator.
 pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// All the templates in the app.
     templates: ArcTemplateMap<SsrNode>,
-    error_pages: Arc<ErrorPages<SsrNode>>,
+    /// The app's error views.
+    error_views: Arc<ErrorViews<SsrNode>>,
     /// All the capsule fallbacks in the app.
     capsule_fallbacks: ArcCapsuleMap<SsrNode>,
     /// The app's locales data.
@@ -73,7 +74,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
         let root_id = app.get_root()?;
         let static_dir = app.get_static_dir();
         let static_aliases = app.get_static_aliases()?;
-        let error_pages = app.get_atomic_error_pages();
+        let error_views = app.get_atomic_error_views();
         // This consumes the app
         // Note that we can't do anything in parallel with this anyway
         let translations_manager = block_on(app.get_translations_manager());
@@ -90,7 +91,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
             root_id,
             static_dir: PathBuf::from(&static_dir),
             static_aliases,
-            error_pages,
+            error_views,
             translations_manager,
 
             // If we're going from a `PerseusApp`, these will be filled in later

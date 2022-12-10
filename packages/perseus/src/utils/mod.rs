@@ -14,6 +14,8 @@ mod path_prefix;
 #[cfg(target_arch = "wasm32")]
 mod replace_head;
 mod test;
+#[cfg(target_arch = "wasm32")]
+mod render_or_hydrate;
 
 pub(crate) use async_fn_trait::AsyncFnReturn;
 #[cfg(not(target_arch = "wasm32"))]
@@ -29,3 +31,5 @@ pub(crate) use minify::minify;
 pub use path_prefix::*;
 #[cfg(target_arch = "wasm32")]
 pub(crate) use replace_head::replace_head;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use render_or_hydrate::render_or_hydrate;

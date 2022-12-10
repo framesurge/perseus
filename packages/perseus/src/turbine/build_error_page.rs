@@ -1,3 +1,4 @@
+use crate::error_views::{ErrorViews, ServerErrorData};
 use crate::server::HtmlShell;
 use crate::error_pages::{ErrorPageData, ErrorPageLocation, ErrorPages};
 use crate::translator::Translator;
@@ -11,21 +12,19 @@ use std::rc::Rc;
 /// (other systems handle errors in subsequent loads, and the app shell
 /// exists then so the server doesn't have to do nearly as much work).
 ///
-/// This doesn't inject translations of any sort, deliberately, since
-/// we can't ensure that they would even exist --- this is used for all
-/// types of server-side errors.
-///
-/// Note that this is only ever used for pages, never widgets.
+/// If a translator is provided, this will inject the translations for that
+/// locale. If not, then the default translations will be used. This is done
+/// because the translator active here will always match with the URL the client
+/// requested (or be default if there's no locale attached).
 pub fn build_error_page(
-    location: ErrorPageLocation,
-    status: u16,
-    // This should already have been transformed into a string (with a source chain etc.)
-    err: &str,
-    translator: Option<Rc<Translator>>,
-    error_pages: &ErrorPages<SsrNode>,
+    data: ServerErrorData,
+    translator: Option<&Translator>,
+    error_views: &ErrorViews<SsrNode>,
     html_shell: &HtmlShell,
 ) -> String {
-    let error_html = error_pages.render_to_string(location.clone(), status, err, translator.clone());
+    // TODO!
+
+    let error_html = error_views.render_to_string(data,, translator.clone());
     let error_head = error_pages.render_head(location.clone(), status, err, translator);
     // We create a JSON representation of the data necessary to hydrate the error
     // page on the client-side Right now, translators are never included in

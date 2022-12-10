@@ -1,4 +1,5 @@
 use sycamore::web::Html;
+use crate::{checkpoint, error_views::ErrorPosition, reactor::InitialView, utils::{render_or_hydrate, replace_head}};
 
 // We don't want to bring in a styling library, so we do this the old-fashioned
 // way! We're particularly comprehensive with these because the user could
@@ -21,10 +22,43 @@ impl<G: Html> Reactor<G> {
     /// (in a reactive web framework, there are quite a few of these). This should
     /// only be executed at the beginning of the browser-side instantiation.
     ///
+    /// This is internally responsible for fetching the initial load and rendering
+    /// it, starting the reactive cycle based on the given scope that will handle
+    /// subsequent loads and the like.
+    ///
     /// This takes the app-level scope.
-    pub(crate) fn set_handlers(cx: Scope) -> Result<(), ClientError> {
+    ///
+    /// As Sycamore works by starting a reactive cycle, rather than by calling a
+    /// function that never terminates, this will 'finish' as soon as the intial load
+    /// is ready. However, in cases of critical errors that have been successfully displayed,
+    /// the app-level scope should be disposed of. If this should occur, this will return
+    /// `false`, indicating that the app was not successful. Note that server errors will
+    /// not cause this, and they will receive a router. This situation is very rare, and
+    /// affords a plugin action for analytics.
+    pub(crate) fn start(cx: Scope) -> bool {
         // We must be in the first load
-        assert!(*self.is_first.get(), "attempted to instantiate perseus handlers after first load");
+        assert!(*self.is_first.get(), "attempted to instantiate perseus after first load");
+
+        // --- Route announcer ---
+
+        // Append the route announcer to the end of the document body
+        let document = web_sys::window().unwrap().document().unwrap();
+        let announcer = document.create_element("p").unwrap();
+        announcer.set_attribute("aria-live", "assertive").unwrap();
+        announcer.set_attribute("role", "alert").unwrap();
+        announcer
+            .set_attribute("style", ROUTE_ANNOUNCER_STYLES)
+            .unwrap();
+        announcer.set_id("__perseus_route_announcer");
+        let body_elem: Element = document.body().unwrap().into();
+        body_elem
+            .append_with_node_1(&announcer.clone().into())
+            .unwrap();
+        // Update the announcer's text whenever the `route_announcement` changes
+        create_effect(cx, move || {
+            let ra = route_announcement.get();
+            announcer.set_inner_html(&ra);
+        });
 
         // Create a derived state for the route announcement
         // We do this with an effect because we only want to update in some cases (when
@@ -83,6 +117,8 @@ impl<G: Html> Reactor<G> {
             }
         });
 
+        // --- Reload commander ---
+
         // This allows us to not run the subsequent load code on the initial load (we
         // need a separate one for the reload commander)
         let is_initial_reload_commander = create_signal(cx, true);
@@ -106,11 +142,12 @@ impl<G: Html> Reactor<G> {
                     None => return,
                 };
                 spawn_local_scoped(cx, async move {
-                    // TODO
-                    set_view(cx, route_manager, verdict.clone()).await;
+                    // TODO Subsequent load
                 });
             }
         });
+
+        // --- HSR and live reloading ---
 
         // This section handles live reloading and HSR freezing
         // We used to have an indicator shared to the macros, but that's no longer used
@@ -161,25 +198,133 @@ impl<G: Html> Reactor<G> {
             });
         };
 
-        // Append the route announcer to the end of the document body
-        let document = web_sys::window().unwrap().document().unwrap();
-        let announcer = document.create_element("p").unwrap();
-        announcer.set_attribute("aria-live", "assertive").unwrap();
-        announcer.set_attribute("role", "alert").unwrap();
-        announcer
-            .set_attribute("style", ROUTE_ANNOUNCER_STYLES)
-            .unwrap();
-        announcer.set_id("__perseus_route_announcer");
-        let body_elem: Element = document.body().unwrap().into();
-        body_elem
-            .append_with_node_1(&announcer.clone().into())
-            .unwrap();
-        // Update the announcer's text whenever the `route_announcement` changes
-        create_effect(cx, move || {
-            let ra = route_announcement.get();
-            announcer.set_inner_html(&ra);
-        });
+        // --- Error handlers ---
 
-        Ok(())
+        // Create and get the element in which we'll render popup errors
+        let popup_error_root = {
+            let document = web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap();
+            let err_div = document.create_element("div").unwrap();
+            // The user can style using this
+            err_dir.set_id("__perseus_popup_error");
+            let body_elem: Element = document.body().unwrap().into();
+            body_elem
+                .append_with_node_1(&err_div.clone().into())
+                .unwrap();
+            err_div
+        };
+        // Now set up the handlers to actually render this (the scope will keep
+        // reactivity going as long as it isn't dropped). Popup errors do *not*
+        // get access to a router or the like. Ever time `popup_err_view` is
+        // updated, this will update too.
+        render_or_hydrate(
+            cx,
+            view! { cx,
+                (*self.popup_err_view.get())
+            },
+            popup_error_root
+        );
+
+        // --- Initial load ---
+
+        // Get the initial load so we have something to put inside the root. Usually, we
+        // can simply report errors, but, because we don't actually have a place to put
+        // page-wide errors yet, we need to know what this will return so we know if we
+        // should proceed.
+        let starting_view = match self.get_initial_view(cx) {
+            Ok(InitialView::View(view, disposer)) => {
+                // Add the disposer
+                // SAFETY: There's nothing in there right now, and we know that for sure
+                // because it's the initial load (asserted above). Also, we're in the app-level
+                // scope.
+                unsafe { self.page_disposer.update(disposer); }
+
+                view
+            },
+            // On a redirect, return a view that just redirects straight away (of course,
+            // this will be created inside a router, so everything works nicely)
+            Ok(InitialView::Redirect(dest)) => view! { cx,
+                (sycamore::navigate_replace(&dest))
+            },
+            // We still need the page-wide view
+            Err(ClientError::ServerError { .. }) => {
+                // Rather than worrying about multi-file invariants, just do the error
+                // handling manually for sanity
+                let (head_str, body_view) = self.error_views.handle(cx, err, ErrorPosition::Page);
+                replace_head(&head_str);
+
+                // This *will* hydrate if we're using hydration, but that should be fine, since the same
+                // error details are being used as were sent from the server-side (if the user renders
+                // somethign radically different, that's their problem, as it would be with pages)
+                view
+            },
+            // Popup error: we will not create a router, terminating immediately
+            // and instructing the caller to dispose of the scope
+            Err(err) => {
+                // Rather than worrying about multi-file invariants, just do the error
+                // handling manually for sanity
+                let (_, body_view) = self.error_views.handle(cx, err, ErrorPosition::Popup);
+                self.popup_err_view.set(body_view);
+                // Signal the top-level disposer
+                return false;
+            }
+        };
+        self.current_view.set(starting_view);
+
+        // --- Router! ---
+
+        // Get the root we'll be injecting the router into
+        let root = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .query_selector(&format!("#{}", &self.root))
+            .unwrap()
+            .unwrap();
+
+        checkpoint("page_interactive");
+
+        // Now set up the full router
+        render_or_hydrate(
+            cx,
+            view! { cx,
+                RouterBase(
+                    integration = HistoryIntegration::new(),
+                    // This will be immediately updated and fixed up
+                    route = PerseusRoute {
+                        verdict: RouteVerdict::NotFound,
+                        cx: Some(cx),
+                    },
+                    view = move |cx, route: &ReadSignal<PerseusRoute>| {
+                        // Do this on every update to the route, except the first time, when we'll use the initial load
+                        create_effect(cx, move || {
+                            route.track();
+
+                            if *self.is_first.get_untracked() {
+                                self.is_first.set(false);
+                            } else {
+                                spawn_local_scoped(cx, async move {
+                                    let route = route.get();
+                                    let verdict = route.get_verdict();
+
+                                    // TODO Subsequent load
+                                });
+                            }
+                        });
+
+                        // This template is reactive, and will be updated as necessary
+                        view! { cx,
+                            (*self.current_view.get())
+                        }
+                    }
+                )
+            },
+            root
+        );
+
+        // If we successfully got here, the app is running!
+        true
     }
 }

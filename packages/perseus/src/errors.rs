@@ -70,6 +70,14 @@ pub enum EngineError {
 /// **Important:** any changes to this `enum` constitute a breaking change,
 /// since users match this in their error pages. Changes in underlying
 /// `enum`s are not considered breaking (e.g. introducing a new invariant error).
+///
+/// **Warning:** in all these cases, except `ClientError::ServerError`, the user can
+/// already see the prerendered version of the page, it just isn't interactive. Only
+/// in that case will your error page occupy the entire screen, otherwise it will
+/// be placed into a `div` with the class `__perseus-error`, a deliberate choice
+/// to reinforce the best practice of giving the user as much as possible (it might
+/// not be interactive, but they can still use a rudimentary version). See the book
+/// for further details.
 #[derive(Error, Debug)]
 pub enum ClientError {
     #[error(transparent)]
@@ -78,6 +86,15 @@ pub enum ClientError {
     InvariantError(#[from] ClientInvariantError),
     #[error(transparent)]
     ThawError(#[from] ClientThawError),
+    // Not like the `ServerError` in this file!
+    #[error("an error with HTTP status code '{status}' was returned by the server: '{message}'")]
+    ServerError {
+        status: u16,
+        // This has to have been serialized unfortunately
+        message: String,
+    },
+    #[error(transparent)]
+    FetchError(#[from] FetchError)
 
     // #[error("locale '{locale}' is not supported")]
     // LocaleNotSupported { locale: String },
@@ -128,6 +145,31 @@ pub enum ClientInvariantError {
     // Invariant because the user would have had to call something like `.template_with_state()` for this to happen
     #[error("no state was found for a page/widget that expected state (you might have forgotten to write a state generation function, like `get_build_state`)")]
     NoState,
+    #[error("the initial state was not found, or was malformed")]
+    InitialState,
+    #[error("the initial state denoted an error, but this was malformed")]
+    InitialStateError {
+        #[source]
+        source: serde_json::Error,
+    },
+    #[error("the locale '{locale}', which is supported by this app, was not returned by the server")]
+    ValidLocaleNotProvided {
+        locale: String,
+    },
+    // This is just for initial loads (`__PERSEUS_TRANSLATIONS` window variable)
+    #[error("the translations were not found, or were malformed (even apps not using i18n have a declaration of their lack of translations)")]
+    Translations,
+    #[error("we found the current page to be a 404, but the engine disagrees")]
+    RouterMismatch
+}
+
+/// Errors that can occur in the browser while interfacing with browser functionality. These should never really
+/// occur unless you're operating in an extremely alien environment (which probably wouldn't support Wasm, but
+/// we try to allow maximal error page control).
+#[derive(Debug, Error)]
+pub enum ClientBrowserError {
+    #[error("failed to get current url for initial load determination")]
+    InitialPath
 }
 
 /// Errors that can occur in the browser as a result of attempting to thaw provided state.
@@ -262,24 +304,51 @@ pub enum StoreError {
 /// Errors that can occur while fetching a resource from the server.
 #[derive(Error, Debug)]
 pub enum FetchError {
-    #[error("asset fetched from '{url}' wasn't a string")]
-    NotString { url: String },
-    #[error("asset fetched from '{url}' returned status code '{status}' (expected 200)")]
+    #[error("asset of type '{ty}' fetched from '{url}' wasn't a string")]
+    NotString {
+        url: String,
+        ty: AssetType,
+    },
+    #[error("asset of type '{ty}' fetched from '{url}' returned status code '{status}' (expected 200)")]
     NotOk {
         url: String,
         status: u16,
         // The underlying body of the HTTP error response
         err: String,
+        ty: AssetType,
     },
-    #[error("asset fetched from '{url}' couldn't be serialized")]
+    #[error("asset of type '{ty}' fetched from '{url}' couldn't be serialized")]
     SerFailed {
         url: String,
         #[source]
         source: Box<dyn std::error::Error + Send + Sync>,
+        ty: AssetType,
     },
     // This is not used by the `fetch` function, but it is used by the preloading system
-    #[error("asset not found")]
-    NotFound { url: String },
+    #[error("preload asset fetched from '{url}' was not found")]
+    PreloadNotFound {
+        url: String,
+        ty: AssetType,
+    },
+}
+
+/// The type of an asset fetched from the server. This allows distinguishing between errors in
+/// fetching, say, pages, vs. translations, which you may wish to handle differently.
+#[derive(Debug)]
+pub enum AssetType {
+    /// A page in the app.
+    Page,
+    /// A widget in the app.
+    Widget,
+    /// Translations for a locale.
+    Translations,
+    /// A page/widget the user asked to have preloaded.
+    Preload,
+}
+impl std::fmt::Display for AssetType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 /// Errors that can occur while building an app.
@@ -320,6 +389,9 @@ pub enum ExportError {
     GlobalStateNotExportable,
     #[error("template '{template_name} can't be exported because one or more of its widget dependencies use state generation strategies that can't be run at build-time")]
     DependenciesNotExportable { template_name: String },
+    // This is used in error page exports
+    #[error("invalid status code provided for error page export (please provide a valid http status code)")]
+    InvalidStatusCode
 }
 
 /// Errors that can occur while serving an app. These are integration-agnostic.
