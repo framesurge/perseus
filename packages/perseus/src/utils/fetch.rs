@@ -3,8 +3,8 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 
-/// Fetches the given resource. This is heavily intertwined with the Perseus error
-/// management system, and should not be used by end users.
+/// Fetches the given resource. This is heavily intertwined with the Perseus
+/// error management system, and should not be used by end users.
 pub(crate) async fn fetch(url: &str, ty: AssetType) -> Result<Option<String>, ClientError> {
     let js_err_handler = |err: JsValue| FetchError::Js(format!("{:?}", err));
     let mut opts = RequestInit::new();
@@ -20,7 +20,8 @@ pub(crate) async fn fetch(url: &str, ty: AssetType) -> Result<Option<String>, Cl
     // Turn that into a proper response object
     let res: Response = res_value.dyn_into().unwrap();
     // If the status is 404, we should return that the request worked but no file
-    // existed (there is a `NotFound` error type, but that's only used for preloading)
+    // existed (there is a `NotFound` error type, but that's only used for
+    // preloading)
     if res.status() == 404 {
         return Ok(None);
     }
@@ -49,7 +50,7 @@ pub(crate) async fn fetch(url: &str, ty: AssetType) -> Result<Option<String>, Cl
             url: url.to_string(),
             status: res.status(),
             err: body_str,
-            ty
+            ty,
         }
         .into())
     }

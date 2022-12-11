@@ -4,9 +4,7 @@ use super::serve::get_host_and_port;
 use super::EngineOperation;
 use crate::server::ServerOptions;
 use crate::turbine::Turbine;
-use crate::{
-    i18n::TranslationsManager, stores::MutableStore, init::PerseusAppBase, SsrNode,
-};
+use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore, SsrNode};
 use fmterr::fmt_err;
 use futures::Future;
 use std::env;
@@ -62,7 +60,7 @@ where
         Ok(turbine) => turbine,
         Err(err) => {
             eprintln!("{}", fmt_err(&err));
-            return 1
+            return 1;
         }
     };
 
@@ -135,7 +133,7 @@ where
             if !cfg!(debug_assertions) {
                 let binary_loc = env::current_exe().unwrap();
                 let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close
-                // to sanity
+                                                               // to sanity
                 env::set_current_dir(binary_dir).unwrap();
             }
 
@@ -149,9 +147,11 @@ where
                 port = &addr.1
             );
 
-            // This actively and intentionally leaks the entire turbine to avoid the overhead of an `Arc`, since we're guaranteed to need an immutable
-            // reference to it for the server (we do this here so integration authors don't have to).
-            // Since this only runs once, there is no accumulation of unused memory, so this shouldn't be a problem.
+            // This actively and intentionally leaks the entire turbine to avoid the
+            // overhead of an `Arc`, since we're guaranteed to need an immutable
+            // reference to it for the server (we do this here so integration authors don't
+            // have to). Since this only runs once, there is no accumulation of
+            // unused memory, so this shouldn't be a problem.
             let turbine_static = Box::leak(Box::new(turbine));
 
             // We have access to default server options when `dflt-engine` is enabled

@@ -26,6 +26,8 @@ documentation, and this should mostly be used as a secondary reference source. Y
 /// setting up the entrypoint for your app's build/export/server processes.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod engine;
+/// Utilities surrounding `ErrorViews` and their management.
+pub mod error_views;
 pub mod errors;
 /// Utilities for internationalization, the process of making your app available
 /// in multiple languages.
@@ -49,22 +51,20 @@ pub mod stores;
 pub mod template;
 /// General utilities that may be useful while building Perseus apps.
 pub mod utils;
-/// Utilities surrounding `ErrorViews` and their management.
-pub mod error_views;
 
 #[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
 mod client;
 mod init;
 mod page_data;
-mod translator;
 /// Utilities for working with typed paths.
 pub mod path;
+/// The core of the Perseus browser-side system. This is used on the engine-side
+/// as well for rendering.
+pub mod reactor;
+mod translator;
 /// The core of the Perseus state generation system.
 #[cfg(not(target_arch = "wasm32"))]
 pub mod turbine;
-/// The core of the Perseus browser-side system. This is used on the engine-side as well
-/// for rendering.
-pub mod reactor;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
@@ -118,19 +118,16 @@ pub mod prelude {
     pub use crate::error_views::ErrorViews;
     pub use crate::errors::{ErrorCause, GenericErrorWithCause};
     pub use crate::init::*;
-    pub use crate::state::{RxResult, RxResultRef, SerdeInfallible, BuildPaths, StateGeneratorInfo};
     pub use crate::reactor::Reactor;
-    pub use crate::template::{
-        RenderFnResult, RenderFnResultWithCause,
-        Template, Capsule
+    pub use crate::state::{
+        BuildPaths, RxResult, RxResultRef, SerdeInfallible, StateGeneratorInfo,
     };
+    pub use crate::template::{Capsule, RenderFnResult, RenderFnResultWithCause, Template};
 
     #[cfg(not(target_arch = "wasm32"))]
     pub use crate::utils::{cache_fallible_res, cache_res};
     pub use crate::web_log;
-    pub use crate::{
-        blame_err, make_blamed_err, Request, spawn_local_scoped
-    };
+    pub use crate::{blame_err, make_blamed_err, spawn_local_scoped, Request};
     #[cfg(feature = "macros")]
     pub use crate::{
         browser, browser_main, browser_only_fn, engine, engine_main, engine_only_fn, main,
@@ -139,4 +136,3 @@ pub mod prelude {
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};
 }
-

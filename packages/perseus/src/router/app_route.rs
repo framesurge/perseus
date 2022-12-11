@@ -22,7 +22,9 @@ pub(crate) struct PerseusRoute<'cx> {
 impl<'cx> Default for PerseusRoute<'cx> {
     fn default() -> Self {
         Self {
-            verdict: RouteVerdict::NotFound { locale: "xx-XX".to_string() },
+            verdict: RouteVerdict::NotFound {
+                locale: "xx-XX".to_string(),
+            },
             // Again, this will never be accessed
             cx: None,
         }

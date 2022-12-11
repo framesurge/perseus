@@ -9,9 +9,17 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 
 use actix_files::Files;
-use actix_web::{HttpRequest, HttpResponse, Responder, web};
-use perseus::{path::*, Request, http::StatusCode, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
+use perseus::{
+    http::StatusCode,
+    i18n::TranslationsManager,
+    path::*,
+    server::ServerOptions,
+    stores::MutableStore,
+    turbine::{SubsequentLoadQueryParams, Turbine},
+    Request,
+};
 
 // ----- Request conversion implementation -----
 
@@ -48,7 +56,8 @@ impl Responder for ApiResponse {
         let mut res = HttpResponse::build(self.0.status);
         let headers = self.0.headers.unwrap_or_default();
         for header in headers {
-            // THe header name is in an `Option`, but we only ever add them with proper names in `PerseusApiResponse`
+            // THe header name is in an `Option`, but we only ever add them with proper
+            // names in `PerseusApiResponse`
             res.insert_header((header.0.unwrap(), header.1));
         }
         // TODO
@@ -109,26 +118,35 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
             cfg.service(Files::new(url, static_path));
         }
         // --- Initial load handler ---
-        cfg.route("{route:.*}", web::get().to(move |http_req: HttpRequest| async move {
-            let raw_path = http_req.path().to_string();
-            let http_req = match convert_req(&http_req) {
-                Ok(req) => req,
-                Err(err) => return ApiResponse(PerseusApiResponse::err(StatusCode::BAD_REQUEST, &err))
-            };
-            ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(raw_path), http_req).await)
-        }));
+        cfg.route(
+            "{route:.*}",
+            web::get().to(move |http_req: HttpRequest| async move {
+                let raw_path = http_req.path().to_string();
+                let http_req = match convert_req(&http_req) {
+                    Ok(req) => req,
+                    Err(err) => {
+                        return ApiResponse(PerseusApiResponse::err(StatusCode::BAD_REQUEST, &err))
+                    }
+                };
+                ApiResponse(
+                    turbine
+                        .get_initial_load(PathMaybeWithLocale(raw_path), http_req)
+                        .await,
+                )
+            }),
+        );
     }
 }
 
 // // File handlers (these have to be broken out for Actix)
-// async fn js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
-//     NamedFile::open(&opts.js_bundle)
+// async fn js_bundle(opts: web::Data<ServerOptions>) ->
+// std::io::Result<NamedFile> {     NamedFile::open(&opts.js_bundle)
 // }
-// async fn wasm_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
-//     NamedFile::open(&opts.wasm_bundle)
+// async fn wasm_bundle(opts: web::Data<ServerOptions>) ->
+// std::io::Result<NamedFile> {     NamedFile::open(&opts.wasm_bundle)
 // }
-// async fn wasm_js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
-//     NamedFile::open(&opts.wasm_js_bundle)
+// async fn wasm_js_bundle(opts: web::Data<ServerOptions>) ->
+// std::io::Result<NamedFile> {     NamedFile::open(&opts.wasm_js_bundle)
 // }
 // async fn static_alias<M: MutableStore, T: TranslationsManager>(
 //     turbine: &'static Turbine<M, T>,
@@ -138,8 +156,8 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
 //     let filename = match filename {
 //         Some(filename) => filename,
 //         // If the path doesn't exist, then the alias is not found
-//         None => return Err(std::io::Error::from(std::io::ErrorKind::NotFound)),
-//     };
+//         None => return
+// Err(std::io::Error::from(std::io::ErrorKind::NotFound)),     };
 //     NamedFile::open(filename)
 // }
 
@@ -153,7 +171,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
 pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
-    (host, port): (String, u16)
+    (host, port): (String, u16),
 ) {
     use actix_web::{App, HttpServer};
     use futures::executor::block_on;

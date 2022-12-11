@@ -1,8 +1,8 @@
-use sycamore::prelude::{Scope, View};
 use super::Template;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
+use sycamore::prelude::{Scope, View};
 
 /// Gets a `HashMap` of the given templates by their paths for serving. This
 /// should be manually wrapped for the pages your app provides for convenience.
@@ -62,6 +62,6 @@ pub type ArcTemplateMap<G> = HashMap<String, Arc<Template<G>>>;
 /// capsule templates alongside the full templates.
 pub type CapsuleMap<G> = HashMap<String, Rc<Box<dyn Fn(Scope) -> View<G> + Send + Sync>>>;
 /// A type alias for a `HashMap` of [`Capsule`] fallback functions. This is
-/// to be used in conjunction with a [`ArcTemplateMap`] that stores the underlying
-/// capsule templates alongside the full templates.
+/// to be used in conjunction with a [`ArcTemplateMap`] that stores the
+/// underlying capsule templates alongside the full templates.
 pub type ArcCapsuleMap<G> = HashMap<String, Arc<Box<dyn Fn(Scope) -> View<G> + Send + Sync>>>;

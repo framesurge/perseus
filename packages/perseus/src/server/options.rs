@@ -24,7 +24,7 @@ impl Default for ServerOptions {
             // This probably won't exist, but on the off chance that the user needs to support older
             // browsers, we'll provide it anyway
             wasm_js_bundle: "dist/pkg/perseus_engine_bg.wasm.js".to_string(),
-            snippets: "dist/pkg/snippets".to_string()
+            snippets: "dist/pkg/snippets".to_string(),
         }
     }
 }

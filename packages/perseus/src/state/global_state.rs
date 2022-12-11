@@ -1,11 +1,11 @@
 use super::rx_state::AnyFreeze;
+use super::TemplateState;
 use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx};
 #[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
 use crate::errors::{ClientError, ClientInvariantError};
 use crate::stores::ImmutableStore;
 use crate::template::RenderFnResult;
-use super::TemplateState;
 use crate::utils::AsyncFnReturn;
 use crate::{make_async_trait, template::RenderFnResultWithCause, Request};
 use futures::Future;
@@ -340,7 +340,7 @@ impl GlobalStateType {
                     .ok_or(ClientInvariantError::GlobalStateDowncast)?
                     .clone();
                 Ok(Some(rx))
-            },
+            }
             Self::Server(_) | Self::None => Ok(None),
         }
     }
@@ -357,8 +357,8 @@ pub enum FrozenGlobalState {
     /// There is state that should be instantiated.
     Some(String),
     /// The global state had not been modified from the engine-side. In this
-    /// case, we don't bother storing the frozen state, since it can be trivially
-    /// re-instantiated.
+    /// case, we don't bother storing the frozen state, since it can be
+    /// trivially re-instantiated.
     Server,
     /// There was no global state.
     None,

@@ -1,13 +1,30 @@
-use sycamore::{prelude::{Scope, ScopeDisposer}, view::View, web::Html};
-use crate::{checkpoint, error_views::ServerErrorData, errors::*, i18n::detect_locale, path::PathMaybeWithLocale, router::{RouteInfo, RouteVerdict, RouterLoadState, match_route}, state::TemplateState, utils::get_path_prefix_client};
+use crate::{
+    checkpoint,
+    error_views::ServerErrorData,
+    errors::*,
+    i18n::detect_locale,
+    path::PathMaybeWithLocale,
+    router::{match_route, RouteInfo, RouteVerdict, RouterLoadState},
+    state::TemplateState,
+    utils::get_path_prefix_client,
+};
+use sycamore::{
+    prelude::{Scope, ScopeDisposer},
+    view::View,
+    web::Html,
+};
 use web_sys::Element;
 
 use super::{Reactor, WindowVariable};
 
 impl<G: Html> Reactor<G> {
-    /// Gets the initial view to hydrate, which will be the same as what the engine-side rendered
-    /// and provided. This will automatically extract the current path from the browser.
-    pub(crate) fn get_initial_view<'a>(&self, cx: Scope<'a>) -> Result<InitialView<'a, G>, ClientError> {
+    /// Gets the initial view to hydrate, which will be the same as what the
+    /// engine-side rendered and provided. This will automatically extract
+    /// the current path from the browser.
+    pub(crate) fn get_initial_view<'a>(
+        &self,
+        cx: Scope<'a>,
+    ) -> Result<InitialView<'a, G>, ClientError> {
         // Get the current path, removing any base paths to avoid relative path locale
         // redirection loops (in previous versions of Perseus, we used Sycamore to
         // get the path, and it strips this out automatically)
@@ -31,7 +48,12 @@ impl<G: Html> Reactor<G> {
             .split('/')
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
-        let verdict = match_route(&path_segments, &self.render_cfg, &self.templates, &self.locales);
+        let verdict = match_route(
+            &path_segments,
+            &self.render_cfg,
+            &self.templates,
+            &self.locales,
+        );
         match &verdict {
             RouteVerdict::Found(RouteInfo {
                 path,
@@ -55,10 +77,11 @@ impl<G: Html> Reactor<G> {
                 checkpoint("initial_state_present"); // If we got past that `?`
 
                 // TODO Fairly certain we don't need this anymore, but check
-                // // Unset the initial state variable so we perform subsequent renders correctly
-                // // This monstrosity is needed until `web-sys` adds a `.set()` method on `Window`
-                // // We don't do this for the global state because it should hang around
-                // // uninitialized until a template wants it (if we remove it before then, we're
+                // // Unset the initial state variable so we perform subsequent renders
+                // correctly // This monstrosity is needed until `web-sys` adds
+                // a `.set()` method on `Window` // We don't do this for the
+                // global state because it should hang around // uninitialized
+                // until a template wants it (if we remove it before then, we're
                 // // stuffed)
                 // Reflect::set(
                 //     &JsValue::from(web_sys::window().unwrap()),
@@ -73,16 +96,20 @@ impl<G: Html> Reactor<G> {
                 // never have to fetch translations separately unless the user switches locales
                 let translations_str = match WindowVariable::new_str("__PERSEUS_TRANSLATIONS") {
                     WindowVariable::Some(state_str) => state_str,
-                    WindowVariable::Malformed | WindowVariable::None => return Err(ClientInvariantError::Translations.into()),
+                    WindowVariable::Malformed | WindowVariable::None => {
+                        return Err(ClientInvariantError::Translations.into())
+                    }
                 };
-                // This will cache the translator internally in the reactor (which can be accessed later through the`t!` macro etc.)
+                // This will cache the translator internally in the reactor (which can be
+                // accessed later through the`t!` macro etc.)
                 self.translations_manager
                     .set_translator_for_translations_str(&locale, &translations_str)?;
 
                 #[cfg(feature = "cache-initial-load")]
                 {
-                    // Cache the page's head in the PSS (getting it as reliably as we can, which isn't perfect,
-                    // hence the feature-gate). Without this, we would have to get the head from the server on
+                    // Cache the page's head in the PSS (getting it as reliably as we can, which
+                    // isn't perfect, hence the feature-gate). Without this, we
+                    // would have to get the head from the server on
                     // a subsequent load back to this page, which isn't ideal.
                     let head_str = Self::get_head()?;
                     self.state_store.add_head(&full_path, head_str, false); // We know this is a page
@@ -90,37 +117,35 @@ impl<G: Html> Reactor<G> {
 
                 // Render the actual template to the root (done imperatively due to child
                 // scopes)
-                let (view, disposer) = template.render_for_template_client(
-                    full_path,
-                    state,
-                    cx,
-                )?;
+                let (view, disposer) = template.render_for_template_client(full_path, state, cx)?;
 
                 Ok(InitialView::View(view, disposer))
             }
             // If the user is using i18n, then they'll want to detect the locale on any paths
             // missing a locale. Those all go to the same system that redirects to the
             // appropriate locale. This returns a full URL to imperatively redirect to.
-            RouteVerdict::LocaleDetection(path) => {
-                Ok(InitialView::Redirect(detect_locale(path.clone(), &self.locales)))
-            }
-            // Since all unlocalized 404s go to a redirect, we always have a locale here. Provided the
-            // server is being remotely reasonable, we should have translations too, *unless* the error
-            // page was exported, in which case we're up the creek.
+            RouteVerdict::LocaleDetection(path) => Ok(InitialView::Redirect(detect_locale(
+                path.clone(),
+                &self.locales,
+            ))),
+            // Since all unlocalized 404s go to a redirect, we always have a locale here. Provided
+            // the server is being remotely reasonable, we should have translations too,
+            // *unless* the error page was exported, in which case we're up the creek.
             // TODO Fetch translations with exported error pages? Solution??
             RouteVerdict::NotFound { locale } => {
                 checkpoint("not_found");
                 // Check what we have in the error page data. We would expect this to be a
                 // `ClientError::ServerError { status: 404, source: "page not found" }`, but
-                // other invariants could have been broken. So, we propagate any errors up happily.
-                // If this is `Ok(_)`, we have a *serious* problem, as that means the engine thought
-                // this page was valid, but we disagree. This should not happen without tampering,
+                // other invariants could have been broken. So, we propagate any errors up
+                // happily. If this is `Ok(_)`, we have a *serious* problem, as
+                // that means the engine thought this page was valid, but we
+                // disagree. This should not happen without tampering,
                 // so we'll return an invariant error.
                 match self.get_initial_state(locale) {
                     Err(err) => Err(err),
-                    Ok(_) => Err(ClientInvariantError::RouterMismatch.into())
+                    Ok(_) => Err(ClientInvariantError::RouterMismatch.into()),
                 }
-            },
+            }
         }
     }
 
@@ -130,11 +155,13 @@ impl<G: Html> Reactor<G> {
     fn get_initial_state(&self, locale: &str) -> Result<TemplateState, ClientError> {
         let state_str = match WindowVariable::new_str("__PERSEUS_INITIAL_STATE") {
             WindowVariable::Some(state_str) => state_str,
-            WindowVariable::Malformed | WindowVariable::None => return Err(ClientInvariantError::InitialState.into()),
+            WindowVariable::Malformed | WindowVariable::None => {
+                return Err(ClientInvariantError::InitialState.into())
+            }
         };
 
-        // If there was an error, it's specially injected with this prefix before error page
-        // data
+        // If there was an error, it's specially injected with this prefix before error
+        // page data
         if state_str.starts_with("error-") {
             // We strip the prefix and escape any tab/newline control characters (inserted
             // by `fmterr`). Any others are user-inserted, and this is documented.
@@ -146,51 +173,60 @@ impl<G: Html> Reactor<G> {
             // There will be error page data encoded after `error-`
             let err_page_data = match serde_json::from_str::<ServerErrorData>(&err_page_data_str) {
                 Ok(data) => data,
-                Err(err) => return Err(ClientInvariantError::InitialStateError { source: err }.into()),
+                Err(err) => {
+                    return Err(ClientInvariantError::InitialStateError { source: err }.into())
+                }
             };
-            // This will be sent back to the handler for proper rendering, the only difference is that
-            // the user won't get a flash to an error page, they will have started with an error
+            // This will be sent back to the handler for proper rendering, the only
+            // difference is that the user won't get a flash to an error page,
+            // they will have started with an error
             let err = ClientError::ServerError {
                 status: err_page_data.status,
-                message: err_page_data.msg
+                message: err_page_data.msg,
             };
-            // In some nice cases, the server will have been able to figure out the locale, which we should
-            // have (this is one of those things that most sites don't bother with because it's not easy
-            // to build, and *this* is where a framework really shines). If we do have it, it'll be
-            // in the `__PERSEUS_TRANSLATIONS` variable. If that's there, then the error provided will be
-            // localized, so, if we can't get the translator, we'll prefer to return an internal error that
-            // comes up as a popup (since we don't want to replace a localized error with an unlocalized one).
-            // If we know we have something unlocalized, just replace it with whatever we have now.
+            // In some nice cases, the server will have been able to figure out the locale,
+            // which we should have (this is one of those things that most sites
+            // don't bother with because it's not easy to build, and *this* is
+            // where a framework really shines). If we do have it, it'll be
+            // in the `__PERSEUS_TRANSLATIONS` variable. If that's there, then the error
+            // provided will be localized, so, if we can't get the translator,
+            // we'll prefer to return an internal error that comes up as a popup
+            // (since we don't want to replace a localized error with an unlocalized one).
+            // If we know we have something unlocalized, just replace it with whatever we
+            // have now.
             //
-            // Note: in the case of a server-given error, we'll only not have translations if there was an
-            // internal error (since `/this-page-does-not-exist` would be a locale redirection).
+            // Note: in the case of a server-given error, we'll only not have translations
+            // if there was an internal error (since `/this-page-does-not-exist`
+            // would be a locale redirection).
             let translations_str = match WindowVariable::new_str("__PERSEUS_TRANSLATIONS") {
                 // We have translations! Any errors in resolving them fully will be propagated.
-                WindowVariable::Some(translations_str) => self.translations_manager
+                WindowVariable::Some(translations_str) => self
+                    .translations_manager
                     .set_translator_for_translations_str(locale, &translations_str)?,
-                // This would be extremely odd...but it's still a problem that could happen (and there
-                // *should* be a localized error that the user can see)
+                // This would be extremely odd...but it's still a problem that could happen (and
+                // there *should* be a localized error that the user can see)
                 WindowVariable::Malformed => return Err(ClientInvariantError::Translations.into()),
                 // There was probably an internal server error
-                WindowVariable::None => ()
+                WindowVariable::None => (),
             };
 
             Err(err)
         } else {
             match TemplateState::from_str(&state_str) {
                 Ok(state) => Ok(state),
-                // An actual error means the state was provided, but it was malformed, so we'll render
-                // an error page
+                // An actual error means the state was provided, but it was malformed, so we'll
+                // render an error page
                 Err(_) => Err(ClientInvariantError::InitialState.into()),
             }
         }
-}
+    }
 
-    /// Gets the entire contents of the current `<head>`, up to the Perseus head-end
-    /// comment (which prevents any JS that was loaded later from being included).
-    /// This is not guaranteed to always get exactly the original head, but it's
-    /// pretty good, and prevents unnecessary network requests, while enabling the
-    /// caching of initially loaded pages.
+    /// Gets the entire contents of the current `<head>`, up to the Perseus
+    /// head-end comment (which prevents any JS that was loaded later from
+    /// being included). This is not guaranteed to always get exactly the
+    /// original head, but it's pretty good, and prevents unnecessary
+    /// network requests, while enabling the caching of initially loaded
+    /// pages.
     #[cfg(feature = "cache-initial-load")]
     fn get_head() -> Result<String, ClientError> {
         use wasm_bindgen::JsCast;

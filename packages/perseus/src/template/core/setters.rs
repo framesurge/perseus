@@ -1,14 +1,16 @@
-use serde::{Serialize, de::DeserializeOwned};
-use sycamore::{prelude::Scope, view::View, web::Html};
-use crate::state::{AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateStateWithType, UnreactiveState};
-use super::Template;
 use super::super::fn_types::*;
-#[cfg(not(target_arch = "wasm32"))]
-use sycamore::web::SsrNode;
-use crate::state::{TemplateState, UnknownStateType, StateGeneratorInfo};
+use super::Template;
+use crate::state::{
+    AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateStateWithType, UnreactiveState,
+};
+use crate::state::{StateGeneratorInfo, TemplateState, UnknownStateType};
+use crate::utils::PerseusDuration;
 #[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
-use crate::utils::PerseusDuration;
+use serde::{de::DeserializeOwned, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
+use sycamore::web::SsrNode;
+use sycamore::{prelude::Scope, view::View, web::Html};
 
 impl<G: Html> Template<G> {
     // The server-only ones have a different version for Wasm that takes in an empty
@@ -228,8 +230,8 @@ impl<G: Html> Template<G> {
     {
         self.amalgamate_states = Some(Box::new(
             move |info: StateGeneratorInfo<UnknownStateType>,
-            build_state: TemplateState,
-            request_state: TemplateState| {
+                  build_state: TemplateState,
+                  request_state: TemplateState| {
                 let val = val.clone();
                 async move {
                     // Amalgamation logic will only be called if both states are indeed defined
@@ -270,19 +272,21 @@ impl<G: Html> Template<G> {
     pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Template<G> {
         self
     }
-    /// Allow the building of this page's templates to be rescheduled from build-tim
-    /// to request-time.
+    /// Allow the building of this page's templates to be rescheduled from
+    /// build-tim to request-time.
     ///
-    /// A page whose state isn't generated at request-tim and isn't revalidated can
-    /// be rendered at build-time, unless it depends on capsules that don't have those
-    /// properties. If a page that could be rendered at build-time were to render
-    /// with a widget that revalidates later, that prerender would be invalidated later,
-    /// leading to render errors. If that situation arises, and this hasn't been set,
-    /// building will return an error.
+    /// A page whose state isn't generated at request-tim and isn't revalidated
+    /// can be rendered at build-time, unless it depends on capsules that
+    /// don't have those properties. If a page that could be rendered at
+    /// build-time were to render with a widget that revalidates later, that
+    /// prerender would be invalidated later, leading to render errors. If
+    /// that situation arises, and this hasn't been set, building will
+    /// return an error.
     ///
-    /// If you receive one of those errors, it's almost always absolutely fine to enable this,
-    /// as the performance hit will usually be negligible. If you notice a substantial difference
-    /// though, you may wish to reconsider.
+    /// If you receive one of those errors, it's almost always absolutely fine
+    /// to enable this, as the performance hit will usually be negligible.
+    /// If you notice a substantial difference though, you may wish to
+    /// reconsider.
     pub fn allow_rescheduling(mut self) -> Self {
         self.can_be_rescheduled = true;
         self

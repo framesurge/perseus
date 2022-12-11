@@ -2,8 +2,7 @@ use crate::plugins::*;
 use std::any::Any;
 use std::marker::PhantomData;
 
-type FunctionalActionsRegistrar =
-    Box<dyn Fn(FunctionalPluginActions) -> FunctionalPluginActions>;
+type FunctionalActionsRegistrar = Box<dyn Fn(FunctionalPluginActions) -> FunctionalPluginActions>;
 type ControlActionsRegistrar = Box<dyn Fn(ControlPluginActions) -> ControlPluginActions>;
 
 /// The environments a plugin can run in. These will affect Wasm bundle size.

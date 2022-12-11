@@ -56,7 +56,8 @@ impl Plugins {
         // This is a function so that it never gets called if we're compiling for Wasm, which means
         // Rust eliminates it as dead code!
         #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin: impl Fn() -> Plugin<D>
-            + Send + Sync,
+            + Send
+            + Sync,
         #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin_data: D,
     ) -> Self {
         // If we're compiling for Wasm, plugins that don't run on the client side

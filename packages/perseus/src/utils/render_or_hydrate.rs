@@ -1,8 +1,8 @@
-use sycamore::{prelude::Scope, utils::render::insert, view::View};
-#[cfg(feature = "hydrate")]
-use sycamore::web::HydrateNode;
 #[cfg(not(feature = "hydrate"))]
 use sycamore::web::DomNode;
+#[cfg(feature = "hydrate")]
+use sycamore::web::HydrateNode;
+use sycamore::{prelude::Scope, utils::render::insert, view::View};
 use web_sys::Element;
 
 use crate::template::TemplateNodeType;

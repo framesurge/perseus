@@ -1,18 +1,27 @@
-use std::{collections::HashMap, fs, path::PathBuf, rc::Rc, sync::Arc};
+use super::Turbine;
+use crate::{
+    errors::*,
+    i18n::TranslationsManager,
+    init::PerseusAppBase,
+    internal::{PageData, PageDataPartial},
+    plugins::PluginAction,
+    server::HtmlShell,
+    state::TemplateState,
+    stores::MutableStore,
+    utils::get_path_prefix_server,
+};
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::future::{try_join, try_join_all};
 use serde_json::Value;
+use std::{collections::HashMap, fs, path::PathBuf, rc::Rc, sync::Arc};
 use sycamore::web::SsrNode;
-use crate::{init::PerseusAppBase, errors::*, i18n::TranslationsManager, internal::{PageData, PageDataPartial}, plugins::PluginAction, server::HtmlShell, stores::MutableStore, state::TemplateState, utils::get_path_prefix_server};
-use super::Turbine;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Exports your app to a series of static files. If any templates/capsules
     /// in your app use request-time-only functionality, this will fail.
     pub async fn export(&mut self) -> Result<(), Arc<Error>> {
         // Note that this function uses different plugin actions from a pure build
-        self
-            .plugins
+        self.plugins
             .functional_actions
             .export_actions
             .before_export
@@ -21,8 +30,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let res = self.build_internal(true).await; // We mark that we will be exporting
         if let Err(err) = res {
             let err: Arc<Error> = Arc::new(err.into());
-            self
-                .plugins
+            self.plugins
                 .functional_actions
                 .export_actions
                 .after_failed_build
@@ -31,8 +39,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
             return Err(err);
         } else {
-            self
-                .plugins
+            self.plugins
                 .functional_actions
                 .export_actions
                 .after_successful_build
@@ -40,22 +47,17 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .map_err(|err| Arc::new(err.into()))?;
         }
 
-        // By now, the global states have been written for each locale, along with the render configuration (that's all in memory and in the immutable store)
+        // By now, the global states have been written for each locale, along with the
+        // render configuration (that's all in memory and in the immutable store)
 
         // This won't have any trailing slashes (they're stripped by the immutable store
         // initializer)
-        let dest = format!(
-            "{}/exported",
-            self
-                .immutable_store
-               .get_path()
-        );
+        let dest = format!("{}/exported", self.immutable_store.get_path());
         // Turn the build artifacts into self-contained static files
         let export_res = self.export_internal().await;
         if let Err(err) = export_res {
             let err: Arc<Error> = Arc::new(err.into());
-            self
-                .plugins
+            self.plugins
                 .functional_actions
                 .export_actions
                 .after_failed_export
@@ -67,8 +69,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             self.copy_static_aliases(&dest)?;
             self.copy_static_dir(&dest)?;
 
-            self
-                .plugins
+            self.plugins
                 .functional_actions
                 .export_actions
                 .after_successful_export
@@ -130,7 +131,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 return Err(ServeError::PageNotFound {
                     path: template_path.to_string(),
                 }
-                           .into())
+                .into())
             }
         };
         // Create a locale detection file for it if we're using i18n
@@ -138,8 +139,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Notably, these also include fallback redirectors if either Wasm or JS is
         // disabled (or both)
         if self.locales.using_i18n {
-            self
-                .immutable_store
+            self.immutable_store
                 .write(
                     &format!("exported/{}.html", &initial_load_path),
                     &html_shell
@@ -161,13 +161,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // This map was constructed from the locales, so each one must be in here
                 let global_state = self.global_states_by_locale.get(locale).unwrap();
 
-                let page_data = self.get_static_page_data(
-                    &format!("{}-{}", locale, &path_encoded),
-                    has_state,
-                )
+                let page_data = self
+                    .get_static_page_data(&format!("{}-{}", locale, &path_encoded), has_state)
                     .await?;
                 // Get the translations string for this locale
-                let translations = self.translations_manager
+                let translations = self
+                    .translations_manager
                     .get_translations_str_for_locale(locale.to_string())
                     .await?;
                 // Create a full HTML file from those that can be served for initial loads
@@ -199,13 +198,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .await?;
             }
         } else {
-            // For apps without i18n, the global state will still be built for the dummy locale
+            // For apps without i18n, the global state will still be built for the dummy
+            // locale
             let global_state = self.global_states_by_locale.get("xx-XX").unwrap();
 
-            let page_data = self.get_static_page_data(
-                &format!("{}-{}", self.locales.default, &path_encoded),
-                has_state,
-            )
+            let page_data = self
+                .get_static_page_data(
+                    &format!("{}-{}", self.locales.default, &path_encoded),
+                    has_state,
+                )
                 .await?;
             // Create a full HTML file from those that can be served for initial loads
             // The build process writes these with a dummy default locale even though we're
@@ -227,10 +228,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 head: page_data.head,
             };
             let partial = serde_json::to_string(&partial_page_data).unwrap();
-            self
-               .immutable_store
+            self.immutable_store
                 .write(
-                    &format!("exported/.perseus/page/{}/{}.json", self.locales.default, &path),
+                    &format!(
+                        "exported/.perseus/page/{}/{}.json",
+                        self.locales.default, &path
+                    ),
                     &partial,
                 )
                 .await?;
@@ -245,8 +248,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .get_translations_str_for_locale(locale.to_string())
             .await?;
         // Write it to an asset so that it can be served directly
-        self
-            .immutable_store
+        self.immutable_store
             .write(
                 &format!("exported/.perseus/translations/{}", locale),
                 &translations_str,
@@ -255,28 +257,38 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         Ok(())
     }
-    async fn get_static_page_data(&self, full_path_encoded: &str, has_state: bool) -> Result<PageData, ServerError> {
+    async fn get_static_page_data(
+        &self,
+        full_path_encoded: &str,
+        has_state: bool,
+    ) -> Result<PageData, ServerError> {
         // Get the partial HTML content and a state to go with it (if applicable)
-        let content = self.immutable_store
+        let content = self
+            .immutable_store
             .read(&format!("static/{}.html", full_path_encoded))
             .await?;
         // This maps all the dependencies for any page that has a prerendered fragment
-        let widget_states = self.immutable_store
-                                .read(&format!("static/{}.widgets.json", full_path_encoded)).await?;
-        let widget_states = match serde_json::from_str::<HashMap<String, (String, Value)>>(&widget_states) {
-            Ok(widget_states) => widget_states,
-            Err(err) => return Err(ServerError::InvalidPageState { source: err })
-        };
-        let head = self.immutable_store
+        let widget_states = self
+            .immutable_store
+            .read(&format!("static/{}.widgets.json", full_path_encoded))
+            .await?;
+        let widget_states =
+            match serde_json::from_str::<HashMap<String, (String, Value)>>(&widget_states) {
+                Ok(widget_states) => widget_states,
+                Err(err) => return Err(ServerError::InvalidPageState { source: err }),
+            };
+        let head = self
+            .immutable_store
             .read(&format!("static/{}.head.html", full_path_encoded))
             .await?;
         let state = match has_state {
             true => serde_json::from_str(
-                &self.immutable_store
+                &self
+                    .immutable_store
                     .read(&format!("static/{}.json", full_path_encoded))
                     .await?,
             )
-                .map_err(|err| ServerError::InvalidPageState { source: err })?,
+            .map_err(|err| ServerError::InvalidPageState { source: err })?,
             false => TemplateState::empty().state,
         };
         // Create an instance of `PageData`
@@ -288,13 +300,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         })
     }
     /// Copies the static aliases into a distribution directory at `dest` (no
-    /// trailing `/`). This should be the root of the destination directory for the
-    /// exported files. Because this provides a customizable destination, it is
-    /// fully engine-agnostic.
+    /// trailing `/`). This should be the root of the destination directory for
+    /// the exported files. Because this provides a customizable
+    /// destination, it is fully engine-agnostic.
     ///
-    /// The error type here is a tuple of the location the asset was copied from,
-    /// the location it was copied to, and the error in that process (which could be
-    /// from `io` or `fs_extra`).
+    /// The error type here is a tuple of the location the asset was copied
+    /// from, the location it was copied to, and the error in that process
+    /// (which could be from `io` or `fs_extra`).
     fn copy_static_aliases(&self, dest: &str) -> Result<(), Arc<Error>> {
         // Loop through any static aliases and copy them in too
         // Unlike with the server, these could override pages!
@@ -312,8 +324,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         from: path.to_string(),
                     };
                     let err: Arc<Error> = Arc::new(err.into());
-                    self
-                        .plugins
+                    self.plugins
                         .functional_actions
                         .export_actions
                         .after_failed_static_alias_dir_copy
@@ -328,8 +339,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     from: path.to_string(),
                 };
                 let err: Arc<Error> = Arc::new(err.into());
-                self
-                    .plugins
+                self.plugins
                     .functional_actions
                     .export_actions
                     .after_failed_static_alias_file_copy
@@ -341,9 +351,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         Ok(())
     }
-    /// Copies the directory containing static data to be put in `/.perseus/static/`
-    /// (URL). This takes in both the location of the static directory and the
-    /// destination directory for exported files.
+    /// Copies the directory containing static data to be put in
+    /// `/.perseus/static/` (URL). This takes in both the location of the
+    /// static directory and the destination directory for exported files.
     fn copy_static_dir(&self, dest: &str) -> Result<(), Arc<Error>> {
         // Copy the `static` directory into the export package if it exists
         // If the user wants extra, they can use static aliases, plugins are unnecessary
@@ -360,8 +370,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     dest: dest.to_string(),
                 };
                 let err: Arc<Error> = Arc::new(err.into());
-                self
-                    .plugins
+                self.plugins
                     .functional_actions
                     .export_actions
                     .after_failed_static_copy

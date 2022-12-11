@@ -1,20 +1,20 @@
-// This module contains the primary shared logic in Perseus, and is broken up to avoid
-// a 2000-line file.
+// This module contains the primary shared logic in Perseus, and is broken up to
+// avoid a 2000-line file.
 
-mod utils;
-mod renderers;
 mod getters;
+mod renderers;
 mod setters;
+mod utils;
 // These are broken out because of state-management closure wrapping
 mod state_setters;
 
 pub(crate) use utils::*;
 
-use sycamore::{prelude::create_scope, view::View, web::Html};
-use crate::utils::ComputedDuration;
 use super::fn_types::*;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::default_headers;
+use crate::utils::ComputedDuration;
+use sycamore::{prelude::create_scope, view::View, web::Html};
 
 /// A single template in an app. Each template is comprised of a Sycamore view,
 /// a state type, and some functions involved with generating that state. Pages
@@ -115,10 +115,11 @@ pub struct Template<G: Html> {
     /// Do NOT manually change this unless you really know what you're doing!
     pub(crate) is_capsule: bool,
     /// Whether or not this template's pages can have their builds rescheduled
-    /// from build-time to request-time if they depend on capsules that aren't ready
-    /// with state at build-time. This is included as a precaution to seemingly erroneous
-    /// performance changes with pages. If rescheduling is needed and it hasn't been explicitly
-    /// allowed, an error will be returned from the build process.
+    /// from build-time to request-time if they depend on capsules that aren't
+    /// ready with state at build-time. This is included as a precaution to
+    /// seemingly erroneous performance changes with pages. If rescheduling
+    /// is needed and it hasn't been explicitly allowed, an error will be
+    /// returned from the build process.
     pub(crate) can_be_rescheduled: bool,
 }
 impl<G: Html> std::fmt::Debug for Template<G> {

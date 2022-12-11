@@ -1,29 +1,31 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
-use futures::future::try_join_all;
-use sycamore::{prelude::create_scope_immediate, utils::hydrate::with_hydration_context, view::View, web::SsrNode};
+use super::Turbine;
 use crate::{
-    state::{BuildPaths, StateGeneratorInfo, TemplateState},
-    path::*,
-    init::PerseusAppBase,
     errors::*,
     i18n::TranslationsManager,
+    init::PerseusAppBase,
+    path::*,
     plugins::PluginAction,
-    stores::MutableStore,
     reactor::{RenderMode, RenderStatus},
+    state::{BuildPaths, StateGeneratorInfo, TemplateState},
+    stores::MutableStore,
     template::Template,
-    utils::minify
+    utils::minify,
 };
-use super::Turbine;
+use futures::future::try_join_all;
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
+use sycamore::{
+    prelude::create_scope_immediate, utils::hydrate::with_hydration_context, view::View,
+    web::SsrNode,
+};
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
-    /// Builds your whole app for being run on a server. Do not use this function
-    /// if you want to export your app.
+    /// Builds your whole app for being run on a server. Do not use this
+    /// function if you want to export your app.
     ///
-    /// This returns an `Arc<Error>`, since any errors are passed to plugin actions
-    /// for further processing.
+    /// This returns an `Arc<Error>`, since any errors are passed to plugin
+    /// actions for further processing.
     pub async fn build(&mut self) -> Result<(), Arc<Error>> {
-        self
-            .plugins
+        self.plugins
             .functional_actions
             .build_actions
             .before_build
@@ -32,8 +34,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let res = self.build_internal(false).await;
         if let Err(err) = res {
             let err: Arc<Error> = Arc::new(err.into());
-            self
-                .plugins
+            self.plugins
                 .functional_actions
                 .build_actions
                 .after_failed_build
@@ -42,8 +43,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
             Err(err)
         } else {
-            self
-                .plugins
+            self.plugins
                 .functional_actions
                 .build_actions
                 .after_successful_build
@@ -60,7 +60,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Build all the global states, for each locale, in parallel
         let mut global_state_futs = Vec::new();
         for locale in locales.into_iter() {
-            global_state_futs.push(self.build_global_state_for_locale(locale.to_string(), exporting));
+            global_state_futs
+                .push(self.build_global_state_for_locale(locale.to_string(), exporting));
         }
         let global_states_by_locale = try_join_all(global_state_futs).await?;
         let global_states_by_locale = HashMap::from_iter(global_states_by_locale.into_iter());
@@ -69,7 +70,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         let mut render_cfg = HashMap::new();
 
-        // Now build every capsule's state in parallel (capsules are never rendered outside a page)
+        // Now build every capsule's state in parallel (capsules are never rendered
+        // outside a page)
         let mut capsule_futs = Vec::new();
         for capsule in self.templates.values() {
             if capsule.is_capsule {
@@ -82,9 +84,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             render_cfg.extend(fragment.into_iter());
         }
 
-        // We now update the render config with everything we learned from the capsule building
-        // so the actual renders of the pages can resolve the widgets they have (if they have
-        // one that's not in here, it wasn't even built, and would cancel the render).
+        // We now update the render config with everything we learned from the capsule
+        // building so the actual renders of the pages can resolve the widgets
+        // they have (if they have one that's not in here, it wasn't even built,
+        // and would cancel the render).
         self.render_cfg = render_cfg.clone();
 
         // Now build every template's state in parallel
@@ -101,28 +104,38 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         }
 
         // Now write the render config to the immutable store
-        self
-            .immutable_store
-            .write("render_conf.json", &serde_json::to_string(&render_cfg).unwrap())
+        self.immutable_store
+            .write(
+                "render_conf.json",
+                &serde_json::to_string(&render_cfg).unwrap(),
+            )
             .await?;
         self.render_cfg = render_cfg;
 
-        // And build the HTML shell (so that this does the exact same thing as instantiating from files)
+        // And build the HTML shell (so that this does the exact same thing as
+        // instantiating from files)
         let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
             self.index_view_str.to_string(),
             &self.root_id,
             &self.render_cfg,
             &self.immutable_store,
             &self.plugins,
-        ).await?;
+        )
+        .await?;
         self.html_shell = Some(html_shell);
 
         Ok(())
     }
-    /// Builds the global state for a given locale, returning a tuple of the locale and the state
-    /// generated. This will also write the global state to the immutable store (there is no such
-    /// thing as revalidation for global state, and it is *extremely* unlikely that there ever will be).
-    async fn build_global_state_for_locale(&self, locale: String, exporting: bool) -> Result<(String, TemplateState), ServerError> {
+    /// Builds the global state for a given locale, returning a tuple of the
+    /// locale and the state generated. This will also write the global
+    /// state to the immutable store (there is no such thing as revalidation
+    /// for global state, and it is *extremely* unlikely that there ever will
+    /// be).
+    async fn build_global_state_for_locale(
+        &self,
+        locale: String,
+        exporting: bool,
+    ) -> Result<(String, TemplateState), ServerError> {
         let gsc = &self.global_state_creator;
 
         if exporting && (gsc.uses_request_state() || gsc.can_amalgamate_states()) {
@@ -132,12 +145,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let global_state = if gsc.uses_build_state() {
             // Generate the global state and write it to a file
             let global_state = gsc.get_build_state(locale.clone()).await?;
-            self
-                .immutable_store
+            self.immutable_store
                 .write(
                     // We put the locale at the end to prevent confusion with any pages
                     &format!("static/global_state_{}.json", &locale),
-                    &global_state.state.to_string()
+                    &global_state.state.to_string(),
                 )
                 .await?;
             global_state
@@ -157,9 +169,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         };
         Ok((locale, global_state))
     }
-    /// This returns the fragment of the render configuration generated by this template/capsule.
-    // Note we use page/template rhetoric here, but this coudl equally be widget/capsule
-    async fn build_template_or_capsule(&self, entity: &Template<SsrNode>, exporting: bool) -> Result<HashMap<String, String>, ServerError> {
+    /// This returns the fragment of the render configuration generated by this
+    /// template/capsule.
+    // Note we use page/template rhetoric here, but this coudl equally be
+    // widget/capsule
+    async fn build_template_or_capsule(
+        &self,
+        entity: &Template<SsrNode>,
+        exporting: bool,
+    ) -> Result<HashMap<String, String>, ServerError> {
         // If we're exporting, ensure that all the capsule's strategies are export-safe
         // (not requiring a server)
         if exporting
@@ -171,12 +189,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         {
             return Err(ExportError::TemplateNotExportable {
                 template_name: entity.get_path(),
-            }.into());
+            }
+            .into());
         }
 
         let mut render_cfg_frag = HashMap::new();
 
-        // We extract the paths and extra state for rendering outside, but we handle the render config inside this block
+        // We extract the paths and extra state for rendering outside, but we handle the
+        // render config inside this block
         let (paths, extra) = if entity.uses_build_paths() {
             let BuildPaths { mut paths, extra } = entity.get_build_paths().await?;
 
@@ -195,42 +215,50 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Now if the page uses ISR, add an explicit `/*` in there after the template
             // root path. Incremental rendering requires build-time path generation.
             if entity.uses_incremental() {
-                render_cfg_frag.insert(
-                    format!("{}/*", &entity.get_path()),
-                    entity.get_path(),
-                );
+                render_cfg_frag.insert(format!("{}/*", &entity.get_path()), entity.get_path());
             }
 
             (paths, extra)
         } else {
-            // There's no facility to generate extra paths for this template, so it only renders itself
+            // There's no facility to generate extra paths for this template, so it only
+            // renders itself
 
-            // The render config should map the only page this generates to the template of the same name
+            // The render config should map the only page this generates to the template of
+            // the same name
             render_cfg_frag.insert(entity.get_path(), entity.get_path());
             // No extra state, one empty path for the index
             (vec![String::new()], TemplateState::empty())
         };
         // We write the extra state even if it's empty
-        self
-            .immutable_store
+        self.immutable_store
             .write(
                 &format!("static/{}.extra.json", entity.get_path()),
                 &extra.state.to_string(),
             )
             .await?;
 
-        // We now have a populated render config, so we should build each path in parallel for each locale,
-        // if we can. Yes, the function we're calling will also write the revalidation text, but, if you're not
-        // using build state or being basic, the you're using request state, which means revalidation is completely
-        // irrelevant, since you're revalidating on every load.
+        // We now have a populated render config, so we should build each path in
+        // parallel for each locale, if we can. Yes, the function we're calling
+        // will also write the revalidation text, but, if you're not using build
+        // state or being basic, the you're using request state, which means
+        // revalidation is completely irrelevant, since you're revalidating on
+        // every load.
         if entity.uses_build_state() || entity.is_basic() {
             let mut path_futs = Vec::new();
             for path in paths.into_iter() {
                 for locale in self.locales.get_all() {
                     let path = PurePath(path.clone());
-                    // We created these from the same loop as we render each path for each locale from, so this is safe to `.unwrap()`
+                    // We created these from the same loop as we render each path for each locale
+                    // from, so this is safe to `.unwrap()`
                     let global_state = self.global_states_by_locale.get(locale).unwrap().clone();
-                    path_futs.push(self.build_path_or_widget_for_locale(path, entity, &extra, locale, global_state, exporting));
+                    path_futs.push(self.build_path_or_widget_for_locale(
+                        path,
+                        entity,
+                        &extra,
+                        locale,
+                        global_state,
+                        exporting,
+                    ));
                 }
             }
             try_join_all(path_futs).await?;
@@ -238,12 +266,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         Ok(render_cfg_frag)
     }
-    /// The path this accepts is the path *within* the entity, not including the entity's name! It is assumed that the path provided to
-    /// this function has been stripped of extra leading/trailing forward slashes.
+    /// The path this accepts is the path *within* the entity, not including the
+    /// entity's name! It is assumed that the path provided to this function
+    /// has been stripped of extra leading/trailing forward slashes.
     ///
-    /// This function will do nothing for entities that are not either basic or build-state-generating.
+    /// This function will do nothing for entities that are not either basic or
+    /// build-state-generating.
     ///
-    /// This function is `super`-public because it's used to generate incremental pages. Because of this, it also takes in the most
+    /// This function is `super`-public because it's used to generate
+    /// incremental pages. Because of this, it also takes in the most
     /// up-to-date global state.
     pub(super) async fn build_path_or_widget_for_locale(
         &self,
@@ -252,7 +283,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         extra: &TemplateState,
         locale: &str,
         global_state: TemplateState,
-        exporting: bool
+        exporting: bool,
     ) -> Result<(), ServerError> {
         let translator = self
             .translations_manager
@@ -264,9 +295,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // We don't want to concatenate the name twice if we don't have to
             false => entity.get_path(),
         });
-        // Create the encoded path, which always includes the locale (even if it's `xx-XX` in a non-i18n app)
+        // Create the encoded path, which always includes the locale (even if it's
+        // `xx-XX` in a non-i18n app)
         //
-        // BUG: insanely nested paths won't work whatsoever if the filename is too long, maybe hash instead?
+        // BUG: insanely nested paths won't work whatsoever if the filename is too long,
+        // maybe hash instead?
         let full_path_encoded = format!(
             "{}-{}",
             translator.get_locale(),
@@ -278,16 +311,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let locale = translator.get_locale();
         let full_path = PathMaybeWithLocale::new(&full_path_without_locale, &locale);
 
-        // First, if this page revalidates, write a timestamp about when it was built to the
-        // mutable store (this will be updated to keep track)
+        // First, if this page revalidates, write a timestamp about when it was built to
+        // the mutable store (this will be updated to keep track)
         if entity.revalidates_with_time() {
             let datetime_to_revalidate = entity
                 .get_revalidate_interval()
                 .unwrap()
                 .compute_timestamp();
             // Note that different locales do have different revalidation schedules
-            self
-                .mutable_store
+            self.mutable_store
                 .write(
                     &format!("static/{}.revld.txt", full_path_encoded),
                     &datetime_to_revalidate.to_string(),
@@ -299,61 +331,48 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // We don't bother writing the state of basic entities
             TemplateState::empty()
         } else if entity.uses_build_state() {
-            let build_state = entity.get_build_state(
-                StateGeneratorInfo {
+            let build_state = entity
+                .get_build_state(StateGeneratorInfo {
                     path: (*full_path_without_locale).clone(),
                     locale: translator.get_locale(),
                     extra: extra.clone(),
-                }
-            ).await?;
+                })
+                .await?;
             // Write the state to the appropriate store (mutable if the entity revalidates)
             let state_str = build_state.state.to_string();
             if entity.revalidates() {
-                self
-                    .mutable_store
-                    .write(
-                        &format!("static/{}.json", full_path_encoded),
-                        &state_str,
-                    )
+                self.mutable_store
+                    .write(&format!("static/{}.json", full_path_encoded), &state_str)
                     .await?;
             } else {
-                self
-                    .immutable_store
-                    .write(
-                        &format!("static/{}.json", full_path_encoded),
-                        &state_str,
-                    )
+                self.immutable_store
+                    .write(&format!("static/{}.json", full_path_encoded), &state_str)
                     .await?;
             }
 
             build_state
         } else {
             // There's nothing we can do with any other sort of template at build-time
-            return Ok(())
+            return Ok(());
         };
 
-        // For templates (*not* capsules), we'll render the full content (with dependencies),
-        // and the head (which capsules don't have), provided it's not always going to be useless
-        // (i.e. if this uses request state)
+        // For templates (*not* capsules), we'll render the full content (with
+        // dependencies), and the head (which capsules don't have), provided
+        // it's not always going to be useless (i.e. if this uses request state)
         if !entity.is_capsule && !entity.uses_request_state() {
             // Render the head (which has no dependencies)
-            let head_str = entity.render_head_str(
-                state.clone(),
-                global_state.clone(),
-                &translator
-            )?;
+            let head_str =
+                entity.render_head_str(state.clone(), global_state.clone(), &translator)?;
             let head_str = minify(&head_str, true)?;
             if entity.revalidates() {
-                self
-                    .mutable_store
+                self.mutable_store
                     .write(
                         &format!("static/{}.head.html", full_path_encoded),
                         &head_str,
                     )
                     .await?;
             } else {
-                self
-                    .immutable_store
+                self.immutable_store
                     .write(
                         &format!("static/{}.head.html", full_path_encoded),
                         &head_str,
@@ -391,9 +410,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     });
                 });
                 let prerender_view = prerender_view?;
-                let prerendered = sycamore::render_to_string(|_| {
-                    prerender_view
-                });
+                let prerendered = sycamore::render_to_string(|_| prerender_view);
                 let render_status = render_status.take();
 
                 // With the prerender over, all references to this have been dropped
@@ -401,67 +418,57 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // We know this is a `HashMap<String, (String, Value)>`, which will work
                 let widget_states = serde_json::to_string(&widget_states).unwrap();
 
-                (
-                    prerendered,
-                    render_status,
-                    widget_states,
-                )
+                (prerendered, render_status, widget_states)
             };
 
             // Check how the render went
             match render_status {
                 RenderStatus::Ok => {
                     let prerendered = minify(&prerendered, true)?;
-                    // Write that prerendered HTML to a static file (whose presence is used to indicate
-                    // that this page/widget was fine to be built at build-time, and will not change
-                    // at request-time; therefore this will be blindly returned at request-time).
-                    // We also write a JSON file with a map of all the widget states, since the browser
-                    // will need to know them for hydration.
+                    // Write that prerendered HTML to a static file (whose presence is used to
+                    // indicate that this page/widget was fine to be built at
+                    // build-time, and will not change at request-time;
+                    // therefore this will be blindly returned at request-time).
+                    // We also write a JSON file with a map of all the widget states, since the
+                    // browser will need to know them for hydration.
                     if entity.revalidates() {
-                        self
-                            .mutable_store
-                            .write(
-                                &format!("static/{}.html", full_path_encoded),
-                                &prerendered,
-                            )
+                        self.mutable_store
+                            .write(&format!("static/{}.html", full_path_encoded), &prerendered)
                             .await?;
-                        self
-                            .mutable_store
+                        self.mutable_store
                             .write(
                                 &format!("static/{}.widgets.json", full_path_encoded),
                                 &widget_states,
                             )
                             .await?;
                     } else {
-                        self
-                            .immutable_store
-                            .write(
-                                &format!("static/{}.html", full_path_encoded),
-                                &prerendered,
-                            )
+                        self.immutable_store
+                            .write(&format!("static/{}.html", full_path_encoded), &prerendered)
                             .await?;
-                        self
-                            .immutable_store
+                        self.immutable_store
                             .write(
                                 &format!("static/{}.widgets.json", full_path_encoded),
                                 &widget_states,
                             )
                             .await?;
                     }
-                },
+                }
                 RenderStatus::Err(err) => return Err(err),
                 // One of the dependencies couldn't be built at build-time,
                 // so, by not writing a prerender to the store, we implicitly
                 // reschedule it (unless this hasn't been allowed by the user,
                 // or if we're exporting)
-                RenderStatus::Cancelled => if exporting {
-                    return Err(ExportError::DependenciesNotExportable {
-                        template_name: entity.get_path(),
-                    }.into());
-                } else if !entity.can_be_rescheduled {
-                    return Err(ServerError::TemplateCannotBeRescheduled {
-                        template_name: entity.get_path(),
-                    });
+                RenderStatus::Cancelled => {
+                    if exporting {
+                        return Err(ExportError::DependenciesNotExportable {
+                            template_name: entity.get_path(),
+                        }
+                        .into());
+                    } else if !entity.can_be_rescheduled {
+                        return Err(ServerError::TemplateCannotBeRescheduled {
+                            template_name: entity.get_path(),
+                        });
+                    }
                 }
             }
         }

@@ -1,11 +1,12 @@
+use super::Reactor;
 use crate::state::IdbFrozenStateStore;
 use sycamore::web::Html;
 use wasm_bindgen::JsValue;
-use super::Reactor;
 
 impl<G: Html> Reactor<G> {
-    /// Freezes the app's state to IndexedDB to be accessed in future. This takes a
-    /// pre-determined frozen state to avoid *really* annoying lifetime errors.
+    /// Freezes the app's state to IndexedDB to be accessed in future. This
+    /// takes a pre-determined frozen state to avoid *really* annoying
+    /// lifetime errors.
     pub(crate) async fn hsr_freeze(frozen_state: String) {
         // We use a custom name so we don't interfere with any state freezing the user's
         // doing independently
@@ -43,8 +44,9 @@ impl<G: Html> Reactor<G> {
             global_prefer_frozen: true,
         };
         // This invokes a modified type of thawing that is internal-only, which is more
-        // lenient with invalid and/or corrupted state, thus allowing the user to radically
-        // change their data model. In such cases, the frozen HSR state will simply be bypassed.
+        // lenient with invalid and/or corrupted state, thus allowing the user to
+        // radically change their data model. In such cases, the frozen HSR
+        // state will simply be bypassed.
         match self._thaw(&frozen_state, thaw_prefs, true) {
             Ok(_) => log("State restored."),
             Err(_) => log("Stored state corrupted, waiting for next code change to override."),

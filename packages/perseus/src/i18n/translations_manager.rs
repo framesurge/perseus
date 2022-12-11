@@ -56,11 +56,11 @@ pub trait TranslationsManager: std::fmt::Debug + Clone + Send + Sync {
     ) -> Result<String, TranslationsManagerError>;
     /// Gets a translator for the given locale and translations string. This is
     /// intended as an internal convenience method to minimize extra computation
-    /// when both a translations string and a translator are required for the same
-    /// locale.
+    /// when both a translations string and a translator are required for the
+    /// same locale.
     ///
-    /// **Warning:** providing a mismatched translations string and locale to this
-    /// function will lead to chaos.
+    /// **Warning:** providing a mismatched translations string and locale to
+    /// this function will lead to chaos.
     async fn get_translator_for_translations_str(
         &self,
         locale: String,

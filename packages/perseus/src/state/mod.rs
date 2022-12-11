@@ -1,21 +1,21 @@
 mod freeze;
 mod global_state;
-mod state_store;
 mod rx_result;
 mod rx_state;
+mod state_generator_info;
+mod state_store;
 #[cfg(target_arch = "wasm32")]
 mod suspense;
 mod template_state;
-mod state_generator_info;
 
 pub use freeze::{FrozenApp, PageThawPrefs, ThawPrefs};
-pub use global_state::{GlobalState, GlobalStateCreator, GlobalStateType};
 pub(crate) use global_state::FrozenGlobalState;
-pub use state_store::{PageStateStore, PssContains, PssEntry, PssState};
+pub use global_state::{GlobalState, GlobalStateCreator, GlobalStateType};
 pub use rx_result::{RxResult, RxResultIntermediate, RxResultRef, SerdeInfallible};
 pub use rx_state::{AnyFreeze, Freeze, MakeRx, MakeRxRef, MakeUnrx, RxRef, UnreactiveState};
-pub use template_state::{TemplateState, TemplateStateWithType, UnknownStateType};
 pub use state_generator_info::{BuildPaths, StateGeneratorInfo};
+pub use state_store::{PageStateStore, PssContains, PssEntry, PssState};
+pub use template_state::{TemplateState, TemplateStateWithType, UnknownStateType};
 
 #[cfg(all(feature = "idb-freezing", target_arch = "wasm32"))]
 mod freeze_idb;

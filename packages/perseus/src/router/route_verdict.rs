@@ -1,5 +1,5 @@
 use crate::template::Template;
-use crate::{Html, path::PathWithoutLocale};
+use crate::{path::PathWithoutLocale, Html};
 use std::rc::Rc;
 
 /// Information about a route, which, combined with error pages and a
@@ -82,7 +82,7 @@ pub enum RouteVerdictAtomic<'a, G: Html> {
     /// shown.
     NotFound {
         /// The active locale.
-        locale: String
+        locale: String,
     },
     /// The given route maps to the locale detector, which will redirect the
     /// user to the attached path (in the appropriate locale).

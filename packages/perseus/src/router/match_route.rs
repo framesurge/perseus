@@ -1,7 +1,7 @@
 use super::{RouteInfo, RouteInfoAtomic, RouteVerdict, RouteVerdictAtomic};
 use crate::i18n::Locales;
 use crate::template::{ArcTemplateMap, Template, TemplateMap};
-use crate::{Html, path::*};
+use crate::{path::*, Html};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -124,7 +124,7 @@ pub fn match_route<G: Html>(
 ) -> RouteVerdict<G> {
     let path_vec = path_slice.to_vec();
     let path_joined = PathMaybeWithLocale(path_vec.join("/")); // This should not have a leading forward slash, it's used for asset fetching by
-                                          // the app shell
+                                                               // the app shell
 
     let verdict;
     // There are different logic chains if we're using i18n, so we fork out early
@@ -147,7 +147,9 @@ pub fn match_route<G: Html>(
                     template,
                     was_incremental_match,
                 }),
-                None => RouteVerdict::NotFound { locale: locale.to_string() },
+                None => RouteVerdict::NotFound {
+                    locale: locale.to_string(),
+                },
             };
         } else {
             // If the locale isn't supported, we assume that it's part of a route that still
@@ -177,7 +179,9 @@ pub fn match_route<G: Html>(
                 template,
                 was_incremental_match,
             }),
-            None => RouteVerdict::NotFound { locale: "xx-XX".to_string() },
+            None => RouteVerdict::NotFound {
+                locale: "xx-XX".to_string(),
+            },
         };
     }
 
@@ -197,7 +201,7 @@ pub fn match_route_atomic<'a, G: Html>(
 ) -> RouteVerdictAtomic<'a, G> {
     let path_vec: Vec<&str> = path_slice.to_vec();
     let path_joined = PathMaybeWithLocale(path_vec.join("/")); // This should not have a leading forward slash, it's used for asset fetching by
-                                          // the app shell
+                                                               // the app shell
 
     let verdict;
     // There are different logic chains if we're using i18n, so we fork out early
@@ -220,7 +224,9 @@ pub fn match_route_atomic<'a, G: Html>(
                     template,
                     was_incremental_match,
                 }),
-                None => RouteVerdictAtomic::NotFound { locale: locale.to_string() },
+                None => RouteVerdictAtomic::NotFound {
+                    locale: locale.to_string(),
+                },
             };
         } else {
             // If the locale isn't supported, we assume that it's part of a route that still
@@ -234,7 +240,7 @@ pub fn match_route_atomic<'a, G: Html>(
     } else if locales.using_i18n {
         // If we're here, then we're using i18n, but we're at the root path, which is a
         // locale detection point
-            let path_joined = PathWithoutLocale(path_joined.0);
+        let path_joined = PathWithoutLocale(path_joined.0);
         verdict = RouteVerdictAtomic::LocaleDetection(path_joined);
     } else {
         // We're not using i18n
@@ -250,7 +256,9 @@ pub fn match_route_atomic<'a, G: Html>(
                 template,
                 was_incremental_match,
             }),
-            None => RouteVerdictAtomic::NotFound { locale: "xx-XX".to_string() },
+            None => RouteVerdictAtomic::NotFound {
+                locale: "xx-XX".to_string(),
+            },
         };
     }
 

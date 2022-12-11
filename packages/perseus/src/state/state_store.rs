@@ -1,6 +1,6 @@
-use crate::path::*;
 use crate::errors::{ClientError, ClientInvariantError};
 use crate::page_data::PageDataPartial;
+use crate::path::*;
 use crate::state::AnyFreeze;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -42,8 +42,8 @@ pub struct PageStateStore {
     /// size in memory of individual pages (which should be dropped manually
     /// if this is a concern).
     ///
-    /// This will only apply to the number of pages stored! If one page depends on
-    /// 300 capsules, they will be completely ignored!
+    /// This will only apply to the number of pages stored! If one page depends
+    /// on 300 capsules, they will be completely ignored!
     ///
     /// Note: whatever you set here will impact HSR.
     max_size: usize,
@@ -55,19 +55,20 @@ pub struct PageStateStore {
     /// global state!
     // TODO Can widgets be specified here?
     keep_list: Rc<RefCell<Vec<PathMaybeWithLocale>>>,
-    /// A list of pages/widgets whose data have been manually preloaded to minimize
-    /// future network requests. This list is intended for pages that are to
-    /// be globally preloaded; any pages that should only be preloaded for a
-    /// specific route should be placed in `route_preloaded` instead.
+    /// A list of pages/widgets whose data have been manually preloaded to
+    /// minimize future network requests. This list is intended for pages
+    /// that are to be globally preloaded; any pages that should only be
+    /// preloaded for a specific route should be placed in `route_preloaded`
+    /// instead.
     ///
     /// Note that this is used to store the 'preloaded' widgets from the server
     /// in initial loads, before the actual `Widget` components take them up
     /// for rendering.
     preloaded: Rc<RefCell<HashMap<PathMaybeWithLocale, PageDataPartial>>>,
-    /// Pages/widgets that have been preloaded for the current route, which should be
-    /// cleared on a route change. This is broken out to allow future preloading
-    /// based on heuristics for a given page, which should be dumped if none of
-    /// the pages are actually used.
+    /// Pages/widgets that have been preloaded for the current route, which
+    /// should be cleared on a route change. This is broken out to allow
+    /// future preloading based on heuristics for a given page, which should
+    /// be dumped if none of the pages are actually used.
     route_preloaded: Rc<RefCell<HashMap<PathMaybeWithLocale, PageDataPartial>>>,
 }
 impl PageStateStore {
@@ -126,7 +127,12 @@ impl PageStateStore {
     /// not accepting state, this will return an error, and the entry will
     /// not be added. When this is called for HSR purposes, this should be taken
     /// with a grain of salt, as documented on `.set_state()` for [`PssEntry`].
-    pub fn add_state<T: AnyFreeze + Clone>(&self, url: &PathMaybeWithLocale, val: T, is_widget: bool) -> Result<(), ClientError> {
+    pub fn add_state<T: AnyFreeze + Clone>(
+        &self,
+        url: &PathMaybeWithLocale,
+        val: T,
+        is_widget: bool,
+    ) -> Result<(), ClientError> {
         let mut map = self.map.borrow_mut();
         // We want to modify any existing entries to avoid wiping out document metadata
         if let Some(entry) = map.get_mut(url) {
@@ -241,10 +247,10 @@ impl PageStateStore {
             _ => contains,
         }
     }
-    /// Preloads the given URL from the server and adds it to the PSS. This expects
-    /// a path that does *not* contain the present locale, as the locale is provided
-    /// separately. The two are concatenated appropriately for locale-specific preloading
-    /// in apps that use it.
+    /// Preloads the given URL from the server and adds it to the PSS. This
+    /// expects a path that does *not* contain the present locale, as the
+    /// locale is provided separately. The two are concatenated
+    /// appropriately for locale-specific preloading in apps that use it.
     ///
     /// This function has no effect on the server-side.
     ///
@@ -260,7 +266,10 @@ impl PageStateStore {
         was_incremental_match: bool,
         is_route_preload: bool,
     ) -> Result<(), crate::errors::ClientError> {
-        use crate::{errors::{AssetType, FetchError}, utils::{fetch, get_path_prefix_client}};
+        use crate::{
+            errors::{AssetType, FetchError},
+            utils::{fetch, get_path_prefix_client},
+        };
 
         let full_path = PathMaybeWithLocale::new(path, locale);
 
@@ -298,7 +307,7 @@ impl PageStateStore {
                         FetchError::SerFailed {
                             url: path.to_string(),
                             source: err.into(),
-                            ty: AssetType::Preload
+                            ty: AssetType::Preload,
                         }
                     })?;
                 let mut preloaded = if is_route_preload {
@@ -369,15 +378,15 @@ impl PageStateStore {
         let mut map = self.map.borrow_mut();
         map.remove(url)
     }
-    /// Evicts the oldest page in the store if we've reached the order limit. This
-    /// will also traverse the rest of the store to evict any widgets that were only used
-    /// by that page.
+    /// Evicts the oldest page in the store if we've reached the order limit.
+    /// This will also traverse the rest of the store to evict any widgets
+    /// that were only used by that page.
     ///
-    /// This assumes that any references to parts of the store have been dropped, as this
-    /// will mutably interact with a number of them.
+    /// This assumes that any references to parts of the store have been
+    /// dropped, as this will mutably interact with a number of them.
     ///
-    /// Note that this will never affect paths in the keep list, since they don't actually
-    /// appear in `self.order`.
+    /// Note that this will never affect paths in the keep list, since they
+    /// don't actually appear in `self.order`.
     fn evict_page_if_needed(&self) {
         let mut order = self.order.borrow_mut();
         let mut map = self.map.borrow_mut();
@@ -450,20 +459,21 @@ pub struct PssEntry {
     head: Option<String>,
     /// A list of widgets this page depends on, by their path. This allows quick
     /// indexing of the widgets that should potentially be evicted when the page
-    /// using them is evicted. (Note that widgets are only evicted when all pages
-    /// that depend on them have all been evicted.)
+    /// using them is evicted. (Note that widgets are only evicted when all
+    /// pages that depend on them have all been evicted.)
     ///
-    /// As there is never a centralized list of the dependencies of any given page,
-    /// this will be gradually filled out as the page is rendered. (This is why it
-    /// is critical that pages are pure functions on the state they use with respect
-    /// to the widgets on which they depend.)
+    /// As there is never a centralized list of the dependencies of any given
+    /// page, this will be gradually filled out as the page is rendered.
+    /// (This is why it is critical that pages are pure functions on the
+    /// state they use with respect to the widgets on which they depend.)
     dependencies: Vec<PathMaybeWithLocale>,
     /// A list of dependents by path. For pages, this will always be empty.
     ///
-    /// This is used by widgets to declare the pages that depend on them, creating
-    /// the reverse of the `dependencies` path. This is used so we can quickly iterate
-    /// through each of the widgets a page uses when we're about to evict it and
-    /// remove only those that aren't being used by any other pages.
+    /// This is used by widgets to declare the pages that depend on them,
+    /// creating the reverse of the `dependencies` path. This is used so we
+    /// can quickly iterate through each of the widgets a page uses when
+    /// we're about to evict it and remove only those that aren't being used
+    /// by any other pages.
     dependents: Vec<PathMaybeWithLocale>,
 }
 impl Default for PssEntry {
@@ -499,16 +509,18 @@ impl PssEntry {
     fn add_dependent(&mut self, path: PathMaybeWithLocale) {
         self.dependents.push(path);
     }
-    /// Adds state to this entry. This will return an error if this entry has previously
-    /// been marked as having no state.
+    /// Adds state to this entry. This will return an error if this entry has
+    /// previously been marked as having no state.
     ///
-    /// If we're setting state for HSR, this function's should be interpreted with caution:
-    /// if the user has added state to a template/capsule that previously didn't have state,
-    /// then nothing in the code will try to set it to never having had state (and there will
-    /// be nothing in the frozen state for it), which is fine; but, if they *removed* state
-    /// from an entity that previously had it, this will return an error to the HSR thaw attempt
-    /// (whcih will try to add the old state back). In that case, the error should be discarded
-    /// by the caller, who should accept the changed data model.
+    /// If we're setting state for HSR, this function's should be interpreted
+    /// with caution: if the user has added state to a template/capsule that
+    /// previously didn't have state, then nothing in the code will try to
+    /// set it to never having had state (and there will be nothing in the
+    /// frozen state for it), which is fine; but, if they *removed* state
+    /// from an entity that previously had it, this will return an error to the
+    /// HSR thaw attempt (whcih will try to add the old state back). In that
+    /// case, the error should be discarded by the caller, who should accept
+    /// the changed data model.
     pub fn set_state(&mut self, state: Box<dyn AnyFreeze>) -> Result<(), ClientError> {
         if let PssState::Never = self.state {
             Err(ClientInvariantError::IllegalStateRegistration.into())

@@ -31,8 +31,8 @@ impl ClientTranslationsManager {
         }
     }
     /// Gets the currently cached translator. This is designed to be used as a
-    /// backend for a method that works with both this and the engine-side-provided
-    /// translator.
+    /// backend for a method that works with both this and the
+    /// engine-side-provided translator.
     pub(crate) fn get_translator(&self) -> Option<Translator> {
         self.cached_translator.borrow().as_ref().cloned()
     }
@@ -43,8 +43,8 @@ impl ClientTranslationsManager {
     /// be performed. If you need to fetch a translator after calling this, then
     /// you should be sure to cache it.
     ///
-    /// This will return `false` if the caller needs to take no further action to
-    /// set this translator, or `true` if it shoudl go ahead.
+    /// This will return `false` if the caller needs to take no further action
+    /// to set this translator, or `true` if it shoudl go ahead.
     fn preflight_check(&self, locale: &str) -> Result<bool, ClientError> {
         // Check if we've already cached
         let mut cached_translator = self.cached_translator.borrow_mut();
@@ -87,18 +87,18 @@ impl ClientTranslationsManager {
         translations_str: &str,
     ) -> Result<(), ClientError> {
         if self.preflight_check(locale)? {
-            let translator =
-                match Translator::new(locale.to_string(), translations_str.to_string()) {
-                    Ok(translator) => translator,
-                    Err(err) => {
-                        return Err(FetchError::SerFailed {
-                            url: "*".to_string(),
-                            source: err.into(),
-                            ty: AssetType::Translations,
-                        }
-                                   .into())
+            let translator = match Translator::new(locale.to_string(), translations_str.to_string())
+            {
+                Ok(translator) => translator,
+                Err(err) => {
+                    return Err(FetchError::SerFailed {
+                        url: "*".to_string(),
+                        source: err.into(),
+                        ty: AssetType::Translations,
                     }
-                };
+                    .into())
+                }
+            };
             self.cache_translator(translator);
         }
 
@@ -128,7 +128,8 @@ impl ClientTranslationsManager {
                 None => {
                     return Err(ClientInvariantError::ValidLocaleNotProvided {
                         locale: locale.to_string(),
-                    }.into())
+                    }
+                    .into())
                 }
             };
         }

@@ -1,9 +1,20 @@
-use sycamore::{prelude::{Scope, create_effect, create_signal, view, View, ReadSignal}, web::Html};
-use sycamore_futures::spawn_local_scoped;
-use web_sys::Element;
-use crate::{checkpoint, error_views::ErrorPosition, errors::ClientError, reactor::InitialView, router::{PageDisposer, PerseusRoute, RouteVerdict, RouterLoadState}, template::TemplateNodeType, utils::{render_or_hydrate, replace_head}};
 use super::Reactor;
-use sycamore_router::{RouterBase, navigate_replace, HistoryIntegration};
+use crate::{
+    checkpoint,
+    error_views::ErrorPosition,
+    errors::ClientError,
+    reactor::InitialView,
+    router::{PageDisposer, PerseusRoute, RouteVerdict, RouterLoadState},
+    template::TemplateNodeType,
+    utils::{render_or_hydrate, replace_head},
+};
+use sycamore::{
+    prelude::{create_effect, create_signal, view, ReadSignal, Scope, View},
+    web::Html,
+};
+use sycamore_futures::spawn_local_scoped;
+use sycamore_router::{navigate_replace, HistoryIntegration, RouterBase};
+use web_sys::Element;
 
 // We don't want to bring in a styling library, so we do this the old-fashioned
 // way! We're particularly comprehensive with these because the user could
@@ -22,26 +33,31 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
 "#;
 
 impl Reactor<TemplateNodeType> {
-    /// Sets the handlers necessary to run the event-driven components of Perseus
-    /// (in a reactive web framework, there are quite a few of these). This should
-    /// only be executed at the beginning of the browser-side instantiation.
+    /// Sets the handlers necessary to run the event-driven components of
+    /// Perseus (in a reactive web framework, there are quite a few of
+    /// these). This should only be executed at the beginning of the
+    /// browser-side instantiation.
     ///
-    /// This is internally responsible for fetching the initial load and rendering
-    /// it, starting the reactive cycle based on the given scope that will handle
-    /// subsequent loads and the like.
+    /// This is internally responsible for fetching the initial load and
+    /// rendering it, starting the reactive cycle based on the given scope
+    /// that will handle subsequent loads and the like.
     ///
     /// This takes the app-level scope.
     ///
     /// As Sycamore works by starting a reactive cycle, rather than by calling a
-    /// function that never terminates, this will 'finish' as soon as the intial load
-    /// is ready. However, in cases of critical errors that have been successfully displayed,
-    /// the app-level scope should be disposed of. If this should occur, this will return
-    /// `false`, indicating that the app was not successful. Note that server errors will
-    /// not cause this, and they will receive a router. This situation is very rare, and
+    /// function that never terminates, this will 'finish' as soon as the intial
+    /// load is ready. However, in cases of critical errors that have been
+    /// successfully displayed, the app-level scope should be disposed of.
+    /// If this should occur, this will return `false`, indicating that the
+    /// app was not successful. Note that server errors will not cause this,
+    /// and they will receive a router. This situation is very rare, and
     /// affords a plugin action for analytics.
     pub(crate) fn start<'a>(&'a self, cx: Scope<'a>) -> bool {
         // We must be in the first load
-        assert!(self.is_first.get(), "attempted to instantiate perseus after first load");
+        assert!(
+            self.is_first.get(),
+            "attempted to instantiate perseus after first load"
+        );
 
         // --- Route announcer ---
 
@@ -71,7 +87,8 @@ impl Reactor<TemplateNodeType> {
         // page (because we don't want to announce that, screen readers will get that
         // one right)
 
-        // This is not whether the first page has been loaded or not, it's whether or not we're still on it
+        // This is not whether the first page has been loaded or not, it's whether or
+        // not we're still on it
         let mut on_first_page = true;
         let load_state = self.router_state.get_load_state_rc();
         create_effect(cx, move || {
@@ -174,8 +191,9 @@ impl Reactor<TemplateNodeType> {
                             Self::hsr_freeze(frozen_state).await;
                         }
                         crate::state::force_reload();
-                        // We shouldn't ever get here unless there was an error, the
-                        // entire page will be fully reloaded
+                        // We shouldn't ever get here unless there was an error,
+                        // the entire page will be fully
+                        // reloaded
                     }
                     _ => (),
                 }
@@ -216,14 +234,15 @@ impl Reactor<TemplateNodeType> {
             view! { cx,
                 (*self.popup_error_view.get())
             },
-            popup_error_root
+            popup_error_root,
         );
 
         // --- Initial load ---
 
-        // We handle the disposer for the page-wide view, without worrying about widgets,
-        // because they're all in child scopes of the page scope, meaning they will be
-        // automatically disposed of when the page disposer is called.
+        // We handle the disposer for the page-wide view, without worrying about
+        // widgets, because they're all in child scopes of the page scope,
+        // meaning they will be automatically disposed of when the page disposer
+        // is called.
         let page_disposer = PageDisposer::default();
         // Get the root we'll be injecting the router into
         let root = web_sys::window()
@@ -242,10 +261,12 @@ impl Reactor<TemplateNodeType> {
                 // SAFETY: There's nothing in there right now, and we know that for sure
                 // because it's the initial load (asserted above). Also, we're in the app-level
                 // scope.
-                unsafe { page_disposer.update(disposer); }
+                unsafe {
+                    page_disposer.update(disposer);
+                }
 
                 view
-            },
+            }
             // On a redirect, return a view that just redirects straight away (of course,
             // this will be created inside a router, so everything works nicely)
             Ok(InitialView::Redirect(dest)) => view! { cx,
@@ -258,28 +279,33 @@ impl Reactor<TemplateNodeType> {
             Err(err @ ClientError::ServerError { .. }) => {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
-                let (head_str, body_view, disposer) = self.error_views.handle(cx, &err, ErrorPosition::Page);
+                let (head_str, body_view, disposer) =
+                    self.error_views.handle(cx, &err, ErrorPosition::Page);
                 replace_head(&head_str);
 
                 // SAFETY: There's nothing in there right now, and we know that for sure
                 // because it's the initial load (asserted above). Also, we're in the app-level
                 // scope.
-                unsafe { page_disposer.update(disposer); }
+                unsafe {
+                    page_disposer.update(disposer);
+                }
 
                 // For apps using exporting, it's very possible that the prerendered may be
                 // unlocalized, and this may be localized. Hence, we clear the contents.
                 root.set_inner_html("");
                 body_view
-            },
+            }
             // Popup error: we will not create a router, terminating immediately
             // and instructing the caller to dispose of the scope
             Err(err) => {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
-                let (_, body_view, _disposer) = self.error_views.handle(cx, &err, ErrorPosition::Popup);
+                let (_, body_view, _disposer) =
+                    self.error_views.handle(cx, &err, ErrorPosition::Popup);
                 self.popup_error_view.set(body_view);
 
-                // Signal the top-level disposer, which will also call the child scope disposer ignored above
+                // Signal the top-level disposer, which will also call the child scope disposer
+                // ignored above
                 return false;
             }
         };
@@ -324,19 +350,17 @@ impl Reactor<TemplateNodeType> {
                     }
                 )
             },
-            root
+            root,
         );
 
         // If we successfully got here, the app is running!
         true
     }
 
-    /// Creates the element for popup errors (used in both full startup and critical failures).
+    /// Creates the element for popup errors (used in both full startup and
+    /// critical failures).
     pub(crate) fn create_popup_err_elem() -> Element {
-        let document = web_sys::window()
-            .unwrap()
-            .document()
-            .unwrap();
+        let document = web_sys::window().unwrap().document().unwrap();
         let err_div = document.create_element("div").unwrap();
         // The user can style using this
         err_div.set_id("__perseus_popup_error");

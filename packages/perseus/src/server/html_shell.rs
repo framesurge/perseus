@@ -1,8 +1,8 @@
-use fmterr::fmterr;
 use crate::error_views::ServerErrorData;
 use crate::page_data::PageData;
 use crate::state::TemplateState;
 use crate::utils::minify;
+use fmterr::fmterr;
 use std::collections::HashMap;
 use std::{env, fmt};
 
@@ -163,7 +163,8 @@ impl HtmlShell {
         // set this to `error`
         let initial_state = escape_page_data(&page_data.state.to_string());
         // We know the form of this, and it won't fail
-        let initial_widget_states = escape_page_data(&serde_json::to_string(&page_data.widget_states).unwrap());
+        let initial_widget_states =
+            escape_page_data(&serde_json::to_string(&page_data.widget_states).unwrap());
         let global_state = escape_page_data(&global_state.state.to_string());
         let translations = escape_page_data(translations);
 
@@ -171,7 +172,10 @@ impl HtmlShell {
         // it doesn't matter if it's expunged on subsequent loads
         let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`;", initial_state);
         self.scripts_after_boundary.push(initial_state);
-        let initial_widget_states = format!("window.__PERSEUS_INITIAL_WIDGET_STATES = `{}`;", initial_widget_states);
+        let initial_widget_states = format!(
+            "window.__PERSEUS_INITIAL_WIDGET_STATES = `{}`;",
+            initial_widget_states
+        );
         self.scripts_after_boundary.push(initial_widget_states);
         // But we'll need the global state as a variable until a template accesses it,
         // so we'll keep it around (even though it should actually instantiate validly
@@ -267,9 +271,10 @@ impl HtmlShell {
 
     /// Interpolates page error data into the shell in the event of a failure.
     ///
-    /// This takes an optional translations string if it's available, injecting it
-    /// if possible. If the reactor finds this variable to be empty on an error
-    /// extracted from the initial state variable, it will assume the error is unlocalized.
+    /// This takes an optional translations string if it's available, injecting
+    /// it if possible. If the reactor finds this variable to be empty on an
+    /// error extracted from the initial state variable, it will assume the
+    /// error is unlocalized.
     pub(crate) fn error_page(
         mut self,
         error_page_data: &ServerErrorData,

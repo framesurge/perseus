@@ -1,6 +1,6 @@
 use std::{any::TypeId, marker::PhantomData};
 
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 
 /// A marker for when the type of template state is unknown.

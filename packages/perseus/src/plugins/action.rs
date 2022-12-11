@@ -8,8 +8,11 @@ use crate::errors::PluginError;
 // A: some stuff the specific action gets
 // dyn Any + Send: the plugin options
 // R: the return type
-pub type Runner<A, R> =
-    Box<dyn Fn(&A, &(dyn Any + Send + Sync)) -> Result<R, Box<dyn std::error::Error + Send + Sync>> + Send + Sync>;
+pub type Runner<A, R> = Box<
+    dyn Fn(&A, &(dyn Any + Send + Sync)) -> Result<R, Box<dyn std::error::Error + Send + Sync>>
+        + Send
+        + Sync,
+>;
 
 /// A trait for the interface for a plugin action, which abstracts whether it's
 /// a functional or a control action.
@@ -42,7 +45,10 @@ pub trait PluginAction<A, R, R2>: Send + Sync {
     fn register_plugin(
         &mut self,
         name: &str,
-        runner: impl Fn(&A, &(dyn Any + Send + Sync)) -> Result<R, Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+        runner: impl Fn(&A, &(dyn Any + Send + Sync)) -> Result<R, Box<dyn std::error::Error + Send + Sync>>
+            + Send
+            + Sync
+            + 'static,
     );
     /// Same as `.register_plugin()`, but takes a prepared runner in a `Box`.
     fn register_plugin_box(&mut self, name: &str, runner: Runner<A, R>);

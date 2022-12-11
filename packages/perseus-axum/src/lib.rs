@@ -8,15 +8,28 @@ documentation, and this should mostly be used as a secondary reference source. Y
 
 #![deny(missing_docs)]
 
-use axum::{Router, body::Body, extract::{Path, Query}, http::{StatusCode, Request}, response::{Response, IntoResponse}, routing::{get, get_service}};
-use perseus::{path::*, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
-use tower_http::services::{ServeDir, ServeFile};
+use axum::{
+    body::Body,
+    extract::{Path, Query},
+    http::{Request, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, get_service},
+    Router,
+};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
+use perseus::{
+    i18n::TranslationsManager,
+    path::*,
+    server::ServerOptions,
+    stores::MutableStore,
+    turbine::{SubsequentLoadQueryParams, Turbine},
+};
+use tower_http::services::{ServeDir, ServeFile};
 
 // ----- Request conversion implementation -----
 
-// Not needed, since Axum uses `http::Request` under the hood, and we can just change the body
-// type to `()`.
+// Not needed, since Axum uses `http::Request` under the hood, and we can just
+// change the body type to `()`.
 
 // ----- Newtype wrapper for response implementation -----
 
@@ -68,29 +81,40 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
                 ApiResponse(turbine.get_translations(&locale).await)
             }),
         )
-        .route("/.perseus/page/:locale/*tail", get(move |Path(path_parts): Path<Vec<String>>,
-                                                   Query(SubsequentLoadQueryParams {
-                                                       entity_name,
-                                                       was_incremental_match,
-                                                   }): Query<SubsequentLoadQueryParams>, http_req: Request<Body>| async move {
-                                                       // Separate the locale from the rest of the page name
-                                                       let locale = &path_parts[0];
-                                                       let raw_path = path_parts[1..]
-                                                           .iter()
-                                                           .map(|x| x.as_str())
-                                                           .collect::<Vec<&str>>()
-                                                           .join("/");
-                                                       // Get rid of the body from the request (Perseus only needs the metadata)
-                                                       let req = Request::from_parts(http_req.into_parts().0, ());
+        .route(
+            "/.perseus/page/:locale/*tail",
+            get(
+                move |Path(path_parts): Path<Vec<String>>,
+                      Query(SubsequentLoadQueryParams {
+                          entity_name,
+                          was_incremental_match,
+                      }): Query<SubsequentLoadQueryParams>,
+                      http_req: Request<Body>| async move {
+                    // Separate the locale from the rest of the page name
+                    let locale = &path_parts[0];
+                    let raw_path = path_parts[1..]
+                        .iter()
+                        .map(|x| x.as_str())
+                        .collect::<Vec<&str>>()
+                        .join("/");
+                    // Get rid of the body from the request (Perseus only needs the metadata)
+                    let req = Request::from_parts(http_req.into_parts().0, ());
 
-                                                       ApiResponse(turbine.get_subsequent_load(
-                                                           PathWithoutLocale(raw_path),
-                                                           locale.to_string(),
-                                                           entity_name,
-                                                           was_incremental_match,
-                                                           req
-                                                       ).await.into())
-                                                   }));
+                    ApiResponse(
+                        turbine
+                            .get_subsequent_load(
+                                PathWithoutLocale(raw_path),
+                                locale.to_string(),
+                                entity_name,
+                                was_incremental_match,
+                                req,
+                            )
+                            .await
+                            .into(),
+                    )
+                },
+            ),
+        );
     // --- Static directory and alias handlers ---
     if turbine.static_dir.exists() {
         router = router.nest_service(
@@ -106,11 +130,16 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     }
     // --- Initial load handler ---
     router.fallback_service(get(move |http_req: Request<Body>| async move {
-        // Since this is a fallback handler, we have to do everything from the request itself
+        // Since this is a fallback handler, we have to do everything from the request
+        // itself
         let path = http_req.uri().path().to_string();
         let http_req = Request::from_parts(http_req.into_parts().0, ());
 
-        ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(path), http_req).await)
+        ApiResponse(
+            turbine
+                .get_initial_load(PathMaybeWithLocale(path), http_req)
+                .await,
+        )
     }))
 }
 

@@ -12,11 +12,22 @@ documentation, and this should mostly be used as a secondary reference source. Y
 mod static_content;
 use crate::static_content::{serve_file, static_aliases_filter};
 
-use std::{path::PathBuf, sync::Arc};
-use perseus::{path::*, Request, i18n::TranslationsManager, server::ServerOptions, stores::MutableStore, turbine::{SubsequentLoadQueryParams, Turbine}};
-use perseus::turbine::ApiResponse as PerseusApiResponse;
 use perseus::http;
-use warp::{Filter, Rejection, Reply, path::{FullPath, Tail}, reply::Response};
+use perseus::turbine::ApiResponse as PerseusApiResponse;
+use perseus::{
+    i18n::TranslationsManager,
+    path::*,
+    server::ServerOptions,
+    stores::MutableStore,
+    turbine::{SubsequentLoadQueryParams, Turbine},
+    Request,
+};
+use std::{path::PathBuf, sync::Arc};
+use warp::{
+    path::{FullPath, Tail},
+    reply::Response,
+    Filter, Rejection, Reply,
+};
 
 // ----- Request conversion implementation -----
 
@@ -90,29 +101,36 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         warp::path!(".perseus" / "snippets" / ..).and(warp::fs::dir(opts.snippets.clone()));
 
     // --- Translation and subsequent load handlers ---
-    let translations = warp::path!(".perseus" / "translations" / String)
-        .then(move |locale: String| async move {
+    let translations =
+        warp::path!(".perseus" / "translations" / String).then(move |locale: String| async move {
             ApiResponse(turbine.get_translations(&locale).await)
         });
     let page_data = warp::path!(".perseus" / "page" / String / ..)
         .and(warp::path::tail())
         .and(warp::query::<SubsequentLoadQueryParams>())
         .and(get_http_req())
-        .then(move |locale: String,
-              path: Tail, // This is the path after the locale that was sent
-              SubsequentLoadQueryParams {
-                  entity_name,
-                  was_incremental_match,
-              }: SubsequentLoadQueryParams,
-              http_req: Request| async move {
-                  ApiResponse(turbine.get_subsequent_load(
-                      PathWithoutLocale(path.as_str().to_string()),
-                      locale,
+        .then(
+            move |locale: String,
+                  path: Tail, // This is the path after the locale that was sent
+                  SubsequentLoadQueryParams {
                       entity_name,
                       was_incremental_match,
-                      http_req
-                  ).await.into())
-              });
+                  }: SubsequentLoadQueryParams,
+                  http_req: Request| async move {
+                ApiResponse(
+                    turbine
+                        .get_subsequent_load(
+                            PathWithoutLocale(path.as_str().to_string()),
+                            locale,
+                            entity_name,
+                            was_incremental_match,
+                            http_req,
+                        )
+                        .await
+                        .into(),
+                )
+            },
+        );
 
     // --- Static directory and alias handlers ---
     let static_dir_path = Arc::new(turbine.static_dir.clone());
@@ -127,10 +145,8 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
             }
         })
         .untuple_one() // We need this to avoid a ((), File) (which makes the return type fail)
-    // This alternative will never be served, but if we don't have it we'll get a runtime panic
-        .and(warp::fs::dir(
-            turbine.static_dir.clone()
-        ));
+        // This alternative will never be served, but if we don't have it we'll get a runtime panic
+        .and(warp::fs::dir(turbine.static_dir.clone()));
     let static_aliases = warp::any()
         .and(static_aliases_filter(turbine.static_aliases.clone()))
         .and_then(serve_file);
@@ -140,7 +156,11 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .and(warp::path::full())
         .and(get_http_req())
         .then(move |path: FullPath, http_req: Request| async move {
-            ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(path.as_str().to_string()), http_req).await)
+            ApiResponse(
+                turbine
+                    .get_initial_load(PathMaybeWithLocale(path.as_str().to_string()), http_req)
+                    .await,
+            )
         });
 
     // Now put all those routes together in the final thing (the user will add this

@@ -1,72 +1,89 @@
 #[cfg(target_arch = "wasm32")]
-mod start;
-#[cfg(target_arch = "wasm32")]
 mod error;
-mod state;
 mod global_state;
+#[cfg(all(feature = "hsr", debug_assertions, target_arch = "wasm32"))]
+mod hsr;
+#[cfg(target_arch = "wasm32")]
+mod initial_load;
 #[cfg(not(target_arch = "wasm32"))]
 mod render_mode;
 #[cfg(target_arch = "wasm32")]
-mod initial_load;
+mod start;
+mod state;
 #[cfg(target_arch = "wasm32")]
 mod widget_disposers;
-#[cfg(all(feature = "hsr", debug_assertions, target_arch = "wasm32"))]
-mod hsr;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) use render_mode::{RenderMode, RenderStatus};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use initial_load::InitialView;
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
-use std::{cell::{Cell, RefCell}, collections::HashMap, rc::Rc};
-use sycamore::{prelude::{Scope, provide_context, use_context}, view::View, web::Html};
-use crate::{errors::ClientError, i18n::Translator, plugins::PluginAction, router::RouterState, state::{GlobalState, GlobalStateType, PageStateStore, TemplateState}, template::TemplateNodeType};
+use crate::{
+    errors::ClientError,
+    i18n::Translator,
+    plugins::PluginAction,
+    router::RouterState,
+    state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
+    template::TemplateNodeType,
+};
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
+use sycamore::{
+    prelude::{provide_context, use_context, Scope},
+    view::View,
+    web::Html,
+};
 
 // --- Engine-side imports ---
 
 // --- Browser-side imports ---
 #[cfg(target_arch = "wasm32")]
+use self::widget_disposers::WidgetDisposers;
+#[cfg(target_arch = "wasm32")]
 use crate::{
-    i18n::{ClientTranslationsManager, Locales, TranslationsManager},
-    router::PageDisposer,
     error_views::ErrorViews,
-    init::PerseusAppBase,
     errors::{ClientInvariantError, PluginError},
+    i18n::{ClientTranslationsManager, Locales, TranslationsManager},
+    init::PerseusAppBase,
     plugins::Plugins,
+    router::PageDisposer,
     state::{FrozenApp, ThawPrefs},
     stores::MutableStore,
     template::TemplateMap,
 };
 #[cfg(target_arch = "wasm32")]
-use self::widget_disposers::WidgetDisposers;
-#[cfg(target_arch = "wasm32")]
-use sycamore::reactive::{RcSignal, create_rc_signal};
-#[cfg(target_arch = "wasm32")]
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 #[cfg(target_arch = "wasm32")]
 use serde_json::Value;
+#[cfg(target_arch = "wasm32")]
+use sycamore::reactive::{create_rc_signal, RcSignal};
 
-/// The core of Perseus' browser-side systems. This forms a central point for all the Perseus state and rendering logic
-/// to operate from. In your own code, this will always be available in the Sycamore context system.
+/// The core of Perseus' browser-side systems. This forms a central point for
+/// all the Perseus state and rendering logic to operate from. In your own code,
+/// this will always be available in the Sycamore context system.
 ///
 /// Note that this is also used on the engine-side for rendering.
 pub struct Reactor<G: Html> {
-    /// The state store, which is used to hold all reactive states, along with preloads.
+    /// The state store, which is used to hold all reactive states, along with
+    /// preloads.
     state_store: PageStateStore,
     /// The router state.
     router_state: RouterState<G>,
-    /// The user-provided global state, stored with similar mechanics to the state store,
-    /// although optimised.
+    /// The user-provided global state, stored with similar mechanics to the
+    /// state store, although optimised.
     global_state: GlobalState,
 
     // --- Browser-side only ---
     /// A previous state the app was once in, still serialized. This will be
     /// rehydrated gradually by the template closures.
     ///
-    /// The `bool` in here will be set to `true` if this was created through HSR,
-    /// which has slightly more lenient thawing procedures to allow for data model
-    /// changes.
+    /// The `bool` in here will be set to `true` if this was created through
+    /// HSR, which has slightly more lenient thawing procedures to allow for
+    /// data model changes.
     #[cfg(target_arch = "wasm32")]
     frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs, bool)>>>,
     /// Whether or not this page is the very first to have been rendered since
@@ -95,8 +112,9 @@ pub struct Reactor<G: Html> {
     /// The app's error views.
     #[cfg(target_arch = "wasm32")]
     error_views: Rc<ErrorViews<G>>,
-    /// A reactive container for the current page-wide view. This will usually contain the contents of
-    /// the current page, but it may also contain a page-wide error. This will be wrapped in a router.
+    /// A reactive container for the current page-wide view. This will usually
+    /// contain the contents of the current page, but it may also contain a
+    /// page-wide error. This will be wrapped in a router.
     #[cfg(target_arch = "wasm32")]
     current_view: RcSignal<View<TemplateNodeType>>,
     /// A reactive container for any popup errors.
@@ -109,18 +127,21 @@ pub struct Reactor<G: Html> {
     // --- Engine-side only ---
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) render_mode: RenderMode<G>,
-    /// The currently active translator. On the browser-side, this is handled by the more fully-fledged
-    /// [`ClientTranslationsManager`].
+    /// The currently active translator. On the browser-side, this is handled by
+    /// the more fully-fledged [`ClientTranslationsManager`].
     ///
-    /// This is provided to the engine-side reactor on instantiation. This can be `None` in certain
-    /// error view renders.
+    /// This is provided to the engine-side reactor on instantiation. This can
+    /// be `None` in certain error view renders.
     #[cfg(not(target_arch = "wasm32"))]
     translator: Option<Translator>,
 }
 
-// This uses window variables set by the HTML shell, so it should never be used on the engine-side
+// This uses window variables set by the HTML shell, so it should never be used
+// on the engine-side
 #[cfg(target_arch = "wasm32")]
-impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G, M, T>> for Reactor<G> {
+impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G, M, T>>
+    for Reactor<G>
+{
     type Error = ClientError;
 
     fn try_from(app: PerseusAppBase<G, M, T>) -> Result<Self, Self::Error> {
@@ -138,21 +159,25 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             .run((), plugins.get_plugin_data())?;
 
         // We need to fetch some things from window variables
-        let render_cfg = match WindowVariable::<HashMap<String, String>>::new_obj("__PERSEUS_RENDER_CFG") {
-            WindowVariable::Some(render_cfg) => render_cfg,
-            WindowVariable::None | WindowVariable::Malformed => return Err(ClientInvariantError::RenderCfg.into()),
-        };
+        let render_cfg =
+            match WindowVariable::<HashMap<String, String>>::new_obj("__PERSEUS_RENDER_CFG") {
+                WindowVariable::Some(render_cfg) => render_cfg,
+                WindowVariable::None | WindowVariable::Malformed => {
+                    return Err(ClientInvariantError::RenderCfg.into())
+                }
+            };
         let global_state_ty = match WindowVariable::<Value>::new_obj("__PERSEUS_GLOBAL_STATE") {
             WindowVariable::Some(val) => {
                 let state = TemplateState::from_value(val);
                 if state.is_empty() {
-                    // TODO Since we have it to hand, just make sure the global state creator really wasn't
-                    // going to create anything (otherwise fail immediately)
+                    // TODO Since we have it to hand, just make sure the global state creator really
+                    // wasn't going to create anything (otherwise fail
+                    // immediately)
                     GlobalStateType::None
                 } else {
                     GlobalStateType::Server(state)
                 }
-            },
+            }
             WindowVariable::None => GlobalStateType::None,
             WindowVariable::Malformed => return Err(ClientInvariantError::GlobalState.into()),
         };
@@ -195,32 +220,36 @@ impl<G: Html> Reactor<G> {
     }
     /// Gets the currently active translator.
     ///
-    /// On the browser-side, this will return `None` under some error conditions,
-    /// or before the initial load.
+    /// On the browser-side, this will return `None` under some error
+    /// conditions, or before the initial load.
     ///
-    /// On the engine-side, this will return `None` under certain error conditions.
+    /// On the engine-side, this will return `None` under certain error
+    /// conditions.
     #[cfg(target_arch = "wasm32")]
     pub fn try_get_translator(&self) -> Option<Translator> {
         self.translations_manager.get_translator()
     }
     /// Gets the currently active translator.
     ///
-    /// On the browser-side, this will return `None` under some error conditions,
-    /// or before the initial load.
+    /// On the browser-side, this will return `None` under some error
+    /// conditions, or before the initial load.
     ///
-    /// On the engine-side, this will return `None` under certain error conditions.
+    /// On the engine-side, this will return `None` under certain error
+    /// conditions.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn try_get_translator(&self) -> Option<Translator> {
         self.translator.clone()
     }
-    /// Gets the currently active translator. Under some conditions, this will panic:
-    /// `.try_get_translator()` is available as a non-panicking alternative.
+    /// Gets the currently active translator. Under some conditions, this will
+    /// panic: `.try_get_translator()` is available as a non-panicking
+    /// alternative.
     ///
     /// # Panics
-    /// Panics if used before the initial load on the browser, when there isn't a translator
-    /// yet, or if used on the engine-side when a translator is not available (which will be
-    /// inside certain error views). Note that an engine-side panic would occur as the server
-    /// is serving a request, which will lead to the request not being fulfilled.
+    /// Panics if used before the initial load on the browser, when there isn't
+    /// a translator yet, or if used on the engine-side when a translator is
+    /// not available (which will be inside certain error views). Note that
+    /// an engine-side panic would occur as the server is serving a request,
+    /// which will lead to the request not being fulfilled.
     pub fn get_translator(&self) -> Translator {
         self.try_get_translator().expect("translator not available")
     }
@@ -229,39 +258,46 @@ impl<G: Html> Reactor<G> {
 #[cfg(not(target_arch = "wasm32"))]
 impl<G: Html> Reactor<G> {
     /// Initializes a new [`Reactor`] on the engine-side.
-    pub(crate) fn engine(global_state: TemplateState, mode: RenderMode<G>, translator: Option<&Translator>) -> Self {
+    pub(crate) fn engine(
+        global_state: TemplateState,
+        mode: RenderMode<G>,
+        translator: Option<&Translator>,
+    ) -> Self {
         Self {
             router_state: RouterState::default(),
-            state_store: PageStateStore::new(0), /* There will be no need for the state store on the
-                                                       * server-side (but is still has to be accessible) */
+            state_store: PageStateStore::new(0), /* There will be no need for the state store on
+                                                  * the
+                                                  * server-side (but is still has to be
+                                                  * accessible) */
             global_state: if !global_state.is_empty() {
                 GlobalState::new(GlobalStateType::Server(global_state))
             } else {
                 GlobalState::new(GlobalStateType::None)
             },
             render_mode: mode,
-            translator: translator.cloned()
+            translator: translator.cloned(),
         }
     }
 }
 
-/// The possible states a window variable injected by the server/export process can be found in.
+/// The possible states a window variable injected by the server/export process
+/// can be found in.
 #[cfg(target_arch = "wasm32")]
 enum WindowVariable<T: Serialize + DeserializeOwned> {
     /// It existed and coudl be deserialized into the correct type.
     Some(T),
     /// It was not present.
     None,
-    /// It could not be deserialized into the correct type, or it was not instantiated
-    /// as the correct serialized type (e.g. expected to find a string to be deserialized,
-    /// found a boolean instead).
+    /// It could not be deserialized into the correct type, or it was not
+    /// instantiated as the correct serialized type (e.g. expected to find a
+    /// string to be deserialized, found a boolean instead).
     Malformed,
 }
 #[cfg(target_arch = "wasm32")]
 impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
-    /// Gets the window variable of the given name, attempting to fetch it as the given type. This
-    /// will only work with window variables that have been serialized to strings from the given
-    /// type `T`.
+    /// Gets the window variable of the given name, attempting to fetch it as
+    /// the given type. This will only work with window variables that have
+    /// been serialized to strings from the given type `T`.
     fn new_obj(name: &str) -> Self {
         let val_opt = web_sys::window().unwrap().get(name);
         let js_obj = match val_opt {
@@ -283,8 +319,8 @@ impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
 }
 #[cfg(target_arch = "wasm32")]
 impl WindowVariable<bool> {
-    /// Gets the window variable of the given name, attempting to fetch it as the given type. This
-    /// will only work with boolean window variables.
+    /// Gets the window variable of the given name, attempting to fetch it as
+    /// the given type. This will only work with boolean window variables.
     fn new_bool(name: &str) -> Self {
         let val_opt = web_sys::window().unwrap().get(name);
         let js_bool = match val_opt {
@@ -300,8 +336,8 @@ impl WindowVariable<bool> {
 }
 #[cfg(target_arch = "wasm32")]
 impl WindowVariable<String> {
-    /// Gets the window variable of the given name, attempting to fetch it as the given type. This
-    /// will only work with `String` window variables.
+    /// Gets the window variable of the given name, attempting to fetch it as
+    /// the given type. This will only work with `String` window variables.
     fn new_str(name: &str) -> Self {
         let val_opt = web_sys::window().unwrap().get(name);
         let js_str = match val_opt {

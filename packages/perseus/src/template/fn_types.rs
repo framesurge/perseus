@@ -1,10 +1,21 @@
-use serde::{Serialize, de::DeserializeOwned};
-use sycamore::{prelude::{Scope, ScopeDisposer}, view::View, web::SsrNode};
-use futures::Future;
-use crate::{Request, errors::{ClientError, GenericErrorWithCause}, make_async_trait, path::PathMaybeWithLocale, state::{BuildPaths, MakeRx, StateGeneratorInfo, TemplateState, UnknownStateType}, utils::AsyncFnReturn};
 use super::core::PreloadInfo;
+use crate::{
+    errors::{ClientError, GenericErrorWithCause},
+    make_async_trait,
+    path::PathMaybeWithLocale,
+    state::{BuildPaths, MakeRx, StateGeneratorInfo, TemplateState, UnknownStateType},
+    utils::AsyncFnReturn,
+    Request,
+};
+use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
+use serde::{de::DeserializeOwned, Serialize};
+use sycamore::{
+    prelude::{Scope, ScopeDisposer},
+    view::View,
+    web::SsrNode,
+};
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error
@@ -29,8 +40,8 @@ pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCau
 // pin their functions
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(pub GetBuildPathsFnType, RenderFnResult<BuildPaths>); // This doubles as the user type
-// The build state strategy needs an error cause if it's invoked from
-// incremental
+                                                                        // The build state strategy needs an error cause if it's invoked from
+                                                                        // incremental
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub(super) GetBuildStateFnType,
@@ -96,17 +107,27 @@ make_async_trait!(
 /// defined state for your page, it's safe to `.unwrap()` the given `Option`
 /// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
 /// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
-pub(crate) type TemplateFn<G> =
-    Box<dyn for<'a> Fn(Scope<'a>, PreloadInfo, TemplateState, PathMaybeWithLocale) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> + Send + Sync>;
+pub(crate) type TemplateFn<G> = Box<
+    dyn for<'a> Fn(
+            Scope<'a>,
+            PreloadInfo,
+            TemplateState,
+            PathMaybeWithLocale,
+        ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
+        + Send
+        + Sync,
+>;
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
 /// string, rather than a reactive template).
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) type HeadFn = Box<dyn Fn(Scope, TemplateState) -> Result<View<SsrNode>, ClientError> + Send + Sync>;
+pub(crate) type HeadFn =
+    Box<dyn Fn(Scope, TemplateState) -> Result<View<SsrNode>, ClientError> + Send + Sync>;
 #[cfg(not(target_arch = "wasm32"))]
 /// The type of functions that modify HTTP response headers.
-pub(crate) type SetHeadersFn = Box<dyn Fn(TemplateState) -> Result<HeaderMap, ClientError> + Send + Sync>;
+pub(crate) type SetHeadersFn =
+    Box<dyn Fn(TemplateState) -> Result<HeaderMap, ClientError> + Send + Sync>;
 /// The type of functions that get build paths.
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type GetBuildPathsFn = Box<dyn GetBuildPathsFnType + Send + Sync>;

@@ -1,10 +1,6 @@
 use crate::reactor::Reactor;
-use crate::{
-    checkpoint,
-    plugins::PluginAction,
-    template::TemplateNodeType,
-};
-use crate::{i18n::TranslationsManager, stores::MutableStore, init::PerseusAppBase};
+use crate::{checkpoint, plugins::PluginAction, template::TemplateNodeType};
+use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
 use sycamore::prelude::create_scope;
 use sycamore::utils::hydrate::with_hydration_context;
 use wasm_bindgen::JsValue;
@@ -44,8 +40,9 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 
     let plugins = app.get_plugins();
 
-    // This variable acts as a signal to determine whether or not there was a show-stopping failure that
-    // should trigger root scope disposal (terminating Perseus and rendering the app inoperable)
+    // This variable acts as a signal to determine whether or not there was a
+    // show-stopping failure that should trigger root scope disposal
+    // (terminating Perseus and rendering the app inoperable)
     let mut running = true;
     // === IF THIS DISPOSER IS CALLED, PERSEUS WILL TERMINATE! ===
     let app_disposer = create_scope(|cx| {
@@ -60,10 +57,11 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
                     reactor.add_self_to_cx(cx);
                     let reactor = Reactor::from_cx(cx);
                     running = reactor.start(cx);
-                },
+                }
                 Err(err) => {
-                    // We don't have a reactor, so render a critical popup error, hoping the user can
-                    // see something prerendered that makes sense (this displays and everything)
+                    // We don't have a reactor, so render a critical popup error, hoping the user
+                    // can see something prerendered that makes sense (this
+                    // displays and everything)
                     Reactor::handle_critical_error(cx, &err, &error_views);
                     // We can't do anything without a reactor
                     running = false;
@@ -71,8 +69,8 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
             };
         };
 
-        // If we're using hydration, everything has to be done inside a hydration context (because of all the
-        // custom view handling)
+        // If we're using hydration, everything has to be done inside a hydration
+        // context (because of all the custom view handling)
         #[cfg(feature = "hydrate")]
         with_hydration_context(|| core());
         #[cfg(not(feature = "hydrate"))]

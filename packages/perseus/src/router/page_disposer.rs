@@ -1,5 +1,8 @@
 use std::rc::Rc;
-use sycamore::{prelude::{RcSignal, Scope, Signal, create_rc_signal, create_signal}, reactive::ScopeDisposer};
+use sycamore::{
+    prelude::{create_rc_signal, create_signal, RcSignal, Scope, Signal},
+    reactive::ScopeDisposer,
+};
 
 /// This stores the disposers for user pages so that they can be safely
 /// unmounted when the view changes.

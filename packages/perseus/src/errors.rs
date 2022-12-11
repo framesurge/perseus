@@ -69,15 +69,16 @@ pub enum EngineError {
 ///
 /// **Important:** any changes to this `enum` constitute a breaking change,
 /// since users match this in their error pages. Changes in underlying
-/// `enum`s are not considered breaking (e.g. introducing a new invariant error).
+/// `enum`s are not considered breaking (e.g. introducing a new invariant
+/// error).
 ///
-/// **Warning:** in all these cases, except `ClientError::ServerError`, the user can
-/// already see the prerendered version of the page, it just isn't interactive. Only
-/// in that case will your error page occupy the entire screen, otherwise it will
-/// be placed into a `div` with the class `__perseus-error`, a deliberate choice
-/// to reinforce the best practice of giving the user as much as possible (it might
-/// not be interactive, but they can still use a rudimentary version). See the book
-/// for further details.
+/// **Warning:** in all these cases, except `ClientError::ServerError`, the user
+/// can already see the prerendered version of the page, it just isn't
+/// interactive. Only in that case will your error page occupy the entire
+/// screen, otherwise it will be placed into a `div` with the class
+/// `__perseus-error`, a deliberate choice to reinforce the best practice of
+/// giving the user as much as possible (it might not be interactive, but they
+/// can still use a rudimentary version). See the book for further details.
 #[derive(Error, Debug)]
 pub enum ClientError {
     #[error(transparent)]
@@ -99,31 +100,30 @@ pub enum ClientError {
     PlatformError(#[from] ClientPlatformError),
     #[error("locale '{locale}' is not supported")]
     LocaleNotSupported { locale: String },
-
     // #[error(transparent)]
     // FetchError(#[from] FetchError),
     // ,
     // // If the user is using the template macros, this should never be emitted because we can
     // // ensure that the generated state is valid
-    // #[error("tried to deserialize invalid state (it was not malformed, but the state was not of the declared type)")]
-    // StateInvalid {
+    // #[error("tried to deserialize invalid state (it was not malformed, but the state was not of
+    // the declared type)")] StateInvalid {
     //     #[source]
     //     source: serde_json::Error,
     // },
-    // #[error("server informed us that a valid locale was invald (this almost certainly requires a hard reload)")]
-    // ValidLocaleNotProvided { locale: String },
-    // #[error("the given path for preloading leads to a locale detection page; you probably wanted to wrap the path in `link!(...)`")]
-    // PreloadLocaleDetection,
+    // #[error("server informed us that a valid locale was invald (this almost certainly requires
+    // a hard reload)")] ValidLocaleNotProvided { locale: String },
+    // #[error("the given path for preloading leads to a locale detection page; you probably
+    // wanted to wrap the path in `link!(...)`")] PreloadLocaleDetection,
     // #[error("the given path for preloading was not found")]
     // PreloadNotFound,
 }
 
-/// Errors that can occur in the browser from certain invariants not being upheld. These
-/// should be extremely rare, but, since we don't control what HTML the browser gets, we avoid
-/// panicking in these cases.
+/// Errors that can occur in the browser from certain invariants not being
+/// upheld. These should be extremely rare, but, since we don't control what
+/// HTML the browser gets, we avoid panicking in these cases.
 ///
-/// Note that some of these invariants may be broken by an app's own code, such as invalid global
-/// state downcasting.
+/// Note that some of these invariants may be broken by an app's own code, such
+/// as invalid global state downcasting.
 #[derive(Debug, Error)]
 pub enum ClientInvariantError {
     #[error("the render configuration was not found, or was malformed")]
@@ -133,15 +133,19 @@ pub enum ClientInvariantError {
     // This won't be triggered for HSR
     #[error("attempted to register state on a page/capsule that had been previously declared as having no state")]
     IllegalStateRegistration,
-    #[error("attempted to downcast reactive global state to the incorrect type (this is an error)")]
+    #[error(
+        "attempted to downcast reactive global state to the incorrect type (this is an error)"
+    )]
     GlobalStateDowncast,
-    // This is technically a typing error, but we do the typing internally, so this should be impossible
+    // This is technically a typing error, but we do the typing internally, so this should be
+    // impossible
     #[error("invalid page/widget state found")]
     InvalidState {
         #[source]
         source: serde_json::Error,
     },
-    // Invariant because the user would have had to call something like `.template_with_state()` for this to happen
+    // Invariant because the user would have had to call something like `.template_with_state()`
+    // for this to happen
     #[error("no state was found for a page/widget that expected state (you might have forgotten to write a state generation function, like `get_build_state`)")]
     NoState,
     #[error("the initial state was not found, or was malformed")]
@@ -151,27 +155,29 @@ pub enum ClientInvariantError {
         #[source]
         source: serde_json::Error,
     },
-    #[error("the locale '{locale}', which is supported by this app, was not returned by the server")]
-    ValidLocaleNotProvided {
-        locale: String,
-    },
+    #[error(
+        "the locale '{locale}', which is supported by this app, was not returned by the server"
+    )]
+    ValidLocaleNotProvided { locale: String },
     // This is just for initial loads (`__PERSEUS_TRANSLATIONS` window variable)
     #[error("the translations were not found, or were malformed (even apps not using i18n have a declaration of their lack of translations)")]
     Translations,
     #[error("we found the current page to be a 404, but the engine disagrees")]
-    RouterMismatch
+    RouterMismatch,
 }
 
-/// Errors that can occur in the browser while interfacing with browser functionality. These should never really
-/// occur unless you're operating in an extremely alien environment (which probably wouldn't support Wasm, but
+/// Errors that can occur in the browser while interfacing with browser
+/// functionality. These should never really occur unless you're operating in an
+/// extremely alien environment (which probably wouldn't support Wasm, but
 /// we try to allow maximal error page control).
 #[derive(Debug, Error)]
 pub enum ClientPlatformError {
     #[error("failed to get current url for initial load determination")]
-    InitialPath
+    InitialPath,
 }
 
-/// Errors that can occur in the browser as a result of attempting to thaw provided state.
+/// Errors that can occur in the browser as a result of attempting to thaw
+/// provided state.
 #[derive(Debug, Error)]
 pub enum ClientThawError {
     #[error("invalid frozen page/widget state")]
@@ -190,7 +196,7 @@ pub enum ClientThawError {
     InvalidFrozenApp {
         #[source]
         source: serde_json::Error,
-    }
+    },
 }
 
 /// Errors that can occur in the build process or while the server is running.
@@ -234,19 +240,11 @@ pub enum ServerError {
         source: serde_json::Error,
     },
     #[error("attempting to resolve dependency '{widget}' in locale '{locale}' produced a locale redirection verdict (this shouldn't be possible)")]
-    ResolveDepLocaleRedirection {
-        widget: String,
-        locale: String,
-    },
+    ResolveDepLocaleRedirection { widget: String, locale: String },
     #[error("attempting to resolve dependency '{widget}' in locale '{locale}' produced a not found verdict (did you mistype the widget path?)")]
-    ResolveDepNotFound {
-        widget: String,
-        locale: String,
-    },
+    ResolveDepNotFound { widget: String, locale: String },
     #[error("template '{template_name}' cannot be built at build-time due to one or more of its dependencies having state that may change later; to allow this template to be built later, add `.allow_rescheduling()` to your template definition")]
-    TemplateCannotBeRescheduled {
-        template_name: String,
-    },
+    TemplateCannotBeRescheduled { template_name: String },
     // This is a serious error in programming
     #[error("a dependency tree was not resolved, but a function expecting it to have been was called (this is a server-side error)")]
     DepTreeNotResolved,
@@ -267,7 +265,7 @@ pub enum ServerError {
     PluginError(#[from] PluginError),
     // This can occur in state acquisition failures during prerendering
     #[error(transparent)]
-    ClientError(#[from] ClientError)
+    ClientError(#[from] ClientError),
 }
 /// Converts a server error into an HTTP status code.
 #[cfg(not(target_arch = "wasm32"))]
@@ -309,11 +307,10 @@ pub enum StoreError {
 #[derive(Error, Debug)]
 pub enum FetchError {
     #[error("asset of type '{ty}' fetched from '{url}' wasn't a string")]
-    NotString {
-        url: String,
-        ty: AssetType,
-    },
-    #[error("asset of type '{ty}' fetched from '{url}' returned status code '{status}' (expected 200)")]
+    NotString { url: String, ty: AssetType },
+    #[error(
+        "asset of type '{ty}' fetched from '{url}' returned status code '{status}' (expected 200)"
+    )]
     NotOk {
         url: String,
         status: u16,
@@ -330,17 +327,15 @@ pub enum FetchError {
     },
     // This is not used by the `fetch` function, but it is used by the preloading system
     #[error("preload asset fetched from '{url}' was not found")]
-    PreloadNotFound {
-        url: String,
-        ty: AssetType,
-    },
+    PreloadNotFound { url: String, ty: AssetType },
     /// This converts from a `JsValue` or the like.
     #[error("the following error occurred while interfacing with JavaScript: {0}")]
     Js(String),
 }
 
-/// The type of an asset fetched from the server. This allows distinguishing between errors in
-/// fetching, say, pages, vs. translations, which you may wish to handle differently.
+/// The type of an asset fetched from the server. This allows distinguishing
+/// between errors in fetching, say, pages, vs. translations, which you may wish
+/// to handle differently.
 #[derive(Debug)]
 pub enum AssetType {
     /// A page in the app.
@@ -398,7 +393,7 @@ pub enum ExportError {
     DependenciesNotExportable { template_name: String },
     // This is used in error page exports
     #[error("invalid status code provided for error page export (please provide a valid http status code)")]
-    InvalidStatusCode
+    InvalidStatusCode,
 }
 
 /// Errors that can occur while serving an app. These are integration-agnostic.

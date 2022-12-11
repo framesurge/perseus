@@ -1,9 +1,17 @@
-use serde::{Serialize, de::DeserializeOwned};
-use sycamore::{prelude::Scope, web::Html};
-use crate::{path::PathMaybeWithLocale, errors::{ClientError, ClientInvariantError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef, TemplateState}};
 use super::Reactor;
+use crate::{
+    errors::{ClientError, ClientInvariantError, ClientThawError},
+    path::PathMaybeWithLocale,
+    state::{
+        AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef,
+        MakeUnrx, RxRef, TemplateState,
+    },
+};
+use serde::{de::DeserializeOwned, Serialize};
+use sycamore::{prelude::Scope, web::Html};
 
-// These methods are used for acquiring the global state on both the browser-side and the engine-side
+// These methods are used for acquiring the global state on both the
+// browser-side and the engine-side
 impl<G: Html> Reactor<G> {
     // TODO Fix these type bounds
     /// Gets the global state. Note that this can only be used for reactive
@@ -16,14 +24,11 @@ impl<G: Html> Reactor<G> {
     /// instead.
     // This function takes the final ref struct as a type parameter! That
     // complicates everything substantially.
-    pub fn get_global_state<'a, R>(
-        &self,
-        cx: Scope<'a>,
-    ) -> R
+    pub fn get_global_state<'a, R>(&self, cx: Scope<'a>) -> R
     where
         R: RxRef,
         R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
-        <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>
+        <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>,
     {
         // Warn the user about the perils of having no build-time global state handler
         self.try_get_global_state::<R>(cx).unwrap().expect("you requested global state, but none exists for this app (if you;re generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
@@ -33,10 +38,7 @@ impl<G: Html> Reactor<G> {
     ///
     /// This will return an error if the state from the server was found to be
     /// invalid.
-    pub fn try_get_global_state<'a, R>(
-        &self,
-        cx: Scope<'a>,
-    ) -> Result<Option<R>, ClientError>
+    pub fn try_get_global_state<'a, R>(&self, cx: Scope<'a>) -> Result<Option<R>, ClientError>
     where
         R: RxRef,
         R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
@@ -48,14 +50,18 @@ impl<G: Html> Reactor<G> {
             return Ok(None);
         }
 
-        let intermediate_state = if let Some(held_state) = self.get_held_global_state::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>()? {
+        let intermediate_state = if let Some(held_state) =
+            self.get_held_global_state::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>()?
+        {
             held_state
         } else {
             // We'll get the server-given global state
             if let GlobalStateType::Server(server_state) = &*global_state_ty {
                 // Fall back to the state we were given, first
                 // giving it a type (this just sets a phantom type parameter)
-                let typed_state = server_state.clone().change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
+                let typed_state = server_state
+                    .clone()
+                    .change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
                 // This attempts a deserialization from a `Value`, which could fail
                 let unrx = typed_state
                     .to_concrete()
@@ -67,9 +73,10 @@ impl<G: Html> Reactor<G> {
 
                 rx
             } else {
-                // There are two alternatives: `None` (handled with an early bail above) and `Loaded`,
-                // the latter of which would have been handled as the active state above (even if we
-                // prioritized frozen state, that would have returned something; if there was an active global state,
+                // There are two alternatives: `None` (handled with an early bail above) and
+                // `Loaded`, the latter of which would have been handled as the
+                // active state above (even if we prioritized frozen state, that
+                // would have returned something; if there was an active global state,
                 // we would've dealt with it). If we're here it was `Server`.
                 unreachable!()
             }
@@ -79,15 +86,17 @@ impl<G: Html> Reactor<G> {
     }
 
     /// Determines if the global state should use the state given by the server,
-    /// or whether it has other state in the frozen/active state systems. If the latter is true,
-    /// this will instantiate them appropriately and return them. If this returns `None`, the
-    /// server-provided state should be used.
+    /// or whether it has other state in the frozen/active state systems. If the
+    /// latter is true, this will instantiate them appropriately and return
+    /// them. If this returns `None`, the server-provided state should be
+    /// used.
     ///
-    /// To understand the exact logic chain this uses, please refer to the flowchart of the
-    /// Perseus reactive state platform in the book.
+    /// To understand the exact logic chain this uses, please refer to the
+    /// flowchart of the Perseus reactive state platform in the book.
     ///
-    /// Note: on the engine-side, there is no such thing as frozen state, and the active state will
-    /// always be empty, so this will simply return `None`.
+    /// Note: on the engine-side, there is no such thing as frozen state, and
+    /// the active state will always be empty, so this will simply return
+    /// `None`.
     #[cfg(target_arch = "wasm32")]
     fn get_held_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
@@ -130,9 +139,9 @@ impl<G: Html> Reactor<G> {
     }
 
     /// Attempts to the get the active global state. Of course, this does not
-    /// register anything in the state store. This may return an error on a downcast failure
-    /// (which is probably the user's fault for providing the wrong type argument, but it's
-    /// still an invariant failure).
+    /// register anything in the state store. This may return an error on a
+    /// downcast failure (which is probably the user's fault for providing
+    /// the wrong type argument, but it's still an invariant failure).
     fn get_active_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,
@@ -141,9 +150,9 @@ impl<G: Html> Reactor<G> {
         // This just attempts a downcast to `S::Rx`
         self.global_state.0.borrow().parse_active::<S>()
     }
-    /// Attempts to extract the frozen global state from any currently registered frozen
-    /// app, registering what it finds. This assumes that the thaw preferences have already been
-    /// accounted for.
+    /// Attempts to extract the frozen global state from any currently
+    /// registered frozen app, registering what it finds. This assumes that
+    /// the thaw preferences have already been accounted for.
     ///
     /// This assumes that the app actually supports global state.
     #[cfg(target_arch = "wasm32")]
@@ -155,7 +164,10 @@ impl<G: Html> Reactor<G> {
         let frozen_app_full = self.frozen_app.borrow();
         if let Some((frozen_app, thaw_prefs, is_hsr)) = &*frozen_app_full {
             #[cfg(not(all(debug_assertions, feature = "hsr")))]
-            assert!(!is_hsr, "attempted to invoke hsr-style thaw in non-hsr environment");
+            assert!(
+                !is_hsr,
+                "attempted to invoke hsr-style thaw in non-hsr environment"
+            );
 
             match &frozen_app.global_state {
                 FrozenGlobalState::Some(state_str) => {
@@ -166,7 +178,11 @@ impl<G: Html> Reactor<G> {
                         // *unless* this is HSR, in which case the data model has just been changed,
                         // and we should move on
                         Err(_) if *is_hsr => return Ok(None),
-                        Err(err) => return Err(ClientThawError::InvalidFrozenGlobalState { source: err }.into())
+                        Err(err) => {
+                            return Err(
+                                ClientThawError::InvalidFrozenGlobalState { source: err }.into()
+                            )
+                        }
                     };
                     // This returns the reactive version of the unreactive version of `R`, which
                     // is why we have to make everything else do the same
@@ -185,7 +201,7 @@ impl<G: Html> Reactor<G> {
                     *frozen_app = Some(frozen_app_val);
 
                     Ok(Some(rx))
-                },
+                }
                 // The state hadn't been modified from what the server provided, so
                 // we'll just use that (note: this really means it hadn't been instantiated
                 // yet).
@@ -197,11 +213,13 @@ impl<G: Html> Reactor<G> {
                 // checked that the app is using global state. If we're using HSR,
                 // allow the data model change, otherwise ths frozen state will be considered
                 // invalid.
-                FrozenGlobalState::None => if *is_hsr {
-                    Ok(None)
-                } else {
-                    Err(ClientThawError::NoFrozenGlobalState.into())
-                },
+                FrozenGlobalState::None => {
+                    if *is_hsr {
+                        Ok(None)
+                    } else {
+                        Err(ClientThawError::NoFrozenGlobalState.into())
+                    }
+                }
             }
         } else {
             Ok(None)

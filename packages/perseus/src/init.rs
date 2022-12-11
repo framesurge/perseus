@@ -1,4 +1,3 @@
-use crate::{errors::PluginError, template::{ArcCapsuleMap, Capsule, CapsuleMap}};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::HtmlShell;
 use crate::stores::ImmutableStore;
@@ -9,11 +8,17 @@ use crate::template::TemplateMap;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::get_path_prefix_server;
 use crate::{
+    error_views::ErrorViews,
     i18n::{Locales, TranslationsManager},
     plugins::{PluginAction, Plugins},
     state::GlobalStateCreator,
     stores::MutableStore,
-    error_views::ErrorViews, Html, SsrNode, template::Template,
+    template::Template,
+    Html, SsrNode,
+};
+use crate::{
+    errors::PluginError,
+    template::{ArcCapsuleMap, Capsule, CapsuleMap},
 };
 use futures::Future;
 #[cfg(target_arch = "wasm32")]
@@ -97,8 +102,8 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
     /// injected.
     root: String,
-    /// A list of all the templates that the app uses, including the underlying templates
-    /// beneath all its capsules.
+    /// A list of all the templates that the app uses, including the underlying
+    /// templates beneath all its capsules.
     #[cfg(target_arch = "wasm32")]
     templates: TemplateMap<G>,
     #[cfg(not(target_arch = "wasm32"))]
@@ -412,17 +417,21 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Adds a single new template to the app (convenience function). This takes
     /// a *function that returns a template* (for internal reasons).
     ///
-    /// **Warning:** the capsule map system is non-obvious in Perseus: all [`Capsule`]s
-    /// are split into their underlying templates and their fallback views (the two
-    /// things that make up a capsule), and the former are added to the map of all
-    /// other templates, while the latter are added to a special [`CapsuleMap`].
+    /// **Warning:** the capsule map system is non-obvious in Perseus: all
+    /// [`Capsule`]s are split into their underlying templates and their
+    /// fallback views (the two things that make up a capsule), and the
+    /// former are added to the map of all other templates, while the latter
+    /// are added to a special [`CapsuleMap`].
     ///
     /// See [`Capsule`] for further details.
     pub fn capsule(mut self, val: Capsule<G>) -> Self {
         let path = val.get_path().clone();
         let fallback = match val.fallback {
             Some(fallback) => fallback,
-            None => panic!("capsule '{}' has no fallback (please register one)", val.get_path()),
+            None => panic!(
+                "capsule '{}' has no fallback (please register one)",
+                val.get_path()
+            ),
         };
         #[cfg(target_arch = "wasm32")]
         self.templates.insert(path.clone(), Rc::new(val.template));
@@ -557,9 +566,13 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// further details.
     pub fn plugins(mut self, val: Plugins) -> Self {
         #[cfg(target_arch = "wasm32")]
-        { self.plugins = Rc::new(val); }
+        {
+            self.plugins = Rc::new(val);
+        }
         #[cfg(not(target_arch = "wasm32"))]
-        { self.plugins = Arc::new(val); }
+        {
+            self.plugins = Arc::new(val);
+        }
 
         self
     }
@@ -698,12 +711,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         plugins: &Plugins,
     ) -> Result<HtmlShell, PluginError> {
         // Construct an HTML shell
-        let mut html_shell = HtmlShell::new(
-            index_view_str,
-            root,
-            render_cfg,
-            &get_path_prefix_server(),
-        );
+        let mut html_shell =
+            HtmlShell::new(index_view_str, root, render_cfg, &get_path_prefix_server());
 
         // Apply the myriad plugin actions to the HTML shell (replacing the whole thing
         // first if need be)
@@ -791,17 +800,20 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     pub fn get_atomic_templates_map(&self) -> ArcTemplateMap<G> {
         self.templates.clone()
     }
-    /// Gets the capsule fallbacks in an `Rc`-based `HashMap` for non-concurrent access.
+    /// Gets the capsule fallbacks in an `Rc`-based `HashMap` for non-concurrent
+    /// access.
     ///
-    /// Note that the templates that underlie each capsule are stored in the template map!
+    /// Note that the templates that underlie each capsule are stored in the
+    /// template map!
     #[cfg(target_arch = "wasm32")]
     pub fn get_capsules_map(&self) -> CapsuleMap<G> {
         self.capsules.clone()
     }
-    /// Gets the capsule fallbacks in an `Arc`-based `HashMap` for concurrent access.
-    /// This should only be relevant on the server-side.
+    /// Gets the capsule fallbacks in an `Arc`-based `HashMap` for concurrent
+    /// access. This should only be relevant on the server-side.
     ///
-    /// Note that the templates that underlie each capsule are stored in the template map!
+    /// Note that the templates that underlie each capsule are stored in the
+    /// template map!
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_atomic_capsules_map(&self) -> ArcCapsuleMap<G> {
         self.capsules.clone()

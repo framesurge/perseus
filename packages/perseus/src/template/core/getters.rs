@@ -1,7 +1,7 @@
-use sycamore::web::Html;
+use super::Template;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
-use super::Template;
+use sycamore::web::Html;
 
 impl<G: Html> Template<G> {
     /// Gets the path of the template. This is the root path under which any

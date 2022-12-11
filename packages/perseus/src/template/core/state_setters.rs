@@ -1,15 +1,20 @@
-use serde::{Serialize, de::DeserializeOwned};
-use sycamore::{prelude::Scope, view::View, web::Html};
-use crate::{reactor::Reactor, state::{AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateStateWithType, UnreactiveState}};
-use super::Template;
 use super::super::fn_types::*;
-#[cfg(not(target_arch = "wasm32"))]
-use sycamore::web::SsrNode;
-use crate::state::{TemplateState, UnknownStateType, StateGeneratorInfo};
+use super::Template;
+use crate::errors::ClientError;
+use crate::state::{StateGeneratorInfo, TemplateState, UnknownStateType};
+use crate::utils::PerseusDuration;
+use crate::{
+    reactor::Reactor,
+    state::{
+        AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateStateWithType, UnreactiveState,
+    },
+};
 #[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
-use crate::utils::PerseusDuration;
-use crate::errors::ClientError;
+use serde::{de::DeserializeOwned, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
+use sycamore::web::SsrNode;
+use sycamore::{prelude::Scope, view::View, web::Html};
 
 impl<G: Html> Template<G> {
     /// Sets the template rendering function to use, if the template takes
@@ -23,8 +28,8 @@ impl<G: Html> Template<G> {
         F: Fn(Scope, I) -> View<G> + Send + Sync + 'static,
         S: MakeRx<Rx = I> + Serialize + DeserializeOwned + 'static,
         I: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
-    // IDEA: We might be able to fix these type bounds by having `R` link *directly* to `S`!
-    // R: RxRef<RxNonRef = <S as MakeRx>::Rx>
+        // IDEA: We might be able to fix these type bounds by having `R` link *directly* to `S`!
+        // R: RxRef<RxNonRef = <S as MakeRx>::Rx>
     {
         self.template = Box::new(move |app_cx, preload_info, template_state, path| {
             let reactor = Reactor::<G>::from_cx(app_cx);
@@ -35,75 +40,84 @@ impl<G: Html> Template<G> {
                 reactor.get_page_state::<S>(&path, template_state)?
             };
 
-
-            //         // If this is a capsule though, the state we've been given is a dummy, and
-            //         // we'll need to manually request it, rendering a `Suspense` in the meantime.
-            //         None if self.is_capsule => {
-            //             let pss = &render_ctx.page_state_store;
-            //             // If this is an initial load, the state will have been preloaded for us already. If it's
+            //         // If this is a capsule though, the state we've been given is a
+            // dummy, and         // we'll need to manually request it,
+            // rendering a `Suspense` in the meantime.         None if
+            // self.is_capsule => {             let pss =
+            // &render_ctx.page_state_store;             // If this is an
+            // initial load, the state will have been preloaded for us already. If it's
             //             // subsequent or if we're a delayed widget, it won't have been.
             //             match pss.contains(&path) {
-            //                 // This indicates either that the widget was used by a previous page,
-            //                 // or that this is an initial load
+            //                 // This indicates either that the widget was used by a
+            // previous page,                 // or that this is an initial load
             //                 PssContains::Preloaded => {
             //                     let page_data = pss.get_preloaded(&path).unwrap();
-            //                     // Register the head, otherwise it will never be registered and the page will
-            //                     // never properly show up in the PSS (meaning future preload
-            //                     // calls will go through, creating unnecessary network requests). Note that
+            //                     // Register the head, otherwise it will never be
+            // registered and the page will                     // never
+            // properly show up in the PSS (meaning future preload              
+            // // calls will go through, creating unnecessary network requests). Note that
             //                     // this is guaranteed to be empty for a widget.
-            //                     assert!(page_data.head.is_empty(), "widget had defined head");
-            //                     pss.add_head(&path, page_data.head.to_string(), self.is_capsule);
-            //                     let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
+            //                     assert!(page_data.head.is_empty(), "widget had defined
+            // head");                     pss.add_head(&path,
+            // page_data.head.to_string(), self.is_capsule);                    
+            // let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
             //                     // Register the state properly
             //                     match render_ctx
-            //                         .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state, self.is_capsule)
-            //                     {
-            //                         Ok(state) => state,
+            //                         .register_page_state_value::<<S as
+            // MakeRx>::Rx>(&path, typed_state, self.is_capsule)                
+            // {                         Ok(state) => state,
             //                         Err(err) => panic!(
-            //                             "unrecoverable error in widget state derivation: {:#?}",
-            //                             err
+            //                             "unrecoverable error in widget state derivation:
+            // {:#?}",                             err
             //                         ),
             //                     }
             //                 },
             //                 PssContains::None => {
             //                     use sycamore::suspense::Suspense;
 
-            //                     // We need to manually fetch the state, which involves wrapping the user's
-            //                     // function in a Sycamore `Suspense`. To do that, we'll do everything manually,
-            //                     // and return directly.
-            //                     let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+            //                     // We need to manually fetch the state, which involves
+            // wrapping the user's                     // function in a Sycamore
+            // `Suspense`. To do that, we'll do everything manually,            
+            // // and return directly.                     let disposer =
+            // ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
             //                         let suspended_view = {
-            //                             // Use the preload info that's been passed through to preload the page (when
-            //                             // this future is done, if it was successful, the widget will have been preloaded)
-            //                             let path_without_locale = match preload_info.locale.as_str() {
-            //                                 "xx-XX" => path.to_string(),
-            //                                 locale => path.strip_prefix(&format!("{}/", locale)).unwrap().to_string()
+            //                             // Use the preload info that's been passed
+            // through to preload the page (when                             //
+            // this future is done, if it was successful, the widget will have been
+            // preloaded)                             let path_without_locale =
+            // match preload_info.locale.as_str() {                             
+            // "xx-XX" => path.to_string(),                                 
+            // locale => path.strip_prefix(&format!("{}/", locale)).unwrap().to_string()
             //                             };
             //                             // pss.preload(
             //                             //     &path_without_locale,
             //                             //     &preload_info.locale,
             //                             //     &self.get_path(),
             //                             //     preload_info.was_incremental_match,
-            //                             //     false, // This is not a route-specific preload (it will be cleared in a moment anyway)
-            //                             // );
+            //                             //     false, // This is not a route-specific
+            // preload (it will be cleared in a moment anyway)                  
+            // // );
 
-            //                             // The preload has completed, so the state is in the PSS
-            //                             let page_data = pss.get_preloaded(&path).unwrap();
-            //                             // Register the head, otherwise it will never be registered and the page will
-            //                             // never properly show up in the PSS (meaning future preload
-            //                             // calls will go through, creating unnecessary network requests). Note that
+            //                             // The preload has completed, so the state is in
+            // the PSS                             let page_data =
+            // pss.get_preloaded(&path).unwrap();                             //
+            // Register the head, otherwise it will never be registered and the page will
+            //                             // never properly show up in the PSS (meaning
+            // future preload                             // calls will go
+            // through, creating unnecessary network requests). Note that
             //                             // this is guaranteed to be empty for a widget.
-            //                             assert!(page_data.head.is_empty(), "widget had defined head");
-            //                             pss.add_head(&path, page_data.head.to_string(), self.is_capsule);
-            //                             let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
+            //                             assert!(page_data.head.is_empty(), "widget had
+            // defined head");                             pss.add_head(&path,
+            // page_data.head.to_string(), self.is_capsule);                    
+            // let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
             //                             // Register the state properly
             //                             let intermediate_state = match render_ctx
-            //                                 .register_page_state_value::<<S as MakeRx>::Rx>(&path, typed_state, self.is_capsule)
-            //                             {
-            //                                 Ok(state) => state,
+            //                                 .register_page_state_value::<<S as
+            // MakeRx>::Rx>(&path, typed_state, self.is_capsule)                
+            // {                                 Ok(state) => state,
             //                                 Err(err) => panic!(
-            //                                     "unrecoverable error in widget state derivation: {:#?}",
-            //                                     err
+            //                                     "unrecoverable error in widget state
+            // derivation: {:#?}",                                     err
             //                                 ),
             //                             };
 
@@ -126,22 +140,26 @@ impl<G: Html> Template<G> {
             //                     });
             //                     route_manager.update_disposer(disposer);
 
-            //                     // We've done everything manually, so return to prevent the default
-            //                     return;
+            //                     // We've done everything manually, so return to prevent
+            // the default                     return;
             //                 }
-            //                 // Widgets have no head, so only have a head is impossible. They're also always registered
-            //                 // with empty heads, so having just a state is impossible. Finally, there can't be everything,
-            //                 // or `.get_active_or_frozen_page_state()` would have returned active state.
-            //                 PssContains::Head | PssContains::HeadNoState | PssContains::State | PssContains::All => unreachable!(),
+            //                 // Widgets have no head, so only have a head is impossible.
+            // They're also always registered                 // with empty
+            // heads, so having just a state is impossible. Finally, there can't be
+            // everything,                 // or
+            // `.get_active_or_frozen_page_state()` would have returned active state.
+            //                 PssContains::Head | PssContains::HeadNoState |
+            // PssContains::State | PssContains::All => unreachable!(),
             //             }
             //         },
             //         _ => unreachable!()
             //     }
             // };
 
-            // Run the user's code in a child scope so any effects they start are killed when the page ends (otherwise we
-            // basically get a series of continuous pseudo-memory leaks, which can also cause accumulations of listeners
-            // on things like the router state)
+            // Run the user's code in a child scope so any effects they start are killed
+            // when the page ends (otherwise we basically get a series of
+            // continuous pseudo-memory leaks, which can also cause accumulations of
+            // listeners on things like the router state)
             let mut view = View::empty();
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
                 // Compute suspended states
@@ -173,7 +191,8 @@ impl<G: Html> Template<G> {
 
             let mut view = View::empty();
             let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
-                // We go back from the unreactive state type wrapper to the base type (since it's unreactive)
+                // We go back from the unreactive state type wrapper to the base type (since
+                // it's unreactive)
                 view = val(child_cx, intermediate_state.make_unrx());
             });
             Ok((view, disposer))
@@ -247,7 +266,6 @@ impl<G: Html> Template<G> {
         self
     }
 
-
     /// Sets the function to set headers. This will override Perseus' inbuilt
     /// header defaults. This should only be used when your header-setting
     /// requires knowing the state.
@@ -265,7 +283,7 @@ impl<G: Html> Template<G> {
         self.set_headers = Box::new(move |template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
-                return Err(ClientInvariantError::NoState.into())
+                return Err(ClientInvariantError::NoState.into());
             }
             // Declare a type on the untyped state (this doesn't perform any conversions,
             // but the type we declare may be invalid)

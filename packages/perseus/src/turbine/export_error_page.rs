@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use std::{fs, rc::Rc};
-use sycamore::web::SsrNode;
+use super::Turbine;
 use crate::error_views::ServerErrorData;
 use crate::init::PerseusAppBase;
 use crate::{errors::*, i18n::TranslationsManager, plugins::PluginAction, stores::MutableStore};
-use super::Turbine;
+use std::sync::Arc;
+use std::{fs, rc::Rc};
+use sycamore::web::SsrNode;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Exports the error page of the given exit code to the given path.
@@ -23,17 +23,19 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let err_page_str = self.build_error_page(
             ServerErrorData {
                 status: code,
-                // Hopefully, this error will appear in a context that makes sense (e.g. a 404). Exporting
-                // a 500 page doesn't make a great deal of sense on most static serving infrastructure (they'll have
-                // their own).
+                // Hopefully, this error will appear in a context that makes sense (e.g. a 404).
+                // Exporting a 500 page doesn't make a great deal of sense on most
+                // static serving infrastructure (they'll have their own).
                 msg: "app was exported, no further details available".to_string(),
             },
-            // Localizing exported error pages is not currently supported. However, if a locale is available
-            // in the browser, it will be used to override whatever was rendered from this.
-            None
+            // Localizing exported error pages is not currently supported. However, if a locale is
+            // available in the browser, it will be used to override whatever was
+            // rendered from this.
+            None,
         );
 
-        // Write that to the given output location (this will be relative to wherever the user executed from)
+        // Write that to the given output location (this will be relative to wherever
+        // the user executed from)
         match fs::write(&output, err_page_str) {
             Ok(_) => (),
             Err(err) => {
