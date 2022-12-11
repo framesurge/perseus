@@ -2,6 +2,7 @@ use crate::errors::{ClientError, ClientInvariantError};
 use crate::page_data::PageDataPartial;
 use crate::path::*;
 use crate::state::AnyFreeze;
+use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -324,6 +325,20 @@ impl PageStateStore {
             }
             .into()),
         }
+    }
+    /// Adds the given widget to the preload list so it can be later accessed
+    /// during the initial load render. This is not used for widgets in
+    /// subsequently loaded pages, which are fetched separately.
+    pub(crate) fn add_initial_widget(&self, url: PathMaybeWithLocale, state: Value) {
+        let mut preloaded = self.preloaded.borrow_mut();
+        // Widgets never have heads
+        preloaded.insert(
+            url,
+            PageDataPartial {
+                state,
+                head: String::new(),
+            },
+        );
     }
     /// Gets a preloaded page. This will search both the globally and
     /// route-specifically preloaded pages.

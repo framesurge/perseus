@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-
+use crate::path::PathMaybeWithLocale;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 
 /// Represents the data necessary to render a page, including document metadata.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -15,7 +15,7 @@ pub struct PageData {
     ///
     /// This is a map of widget path to capsule name and state, preventing the
     /// need to run route resolution algorithms on the browser-side.
-    pub widget_states: HashMap<String, (String, Value)>,
+    pub widget_states: HashMap<PathMaybeWithLocale, Value>,
     /// The string to interpolate into the document's `<head>`.
     pub head: String,
 }

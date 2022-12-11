@@ -4,6 +4,7 @@ use crate::{
     i18n::TranslationsManager,
     init::PerseusAppBase,
     internal::{PageData, PageDataPartial},
+    path::PathMaybeWithLocale,
     plugins::PluginAction,
     server::HtmlShell,
     state::TemplateState,
@@ -273,7 +274,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .read(&format!("static/{}.widgets.json", full_path_encoded))
             .await?;
         let widget_states =
-            match serde_json::from_str::<HashMap<String, (String, Value)>>(&widget_states) {
+            match serde_json::from_str::<HashMap<PathMaybeWithLocale, Value>>(&widget_states) {
                 Ok(widget_states) => widget_states,
                 Err(err) => return Err(ServerError::InvalidPageState { source: err }),
             };

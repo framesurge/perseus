@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     checkpoint,
     error_views::ServerErrorData,
@@ -8,6 +10,7 @@ use crate::{
     state::TemplateState,
     utils::get_path_prefix_client,
 };
+use serde_json::Value;
 use sycamore::{
     prelude::{Scope, ScopeDisposer},
     view::View,
@@ -113,6 +116,23 @@ impl<G: Html> Reactor<G> {
                     // a subsequent load back to this page, which isn't ideal.
                     let head_str = Self::get_head()?;
                     self.state_store.add_head(&full_path, head_str, false); // We know this is a page
+                }
+
+                // Get the widget states and register them all as preloads in the state store so
+                // they can be accessed by the `Widget` component. Like other
+                // window variables, this will always be present, even if there
+                // were no widgets used.
+                let widget_states =
+                    match WindowVariable::<HashMap<PathMaybeWithLocale, Value>>::new_obj(
+                        "__PERSEUS_INITIAL_WIDGET_STATES",
+                    ) {
+                        WindowVariable::Some(states) => states,
+                        WindowVariable::None | WindowVariable::Malformed => {
+                            return Err(ClientInvariantError::WidgetStates.into())
+                        }
+                    };
+                for (widget_path, state) in widget_states.into_iter() {
+                    self.state_store.add_initial_widget(widget_path, state);
                 }
 
                 // Render the actual template to the root (done imperatively due to child

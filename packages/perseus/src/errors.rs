@@ -164,6 +164,8 @@ pub enum ClientInvariantError {
     Translations,
     #[error("we found the current page to be a 404, but the engine disagrees")]
     RouterMismatch,
+    #[error("the widget states were not found, or were malformed (even pages not using widgets still have a declaration of these)")]
+    WidgetStates,
 }
 
 /// Errors that can occur in the browser while interfacing with browser

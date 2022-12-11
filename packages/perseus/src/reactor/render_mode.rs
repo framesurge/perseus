@@ -1,5 +1,5 @@
 use crate::{
-    errors::ServerError, path::PathWithoutLocale, state::TemplateState, stores::ImmutableStore,
+    errors::ServerError, path::*, state::TemplateState, stores::ImmutableStore,
     template::ArcTemplateMap,
 };
 use serde_json::Value;
@@ -66,7 +66,7 @@ pub(crate) enum RenderMode<G: Html> {
     /// fully-rendered content!
     Request {
         /// The widget states and attached capsule names.
-        widget_states: Rc<HashMap<String, (String, TemplateState)>>,
+        widget_states: Rc<HashMap<PathMaybeWithLocale, TemplateState>>,
         /// The app's templates and capsules.
         templates: ArcTemplateMap<G>,
         /// A list of the paths to widgets that haven't yet been resolved in any

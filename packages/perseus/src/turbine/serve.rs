@@ -166,7 +166,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .await?
             };
             let widget_states =
-                match serde_json::from_str::<HashMap<String, (String, Value)>>(&widget_states) {
+                match serde_json::from_str::<HashMap<PathMaybeWithLocale, Value>>(&widget_states) {
                     Ok(widget_states) => widget_states,
                     Err(err) => return Err(ServerError::InvalidPageState { source: err }),
                 };
@@ -196,7 +196,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Convert the `TemplateState`s into `Value`s
             let final_widget_states = final_widget_states
                 .into_iter()
-                .map(|(k, (v, s))| (k, (v, s.state)))
+                .map(|(k, v)| (k, v.state))
                 .collect::<HashMap<_, _>>();
 
             Ok((
@@ -224,9 +224,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // we go through. That way, we can just run the exact same render over and over
         // again, getting to a new layer each time, since, if a widget finds its state in
         // this, it'll use it. This will be progressively accumulated over many layers.
-        //
-        // This is not path-typed, but the keys are `PathWithoutLocale`s.
-        widget_states: HashMap<String, (String, TemplateState)>,
+        widget_states: HashMap<PathMaybeWithLocale, TemplateState>,
         path: PathWithoutLocale,
         locale: String,
         state: TemplateState,
@@ -235,7 +233,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         req: &'a Request,
         translator: &'a Translator,
     ) -> Result<
-        BoxFuture<'a, Result<(HashMap<String, (String, TemplateState)>, String), ServerError>>,
+        BoxFuture<'a, Result<(HashMap<PathMaybeWithLocale, TemplateState>, String), ServerError>>,
         ServerError,
     > {
         // Misleadingly, this only has the locale if we're using i18n!
@@ -326,14 +324,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                                 })
                             }
                         };
-                        let capsule_name = route_info.template.get_path();
 
                         // Now build the state
                         let state = self
                             .get_state_for_path_internal(
                                 widget_path.clone(),
                                 translator,
-                                &capsule_name,
+                                &route_info.template.get_path(),
                                 route_info.was_incremental_match,
                                 clone_req(req),
                                 // We do happen to actually have this from the routing
@@ -343,7 +340,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                             .await?;
 
                         // Return the tuples that'll go into `widget_states`
-                        Ok((widget_path.0, (capsule_name, state.state)))
+                        Ok((localized_widget_path, state.state))
                     });
                 }
                 let tuples = try_join_all(futs).await?;
