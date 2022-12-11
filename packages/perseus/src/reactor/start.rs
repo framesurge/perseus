@@ -139,36 +139,7 @@ impl Reactor<TemplateNodeType> {
             }
         });
 
-        // --- Reload commander ---
-
-        // This allows us to not run the subsequent load code on the initial load (we
-        // need a separate one for the reload commander)
-        let is_initial_reload_commander = create_signal(cx, true);
-        let router_state = &self.router_state;
-        create_effect(cx, move || {
-            router_state.reload_commander.track();
-            // Using a tracker of the initial state separate to the main one is fine,
-            // because this effect is guaranteed to fire on page load (they'll both be set)
-            if *is_initial_reload_commander.get_untracked() {
-                is_initial_reload_commander.set(false);
-            } else {
-                // Get the route verdict and re-run the function we use on route changes
-                // This has to be untracked, otherwise we get an infinite loop that will
-                // actually break client browsers (I had to manually kill Firefox...)
-                // TODO Investigate how the heck this actually caused an infinite loop...
-                let verdict = router_state.get_last_verdict();
-                let verdict = match verdict {
-                    Some(verdict) => verdict,
-                    // If the first page hasn't loaded yet, terminate now
-                    None => return,
-                };
-                spawn_local_scoped(cx, async move {
-                    // TODO Subsequent load
-                });
-            }
-        });
-
-        // // --- HSR and live reloading ---
+        // --- HSR and live reloading ---
 
         // This section handles live reloading and HSR freezing
         // We used to have an indicator shared to the macros, but that's no longer used
@@ -311,10 +282,70 @@ impl Reactor<TemplateNodeType> {
         };
         self.current_view.set(starting_view);
 
+        // --- Reload commander ---
+
+        // This allows us to not run the subsequent load code on the initial load (we
+        // need a separate one for the reload commander)
+        let is_initial_reload_commander = create_signal(cx, true);
+        let router_state = &self.router_state;
+        let page_disposer_2 = page_disposer.clone();
+        let popup_error_disposer_2 = popup_error_disposer.clone();
+        create_effect(cx, move || {
+            router_state.reload_commander.track();
+            // These use `RcSignal`s, so there's still only one actual disposer for each
+            let page_disposer_2 = page_disposer_2.clone();
+            let popup_error_disposer_2 = popup_error_disposer_2.clone();
+
+            // Using a tracker of the initial state separate to the main one is fine,
+            // because this effect is guaranteed to fire on page load (they'll both be set)
+            if *is_initial_reload_commander.get_untracked() {
+                is_initial_reload_commander.set(false);
+            } else {
+                // Get the route verdict and re-run the function we use on route changes
+                // This has to be untracked, otherwise we get an infinite loop that will
+                // actually break client browsers (I had to manually kill Firefox...)
+                // TODO Investigate how the heck this actually caused an infinite loop...
+                let verdict = router_state.get_last_verdict();
+                let verdict = match verdict {
+                    Some(verdict) => verdict,
+                    // If the first page hasn't loaded yet, terminate now
+                    None => return,
+                };
+                spawn_local_scoped(cx, async move {
+                    // Get the subsequent view and handle errors
+                    match self.get_subsequent_view(cx, verdict.clone()).await {
+                        Ok((view, disposer)) => {
+                            self.current_view.set(view);
+                            // SAFETY: We're outside the old page's scope
+                            unsafe {
+                                page_disposer_2.update(disposer);
+                            }
+                        }
+                        Err(err) => {
+                            // Any errors should be gracefully reported, and their disposers
+                            // placed into the correct `Signal` for future managament
+                            let (disposer, pagewide) = self.report_err(cx, &err);
+                            // SAFETY: We're outside the old error/page's scope
+                            if pagewide {
+                                unsafe {
+                                    page_disposer_2.update(disposer);
+                                }
+                            } else {
+                                unsafe {
+                                    popup_error_disposer_2.clone().update(disposer);
+                                }
+                            }
+                        }
+                    };
+                });
+            }
+        });
+
         // --- Router! ---
         checkpoint("page_interactive");
 
         // Now set up the full router
+        // let popup_error_disposer_2 = popup_error_disposer.clone();
         render_or_hydrate(
             cx,
             view! { cx,
@@ -330,6 +361,9 @@ impl Reactor<TemplateNodeType> {
                         // Do this on every update to the route, except the first time, when we'll use the initial load
                         create_effect(cx, move || {
                             route.track();
+                            // These use `RcSignal`s, so there's still only one actual disposer for each
+                            let page_disposer_2 = page_disposer.clone();
+                            let popup_error_disposer_2 = popup_error_disposer.clone();
 
                             if self.is_first.get() {
                                 self.is_first.set(false);
@@ -338,7 +372,25 @@ impl Reactor<TemplateNodeType> {
                                     let route = route.get();
                                     let verdict = route.get_verdict();
 
-                                    // TODO Subsequent load
+                                    // Get the subsequent view and handle errors
+                                    match self.get_subsequent_view(cx, verdict.clone()).await {
+                                        Ok((view, disposer)) => {
+                                            self.current_view.set(view);
+                                            // SAFETY: We're outside the old page's scope
+                                            unsafe { page_disposer_2.update(disposer); }
+                                        }
+                                        Err(err) => {
+                                            // Any errors should be gracefully reported, and their disposers
+                                            // placed into the correct `Signal` for future managament
+                                            let (disposer, pagewide) = self.report_err(cx, &err);
+                                            // SAFETY: We're outside the old error/page's scope
+                                            if pagewide {
+                                                unsafe { page_disposer_2.update(disposer); }
+                                            } else {
+                                                unsafe { popup_error_disposer_2.clone().update(disposer); }
+                                            }
+                                        }
+                                    };
                                 });
                             }
                         });

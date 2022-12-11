@@ -11,6 +11,8 @@ mod render_mode;
 mod start;
 mod state;
 #[cfg(target_arch = "wasm32")]
+mod subsequent_load;
+#[cfg(target_arch = "wasm32")]
 mod widget_disposers;
 
 #[cfg(target_arch = "wasm32")]

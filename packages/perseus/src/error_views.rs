@@ -101,14 +101,15 @@ impl<G: Html> ErrorViews<G> {
         !(self.subsequent_load_determinant)(err)
     }
 
-    /// Force-sets the unlocalized defaults. If you really want to use the default
-    /// error pages in production, this will allow you to (where they would normally
-    /// fail if you simply specified nothing).
+    /// Force-sets the unlocalized defaults. If you really want to use the
+    /// default error pages in production, this will allow you to (where
+    /// they would normally fail if you simply specified nothing).
     ///
-    /// **Warning:** these defaults are completely unlocalized, unstyled, and intended
-    /// for development! You will be able to use these by not specifying any `.error_views()`
-    /// on your `PerseusApp` in development, and you should only use this function if you're
-    /// doing production testing of Perseus, and you don't particularly want to write
+    /// **Warning:** these defaults are completely unlocalized, unstyled, and
+    /// intended for development! You will be able to use these by not
+    /// specifying any `.error_views()` on your `PerseusApp` in development,
+    /// and you should only use this function if you're doing production
+    /// testing of Perseus, and you don't particularly want to write
     /// your own error pages.
     ///
     /// Note that this is used throughout the Perseus examples for brevity.

@@ -54,17 +54,17 @@ impl<G: Html> Template<G> {
             //                     let page_data = pss.get_preloaded(&path).unwrap();
             //                     // Register the head, otherwise it will never be
             // registered and the page will                     // never
-            // properly show up in the PSS (meaning future preload              
+            // properly show up in the PSS (meaning future preload
             // // calls will go through, creating unnecessary network requests). Note that
             //                     // this is guaranteed to be empty for a widget.
             //                     assert!(page_data.head.is_empty(), "widget had defined
             // head");                     pss.add_head(&path,
-            // page_data.head.to_string(), self.is_capsule);                    
+            // page_data.head.to_string(), self.is_capsule);
             // let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
             //                     // Register the state properly
             //                     match render_ctx
             //                         .register_page_state_value::<<S as
-            // MakeRx>::Rx>(&path, typed_state, self.is_capsule)                
+            // MakeRx>::Rx>(&path, typed_state, self.is_capsule)
             // {                         Ok(state) => state,
             //                         Err(err) => panic!(
             //                             "unrecoverable error in widget state derivation:
@@ -77,7 +77,7 @@ impl<G: Html> Template<G> {
 
             //                     // We need to manually fetch the state, which involves
             // wrapping the user's                     // function in a Sycamore
-            // `Suspense`. To do that, we'll do everything manually,            
+            // `Suspense`. To do that, we'll do everything manually,
             // // and return directly.                     let disposer =
             // ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
             //                         let suspended_view = {
@@ -85,8 +85,8 @@ impl<G: Html> Template<G> {
             // through to preload the page (when                             //
             // this future is done, if it was successful, the widget will have been
             // preloaded)                             let path_without_locale =
-            // match preload_info.locale.as_str() {                             
-            // "xx-XX" => path.to_string(),                                 
+            // match preload_info.locale.as_str() {
+            // "xx-XX" => path.to_string(),
             // locale => path.strip_prefix(&format!("{}/", locale)).unwrap().to_string()
             //                             };
             //                             // pss.preload(
@@ -95,7 +95,7 @@ impl<G: Html> Template<G> {
             //                             //     &self.get_path(),
             //                             //     preload_info.was_incremental_match,
             //                             //     false, // This is not a route-specific
-            // preload (it will be cleared in a moment anyway)                  
+            // preload (it will be cleared in a moment anyway)
             // // );
 
             //                             // The preload has completed, so the state is in
@@ -108,12 +108,12 @@ impl<G: Html> Template<G> {
             //                             // this is guaranteed to be empty for a widget.
             //                             assert!(page_data.head.is_empty(), "widget had
             // defined head");                             pss.add_head(&path,
-            // page_data.head.to_string(), self.is_capsule);                    
+            // page_data.head.to_string(), self.is_capsule);
             // let typed_state = TemplateStateWithType::<S>::from_value(page_data.state);
             //                             // Register the state properly
             //                             let intermediate_state = match render_ctx
             //                                 .register_page_state_value::<<S as
-            // MakeRx>::Rx>(&path, typed_state, self.is_capsule)                
+            // MakeRx>::Rx>(&path, typed_state, self.is_capsule)
             // {                                 Ok(state) => state,
             //                                 Err(err) => panic!(
             //                                     "unrecoverable error in widget state

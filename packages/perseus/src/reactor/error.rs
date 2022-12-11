@@ -20,27 +20,32 @@ impl Reactor<TemplateNodeType> {
     ///
     /// This returns the disposer for the underlying error scope, which must be
     /// handled appropriately, or a memory leak will occur. Leaking an error
-    /// scope is never permissible.
+    /// scope is never permissible. A boolean of whether or not the error took
+    /// up the whole page or not is also returned, which can be used to guide
+    /// what should be done with the disposer.
+    ///
+    /// Obviously, since this is a method on a reactor, this does not handle
+    /// critical errors caused by not being able to create a reactor.
     ///
     /// This **does not** handle widget errors (unless they're popups).
     #[must_use]
-    pub(crate) fn report_err<'a>(&self, cx: Scope<'a>, err: &ClientError) -> ScopeDisposer<'a> {
+    pub(crate) fn report_err<'a>(
+        &self,
+        cx: Scope<'a>,
+        err: &ClientError,
+    ) -> (ScopeDisposer<'a>, bool) {
         // Determine where this should be placed
-        let pos = match try_use_context::<Reactor<TemplateNodeType>>(cx) {
-            Some(reactor) => match reactor.is_first.get() {
-                // On an initial load, we'll use a popup, unless it's a server-given error
-                true => match err {
-                    ClientError::ServerError { .. } => ErrorPosition::Page,
-                    _ => ErrorPosition::Popup,
-                },
-                // On a subsequent load, this is the responsibility of the user
-                false => match self.error_views.subsequent_err_should_be_popup(err) {
-                    true => ErrorPosition::Popup,
-                    false => ErrorPosition::Page,
-                },
+        let pos = match self.is_first.get() {
+            // On an initial load, we'll use a popup, unless it's a server-given error
+            true => match err {
+                ClientError::ServerError { .. } => ErrorPosition::Page,
+                _ => ErrorPosition::Popup,
             },
-            // There's no reactor, so this was critical
-            None => ErrorPosition::Popup,
+            // On a subsequent load, this is the responsibility of the user
+            false => match self.error_views.subsequent_err_should_be_popup(err) {
+                true => ErrorPosition::Popup,
+                false => ErrorPosition::Page,
+            },
         };
 
         let (head_str, body_view, disposer) = self.error_views.handle(cx, err, pos);
@@ -50,15 +55,15 @@ impl Reactor<TemplateNodeType> {
             ErrorPosition::Page => {
                 replace_head(&head_str);
                 self.current_view.set(body_view);
+                (disposer, true)
             }
             ErrorPosition::Popup => {
                 self.popup_error_view.set(body_view);
+                (disposer, false)
             }
             // We don't handle widget errors in this function
             ErrorPosition::Widget => unreachable!(),
-        };
-
-        disposer
+        }
     }
 
     /// Creates the infrastructure necessary to handle a critical error, and
