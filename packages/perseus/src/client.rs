@@ -1,16 +1,12 @@
-use crate::errors::PluginError;
 use crate::reactor::Reactor;
 use crate::{
     checkpoint,
     plugins::PluginAction,
-    router::{perseus_router, PerseusRouterProps},
     template::TemplateNodeType,
 };
-use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
-use fmterr::fmt_err;
+use crate::{i18n::TranslationsManager, stores::MutableStore, init::PerseusAppBase};
 use sycamore::prelude::create_scope;
 use sycamore::utils::hydrate::with_hydration_context;
-use std::collections::HashMap;
 use wasm_bindgen::JsValue;
 
 /// The entrypoint into the app itself. This will be compiled to Wasm and
@@ -66,7 +62,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
                 Err(err) => {
                     // We don't have a reactor, so render a critical popup error, hoping the user can
                     // see something prerendered that makes sense (this displays and everything)
-                    Reactor::handle_critical_error(cx, err, &error_views);
+                    Reactor::handle_critical_error(cx, &err, &error_views);
                     // We can't do anything without a reactor
                     running = false;
                 }

@@ -291,4 +291,12 @@ impl TranslationsManager for FsTranslationsManager {
     ) -> Result<Translator, TranslationsManagerError> {
         Ok(crate::i18n::Translator::new(String::new(), String::new()).unwrap())
     }
+    #[cfg(target_arch = "wasm32")]
+    async fn get_translator_for_translations_str(
+        &self,
+        locale: String,
+        translations_str: String,
+    ) -> Result<Translator, TranslationsManagerError> {
+        Ok(crate::i18n::Translator::new(String::new(), String::new()).unwrap())
+    }
 }

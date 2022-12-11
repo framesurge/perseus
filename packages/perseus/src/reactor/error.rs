@@ -1,17 +1,17 @@
 use std::rc::Rc;
-use sycamore::{prelude::{RcSignal, Scope, create_rc_signal, try_use_context}, view::{self, View}, web::Html};
+use sycamore::{prelude::{RcSignal, Scope, create_rc_signal, try_use_context, view}, view::View, web::Html};
 use web_sys::Element;
-use crate::{error_views::{ErrorPosition, ErrorViews}, errors::ClientError, utils::{render_or_hydrate, replace_head}};
+use crate::{error_views::{ErrorPosition, ErrorViews}, errors::ClientError, template::TemplateNodeType, utils::{render_or_hydrate, replace_head}};
 use super::Reactor;
 
-impl<G: Html> Reactor<G> {
+impl Reactor<TemplateNodeType> {
     /// This reports an error to the failsafe mechanism, which will handle it appropriately. This will
     /// determine the capabilities the error view will have access to from the scope provided.
     ///
     /// This **does not** handle widget errors (unless they're popups).
-    pub(crate) fn report_err(cx: Scope, err: &ClientError) {
+    pub(crate) fn report_err(&self, cx: Scope, err: &ClientError) {
         // Determine where this should be placed
-        let pos = match try_use_context::<Reactor<G>>(cx) {
+        let pos = match try_use_context::<Reactor<TemplateNodeType>>(cx) {
             Some(reactor) => match reactor.is_first.get() {
                 // On an initial load, we'll use a popup, unless it's a server-given error
                 true => match err {
@@ -37,7 +37,7 @@ impl<G: Html> Reactor<G> {
                 self.current_view.set(body_view);
             },
             ErrorPosition::Popup => {
-                self.popup_err_view.set(body_view);
+                self.popup_error_view.set(body_view);
             },
             // We don't handle widget errors in this function
             ErrorPosition::Widget => unreachable!(),
@@ -55,14 +55,15 @@ impl<G: Html> Reactor<G> {
     /// This is broadly part of Perseus implementation details, and is exposed only for
     /// those foregoing `#[perseus::main]` or `#[perseus::browser_main]` to build their
     /// own custom browser-side entrypoint (do not do this unless you really need to).
-    pub fn handle_critical_error(cx: Scope, err: &ClientError, error_views: &ErrorViews<G>) {
+    pub fn handle_critical_error(cx: Scope, err: &ClientError, error_views: &ErrorViews<TemplateNodeType>) {
         // We do NOT want this called if there is a reactor (but, if it is, we have no clue
         // about the calling situation, so it's safest to just panic)
-        assert!(try_use_context::<Reactor<G>>(cx).is_none(), "attempted to handle 'critical' error, but a reactor was found (this is a programming error)");
+        assert!(try_use_context::<Reactor<TemplateNodeType>>(cx).is_none(), "attempted to handle 'critical' error, but a reactor was found (this is a programming error)");
 
-        let popup_err_root = Self::create_popup_err_elem();
-        // This will determine the `Static` error context (we guaranteed there's no reactor above)
-        let err_view = error_views.handle(cx, err, ErrorPosition::Popup);
+        let popup_error_root = Self::create_popup_err_elem();
+        // This will determine the `Static` error context (we guaranteed there's no reactor above). We don't care
+        // about the head in a popup.
+        let (_, err_view) = error_views.handle(cx, err, ErrorPosition::Popup);
         render_or_hydrate(
             cx,
             view! { cx,

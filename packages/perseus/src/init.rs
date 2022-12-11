@@ -299,7 +299,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             #[cfg(not(target_arch = "wasm32"))]
             static_aliases: HashMap::new(),
             // By default, we won't use any plugins
+            #[cfg(not(target_arch = "wasm32"))]
             plugins: Arc::new(Plugins::new()),
+            #[cfg(target_arch = "wasm32")]
+            plugins: Rc::new(Plugins::new()),
             #[cfg(not(target_arch = "wasm32"))]
             immutable_store: ImmutableStore::new("./dist".to_string()),
             #[cfg(not(target_arch = "wasm32"))]
@@ -553,7 +556,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Sets the plugins that the app will use. See [`Plugins`] for
     /// further details.
     pub fn plugins(mut self, val: Plugins) -> Self {
-        self.plugins = Arc::new(val);
+        #[cfg(target_arch = "wasm32")]
+        { self.plugins = Rc::new(val); }
+        #[cfg(not(target_arch = "wasm32"))]
+        { self.plugins = Arc::new(val); }
+
         self
     }
     /// Sets the [`MutableStore`] for the app to use, which you would change for
@@ -801,8 +808,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
     #[cfg(target_arch = "wasm32")]
-    pub fn get_error_views(&self) -> Rc<ErrorPages<G>> {
-        self.error_pages.clone()
+    pub fn get_error_views(&self) -> Rc<ErrorViews<G>> {
+        self.error_views.clone()
     }
     /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
     #[cfg(not(target_arch = "wasm32"))]

@@ -111,7 +111,7 @@ impl ClientTranslationsManager {
     pub(crate) async fn set_translator_for_locale<'a>(
         &'a self,
         locale: &'a str,
-    ) -> Result<Translator, ClientError> {
+    ) -> Result<(), ClientError> {
         if self.preflight_check(locale)? {
             let path_prefix = get_path_prefix_client();
             // Get the translations data
@@ -119,19 +119,18 @@ impl ClientTranslationsManager {
             // If this doesn't exist, then it's a 404 (we went here by explicit navigation
             // after checking the locale, so that's a bug)
             let translations_str = fetch(&asset_url, AssetType::Translations).await?;
-            let translator = match translations_str {
+            match translations_str {
                 Some(translations_str) => {
                     // All good, turn the translations into a translator
-                    self.get_translator_for_translations_str(locale, &translations_str)?
+                    self.set_translator_for_translations_str(locale, &translations_str)?
                 }
                 // If we get a 404 for a supported locale, that's an exception
                 None => {
                     return Err(ClientInvariantError::ValidLocaleNotProvided {
                         locale: locale.to_string(),
-                    })
+                    }.into())
                 }
             };
-            self.cache_translator(translator)
         }
 
         Ok(())

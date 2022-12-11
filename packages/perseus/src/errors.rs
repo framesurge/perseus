@@ -94,13 +94,12 @@ pub enum ClientError {
         message: String,
     },
     #[error(transparent)]
-    FetchError(#[from] FetchError)
+    FetchError(#[from] FetchError),
+    #[error(transparent)]
+    PlatformError(#[from] ClientPlatformError),
+    #[error("locale '{locale}' is not supported")]
+    LocaleNotSupported { locale: String },
 
-    // #[error("locale '{locale}' is not supported")]
-    // LocaleNotSupported { locale: String },
-    // /// This converts from a `JsValue` or the like.
-    // #[error("the following error occurred while interfacing with JavaScript: {0}")]
-    // Js(String),
     // #[error(transparent)]
     // FetchError(#[from] FetchError),
     // ,
@@ -167,7 +166,7 @@ pub enum ClientInvariantError {
 /// occur unless you're operating in an extremely alien environment (which probably wouldn't support Wasm, but
 /// we try to allow maximal error page control).
 #[derive(Debug, Error)]
-pub enum ClientBrowserError {
+pub enum ClientPlatformError {
     #[error("failed to get current url for initial load determination")]
     InitialPath
 }
@@ -186,7 +185,12 @@ pub enum ClientThawError {
         source: serde_json::Error,
     },
     #[error("this app uses global state, but the provided frozen state declared itself to have no global state")]
-    NoFrozenGlobalState
+    NoFrozenGlobalState,
+    #[error("invalid frozen app provided (this is likely a corruption)")]
+    InvalidFrozenApp {
+        #[source]
+        source: serde_json::Error,
+    }
 }
 
 /// Errors that can occur in the build process or while the server is running.
@@ -330,6 +334,9 @@ pub enum FetchError {
         url: String,
         ty: AssetType,
     },
+    /// This converts from a `JsValue` or the like.
+    #[error("the following error occurred while interfacing with JavaScript: {0}")]
+    Js(String),
 }
 
 /// The type of an asset fetched from the server. This allows distinguishing between errors in

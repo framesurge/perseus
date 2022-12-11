@@ -1,5 +1,5 @@
 use super::Locales;
-use crate::{PathWithoutLocale, utils::get_path_prefix_client};
+use crate::{path::PathWithoutLocale, utils::get_path_prefix_client};
 use sycamore::rt::Reflect;
 use wasm_bindgen::JsValue;
 

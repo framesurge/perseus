@@ -1,5 +1,6 @@
-use sycamore::{prelude::{Scope, ScopeDisposer}, web::Html};
-use crate::{errors::{ClientBrowserError, ClientInvariantError}, utils::get_path_prefix_client};
+use sycamore::{prelude::{Scope, ScopeDisposer}, view::View, web::Html};
+use crate::{checkpoint, error_views::ServerErrorData, errors::*, i18n::detect_locale, path::PathMaybeWithLocale, router::{RouteInfo, RouteVerdict, RouterLoadState, match_route}, state::TemplateState, utils::get_path_prefix_client};
+use web_sys::Element;
 
 use super::{Reactor, WindowVariable};
 
@@ -21,9 +22,9 @@ impl<G: Html> Reactor<G> {
             &path
         };
         let path = js_sys::decode_uri_component(&path)
-            .map_err(|_| ClientBrowserError::InitialPath)?
+            .map_err(|_| ClientPlatformError::InitialPath)?
             .as_string()
-            .map_err(|_| ClientBrowserError::InitialPath)?;
+            .ok_or(ClientPlatformError::InitialPath)?;
 
         // Start by figuring out what template we should be rendering
         let path_segments = path
@@ -43,14 +44,14 @@ impl<G: Html> Reactor<G> {
                 let full_path = PathMaybeWithLocale::new(&path, &locale);
                 // Update the router state as we try to load (since this is the initial
                 // view, this will be the first change since the server)
-                router_state.set_load_state(RouterLoadState::Loading {
+                self.router_state.set_load_state(RouterLoadState::Loading {
                     template_name: template.get_path(),
                     path: full_path.clone(),
                 });
-                router_state.set_last_verdict(verdict.clone());
+                self.router_state.set_last_verdict(verdict.clone());
 
                 // Get the initial state and decide what to do from that
-                let state = Self::get_initial_state()?;
+                let state = self.get_initial_state(locale)?;
                 checkpoint("initial_state_present"); // If we got past that `?`
 
                 // TODO Fairly certain we don't need this anymore, but check
@@ -75,7 +76,7 @@ impl<G: Html> Reactor<G> {
                     WindowVariable::Malformed | WindowVariable::None => return Err(ClientInvariantError::Translations.into()),
                 };
                 // This will cache the translator internally in the reactor (which can be accessed later through the`t!` macro etc.)
-                translations_manager
+                self.translations_manager
                     .set_translator_for_translations_str(&locale, &translations_str)?;
 
                 #[cfg(feature = "cache-initial-load")]
@@ -83,8 +84,8 @@ impl<G: Html> Reactor<G> {
                     // Cache the page's head in the PSS (getting it as reliably as we can, which isn't perfect,
                     // hence the feature-gate). Without this, we would have to get the head from the server on
                     // a subsequent load back to this page, which isn't ideal.
-                    let head_str = get_head();
-                    pss.add_head(&full_path, head_str, false); // We know this is a page
+                    let head_str = Self::get_head()?;
+                    self.state_store.add_head(&full_path, head_str, false); // We know this is a page
                 }
 
                 // Render the actual template to the root (done imperatively due to child
@@ -93,21 +94,21 @@ impl<G: Html> Reactor<G> {
                     full_path,
                     state,
                     cx,
-                    PreloadInfo {
-                        locale: locale.to_string(),
-                        was_incremental_match,
-                    },
                 )?;
 
-                InitialView::Success(view, disposer)
+                Ok(InitialView::View(view, disposer))
             }
             // If the user is using i18n, then they'll want to detect the locale on any paths
             // missing a locale. Those all go to the same system that redirects to the
             // appropriate locale. This returns a full URL to imperatively redirect to.
             RouteVerdict::LocaleDetection(path) => {
-                Ok(InitialView::Redirect(detect_locale(path.clone(), &locales)))
+                Ok(InitialView::Redirect(detect_locale(path.clone(), &self.locales)))
             }
-            RouteVerdict::NotFound => {
+            // Since all unlocalized 404s go to a redirect, we always have a locale here. Provided the
+            // server is being remotely reasonable, we should have translations too, *unless* the error
+            // page was exported, in which case we're up the creek.
+            // TODO Fetch translations with exported error pages? Solution??
+            RouteVerdict::NotFound { locale } => {
                 checkpoint("not_found");
                 // Check what we have in the error page data. We would expect this to be a
                 // `ClientError::ServerError { status: 404, source: "page not found" }`, but
@@ -115,7 +116,7 @@ impl<G: Html> Reactor<G> {
                 // If this is `Ok(_)`, we have a *serious* problem, as that means the engine thought
                 // this page was valid, but we disagree. This should not happen without tampering,
                 // so we'll return an invariant error.
-                match Self::get_initial_state()? {
+                match self.get_initial_state(locale) {
                     Err(err) => Err(err),
                     Ok(_) => Err(ClientInvariantError::RouterMismatch.into())
                 }
@@ -126,7 +127,7 @@ impl<G: Html> Reactor<G> {
     /// Gets the initial state injected by the server, if there was any. This is
     /// used to differentiate initial loads from subsequent ones, which have
     /// different log chains to prevent double-trips (a common SPA problem).
-    fn get_initial_state() -> Result<TemplateState, ClientError> {
+    fn get_initial_state(&self, locale: &str) -> Result<TemplateState, ClientError> {
         let state_str = match WindowVariable::new_str("__PERSEUS_INITIAL_STATE") {
             WindowVariable::Some(state_str) => state_str,
             WindowVariable::Malformed | WindowVariable::None => return Err(ClientInvariantError::InitialState.into()),
@@ -165,8 +166,8 @@ impl<G: Html> Reactor<G> {
             // internal error (since `/this-page-does-not-exist` would be a locale redirection).
             let translations_str = match WindowVariable::new_str("__PERSEUS_TRANSLATIONS") {
                 // We have translations! Any errors in resolving them fully will be propagated.
-                WindowVariable::Some(state_str) => translations_manager
-                    .set_translator_for_translations_str(&locale, &translations_str)?,
+                WindowVariable::Some(translations_str) => self.translations_manager
+                    .set_translator_for_translations_str(locale, &translations_str)?,
                 // This would be extremely odd...but it's still a problem that could happen (and there
                 // *should* be a localized error that the user can see)
                 WindowVariable::Malformed => return Err(ClientInvariantError::Translations.into()),
@@ -192,6 +193,8 @@ impl<G: Html> Reactor<G> {
     /// caching of initially loaded pages.
     #[cfg(feature = "cache-initial-load")]
     fn get_head() -> Result<String, ClientError> {
+        use wasm_bindgen::JsCast;
+
         let document = web_sys::window().unwrap().document().unwrap();
         // Get the current head
         // The server sends through a head, so we can guarantee that one is present (and

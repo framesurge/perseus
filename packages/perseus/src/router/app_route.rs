@@ -1,5 +1,5 @@
 use super::{match_route, RouteVerdict};
-use crate::template::{RenderCtx, TemplateNodeType};
+use crate::{reactor::Reactor, template::TemplateNodeType};
 use sycamore::prelude::Scope;
 use sycamore_router::Route;
 
@@ -22,7 +22,7 @@ pub(crate) struct PerseusRoute<'cx> {
 impl<'cx> Default for PerseusRoute<'cx> {
     fn default() -> Self {
         Self {
-            verdict: RouteVerdict::NotFound,
+            verdict: RouteVerdict::NotFound { locale: "xx-XX".to_string() },
             // Again, this will never be accessed
             cx: None,
         }
@@ -48,12 +48,12 @@ impl<'cx> Route for PerseusRoute<'cx> {
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
 
-        let render_ctx = RenderCtx::from_ctx(self.cx.unwrap()); // We know the scope will always exist
+        let reactor = Reactor::from_cx(self.cx.unwrap()); // We know the scope will always exist
         let verdict = match_route(
             &path_segments,
-            &render_ctx.render_cfg,
-            &render_ctx.templates,
-            &render_ctx.locales,
+            &reactor.render_cfg,
+            &reactor.templates,
+            &reactor.locales,
         );
         Self {
             verdict,

@@ -1,6 +1,9 @@
-use sycamore::web::Html;
+use sycamore::{prelude::{Scope, create_effect, create_signal, view, View, ReadSignal}, web::Html};
+use sycamore_futures::spawn_local_scoped;
 use web_sys::Element;
-use crate::{checkpoint, error_views::ErrorPosition, reactor::InitialView, utils::{render_or_hydrate, replace_head}};
+use crate::{checkpoint, error_views::ErrorPosition, errors::ClientError, reactor::InitialView, router::{RouterLoadState, PerseusRoute, RouteVerdict}, template::TemplateNodeType, utils::{render_or_hydrate, replace_head}};
+use super::Reactor;
+use sycamore_router::{RouterBase, navigate_replace, HistoryIntegration};
 
 // We don't want to bring in a styling library, so we do this the old-fashioned
 // way! We're particularly comprehensive with these because the user could
@@ -18,7 +21,7 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
     word-wrap: normal;
 "#;
 
-impl<G: Html> Reactor<G> {
+impl Reactor<TemplateNodeType> {
     /// Sets the handlers necessary to run the event-driven components of Perseus
     /// (in a reactive web framework, there are quite a few of these). This should
     /// only be executed at the beginning of the browser-side instantiation.
@@ -36,12 +39,13 @@ impl<G: Html> Reactor<G> {
     /// `false`, indicating that the app was not successful. Note that server errors will
     /// not cause this, and they will receive a router. This situation is very rare, and
     /// affords a plugin action for analytics.
-    pub(crate) fn start(cx: Scope) -> bool {
+    pub(crate) fn start(&self, cx: Scope) -> bool {
         // We must be in the first load
-        assert!(*self.is_first.get(), "attempted to instantiate perseus after first load");
+        assert!(self.is_first.get(), "attempted to instantiate perseus after first load");
 
         // --- Route announcer ---
 
+        let route_announcement = create_signal(cx, String::new());
         // Append the route announcer to the end of the document body
         let document = web_sys::window().unwrap().document().unwrap();
         let announcer = document.create_element("p").unwrap();
@@ -66,7 +70,7 @@ impl<G: Html> Reactor<G> {
         // the new page is actually loaded) We also need to know if it's the first
         // page (because we don't want to announce that, screen readers will get that
         // one right)
-        let route_announcement = create_signal(cx, String::new());
+
         // This is not whether the first page has been loaded or not, it's whether or not we're still on it
         let mut on_first_page = true;
         let load_state = self.router_state.get_load_state_rc();
@@ -123,8 +127,7 @@ impl<G: Html> Reactor<G> {
         // This allows us to not run the subsequent load code on the initial load (we
         // need a separate one for the reload commander)
         let is_initial_reload_commander = create_signal(cx, true);
-
-        let router_state = &render_ctx.router;
+        let router_state = &self.router_state;
         create_effect(cx, move || {
             router_state.reload_commander.track();
             // Using a tracker of the initial state separate to the main one is fine,
@@ -148,7 +151,7 @@ impl<G: Html> Reactor<G> {
             }
         });
 
-        // --- HSR and live reloading ---
+        // // --- HSR and live reloading ---
 
         // This section handles live reloading and HSR freezing
         // We used to have an indicator shared to the macros, but that's no longer used
@@ -167,8 +170,8 @@ impl<G: Html> Reactor<G> {
                     Ok(_) => {
                         #[cfg(all(feature = "hsr"))]
                         {
-                            let frozen_state = render_ctx.freeze();
-                            crate::state::hsr_freeze(frozen_state).await;
+                            let frozen_state = self.freeze();
+                            Self::hsr_freeze(frozen_state).await;
                         }
                         crate::state::force_reload();
                         // We shouldn't ever get here unless there was an error, the
@@ -194,7 +197,7 @@ impl<G: Html> Reactor<G> {
                 // initial load
                 if self.is_first.get() {
                     self.is_first.set(false);
-                    crate::state::hsr_thaw(&render_ctx).await;
+                    // crate::state::hsr_thaw(&render_ctx).await;
                 }
             });
         };
@@ -202,7 +205,7 @@ impl<G: Html> Reactor<G> {
         // --- Error handlers ---
 
         // Broken out for ease if the reactor can't be created
-        let popup_err_root = Self::create_popup_err_elem();
+        let popup_error_root = Self::create_popup_err_elem();
         // Now set up the handlers to actually render popup errors (the scope will keep
         // reactivity going as long as it isn't dropped). Popup errors do *not*
         // get access to a router or the like. Ever time `popup_err_view` is
@@ -210,13 +213,21 @@ impl<G: Html> Reactor<G> {
         render_or_hydrate(
             cx,
             view! { cx,
-                (*self.popup_err_view.get())
+                (*self.popup_error_view.get())
             },
             popup_error_root
         );
 
         // --- Initial load ---
 
+        // Get the root we'll be injecting the router into
+        let root = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .query_selector(&format!("#{}", &self.root))
+            .unwrap()
+            .unwrap();
         // Get the initial load so we have something to put inside the root. Usually, we
         // can simply report errors, but, because we don't actually have a place to put
         // page-wide errors yet, we need to know what this will return so we know if we
@@ -234,27 +245,30 @@ impl<G: Html> Reactor<G> {
             // On a redirect, return a view that just redirects straight away (of course,
             // this will be created inside a router, so everything works nicely)
             Ok(InitialView::Redirect(dest)) => view! { cx,
-                (sycamore::navigate_replace(&dest))
+                ({
+                    navigate_replace(&dest);
+                    View::empty()
+                })
             },
             // We still need the page-wide view
-            Err(ClientError::ServerError { .. }) => {
+            Err(err @ ClientError::ServerError { .. }) => {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
-                let (head_str, body_view) = self.error_views.handle(cx, err, ErrorPosition::Page);
+                let (head_str, body_view) = self.error_views.handle(cx, &err, ErrorPosition::Page);
                 replace_head(&head_str);
 
-                // This *will* hydrate if we're using hydration, but that should be fine, since the same
-                // error details are being used as were sent from the server-side (if the user renders
-                // somethign radically different, that's their problem, as it would be with pages)
-                view
+                // For apps using exporting, it's very possible that the prerendered may be
+                // unlocalized, and this may be localized. Hence, we clear the contents.
+                root.set_inner_html("");
+                body_view
             },
             // Popup error: we will not create a router, terminating immediately
             // and instructing the caller to dispose of the scope
             Err(err) => {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
-                let (_, body_view) = self.error_views.handle(cx, err, ErrorPosition::Popup);
-                self.popup_err_view.set(body_view);
+                let (_, body_view) = self.error_views.handle(cx, &err, ErrorPosition::Popup);
+                self.popup_error_view.set(body_view);
                 // Signal the top-level disposer
                 return false;
             }
@@ -262,16 +276,6 @@ impl<G: Html> Reactor<G> {
         self.current_view.set(starting_view);
 
         // --- Router! ---
-
-        // Get the root we'll be injecting the router into
-        let root = web_sys::window()
-            .unwrap()
-            .document()
-            .unwrap()
-            .query_selector(&format!("#{}", &self.root))
-            .unwrap()
-            .unwrap();
-
         checkpoint("page_interactive");
 
         // Now set up the full router
@@ -282,7 +286,8 @@ impl<G: Html> Reactor<G> {
                     integration = HistoryIntegration::new(),
                     // This will be immediately updated and fixed up
                     route = PerseusRoute {
-                        verdict: RouteVerdict::NotFound,
+                        // This is completely invalid, but will never be read
+                        verdict: RouteVerdict::NotFound { locale: "xx-XX".to_string() },
                         cx: Some(cx),
                     },
                     view = move |cx, route: &ReadSignal<PerseusRoute>| {
@@ -290,7 +295,7 @@ impl<G: Html> Reactor<G> {
                         create_effect(cx, move || {
                             route.track();
 
-                            if *self.is_first.get_untracked() {
+                            if self.is_first.get() {
                                 self.is_first.set(false);
                             } else {
                                 spawn_local_scoped(cx, async move {
@@ -324,7 +329,7 @@ impl<G: Html> Reactor<G> {
             .unwrap();
         let err_div = document.create_element("div").unwrap();
         // The user can style using this
-        err_dir.set_id("__perseus_popup_error");
+        err_div.set_id("__perseus_popup_error");
         let body_elem: Element = document.body().unwrap().into();
         body_elem
             .append_with_node_1(&err_div.clone().into())

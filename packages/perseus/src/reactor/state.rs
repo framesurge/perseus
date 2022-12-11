@@ -1,6 +1,7 @@
 use serde::{Serialize, de::DeserializeOwned};
 use sycamore::web::Html;
-use crate::{path::PathMaybeWithLocale, errors::{ClientError, ClientInvariantError, ClientThawError}, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, TemplateState}};
+use sycamore_router::navigate;
+use crate::{errors::{ClientError, ClientInvariantError, ClientThawError}, path::PathMaybeWithLocale, router::RouterLoadState, state::{AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, TemplateState, ThawPrefs}};
 use super::Reactor;
 
 // Explicitly prevent the user from trying to freeze on the engine-side
@@ -10,8 +11,8 @@ impl<G: Html> Freeze for Reactor<G> {
         // This constructs a `FrozenApp`, which has everything the thawing reactor will need
         let frozen_app = FrozenApp {
             // `GlobalStateType` -> `FrozenGlobalState`
-            global_state: self.global_state.0.borrow().into(),
-            route: match &*self.router.get_load_state_rc().get_untracked() {
+            global_state: (&*self.global_state.0.borrow()).into(),
+            route: match &*self.router_state.get_load_state_rc().get_untracked() {
                 RouterLoadState::Loaded { path, .. } => Some(path.clone()),
                 // It would be impressive to manage this timing, but it's fine to go to the route we were
                 // in the middle of loading when we thaw
@@ -49,39 +50,37 @@ impl<G: Html> Reactor<G> {
     /// If the app was last frozen while on an error page, this will not attempt
     /// to change the current route.
     pub fn thaw(&self, new_frozen_app: &str, thaw_prefs: ThawPrefs) -> Result<(), ClientError> {
+        self._thaw(new_frozen_app, thaw_prefs, false)
+    }
+    /// Internal underlying thaw logic (generic over HSR).
+    pub(super) fn _thaw(&self, new_frozen_app: &str, thaw_prefs: ThawPrefs, is_hsr: bool) -> Result<(), ClientError> {
         let new_frozen_app: FrozenApp = serde_json::from_str(new_frozen_app)
-            .map_err(|err| ClientError::ThawFailed { source: err })?;
+            .map_err(|err| ClientThawError::InvalidFrozenApp { source: err })?;
         let route = new_frozen_app.route.clone();
         // Update our current frozen app
         let mut frozen_app = self.frozen_app.borrow_mut();
-        *frozen_app = Some((new_frozen_app, thaw_prefs));
+        *frozen_app = Some((new_frozen_app, thaw_prefs, is_hsr));
         // Better safe than sorry
         drop(frozen_app);
 
-        // Check if we're on the same page now as we were at freeze-time
-        let curr_route = match &*self.router.get_load_state_rc().get_untracked() {
-                RouterLoadState::Loaded { path, .. } => path.clone(),
-                RouterLoadState::Loading { path, .. } => path.clone(),
-                // TODO
-                RouterLoadState::ErrorLoaded { location } => todo!("thawing while in an error state is not yet implemented"),
+        if let Some(frozen_route) = route {
+            let curr_route = match &*self.router_state.get_load_state_rc().get_untracked() {
+                // If we've loaded a page, or we're about to, only change the route if necessary
+                RouterLoadState::Loaded { path, .. } | RouterLoadState::Loading { path, .. } | RouterLoadState::ErrorLoaded { path } => path.clone(),
                 // Since this function is only defined on the browser-side, this should
                 // be completely impossible (note that the user can't change the router
                 // state manually)
                 RouterLoadState::Server => unreachable!(),
             };
-        // We handle the possibility that the page tried to reload before it had been
-        // made interactive here (we'll just reload wherever we are)
-        if let Some(route) = route {
             // If we're on the same page, just reload, otherwise go to the frozen route
-            if curr_route == route {
+            if curr_route == frozen_route {
                 // We need to do this to get the new frozen state (dependent on thaw prefs)
-                self.router.reload();
+                self.router_state.reload();
             } else {
-                navigate(&route);
+                navigate(&frozen_route);
             }
         } else {
-            // The page froze before hydration, so we'll just reload to get the new state
-            self.router.reload();
+            self.router_state.reload();
         }
 
         Ok(())
@@ -153,12 +152,12 @@ impl<G: Html> Reactor<G> {
     #[cfg(target_arch = "wasm32")]
     fn get_held_state<S>(&self, url: &PathMaybeWithLocale, is_widget: bool) -> Result<Option<S::Rx>, ClientError>
     where
-        S: MakeRx,
+        S: MakeRx + Serialize + DeserializeOwned,
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         // See if we can get both the active and frozen states
         let frozen_app_full = self.frozen_app.borrow();
-        if let Some((_, thaw_prefs)) = &*frozen_app_full {
+        if let Some((_, thaw_prefs, _)) = &*frozen_app_full {
             // Check against the thaw preferences if we should prefer frozen state over
             // active state
             if thaw_prefs.page.should_prefer_frozen_state(url) {
@@ -215,7 +214,7 @@ impl<G: Html> Reactor<G> {
             #[cfg(not(all(debug_assertions, feature = "hsr")))]
             assert!(!is_hsr, "attempted to invoke hsr-style thaw in non-hsr environment");
             // Get the serialized and unreactive frozen state from the store
-            match frozen_app.page_state_store.get(&url) {
+            match frozen_app.state_store.get(&url) {
                 Some(state_str) => {
                     // Deserialize into the unreactive version
                     let unrx = match serde_json::from_str::<S>(state_str) {
@@ -223,7 +222,7 @@ impl<G: Html> Reactor<G> {
                         // A corrupted frozen state should explicitly bubble up to be an error,
                         // *unless* this is HSR, in which case the data model has just been changed,
                         // and we should move on
-                        Err(_) if is_hsr => return Ok(None),
+                        Err(_) if *is_hsr => return Ok(None),
                         Err(err) => return Err(ClientThawError::InvalidFrozenState { source: err }.into()),
                     };
                     // This returns the reactive version of the unreactive version of `R`, which
@@ -237,7 +236,7 @@ impl<G: Html> Reactor<G> {
                         Ok(_) => (),
                         // This means the user has removed state from an entity that previously had it,
                         // and that's fine
-                        Err(_) if is_hsr => return Ok(None),
+                        Err(_) if *is_hsr => return Ok(None),
                         Err(err) => return Err(err)
                     };
 
@@ -245,7 +244,7 @@ impl<G: Html> Reactor<G> {
                     // it again
                     drop(frozen_app_full);
                     let mut frozen_app_val = self.frozen_app.take().unwrap(); // We're literally in a conditional that checked this
-                    frozen_app_val.0.page_state_store.remove(url);
+                    frozen_app_val.0.state_store.remove(url);
                     let mut frozen_app = self.frozen_app.borrow_mut();
                     *frozen_app = Some(frozen_app_val);
 

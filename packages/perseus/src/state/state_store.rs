@@ -1,4 +1,4 @@
-use crate::path::PathMaybeWithLocale;
+use crate::path::*;
 use crate::errors::{ClientError, ClientInvariantError};
 use crate::page_data::PageDataPartial;
 use crate::state::AnyFreeze;
@@ -260,11 +260,13 @@ impl PageStateStore {
         was_incremental_match: bool,
         is_route_preload: bool,
     ) -> Result<(), crate::errors::ClientError> {
-        use crate::{PathWithoutLocale, errors::FetchError, utils::{fetch, get_path_prefix_client}};
+        use crate::{errors::{AssetType, FetchError}, utils::{fetch, get_path_prefix_client}};
+
+        let full_path = PathMaybeWithLocale::new(path, locale);
 
         // If we already have the page loaded fully in the PSS, abort immediately
         if let PssContains::All | PssContains::HeadNoState | PssContains::Preloaded =
-            self.contains(path)
+            self.contains(&full_path)
         {
             return Ok(());
         }
@@ -276,20 +278,18 @@ impl PageStateStore {
         //     true => "index".to_string(),
         //     false => path.to_string(),
         // };
-        let path_norm = path.to_string();
-        let path_with_locale = format!("{}/{}", locale, path);
         // Get the static page data (head and state)
         let asset_url = format!(
             "{}/.perseus/page/{}/{}.json?entity_name={}&was_incremental_match={}",
             get_path_prefix_client(),
             locale,
-            path_norm,
+            **path,
             template_path,
             was_incremental_match
         );
         // If this doesn't exist, then it's a 404 (we went here by explicit instruction,
         // but it may be an unservable ISR page or the like)
-        let page_data_str = fetch(&asset_url).await?;
+        let page_data_str = fetch(&asset_url, AssetType::Preload).await?;
         match page_data_str {
             Some(page_data_str) => {
                 // All good, deserialize the page data
@@ -298,6 +298,7 @@ impl PageStateStore {
                         FetchError::SerFailed {
                             url: path.to_string(),
                             source: err.into(),
+                            ty: AssetType::Preload
                         }
                     })?;
                 let mut preloaded = if is_route_preload {
@@ -305,11 +306,12 @@ impl PageStateStore {
                 } else {
                     self.route_preloaded.borrow_mut()
                 };
-                preloaded.insert(path_with_locale, page_data);
+                preloaded.insert(full_path, page_data);
                 Ok(())
             }
-            None => Err(FetchError::NotFound {
+            None => Err(FetchError::PreloadNotFound {
                 url: path.to_string(),
+                ty: AssetType::Preload,
             }
             .into()),
         }

@@ -1,9 +1,9 @@
-use sycamore::{prelude::Scope, view::View};
+use sycamore::{prelude::Scope, utils::render::insert, view::View};
 #[cfg(feature = "hydrate")]
 use sycamore::web::HydrateNode;
 #[cfg(not(feature = "hydrate"))]
 use sycamore::web::DomNode;
-use web_sys::Node;
+use web_sys::Element;
 
 use crate::template::TemplateNodeType;
 
@@ -16,7 +16,7 @@ use crate::template::TemplateNodeType;
 // TODO Make sure hydration will work when it's targeted at a blank canvas...
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details! (TODO PR for `hydrate_to_with_scope` etc.)
-fn render_or_hydrate(cx: Scope, view: View<TemplateNodeType>, parent: Node) {
+pub(crate) fn render_or_hydrate(cx: Scope, view: View<TemplateNodeType>, parent: Element) {
     #[cfg(feature = "hydrate")]
     {
         // We need `sycamore::hydrate_to_with_scope()`!
@@ -34,7 +34,7 @@ fn render_or_hydrate(cx: Scope, view: View<TemplateNodeType>, parent: Node) {
 
         insert(
             cx,
-            &HydrateNode::from_web_sys(parent),
+            &HydrateNode::from_web_sys(parent.into()),
             view, // We assume this was created in `with_hydration_context(..)`
             Some(View::new_fragment(children)),
             None,
@@ -44,10 +44,10 @@ fn render_or_hydrate(cx: Scope, view: View<TemplateNodeType>, parent: Node) {
     #[cfg(not(feature = "hydrate"))]
     {
         // We have to delete the existing content before we can render the new stuff
-        root.set_inner_html("");
+        parent.set_inner_html("");
         insert(
             cx,
-            &DomNode::from_web_sys(parent),
+            &DomNode::from_web_sys(parent.into()),
             view,
             None,
             None,

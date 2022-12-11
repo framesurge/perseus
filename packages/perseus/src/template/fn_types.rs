@@ -1,9 +1,10 @@
-use http::HeaderMap;
 use serde::{Serialize, de::DeserializeOwned};
 use sycamore::{prelude::{Scope, ScopeDisposer}, view::View, web::SsrNode};
 use futures::Future;
 use crate::{Request, errors::{ClientError, GenericErrorWithCause}, make_async_trait, path::PathMaybeWithLocale, state::{BuildPaths, MakeRx, StateGeneratorInfo, TemplateState, UnknownStateType}, utils::AsyncFnReturn};
 use super::core::PreloadInfo;
+#[cfg(not(target_arch = "wasm32"))]
+use http::HeaderMap;
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error

@@ -4,15 +4,19 @@ use std::rc::Rc;
 use sycamore::{prelude::Scope, view::View, web::SsrNode};
 use crate::path::PathMaybeWithLocale;
 use crate::i18n::Translator;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::reactor::RenderMode;
 use crate::utils::provide_context_signal_replace;
 use super::utils::PreloadInfo;
 use crate::errors::*;
 use crate::state::{TemplateState, UnknownStateType, BuildPaths, StateGeneratorInfo};
 use crate::Request;
+#[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::reactor::Reactor;
+#[cfg(target_arch = "wasm32")]
+use sycamore::prelude::ScopeDisposer;
 
 impl<G: Html> Template<G> {
     /// Executes the user-given function that renders the template on the
@@ -26,9 +30,9 @@ impl<G: Html> Template<G> {
         path: PathMaybeWithLocale,
         state: TemplateState,
         cx: Scope<'a>,
-        preload_info: PreloadInfo,
-    ) -> Result<(View, ScopeDisposer), ClientError> {
-        (self.template)(cx, preload_info, state, path);
+    ) -> Result<(View<G>, ScopeDisposer), ClientError> {
+        // Only widgets use the preload info
+        (self.template)(cx, PreloadInfo { locale: String::new(), was_incremental_match: false }, state, path)
     }
     /// Executes the user-given function that renders the *widget* on the
     /// client-side ONLY. This takes in an existing global state.
@@ -41,7 +45,7 @@ impl<G: Html> Template<G> {
         path: PathMaybeWithLocale,
         cx: Scope<'a>,
         preload_info: PreloadInfo,
-    ) -> Result<(View<G>, ScopeDisposer), ClientError> {
+    ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> {
         // The template state is ignored by widgets, they fetch it themselves asynchronously
         (self.template)(cx, preload_info, TemplateState::empty(), path)
     }

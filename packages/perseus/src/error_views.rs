@@ -1,7 +1,9 @@
 use fmterr::fmt_err;
 use serde::{Deserialize, Serialize};
 use sycamore::{prelude::{Scope, create_scope_immediate, try_use_context, view}, utils::hydrate::{with_hydration_context, with_no_hydration_context}, view::View, web::{Html, SsrNode}};
-use crate::{errors::{ClientError, ExportError}, i18n::Translator, reactor::{Reactor, RenderMode}, state::TemplateState};
+use crate::{errors::*, i18n::Translator, reactor::Reactor, state::TemplateState};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::reactor::RenderMode;
 
 /// The error handling system of an app. In Perseus, errors come in several forms,
 /// all of which must be handled. This system provides a way to do this automatically,
@@ -9,7 +11,7 @@ use crate::{errors::{ClientError, ExportError}, i18n::Translator, reactor::{Reac
 pub struct ErrorViews<G: Html> {
     /// The central function that parses the error provided and returns a tuple of views to deal with it:
     /// the first view is the document metadata, and the second the body of the error.
-    handler: Box<dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<G>, View<G>) + Send + Sync>,
+    handler: Box<dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>) + Send + Sync>,
     /// A function for determining if a subsequent load error should occupy the entire page
     /// or not. If this returns `true`, the whole page will be taken over (e.g. for a 404),
     /// but, if it returns `false`, a small popup will be created on the current page (e.g.
@@ -28,7 +30,7 @@ impl<G: Html> ErrorViews<G> {
     /// The function given to this should return a tuple of two `View`s: the first to be placed in document `<head>`, and the second
     /// for the body. For views with `ErrorPosition::Popup` or `ErrorPosition::Widget`, the head view will be ignored,
     /// and would usually be returned as `View::empty()`.
-    pub fn new(handler: impl Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<G>, View<G>) + Send + Sync + 'static) -> Self {
+    pub fn new(handler: impl Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>) + Send + Sync + 'static) -> Self {
         Self {
             handler: Box::new(handler),
             // Sensible defaults are fine here
@@ -69,7 +71,7 @@ impl<G: Html> ErrorViews<G> {
     }
 }
 #[cfg(target_arch = "wasm32")]
-impl<G: Html> ErrorView<G> {
+impl<G: Html> ErrorViews<G> {
     /// Invokes the user's handling function, producing head/body views for the given error. From the given scope,
     /// this will determine the conditions under which the error can be rendered.
     pub(crate) fn handle(&self, cx: Scope, err: &ClientError, pos: ErrorPosition) -> (String, View<G>) {

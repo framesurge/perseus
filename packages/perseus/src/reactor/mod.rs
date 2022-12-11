@@ -10,19 +10,20 @@ mod render_mode;
 mod initial_load;
 #[cfg(target_arch = "wasm32")]
 mod widget_disposers;
+#[cfg(all(feature = "hsr", debug_assertions, target_arch = "wasm32"))]
+mod hsr;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use render_mode::{RenderMode, RenderStatus};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use initial_load::InitialView;
 
 // --- Common imports ---
 use std::{cell::{Cell, RefCell}, collections::HashMap, rc::Rc};
-use sycamore::{prelude::{Scope, provide_context, use_context}, web::Html};
-use crate::{router::RouterState, state::{GlobalState, GlobalStateType, PageStateStore, TemplateState}};
+use sycamore::{prelude::{Scope, provide_context, use_context}, view::View, web::Html};
+use crate::{errors::ClientError, i18n::Translator, plugins::PluginAction, router::RouterState, state::{GlobalState, GlobalStateType, PageStateStore, TemplateState}, template::TemplateNodeType};
 
 // --- Engine-side imports ---
-#[cfg(not(target_arch = "wasm32"))]
-use crate::i18n::Translator;
 
 // --- Browser-side imports ---
 #[cfg(target_arch = "wasm32")]
@@ -54,7 +55,7 @@ pub struct Reactor<G: Html> {
     /// The state store, which is used to hold all reactive states, along with preloads.
     state_store: PageStateStore,
     /// The router state.
-    router_state: RouterState,
+    router_state: RouterState<G>,
     /// The user-provided global state, stored with similar mechanics to the state store,
     /// although optimised.
     global_state: GlobalState,
@@ -78,13 +79,13 @@ pub struct Reactor<G: Html> {
     /// is contained in the [`RenderMode`] on the engine-side for widget
     /// rendering.
     #[cfg(target_arch = "wasm32")]
-    render_cfg: HashMap<String, String>,
+    pub(crate) render_cfg: HashMap<String, String>,
     /// The app's templates for use in routing.
     #[cfg(target_arch = "wasm32")]
-    templates: TemplateMap<G>,
+    pub(crate) templates: TemplateMap<G>,
     /// The app's locales.
     #[cfg(target_arch = "wasm32")]
-    locales: Locales,
+    pub(crate) locales: Locales,
     /// The app's plugins.
     #[cfg(target_arch = "wasm32")]
     plugins: Rc<Plugins>,
@@ -110,14 +111,14 @@ pub struct Reactor<G: Html> {
     translations_manager: ClientTranslationsManager,
     /// The app's error views.
     #[cfg(target_arch = "wasm32")]
-    error_views: ErrorViews<G>,
+    error_views: Rc<ErrorViews<G>>,
     /// A reactive container for the current page-wide view. This will usually contain the contents of
     /// the current page, but it may also contain a page-wide error. This will be wrapped in a router.
     #[cfg(target_arch = "wasm32")]
-    current_view: RcSignal<View<G>>,
+    current_view: RcSignal<View<TemplateNodeType>>,
     /// A reactive container for any popup errors.
     #[cfg(target_arch = "wasm32")]
-    popup_error_view: RcSignal<View<G>>,
+    popup_error_view: RcSignal<View<TemplateNodeType>>,
     /// The disposer for the current page (separate from the widget disposers). This does
     /// not need a distinction between current/next (as the widgets do), because it will instantiated
     /// from code in `Self`.
@@ -142,7 +143,9 @@ pub struct Reactor<G: Html> {
 // This uses window variables set by the HTML shell, so it should never be used on the engine-side
 #[cfg(target_arch = "wasm32")]
 impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G, M, T>> for Reactor<G> {
-    fn try_from(app: PerseusAppBase<G, M, T>) -> Result<Self, ClientError> {
+    type Error = ClientError;
+
+    fn try_from(app: PerseusAppBase<G, M, T>) -> Result<Self, Self::Error> {
         let pss_max_size = app.get_pss_max_size();
         let templates = app.get_templates_map();
         let locales = app.get_locales()?;
@@ -159,9 +162,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
         // We need to fetch some things from window variables
         let render_cfg = match WindowVariable::<HashMap<String, String>>::new_obj("__PERSEUS_RENDER_CFG") {
             WindowVariable::Some(render_cfg) => render_cfg,
-            WindowVariable::None | WindowVariable::Malformed => return Err(ClientInvariantError::RenderCfg).into(),
+            WindowVariable::None | WindowVariable::Malformed => return Err(ClientInvariantError::RenderCfg.into()),
         };
-        let global_state = match WindowVariable::<Value>::new_obj("__PERSEUS_GLOBAL_STATE") {
+        let global_state_ty = match WindowVariable::<Value>::new_obj("__PERSEUS_GLOBAL_STATE") {
             WindowVariable::Some(val) => {
                 let state = TemplateState::from_value(val);
                 if state.is_empty() {
@@ -173,14 +176,14 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
                 }
             },
             WindowVariable::None => GlobalStateType::None,
-            WindowVariable::Malformed => err,
+            WindowVariable::Malformed => return Err(ClientInvariantError::GlobalState.into()),
         };
 
         Ok(Self {
             // This instantiates as if for the engine-side, but it will rapidly be changed
             router_state: RouterState::default(),
             state_store: PageStateStore::new(pss_max_size),
-            global_state,
+            global_state: GlobalState::new(global_state_ty),
             translations_manager: ClientTranslationsManager::new(&locales),
             // This will be filled out by a `.thaw()` call or HSR
             frozen_app: Rc::new(RefCell::new(None)),
@@ -293,10 +296,10 @@ impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
         };
         // The object should only actually contain the string value that was injected
         let val_str = match js_obj.as_string() {
-            Some(cfg_str) => cfg_str,
+            Some(val_str) => val_str,
             None => return Self::Malformed,
         };
-        let val_typed = match serde_json::from_str::<T>(&cfg_str) {
+        let val_typed = match serde_json::from_str::<T>(&val_str) {
             Ok(typed) => typed,
             Err(_) => return Self::Malformed,
         };
@@ -315,7 +318,7 @@ impl WindowVariable<bool> {
             None => return Self::None,
         };
         // The object should only actually contain the boolean value that was injected
-        match js_obj.as_bool() {
+        match js_bool.as_bool() {
             Some(val) => Self::Some(val),
             None => Self::Malformed,
         }
@@ -327,12 +330,12 @@ impl WindowVariable<String> {
     /// will only work with `String` window variables.
     fn new_str(name: &str) -> Self {
         let val_opt = web_sys::window().unwrap().get(name);
-        let js_bool = match val_opt {
-            Some(js_bool) => js_bool,
+        let js_str = match val_opt {
+            Some(js_str) => js_str,
             None => return Self::None,
         };
         // The object should only actually contain the boolean value that was injected
-        match js_obj.as_string() {
+        match js_str.as_string() {
             Some(val) => Self::Some(val),
             None => Self::Malformed,
         }

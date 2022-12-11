@@ -6,7 +6,7 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 /// Fetches the given resource. This is heavily intertwined with the Perseus error
 /// management system, and should not be used by end users.
 pub(crate) async fn fetch(url: &str, ty: AssetType) -> Result<Option<String>, ClientError> {
-    let js_err_handler = |err: JsValue| ClientError::Js(format!("{:?}", err));
+    let js_err_handler = |err: JsValue| FetchError::Js(format!("{:?}", err));
     let mut opts = RequestInit::new();
     opts.method("GET").mode(RequestMode::Cors);
 

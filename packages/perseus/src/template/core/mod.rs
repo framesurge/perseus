@@ -11,8 +11,10 @@ mod state_setters;
 pub(crate) use utils::*;
 
 use sycamore::{prelude::create_scope, view::View, web::Html};
-use crate::{template::default_headers, utils::ComputedDuration};
+use crate::utils::ComputedDuration;
 use super::fn_types::*;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::template::default_headers;
 
 /// A single template in an app. Each template is comprised of a Sycamore view,
 /// a state type, and some functions involved with generating that state. Pages

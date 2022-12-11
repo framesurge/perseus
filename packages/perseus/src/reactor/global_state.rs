@@ -91,12 +91,12 @@ impl<G: Html> Reactor<G> {
     #[cfg(target_arch = "wasm32")]
     fn get_held_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
-        S: MakeRx,
+        S: MakeRx + Serialize + DeserializeOwned,
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         // See if we can get both the active and frozen states
         let frozen_app_full = self.frozen_app.borrow();
-        if let Some((_, thaw_prefs)) = &*frozen_app_full {
+        if let Some((_, thaw_prefs, _)) = &*frozen_app_full {
             // Check against the thaw preferences if we should prefer frozen state over
             // active state
             if thaw_prefs.global_prefer_frozen {
@@ -104,20 +104,20 @@ impl<G: Html> Reactor<G> {
                 // We'll fall back to active state if no frozen state is available
                 match self.get_frozen_global_state_and_register::<S>()? {
                     Some(state) => Ok(Some(state)),
-                    None => Ok(self.get_active_global_state::<S>(url)),
+                    None => self.get_active_global_state::<S>(),
                 }
             } else {
                 drop(frozen_app_full);
                 // We're preferring active state, but we'll fall back to frozen state if none is
                 // available
-                match self.get_active_global_state::<S>(url) {
+                match self.get_active_global_state::<S>()? {
                     Some(state) => Ok(Some(state)),
                     None => self.get_frozen_global_state_and_register::<S>(),
                 }
             }
         } else {
             // No frozen app exists, so we of course shouldn't prioritize it
-            Ok(self.get_active_global_state::<S>())
+            self.get_active_global_state::<S>()
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -133,7 +133,7 @@ impl<G: Html> Reactor<G> {
     /// register anything in the state store. This may return an error on a downcast failure
     /// (which is probably the user's fault for providing the wrong type argument, but it's
     /// still an invariant failure).
-    fn get_active_global_state<S>(&self, url: &PathMaybeWithLocale) -> Result<Option<S::Rx>, ClientError>
+    fn get_active_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
@@ -160,12 +160,12 @@ impl<G: Html> Reactor<G> {
             match frozen_app.global_state {
                 FrozenGlobalState::Some(state_str) => {
                     // Deserialize into the unreactive version
-                    let unrx = match serde_json::from_str::<S>(state_str) {
+                    let unrx = match serde_json::from_str::<S>(&state_str) {
                         Ok(unrx) => unrx,
                         // A corrupted frozen state should explicitly bubble up to be an error,
                         // *unless* this is HSR, in which case the data model has just been changed,
                         // and we should move on
-                        Err(_) if is_hsr => return Ok(None),
+                        Err(_) if *is_hsr => return Ok(None),
                         Err(err) => return Err(ClientThawError::InvalidFrozenGlobalState { source: err }.into())
                     };
                     // This returns the reactive version of the unreactive version of `R`, which
@@ -184,7 +184,7 @@ impl<G: Html> Reactor<G> {
                     let mut frozen_app = self.frozen_app.borrow_mut();
                     *frozen_app = Some(frozen_app_val);
 
-                    Some(rx)
+                    Ok(Some(rx))
                 },
                 // The state hadn't been modified from what the server provided, so
                 // we'll just use that (note: this really means it hadn't been instantiated
@@ -192,15 +192,15 @@ impl<G: Html> Reactor<G> {
                 // We'll handle global state that has already been used in the same way (this
                 // is needed because, unlike a page/widget state map, we can't just remove
                 // the global state from the frozen app, so this acts as a placeholder).
-                FrozenGlobalState::Server | FrozenGlobalState::Used => None,
+                FrozenGlobalState::Server | FrozenGlobalState::Used => Ok(None),
                 // There was no global state last time, but if we're here, we've
                 // checked that the app is using global state. If we're using HSR,
                 // allow the data model change, otherwise ths frozen state will be considered
                 // invalid.
-                FrozenGlobalState::None => if is_hsr {
-                    return Ok(None)
+                FrozenGlobalState::None => if *is_hsr {
+                    Ok(None)
                 } else {
-                    return Err(ClientThawError::NoFrozenGlobalState.into())
+                    Err(ClientThawError::NoFrozenGlobalState.into())
                 },
             }
         } else {
