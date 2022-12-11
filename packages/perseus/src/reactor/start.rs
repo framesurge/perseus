@@ -197,7 +197,7 @@ impl Reactor<TemplateNodeType> {
                 // initial load
                 if self.is_first.get() {
                     self.is_first.set(false);
-                    // crate::state::hsr_thaw(&render_ctx).await;
+                    self.hsr_thaw().await;
                 }
             });
         };
