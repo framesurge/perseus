@@ -72,9 +72,9 @@ use sycamore::reactive::{create_rc_signal, RcSignal};
 pub struct Reactor<G: Html> {
     /// The state store, which is used to hold all reactive states, along with
     /// preloads.
-    state_store: PageStateStore,
+    pub(crate) state_store: PageStateStore,
     /// The router state.
-    router_state: RouterState<G>,
+    pub(crate) router_state: RouterState<G>,
     /// The user-provided global state, stored with similar mechanics to the
     /// state store, although optimised.
     global_state: GlobalState,

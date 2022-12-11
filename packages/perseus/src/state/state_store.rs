@@ -248,6 +248,34 @@ impl PageStateStore {
             _ => contains,
         }
     }
+    /// Declares that a certain page/widget depends on a certain widget. This
+    /// will added as a bidirectional relation that can be used to control
+    /// when the widget will be evicted from the state store (which should
+    /// only happen after all the pages using it have also been evicted).
+    /// Failure to declare a widget here is not a *critical* error, but it
+    /// will lead to a seriously suboptimal user experience.
+    ///
+    /// # Panics
+    /// This function will panic if the given page and widget paths are not
+    /// already registered in the state store.
+    pub(crate) fn declare_dependency(
+        &self,
+        widget_path: &PathMaybeWithLocale,
+        caller_path: &PathMaybeWithLocale,
+    ) {
+        let mut map = self.map.borrow_mut();
+        {
+            let mut caller = map.get_mut(caller_path).expect("page/widget that was part of dependency declaration was not present in the state store");
+            caller.add_dependency(widget_path.clone());
+        }
+
+        {
+            let mut widget = map.get_mut(widget_path).expect(
+                "widget that was part of dependency declaration was not present in the state store",
+            );
+            widget.add_dependent(caller_path.clone());
+        }
+    }
     /// Preloads the given URL from the server and adds it to the PSS. This
     /// expects a path that does *not* contain the present locale, as the
     /// locale is provided separately. The two are concatenated

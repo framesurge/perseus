@@ -43,32 +43,37 @@ impl<G: Html> Template<G> {
         )
     }
     /// Executes the user-given function that renders the *widget* on the
-    /// client-side ONLY. This takes in an existing global state.
+    /// client-side ONLY. This takes in an existing global state. This will
+    /// ignore its internal scope disposer, since the given scope **must**
+    /// be a page-level scope, which will be disposed from the root when the
+    /// page changes, thereby disposing of all the child scopes, like those
+    /// used for widgets.
     ///
     /// This should NOT be used to render pages!
     #[cfg(target_arch = "wasm32")]
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn render_widget_for_template_client<'a>(
+    pub(crate) fn render_widget_for_template_client(
         &self,
         path: PathMaybeWithLocale,
-        cx: Scope<'a>,
+        cx: Scope,
         preload_info: PreloadInfo,
-    ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> {
+    ) -> Result<View<G>, ClientError> {
         // The template state is ignored by widgets, they fetch it themselves
         // asynchronously
-        (self.template)(cx, preload_info, TemplateState::empty(), path)
+        let (view, _disposer) = (self.template)(cx, preload_info, TemplateState::empty(), path)?;
+        Ok(view)
     }
     /// Executes the user-given function that renders the template on the
     /// server-side ONLY. This automatically initializes an isolated global
     /// state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn render_for_template_server<'a>(
+    pub(crate) fn render_for_template_server(
         &self,
         path: PathMaybeWithLocale,
         state: TemplateState,
         global_state: TemplateState,
         mode: RenderMode<SsrNode>,
-        cx: Scope<'a>,
+        cx: Scope,
         translator: &Translator,
     ) -> Result<View<G>, ClientError> {
         // The context we have here has no context elements set on it, so we set all the
@@ -88,11 +93,12 @@ impl<G: Html> Template<G> {
     /// server-side ONLY. This takes the scope from a previous call of
     /// `.render_for_template_server()`, assuming the render context and
     /// translator have already been fully instantiated.
-    pub(crate) fn render_widget_for_template_server<'a>(
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn render_widget_for_template_server(
         &self,
         path: PathMaybeWithLocale,
         state: TemplateState,
-        cx: Scope<'a>,
+        cx: Scope,
     ) -> Result<View<G>, ClientError> {
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {
