@@ -1,7 +1,7 @@
 use sycamore::{prelude::{Scope, create_effect, create_signal, view, View, ReadSignal}, web::Html};
 use sycamore_futures::spawn_local_scoped;
 use web_sys::Element;
-use crate::{checkpoint, error_views::ErrorPosition, errors::ClientError, reactor::InitialView, router::{RouterLoadState, PerseusRoute, RouteVerdict}, template::TemplateNodeType, utils::{render_or_hydrate, replace_head}};
+use crate::{checkpoint, error_views::ErrorPosition, errors::ClientError, reactor::InitialView, router::{PageDisposer, PerseusRoute, RouteVerdict, RouterLoadState}, template::TemplateNodeType, utils::{render_or_hydrate, replace_head}};
 use super::Reactor;
 use sycamore_router::{RouterBase, navigate_replace, HistoryIntegration};
 
@@ -39,7 +39,7 @@ impl Reactor<TemplateNodeType> {
     /// `false`, indicating that the app was not successful. Note that server errors will
     /// not cause this, and they will receive a router. This situation is very rare, and
     /// affords a plugin action for analytics.
-    pub(crate) fn start(&self, cx: Scope) -> bool {
+    pub(crate) fn start<'a>(&'a self, cx: Scope<'a>) -> bool {
         // We must be in the first load
         assert!(self.is_first.get(), "attempted to instantiate perseus after first load");
 
@@ -204,6 +204,7 @@ impl Reactor<TemplateNodeType> {
 
         // --- Error handlers ---
 
+        let popup_error_disposer = PageDisposer::default();
         // Broken out for ease if the reactor can't be created
         let popup_error_root = Self::create_popup_err_elem();
         // Now set up the handlers to actually render popup errors (the scope will keep
@@ -220,6 +221,10 @@ impl Reactor<TemplateNodeType> {
 
         // --- Initial load ---
 
+        // We handle the disposer for the page-wide view, without worrying about widgets,
+        // because they're all in child scopes of the page scope, meaning they will be
+        // automatically disposed of when the page disposer is called.
+        let page_disposer = PageDisposer::default();
         // Get the root we'll be injecting the router into
         let root = web_sys::window()
             .unwrap()
@@ -234,11 +239,10 @@ impl Reactor<TemplateNodeType> {
         // should proceed.
         let starting_view = match self.get_initial_view(cx) {
             Ok(InitialView::View(view, disposer)) => {
-                // Add the disposer
                 // SAFETY: There's nothing in there right now, and we know that for sure
                 // because it's the initial load (asserted above). Also, we're in the app-level
                 // scope.
-                unsafe { self.page_disposer.update(disposer); }
+                unsafe { page_disposer.update(disposer); }
 
                 view
             },
@@ -254,8 +258,13 @@ impl Reactor<TemplateNodeType> {
             Err(err @ ClientError::ServerError { .. }) => {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
-                let (head_str, body_view) = self.error_views.handle(cx, &err, ErrorPosition::Page);
+                let (head_str, body_view, disposer) = self.error_views.handle(cx, &err, ErrorPosition::Page);
                 replace_head(&head_str);
+
+                // SAFETY: There's nothing in there right now, and we know that for sure
+                // because it's the initial load (asserted above). Also, we're in the app-level
+                // scope.
+                unsafe { page_disposer.update(disposer); }
 
                 // For apps using exporting, it's very possible that the prerendered may be
                 // unlocalized, and this may be localized. Hence, we clear the contents.
@@ -267,9 +276,10 @@ impl Reactor<TemplateNodeType> {
             Err(err) => {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
-                let (_, body_view) = self.error_views.handle(cx, &err, ErrorPosition::Popup);
+                let (_, body_view, _disposer) = self.error_views.handle(cx, &err, ErrorPosition::Popup);
                 self.popup_error_view.set(body_view);
-                // Signal the top-level disposer
+
+                // Signal the top-level disposer, which will also call the child scope disposer ignored above
                 return false;
             }
         };

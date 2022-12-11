@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use sycamore::{prelude::{RcSignal, Scope, create_rc_signal, try_use_context, view}, view::View, web::Html};
+use sycamore::{prelude::{RcSignal, Scope, ScopeDisposer, create_rc_signal, try_use_context, view}, view::View, web::Html};
 use web_sys::Element;
 use crate::{error_views::{ErrorPosition, ErrorViews}, errors::ClientError, template::TemplateNodeType, utils::{render_or_hydrate, replace_head}};
 use super::Reactor;
@@ -8,8 +8,12 @@ impl Reactor<TemplateNodeType> {
     /// This reports an error to the failsafe mechanism, which will handle it appropriately. This will
     /// determine the capabilities the error view will have access to from the scope provided.
     ///
+    /// This returns the disposer for the underlying error scope, which must be handled appropriately,
+    /// or a memory leak will occur. Leaking an error scope is never permissible.
+    ///
     /// This **does not** handle widget errors (unless they're popups).
-    pub(crate) fn report_err(&self, cx: Scope, err: &ClientError) {
+    #[must_use]
+    pub(crate) fn report_err<'a>(&self, cx: Scope<'a>, err: &ClientError) -> ScopeDisposer<'a> {
         // Determine where this should be placed
         let pos = match try_use_context::<Reactor<TemplateNodeType>>(cx) {
             Some(reactor) => match reactor.is_first.get() {
@@ -28,7 +32,7 @@ impl Reactor<TemplateNodeType> {
             None => ErrorPosition::Popup
         };
 
-        let (head_str, body_view) = self.error_views.handle(cx, err, pos);
+        let (head_str, body_view, disposer) = self.error_views.handle(cx, err, pos);
 
         match pos {
             // For page-wide errors, we need to set the head
@@ -41,7 +45,9 @@ impl Reactor<TemplateNodeType> {
             },
             // We don't handle widget errors in this function
             ErrorPosition::Widget => unreachable!(),
-        }
+        };
+
+        disposer
     }
 
     /// Creates the infrastructure necessary to handle a critical error, and then
@@ -63,7 +69,7 @@ impl Reactor<TemplateNodeType> {
         let popup_error_root = Self::create_popup_err_elem();
         // This will determine the `Static` error context (we guaranteed there's no reactor above). We don't care
         // about the head in a popup.
-        let (_, err_view) = error_views.handle(cx, err, ErrorPosition::Popup);
+        let (_, err_view, disposer) = error_views.handle(cx, err, ErrorPosition::Popup);
         render_or_hydrate(
             cx,
             view! { cx,
@@ -72,5 +78,7 @@ impl Reactor<TemplateNodeType> {
             },
             popup_error_root
         );
+        // SAFETY: We're outside the child scope
+        unsafe { disposer.dispose(); }
     }
 }

@@ -7,7 +7,7 @@ use super::{Reactor, WindowVariable};
 impl<G: Html> Reactor<G> {
     /// Gets the initial view to hydrate, which will be the same as what the engine-side rendered
     /// and provided. This will automatically extract the current path from the browser.
-    pub(crate) fn get_initial_view(&self, cx: Scope) -> Result<InitialView<G>, ClientError> {
+    pub(crate) fn get_initial_view<'a>(&self, cx: Scope<'a>) -> Result<InitialView<'a, G>, ClientError> {
         // Get the current path, removing any base paths to avoid relative path locale
         // redirection loops (in previous versions of Perseus, we used Sycamore to
         // get the path, and it strips this out automatically)

@@ -1,6 +1,6 @@
 use fmterr::fmt_err;
 use serde::{Deserialize, Serialize};
-use sycamore::{prelude::{Scope, create_scope_immediate, try_use_context, view}, utils::hydrate::{with_hydration_context, with_no_hydration_context}, view::View, web::{Html, SsrNode}};
+use sycamore::{prelude::{Scope, ScopeDisposer, create_child_scope, create_scope_immediate, try_use_context, view}, utils::hydrate::{with_hydration_context, with_no_hydration_context}, view::View, web::{Html, SsrNode}};
 use crate::{errors::*, i18n::Translator, reactor::Reactor, state::TemplateState};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::reactor::RenderMode;
@@ -74,7 +74,7 @@ impl<G: Html> ErrorViews<G> {
 impl<G: Html> ErrorViews<G> {
     /// Invokes the user's handling function, producing head/body views for the given error. From the given scope,
     /// this will determine the conditions under which the error can be rendered.
-    pub(crate) fn handle(&self, cx: Scope, err: &ClientError, pos: ErrorPosition) -> (String, View<G>) {
+    pub(crate) fn handle<'a>(&self, cx: Scope<'a>, err: &ClientError, pos: ErrorPosition) -> (String, View<G>, ScopeDisposer<'a>) {
         let reactor = try_use_context::<Reactor<G>>(cx);
         // From the given scope, we can perfectly determine the capabilities this error view will have
         let info = match reactor {
@@ -85,13 +85,18 @@ impl<G: Html> ErrorViews<G> {
             None => ErrorContext::Static,
         };
 
-        let (head_view, body_view) = (self.handler)(cx, err, info, pos);
-        // Stringify the head view with no hydration markers
-        let head_str = sycamore::render_to_string(|_|
-                                                  with_no_hydration_context(|| head_view)
-        );
+        let mut body_view = View::empty();
+        let mut head_str = String::new();
+        let disposer = create_child_scope(cx, |child_cx| {
+            let (head_view, body_view_local) = (self.handler)(cx, err, info, pos);
+            body_view = body_view_local;
+            // Stringify the head view with no hydration markers
+            head_str = sycamore::render_to_string(|_|
+                                                      with_no_hydration_context(|| head_view)
+            );
+        });
 
-        (head_str, body_view)
+        (head_str, body_view, disposer)
     }
 }
 #[cfg(not(target_arch = "wasm32"))]

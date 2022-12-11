@@ -80,6 +80,10 @@ pub use sycamore_futures::spawn_local_scoped;
 /// **Warning:** on the browser-side, this is defined as `()`.
 #[cfg(not(target_arch = "wasm32"))]
 pub type Request = HttpRequest<()>;
+/// All HTTP requests use empty bodies for simplicity of passing them around.
+/// They'll never need payloads (value in path requested).
+///
+/// **Warning:** on the browser-side, this is defined as `()`.
 #[cfg(target_arch = "wasm32")]
 pub type Request = ();
 

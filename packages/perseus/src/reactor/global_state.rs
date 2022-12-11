@@ -157,7 +157,7 @@ impl<G: Html> Reactor<G> {
             #[cfg(not(all(debug_assertions, feature = "hsr")))]
             assert!(!is_hsr, "attempted to invoke hsr-style thaw in non-hsr environment");
 
-            match frozen_app.global_state {
+            match &frozen_app.global_state {
                 FrozenGlobalState::Some(state_str) => {
                     // Deserialize into the unreactive version
                     let unrx = match serde_json::from_str::<S>(&state_str) {

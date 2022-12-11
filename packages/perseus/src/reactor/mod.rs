@@ -89,23 +89,6 @@ pub struct Reactor<G: Html> {
     /// The app's plugins.
     #[cfg(target_arch = "wasm32")]
     plugins: Rc<Plugins>,
-    /// The scope disposers for widgets rendered for the current page. These will all be disposed of
-    /// simultaneously.
-    ///
-    /// On the engine-side, scopes are simply ignored, because they're all ephemeral, so we don't
-    /// need this.
-    #[cfg(target_arch = "wasm32")]
-    current_widget_disposers: WidgetDisposers,
-    /// The scope disposers for widgets rendered for the next page. These will all be disposed of
-    /// simultaneously. We need this to be separate because, during the render of the next page,
-    /// durng which these will be accumulated, the current page has not yet been disposed of,
-    /// so adding the next disposers to that old list would lead to their all being disposed of
-    /// when we switched formally to the new page!
-    ///
-    /// On the engine-side, scopes are simply ignored, because they're all ephemeral, so we don't
-    /// need this.
-    #[cfg(target_arch = "wasm32")]
-    next_widget_disposers: WidgetDisposers,
     /// The browser-side translations manager.
     #[cfg(target_arch = "wasm32")]
     translations_manager: ClientTranslationsManager,
@@ -119,11 +102,6 @@ pub struct Reactor<G: Html> {
     /// A reactive container for any popup errors.
     #[cfg(target_arch = "wasm32")]
     popup_error_view: RcSignal<View<TemplateNodeType>>,
-    /// The disposer for the current page (separate from the widget disposers). This does
-    /// not need a distinction between current/next (as the widgets do), because it will instantiated
-    /// from code in `Self`.
-    #[cfg(target_arch = "wasm32")]
-    page_disposer: PageDisposer,
     /// The app's root div ID.
     #[cfg(target_arch = "wasm32")]
     root: String,
@@ -190,10 +168,6 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             is_first: Cell::new(true),
             current_view: create_rc_signal(View::empty()),
             popup_error_view: create_rc_signal(View::empty()),
-            current_widget_disposers: WidgetDisposers::default(),
-            // Yes, the initial load puts things in here
-            next_widget_disposers: WidgetDisposers::default(),
-            page_disposer: PageDisposer::default(),
             templates,
             locales,
             render_cfg,

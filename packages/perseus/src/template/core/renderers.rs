@@ -25,12 +25,12 @@ impl<G: Html> Template<G> {
     /// This should NOT be used to render widgets!
     #[cfg(target_arch = "wasm32")]
     #[allow(clippy::too_many_arguments)]
-    pub fn render_for_template_client<'a>(
+    pub(crate) fn render_for_template_client<'a>(
         &self,
         path: PathMaybeWithLocale,
         state: TemplateState,
         cx: Scope<'a>,
-    ) -> Result<(View<G>, ScopeDisposer), ClientError> {
+    ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> {
         // Only widgets use the preload info
         (self.template)(cx, PreloadInfo { locale: String::new(), was_incremental_match: false }, state, path)
     }
@@ -40,7 +40,7 @@ impl<G: Html> Template<G> {
     /// This should NOT be used to render pages!
     #[cfg(target_arch = "wasm32")]
     #[allow(clippy::too_many_arguments)]
-    pub fn render_widget_for_template_client<'a>(
+    pub(crate) fn render_widget_for_template_client<'a>(
         &self,
         path: PathMaybeWithLocale,
         cx: Scope<'a>,

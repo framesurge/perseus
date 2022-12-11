@@ -46,7 +46,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 
     // This variable acts as a signal to determine whether or not there was a show-stopping failure that
     // should trigger root scope disposal (terminating Perseus and rendering the app inoperable)
-    let mut running;
+    let mut running = true;
     // === IF THIS DISPOSER IS CALLED, PERSEUS WILL TERMINATE! ===
     let app_disposer = create_scope(|cx| {
         let core = move || {
@@ -57,6 +57,8 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
             match Reactor::try_from(app) {
                 Ok(reactor) => {
                     // We're away!
+                    reactor.add_self_to_cx(cx);
+                    let reactor = Reactor::from_cx(cx);
                     running = reactor.start(cx);
                 },
                 Err(err) => {
