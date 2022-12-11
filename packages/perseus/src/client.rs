@@ -18,6 +18,9 @@ use wasm_bindgen::JsValue;
 ///
 /// Note that, by the time this, or any of our code, is executing, the user can
 /// already see something due to engine-side rendering.
+///
+/// This function performs all error handling internally, and will do its level
+/// best not to fail, including through setting panic handlers.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
     app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
 ) {

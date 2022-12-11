@@ -182,7 +182,8 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
         // The browser-specific `main` function
         #[cfg(target_arch = "wasm32")]
         pub fn main() -> ::perseus::ClientReturn {
-            ::perseus::run_client(__perseus_simple_main)
+            ::perseus::run_client(__perseus_simple_main);
+            Ok(())
         }
 
         // The user's function (which gets the `PerseusApp`)
@@ -220,7 +221,8 @@ pub fn main_export_impl(input: MainFn) -> TokenStream {
         // The browser-specific `main` function
         #[cfg(target_arch = "wasm32")]
         pub fn main() -> ::perseus::ClientReturn {
-            ::perseus::run_client(__perseus_simple_main)
+            ::perseus::run_client(__perseus_simple_main);
+            Ok(())
         }
 
         // The user's function (which gets the `PerseusApp`)
