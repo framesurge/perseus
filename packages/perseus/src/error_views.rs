@@ -100,6 +100,46 @@ impl<G: Html> ErrorViews<G> {
     pub(crate) fn subsequent_err_should_be_popup(&self, err: &ClientError) -> bool {
         !(self.subsequent_load_determinant)(err)
     }
+
+    /// Force-sets the unlocalized defaults. If you really want to use the default
+    /// error pages in production, this will allow you to (where they would normally
+    /// fail if you simply specified nothing).
+    ///
+    /// **Warning:** these defaults are completely unlocalized, unstyled, and intended
+    /// for development! You will be able to use these by not specifying any `.error_views()`
+    /// on your `PerseusApp` in development, and you should only use this function if you're
+    /// doing production testing of Perseus, and you don't particularly want to write
+    /// your own error pages.
+    ///
+    /// Note that this is used throughout the Perseus examples for brevity.
+    pub fn unlocalized_development_default() -> Self {
+        // Because this is an unlocalized, extremely simple default, we don't care about
+        // capabilities or positioning
+        Self::new(|cx, err, _, _| {
+            match err {
+                // Special case for 404 due to its frequency
+                ClientError::ServerError { status, .. } if *status == 404 => (
+                    view! { cx,
+                            title { "Page not found" }
+                    },
+                    view! { cx,
+
+                    },
+                ),
+                err => {
+                    let err_msg = fmt_err(err);
+                    (
+                        view! { cx,
+                                title { "Error" }
+                        },
+                        view! { cx,
+                                (format!("An error occurred: {}", err_msg))
+                        },
+                    )
+                }
+            }
+        })
+    }
 }
 #[cfg(target_arch = "wasm32")]
 impl<G: Html> ErrorViews<G> {
@@ -297,31 +337,6 @@ impl ServerErrorData {
 #[cfg(debug_assertions)] // This will fail production compilation neatly
 impl<G: Html> Default for ErrorViews<G> {
     fn default() -> Self {
-        // Because this is an unlocalized, extremely simple default, we don't care about
-        // capabilities or positioning
-        Self::new(|cx, err, _, _| {
-            match err {
-                // Special case for 404 due to its frequency
-                ClientError::ServerError { status, .. } if *status == 404 => (
-                    view! { cx,
-                        title { "Page not found" }
-                    },
-                    view! { cx,
-
-                    },
-                ),
-                err => {
-                    let err_msg = fmt_err(err);
-                    (
-                        view! { cx,
-                            title { "Error" }
-                        },
-                        view! { cx,
-                            (format!("An error occurred: {}", err_msg))
-                        },
-                    )
-                }
-            }
-        })
+        Self::unlocalized_development_default()
     }
 }

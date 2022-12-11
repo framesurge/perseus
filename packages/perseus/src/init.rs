@@ -444,7 +444,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self
     }
     /// Sets the app's error views. See [`ErrorViews`] for further details.
-    pub fn error_pages(mut self, val: ErrorViews<G>) -> Self {
+    pub fn error_views(mut self, val: ErrorViews<G>) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
             self.error_views = Rc::new(val);

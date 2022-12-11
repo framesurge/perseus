@@ -123,6 +123,7 @@ pub mod prelude {
         BuildPaths, RxResult, RxResultRef, SerdeInfallible, StateGeneratorInfo,
     };
     pub use crate::template::{Capsule, RenderFnResult, RenderFnResultWithCause, Template};
+    pub use sycamore::web::Html;
 
     #[cfg(not(target_arch = "wasm32"))]
     pub use crate::utils::{cache_fallible_res, cache_res};
