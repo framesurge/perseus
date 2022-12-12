@@ -165,24 +165,28 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let page_data = self
                     .get_static_page_data(&format!("{}-{}", locale, &path_encoded), has_state)
                     .await?;
-                // Get the translations string for this locale
-                let translations = self
-                    .translations_manager
-                    .get_translations_str_for_locale(locale.to_string())
-                    .await?;
-                // Create a full HTML file from those that can be served for initial loads
-                // The build process writes these with a dummy default locale even though we're
-                // not using i18n
-                let full_html = html_shell
-                    .clone()
-                    .page_data(&page_data, global_state, &translations)
-                    .to_string();
-                self.immutable_store
-                    .write(
-                        &format!("exported/{}/{}.html", locale, initial_load_path),
-                        &full_html,
-                    )
-                    .await?;
+
+                // Don't create initial load pages for widgets
+                if !template.is_capsule {
+                    // Get the translations string for this locale
+                    let translations = self
+                        .translations_manager
+                        .get_translations_str_for_locale(locale.to_string())
+                        .await?;
+                    // Create a full HTML file from those that can be served for initial loads
+                    // The build process writes these with a dummy default locale even though we're
+                    // not using i18n
+                    let full_html = html_shell
+                        .clone()
+                        .page_data(&page_data, global_state, &translations)
+                        .to_string();
+                    self.immutable_store
+                        .write(
+                            &format!("exported/{}/{}.html", locale, initial_load_path),
+                            &full_html,
+                        )
+                        .await?;
+                }
 
                 // Serialize the page data to JSON and write it as a partial (fetched by the app
                 // shell for subsequent loads)
@@ -209,18 +213,22 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     has_state,
                 )
                 .await?;
-            // Create a full HTML file from those that can be served for initial loads
-            // The build process writes these with a dummy default locale even though we're
-            // not using i18n
-            let full_html = html_shell
-                .clone()
-                .page_data(&page_data, global_state, "")
-                .to_string();
-            // We don't add an extension because this will be queried directly by the
-            // browser
-            self.immutable_store
-                .write(&format!("exported/{}.html", initial_load_path), &full_html)
-                .await?;
+
+            // Don't create initial load pages for widgets
+            if !template.is_capsule {
+                // Create a full HTML file from those that can be served for initial loads
+                // The build process writes these with a dummy default locale even though we're
+                // not using i18n
+                let full_html = html_shell
+                    .clone()
+                    .page_data(&page_data, global_state, "")
+                    .to_string();
+                // We don't add an extension because this will be queried directly by the
+                // browser
+                self.immutable_store
+                    .write(&format!("exported/{}.html", initial_load_path), &full_html)
+                    .await?;
+            }
 
             // Serialize the page data to JSON and write it as a partial (fetched by the app
             // shell for subsequent loads)
