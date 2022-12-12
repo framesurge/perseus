@@ -1,6 +1,5 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::HtmlShell;
-use crate::stores::ImmutableStore;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::ArcTemplateMap;
 #[cfg(target_arch = "wasm32")]
@@ -17,6 +16,11 @@ use crate::{
     Html, SsrNode,
 };
 use crate::{
+    error_views::{ErrorContext, ErrorPosition},
+    errors::ClientError,
+    stores::ImmutableStore,
+};
+use crate::{
     errors::PluginError,
     template::{ArcCapsuleMap, Capsule, CapsuleMap},
 };
@@ -25,7 +29,6 @@ use futures::Future;
 use std::marker::PhantomData;
 #[cfg(not(target_arch = "wasm32"))]
 use std::pin::Pin;
-#[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
 use std::{collections::HashMap, panic::PanicInfo, rc::Rc};
 use sycamore::prelude::Scope;
@@ -158,10 +161,20 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// here will only be used if it exists.
     #[cfg(not(target_arch = "wasm32"))]
     static_dir: String,
-    /// A handler for panics on the client-side. This could create an arbitrary
-    /// message for the user, or do anything else.
+    /// A handler for panics on the browser-side.
     #[cfg(target_arch = "wasm32")]
     panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+    /// A duplicate of the app's error handling function intended for panic
+    /// handling. This must be extracted as an owned value and provided in a
+    /// thread-safe manner to the panic hook system.
+    ///
+    /// This is in an `Arc` because panic hooks are `Fn`s, not `FnOnce`s.
+    #[cfg(target_arch = "wasm32")]
+    panic_handler_view: Arc<
+        dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+            + Send
+            + Sync,
+    >,
     // We need this on the client-side to account for the unused type parameters
     #[cfg(target_arch = "wasm32")]
     _marker: PhantomData<(M, T)>,
@@ -321,6 +334,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             #[cfg(target_arch = "wasm32")]
             panic_handler: None,
             #[cfg(target_arch = "wasm32")]
+            panic_handler_view: ErrorViews::unlocalized_development_default().take_panic_handler(),
+            #[cfg(target_arch = "wasm32")]
             _marker: PhantomData,
         }
     }
@@ -351,6 +366,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
             panic_handler: None,
+            panic_handler_view: ErrorViews::unlocalized_development_default().take_panic_handler(),
             _marker: PhantomData,
         }
     }
@@ -444,15 +460,21 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self
     }
     /// Sets the app's error views. See [`ErrorViews`] for further details.
-    pub fn error_views(mut self, val: ErrorViews<G>) -> Self {
+    // Internally, this will extract a copy of the main handler for panic
+    // usage. Note that the default value of this is extracted from the default
+    // error views.
+    pub fn error_views(mut self, mut val: ErrorViews<G>) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
+            let panic_handler = val.take_panic_handler();
             self.error_views = Rc::new(val);
+            self.panic_handler_view = panic_handler;
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.error_views = Arc::new(val);
         }
+
         self
     }
     /// Sets the app's [`GlobalStateCreator`].
@@ -644,14 +666,27 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Sets the browser-side panic handler for your app. This is a function
     /// that will be executed if your app panics (which should never be caused
     /// by Perseus unless something is seriously wrong, it's much more likely
-    /// to come from your code, or third-party code). If this happens, your page
-    /// would become totally uninteractive, with no warning to the user, since
-    /// Wasm will simply abort. In such cases, it is strongly recommended to
-    /// generate a warning message that notifies the user.
+    /// to come from your code, or third-party code).
+    ///
+    /// In the case of a panic, Perseus will automatically try to render a full
+    /// popup error to explain the situation to the user before terminating,
+    /// but, since it's impossible to use the plugins in the case of a
+    /// panic, this function is provided as an alternative in case you want
+    /// to perform other work, like sending a crash report.
+    ///
+    /// This function **must not** panic itself, because Perseus renders the
+    /// message *after* your handler is executed. If it panics, that popup
+    /// will never get to the user, leading to very poor UX. That said,
+    /// don't stress about calling things like `web_sys::window().unwrap()`,
+    /// because, if that fails, then trying to render a popup will
+    /// *definitely* fail anyway. Perseus will attempt to write an error
+    /// message to the console before this, just in case anything panics.
     ///
     /// Note that there is no access within this function to Sycamore, page
     /// state, global state, or translators. Assume that your code has
-    /// completely imploded when you write this function.
+    /// completely imploded when you write this function. Anything more advanced
+    /// should be left to your error views system, when it handles
+    /// `ClientError::Panic`.
     ///
     /// This has no default value.
     #[allow(unused_variables)]
@@ -944,13 +979,30 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         Ok(scoped_static_aliases)
     }
-    /// Takes the user-set panic handler out and returns it as an owned value,
-    /// allowing it to be used as an actual panic hook.
+    /// Takes the user-set panic handlers out and returns them as an owned
+    /// tuple, allowing them to be used in an actual panic hook.
+    ///
+    /// # Future panics
+    /// If this is called more than once, the view panic handler will panic when
+    /// called.
     #[cfg(target_arch = "wasm32")]
-    pub fn take_panic_handler(
+    pub fn take_panic_handlers(
         &mut self,
-    ) -> Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>> {
-        self.panic_handler.take()
+    ) -> (
+        Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+        Arc<
+            dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+                + Send
+                + Sync,
+        >,
+    ) {
+        let panic_handler_view = std::mem::replace(
+            &mut self.panic_handler_view,
+            Arc::new(|_, _, _, _| unreachable!()),
+        );
+        let general_panic_handler = self.panic_handler.take();
+
+        (general_panic_handler, panic_handler_view)
     }
 }
 

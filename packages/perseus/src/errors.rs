@@ -1,5 +1,7 @@
 #![allow(missing_docs)]
 
+use std::panic::PanicInfo;
+
 #[cfg(not(target_arch = "wasm32"))]
 use crate::i18n::TranslationsManagerError;
 use thiserror::Error;
@@ -79,8 +81,30 @@ pub enum EngineError {
 /// `__perseus-error`, a deliberate choice to reinforce the best practice of
 /// giving the user as much as possible (it might not be interactive, but they
 /// can still use a rudimentary version). See the book for further details.
+///
+/// # Panic handling
+/// In a rather unorthodox manner, Perseus will do its level best to get an
+/// error message to the user of your app, no matter what happens. For this
+/// reason, this `enum` includes a `Panic` variant that will be provided when a
+/// panic has been intercepted. In this case, your error view will be rendered
+/// with no reactor, translations, or anything else available to it. What you do
+/// at this time is extremely important, since any panics in the code that
+/// handles that variant **cannot be caught**, leaving the user with no error
+/// message and an app that has completely frozen.
+///
+/// The `Panic` variant on this type only provides a formatted panic message,
+/// and nothing else from [`std::panic::PanicInfo`], due to lifetime
+/// constraints. Since the message formatting is done by the standard library,
+/// which automatically takes account of the `payload` and `message`, the only
+/// other properties are `location` and `can_unwind`: the latter should be
+/// handled by Perseus if it ever is, and the former shoudl not be exposed to
+/// end users. Currently, there is no way to get the underlying `PanicInfo`
+/// through Perseus' error handling system (although a plugin could do it
+/// by overriding the panic handler, but this is usually a bad idea).
 #[derive(Error, Debug)]
 pub enum ClientError {
+    #[error("{0}")] // All formatted for us by `std`
+    Panic(String),
     #[error(transparent)]
     PluginError(#[from] PluginError),
     #[error(transparent)]

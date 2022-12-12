@@ -1,3 +1,5 @@
+use std::{panic::PanicInfo, sync::Arc};
+
 #[cfg(not(target_arch = "wasm32"))]
 use crate::reactor::RenderMode;
 use crate::{errors::*, i18n::Translator, reactor::Reactor, state::TemplateState};
@@ -36,6 +38,20 @@ pub struct ErrorViews<G: Html> {
     /// the engine, otherwise just a popup over the prerendered content so
     /// the user can proceed with visibility, but not interactivity.
     subsequent_load_determinant: Box<dyn Fn(&ClientError) -> bool + Send + Sync>,
+    /// A verbatim copy of the user's handler, intended for panics. This is
+    /// needed because we have to extract it completely and give it to the
+    /// standard library in a thread-safe manner (even though Wasm is
+    /// single-threaded).
+    ///
+    /// This will be extracted by the `PerseusApp` creation process and put in a
+    /// place where it can be safely extracted. The replacement function
+    /// will panic if called, so this should **never** be manually executed.
+    #[cfg(target_arch = "wasm32")]
+    panic_handler: Arc<
+        dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+            + Send
+            + Sync,
+    >,
 }
 impl<G: Html> ErrorViews<G> {
     /// Creates an error handling system for your app with the given handler
@@ -53,10 +69,11 @@ impl<G: Html> ErrorViews<G> {
         handler: impl Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync
+            + Clone
             + 'static,
     ) -> Self {
         Self {
-            handler: Box::new(handler),
+            handler: Box::new(handler.clone()),
             // Sensible defaults are fine here
             subsequent_load_determinant: Box::new(|err| {
                 match err {
@@ -67,6 +84,8 @@ impl<G: Html> ErrorViews<G> {
                     _ => false,
                 }
             }),
+            #[cfg(target_arch = "wasm32")]
+            panic_handler: Arc::new(handler),
         }
     }
     /// Sets the function that determines if an error on a *subsequent load*
@@ -174,6 +193,21 @@ impl<G: Html> ErrorViews<G> {
         });
 
         (head_str, body_view, disposer)
+    }
+    /// Extracts the panic handler from within the error views. This should
+    /// generally only be called by `PerseusApp`'s error views instantiation
+    /// system.
+    pub(crate) fn take_panic_handler(
+        &mut self,
+    ) -> Arc<
+        dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+            + Send
+            + Sync,
+    > {
+        std::mem::replace(
+            &mut self.panic_handler,
+            Arc::new(|_, _, _, _| unreachable!()),
+        )
     }
 }
 #[cfg(not(target_arch = "wasm32"))]

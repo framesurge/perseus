@@ -1,15 +1,18 @@
 use super::Reactor;
 use crate::{
-    error_views::{ErrorPosition, ErrorViews},
+    error_views::{ErrorContext, ErrorPosition, ErrorViews},
     errors::ClientError,
     template::TemplateNodeType,
     utils::{render_or_hydrate, replace_head},
 };
-use std::rc::Rc;
+use std::{panic::PanicInfo, rc::Rc, sync::Arc};
 use sycamore::{
-    prelude::{create_rc_signal, try_use_context, view, RcSignal, Scope, ScopeDisposer},
+    prelude::{
+        create_rc_signal, create_scope_immediate, try_use_context, view, RcSignal, Scope,
+        ScopeDisposer,
+    },
     view::View,
-    web::Html,
+    web::{Html, SsrNode},
 };
 use web_sys::Element;
 
@@ -103,5 +106,54 @@ impl Reactor<TemplateNodeType> {
         unsafe {
             disposer.dispose();
         }
+    }
+    /// Creates the infrastructure necessary to handle a panic, and then
+    /// displays an error created by the user's [`ErrorViews`]. This
+    /// function will only panic if certain fundamental functions of the web
+    /// APIs are not defined, in which case no error message could ever be
+    /// displayed to the user anyway.
+    ///
+    /// A handler is manually provided to this, because the [`ErrorViews`]
+    /// are typically not thread-safe once extracted from `PerseusApp`.
+    ///
+    /// # Visibility
+    /// Under absolutely no circumstances should this function **ever** be
+    /// called outside a Perseus panic handler set in the entrypoint! It is
+    /// exposed for custom entrypoints only.
+    pub fn handle_panic(
+        panic_info: &PanicInfo,
+        handler: Arc<
+            dyn Fn(
+                    Scope,
+                    &ClientError,
+                    ErrorContext,
+                    ErrorPosition,
+                ) -> (View<SsrNode>, View<TemplateNodeType>)
+                + Send
+                + Sync,
+        >,
+    ) {
+        let popup_error_root = Self::create_popup_err_elem();
+
+        // The standard library handles all the hard parts here
+        let msg = panic_info.to_string();
+        // The whole app is about to implode, we are not keeping this scope
+        // around
+        create_scope_immediate(|cx| {
+            let (_head, body) = handler(
+                cx,
+                &ClientError::Panic(msg),
+                ErrorContext::Static,
+                ErrorPosition::Popup,
+            );
+            render_or_hydrate(
+                cx,
+                view! { cx,
+                    // This is not reactive, as there's no point in making it so
+                    (body)
+                },
+                popup_error_root,
+            );
+        });
     }
 }

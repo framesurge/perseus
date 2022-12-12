@@ -117,8 +117,8 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     // use futures::executor::block_on;
     // use sycamore::prelude::*;
 
-    // // This will always be rendered with access to the Perseus render context, which
-    // // we will be working with a lot!
+    // // This will always be rendered with access to the Perseus render
+    // context, which // we will be working with a lot!
     // let reactor = Reactor::<G>::from_cx(cx);
     // match &reactor.render_mode {
     //     RenderMode::Build {
@@ -128,8 +128,8 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     //         templates,
     //         widget_states,
     //     } => {
-    //         // If the render status isn't good, don't even bother proceeding, and fail-fast
-    //         // instead
+    //         // If the render status isn't good, don't even bother proceeding,
+    // and fail-fast         // instead
     //         if !matches!(*render_status.borrow(), RenderStatus::Ok) {
     //             return View::empty();
     //         }
@@ -141,50 +141,51 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     //                 None => panic!(""),
     //             };
     //             // Make sure this capsule would be safe for building
-    //             // If this were an incrementally generated widget, we wouldn't have even gotten
-    //             // this far, as it wouldn't be in the render config
-    //             if capsule.uses_request_state() || capsule.revalidates() {
-    //                 *render_status.borrow_mut() = RenderStatus::Cancelled;
-    //                 View::empty()
+    //             // If this were an incrementally generated widget, we
+    // wouldn't have even gotten             // this far, as it wouldn't be
+    // in the render config             if capsule.uses_request_state() ||
+    // capsule.revalidates() {                 *render_status.borrow_mut() =
+    // RenderStatus::Cancelled;                 View::empty()
     //             } else {
-    //                 let translator = use_context::<Signal<Translator>>(cx).get_untracked();
-    //                 let locale = translator.get_locale();
-    //                 // Get the path in a way we can work with
-    //                 let path_encoded = format!(
+    //                 let translator =
+    // use_context::<Signal<Translator>>(cx).get_untracked();
+    // let locale = translator.get_locale();                 // Get the path
+    // in a way we can work with                 let path_encoded = format!(
     //                     "{}-{}",
     //                     &locale,
     //                     // The user provided this
     //                     urlencoding::encode(&path)
     //                 );
-    //                 // Since this widget has state built at build-time that will never change, it
-    //                 // *must* be in the immutable store (only revalidating
-    //                 // states go into the mutable store, and this would be
-    //                 // `false` in the map if it revalidated!) The immutable
-    //                 // store is really just a filesystem API, and we have no choice
-    //                 // but to block here
-    //                 let state = match block_on(
-    //                     immutable_store.read(&format!("static/{}.head.html", path_encoded)),
-    //                 ) {
+    //                 // Since this widget has state built at build-time that
+    // will never change, it                 // *must* be in the immutable
+    // store (only revalidating                 // states go into the
+    // mutable store, and this would be                 // `false` in the
+    // map if it revalidated!) The immutable                 // store is
+    // really just a filesystem API, and we have no choice
+    // // but to block here                 let state = match block_on(
+    //                     immutable_store.read(&format!("static/{}.head.html",
+    // path_encoded)),                 ) {
     //                     Ok(state) => state,
     //                     Err(err) => {
-    //                         *render_status.borrow_mut() = RenderStatus::Err(err.into());
-    //                         return View::empty();
-    //                     }
+    //                         *render_status.borrow_mut() =
+    // RenderStatus::Err(err.into());                         return
+    // View::empty();                     }
     //                 };
     //                 let state = match TemplateState::from_str(&state) {
     //                     Ok(state) => state,
     //                     Err(err) => {
     //                         *render_status.borrow_mut() =
-    //                             RenderStatus::Err(ServerError::InvalidPageState { source: err });
+    //
+    // RenderStatus::Err(ServerError::InvalidPageState { source: err });
     //                         return View::empty();
     //                     }
     //                 };
 
-    //                 // Add this to the list of widget states so they can be written for later use
-    //                 widget_states.borrow_mut().insert(
-    //                     path.to_string(),
-    //                     (capsule_name.to_string(), state.state.clone()),
-    //                 );
+    //                 // Add this to the list of widget states so they can be
+    // written for later use
+    // widget_states.borrow_mut().insert(
+    // path.to_string(),                     (capsule_name.to_string(),
+    // state.state.clone()),                 );
 
     //                 capsule.render_widget_for_template_server(
     //                     PathMaybeWithLocale::new(&path, &locale),
@@ -193,8 +194,8 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     //                 )
     //             }
     //         } else {
-    //             // This widget will be incrementally generated (TODO should we try to build it
-    //             // now?)
+    //             // This widget will be incrementally generated (TODO should
+    // we try to build it             // now?)
     //             *render_status.borrow_mut() = RenderStatus::Cancelled;
     //             View::empty()
     //         }
@@ -204,19 +205,19 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     //         templates,
     //         unresolved_widget_accumulator,
     //     } => {
-    //         // Check if we've already built this widget (i.e. are we up to this layer, or a
-    //         // later one?)
+    //         // Check if we've already built this widget (i.e. are we up to
+    // this layer, or a         // later one?)
     //         match widget_states.get(&*path) {
     //             Some((capsule_name, state)) => {
-    //                 let translator = use_context::<Signal<Translator>>(cx).get_untracked();
-    //                 let locale = translator.get_locale();
-    //                 // Get the capsule this widget was generated by
-    //                 let capsule = match templates.get(capsule_name) {
-    //                     Some(capsule) => capsule,
-    //                     None => panic!(""),
+    //                 let translator =
+    // use_context::<Signal<Translator>>(cx).get_untracked();
+    // let locale = translator.get_locale();                 // Get the
+    // capsule this widget was generated by                 let capsule =
+    // match templates.get(capsule_name) {                     Some(capsule)
+    // => capsule,                     None => panic!(""),
     //                 };
-    //                 // Use that to render the widget for the server-side (this should *not* create a
-    //                 // new render context)
+    //                 // Use that to render the widget for the server-side
+    // (this should *not* create a                 // new render context)
     //                 capsule.render_widget_for_template_server(
     //                     PathMaybeWithLocale::new(&path, &locale),
     //                     state.clone(),
@@ -224,8 +225,8 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     //                 )
     //             }
     //             None => {
-    //                 // Just add this path to the list of unresolved ones, and it will be resolved in
-    //                 // time for the next pass
+    //                 // Just add this path to the list of unresolved ones, and
+    // it will be resolved in                 // time for the next pass
     //                 unresolved_widget_accumulator.borrow_mut().push(path);
     //                 View::empty()
     //             }

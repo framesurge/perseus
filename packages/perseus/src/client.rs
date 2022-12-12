@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
+use crate::errors::ClientError;
 use crate::reactor::Reactor;
 use crate::{checkpoint, plugins::PluginAction, template::TemplateNodeType};
 use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
-use sycamore::prelude::create_scope;
+use sycamore::prelude::{create_scope, create_scope_immediate};
 use sycamore::utils::hydrate::with_hydration_context;
 use wasm_bindgen::JsValue;
 
@@ -25,20 +28,39 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
 ) {
     let mut app = app();
-    let panic_handler = app.take_panic_handler();
+    // The latter of these is a clone of the handler used for other errors
+    let (general_panic_handler, view_panic_handler) = app.take_panic_handlers();
 
     checkpoint("begin");
 
-    // Handle panics (this works for unwinds and aborts)
-    // TODO New system
+    // Handle panics (this works for both unwinds and aborts)
     std::panic::set_hook(Box::new(move |panic_info| {
-        // Print to the console in development
+        // Print to the console in development (details are withheld in production,
+        // they'll just get 'unreachable executed')
         #[cfg(debug_assertions)]
         console_error_panic_hook::hook(panic_info);
-        // If the user wants a little warning dialogue, create that
-        if let Some(panic_handler) = &panic_handler {
+
+        // In case anything after this fails (which, since we're calling out to
+        // view rendering and user code, is reasonably likely), put out a console
+        // message to try to explain things (differentiated for end users)
+        #[cfg(debug_assertions)]
+        crate::web_log!("[CRITICAL ERROR]: Perseus has panicked! An error message has hopefully been displayed on your screen explaining this; if not, then something has gone terribly wrong, and, unless your code is panicking, you should report this as a bug. (If you're seeing this as an end user, please report it to the website administrator.)");
+        #[cfg(not(debug_assertions))]
+        crate::web_log!("[CRITICAL ERROR]: Perseus has panicked! An error message has hopefully been displayed on your screen explaining this; if not, then reloading the page might help.");
+
+        // Run the user's arbitrary panic handler
+        if let Some(panic_handler) = &general_panic_handler {
             panic_handler(panic_info);
         }
+
+        // Try to render an error page
+        Reactor::handle_panic(panic_info, view_panic_handler.clone());
+
+        // There is **not** a plugin opportunity here because that would require
+        // cloning the plugins into here. Any of that can be managed by the
+        // arbitrary user-given panic handler. Please appreciate how
+        // unreasonably difficult it is to get variables into a panic
+        // hook.
     }));
 
     let plugins = app.get_plugins();
