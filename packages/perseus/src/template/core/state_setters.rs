@@ -1,6 +1,6 @@
 use super::super::fn_types::*;
 use super::Template;
-use crate::errors::ClientError;
+use crate::errors::*;
 use crate::state::{StateGeneratorInfo, TemplateState, UnknownStateType};
 use crate::utils::PerseusDuration;
 use crate::{
@@ -228,20 +228,19 @@ impl<G: Html> Template<G> {
     /// This is for heads that do require state. Those that do not should use
     /// `.head()` instead.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn head_with_state<S>(
+    pub fn head_with_state<S, E>(
         mut self,
-        val: impl Fn(Scope, S) -> View<SsrNode> + Send + Sync + 'static,
+        val: impl Fn(Scope, S) -> Result<View<SsrNode>, E> + Send + Sync + 'static,
     ) -> Template<G>
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
+        E: std::error::Error + Send + Sync + 'static,
     {
-        use crate::errors::ClientInvariantError;
-
         let template_name = self.get_path();
         self.head = Box::new(move |cx, template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
-                return Err(ClientInvariantError::NoState.into());
+                return Err(ClientError::InvariantError(ClientInvariantError::NoState).into());
             }
             // Declare a type on the untyped state (this doesn't perform any conversions,
             // but the type we declare may be invalid)
@@ -249,9 +248,17 @@ impl<G: Html> Template<G> {
 
             let state = match typed_state.to_concrete() {
                 Ok(state) => state,
-                Err(err) => return Err(ClientInvariantError::InvalidState { source: err }.into()),
+                Err(err) => return Err(ClientError::InvariantError(ClientInvariantError::InvalidState { source: err }).into()),
             };
-            Ok(val(cx, state))
+
+            let template_name = template_name.clone();
+            let head = val(cx, state).map_err(move |user_err| ServerError::RenderFnFailed {
+                fn_name: "head".to_string(),
+                template_name,
+                blame: ErrorBlame::Server(None),
+                source: Box::new(user_err)
+            })?;
+            Ok(head)
         });
         self
     }
@@ -270,20 +277,19 @@ impl<G: Html> Template<G> {
     /// header defaults. This should only be used when your header-setting
     /// requires knowing the state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn set_headers_with_state<S>(
+    pub fn set_headers_with_state<S, E>(
         mut self,
-        val: impl Fn(S) -> HeaderMap + Send + Sync + 'static,
+        val: impl Fn(S) -> Result<HeaderMap, E> + Send + Sync + 'static,
     ) -> Template<G>
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
+        E: std::error::Error + Send + Sync + 'static,
     {
-        use crate::errors::ClientInvariantError;
-
         let template_name = self.get_path();
         self.set_headers = Box::new(move |template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
-                return Err(ClientInvariantError::NoState.into());
+                return Err(ClientError::InvariantError(ClientInvariantError::NoState).into());
             }
             // Declare a type on the untyped state (this doesn't perform any conversions,
             // but the type we declare may be invalid)
@@ -291,9 +297,16 @@ impl<G: Html> Template<G> {
 
             let state = match typed_state.to_concrete() {
                 Ok(state) => state,
-                Err(err) => return Err(ClientInvariantError::InvalidState { source: err }.into()),
+                Err(err) => return Err(ClientError::InvariantError(ClientInvariantError::InvalidState { source: err }).into()),
             };
-            Ok(val(state))
+
+            let template_name = template_name.clone();
+            val(state).map_err(move |user_err| ServerError::RenderFnFailed {
+                fn_name: "set_headers".to_string(),
+                template_name,
+                blame: ErrorBlame::Server(None),
+                source: Box::new(user_err)
+            })
         });
         self
     }

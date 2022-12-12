@@ -119,7 +119,7 @@ impl<G: Html> Template<G> {
         state: TemplateState,
         global_state: TemplateState,
         translator: &Translator,
-    ) -> Result<String, ClientError> {
+    ) -> Result<String, ServerError> {
         use sycamore::{
             prelude::create_scope_immediate, utils::hydrate::with_no_hydration_context,
         };
@@ -151,7 +151,7 @@ impl<G: Html> Template<G> {
                 Err(err) => Err(ServerError::RenderFnFailed {
                     fn_name: "get_build_paths".to_string(),
                     template_name: self.get_path(),
-                    cause: ErrorCause::Server(None),
+                    blame: ErrorBlame::Server(None),
                     source: err,
                 }),
             }
@@ -177,10 +177,10 @@ impl<G: Html> Template<G> {
             let res = get_build_state.call(info).await;
             match res {
                 Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
                     fn_name: "get_build_state".to_string(),
                     template_name: self.get_path(),
-                    cause,
+                    blame,
                     source: error,
                 }),
             }
@@ -196,7 +196,7 @@ impl<G: Html> Template<G> {
     /// and will not be performed at build-time. Unlike `.get_build_paths()`
     /// though, this will be passed information about the request that triggered
     /// the render. Errors here can be caused by either the server or the
-    /// client, so the user must specify an [`ErrorCause`]. This is also passed
+    /// client, so the user must specify an [`ErrorBlame`]. This is also passed
     /// the locale being rendered to.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_request_state(
@@ -208,10 +208,10 @@ impl<G: Html> Template<G> {
             let res = get_request_state.call(info, req).await;
             match res {
                 Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
                     fn_name: "get_request_state".to_string(),
                     template_name: self.get_path(),
-                    cause,
+                    blame,
                     source: error,
                 }),
             }
@@ -225,7 +225,7 @@ impl<G: Html> Template<G> {
     }
     /// Amalgamates given request and build states. Errors here can be caused by
     /// either the server or the client, so the user must specify
-    /// an [`ErrorCause`].
+    /// an [`ErrorBlame`].
     ///
     /// This takes a separate build state and request state to ensure there are
     /// no `None`s for either of the states. This will only be called if both
@@ -243,10 +243,10 @@ impl<G: Html> Template<G> {
                 .await;
             match res {
                 Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
                     fn_name: "amalgamate_states".to_string(),
                     template_name: self.get_path(),
-                    cause,
+                    blame,
                     source: error,
                 }),
             }
@@ -262,7 +262,7 @@ impl<G: Html> Template<G> {
     /// This function isn't presently parsed anything, but has
     /// network access etc., and can really do whatever it likes. Errors here
     /// can be caused by either the server or the client, so the
-    /// user must specify an [`ErrorCause`].
+    /// user must specify an [`ErrorBlame`].
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn should_revalidate(
         &self,
@@ -273,10 +273,10 @@ impl<G: Html> Template<G> {
             let res = should_revalidate.call(info, req).await;
             match res {
                 Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
                     fn_name: "should_revalidate".to_string(),
                     template_name: self.get_path(),
-                    cause,
+                    blame,
                     source: error,
                 }),
             }

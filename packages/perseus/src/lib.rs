@@ -116,7 +116,7 @@ pub mod log {
 /// be used in conjunction with the Sycamore prelude.
 pub mod prelude {
     pub use crate::error_views::ErrorViews;
-    pub use crate::errors::{ErrorCause, GenericErrorWithCause};
+    pub use crate::errors::{BlamedError, ErrorBlame};
     pub use crate::init::*;
     pub use crate::reactor::Reactor;
     pub use crate::state::{

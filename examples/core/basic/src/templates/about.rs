@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
@@ -8,10 +10,10 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head(cx: Scope) -> Result<View<SsrNode>, Infallible> {
+    Ok(view! { cx,
         title { "About Page | Perseus Example – Basic" }
-    }
+    })
 }
 
 pub fn get_template<G: Html>() -> Template<G> {

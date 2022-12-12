@@ -1,12 +1,5 @@
 use super::core::PreloadInfo;
-use crate::{
-    errors::{ClientError, GenericErrorWithCause},
-    make_async_trait,
-    path::PathMaybeWithLocale,
-    state::{BuildPaths, MakeRx, StateGeneratorInfo, TemplateState, UnknownStateType},
-    utils::AsyncFnReturn,
-    Request,
-};
+use crate::{Request, errors::*, make_async_trait, path::PathMaybeWithLocale, state::{BuildPaths, MakeRx, StateGeneratorInfo, TemplateState, UnknownStateType}, utils::AsyncFnReturn};
 use futures::Future;
 #[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
@@ -16,6 +9,7 @@ use sycamore::{
     view::View,
     web::SsrNode,
 };
+use std::error::Error as StdError;
 
 /// A generic error type that can be adapted for any errors the user may want to
 /// return from a render function. `.into()` can be used to convert most error
@@ -34,14 +28,14 @@ pub type RenderFnResult<T> = std::result::Result<T, Box<dyn std::error::Error + 
 /// need to manually instantiate [`GenericErrorWithCause`] and return that as
 /// the error type. Alternatively, you could use
 /// [`blame_err!`](crate::blame_err).
-pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericErrorWithCause>;
+pub type RenderFnResultWithCause<T> = std::result::Result<T, GenericBlamedError>;
 
 // A series of asynchronous closure traits that prevent the user from having to
 // pin their functions
 #[cfg(not(target_arch = "wasm32"))]
-make_async_trait!(pub GetBuildPathsFnType, RenderFnResult<BuildPaths>); // This doubles as the user type
-                                                                        // The build state strategy needs an error cause if it's invoked from
-                                                                        // incremental
+make_async_trait!(pub(crate) GetBuildPathsFnType, RenderFnResult<BuildPaths>);
+// The build state strategy needs an error cause if it's invoked from
+// incremental
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub(super) GetBuildStateFnType,
@@ -75,38 +69,40 @@ make_async_trait!(
 // internally!
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    pub GetBuildStateUserFnType<S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync>,
-    RenderFnResultWithCause<S>,
+    pub GetBuildPathsUserFnType<E: StdError + Send + Sync>,
+    Result<BuildPaths, E>
+);
+#[cfg(not(target_arch = "wasm32"))]
+make_async_trait!(
+    pub GetBuildStateUserFnType<S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync, E: StdError + Send + Sync>,
+    Result<S, BlamedError<E>>,
     info: StateGeneratorInfo<B>
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    pub GetRequestStateUserFnType<S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync>,
-    RenderFnResultWithCause<S>,
+    pub GetRequestStateUserFnType<S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync, E: StdError + Send + Sync>,
+    Result<S, BlamedError<E>>,
     info: StateGeneratorInfo<B>,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    pub ShouldRevalidateUserFnType<B: Serialize + DeserializeOwned + Send + Sync>,
-    RenderFnResultWithCause<bool>,
+    pub ShouldRevalidateUserFnType<B: Serialize + DeserializeOwned + Send + Sync, E: StdError + Send + Sync>,
+    Result<bool, BlamedError<E>>,
     info: StateGeneratorInfo<B>,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    pub AmalgamateStatesUserFnType<S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync>,
-    RenderFnResultWithCause<S>,
+    pub AmalgamateStatesUserFnType<S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync, E: StdError + Send + Sync>,
+    Result<S, BlamedError<E>>,
     info: StateGeneratorInfo<B>,
     build_state: S,
     request_state: S
 );
 
 // A series of closure types that should not be typed out more than once
-/// The type of functions that are given a state and render a page. If you've
-/// defined state for your page, it's safe to `.unwrap()` the given `Option`
-/// inside `PageProps`. If you're using i18n, an `Rc<Translator>` will also be
-/// made available through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/advanced/advanced_reactivity).
+/// The type of functions that are given a state and render a page.
 pub(crate) type TemplateFn<G> = Box<
     dyn for<'a> Fn(
             Scope<'a>,
@@ -117,17 +113,18 @@ pub(crate) type TemplateFn<G> = Box<
         + Send
         + Sync,
 >;
+// Note: the head and header functions have render errors constructed inside their closures!
 /// A type alias for the function that modifies the document head. This is just
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
 /// string, rather than a reactive template).
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type HeadFn =
-    Box<dyn Fn(Scope, TemplateState) -> Result<View<SsrNode>, ClientError> + Send + Sync>;
+    Box<dyn Fn(Scope, TemplateState) -> Result<View<SsrNode>, ServerError> + Send + Sync>;
 #[cfg(not(target_arch = "wasm32"))]
 /// The type of functions that modify HTTP response headers.
 pub(crate) type SetHeadersFn =
-    Box<dyn Fn(TemplateState) -> Result<HeaderMap, ClientError> + Send + Sync>;
+    Box<dyn Fn(TemplateState) -> Result<HeaderMap, ServerError> + Send + Sync>;
 /// The type of functions that get build paths.
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type GetBuildPathsFn = Box<dyn GetBuildPathsFnType + Send + Sync>;

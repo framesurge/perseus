@@ -209,7 +209,7 @@ impl GlobalStateCreator {
                 Err(err) => Err(ServerError::RenderFnFailed {
                     fn_name: "get_build_state".to_string(),
                     template_name: "GLOBAL_STATE".to_string(),
-                    cause: ErrorCause::Server(None),
+                    blame: ErrorBlame::Server(None),
                     source: err,
                 }),
             }
@@ -232,10 +232,10 @@ impl GlobalStateCreator {
             let res = get_request_state.call(locale, req).await;
             match res {
                 Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
                     fn_name: "get_request_state".to_string(),
                     template_name: "GLOBAL_STATE".to_string(),
-                    cause,
+                    blame,
                     source: error,
                 }),
             }
@@ -262,10 +262,10 @@ impl GlobalStateCreator {
                 .await;
             match res {
                 Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
+                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
                     fn_name: "amalgamate_states".to_string(),
                     template_name: "GLOBAL_STATE".to_string(),
-                    cause,
+                    blame,
                     source: error,
                 }),
             }

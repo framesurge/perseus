@@ -229,12 +229,12 @@ pub enum ClientThawError {
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Error, Debug)]
 pub enum ServerError {
-    #[error("render function '{fn_name}' in template '{template_name}' failed (cause: {cause:?})")]
+    #[error("render function '{fn_name}' in template '{template_name}' failed (cause: {blame:?})")]
     RenderFnFailed {
         // This is something like `build_state`
         fn_name: String,
         template_name: String,
-        cause: ErrorCause,
+        blame: ErrorBlame,
         // This will be triggered by the user's custom render functions, which should be able to
         // have any error type
         #[source]
@@ -299,9 +299,9 @@ pub fn err_to_status_code(err: &ServerError) -> u16 {
     match err {
         ServerError::ServeError(ServeError::PageNotFound { .. }) => 404,
         // Ambiguous (user-generated error), we'll rely on the given cause
-        ServerError::RenderFnFailed { cause, .. } => match cause {
-            ErrorCause::Client(code) => code.unwrap_or(400),
-            ErrorCause::Server(code) => code.unwrap_or(500),
+        ServerError::RenderFnFailed { blame, .. } => match blame {
+            ErrorBlame::Client(code) => code.unwrap_or(400),
+            ErrorBlame::Server(code) => code.unwrap_or(500),
         },
         // Any other errors go to a 500, they'll be misconfigurations or internal server errors
         _ => 500,
@@ -440,10 +440,17 @@ pub enum ServeError {
 /// Defines who caused an ambiguous error message so we can reliably create an
 /// HTTP status code. Specific status codes may be provided in either case, or
 /// the defaults (400 for client, 500 for server) will be used.
+///
+/// The default implementation will produce a server-blamed 500 error.
 #[derive(Debug)]
-pub enum ErrorCause {
+pub enum ErrorBlame {
     Client(Option<u16>),
     Server(Option<u16>),
+}
+impl Default for ErrorBlame {
+    fn default() -> Self {
+        Self::Server(None)
+    }
 }
 
 /// An error that has an attached cause that blames either the client or the
@@ -451,24 +458,38 @@ pub enum ErrorCause {
 /// `.into()` or `?`, which will set the cause to the server by default,
 /// resulting in a *500 Internal Server Error* HTTP status code. If this isn't
 /// what you want, you'll need to initialize this explicitly.
+///
+/// *Note for those using `anyhow`: use `.map_err(|e| anyhow::anyhow!(e))?`
+/// to use anyhow in Perseus render functions.*
 #[derive(Debug)]
-pub struct GenericErrorWithCause {
+pub struct BlamedError<E: Send + Sync> {
     /// The underlying error.
-    pub error: Box<dyn std::error::Error + Send + Sync>,
-    /// The cause of the error.
-    pub cause: ErrorCause,
+    pub error: E,
+    /// Who is to blame for the error.
+    pub blame: ErrorBlame,
+}
+impl<E: std::error::Error + Send + Sync + 'static> BlamedError<E> {
+    /// Converts this blamed error into an internal boxed version that is generic
+    /// over the error type.
+    pub(crate) fn to_boxed(self) -> GenericBlamedError {
+        BlamedError { error: Box::new(self.error), blame: self.blame }
+    }
 }
 // We should be able to convert any error into this easily (e.g. with `?`) with
 // the default being to blame the server
-impl<E: std::error::Error + Send + Sync + 'static> From<E> for GenericErrorWithCause {
+impl<E: std::error::Error + Send + Sync + 'static> From<E> for BlamedError<E> {
     fn from(error: E) -> Self {
         Self {
-            error: error.into(),
-            cause: ErrorCause::Server(None),
+            error,
+            blame: ErrorBlame::default(),
         }
     }
 }
 
+/// A simple wrapper for generic, boxed, blamed errors.
+pub(crate) type GenericBlamedError = BlamedError<Box<dyn std::error::Error + Send + Sync>>;
+
+// === TODO ===
 /// Creates a new [`GenericErrorWithCause` (the error type behind
 /// [`RenderFnResultWithCause`](crate::RenderFnResultWithCause)) efficiently.
 /// This allows you to explicitly return errors from any state-generation
