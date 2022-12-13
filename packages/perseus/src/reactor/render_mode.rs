@@ -1,9 +1,6 @@
-use crate::{
-    errors::ServerError, path::*, state::TemplateState, stores::ImmutableStore,
-    template::ArcTemplateMap,
-};
+use crate::{error_views::{ErrorViews, ServerErrorData}, errors::ServerError, path::*, state::TemplateState, stores::ImmutableStore, template::ArcTemplateMap};
 use serde_json::Value;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 use sycamore::web::Html;
 
 /// The status of a build-time render.
@@ -29,7 +26,7 @@ impl Default for RenderStatus {
 /// Ths render mode is primarily used to inform the non-delayed widgets of how
 /// they should render.
 #[cfg(not(target_arch = "wasm32"))]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) enum RenderMode<G: Html> {
     /// We're rendering at build-time. Any non-delayed widgets should render if
     /// they are not going to alter the render properties of their caller.
@@ -65,10 +62,13 @@ pub(crate) enum RenderMode<G: Html> {
     /// out with nothing new, and then the return value is the
     /// fully-rendered content!
     Request {
-        /// The widget states and attached capsule names.
-        widget_states: Rc<HashMap<PathMaybeWithLocale, TemplateState>>,
+        /// The widget states and attached capsule names. Each of these is fallible,
+        /// and the widget component will render an appropriate error page if necessary.
+        widget_states: Rc<HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>>,
         /// The app's templates and capsules.
         templates: ArcTemplateMap<G>,
+        /// The app's error views.
+        error_views: Arc<ErrorViews<G>>,
         /// A list of the paths to widgets that haven't yet been resolved in any
         /// way. These will be deduplicated and then resolved in
         /// parallel, along with having their states built.

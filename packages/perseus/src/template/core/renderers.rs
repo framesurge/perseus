@@ -91,8 +91,8 @@ impl<G: Html> Template<G> {
     }
     /// Executes the user-given function that renders the capsule on the
     /// server-side ONLY. This takes the scope from a previous call of
-    /// `.render_for_template_server()`, assuming the render context and
-    /// translator have already been fully instantiated.
+    /// `.render_for_template_server()`, assuming the reactor has already
+    /// been fully instantiated.
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn render_widget_for_template_server(
         &self,

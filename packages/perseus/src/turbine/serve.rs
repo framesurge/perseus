@@ -10,9 +10,10 @@ use sycamore::{
     prelude::create_scope_immediate, utils::hydrate::with_hydration_context, view::View,
     web::SsrNode,
 };
+use fmterr::fmt_err;
 
 use super::Turbine;
-use crate::reactor::RenderMode;
+use crate::{error_views::ServerErrorData, reactor::RenderMode};
 use crate::state::{TemplateState, UnknownStateType};
 use crate::{
     errors::*,
@@ -166,7 +167,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .await?
             };
             let widget_states =
-                match serde_json::from_str::<HashMap<PathMaybeWithLocale, Value>>(&widget_states) {
+                match serde_json::from_str::<HashMap<PathMaybeWithLocale, Result<Value, ServerErrorData>>>(&widget_states) {
                     Ok(widget_states) => widget_states,
                     Err(err) => return Err(ServerError::InvalidPageState { source: err }),
                 };
@@ -196,7 +197,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Convert the `TemplateState`s into `Value`s
             let final_widget_states = final_widget_states
                 .into_iter()
-                .map(|(k, v)| (k, v.state))
+                // Ignore the capsule name (needed internally only, we'll `match_route` on the browser-side anyway). We also
+                // need to turn `TemplateState` into its underlying `Value`.
+                .map(|(k, res)| (k, res.map(|(v, s)| s.state)))
                 .collect::<HashMap<_, _>>();
 
             Ok((
@@ -224,7 +227,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // we go through. That way, we can just run the exact same render over and over
         // again, getting to a new layer each time, since, if a widget finds its state in
         // this, it'll use it. This will be progressively accumulated over many layers.
-        widget_states: HashMap<PathMaybeWithLocale, TemplateState>,
+        widget_states: HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>,
         path: PathWithoutLocale,
         locale: String,
         state: TemplateState,
@@ -233,7 +236,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         req: &'a Request,
         translator: &'a Translator,
     ) -> Result<
-        BoxFuture<'a, Result<(HashMap<PathMaybeWithLocale, TemplateState>, String), ServerError>>,
+        BoxFuture<'a, Result<(HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>, String), ServerError>>,
         ServerError,
     > {
         // Misleadingly, this only has the locale if we're using i18n!
@@ -253,6 +256,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             widget_states: widget_states_rc.clone(),
             // This is a bunch of `Arc`s
             templates: self.templates.clone(),
+            error_views: self.error_views.clone(),
             unresolved_widget_accumulator: unresolved_widget_accumulator.clone(),
         };
 
@@ -309,38 +313,61 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                             &self.templates,
                             &self.locales,
                         );
-                        let route_info = match verdict {
-                            RouteVerdictAtomic::Found(route_info) => route_info,
+
+                        let res = match verdict {
+                            RouteVerdictAtomic::Found(route_info) => {
+                                let capsule_name = route_info.template.get_path();
+
+                                // Now build the state; if this fails, we won't fail the whole
+                                // page, we'll just load an error for this particular widget
+                                // (allowing the user to still see the rest of the page). If this
+                                // sort of thing were to happen in a subsequent load, the browser
+                                // would be responsible for this.
+                                self
+                                    .get_state_for_path_internal(
+                                        widget_path.clone(),
+                                        translator,
+                                        &capsule_name,
+                                        route_info.was_incremental_match,
+                                        clone_req(req),
+                                        // We do happen to actually have this from the routing
+                                        Some(route_info.template),
+                                        Some(global_state),
+                                    )
+                                    .await
+                                // The error handling systems will need a client-style error,
+                                // so we just make the same conversion that would be made on
+                                // the browser-side
+                                    .map_err(|err| ServerErrorData {
+                                        status: err_to_status_code(&err),
+                                        msg: fmt_err(&err)
+                                    })
+                                    // And discard the head (it's a widget), adding the capsule name instead
+                                    .map(|state| (capsule_name, state.state))
+                            },
+                            // This is just completely wrong, and implies a corruption, so it's made a page-level error
                             RouteVerdictAtomic::LocaleDetection(_) => {
                                 return Err(ServerError::ResolveDepLocaleRedirection {
                                     locale: locale.to_string(),
                                     widget: widget_path.to_string(),
                                 })
                             }
+                            // But a widget that isn't found will be made a widget-only error
                             RouteVerdictAtomic::NotFound { .. } => {
-                                return Err(ServerError::ResolveDepNotFound {
+                                let err = ServerError::ResolveDepNotFound {
                                     locale: locale.to_string(),
                                     widget: widget_path.to_string(),
+                                };
+                                Err(ServerErrorData {
+                                    status: err_to_status_code(&err),
+                                    msg: fmt_err(&err),
                                 })
                             }
                         };
 
-                        // Now build the state
-                        let state = self
-                            .get_state_for_path_internal(
-                                widget_path.clone(),
-                                translator,
-                                &route_info.template.get_path(),
-                                route_info.was_incremental_match,
-                                clone_req(req),
-                                // We do happen to actually have this from the routing
-                                Some(route_info.template),
-                                Some(global_state),
-                            )
-                            .await?;
 
                         // Return the tuples that'll go into `widget_states`
-                        Ok((localized_widget_path, state.state))
+                        Ok((localized_widget_path, res))
                     });
                 }
                 let tuples = try_join_all(futs).await?;

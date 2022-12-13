@@ -219,13 +219,14 @@ impl ErrorViews<SsrNode> {
     /// Since the only kind of error that can be sent from the server to the
     /// client falls under a `ClientError::ServerError`, which always takes
     /// up the whole page, and since we presumably don't have any actual
-    /// content to render, this will, expectedly, take up the whole page/widget.
+    /// content to render, this will, expectedly, take up the whole page.
+    ///
+    /// This cannot be used for widgets (use `.handle_widget()` instead).
     pub(crate) fn render_to_string(
         &self,
         err: ServerErrorData,
         global_state: TemplateState,
         translator: Option<&Translator>,
-        is_widget: bool,
     ) -> (String, String) {
         // We need to create an engine-side reactor
         let reactor = Reactor::<SsrNode>::engine(global_state, RenderMode::Error, translator);
@@ -239,10 +240,6 @@ impl ErrorViews<SsrNode> {
                 Some(_) => ErrorContext::Full,
                 None => ErrorContext::WithReactor,
             };
-            let pos = match is_widget {
-                true => ErrorPosition::Widget,
-                false => ErrorPosition::Page,
-            };
             let (head_view, body_view) = with_hydration_context(|| {
                 (self.handler)(
                     cx,
@@ -251,7 +248,7 @@ impl ErrorViews<SsrNode> {
                         message: err.msg,
                     },
                     err_cx,
-                    pos,
+                    ErrorPosition::Page,
                 )
             });
 
@@ -260,6 +257,31 @@ impl ErrorViews<SsrNode> {
         });
 
         (head_str, body_str)
+    }
+}
+#[cfg(not(target_arch = "wasm32"))]
+impl<G: Html> ErrorViews<G> {
+    /// Renders an error view for the given widget, using the given scope. This
+    /// will *not* create a new child scope, it will simply use the one it is given.
+    ///
+    /// Since this only handles widgets, it will automatically discard the head.
+    ///
+    /// This assumes the reactor has already been fully set up with a translator on
+    /// the given context, and hence this will always use `ErrorContext::Full` (since
+    /// widgets shoudl not be rendered if a translator cannot be found, and certainly
+    /// not if a reactor could not be instantiated).
+    pub(crate) fn handle_widget(
+        &self,
+        err: &ClientError,
+        cx: Scope,
+    ) -> View<G> {
+        let (_head, body) = (self.handler)(
+            cx,
+            err,
+            ErrorContext::Full,
+            ErrorPosition::Page,
+        );
+        body
     }
 }
 
@@ -339,7 +361,7 @@ pub enum ErrorPosition {
 /// This `struct` is embedded in the HTML provided to the client, allowing it to
 /// be extracted and rendered.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) struct ServerErrorData {
+pub struct ServerErrorData {
     /// The HTTP status code of the error (since these errors are always
     /// transmitted from server to client).
     pub(crate) status: u16,
@@ -348,24 +370,6 @@ pub(crate) struct ServerErrorData {
     /// containing no more information, since it isn't available at
     /// export-time, of course.
     pub(crate) msg: String,
-}
-#[cfg(not(target_arch = "wasm32"))]
-impl ServerErrorData {
-    /// Creates the data for a server error based on the given HTTP status code.
-    pub(crate) fn from_status(status: u16) -> Result<Self, ExportError> {
-        use http::StatusCode;
-
-        let status_code =
-            StatusCode::from_u16(status).map_err(|_| ExportError::InvalidStatusCode)?;
-        // If we can't get a reason, thats okay (but, looking at status.rs in `http`, we
-        // should always be able to)
-        let reason_str = status_code.canonical_reason().unwrap_or_default();
-
-        Ok(Self {
-            status,
-            msg: reason_str.to_string(),
-        })
-    }
 }
 
 // --- Default error views (development only) ---

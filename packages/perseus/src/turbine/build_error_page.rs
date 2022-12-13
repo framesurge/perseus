@@ -40,7 +40,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             data.clone(),
             todo!(),
             translator,
-            false, // This is engine-side, and we'll never render widget errors with it
         );
 
         self.html_shell

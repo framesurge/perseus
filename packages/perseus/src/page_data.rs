@@ -1,4 +1,4 @@
-use crate::path::PathMaybeWithLocale;
+use crate::{error_views::ServerErrorData, path::PathMaybeWithLocale};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -11,11 +11,13 @@ pub struct PageData {
     /// The state for hydration.
     pub state: Value,
     /// The states of all the widgets involved in rendering this page. This will
-    /// not include the states of delayed widgets.
+    /// not include the states of delayed widgets. Each state here is fallible
+    /// with a client error, since any errors in widgets will simply affect their
+    /// own load, not that of the wider page.
     ///
     /// This is a map of widget path to capsule name and state, preventing the
     /// need to run route resolution algorithms on the browser-side.
-    pub widget_states: HashMap<PathMaybeWithLocale, Value>,
+    pub widget_states: HashMap<PathMaybeWithLocale, Result<Value, ServerErrorData>>,
     /// The string to interpolate into the document's `<head>`.
     pub head: String,
 }

@@ -1,16 +1,5 @@
 use super::Turbine;
-use crate::{
-    errors::*,
-    i18n::TranslationsManager,
-    init::PerseusAppBase,
-    internal::{PageData, PageDataPartial},
-    path::PathMaybeWithLocale,
-    plugins::PluginAction,
-    server::HtmlShell,
-    state::TemplateState,
-    stores::MutableStore,
-    utils::get_path_prefix_server,
-};
+use crate::{error_views::ServerErrorData, errors::*, i18n::TranslationsManager, init::PerseusAppBase, internal::{PageData, PageDataPartial}, path::PathMaybeWithLocale, plugins::PluginAction, server::HtmlShell, state::TemplateState, stores::MutableStore, utils::get_path_prefix_server};
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::future::{try_join, try_join_all};
 use serde_json::Value;
@@ -282,7 +271,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .read(&format!("static/{}.widgets.json", full_path_encoded))
             .await?;
         let widget_states =
-            match serde_json::from_str::<HashMap<PathMaybeWithLocale, Value>>(&widget_states) {
+            match serde_json::from_str::<HashMap<PathMaybeWithLocale, Result<Value, ServerErrorData>>>(&widget_states) {
                 Ok(widget_states) => widget_states,
                 Err(err) => return Err(ServerError::InvalidPageState { source: err }),
             };
