@@ -8,7 +8,6 @@ use crate::{
     Request,
 };
 use futures::Future;
-#[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::{
@@ -190,34 +189,29 @@ impl<E: std::error::Error + Send + Sync + 'static> From<Result<bool, BlamedError
 
 // A series of asynchronous closure traits that prevent the user from having to
 // pin their functions
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub(crate) GetBuildPathsFnType,
     Result<BuildPaths, ServerError>
 );
 // The build state strategy needs an error cause if it's invoked from
 // incremental
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub(super) GetBuildStateFnType,
     Result<TemplateState, ServerError>,
     info: StateGeneratorInfo<UnknownStateType>
 );
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub(super) GetRequestStateFnType,
     Result<TemplateState, ServerError>,
     info: StateGeneratorInfo<UnknownStateType>,
     req: Request
 );
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub(super) ShouldRevalidateFnType,
     Result<bool, ServerError>,
     info: StateGeneratorInfo<UnknownStateType>,
     req: Request
 );
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub(super) AmalgamateStatesFnType,
     Result<TemplateState, ServerError>,
@@ -230,32 +224,27 @@ make_async_trait!(
 // internally! As `R` denotes reference reactive state elsewhere, `V` is used
 // here for return types. Also, for some reason macros don't do `>>`, so we need
 // random spaces.
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub GetBuildPathsUserFnType< V: Into< GeneratorResult<BuildPaths> > >,
     V
 );
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub GetBuildStateUserFnType< S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync, V: Into< BlamedGeneratorResult<S> > >,
     V,
     info: StateGeneratorInfo<B>
 );
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub GetRequestStateUserFnType< S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync, V: Into< BlamedGeneratorResult<S> > >,
     V,
     info: StateGeneratorInfo<B>,
     req: Request
 );
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub ShouldRevalidateUserFnType< B: Serialize + DeserializeOwned + Send + Sync, V: Into< BlamedGeneratorResult<bool> >  >,
     V,
     info: StateGeneratorInfo<B>,
     req: Request
 );
-#[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     pub AmalgamateStatesUserFnType< S: Serialize + DeserializeOwned + MakeRx, B: Serialize + DeserializeOwned + Send + Sync, V: Into< BlamedGeneratorResult<S> > >,
     V,
@@ -282,25 +271,18 @@ pub(crate) type TemplateFn<G> = Box<
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
 /// string, rather than a reactive template).
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type HeadFn =
     Box<dyn Fn(Scope, TemplateState) -> Result<View<SsrNode>, ServerError> + Send + Sync>;
-#[cfg(not(target_arch = "wasm32"))]
 /// The type of functions that modify HTTP response headers.
 pub(crate) type SetHeadersFn =
     Box<dyn Fn(TemplateState) -> Result<HeaderMap, ServerError> + Send + Sync>;
 /// The type of functions that get build paths.
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type GetBuildPathsFn = Box<dyn GetBuildPathsFnType + Send + Sync>;
 /// The type of functions that get build state.
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type GetBuildStateFn = Box<dyn GetBuildStateFnType + Send + Sync>;
 /// The type of functions that get request state.
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type GetRequestStateFn = Box<dyn GetRequestStateFnType + Send + Sync>;
 /// The type of functions that check if a template should revalidate.
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type ShouldRevalidateFn = Box<dyn ShouldRevalidateFnType + Send + Sync>;
 /// The type of functions that amalgamate build and request states.
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type AmalgamateStatesFn = Box<dyn AmalgamateStatesFnType + Send + Sync>;

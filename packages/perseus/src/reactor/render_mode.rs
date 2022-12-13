@@ -1,4 +1,11 @@
-use crate::{error_views::{ErrorViews, ServerErrorData}, errors::ServerError, path::*, state::TemplateState, stores::ImmutableStore, template::ArcTemplateMap};
+use crate::{
+    error_views::{ErrorViews, ServerErrorData},
+    errors::ServerError,
+    path::*,
+    state::TemplateState,
+    stores::ImmutableStore,
+    template::ArcTemplateMap,
+};
 use serde_json::Value;
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 use sycamore::web::Html;
@@ -62,9 +69,11 @@ pub(crate) enum RenderMode<G: Html> {
     /// out with nothing new, and then the return value is the
     /// fully-rendered content!
     Request {
-        /// The widget states and attached capsule names. Each of these is fallible,
-        /// and the widget component will render an appropriate error page if necessary.
-        widget_states: Rc<HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>>,
+        /// The widget states and attached capsule names. Each of these is
+        /// fallible, and the widget component will render an
+        /// appropriate error page if necessary.
+        widget_states:
+            Rc<HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>>,
         /// The app's templates and capsules.
         templates: ArcTemplateMap<G>,
         /// The app's error views.

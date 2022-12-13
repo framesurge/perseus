@@ -5,12 +5,10 @@ use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx};
 use crate::errors::*;
 use crate::errors::{ClientError, ClientInvariantError};
 use crate::stores::ImmutableStore;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::template::{BlamedGeneratorResult, GeneratorResult};
 use crate::utils::AsyncFnReturn;
-use crate::{
-    make_async_trait,
-    template::{BlamedGeneratorResult, GeneratorResult},
-    Request,
-};
+use crate::{make_async_trait, Request};
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};

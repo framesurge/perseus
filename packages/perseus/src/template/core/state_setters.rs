@@ -1,5 +1,7 @@
+#[cfg(not(target_arch = "wasm32"))]
 use super::super::fn_types::*;
 use super::Template;
+use super::TemplateFn;
 use crate::errors::*;
 use crate::state::{StateGeneratorInfo, TemplateState, UnknownStateType};
 use crate::utils::PerseusDuration;

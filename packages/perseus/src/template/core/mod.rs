@@ -10,7 +10,9 @@ mod state_setters;
 
 pub(crate) use utils::*;
 
+#[cfg(not(target_arch = "wasm32"))]
 use super::fn_types::*;
+use super::TemplateFn;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::default_headers;
 use crate::utils::ComputedDuration;

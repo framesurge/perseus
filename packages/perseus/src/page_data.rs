@@ -12,8 +12,8 @@ pub struct PageData {
     pub state: Value,
     /// The states of all the widgets involved in rendering this page. This will
     /// not include the states of delayed widgets. Each state here is fallible
-    /// with a client error, since any errors in widgets will simply affect their
-    /// own load, not that of the wider page.
+    /// with a client error, since any errors in widgets will simply affect
+    /// their own load, not that of the wider page.
     ///
     /// This is a map of widget path to capsule name and state, preventing the
     /// need to run route resolution algorithms on the browser-side.

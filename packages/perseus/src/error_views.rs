@@ -262,25 +262,18 @@ impl ErrorViews<SsrNode> {
 #[cfg(not(target_arch = "wasm32"))]
 impl<G: Html> ErrorViews<G> {
     /// Renders an error view for the given widget, using the given scope. This
-    /// will *not* create a new child scope, it will simply use the one it is given.
+    /// will *not* create a new child scope, it will simply use the one it is
+    /// given.
     ///
     /// Since this only handles widgets, it will automatically discard the head.
     ///
-    /// This assumes the reactor has already been fully set up with a translator on
-    /// the given context, and hence this will always use `ErrorContext::Full` (since
-    /// widgets shoudl not be rendered if a translator cannot be found, and certainly
-    /// not if a reactor could not be instantiated).
-    pub(crate) fn handle_widget(
-        &self,
-        err: &ClientError,
-        cx: Scope,
-    ) -> View<G> {
-        let (_head, body) = (self.handler)(
-            cx,
-            err,
-            ErrorContext::Full,
-            ErrorPosition::Page,
-        );
+    /// This assumes the reactor has already been fully set up with a translator
+    /// on the given context, and hence this will always use
+    /// `ErrorContext::Full` (since widgets shoudl not be rendered if a
+    /// translator cannot be found, and certainly not if a reactor could not
+    /// be instantiated).
+    pub(crate) fn handle_widget(&self, err: &ClientError, cx: Scope) -> View<G> {
+        let (_head, body) = (self.handler)(cx, err, ErrorContext::Full, ErrorPosition::Page);
         body
     }
 }

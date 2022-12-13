@@ -1,3 +1,4 @@
+#[cfg(not(target_arch = "wasm32"))]
 use super::super::fn_types::*;
 use super::Template;
 #[cfg(not(target_arch = "wasm32"))]
