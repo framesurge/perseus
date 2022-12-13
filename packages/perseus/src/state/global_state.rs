@@ -5,9 +5,12 @@ use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx};
 use crate::errors::*;
 use crate::errors::{ClientError, ClientInvariantError};
 use crate::stores::ImmutableStore;
-use crate::template::RenderFnResult;
 use crate::utils::AsyncFnReturn;
-use crate::{make_async_trait, template::RenderFnResultWithCause, Request};
+use crate::{
+    make_async_trait,
+    template::{BlamedGeneratorResult, GeneratorResult},
+    Request,
+};
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -17,20 +20,20 @@ use std::rc::Rc;
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GlobalStateBuildFnType,
-    RenderFnResult<TemplateState>,
+    Result<TemplateState, ServerError>,
     locale: String
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GlobalStateRequestFnType,
-    RenderFnResultWithCause<TemplateState>,
+    Result<TemplateState, ServerError>,
     locale: String,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GlobalStateAmalgamationFnType,
-    RenderFnResultWithCause<TemplateState>,
+    Result<TemplateState, ServerError>,
     locale: String,
     build_state: TemplateState,
     request_state: TemplateState
@@ -38,21 +41,21 @@ make_async_trait!(
 
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    GlobalStateBuildUserFnType<S: Serialize + DeserializeOwned + MakeRx>,
-    RenderFnResult<S>,
+    GlobalStateBuildUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< GeneratorResult<S> > >,
+    V,
     locale: String
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    GlobalStateRequestUserFnType<S: Serialize + DeserializeOwned + MakeRx>,
-    RenderFnResultWithCause<S>,
+    GlobalStateRequestUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
+    V,
     locale: String,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    GlobalStateAmalgamationUserFnType<S: Serialize + DeserializeOwned + MakeRx>,
-    RenderFnResultWithCause<S>,
+    GlobalStateAmalgamationUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
+    V,
     locale: String,
     build_state: S,
     request_state: S
@@ -103,17 +106,22 @@ impl GlobalStateCreator {
 
     /// Adds a function to generate global state at build-time.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn build_state_fn<S>(
+    pub fn build_state_fn<S, V>(
         mut self,
-        val: impl GlobalStateBuildUserFnType<S> + Clone + Send + Sync + 'static,
+        val: impl GlobalStateBuildUserFnType<S, V> + Clone + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
+        V: Into<GeneratorResult<S>>,
     {
         self.build = Some(Box::new(move |locale| {
             let val = val.clone();
             async move {
-                let user_state = val.call(locale).await?;
+                let user_state = val
+                    .call(locale)
+                    .await
+                    .into()
+                    .to_server_result("global_build_state", "GLOBAL_STATE".to_string())?;
                 let template_state: TemplateState = user_state.into();
                 Ok(template_state)
             }
@@ -128,17 +136,22 @@ impl GlobalStateCreator {
 
     /// Adds a function to generate global state at request-time.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn request_state_fn<S>(
+    pub fn request_state_fn<S, V>(
         mut self,
-        val: impl GlobalStateRequestUserFnType<S> + Clone + Send + Sync + 'static,
+        val: impl GlobalStateRequestUserFnType<S, V> + Clone + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
+        V: Into<BlamedGeneratorResult<S>>,
     {
         self.request = Some(Box::new(move |locale, req| {
             let val = val.clone();
             async move {
-                let user_state = val.call(locale, req).await?;
+                let user_state = val
+                    .call(locale, req)
+                    .await
+                    .into()
+                    .to_server_result("global_request_state", "GLOBAL_STATE".to_string())?;
                 let template_state: TemplateState = user_state.into();
                 Ok(template_state)
             }
@@ -153,12 +166,13 @@ impl GlobalStateCreator {
 
     /// Adds a function to amalgamate build-time and request-time global state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn amalgamate_states_fn<S>(
+    pub fn amalgamate_states_fn<S, V>(
         mut self,
-        val: impl GlobalStateAmalgamationUserFnType<S> + Clone + Send + Sync + 'static,
+        val: impl GlobalStateAmalgamationUserFnType<S, V> + Clone + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + Send + Sync + 'static,
+        V: Into<BlamedGeneratorResult<S>>,
     {
         self.amalgamation = Some(Box::new(
             move |locale, build_state: TemplateState, request_state: TemplateState| {
@@ -183,7 +197,9 @@ impl GlobalStateCreator {
                     };
                     let user_state = val
                         .call(locale, user_build_state, user_request_state)
-                        .await?;
+                        .await
+                        .into()
+                        .to_server_result("global_amalgamate_states", "GLOBAL_STATE".to_string())?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }
@@ -201,18 +217,7 @@ impl GlobalStateCreator {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_build_state(&self, locale: String) -> Result<TemplateState, ServerError> {
         if let Some(get_build_state) = &self.build {
-            let res = get_build_state.call(locale).await;
-            match res {
-                Ok(res) => Ok(res),
-                // Unlike template build state, there's no incremental generation here, so the
-                // client can't have caused an error
-                Err(err) => Err(ServerError::RenderFnFailed {
-                    fn_name: "get_build_state".to_string(),
-                    template_name: "GLOBAL_STATE".to_string(),
-                    blame: ErrorBlame::Server(None),
-                    source: err,
-                }),
-            }
+            get_build_state.call(locale).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),
@@ -229,16 +234,7 @@ impl GlobalStateCreator {
         req: Request,
     ) -> Result<TemplateState, ServerError> {
         if let Some(get_request_state) = &self.request {
-            let res = get_request_state.call(locale, req).await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "get_request_state".to_string(),
-                    template_name: "GLOBAL_STATE".to_string(),
-                    blame,
-                    source: error,
-                }),
-            }
+            get_request_state.call(locale, req).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),
@@ -257,18 +253,9 @@ impl GlobalStateCreator {
         request_state: TemplateState,
     ) -> Result<TemplateState, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamation {
-            let res = amalgamate_states
+            amalgamate_states
                 .call(locale, build_state, request_state)
-                .await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "amalgamate_states".to_string(),
-                    template_name: "GLOBAL_STATE".to_string(),
-                    blame,
-                    source: error,
-                }),
-            }
+                .await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),

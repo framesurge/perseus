@@ -469,10 +469,13 @@ pub struct BlamedError<E: Send + Sync> {
     pub blame: ErrorBlame,
 }
 impl<E: std::error::Error + Send + Sync + 'static> BlamedError<E> {
-    /// Converts this blamed error into an internal boxed version that is generic
-    /// over the error type.
+    /// Converts this blamed error into an internal boxed version that is
+    /// generic over the error type.
     pub(crate) fn to_boxed(self) -> GenericBlamedError {
-        BlamedError { error: Box::new(self.error), blame: self.blame }
+        BlamedError {
+            error: Box::new(self.error),
+            blame: self.blame,
+        }
     }
 }
 // We should be able to convert any error into this easily (e.g. with `?`) with

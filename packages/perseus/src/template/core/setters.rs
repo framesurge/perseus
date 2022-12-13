@@ -1,7 +1,10 @@
 use super::super::fn_types::*;
 use super::Template;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::errors::{BlamedError, ErrorBlame, GenericBlamedError, ServerError};
 use crate::state::{
-    AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateStateWithType, UnreactiveState,
+    AnyFreeze, BuildPaths, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateStateWithType,
+    UnreactiveState,
 };
 use crate::state::{StateGeneratorInfo, TemplateState, UnknownStateType};
 use crate::utils::PerseusDuration;
@@ -11,8 +14,6 @@ use serde::{de::DeserializeOwned, Serialize};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
-#[cfg(not(target_arch = "wasm32"))]
-use crate::errors::{BlamedError, ErrorBlame, GenericBlamedError, ServerError};
 
 impl<G: Html> Template<G> {
     // The server-only ones have a different version for Wasm that takes in an empty
@@ -27,19 +28,14 @@ impl<G: Html> Template<G> {
     /// This is for heads that do not require state. Those that do should use
     /// `.head_with_state()` instead.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn head<E: std::error::Error + Send + Sync + 'static>(
+    pub fn head<V: Into<GeneratorResult<View<SsrNode>>>>(
         mut self,
-        val: impl Fn(Scope) -> Result<View<SsrNode>, E> + Send + Sync + 'static,
+        val: impl Fn(Scope) -> V + Send + Sync + 'static,
     ) -> Template<G> {
         let template_name = self.get_path();
         self.head = Box::new(move |cx, _template_state| {
             let template_name = template_name.clone();
-            val(cx).map_err(move |user_err| ServerError::RenderFnFailed {
-                fn_name: "head".to_string(),
-                template_name,
-                blame: ErrorBlame::Server(None),
-                source: Box::new(user_err)
-            })
+            val(cx).into().to_server_result("head", template_name)
         });
         self
     }
@@ -57,19 +53,14 @@ impl<G: Html> Template<G> {
     /// header defaults. This should only be used when your header-setting
     /// does not need state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn set_headers<E: std::error::Error + Send + Sync + 'static>(
+    pub fn set_headers<V: Into<GeneratorResult<HeaderMap>>>(
         mut self,
-        val: impl Fn() -> Result<HeaderMap, E> + Send + Sync + 'static,
+        val: impl Fn() -> V + Send + Sync + 'static,
     ) -> Template<G> {
         let template_name = self.get_path();
         self.set_headers = Box::new(move |_template_state| {
             let template_name = template_name.clone();
-            val().map_err(move |user_err| ServerError::RenderFnFailed {
-                fn_name: "set_headers".to_string(),
-                template_name,
-                blame: ErrorBlame::Server(None),
-                source: Box::new(user_err)
-            })
+            val().into().to_server_result("set_headers", template_name)
         });
         self
     }
@@ -83,15 +74,19 @@ impl<G: Html> Template<G> {
 
     /// Enables the *build paths* strategy with the given function.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn build_paths_fn<E: std::error::Error + Send + Sync + 'static>(
+    pub fn build_paths_fn<V: Into<GeneratorResult<BuildPaths>>>(
         mut self,
-        val: impl GetBuildPathsUserFnType<E> + Clone + Send + Sync + 'static,
+        val: impl GetBuildPathsUserFnType<V> + Clone + Send + Sync + 'static,
     ) -> Template<G> {
+        let template_name = self.get_path();
         self.get_build_paths = Some(Box::new(move || {
             let val = val.clone();
+            let template_name = template_name.clone();
             async move {
-                let res = val.call().await?; // Need conversion to boxed
-                Ok(res)
+                val.call()
+                    .await
+                    .into()
+                    .to_server_result("build_paths", template_name)
             }
         }));
         self
@@ -116,21 +111,27 @@ impl<G: Html> Template<G> {
 
     /// Enables the *build state* strategy with the given function.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn build_state_fn<S, B, E>(
+    pub fn build_state_fn<S, B, V>(
         mut self,
-        val: impl GetBuildStateUserFnType<S, B, E> + Clone + Send + Sync + 'static,
+        val: impl GetBuildStateUserFnType<S, B, V> + Clone + Send + Sync + 'static,
     ) -> Template<G>
     where
         S: Serialize + DeserializeOwned + MakeRx,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+        V: Into<BlamedGeneratorResult<S>>,
     {
+        let template_name = self.get_path();
         self.get_build_state = Some(Box::new(
             move |info: StateGeneratorInfo<UnknownStateType>| {
                 let val = val.clone();
+                let template_name = template_name.clone();
                 async move {
                     let user_info = info.change_type::<B>();
-                    let user_state = val.call(user_info).await.map_err(BlamedError::to_boxed)?;
+                    let user_state = val
+                        .call(user_info)
+                        .await
+                        .into()
+                        .to_server_result("build_state", template_name)?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }
@@ -146,21 +147,27 @@ impl<G: Html> Template<G> {
 
     /// Enables the *request state* strategy with the given function.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn request_state_fn<S, B, E>(
+    pub fn request_state_fn<S, B, V>(
         mut self,
-        val: impl GetRequestStateUserFnType<S, B, E> + Clone + Send + Sync + 'static,
+        val: impl GetRequestStateUserFnType<S, B, V> + Clone + Send + Sync + 'static,
     ) -> Template<G>
     where
         S: Serialize + DeserializeOwned + MakeRx,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+        V: Into<BlamedGeneratorResult<S>>,
     {
+        let template_name = self.get_path();
         self.get_request_state = Some(Box::new(
             move |info: StateGeneratorInfo<UnknownStateType>, req| {
                 let val = val.clone();
+                let template_name = template_name.clone();
                 async move {
                     let user_info = info.change_type::<B>();
-                    let user_state = val.call(user_info, req).await.map_err(BlamedError::to_boxed)?;
+                    let user_state = val
+                        .call(user_info, req)
+                        .await
+                        .into()
+                        .to_server_result("request_state", template_name)?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }
@@ -177,20 +184,25 @@ impl<G: Html> Template<G> {
     /// Enables the *revalidation* strategy (logic variant) with the given
     /// function.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn should_revalidate_fn<B, E>(
+    pub fn should_revalidate_fn<B, V>(
         mut self,
-        val: impl ShouldRevalidateUserFnType<B, E> + Clone + Send + Sync + 'static,
+        val: impl ShouldRevalidateUserFnType<B, V> + Clone + Send + Sync + 'static,
     ) -> Template<G>
     where
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+        V: Into<BlamedGeneratorResult<bool>>,
     {
+        let template_name = self.get_path();
         self.should_revalidate = Some(Box::new(
             move |info: StateGeneratorInfo<UnknownStateType>, req| {
                 let val = val.clone();
+                let template_name = template_name.clone();
                 async move {
                     let user_info = info.change_type::<B>();
-                    val.call(user_info, req).await.map_err(BlamedError::to_boxed)
+                    val.call(user_info, req)
+                        .await
+                        .into()
+                        .to_server_result("should_revalidate", template_name)
                 }
             },
         ));
@@ -248,20 +260,22 @@ impl<G: Html> Template<G> {
     /// and this will be run just after the request state function
     /// completes. See [`States`] for further details.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn amalgamate_states_fn<S, B, E>(
+    pub fn amalgamate_states_fn<S, B, V>(
         mut self,
-        val: impl AmalgamateStatesUserFnType<S, B, E> + Clone + Send + Sync + 'static,
+        val: impl AmalgamateStatesUserFnType<S, B, V> + Clone + Send + Sync + 'static,
     ) -> Template<G>
     where
         S: Serialize + DeserializeOwned + MakeRx + Send + Sync + 'static,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+        V: Into<BlamedGeneratorResult<S>>,
     {
+        let template_name = self.get_path();
         self.amalgamate_states = Some(Box::new(
             move |info: StateGeneratorInfo<UnknownStateType>,
                   build_state: TemplateState,
                   request_state: TemplateState| {
                 let val = val.clone();
+                let template_name = template_name.clone();
                 async move {
                     // Amalgamation logic will only be called if both states are indeed defined
                     let typed_build_state = build_state.change_type::<S>();
@@ -284,7 +298,8 @@ impl<G: Html> Template<G> {
                     let user_state = val
                         .call(user_info, user_build_state, user_request_state)
                         .await
-                        .map_err(BlamedError::to_boxed)?;
+                        .into()
+                        .to_server_result("amalgamate_states", template_name)?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }

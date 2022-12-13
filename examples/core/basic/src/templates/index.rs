@@ -1,5 +1,3 @@
-use std::convert::Infallible;
-
 use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
@@ -26,15 +24,15 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope, _props: IndexPageState) -> Result<View<SsrNode>, Infallible> {
-    Ok(view! { cx,
+fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
+    view! { cx,
         title { "Index Page | Perseus Example – Basic" }
-    })
+    }
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> Result<IndexPageState, BlamedError<Infallible>> {
-    Ok(IndexPageState {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
+    IndexPageState {
         greeting: "Hello World!".to_string(),
-    })
+    }
 }

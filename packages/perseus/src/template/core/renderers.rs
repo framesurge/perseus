@@ -145,16 +145,7 @@ impl<G: Html> Template<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_build_paths(&self) -> Result<BuildPaths, ServerError> {
         if let Some(get_build_paths) = &self.get_build_paths {
-            let res = get_build_paths.call().await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(err) => Err(ServerError::RenderFnFailed {
-                    fn_name: "get_build_paths".to_string(),
-                    template_name: self.get_path(),
-                    blame: ErrorBlame::Server(None),
-                    source: err,
-                }),
-            }
+            get_build_paths.call().await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: self.path.clone(),
@@ -174,16 +165,7 @@ impl<G: Html> Template<G> {
         info: StateGeneratorInfo<UnknownStateType>,
     ) -> Result<TemplateState, ServerError> {
         if let Some(get_build_state) = &self.get_build_state {
-            let res = get_build_state.call(info).await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "get_build_state".to_string(),
-                    template_name: self.get_path(),
-                    blame,
-                    source: error,
-                }),
-            }
+            get_build_state.call(info).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: self.path.clone(),
@@ -205,16 +187,7 @@ impl<G: Html> Template<G> {
         req: Request,
     ) -> Result<TemplateState, ServerError> {
         if let Some(get_request_state) = &self.get_request_state {
-            let res = get_request_state.call(info, req).await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "get_request_state".to_string(),
-                    template_name: self.get_path(),
-                    blame,
-                    source: error,
-                }),
-            }
+            get_request_state.call(info, req).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: self.path.clone(),
@@ -238,18 +211,9 @@ impl<G: Html> Template<G> {
         request_state: TemplateState,
     ) -> Result<TemplateState, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamate_states {
-            let res = amalgamate_states
+            amalgamate_states
                 .call(info, build_state, request_state)
-                .await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "amalgamate_states".to_string(),
-                    template_name: self.get_path(),
-                    blame,
-                    source: error,
-                }),
-            }
+                .await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: self.path.clone(),
@@ -270,16 +234,7 @@ impl<G: Html> Template<G> {
         req: Request,
     ) -> Result<bool, ServerError> {
         if let Some(should_revalidate) = &self.should_revalidate {
-            let res = should_revalidate.call(info, req).await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericBlamedError { error, blame }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "should_revalidate".to_string(),
-                    template_name: self.get_path(),
-                    blame,
-                    source: error,
-                }),
-            }
+            should_revalidate.call(info, req).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: self.path.clone(),
@@ -293,7 +248,6 @@ impl<G: Html> Template<G> {
     /// the power to override.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_headers(&self, state: TemplateState) -> Result<HeaderMap, ServerError> {
-        let headers = (self.set_headers)(state)?;
-        Ok(headers)
+        (self.set_headers)(state)
     }
 }

@@ -228,13 +228,13 @@ impl<G: Html> Template<G> {
     /// This is for heads that do require state. Those that do not should use
     /// `.head()` instead.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn head_with_state<S, E>(
+    pub fn head_with_state<S, V>(
         mut self,
-        val: impl Fn(Scope, S) -> Result<View<SsrNode>, E> + Send + Sync + 'static,
+        val: impl Fn(Scope, S) -> V + Send + Sync + 'static,
     ) -> Template<G>
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+        V: Into<GeneratorResult<View<SsrNode>>>,
     {
         let template_name = self.get_path();
         self.head = Box::new(move |cx, template_state| {
@@ -246,19 +246,21 @@ impl<G: Html> Template<G> {
             // but the type we declare may be invalid)
             let typed_state = template_state.change_type::<S>();
 
-            let state = match typed_state.to_concrete() {
-                Ok(state) => state,
-                Err(err) => return Err(ClientError::InvariantError(ClientInvariantError::InvalidState { source: err }).into()),
-            };
+            let state =
+                match typed_state.to_concrete() {
+                    Ok(state) => state,
+                    Err(err) => {
+                        return Err(ClientError::InvariantError(
+                            ClientInvariantError::InvalidState { source: err },
+                        )
+                        .into())
+                    }
+                };
 
             let template_name = template_name.clone();
-            let head = val(cx, state).map_err(move |user_err| ServerError::RenderFnFailed {
-                fn_name: "head".to_string(),
-                template_name,
-                blame: ErrorBlame::Server(None),
-                source: Box::new(user_err)
-            })?;
-            Ok(head)
+            val(cx, state)
+                .into()
+                .to_server_result("head", template_name)
         });
         self
     }
@@ -277,13 +279,13 @@ impl<G: Html> Template<G> {
     /// header defaults. This should only be used when your header-setting
     /// requires knowing the state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn set_headers_with_state<S, E>(
+    pub fn set_headers_with_state<S, V>(
         mut self,
-        val: impl Fn(S) -> Result<HeaderMap, E> + Send + Sync + 'static,
+        val: impl Fn(S) -> V + Send + Sync + 'static,
     ) -> Template<G>
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+        V: Into<GeneratorResult<HeaderMap>>,
     {
         let template_name = self.get_path();
         self.set_headers = Box::new(move |template_state| {
@@ -295,18 +297,21 @@ impl<G: Html> Template<G> {
             // but the type we declare may be invalid)
             let typed_state = template_state.change_type::<S>();
 
-            let state = match typed_state.to_concrete() {
-                Ok(state) => state,
-                Err(err) => return Err(ClientError::InvariantError(ClientInvariantError::InvalidState { source: err }).into()),
-            };
+            let state =
+                match typed_state.to_concrete() {
+                    Ok(state) => state,
+                    Err(err) => {
+                        return Err(ClientError::InvariantError(
+                            ClientInvariantError::InvalidState { source: err },
+                        )
+                        .into())
+                    }
+                };
 
             let template_name = template_name.clone();
-            val(state).map_err(move |user_err| ServerError::RenderFnFailed {
-                fn_name: "set_headers".to_string(),
-                template_name,
-                blame: ErrorBlame::Server(None),
-                source: Box::new(user_err)
-            })
+            val(state)
+                .into()
+                .to_server_result("set_headers", template_name)
         });
         self
     }

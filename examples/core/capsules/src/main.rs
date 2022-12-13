@@ -1,6 +1,6 @@
+mod capsules;
 mod error_pages;
 mod templates;
-mod capsules;
 
 use perseus::{Html, PerseusApp};
 

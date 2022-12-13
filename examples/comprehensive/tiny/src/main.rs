@@ -10,10 +10,15 @@ pub fn main<G: Html>() -> PerseusApp<G> {
             }
         }))
         .error_pages(ErrorPages::new(
-            |cx, url, status, err, _| view! { cx,
-                p { (format!("An error with HTTP code {} occurred: '{}'.", status, err)) }
+            |cx, url, status, err, _| {
+                view! { cx,
+                    p { (format!("An error with HTTP code {} occurred: '{}'.", status, err)) }
+                }
             },
-            |cx, _, _, _, _| view! { cx,
-                title { "Error" }
-            }))
+            |cx, _, _, _, _| {
+                view! { cx,
+                    title { "Error" }
+                }
+            },
+        ))
 }
