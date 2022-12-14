@@ -8,8 +8,7 @@ struct IndexPageState {
     pub greeting: String,
 }
 
-#[perseus::template]
-fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G> {
+fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: IndexPageStateRx<'b>) -> View<G> {
     view! { cx,
         p { (state.greeting.get()) }
         a(href = "about", id = "about-link") { "About!" }
@@ -19,7 +18,7 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template_with_state(index_page)
+        .template_with_state::<IndexPageState, _>(index_page)
         .head_with_state(head)
 }
 

@@ -9,7 +9,7 @@ use crate::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::{
-    prelude::{create_child_scope, create_signal, Scope, ScopeDisposer},
+    prelude::{create_child_scope, create_signal, BoundedScope, Scope, ScopeDisposer},
     view::View,
     web::Html,
 };
@@ -25,7 +25,8 @@ impl<G: Html> Reactor<G> {
     /// This is intended for use with widgets that use reactive state. See
     /// `.get_unreactive_widget_view()` for widgets that use unreactive
     /// state.
-    pub(crate) fn get_widget_view<'a, F, S, I>(
+    // HRTB explanation: 'a = 'app, but the compiler hates that.
+    pub(crate) fn get_widget_view<'a, S, F>(
         &'a self,
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
@@ -36,10 +37,18 @@ impl<G: Html> Reactor<G> {
         fallback_fn: &Arc<dyn Fn(Scope) -> View<G> + Send + Sync>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
     where
-        // Note: these bounds replicate those for `.template_with_state()`
-        F: Fn(Scope, I) -> View<G> + Clone + Send + Sync + 'static,
-        S: MakeRx<Rx = I> + Serialize + DeserializeOwned + 'static,
-        I: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        // Note: these bounds replicate those for `.template_with_state()`, except the app lifetime is
+        // known
+        F: for<'app, 'child> Fn(
+                BoundedScope<'app, 'child>,
+                <S::Rx as MakeRxRef>::RxRef<'child>,
+            ) -> View<G>
+            + Clone
+            + Send
+            + Sync
+            + 'static,
+        S: MakeRx + Serialize + DeserializeOwned + 'static,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
     {
         match self.get_widget_state_no_fetch::<S>(&path, template_state)? {
             Some(intermediate_state) => {
@@ -47,7 +56,7 @@ impl<G: Html> Reactor<G> {
                 let disposer = create_child_scope(app_cx, |child_cx| {
                     // We go back from the unreactive state type wrapper to the base type (since
                     // it's unreactive)
-                    view = template_fn(child_cx, intermediate_state);
+                    view = template_fn(child_cx, intermediate_state.to_ref_struct(child_cx));
                 });
                 Ok((view, disposer))
             }
@@ -104,9 +113,10 @@ impl<G: Html> Reactor<G> {
                                         &path,
                                         TemplateState::empty(),
                                     ) {
-                                        Ok(Some(intermediate_state)) => {
-                                            template_fn(child_cx, intermediate_state)
-                                        }
+                                        Ok(Some(intermediate_state)) => template_fn(
+                                            child_cx,
+                                            intermediate_state.to_ref_struct(child_cx),
+                                        ),
                                         Ok(None) => unreachable!(),
                                         Err(err) => self.error_views.handle_widget(&err, child_cx),
                                     },

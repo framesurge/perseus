@@ -18,6 +18,7 @@ use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::prelude::create_child_scope;
 use sycamore::prelude::create_signal;
+use sycamore::prelude::BoundedScope;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
@@ -30,20 +31,32 @@ impl<G: Html> Template<G> {
     ///
     /// The closure wrapping this performs will automatically handle suspense
     /// state.
-    pub fn template_with_state<F, S, I>(mut self, val: F) -> Template<G>
+    ///
+    /// You will need tp provide this your original state type, so that it can
+    /// be made reactive, and the second type parameter is for the actual
+    /// function, which can always be left as `_` (e.g.
+    /// `.template_with_state::<IndexPageState, _>(index_page)`).
+    // Generics are swapped here for nicer manual specification
+    pub fn template_with_state<S, F>(mut self, val: F) -> Template<G>
     where
-        F: Fn(Scope, I) -> View<G> + Clone + Send + Sync + 'static,
-        S: MakeRx<Rx = I> + Serialize + DeserializeOwned + 'static,
-        I: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
-        // IDEA: We might be able to fix these type bounds by having `R` link *directly* to `S`!
-        // R: RxRef<RxNonRef = <S as MakeRx>::Rx>
+        // The state is made reactive on the child
+        F: for<'app, 'child> Fn(
+                BoundedScope<'app, 'child>,
+                <S::Rx as MakeRxRef>::RxRef<'child>,
+            ) -> View<G>
+            + Clone
+            + Send
+            + Sync
+            + 'static,
+        S: MakeRx + Serialize + DeserializeOwned + Send + Sync + Clone + 'static,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
     {
         let entity_name = self.get_path();
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.template = Box::new(move |app_cx, preload_info, template_state, path| {
             let reactor = Reactor::<G>::from_cx(app_cx);
             if self.is_capsule {
-                reactor.get_widget_view(
+                reactor.get_widget_view::<S, _>(
                     app_cx,
                     path,
                     entity_name.clone(),
@@ -65,7 +78,7 @@ impl<G: Html> Template<G> {
                     #[cfg(target_arch = "wasm32")]
                     intermediate_state.compute_suspense(child_cx);
                     // let ref_struct = intermediate_state.to_ref_struct(child_cx);
-                    view = val(child_cx, intermediate_state);
+                    view = val(child_cx, intermediate_state.to_ref_struct(child_cx));
                 });
                 Ok((view, disposer))
             }
