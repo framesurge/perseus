@@ -2,7 +2,7 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, ReactiveState, Clone)]
 #[rx(alias = "IndexPageStateRx")]
 struct IndexPageState {
     pub greeting: String,
