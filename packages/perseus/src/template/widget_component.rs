@@ -6,21 +6,75 @@ use sycamore::{
     web::{Html, SsrNode},
 };
 
+/// An alternative to [`Widget`] that delays the rendering of the widget until
+/// the rest of the page has loaded.
+///
+/// Normally, a widget will have its state generated at the earliest possible
+/// opportunity (e.g. if it only uses bujild state, it will be generated at
+/// build-time, but one using request state would have to wait until
+/// request-time) and its contents prerendered with the pages that use it.
+/// However, sometimes, you may have a particularly 'heavy' widget that involves
+/// a large amount of state. If you're finding a certain page is loading a
+/// bit slowly due to such a widget, then you may wish to use `DelayedWidget`
+/// instead, which will generate state as usual, but, when it comes time to
+/// actually render the widget in this page, a placeholder will be inserted, and
+/// the whole widget will only be rendered on the browser-side with an
+/// asynchronous fetch of the state.
+///
+/// Usually, you won't need to delay a widget, and choosing to use this over
+/// [`Widget`] should be based on real-world testing.
+///
+/// Note that using other widgets inside a delayed widget will cause those other
+/// widgets to be delayed in this context. Importantly, a widget that is delayed
+/// in one page can be non-delayed in another page: think of widgets as little
+/// modules that are imported into pages. Delaying is just one importing
+/// strategy, by that logic. In fact, one of the reasons you may wish to delay a
+/// widget's load is if it has a very large nesting of depdendencies, which
+/// would slow down server-side processing (although fetching on the
+/// browser-side will almost always be quite a bit slower). Again, you should
+/// base your choices with delaying on empirical data!
+// Internally, the reason we can just return a `View::empty()` on the engine-side is because
+// delayed widgets are guaranteed to only ever be fetched using the subsequent loads system,
+// which means their state will automatically be sorted out by that, independent of any
+// dependencies. I mention that browser-side loading of delayed widgets with deeply nested
+// dependencies will lead to poor performance because you have to fetch each layer first, before
+// proceeding with the next. This is the same as the engine-side, except 'fetching' there means a
+// quick filesystem check and maybe a brief render, whereas, on the browser-side, it means a network
+// request that will do the exact same thing: it will *always* take longer, unless the network speed
+// is greater than infinity.
+#[sycamore::component]
+pub fn DelayedWidget<G: Html>(cx: Scope, path: &str) -> View<G> {
+    // On the engine-side, we expect absolutely nothing, no matter what
+    // TODO Hydration??
+    #[cfg(not(target_arch = "wasm32"))]
+    return View::empty();
+
+    // On the browser-side, we expect a `TemplateNodeType` (i.e. `HydrateNode` or
+    // `DomNode`)
+    #[cfg(target_arch = "wasm32")]
+    {
+        // Handle leading and trailing slashes
+        let path = path.strip_prefix('/').unwrap_or(&path);
+        let path = path.strip_suffix('/').unwrap_or(&path);
+
+        let path = PathWithoutLocale(format!("__capsule/{}", path));
+
+        return browser_widget(cx, path);
+    }
+}
+
 /// A Sycamore component for rendering a Perseus widget by its path (not
-/// including the `__capsule/` prefix).
-///
-/// # Implementation notes
-/// This component behaves completely differently on the engine-side from the
-/// browser-side, due to the rather complex nature of the Perseus build process.
-/// In some rare cases, you may feel the urge to try to server-side render a
-/// widget while in the browser. Attempting this will result in a panic.
-/// Attempting to use this on non-browser infrastructure (e.g. with an alternate
-/// Sycamore backend) will also fail, as this relies on transmuting
-/// behind-the-scenes to perform manual monomorphic specialization (though
-/// manual type checks are performed, making UB impossible).
-///
-/// Use this as documented, and you'll be fine. If you need it in an alternate
-/// rendering backend, please open an issue.
+/// including the `__capsule/` prefix). This will handle state generation and
+/// prerendering automatically, signalling the calling page/widget (widgets can
+/// be nested) if this widget is incompatible with the caller. That would occur
+/// when the widget, for example, needs request-state, but the page uses only
+/// build-state. Perseus wants to build the page at build-time, but the widget
+/// prevents this. To solve this, you could either use [`DelayedWidget`] (which
+/// will prevent rendering the widget until the browser-side), or you could
+/// allow rescheduling of the relevant page's template, which gives Perseus
+/// permission to delay rendering a build-time page until request-time, in
+/// this case. Revalidating and incrementally generated widgets will cause
+/// similar issues.
 #[sycamore::component]
 pub fn Widget<G: Html>(cx: Scope, path: &str) -> View<G> {
     // Handle leading and trailing slashes
@@ -39,7 +93,7 @@ pub fn Widget<G: Html>(cx: Scope, path: &str) -> View<G> {
     return browser_widget(cx, path);
 }
 
-/// The internal browser-side logic for widgets.
+/// The internal browser-side logic for widgets, both delayed and not.
 #[cfg(target_arch = "wasm32")]
 fn browser_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     use crate::{

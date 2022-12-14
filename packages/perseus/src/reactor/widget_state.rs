@@ -119,7 +119,7 @@ impl<G: Html> Reactor<G> {
                     });
 
                     Ok((view, disposer))
-                }
+                };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
             #[cfg(not(target_arch = "wasm32"))]
@@ -229,7 +229,7 @@ impl<G: Html> Reactor<G> {
                     });
 
                     Ok((view, disposer))
-                }
+                };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
             #[cfg(not(target_arch = "wasm32"))]
