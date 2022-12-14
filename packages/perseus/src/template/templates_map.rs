@@ -56,12 +56,3 @@ pub type TemplateMap<G> = HashMap<String, Rc<Template<G>>>;
 /// thread-safety. If you don't need to share templates between threads, use
 /// `TemplateMap` instead.
 pub type ArcTemplateMap<G> = HashMap<String, Arc<Template<G>>>;
-
-/// A type alias for a `HashMap` of [`Capsule`] fallback functions. This is
-/// to be used in conjunction with a [`TemplateMap`] that stores the underlying
-/// capsule templates alongside the full templates.
-pub type CapsuleMap<G> = HashMap<String, Rc<Box<dyn Fn(Scope) -> View<G> + Send + Sync>>>;
-/// A type alias for a `HashMap` of [`Capsule`] fallback functions. This is
-/// to be used in conjunction with a [`ArcTemplateMap`] that stores the
-/// underlying capsule templates alongside the full templates.
-pub type ArcCapsuleMap<G> = HashMap<String, Arc<Box<dyn Fn(Scope) -> View<G> + Send + Sync>>>;

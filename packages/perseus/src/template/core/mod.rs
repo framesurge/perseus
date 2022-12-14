@@ -8,6 +8,8 @@ mod utils;
 // These are broken out because of state-management closure wrapping
 mod state_setters;
 
+use std::{rc::Rc, sync::Arc};
+
 pub(crate) use utils::*;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -16,7 +18,11 @@ use super::TemplateFn;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::default_headers;
 use crate::utils::ComputedDuration;
-use sycamore::{prelude::create_scope, view::View, web::Html};
+use sycamore::{
+    prelude::{create_scope, Scope},
+    view::View,
+    web::Html,
+};
 
 /// A single template in an app. Each template is comprised of a Sycamore view,
 /// a state type, and some functions involved with generating that state. Pages
@@ -123,6 +129,14 @@ pub struct Template<G: Html> {
     /// is needed and it hasn't been explicitly allowed, an error will be
     /// returned from the build process.
     pub(crate) can_be_rescheduled: bool,
+    /// A function that returns the fallback view to be rendered between when
+    /// the page is ready and when the capsule's state has been fetched.
+    ///
+    /// Note that this starts as `None`, but, if it's not set, `PerseusApp` will
+    /// panic. So, for later code, this can be assumed to be always `Some`.
+    ///
+    /// This will not be defined for templates, only for capsules.
+    pub(crate) fallback: Option<Arc<dyn Fn(Scope) -> View<G> + Send + Sync>>,
 }
 impl<G: Html> std::fmt::Debug for Template<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -169,6 +183,7 @@ impl<G: Html> Template<G> {
             // There is no mechanism to set this to `true`, except through the `Capsule` struct
             is_capsule: false,
             can_be_rescheduled: false,
+            fallback: None,
         }
     }
 }

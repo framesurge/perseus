@@ -145,11 +145,10 @@ impl<G: Html> Reactor<G> {
             }
         }
     }
-    // TODO Version of the above for widgets
     /// Registers a page/widget as definitely taking no state, which allows it
     /// to be cached fully, preventing unnecessary network requests. Any
-    /// future attempt to set state will lead to errors (with logical
-    /// exceptions for HSR).
+    /// future attempt to set state will lead to errors (with exceptions for
+    /// HSR).
     pub fn register_no_state(&self, url: &PathMaybeWithLocale, is_widget: bool) {
         self.state_store.set_state_never(url, is_widget);
     }
@@ -170,7 +169,7 @@ impl<G: Html> Reactor<G> {
     /// the active state will always be empty, so this will simply return
     /// `None`.
     #[cfg(target_arch = "wasm32")]
-    fn get_held_state<S>(
+    pub(super) fn get_held_state<S>(
         &self,
         url: &PathMaybeWithLocale,
         is_widget: bool,
@@ -206,7 +205,7 @@ impl<G: Html> Reactor<G> {
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
-    fn get_held_state<S>(
+    pub(super) fn get_held_state<S>(
         &self,
         _url: &PathMaybeWithLocale,
         _is_widget: bool,

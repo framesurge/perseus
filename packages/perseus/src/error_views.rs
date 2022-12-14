@@ -259,7 +259,6 @@ impl ErrorViews<SsrNode> {
         (head_str, body_str)
     }
 }
-#[cfg(not(target_arch = "wasm32"))]
 impl<G: Html> ErrorViews<G> {
     /// Renders an error view for the given widget, using the given scope. This
     /// will *not* create a new child scope, it will simply use the one it is

@@ -1,5 +1,5 @@
 use super::Template;
-use std::ops::Deref;
+use std::{ops::Deref, rc::Rc, sync::Arc};
 use sycamore::{prelude::Scope, view::View, web::Html};
 
 /// A *capsule*, a special type of template in Perseus that can also accept
@@ -11,12 +11,6 @@ pub struct Capsule<G: Html> {
     /// The underlying template (since capsules are just a special type of
     /// template).
     pub(crate) template: Template<G>,
-    /// A function that returns the fallback view to be rendered between when
-    /// the page is ready and when the capsule's state has been fetched.
-    ///
-    /// Note that this starts as `None`, but, if it's not set, `PerseusApp` will
-    /// panic. So, for later code, this can be assumed to be always `Some`.
-    pub(crate) fallback: Option<Box<dyn Fn(Scope) -> View<G> + Send + Sync>>,
 }
 impl<G: Html> std::fmt::Debug for Capsule<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -33,10 +27,7 @@ impl<G: Html> Capsule<G> {
         // We create a template with this path, and then turn it into a capsule
         let mut template = Template::new(path);
         template.is_capsule = true;
-        Self {
-            template,
-            fallback: None,
-        }
+        Self { template }
     }
     /// Declares the fallback view to render for this capsule. When Perseus
     /// renders a page of your app, it fetches the page itself, along with
@@ -52,9 +43,10 @@ impl<G: Html> Capsule<G> {
     ///
     /// **Warning:** if you do not set a fallback view for a capsule, your app
     /// will not compile!
-    // TODO This function should take properties
     pub fn fallback(mut self, view: impl Fn(Scope) -> View<G> + Send + Sync + 'static) -> Self {
-        self.fallback = Some(Box::new(view));
+        {
+            self.template.fallback = Some(Arc::new(view));
+        }
         self
     }
     /// Sets the fallback for this capsule to be an empty view.
@@ -64,7 +56,9 @@ impl<G: Html> Capsule<G> {
     /// have no size, which may compromise your layouts: be sure to test
     /// this).
     pub fn empty_fallback(mut self) -> Self {
-        self.fallback = Some(Box::new(|cx| sycamore::view! { cx, }));
+        {
+            self.template.fallback = Some(Arc::new(|cx| sycamore::view! { cx, }));
+        }
         self
     }
 }

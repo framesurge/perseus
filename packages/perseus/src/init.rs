@@ -20,10 +20,7 @@ use crate::{
     errors::ClientError,
     stores::ImmutableStore,
 };
-use crate::{
-    errors::PluginError,
-    template::{ArcCapsuleMap, Capsule, CapsuleMap},
-};
+use crate::{errors::PluginError, template::Capsule};
 use futures::Future;
 #[cfg(target_arch = "wasm32")]
 use std::marker::PhantomData;
@@ -111,11 +108,6 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     templates: TemplateMap<G>,
     #[cfg(not(target_arch = "wasm32"))]
     templates: ArcTemplateMap<G>,
-    /// A list of all the capsules' fallback functions that the app will use.
-    #[cfg(target_arch = "wasm32")]
-    capsules: CapsuleMap<G>,
-    #[cfg(not(target_arch = "wasm32"))]
-    capsules: ArcCapsuleMap<G>,
     /// The app's error pages.
     #[cfg(target_arch = "wasm32")]
     error_views: Rc<ErrorViews<G>>,
@@ -299,7 +291,6 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
             templates: HashMap::new(),
-            capsules: HashMap::new(),
             // We do offer default error views, but they'll panic if they're called for production
             // building
             error_views: Default::default(),
@@ -349,7 +340,6 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
             templates: HashMap::new(),
-            capsules: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
             error_views: Default::default(),
@@ -433,30 +423,21 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Adds a single new template to the app (convenience function). This takes
     /// a *function that returns a template* (for internal reasons).
     ///
-    /// **Warning:** the capsule map system is non-obvious in Perseus: all
-    /// [`Capsule`]s are split into their underlying templates and their
-    /// fallback views (the two things that make up a capsule), and the
-    /// former are added to the map of all other templates, while the latter
-    /// are added to a special [`CapsuleMap`].
-    ///
     /// See [`Capsule`] for further details.
     pub fn capsule(mut self, val: Capsule<G>) -> Self {
+        let val = val.template;
         let path = val.get_path().clone();
-        let fallback = match val.fallback {
-            Some(fallback) => fallback,
-            None => panic!(
+        // Enforce that capsules must have defined fallbacks
+        if val.fallback.is_none() {
+            panic!(
                 "capsule '{}' has no fallback (please register one)",
                 val.get_path()
-            ),
-        };
+            )
+        }
         #[cfg(target_arch = "wasm32")]
-        self.templates.insert(path.clone(), Rc::new(val.template));
+        self.templates.insert(path.clone(), Rc::new(val));
         #[cfg(not(target_arch = "wasm32"))]
-        self.templates.insert(path.clone(), Arc::new(val.template));
-        #[cfg(target_arch = "wasm32")]
-        self.capsules.insert(path, Rc::new(fallback));
-        #[cfg(not(target_arch = "wasm32"))]
-        self.capsules.insert(path, Arc::new(fallback));
+        self.templates.insert(path.clone(), Arc::new(val));
         self
     }
     /// Sets the app's error views. See [`ErrorViews`] for further details.
@@ -834,24 +815,6 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn get_atomic_templates_map(&self) -> ArcTemplateMap<G> {
         self.templates.clone()
-    }
-    /// Gets the capsule fallbacks in an `Rc`-based `HashMap` for non-concurrent
-    /// access.
-    ///
-    /// Note that the templates that underlie each capsule are stored in the
-    /// template map!
-    #[cfg(target_arch = "wasm32")]
-    pub fn get_capsules_map(&self) -> CapsuleMap<G> {
-        self.capsules.clone()
-    }
-    /// Gets the capsule fallbacks in an `Arc`-based `HashMap` for concurrent
-    /// access. This should only be relevant on the server-side.
-    ///
-    /// Note that the templates that underlie each capsule are stored in the
-    /// template map!
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_capsules_map(&self) -> ArcCapsuleMap<G> {
-        self.capsules.clone()
     }
     /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
     #[cfg(target_arch = "wasm32")]

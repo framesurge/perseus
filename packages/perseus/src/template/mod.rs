@@ -21,7 +21,7 @@ pub(crate) use default_headers::default_headers;
 pub use capsule::Capsule;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use states::States;
-pub use templates_map::{ArcCapsuleMap, ArcTemplateMap, CapsuleMap, TemplateMap};
+pub use templates_map::{ArcTemplateMap, TemplateMap};
 pub use widget_component::Widget;
 
 use crate::{errors::ClientError, path::PathMaybeWithLocale, state::TemplateState};

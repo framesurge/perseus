@@ -14,6 +14,7 @@ mod state;
 mod subsequent_load;
 #[cfg(target_arch = "wasm32")]
 mod widget_disposers;
+mod widget_state;
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) use initial_load::InitialView;
@@ -113,7 +114,7 @@ pub struct Reactor<G: Html> {
     translations_manager: ClientTranslationsManager,
     /// The app's error views.
     #[cfg(target_arch = "wasm32")]
-    error_views: Rc<ErrorViews<G>>,
+    pub(crate) error_views: Rc<ErrorViews<G>>,
     /// A reactive container for the current page-wide view. This will usually
     /// contain the contents of the current page, but it may also contain a
     /// page-wide error. This will be wrapped in a router.

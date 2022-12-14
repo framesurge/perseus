@@ -254,17 +254,7 @@ make_async_trait!(
 );
 
 // A series of closure types that should not be typed out more than once
-/// The type of functions that are given a state and render a page.
-pub(crate) type TemplateFn<G> = Box<
-    dyn for<'a> Fn(
-            Scope<'a>,
-            PreloadInfo,
-            TemplateState,
-            PathMaybeWithLocale,
-        ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
-        + Send
-        + Sync,
->;
+
 // Note: the head and header functions have render errors constructed inside
 // their closures!
 /// A type alias for the function that modifies the document head. This is just

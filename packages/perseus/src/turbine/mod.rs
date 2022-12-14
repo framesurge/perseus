@@ -26,7 +26,7 @@ use crate::{
     server::HtmlShell,
     state::{GlobalStateCreator, TemplateState},
     stores::{ImmutableStore, MutableStore},
-    template::{ArcCapsuleMap, ArcTemplateMap},
+    template::ArcTemplateMap,
 };
 use futures::executor::block_on;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
@@ -38,8 +38,6 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     templates: ArcTemplateMap<SsrNode>,
     /// The app's error views.
     error_views: Arc<ErrorViews<SsrNode>>,
-    /// All the capsule fallbacks in the app.
-    capsule_fallbacks: ArcCapsuleMap<SsrNode>,
     /// The app's locales data.
     locales: Locales,
     /// An immutable store.
@@ -80,7 +78,6 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
 
     fn try_from(app: PerseusAppBase<SsrNode, M, T>) -> Result<Self, Self::Error> {
         let templates = app.get_atomic_templates_map();
-        let capsule_fallbacks = app.get_atomic_capsules_map();
         let locales = app.get_locales()?;
         let immutable_store = app.get_immutable_store()?;
         let mutable_store = app.get_mutable_store();
@@ -97,7 +94,6 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
 
         Ok(Self {
             templates,
-            capsule_fallbacks,
             locales,
             immutable_store,
             mutable_store,

@@ -190,6 +190,8 @@ pub enum ClientInvariantError {
     RouterMismatch,
     #[error("the widget states were not found, or were malformed (even pages not using widgets still have a declaration of these)")]
     WidgetStates,
+    #[error("a widget was registered in the state store with only a head (but widgets do not have heads), implying a corruption")]
+    InvalidWidgetPssEntry,
 }
 
 /// Errors that can occur in the browser while interfacing with browser
@@ -362,7 +364,7 @@ pub enum FetchError {
 /// The type of an asset fetched from the server. This allows distinguishing
 /// between errors in fetching, say, pages, vs. translations, which you may wish
 /// to handle differently.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum AssetType {
     /// A page in the app.
     Page,

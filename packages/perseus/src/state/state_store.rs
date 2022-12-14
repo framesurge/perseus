@@ -163,6 +163,9 @@ impl PageStateStore {
     ///
     /// This will be added to the end of the `order` property, and any previous
     /// entries of it in that list will be removed.
+    ///
+    /// This will accept widgets adding empty heads, since they do still need
+    /// to be registered.
     pub fn add_head(&self, url: &PathMaybeWithLocale, head: String, is_widget: bool) {
         let mut map = self.map.borrow_mut();
         // We want to modify any existing entries to avoid wiping out state
@@ -283,7 +286,7 @@ impl PageStateStore {
     ///
     /// This function has no effect on the server-side.
     ///
-    /// Note that this should generally be called through `RenderCtx`, to avoid
+    /// Note that this should generally be called through `Reactor`, to avoid
     /// having to manually collect the required arguments.
     // Note that this function bears striking resemblance to the subsequent load system!
     #[cfg(target_arch = "wasm32")]
@@ -294,10 +297,18 @@ impl PageStateStore {
         template_path: &str,
         was_incremental_match: bool,
         is_route_preload: bool,
+        // This changes a few flag types, like `AssetType`
+        is_widget: bool,
     ) -> Result<(), crate::errors::ClientError> {
         use crate::{
             errors::{AssetType, FetchError},
             utils::{fetch, get_path_prefix_client},
+        };
+
+        let asset_ty = if is_widget {
+            AssetType::Widget
+        } else {
+            AssetType::Preload
         };
 
         let full_path = PathMaybeWithLocale::new(path, locale);
@@ -327,7 +338,7 @@ impl PageStateStore {
         );
         // If this doesn't exist, then it's a 404 (we went here by explicit instruction,
         // but it may be an unservable ISR page or the like)
-        let page_data_str = fetch(&asset_url, AssetType::Preload).await?;
+        let page_data_str = fetch(&asset_url, asset_ty).await?;
         match page_data_str {
             Some(page_data_str) => {
                 // All good, deserialize the page data
@@ -336,7 +347,7 @@ impl PageStateStore {
                         FetchError::SerFailed {
                             url: path.to_string(),
                             source: err.into(),
-                            ty: AssetType::Preload,
+                            ty: asset_ty,
                         }
                     })?;
                 let mut preloaded = if is_route_preload {
@@ -349,7 +360,7 @@ impl PageStateStore {
             }
             None => Err(FetchError::PreloadNotFound {
                 url: path.to_string(),
-                ty: AssetType::Preload,
+                ty: asset_ty,
             }
             .into()),
         }
@@ -588,6 +599,10 @@ pub enum PssState<T> {
 
 /// The various things the PSS can contain for a single page. It might have
 /// state, a head, both, or neither.
+///
+/// *Note: the `P` in the `PSS` acronym used to stand for page (pre-widgets),
+/// and it now stands for Perseus, as its removal creates a considerably less
+/// desirable acronym.*
 #[derive(Debug)]
 pub enum PssContains {
     /// There is no entry for this page.

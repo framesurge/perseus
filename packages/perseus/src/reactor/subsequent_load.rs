@@ -19,7 +19,7 @@ use crate::{
 use super::Reactor;
 
 impl<G: Html> Reactor<G> {
-    /// TODO
+    /// Gets the subsequent view, based on the given verdict.
     ///
     /// Note that 'server errors' as constructed by this function are
     /// constructed here, not deserialized from provided data.
