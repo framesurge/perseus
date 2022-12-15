@@ -54,9 +54,8 @@ impl Responder for ApiResponse {
     type Body = String;
     fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
         let mut res = HttpResponse::build(self.0.status);
-        let headers = self.0.headers.unwrap_or_default();
-        for header in headers {
-            // THe header name is in an `Option`, but we only ever add them with proper
+        for header in self.0.headers {
+            // The header name is in an `Option`, but we only ever add them with proper
             // names in `PerseusApiResponse`
             res.insert_header((header.0.unwrap(), header.1));
         }

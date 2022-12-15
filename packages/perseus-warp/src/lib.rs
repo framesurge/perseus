@@ -70,10 +70,9 @@ impl From<PerseusApiResponse> for ApiResponse {
 }
 impl Reply for ApiResponse {
     fn into_response(self) -> Response {
-        let headers = self.0.headers.unwrap_or_default();
         let mut response = Response::new(self.0.body.into());
         *response.status_mut() = self.0.status;
-        *response.headers_mut() = headers;
+        *response.headers_mut() = self.0.headers;
         response
     }
 }

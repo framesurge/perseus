@@ -12,7 +12,10 @@ use crate::{
     Request,
 };
 use fmterr::fmt_err;
-use http::{header::HeaderName, HeaderMap, HeaderValue, StatusCode};
+use http::{
+    header::{self, HeaderName},
+    HeaderMap, HeaderValue, StatusCode,
+};
 use serde::{Deserialize, Serialize};
 
 /// The integration-agnostic representation of
@@ -22,16 +25,16 @@ pub struct ApiResponse {
     /// The additional headers for the response. These will *not* include things
     /// like caching directives and the like, as they are expected to be
     /// handled by integrations.
-    pub headers: Option<HeaderMap>,
+    pub headers: HeaderMap,
     /// The HTTP status code of the response.
     pub status: StatusCode,
 }
 impl ApiResponse {
-    /// Creates a 200 OK response.
+    /// Creates a 200 OK response with the given body and MIME type.
     pub fn ok(body: &str) -> Self {
         Self {
             body: body.to_string(),
-            headers: None,
+            headers: HeaderMap::new(),
             status: StatusCode::OK,
         }
     }
@@ -39,7 +42,7 @@ impl ApiResponse {
     pub fn not_found(msg: &str) -> Self {
         Self {
             body: msg.to_string(),
-            headers: None,
+            headers: HeaderMap::new(),
             status: StatusCode::NOT_FOUND,
         }
     }
@@ -47,19 +50,32 @@ impl ApiResponse {
     pub fn err(status: StatusCode, body: &str) -> Self {
         Self {
             body: body.to_string(),
-            headers: None,
+            headers: HeaderMap::new(),
             status,
         }
     }
     /// Adds the given header to this response.
     pub fn add_header(&mut self, k: HeaderName, v: HeaderValue) {
-        if let Some(headers) = &mut self.headers {
-            headers.insert(k, v);
-        } else {
-            let mut headers = HeaderMap::new();
-            headers.insert(k, v);
-            self.headers = Some(headers);
-        }
+        self.headers.insert(k, v);
+    }
+    /// Sets the `Content-Type` HTTP header to the given MIME type, which tells
+    /// the browser what file type it has actually been given. For HTML, this is
+    /// especially important!
+    ///
+    /// As this is typically called last, and only once, it consumes `self` for
+    /// ergonomics. If this is not desired, the `.add_header()` method can
+    /// be manually invoked.
+    ///
+    /// # Panics
+    ///
+    /// This will panic if the given MIME type contains invalid ASCII
+    /// characters.
+    pub fn content_type(mut self, mime_type: &str) -> Self {
+        self.headers.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_str(mime_type).unwrap(),
+        );
+        self
     }
 }
 
@@ -79,6 +95,9 @@ pub struct SubsequentLoadQueryParams {
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// The endpoint for getting translations.
+    ///
+    /// Translations have the `text/plain` MIME type, as they may be in an
+    /// entirely arbitrary format, which should be manually parsed.
     pub async fn get_translations(&self, locale: &str) -> ApiResponse {
         // Check if the locale is supported
         if self.locales.is_supported(locale) {
@@ -87,7 +106,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .get_translations_str_for_locale(locale.to_string())
                 .await;
             match translations {
-                Ok(translations) => ApiResponse::ok(&translations),
+                Ok(translations) => ApiResponse::ok(&translations).content_type("text/plain"),
                 Err(err) => ApiResponse::err(StatusCode::INTERNAL_SERVER_ERROR, &fmt_err(&err)),
             }
         } else {
@@ -101,6 +120,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// The path provided to this may have trailing slashes, these will be
     /// handled. It is expected to end in `.json` (needed for compatibility
     /// with the exporting system).
+    ///
+    /// Subsequent loads have the MIME type `application/json`.
     pub async fn get_subsequent_load(
         &self,
         raw_path: PathWithoutLocale,
@@ -136,7 +157,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
             // We know the form of this, and it should never fail
             let page_data_str = serde_json::to_string(&page_data_partial).unwrap();
-            ApiResponse::ok(&page_data_str)
+            ApiResponse::ok(&page_data_str).content_type("application/json")
         } else {
             ApiResponse::not_found("locale not supported")
         }
@@ -152,6 +173,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     ///
     /// If there's an error anywhere in this function, it will return the HTML
     /// of a proper error page.
+    ///
+    /// Initial loads *always* (even in the case of errors) have the MIME type
+    /// `text/html`.
     pub async fn get_initial_load(
         &self,
         raw_path: PathMaybeWithLocale,
@@ -238,7 +262,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .clone()
                     .page_data(&page_data, &global_state, &translations_str)
                     .to_string();
-                let mut response = ApiResponse::ok(&final_html);
+                // NOTE: Yes, the user can fully override the content type...I have yet to find
+                // a good use for this given the need to generate a `View`
+                // though...
+                let mut response = ApiResponse::ok(&final_html).content_type("text/html");
 
                 // Generate and add HTTP headers
                 let headers = match template.get_headers(TemplateState::from_value(page_data.state))
@@ -282,7 +309,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .to_string();
                 // TODO Headers? They weren't here in the old code...
                 // This isn't an error, but that's how this API expresses it (302 redirect)
-                ApiResponse::err(StatusCode::FOUND, &html)
+                ApiResponse::err(StatusCode::FOUND, &html).content_type("text/html")
             }
             // Any unlocalized 404s would go to a redirect first
             RouteVerdictAtomic::NotFound { locale } => {
@@ -336,6 +363,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let err_data = ServerErrorData { status, msg };
         let html = self.build_error_page(err_data, i18n_data);
         // This can construct a 404 if needed
-        ApiResponse::err(StatusCode::from_u16(status).unwrap(), &html)
+        ApiResponse::err(StatusCode::from_u16(status).unwrap(), &html).content_type("text/html")
     }
 }

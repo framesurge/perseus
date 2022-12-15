@@ -41,9 +41,8 @@ impl From<PerseusApiResponse> for ApiResponse {
 }
 impl IntoResponse for ApiResponse {
     fn into_response(self) -> Response {
-        let headers = self.0.headers.unwrap_or_default();
         // Very convenient!
-        (self.0.status, headers, self.0.body).into_response()
+        (self.0.status, self.0.headers, self.0.body).into_response()
     }
 }
 
