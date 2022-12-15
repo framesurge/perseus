@@ -11,12 +11,19 @@ use crate::template::TemplateNodeType;
 /// depending on feature flags. This will atuomatically handle
 /// proper scoping.
 ///
+/// This has the option to force a render by ignoring the initial elements.
+///
 /// **Warning:** if hydration is being used, it is expected that
 /// the given view was created inside a `with_hydration_context()` closure.
 // TODO Make sure hydration will work when it's targeted at a blank canvas...
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details! (TODO PR for `hydrate_to_with_scope` etc.)
-pub(crate) fn render_or_hydrate(cx: Scope, view: View<TemplateNodeType>, parent: Element) {
+pub(crate) fn render_or_hydrate(
+    cx: Scope,
+    view: View<TemplateNodeType>,
+    parent: Element,
+    force_render: bool,
+) {
     #[cfg(feature = "hydrate")]
     {
         // We need `sycamore::hydrate_to_with_scope()`!
@@ -36,7 +43,11 @@ pub(crate) fn render_or_hydrate(cx: Scope, view: View<TemplateNodeType>, parent:
             cx,
             &HydrateNode::from_web_sys(parent.into()),
             view, // We assume this was created in `with_hydration_context(..)`
-            Some(View::new_fragment(children)),
+            if force_render {
+                None
+            } else {
+                Some(View::new_fragment(children))
+            },
             None,
             false,
         );

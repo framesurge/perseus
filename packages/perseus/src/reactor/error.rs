@@ -90,7 +90,7 @@ impl Reactor<TemplateNodeType> {
         // clue about the calling situation, so it's safest to just panic)
         assert!(try_use_context::<Reactor<TemplateNodeType>>(cx).is_none(), "attempted to handle 'critical' error, but a reactor was found (this is a programming error)");
 
-        let popup_error_root = Self::create_popup_err_elem();
+        let popup_error_root = Self::get_popup_err_elem();
         // This will determine the `Static` error context (we guaranteed there's no
         // reactor above). We don't care about the head in a popup.
         let (_, err_view, disposer) = error_views.handle(cx, err, ErrorPosition::Popup);
@@ -101,6 +101,7 @@ impl Reactor<TemplateNodeType> {
                 (err_view)
             },
             popup_error_root,
+            true, // Browser-side-only error, so force a full render
         );
         // SAFETY: We're outside the child scope
         unsafe {
@@ -133,7 +134,7 @@ impl Reactor<TemplateNodeType> {
                 + Sync,
         >,
     ) {
-        let popup_error_root = Self::create_popup_err_elem();
+        let popup_error_root = Self::get_popup_err_elem();
 
         // The standard library handles all the hard parts here
         let msg = panic_info.to_string();
@@ -153,6 +154,7 @@ impl Reactor<TemplateNodeType> {
                     (body)
                 },
                 popup_error_root,
+                true, // Browser-side-only error, so force a full render
             );
         });
     }

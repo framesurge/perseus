@@ -332,9 +332,16 @@ impl fmt::Display for HtmlShell {
 
         let body_start = self.before_content.join("\n");
         let body_end = self.after_content.join("\n");
+        // We also insert the popup error handler here
         let shell_with_body = shell_with_head
             .replace("<body>", &format!("<body>{}", body_start))
-            .replace("</body>", &format!("{}</body>", body_end));
+            .replace(
+                "</body>",
+                &format!(
+                    "{}<div id=\"__perseus_popup_error\"></div></body>",
+                    body_end
+                ),
+            );
 
         // The user MUST place have a `<div>` of this exact form (documented explicitly)
         // We permit either double or single quotes

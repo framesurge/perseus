@@ -140,10 +140,10 @@ impl<G: Html> ErrorViews<G> {
                 // Special case for 404 due to its frequency
                 ClientError::ServerError { status, .. } if *status == 404 => (
                     view! { cx,
-                            title { "Page not found" }
+                        title { "Page not found" }
                     },
                     view! { cx,
-
+                        p { "Page not found." }
                     },
                 ),
                 err => {
@@ -222,6 +222,16 @@ impl ErrorViews<SsrNode> {
     /// content to render, this will, expectedly, take up the whole page.
     ///
     /// This cannot be used for widgets (use `.handle_widget()` instead).
+    ///
+    /// # Hydration
+    ///
+    /// At present, due to the difficulties of controlling hydration contexts
+    /// in a fine-grained manner, Perseus does not hydrate error views
+    /// whatsoever. This is compounded by the problem of exported error
+    /// views, which do not have access to locales, whereas their
+    /// browser-side-rendered counterparts do. To avoid hydration mismatches
+    /// and unnecessary development panics, hydration is therefore disabled
+    /// for error views.
     pub(crate) fn render_to_string(
         &self,
         err: ServerErrorData,
@@ -242,19 +252,18 @@ impl ErrorViews<SsrNode> {
                 Some(_) => ErrorContext::FullNoGlobal,
                 None => ErrorContext::WithReactor,
             };
-            let (head_view, body_view) = with_hydration_context(|| {
-                (self.handler)(
-                    cx,
-                    &ClientError::ServerError {
-                        status: err.status,
-                        message: err.msg,
-                    },
-                    err_cx,
-                    ErrorPosition::Page,
-                )
-            });
+            // NOTE: No hydration context
+            let (head_view, body_view) = (self.handler)(
+                cx,
+                &ClientError::ServerError {
+                    status: err.status,
+                    message: err.msg,
+                },
+                err_cx,
+                ErrorPosition::Page,
+            );
 
-            head_str = sycamore::render_to_string(|_| head_view);
+            head_str = sycamore::render_to_string(|_| with_no_hydration_context(|| head_view));
             body_str = sycamore::render_to_string(|_| body_view);
         });
 

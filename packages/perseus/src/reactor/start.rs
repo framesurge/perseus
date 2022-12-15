@@ -195,17 +195,19 @@ impl Reactor<TemplateNodeType> {
 
         let popup_error_disposer = PageDisposer::default();
         // Broken out for ease if the reactor can't be created
-        let popup_error_root = Self::create_popup_err_elem();
+        let popup_error_root = Self::get_popup_err_elem();
         // Now set up the handlers to actually render popup errors (the scope will keep
         // reactivity going as long as it isn't dropped). Popup errors do *not*
         // get access to a router or the like. Ever time `popup_err_view` is
         // updated, this will update too.
+        // TODO
         render_or_hydrate(
             cx,
             view! { cx,
                 (*self.popup_error_view.get())
             },
             popup_error_root,
+            true, // Popup errors are always browser-side-only, so force a full render
         );
 
         // --- Initial load ---
@@ -223,6 +225,10 @@ impl Reactor<TemplateNodeType> {
             .query_selector(&format!("#{}", &self.root))
             .unwrap()
             .unwrap();
+        // Unless we hear otherwise, we'll hydrate the main view by default (but some
+        // errors should trigger a full render). This only matters for the
+        // initial load, since view changes are done reactively after that.
+        let mut force_render = false;
         // Get the initial load so we have something to put inside the root. Usually, we
         // can simply report errors, but, because we don't actually have a place to put
         // page-wide errors yet, we need to know what this will return so we know if we
@@ -263,7 +269,7 @@ impl Reactor<TemplateNodeType> {
 
                 // For apps using exporting, it's very possible that the prerendered may be
                 // unlocalized, and this may be localized. Hence, we clear the contents.
-                root.set_inner_html("");
+                force_render = true;
                 body_view
             }
             // Popup error: we will not create a router, terminating immediately
@@ -273,7 +279,7 @@ impl Reactor<TemplateNodeType> {
                 // handling manually for sanity
                 let (_, body_view, _disposer) =
                     self.error_views.handle(cx, &err, ErrorPosition::Popup);
-                self.popup_error_view.set(body_view);
+                self.popup_error_view.set(body_view); // Popups never hydrate
 
                 // Signal the top-level disposer, which will also call the child scope disposer
                 // ignored above
@@ -403,23 +409,21 @@ impl Reactor<TemplateNodeType> {
                 )
             },
             root,
+            force_render, /* Depending on whether or not there's an error, we might force a full
+                           * render */
         );
 
         // If we successfully got here, the app is running!
         true
     }
 
-    /// Creates the element for popup errors (used in both full startup and
+    /// Gets the element for popup errors (used in both full startup and
     /// critical failures).
-    pub(crate) fn create_popup_err_elem() -> Element {
+    ///
+    /// This is created on the engine-side to avoid hydration issues.
+    pub(crate) fn get_popup_err_elem() -> Element {
         let document = web_sys::window().unwrap().document().unwrap();
-        let err_div = document.create_element("div").unwrap();
-        // The user can style using this
-        err_div.set_id("__perseus_popup_error");
-        let body_elem: Element = document.body().unwrap().into();
-        body_elem
-            .append_with_node_1(&err_div.clone().into())
-            .unwrap();
-        err_div
+        // If we can't get the error container, it's logical to panic
+        document.get_element_by_id("__perseus_popup_error").unwrap()
     }
 }
