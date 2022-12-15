@@ -414,7 +414,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let render_status = render_status.take();
 
                 // With the prerender over, all references to this have been dropped
-                let widget_states = Rc::try_unwrap(widget_states).unwrap().into_inner();
+                // TODO Avoid cloning everything here
+                let widget_states = (&*widget_states).clone().into_inner();
+                // let widget_states = Rc::try_unwrap(widget_states).unwrap().into_inner();
                 // We know this is a `HashMap<String, (String, Value)>`, which will work
                 let widget_states = serde_json::to_string(&widget_states).unwrap();
 

@@ -450,11 +450,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // name, so we need to strip it (this could only fail if we'd mismatches
         // the path to the entity name, which would be either a malformed
         // request or a *critical* Perseus routing bug)
-        let pure_path = PurePath(
-            path.strip_prefix(&format!("{}/", entity_name))
-                .ok_or(ServerError::TemplateNameNotInPath)?
-                .to_string(),
-        );
+        let pure_path = path
+            .strip_prefix(&format!("{}", entity_name))
+            .ok_or(ServerError::TemplateNameNotInPath)?;
+        let pure_path = pure_path.strip_prefix("/").unwrap_or(&pure_path);
+        let pure_path = PurePath(pure_path.to_string());
 
         // If the entity is basic (i.e. has no state), bail early
         if entity.is_basic() {
@@ -462,7 +462,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // this would've been written at build-time)
             let head = self
                 .immutable_store
-                .read(&format!("static/{}.json", &path_encoded))
+                .read(&format!("static/{}.head.html", &path_encoded))
                 .await?;
 
             return Ok(StateAndHead {

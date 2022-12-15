@@ -225,11 +225,11 @@ impl ErrorViews<SsrNode> {
     pub(crate) fn render_to_string(
         &self,
         err: ServerErrorData,
-        global_state: TemplateState,
         translator: Option<&Translator>,
     ) -> (String, String) {
         // We need to create an engine-side reactor
-        let reactor = Reactor::<SsrNode>::engine(global_state, RenderMode::Error, translator);
+        let reactor =
+            Reactor::<SsrNode>::engine(TemplateState::empty(), RenderMode::Error, translator);
         let mut body_str = String::new();
         let mut head_str = String::new();
         create_scope_immediate(|cx| {
@@ -237,7 +237,9 @@ impl ErrorViews<SsrNode> {
             // Depending on whether or not we had a translator, we can figure out the
             // capabilities
             let err_cx = match translator {
-                Some(_) => ErrorContext::Full,
+                // On the engine-side, we don't get global state (see docs for
+                // `ErrorContext::FullNoGlobal`)
+                Some(_) => ErrorContext::FullNoGlobal,
                 None => ErrorContext::WithReactor,
             };
             let (head_view, body_view) = with_hydration_context(|| {
@@ -311,6 +313,18 @@ pub enum ErrorContext {
     /// there was an error fetching translations for the new one, the old
     /// translator will be provided here.*
     WithReactor,
+    /// Perseus was able to successfully instantiate a reactor and translator,
+    /// but this error view is being rendered on the engine-side, and there is
+    /// no global state available.
+    ///
+    /// Although global state could theoretically be provided to error pages
+    /// *sometimes*, the complexity and cloning involved make this extremely
+    /// nuanced (e.g. exported error pages can't access localized global
+    /// state because they don't know their locale, global state might be
+    /// only partially built at the time of the error, etc.). In
+    /// general, error views rendered on the engine-side will have this (though
+    /// not always).
+    FullNoGlobal,
     /// Perseus was able to successfully instantiate everything, including a
     /// translator, but then it encountered an error. You have access to all
     /// the usual things you would have in a page here.

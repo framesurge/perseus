@@ -36,14 +36,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             (None, None)
         };
 
-        let (head, body) = self
-            .error_views
-            .render_to_string(data.clone(), todo!(), translator);
+        let (head, body) = self.error_views.render_to_string(data.clone(), translator);
 
         self.html_shell
             .as_ref()
-            .clone()
             .unwrap()
+            .clone()
             // This will inject the translations string if it's available
             .error_page(&data, &body, &head, translations_str)
             .to_string()
