@@ -97,7 +97,7 @@ where
 {
     type RxRef<'rx> = RxResultRef<'rx, T, E>; // where <<T as MakeRx>::Rx as MakeRxRef>::RxRef<'rx>: 'rx;
 
-    fn to_ref_struct<'rx>(self, cx: Scope<'rx>) -> Self::RxRef<'rx> {
+    fn to_ref_struct(self, cx: Scope) -> Self::RxRef<'_> {
         RxResultRef(create_ref(cx, self.0))
     }
 }

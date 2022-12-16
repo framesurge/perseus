@@ -126,7 +126,7 @@ impl GlobalStateCreator {
                     .call(locale)
                     .await
                     .into()
-                    .to_server_result("global_build_state", "GLOBAL_STATE".to_string())?;
+                    .into_server_result("global_build_state", "GLOBAL_STATE".to_string())?;
                 let template_state: TemplateState = user_state.into();
                 Ok(template_state)
             }
@@ -156,7 +156,7 @@ impl GlobalStateCreator {
                     .call(locale, req)
                     .await
                     .into()
-                    .to_server_result("global_request_state", "GLOBAL_STATE".to_string())?;
+                    .into_server_result("global_request_state", "GLOBAL_STATE".to_string())?;
                 let template_state: TemplateState = user_state.into();
                 Ok(template_state)
             }
@@ -185,7 +185,7 @@ impl GlobalStateCreator {
                 async move {
                     // Amalgamation logic will only be called if both states are indeed defined
                     let typed_build_state = build_state.change_type::<S>();
-                    let user_build_state = match typed_build_state.to_concrete() {
+                    let user_build_state = match typed_build_state.into_concrete() {
                         Ok(state) => state,
                         Err(err) => panic!(
                             "unrecoverable error in state amalgamation parameter derivation: {:#?}",
@@ -193,7 +193,7 @@ impl GlobalStateCreator {
                         ),
                     };
                     let typed_request_state = request_state.change_type::<S>();
-                    let user_request_state = match typed_request_state.to_concrete() {
+                    let user_request_state = match typed_request_state.into_concrete() {
                         Ok(state) => state,
                         Err(err) => panic!(
                             "unrecoverable error in state amalgamation parameter derivation: {:#?}",
@@ -204,7 +204,10 @@ impl GlobalStateCreator {
                         .call(locale, user_build_state, user_request_state)
                         .await
                         .into()
-                        .to_server_result("global_amalgamate_states", "GLOBAL_STATE".to_string())?;
+                        .into_server_result(
+                            "global_amalgamate_states",
+                            "GLOBAL_STATE".to_string(),
+                        )?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }

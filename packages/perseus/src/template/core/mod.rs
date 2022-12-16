@@ -137,6 +137,7 @@ pub struct Template<G: Html> {
     /// panic. So, for later code, this can be assumed to be always `Some`.
     ///
     /// This will not be defined for templates, only for capsules.
+    #[allow(clippy::type_complexity)]
     pub(crate) fallback: Option<Arc<dyn Fn(Scope) -> View<G> + Send + Sync>>,
 }
 impl<G: Html> std::fmt::Debug for Template<G> {

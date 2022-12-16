@@ -83,7 +83,7 @@ impl<G: Html> Template<G> {
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
-        let _ = Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx(cx);
+        Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx(cx);
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway
@@ -129,7 +129,7 @@ impl<G: Html> Template<G> {
             // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             // We don't need any page state store here
-            let _ = Reactor::<G>::engine(global_state, RenderMode::Head, Some(translator))
+            Reactor::<G>::engine(global_state, RenderMode::Head, Some(translator))
                 .add_self_to_cx(cx);
 
             prerender_view = with_no_hydration_context(|| (self.head)(cx, state));

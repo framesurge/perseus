@@ -134,7 +134,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         if self.locales.is_supported(&locale) {
             // Parse the path
             let raw_path = raw_path.strip_prefix('/').unwrap_or(&raw_path);
-            let raw_path = raw_path.strip_suffix('/').unwrap_or(&raw_path);
+            let raw_path = raw_path.strip_suffix('/').unwrap_or(raw_path);
             let path = PathWithoutLocale(match raw_path.strip_suffix(".json") {
                 Some(path) => path.to_string(),
                 None => {

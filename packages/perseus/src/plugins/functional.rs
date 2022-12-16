@@ -70,7 +70,7 @@ impl<A, R> std::fmt::Debug for FunctionalPluginAction<A, R> {
 
 /// Actions designed to be compatible with other plugins such that two plugins
 /// can execute the same action.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FunctionalPluginActions {
     /// The all-powerful action that can modify the Perseus engine itself.
     /// Because modifying the code you're running doesn't work with compiled
@@ -102,26 +102,10 @@ pub struct FunctionalPluginActions {
     /// Actions pertaining to the client-side code.
     pub client_actions: FunctionalPluginClientActions,
 }
-impl Default for FunctionalPluginActions {
-    fn default() -> Self {
-        Self {
-            tinker: FunctionalPluginAction::default(),
-            settings_actions: FunctionalPluginSettingsActions::default(),
-            #[cfg(not(target_arch = "wasm32"))]
-            build_actions: FunctionalPluginBuildActions::default(),
-            #[cfg(not(target_arch = "wasm32"))]
-            export_actions: FunctionalPluginExportActions::default(),
-            #[cfg(not(target_arch = "wasm32"))]
-            export_error_page_actions: FunctionalPluginExportErrorPageActions::default(),
-            server_actions: FunctionalPluginServerActions::default(),
-            client_actions: FunctionalPluginClientActions::default(),
-        }
-    }
-}
 
 /// Functional actions that pertain to altering the settings exported from
 /// `PerseusApp`.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FunctionalPluginSettingsActions {
     /// Adds additional static aliases. Note that a static alias is a mapping of
     /// a URL path to a filesystem path (relative to the project root).
@@ -133,14 +117,6 @@ pub struct FunctionalPluginSettingsActions {
     /// Actions pertaining to the HTML shell, in their own category for
     /// cleanliness (as there are quite a few).
     pub html_shell_actions: FunctionalPluginHtmlShellActions,
-}
-impl Default for FunctionalPluginSettingsActions {
-    fn default() -> Self {
-        Self {
-            add_static_aliases: FunctionalPluginAction::default(),
-            html_shell_actions: FunctionalPluginHtmlShellActions::default(),
-        }
-    }
 }
 
 /// Functional actions that pertain to the HTML shell.

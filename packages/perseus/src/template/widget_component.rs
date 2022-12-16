@@ -74,8 +74,8 @@ pub fn DelayedWidget<G: Html>(cx: Scope, path: &str) -> View<G> {
 #[sycamore::component]
 pub fn Widget<G: Html>(cx: Scope, path: &str) -> View<G> {
     // Handle leading and trailing slashes
-    let path = path.strip_prefix('/').unwrap_or(&path);
-    let path = path.strip_suffix('/').unwrap_or(&path);
+    let path = path.strip_prefix('/').unwrap_or(path);
+    let path = path.strip_suffix('/').unwrap_or(path);
 
     let path = PathWithoutLocale(format!("__capsule/{}", path));
 

@@ -475,7 +475,7 @@ pub struct BlamedError<E: Send + Sync> {
 impl<E: std::error::Error + Send + Sync + 'static> BlamedError<E> {
     /// Converts this blamed error into an internal boxed version that is
     /// generic over the error type.
-    pub(crate) fn to_boxed(self) -> GenericBlamedError {
+    pub(crate) fn into_boxed(self) -> GenericBlamedError {
         BlamedError {
             error: Box::new(self.error),
             blame: self.blame,

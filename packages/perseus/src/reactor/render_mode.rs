@@ -72,6 +72,7 @@ pub(crate) enum RenderMode<G: Html> {
         /// The widget states and attached capsule names. Each of these is
         /// fallible, and the widget component will render an
         /// appropriate error page if necessary.
+        #[allow(clippy::type_complexity)]
         widget_states:
             Rc<HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>>,
         /// The app's templates and capsules.

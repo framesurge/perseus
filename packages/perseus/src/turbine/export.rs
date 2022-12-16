@@ -110,7 +110,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // We need the encoded path to reference flattened build artifacts
         // But we don't create a flattened system with exporting, everything is properly
         // created in a directory structure
-        let path_encoded = urlencoding::encode(&path).to_string();
+        let path_encoded = urlencoding::encode(path).to_string();
         // All initial load pages should be written into their own folders, which
         // prevents a situation of a template root page outside the directory for the
         // rest of that template's pages (see #73). The `.html` file extension is

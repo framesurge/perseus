@@ -21,7 +21,7 @@ pub struct TemplateStateWithType<T: Serialize + DeserializeOwned> {
 impl<T: Serialize + DeserializeOwned + 'static> TemplateStateWithType<T> {
     /// Convert the template state into its underlying concrete type, when that
     /// type is known.
-    pub(crate) fn to_concrete(self) -> Result<T, serde_json::Error> {
+    pub(crate) fn into_concrete(self) -> Result<T, serde_json::Error> {
         serde_json::from_value(self.state)
     }
     /// Creates a new empty template state.

@@ -136,11 +136,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .read(&format!("static/global_state_{}.json", &locale))
                 .await;
             let global_state = match res {
-                Ok(state) => {
-                    let state = TemplateState::from_str(&state)
-                        .map_err(|err| ServerError::InvalidPageState { source: err })?;
-                    state
-                }
+                Ok(state) => TemplateState::from_str(&state)
+                    .map_err(|err| ServerError::InvalidPageState { source: err })?,
                 Err(StoreError::NotFound { .. }) => TemplateState::empty(),
                 Err(err) => return Err(err.into()),
             };

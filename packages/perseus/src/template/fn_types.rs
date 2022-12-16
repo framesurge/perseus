@@ -39,7 +39,7 @@ impl<T> GeneratorResult<T> {
     /// be implicitly blamed on the server with no special status
     /// code (leading to the return of a *500 Internal Server Error* if the
     /// error propagates at request-time).
-    pub(crate) fn to_server_result(
+    pub(crate) fn into_server_result(
         self,
         fn_name: &str,
         template_name: String,
@@ -76,7 +76,7 @@ pub enum BlamedGeneratorResult<T> {
 impl<T> BlamedGeneratorResult<T> {
     /// Converts this `enum` into a `Result` amenable to typical usage within
     /// Perseus' engine-side. This will use the underlying error blame.
-    pub(crate) fn to_server_result(
+    pub(crate) fn into_server_result(
         self,
         fn_name: &str,
         template_name: String,
@@ -160,7 +160,7 @@ impl<S: Serialize + DeserializeOwned + MakeRx, E: std::error::Error + Send + Syn
     fn from(val: Result<S, BlamedError<E>>) -> Self {
         match val {
             Ok(val) => Self::Ok(val),
-            Err(err) => Self::Err(err.to_boxed()),
+            Err(err) => Self::Err(err.into_boxed()),
         }
     }
 }
@@ -176,7 +176,7 @@ impl<E: std::error::Error + Send + Sync + 'static> From<Result<bool, BlamedError
     fn from(val: Result<bool, BlamedError<E>>) -> Self {
         match val {
             Ok(val) => Self::Ok(val),
-            Err(err) => Self::Err(err.to_boxed()),
+            Err(err) => Self::Err(err.into_boxed()),
         }
     }
 }

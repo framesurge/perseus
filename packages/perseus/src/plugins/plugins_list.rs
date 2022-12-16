@@ -9,6 +9,7 @@ type PluginDataMap = HashMap<String, Box<dyn Any + Send + Sync>>;
 /// Due to the sheer number and complexity of nested fields, this is best
 /// transferred in an `Rc`, which unfortunately results in double indirection
 /// for runner functions.
+#[derive(Default)]
 pub struct Plugins {
     /// The functional actions that this plugin takes. This is defined by
     /// default such that all actions are assigned to a default, and so they
@@ -19,15 +20,6 @@ pub struct Plugins {
     /// be run without long chains of matching `Option<T>`s.
     pub control_actions: ControlPluginActions,
     plugin_data: PluginDataMap,
-}
-impl Default for Plugins {
-    fn default() -> Self {
-        Self {
-            functional_actions: FunctionalPluginActions::default(),
-            control_actions: ControlPluginActions::default(),
-            plugin_data: HashMap::default(),
-        }
-    }
 }
 impl std::fmt::Debug for Plugins {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

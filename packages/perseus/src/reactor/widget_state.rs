@@ -275,54 +275,21 @@ impl<G: Html> Reactor<G> {
     {
         if let Some(held_state) = self.get_held_state::<S>(url, true)? {
             Ok(Some(held_state))
-        } else {
-            if cfg!(target_arch = "wasm32") {
-                // On the browser-side, the given server state is empty, and we need to check
-                // the preload
-                match self.state_store.contains(url) {
-                    // This implies either user preloading, or initial load automatic preloading
-                    // from `__PERSEUS_INITIAL_WIDGET_STATES`
-                    PssContains::Preloaded => {
-                        let page_data = self.state_store.get_preloaded(url).unwrap();
-                        // Register an empty head
-                        self.state_store.add_head(url, String::new(), true);
-                        // And reactivize the state for registration
-                        let typed_state =
-                            TemplateState::from_value(page_data.state).change_type::<S>();
-                        // This attempts a deserialization from a `Value`, which could fail
-                        let unrx = typed_state
-                            .to_concrete()
-                            .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
-                        let rx = unrx.make_rx();
-                        // Add that to the state store as the new active state
-                        self.state_store.add_state(url, rx.clone(), false)?;
-
-                        Ok(Some(rx))
-                    }
-                    // We need to fetch the state from the server, which will require
-                    // asynchronicity, so bail out of this function, which is
-                    // not equipped for that
-                    PssContains::None => Ok(None),
-                    // Widgets have no heads, and must always be registered with a state
-                    PssContains::Head | PssContains::HeadNoState => {
-                        return Err(ClientInvariantError::InvalidWidgetPssEntry.into())
-                    }
-                    // These would have been caught by `get_held_state()` above
-                    PssContains::All | PssContains::State => unreachable!(),
-                }
-            } else {
-                // On the engine-side, the given server state is correct, and `get_held_state()`
-                // will definitionally return `Ok(None)`
-                if server_state.is_empty() {
-                    // This would be quite concerning...
-                    Err(ClientInvariantError::NoState.into())
-                } else {
-                    // Fall back to the state we were given, first
-                    // giving it a type (this just sets a phantom type parameter)
-                    let typed_state = server_state.change_type::<S>();
+        } else if cfg!(target_arch = "wasm32") {
+            // On the browser-side, the given server state is empty, and we need to check
+            // the preload
+            match self.state_store.contains(url) {
+                // This implies either user preloading, or initial load automatic preloading
+                // from `__PERSEUS_INITIAL_WIDGET_STATES`
+                PssContains::Preloaded => {
+                    let page_data = self.state_store.get_preloaded(url).unwrap();
+                    // Register an empty head
+                    self.state_store.add_head(url, String::new(), true);
+                    // And reactivize the state for registration
+                    let typed_state = TemplateState::from_value(page_data.state).change_type::<S>();
                     // This attempts a deserialization from a `Value`, which could fail
                     let unrx = typed_state
-                        .to_concrete()
+                        .into_concrete()
                         .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
                     let rx = unrx.make_rx();
                     // Add that to the state store as the new active state
@@ -330,7 +297,36 @@ impl<G: Html> Reactor<G> {
 
                     Ok(Some(rx))
                 }
+                // We need to fetch the state from the server, which will require
+                // asynchronicity, so bail out of this function, which is
+                // not equipped for that
+                PssContains::None => Ok(None),
+                // Widgets have no heads, and must always be registered with a state
+                PssContains::Head | PssContains::HeadNoState => {
+                    Err(ClientInvariantError::InvalidWidgetPssEntry.into())
+                }
+                // These would have been caught by `get_held_state()` above
+                PssContains::All | PssContains::State => unreachable!(),
             }
+        }
+        // On the engine-side, the given server state is correct, and `get_held_state()`
+        // will definitionally return `Ok(None)`
+        else if server_state.is_empty() {
+            // This would be quite concerning...
+            Err(ClientInvariantError::NoState.into())
+        } else {
+            // Fall back to the state we were given, first
+            // giving it a type (this just sets a phantom type parameter)
+            let typed_state = server_state.change_type::<S>();
+            // This attempts a deserialization from a `Value`, which could fail
+            let unrx = typed_state
+                .into_concrete()
+                .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+            let rx = unrx.make_rx();
+            // Add that to the state store as the new active state
+            self.state_store.add_state(url, rx.clone(), false)?;
+
+            Ok(Some(rx))
         }
     }
 }

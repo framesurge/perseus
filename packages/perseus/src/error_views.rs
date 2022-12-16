@@ -24,6 +24,7 @@ pub struct ErrorViews<G: Html> {
     /// The central function that parses the error provided and returns a tuple
     /// of views to deal with it: the first view is the document metadata,
     /// and the second the body of the error.
+    #[allow(clippy::type_complexity)]
     handler: Box<
         dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
@@ -75,6 +76,7 @@ impl<G: Html> ErrorViews<G> {
             + 'static,
     ) -> Self {
         Self {
+            #[allow(clippy::redundant_clone)]
             handler: Box::new(handler.clone()),
             // Sensible defaults are fine here
             subsequent_load_determinant: Box::new(|err| {

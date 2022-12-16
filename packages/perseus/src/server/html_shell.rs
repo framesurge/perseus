@@ -2,7 +2,6 @@ use crate::error_views::ServerErrorData;
 use crate::page_data::PageData;
 use crate::state::TemplateState;
 use crate::utils::minify;
-use fmterr::fmterr;
 use std::collections::HashMap;
 use std::{env, fmt};
 
@@ -363,10 +362,7 @@ impl fmt::Display for HtmlShell {
         // can't minify, we'll fall back to unminified)
         let minified = match minify(&new_shell, true) {
             Ok(minified) => minified,
-            Err(err) => {
-                eprintln!("{}", fmterr(&err));
-                new_shell
-            }
+            Err(_) => new_shell,
         };
 
         f.write_str(&minified)

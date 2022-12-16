@@ -62,7 +62,7 @@ impl<G: Html> Reactor<G> {
                     .change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
                 // This attempts a deserialization from a `Value`, which could fail
                 let unrx = typed_state
-                    .to_concrete()
+                    .into_concrete()
                     .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
                 let rx = unrx.make_rx();
                 // Set that as the new active global state

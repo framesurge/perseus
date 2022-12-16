@@ -36,7 +36,7 @@ impl<G: Html> Template<G> {
         let template_name = self.get_path();
         self.head = Box::new(move |cx, _template_state| {
             let template_name = template_name.clone();
-            val(cx).into().to_server_result("head", template_name)
+            val(cx).into().into_server_result("head", template_name)
         });
         self
     }
@@ -61,7 +61,9 @@ impl<G: Html> Template<G> {
         let template_name = self.get_path();
         self.set_headers = Box::new(move |_template_state| {
             let template_name = template_name.clone();
-            val().into().to_server_result("set_headers", template_name)
+            val()
+                .into()
+                .into_server_result("set_headers", template_name)
         });
         self
     }
@@ -87,7 +89,7 @@ impl<G: Html> Template<G> {
                 val.call()
                     .await
                     .into()
-                    .to_server_result("build_paths", template_name)
+                    .into_server_result("build_paths", template_name)
             }
         }));
         self
@@ -132,7 +134,7 @@ impl<G: Html> Template<G> {
                         .call(user_info)
                         .await
                         .into()
-                        .to_server_result("build_state", template_name)?;
+                        .into_server_result("build_state", template_name)?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }
@@ -168,7 +170,7 @@ impl<G: Html> Template<G> {
                         .call(user_info, req)
                         .await
                         .into()
-                        .to_server_result("request_state", template_name)?;
+                        .into_server_result("request_state", template_name)?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }
@@ -203,7 +205,7 @@ impl<G: Html> Template<G> {
                     val.call(user_info, req)
                         .await
                         .into()
-                        .to_server_result("should_revalidate", template_name)
+                        .into_server_result("should_revalidate", template_name)
                 }
             },
         ));
@@ -280,7 +282,7 @@ impl<G: Html> Template<G> {
                 async move {
                     // Amalgamation logic will only be called if both states are indeed defined
                     let typed_build_state = build_state.change_type::<S>();
-                    let user_build_state = match typed_build_state.to_concrete() {
+                    let user_build_state = match typed_build_state.into_concrete() {
                         Ok(state) => state,
                         Err(err) => panic!(
                             "unrecoverable error in state amalgamation parameter derivation: {:#?}",
@@ -288,7 +290,7 @@ impl<G: Html> Template<G> {
                         ),
                     };
                     let typed_request_state = request_state.change_type::<S>();
-                    let user_request_state = match typed_request_state.to_concrete() {
+                    let user_request_state = match typed_request_state.into_concrete() {
                         Ok(state) => state,
                         Err(err) => panic!(
                             "unrecoverable error in state amalgamation parameter derivation: {:#?}",
@@ -300,7 +302,7 @@ impl<G: Html> Template<G> {
                         .call(user_info, user_build_state, user_request_state)
                         .await
                         .into()
-                        .to_server_result("amalgamate_states", template_name)?;
+                        .into_server_result("amalgamate_states", template_name)?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }

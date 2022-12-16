@@ -429,7 +429,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// See [`Capsule`] for further details.
     pub fn capsule(mut self, val: Capsule<G>) -> Self {
         let val = val.template;
-        let path = val.get_path().clone();
+        let path = val.get_path();
         // Enforce that capsules must have defined fallbacks
         if val.fallback.is_none() {
             panic!(
@@ -438,9 +438,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             )
         }
         #[cfg(target_arch = "wasm32")]
-        self.templates.insert(path.clone(), Rc::new(val));
+        self.templates.insert(path, Rc::new(val));
         #[cfg(not(target_arch = "wasm32"))]
-        self.templates.insert(path.clone(), Arc::new(val));
+        self.templates.insert(path, Arc::new(val));
         self
     }
     /// Sets the app's error views. See [`ErrorViews`] for further details.

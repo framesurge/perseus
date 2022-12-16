@@ -192,7 +192,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     template,
                     global_state.clone(),
                     &req,
-                    &translator,
+                    translator,
                 )?
                 .await?;
             // Convert the `TemplateState`s into `Value`s
@@ -223,6 +223,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// This is deliberately synchronous to avoid making `Self` `Sync`, which is
     /// impossible with Perseus' current design. Thus, this blocks when
     /// resolving each layer.
+    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::type_complexity)]
     fn render_all<'a>(
         &'a self,
         // This is a map of widget paths to their states and capsule names, which we'll populate as
@@ -287,7 +289,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     global_state.clone(),
                     mode.clone(),
                     cx,
-                    &translator,
+                    translator,
                 )
             });
         });
@@ -409,6 +411,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// constantly regenerate it in recursion.
     ///
     /// This assumes the given locale is supported.
+    #[allow(clippy::too_many_arguments)]
     async fn get_state_for_path_internal(
         &self,
         path: PathWithoutLocale, /* This must not contain the locale, but it *will* contain the
@@ -450,9 +453,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // the path to the entity name, which would be either a malformed
         // request or a *critical* Perseus routing bug)
         let pure_path = path
-            .strip_prefix(&format!("{}", entity_name))
+            .strip_prefix(entity_name)
             .ok_or(ServerError::TemplateNameNotInPath)?;
-        let pure_path = pure_path.strip_prefix("/").unwrap_or(&pure_path);
+        let pure_path = pure_path.strip_prefix('/').unwrap_or(pure_path);
         let pure_path = PurePath(pure_path.to_string());
 
         // If the entity is basic (i.e. has no state), bail early
@@ -535,7 +538,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let should_revalidate = self
                     .page_or_widget_should_revalidate(
                         &path_encoded,
-                        &entity,
+                        entity,
                         build_info.clone(),
                         clone_req(&req),
                     )
@@ -544,7 +547,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     // We need to rebuild, which we can do with the build-time logic
                     self.build_path_or_widget_for_locale(
                         pure_path,
-                        &entity,
+                        entity,
                         &build_extra,
                         &locale,
                         global_state.clone(),
@@ -564,7 +567,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // We can provide the most up-to-date global state to this
                 self.build_path_or_widget_for_locale(
                     pure_path,
-                    &entity,
+                    entity,
                     &build_extra,
                     &locale,
                     global_state.clone(),
@@ -576,7 +579,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             let should_revalidate = self
                 .page_or_widget_should_revalidate(
                     &path_encoded,
-                    &entity,
+                    entity,
                     build_info.clone(),
                     clone_req(&req),
                 )
@@ -585,7 +588,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // We need to rebuild, which we can do with the build-time logic
                 self.build_path_or_widget_for_locale(
                     pure_path,
-                    &entity,
+                    entity,
                     &build_extra,
                     &locale,
                     global_state.clone(),
@@ -651,7 +654,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // don't have heads.
         let head_str = if !entity.is_capsule {
             if entity.uses_request_state() {
-                entity.render_head_str(final_state.clone(), global_state.clone(), &translator)?
+                entity.render_head_str(final_state.clone(), global_state.clone(), translator)?
             } else {
                 // The im/mutable store was updated by the last whole block (since any
                 // incremental generation or revalidation would have re-written

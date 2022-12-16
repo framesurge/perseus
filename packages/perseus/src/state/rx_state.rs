@@ -63,7 +63,8 @@ pub trait MakeRxRef {
     /// the type implementing this trait can be converted).
     type RxRef<'a>;
     /// Convert this into a version using `&'a Signal`s using `create_ref()`.
-    fn to_ref_struct<'a>(self, cx: Scope<'a>) -> Self::RxRef<'a>;
+    // Lifetimes are all the same here (but elided)
+    fn to_ref_struct(self, cx: Scope) -> Self::RxRef<'_>;
 }
 
 /// A trait for `struct`s that are both reactive *and* using `&'a Signal`s

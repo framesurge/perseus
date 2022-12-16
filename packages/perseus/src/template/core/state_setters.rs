@@ -180,7 +180,7 @@ impl<G: Html> Template<G> {
             let typed_state = template_state.change_type::<S>();
 
             let state =
-                match typed_state.to_concrete() {
+                match typed_state.into_concrete() {
                     Ok(state) => state,
                     Err(err) => {
                         return Err(ClientError::InvariantError(
@@ -193,7 +193,7 @@ impl<G: Html> Template<G> {
             let template_name = template_name.clone();
             val(cx, state)
                 .into()
-                .to_server_result("head", template_name)
+                .into_server_result("head", template_name)
         });
         self
     }
@@ -231,7 +231,7 @@ impl<G: Html> Template<G> {
             let typed_state = template_state.change_type::<S>();
 
             let state =
-                match typed_state.to_concrete() {
+                match typed_state.into_concrete() {
                     Ok(state) => state,
                     Err(err) => {
                         return Err(ClientError::InvariantError(
@@ -244,7 +244,7 @@ impl<G: Html> Template<G> {
             let template_name = template_name.clone();
             val(state)
                 .into()
-                .to_server_result("set_headers", template_name)
+                .into_server_result("set_headers", template_name)
         });
         self
     }

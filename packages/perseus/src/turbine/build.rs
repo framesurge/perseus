@@ -202,8 +202,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Add all the paths to the render config (stripping erroneous slashes as we go)
             for mut page_path in paths.iter_mut() {
                 // Strip any erroneous slashes
-                let stripped = page_path.strip_suffix('/').unwrap_or(&page_path);
-                let stripped = stripped.strip_prefix('/').unwrap_or(&stripped);
+                let stripped = page_path.strip_suffix('/').unwrap_or(page_path);
+                let stripped = stripped.strip_prefix('/').unwrap_or(stripped);
                 let mut stripped = stripped.to_string();
                 page_path = &mut stripped;
 
@@ -414,7 +414,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
                 // With the prerender over, all references to this have been dropped
                 // TODO Avoid cloning everything here
-                let widget_states = (&*widget_states).clone().into_inner();
+                let widget_states = (*widget_states).clone().into_inner();
                 // let widget_states = Rc::try_unwrap(widget_states).unwrap().into_inner();
                 // We know this is a `HashMap<String, (String, Value)>`, which will work
                 let widget_states = serde_json::to_string(&widget_states).unwrap();

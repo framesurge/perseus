@@ -128,23 +128,21 @@ impl<G: Html> Reactor<G> {
     {
         if let Some(held_state) = self.get_held_state::<S>(url, false)? {
             Ok(held_state)
+        } else if server_state.is_empty() {
+            Err(ClientInvariantError::NoState.into())
         } else {
-            if server_state.is_empty() {
-                Err(ClientInvariantError::NoState.into())
-            } else {
-                // Fall back to the state we were given, first
-                // giving it a type (this just sets a phantom type parameter)
-                let typed_state = server_state.change_type::<S>();
-                // This attempts a deserialization from a `Value`, which could fail
-                let unrx = typed_state
-                    .to_concrete()
-                    .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
-                let rx = unrx.make_rx();
-                // Add that to the state store as the new active state
-                self.state_store.add_state(url, rx.clone(), false)?;
+            // Fall back to the state we were given, first
+            // giving it a type (this just sets a phantom type parameter)
+            let typed_state = server_state.change_type::<S>();
+            // This attempts a deserialization from a `Value`, which could fail
+            let unrx = typed_state
+                .into_concrete()
+                .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+            let rx = unrx.make_rx();
+            // Add that to the state store as the new active state
+            self.state_store.add_state(url, rx.clone(), false)?;
 
-                Ok(rx)
-            }
+            Ok(rx)
         }
     }
     /// Registers a page/widget as definitely taking no state, which allows it

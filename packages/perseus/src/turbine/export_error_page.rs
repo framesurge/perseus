@@ -32,7 +32,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         // Write that to the given output location (this will be relative to wherever
         // the user executed from)
-        match fs::write(&output, err_page_str) {
+        match fs::write(output, err_page_str) {
             Ok(_) => (),
             Err(err) => {
                 let err = EngineError::WriteErrorPageError {
