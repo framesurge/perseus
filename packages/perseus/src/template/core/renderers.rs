@@ -1,22 +1,26 @@
 use super::utils::PreloadInfo;
 use crate::errors::*;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::i18n::Translator;
 use crate::path::PathMaybeWithLocale;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::reactor::Reactor;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::reactor::RenderMode;
-use crate::state::{BuildPaths, StateGeneratorInfo, TemplateState, UnknownStateType};
+use crate::state::TemplateState;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::state::{BuildPaths, StateGeneratorInfo, UnknownStateType};
 use crate::template::Template;
-use crate::utils::provide_context_signal_replace;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
 #[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
-use std::rc::Rc;
 #[cfg(target_arch = "wasm32")]
 use sycamore::prelude::ScopeDisposer;
 use sycamore::web::Html;
-use sycamore::{prelude::Scope, view::View, web::SsrNode};
+#[cfg(not(target_arch = "wasm32"))]
+use sycamore::web::SsrNode;
+use sycamore::{prelude::Scope, view::View};
 
 impl<G: Html> Template<G> {
     /// Executes the user-given function that renders the template on the
@@ -81,10 +85,7 @@ impl<G: Html> Template<G> {
         // We don't need the value, we just want the context instantiations
         let _ = Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx(cx);
         // This is used for widget preloading, which doesn't occur on the engine-side
-        let preload_info = PreloadInfo {
-            locale: String::new(),
-            was_incremental_match: false,
-        };
+        let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway
         let (view, _) = (self.template)(cx, preload_info, state, path)?;
         Ok(view)
@@ -101,10 +102,7 @@ impl<G: Html> Template<G> {
         cx: Scope,
     ) -> Result<View<G>, ClientError> {
         // This is used for widget preloading, which doesn't occur on the engine-side
-        let preload_info = PreloadInfo {
-            locale: String::new(),
-            was_incremental_match: false,
-        };
+        let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway
         let (view, _) = (self.template)(cx, preload_info, state, path)?;
         Ok(view)

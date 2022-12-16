@@ -24,8 +24,8 @@ pub struct RouterState<G: Html> {
     pub(crate) reload_commander: RcSignal<bool>,
 }
 impl<G: Html> Default for RouterState<G> {
-    /// Creates a default instance of the router state intended for server-side
-    /// usage.
+    /// Creates a default instance of the router state intended for usage at the
+    /// startup of an app.
     fn default() -> Self {
         Self {
             load_state: create_rc_signal(RouterLoadState::Server),
@@ -128,8 +128,9 @@ pub enum RouterLoadState {
         /// we're using i18n).
         path: PathMaybeWithLocale,
     },
-    /// We're on the server, and there is no router. Whatever you render based
-    /// on this state will appear when the user first loads the page, before
-    /// it's made interactive.
+    /// We're still warming up, and the router state hasn't been updated yet. As
+    /// the router doesn't actually exist on the engine-side, this won't
+    /// appear on the engine-side, since the type is target-gated to the
+    /// browser-side.
     Server,
 }

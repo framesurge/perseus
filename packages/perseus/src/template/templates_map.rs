@@ -2,7 +2,6 @@ use super::Template;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
-use sycamore::prelude::{Scope, View};
 
 /// Gets a `HashMap` of the given templates by their paths for serving. This
 /// should be manually wrapped for the pages your app provides for convenience.

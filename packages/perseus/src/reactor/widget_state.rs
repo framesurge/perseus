@@ -1,18 +1,24 @@
+#[cfg(target_arch = "wasm32")]
 use std::sync::Arc;
 
 use super::Reactor;
 use crate::{
     errors::{ClientError, ClientInvariantError},
-    path::{PathMaybeWithLocale, PathWithoutLocale},
+    path::*,
     state::{AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateState, UnreactiveState},
-    template::{PreloadInfo, TemplateFn},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::{
-    prelude::{create_child_scope, create_signal, BoundedScope, Scope, ScopeDisposer},
+    prelude::{create_child_scope, BoundedScope, Scope, ScopeDisposer},
     view::View,
     web::Html,
 };
+
+#[cfg(target_arch = "wasm32")]
+use crate::template::PreloadInfo;
+#[cfg(target_arch = "wasm32")]
+use sycamore::prelude::create_signal;
+#[cfg(target_arch = "wasm32")]
 use sycamore_futures::spawn_local_scoped;
 
 impl<G: Html> Reactor<G> {
@@ -30,11 +36,11 @@ impl<G: Html> Reactor<G> {
         &'a self,
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
-        capsule_name: String,
+        #[cfg(target_arch = "wasm32")] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
-        preload_info: PreloadInfo,
+        #[cfg(target_arch = "wasm32")] preload_info: PreloadInfo,
         template_fn: F,
-        fallback_fn: &Arc<dyn Fn(Scope) -> View<G> + Send + Sync>,
+        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope) -> View<G> + Send + Sync>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
     where
         // Note: these bounds replicate those for `.template_with_state()`, except the app lifetime is
@@ -65,13 +71,13 @@ impl<G: Html> Reactor<G> {
             #[cfg(target_arch = "wasm32")]
             None => {
                 return {
-                    let mut view = View::empty();
+                    let view = create_signal(app_cx, View::empty());
 
                     let fallback_fn = fallback_fn.clone();
                     let disposer = create_child_scope(app_cx, |child_cx| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        let widget_view = create_signal(child_cx, (fallback_fn)(child_cx));
+                        view.set((fallback_fn)(child_cx));
                         // Note: this uses `child_cx`, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
@@ -124,11 +130,11 @@ impl<G: Html> Reactor<G> {
                                 }
                             };
 
-                            widget_view.set(final_view);
+                            view.set(final_view);
                         });
                     });
 
-                    Ok((view, disposer))
+                    Ok((sycamore::prelude::view! { app_cx, (*view.get()) }, disposer))
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
@@ -149,15 +155,14 @@ impl<G: Html> Reactor<G> {
         &'a self,
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
-        capsule_name: String,
+        #[cfg(target_arch = "wasm32")] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
-        preload_info: PreloadInfo,
+        #[cfg(target_arch = "wasm32")] preload_info: PreloadInfo,
         template_fn: F,
-        fallback_fn: &Arc<dyn Fn(Scope) -> View<G> + Send + Sync>,
+        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope) -> View<G> + Send + Sync>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
     where
         F: Fn(Scope, S) -> View<G> + Clone + Send + Sync + 'static,
-        // TODO Need another one of these whole functions for reactive!
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
@@ -176,13 +181,13 @@ impl<G: Html> Reactor<G> {
             #[cfg(target_arch = "wasm32")]
             None => {
                 return {
-                    let mut view = View::empty();
+                    let view = create_signal(app_cx, View::empty());
 
                     let fallback_fn = fallback_fn.clone();
                     let disposer = create_child_scope(app_cx, |child_cx| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        let widget_view = create_signal(child_cx, (fallback_fn)(child_cx));
+                        view.set((fallback_fn)(child_cx));
                         // Note: this uses `child_cx`, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
@@ -234,11 +239,11 @@ impl<G: Html> Reactor<G> {
                                 }
                             };
 
-                            widget_view.set(final_view);
+                            view.set(final_view);
                         });
                     });
 
-                    Ok((view, disposer))
+                    Ok((sycamore::prelude::view! { app_cx, (*view.get()) }, disposer))
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)

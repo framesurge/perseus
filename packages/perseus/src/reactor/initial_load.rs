@@ -218,7 +218,7 @@ impl<G: Html> Reactor<G> {
             // Note: in the case of a server-given error, we'll only not have translations
             // if there was an internal error (since `/this-page-does-not-exist`
             // would be a locale redirection).
-            let translations_str = match WindowVariable::new_str("__PERSEUS_TRANSLATIONS") {
+            match WindowVariable::new_str("__PERSEUS_TRANSLATIONS") {
                 // We have translations! Any errors in resolving them fully will be propagated.
                 WindowVariable::Some(translations_str) => self
                     .translations_manager

@@ -1,11 +1,9 @@
 use super::Reactor;
+#[cfg(target_arch = "wasm32")]
+use crate::state::FrozenGlobalState;
 use crate::{
-    errors::{ClientError, ClientInvariantError, ClientThawError},
-    path::PathMaybeWithLocale,
-    state::{
-        AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef,
-        MakeUnrx, RxRef, TemplateState,
-    },
+    errors::*,
+    state::{AnyFreeze, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::{prelude::Scope, web::Html};
@@ -142,6 +140,7 @@ impl<G: Html> Reactor<G> {
     /// register anything in the state store. This may return an error on a
     /// downcast failure (which is probably the user's fault for providing
     /// the wrong type argument, but it's still an invariant failure).
+    #[cfg(target_arch = "wasm32")]
     fn get_active_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,
@@ -162,7 +161,7 @@ impl<G: Html> Reactor<G> {
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         let frozen_app_full = self.frozen_app.borrow();
-        if let Some((frozen_app, thaw_prefs, is_hsr)) = &*frozen_app_full {
+        if let Some((frozen_app, _, is_hsr)) = &*frozen_app_full {
             #[cfg(not(all(debug_assertions, feature = "hsr")))]
             assert!(
                 !is_hsr,

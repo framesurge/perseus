@@ -5,16 +5,14 @@ use crate::{
     template::TemplateNodeType,
     utils::{render_or_hydrate, replace_head},
 };
-use std::{panic::PanicInfo, rc::Rc, sync::Arc};
+#[cfg(not(target_arch = "wasm32"))]
+use std::rc::Rc;
+use std::{panic::PanicInfo, sync::Arc};
 use sycamore::{
-    prelude::{
-        create_rc_signal, create_scope_immediate, try_use_context, view, RcSignal, Scope,
-        ScopeDisposer,
-    },
+    prelude::{create_scope_immediate, try_use_context, view, Scope, ScopeDisposer},
     view::View,
-    web::{Html, SsrNode},
+    web::SsrNode,
 };
-use web_sys::Element;
 
 impl Reactor<TemplateNodeType> {
     /// This reports an error to the failsafe mechanism, which will handle it

@@ -1,15 +1,17 @@
-use std::{panic::PanicInfo, sync::Arc};
-
+use crate::{errors::*, reactor::Reactor};
 #[cfg(not(target_arch = "wasm32"))]
-use crate::reactor::RenderMode;
-use crate::{errors::*, i18n::Translator, reactor::Reactor, state::TemplateState};
+use crate::{i18n::Translator, reactor::RenderMode, state::TemplateState};
 use fmterr::fmt_err;
 use serde::{Deserialize, Serialize};
+#[cfg(target_arch = "wasm32")]
+use std::sync::Arc;
+#[cfg(not(target_arch = "wasm32"))]
+use sycamore::prelude::create_scope_immediate;
+#[cfg(target_arch = "wasm32")]
+use sycamore::prelude::{create_child_scope, try_use_context, ScopeDisposer};
 use sycamore::{
-    prelude::{
-        create_child_scope, create_scope_immediate, try_use_context, view, Scope, ScopeDisposer,
-    },
-    utils::hydrate::{with_hydration_context, with_no_hydration_context},
+    prelude::{view, Scope},
+    utils::hydrate::with_no_hydration_context,
     view::View,
     web::{Html, SsrNode},
 };
@@ -116,6 +118,7 @@ impl<G: Html> ErrorViews<G> {
     /// Returns `true` if the given error, which must have occurred during a
     /// subsequent load, should be displayed as a popup, as opposed to
     /// occupying the entire page/widget.
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn subsequent_err_should_be_popup(&self, err: &ClientError) -> bool {
         !(self.subsequent_load_determinant)(err)
     }
@@ -186,7 +189,7 @@ impl<G: Html> ErrorViews<G> {
         let mut body_view = View::empty();
         let mut head_str = String::new();
         let disposer = create_child_scope(cx, |child_cx| {
-            let (head_view, body_view_local) = (self.handler)(cx, err, info, pos);
+            let (head_view, body_view_local) = (self.handler)(child_cx, err, info, pos);
             body_view = body_view_local;
             // Stringify the head view with no hydration markers
             head_str = sycamore::render_to_string(|_| with_no_hydration_context(|| head_view));

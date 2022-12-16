@@ -8,10 +8,7 @@ use crate::{
     template::TemplateNodeType,
     utils::{render_or_hydrate, replace_head},
 };
-use sycamore::{
-    prelude::{create_effect, create_signal, view, ReadSignal, Scope, View},
-    web::Html,
-};
+use sycamore::prelude::{create_effect, create_signal, view, ReadSignal, Scope, View};
 use sycamore_futures::spawn_local_scoped;
 use sycamore_router::{navigate_replace, HistoryIntegration, RouterBase};
 use web_sys::Element;

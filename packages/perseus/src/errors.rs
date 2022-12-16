@@ -1,7 +1,5 @@
 #![allow(missing_docs)]
 
-use std::panic::PanicInfo;
-
 #[cfg(not(target_arch = "wasm32"))]
 use crate::i18n::TranslationsManagerError;
 use thiserror::Error;
@@ -192,6 +190,8 @@ pub enum ClientInvariantError {
     WidgetStates,
     #[error("a widget was registered in the state store with only a head (but widgets do not have heads), implying a corruption")]
     InvalidWidgetPssEntry,
+    #[error("the widget with path '{path}' was not found, indicating you are rendering an invalid widget on the browser-side only (you should refactor to always render the widget, but only have it do anything on the browser-side; that way, it can be verified on the engine-side, leading to errors at build-time rather than execution-time)")]
+    BadWidgetRouteMatch { path: String },
 }
 
 /// Errors that can occur in the browser while interfacing with browser
@@ -463,6 +463,7 @@ impl Default for ErrorBlame {
 ///
 /// *Note for those using `anyhow`: use `.map_err(|e| anyhow::anyhow!(e))?`
 /// to use anyhow in Perseus render functions.*
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub struct BlamedError<E: Send + Sync> {
     /// The underlying error.
@@ -470,6 +471,7 @@ pub struct BlamedError<E: Send + Sync> {
     /// Who is to blame for the error.
     pub blame: ErrorBlame,
 }
+#[cfg(not(target_arch = "wasm32"))]
 impl<E: std::error::Error + Send + Sync + 'static> BlamedError<E> {
     /// Converts this blamed error into an internal boxed version that is
     /// generic over the error type.
@@ -482,6 +484,7 @@ impl<E: std::error::Error + Send + Sync + 'static> BlamedError<E> {
 }
 // We should be able to convert any error into this easily (e.g. with `?`) with
 // the default being to blame the server
+#[cfg(not(target_arch = "wasm32"))]
 impl<E: std::error::Error + Send + Sync + 'static> From<E> for BlamedError<E> {
     fn from(error: E) -> Self {
         Self {
@@ -492,6 +495,7 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for BlamedError<E> {
 }
 
 /// A simple wrapper for generic, boxed, blamed errors.
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type GenericBlamedError = BlamedError<Box<dyn std::error::Error + Send + Sync>>;
 
 // === TODO ===
@@ -516,59 +520,59 @@ pub(crate) type GenericBlamedError = BlamedError<Box<dyn std::error::Error + Sen
 #[macro_export]
 macro_rules! blame_err {
     (client, $err:expr) => {
-        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+        return ::std::result::Result::Err($crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Client(::std::option::Option::None),
+            cause: $crate::ErrorBlame::Client(::std::option::Option::None),
         })
     };
     (client, $code:literal, $err:expr) => {
-        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+        return ::std::result::Result::Err($crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Client(::std::option::Option::Some($code)),
+            cause: $crate::ErrorBlame::Client(::std::option::Option::Some($code)),
         })
     };
     (server, $err:expr) => {
-        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+        return ::std::result::Result::Err($crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Server(::std::option::Option::None),
+            cause: $crate::ErrorBlame::Server(::std::option::Option::None),
         })
     };
     (server, $code:literal, $err:expr) => {
-        return ::std::result::Result::Err(::perseus::GenericErrorWithCause {
+        return ::std::result::Result::Err($crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Server(::std::option::Option::Some($code)),
+            cause: $crate::ErrorBlame::Server(::std::option::Option::Some($code)),
         })
     };
 }
 
 /// This macro is identical to [`blame_err!`], except it will simply return a
-/// [`GenericErrorWithCause`], not `return`ing it from the caller function. This
+/// [`BlamedError`], not `return`ing it from the caller function. This
 /// is more useful if you're providing a blamed error to something like
 /// `.map_err()`.
 #[macro_export]
 macro_rules! make_blamed_err {
     (client, $err:expr) => {
-        ::perseus::GenericErrorWithCause {
+        $crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Client(::std::option::Option::None),
+            cause: $crate::ErrorBlame::Client(::std::option::Option::None),
         }
     };
     (client, $code:literal, $err:expr) => {
-        ::perseus::GenericErrorWithCause {
+        $crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Client(::std::option::Option::Some($code)),
+            cause: $crate::ErrorBlame::Client(::std::option::Option::Some($code)),
         }
     };
     (server, $err:expr) => {
-        ::perseus::GenericErrorWithCause {
+        $crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Server(::std::option::Option::None),
+            cause: $crate::ErrorBlame::Server(::std::option::Option::None),
         }
     };
     (server, $code:literal, $err:expr) => {
-        ::perseus::GenericErrorWithCause {
+        $crate::BlamedError {
             error: $err.into(),
-            cause: $crate::ErrorCause::Server(::std::option::Option::Some($code)),
+            cause: $crate::ErrorBlame::Server(::std::option::Option::Some($code)),
         }
     };
 }

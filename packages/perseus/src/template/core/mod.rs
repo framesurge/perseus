@@ -8,7 +8,7 @@ mod utils;
 // These are broken out because of state-management closure wrapping
 mod state_setters;
 
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 pub(crate) use utils::*;
 
@@ -17,6 +17,7 @@ use super::fn_types::*;
 use super::TemplateFn;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::default_headers;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
 use sycamore::{
     prelude::{create_scope, Scope},
@@ -156,10 +157,7 @@ impl<G: Html> Template<G> {
         Self {
             path: path.to_string(),
             // Because of the scope disposer return type, this isn't as trivial as an empty function
-            template: Box::new(|_, _, _, _| {
-                let disposer = create_scope(|cx| {});
-                Ok((View::empty(), disposer))
-            }),
+            template: Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(not(target_arch = "wasm32"))]
             head: Box::new(|_, _| Ok(View::empty())),
@@ -190,9 +188,9 @@ impl<G: Html> Template<G> {
 
 // The engine needs to know whether or not to use hydration, this is how we pass
 // those feature settings through
-#[cfg(not(feature = "hydrate"))]
+#[cfg(all(not(feature = "hydrate"), target_arch = "wasm32"))]
 #[doc(hidden)]
 pub(crate) type TemplateNodeType = sycamore::prelude::DomNode;
-#[cfg(feature = "hydrate")]
+#[cfg(all(feature = "hydrate", target_arch = "wasm32"))]
 #[doc(hidden)]
 pub(crate) type TemplateNodeType = sycamore::prelude::HydrateNode;

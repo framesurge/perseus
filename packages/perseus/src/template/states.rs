@@ -12,13 +12,6 @@ pub(crate) struct States {
     pub request_state: TemplateState,
 }
 impl States {
-    /// Creates a new instance of the states, setting both to `None`.
-    pub fn new() -> Self {
-        Self {
-            build_state: TemplateState::empty(),
-            request_state: TemplateState::empty(),
-        }
-    }
     /// Checks if both request state and build state are defined.
     pub fn both_defined(&self) -> bool {
         !self.build_state.is_empty() && !self.request_state.is_empty()

@@ -1,10 +1,8 @@
-use std::sync::Arc;
-
-use crate::errors::ClientError;
 use crate::reactor::Reactor;
 use crate::{checkpoint, plugins::PluginAction, template::TemplateNodeType};
 use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
-use sycamore::prelude::{create_scope, create_scope_immediate};
+use sycamore::prelude::create_scope;
+#[cfg(feature = "hydrate")]
 use sycamore::utils::hydrate::with_hydration_context;
 use wasm_bindgen::JsValue;
 
@@ -81,7 +79,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
                     // We're away!
                     reactor.add_self_to_cx(cx);
                     let reactor = Reactor::from_cx(cx);
-                    running = reactor.start(cx);
+                    reactor.start(cx)
                 }
                 Err(err) => {
                     // We don't have a reactor, so render a critical popup error, hoping the user
@@ -89,17 +87,21 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
                     // displays and everything)
                     Reactor::handle_critical_error(cx, &err, &error_views);
                     // We can't do anything without a reactor
-                    running = false;
+                    false
                 }
-            };
+            }
         };
 
         // If we're using hydration, everything has to be done inside a hydration
         // context (because of all the custom view handling)
         #[cfg(feature = "hydrate")]
-        with_hydration_context(|| core());
+        {
+            running = with_hydration_context(|| core());
+        }
         #[cfg(not(feature = "hydrate"))]
-        core();
+        {
+            running = core();
+        }
     });
 
     // If we failed, terminate

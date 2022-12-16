@@ -116,6 +116,9 @@ pub mod log {
 /// be used in conjunction with the Sycamore prelude.
 pub mod prelude {
     pub use crate::error_views::ErrorViews;
+    // Target-gating doesn't matter, because the prelude is intended to be used all
+    // at once
+    #[cfg(not(target_arch = "wasm32"))]
     pub use crate::errors::{BlamedError, ErrorBlame};
     pub use crate::init::*;
     pub use crate::reactor::Reactor;

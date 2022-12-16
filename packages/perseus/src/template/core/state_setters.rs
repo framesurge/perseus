@@ -1,28 +1,20 @@
 #[cfg(not(target_arch = "wasm32"))]
 use super::super::fn_types::*;
 use super::Template;
-use super::TemplateFn;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::errors::*;
-use crate::path::PathWithLocale;
-use crate::path::PathWithoutLocale;
-use crate::state::{StateGeneratorInfo, TemplateState, UnknownStateType};
-use crate::utils::PerseusDuration;
 use crate::{
     reactor::Reactor,
-    state::{
-        AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateStateWithType, UnreactiveState,
-    },
+    state::{AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, UnreactiveState},
 };
 #[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::prelude::create_child_scope;
-use sycamore::prelude::create_signal;
 use sycamore::prelude::BoundedScope;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
-use sycamore_futures::spawn_local_scoped;
 
 impl<G: Html> Template<G> {
     /// Sets the template rendering function to use, if the template takes
@@ -51,38 +43,46 @@ impl<G: Html> Template<G> {
         S: MakeRx + Serialize + DeserializeOwned + Send + Sync + Clone + 'static,
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
     {
+        #[cfg(target_arch = "wasm32")]
         let entity_name = self.get_path();
+        #[cfg(target_arch = "wasm32")]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
-        self.template = Box::new(move |app_cx, preload_info, template_state, path| {
-            let reactor = Reactor::<G>::from_cx(app_cx);
-            if self.is_capsule {
-                reactor.get_widget_view::<S, _>(
-                    app_cx,
-                    path,
-                    entity_name.clone(),
-                    template_state,
-                    preload_info,
-                    val.clone(),
-                    fallback_fn.as_ref().unwrap(),
-                )
-            } else {
-                // This will handle frozen/active state prioritization, etc.
-                let intermediate_state = reactor.get_page_state::<S>(&path, template_state)?;
-                // Run the user's code in a child scope so any effects they start are killed
-                // when the page ends (otherwise we basically get a series of
-                // continuous pseudo-memory leaks, which can also cause accumulations of
-                // listeners on things like the router state)
-                let mut view = View::empty();
-                let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
-                    // Compute suspended states
-                    #[cfg(target_arch = "wasm32")]
-                    intermediate_state.compute_suspense(child_cx);
-                    // let ref_struct = intermediate_state.to_ref_struct(child_cx);
-                    view = val(child_cx, intermediate_state.to_ref_struct(child_cx));
-                });
-                Ok((view, disposer))
-            }
-        });
+        self.template = Box::new(
+            #[allow(unused_variables)]
+            move |app_cx, preload_info, template_state, path| {
+                let reactor = Reactor::<G>::from_cx(app_cx);
+                if self.is_capsule {
+                    reactor.get_widget_view::<S, _>(
+                        app_cx,
+                        path,
+                        #[cfg(target_arch = "wasm32")]
+                        entity_name.clone(),
+                        template_state,
+                        #[cfg(target_arch = "wasm32")]
+                        preload_info,
+                        val.clone(),
+                        #[cfg(target_arch = "wasm32")]
+                        fallback_fn.as_ref().unwrap(),
+                    )
+                } else {
+                    // This will handle frozen/active state prioritization, etc.
+                    let intermediate_state = reactor.get_page_state::<S>(&path, template_state)?;
+                    // Run the user's code in a child scope so any effects they start are killed
+                    // when the page ends (otherwise we basically get a series of
+                    // continuous pseudo-memory leaks, which can also cause accumulations of
+                    // listeners on things like the router state)
+                    let mut view = View::empty();
+                    let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+                        // Compute suspended states
+                        #[cfg(target_arch = "wasm32")]
+                        intermediate_state.compute_suspense(child_cx);
+                        // let ref_struct = intermediate_state.to_ref_struct(child_cx);
+                        view = val(child_cx, intermediate_state.to_ref_struct(child_cx));
+                    });
+                    Ok((view, disposer))
+                }
+            },
+        );
         self
     }
     /// Sets the template rendering function to use, if the template takes
@@ -93,32 +93,40 @@ impl<G: Html> Template<G> {
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
+        #[cfg(target_arch = "wasm32")]
         let entity_name = self.get_path();
+        #[cfg(target_arch = "wasm32")]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
-        self.template = Box::new(move |app_cx, preload_info, template_state, path| {
-            let reactor = Reactor::<G>::from_cx(app_cx);
-            if self.is_capsule {
-                reactor.get_unreactive_widget_view(
-                    app_cx,
-                    path,
-                    entity_name.clone(),
-                    template_state,
-                    preload_info,
-                    val.clone(),
-                    fallback_fn.as_ref().unwrap(),
-                )
-            } else {
-                // This will handle frozen/active state prioritization, etc.
-                let intermediate_state = reactor.get_page_state::<S>(&path, template_state)?;
-                let mut view = View::empty();
-                let disposer = create_child_scope(app_cx, |child_cx| {
-                    // We go back from the unreactive state type wrapper to the base type (since
-                    // it's unreactive)
-                    view = val(child_cx, intermediate_state.make_unrx());
-                });
-                Ok((view, disposer))
-            }
-        });
+        self.template = Box::new(
+            #[allow(unused_variables)]
+            move |app_cx, preload_info, template_state, path| {
+                let reactor = Reactor::<G>::from_cx(app_cx);
+                if self.is_capsule {
+                    reactor.get_unreactive_widget_view(
+                        app_cx,
+                        path,
+                        #[cfg(target_arch = "wasm32")]
+                        entity_name.clone(),
+                        template_state,
+                        #[cfg(target_arch = "wasm32")]
+                        preload_info,
+                        val.clone(),
+                        #[cfg(target_arch = "wasm32")]
+                        fallback_fn.as_ref().unwrap(),
+                    )
+                } else {
+                    // This will handle frozen/active state prioritization, etc.
+                    let intermediate_state = reactor.get_page_state::<S>(&path, template_state)?;
+                    let mut view = View::empty();
+                    let disposer = create_child_scope(app_cx, |child_cx| {
+                        // We go back from the unreactive state type wrapper to the base type (since
+                        // it's unreactive)
+                        view = val(child_cx, intermediate_state.make_unrx());
+                    });
+                    Ok((view, disposer))
+                }
+            },
+        );
         self
     }
 

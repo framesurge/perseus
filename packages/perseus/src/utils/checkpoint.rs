@@ -1,3 +1,5 @@
+use crate::reactor::WindowVariable;
+
 /// Marks a checkpoint in the code and alerts any tests that it's been reached
 /// by creating an element that represents it. The preferred solution would be
 /// emitting a DOM event, but the WebDriver specification currently doesn't
@@ -25,19 +27,13 @@ pub fn checkpoint(name: &str) {
         panic!("checkpoint must not contain hyphens, use underscores instead (hyphens are used as an internal delimiter)");
     }
 
-    let val_opt = web_sys::window().unwrap().get("__PERSEUS_TESTING");
-    let js_obj = match val_opt {
-        Some(js_obj) => js_obj,
-        None => return,
+    let is_testing = WindowVariable::new_bool("__PERSEUS_TESTING");
+    match is_testing {
+        WindowVariable::Some(val) if val => (),
+        // If the boolean was some other type in JS, just abort (this would be a *very* weird
+        // environment that implies user tampering)
+        _ => return,
     };
-    // The object should only actually contain the string value that was injected
-    let is_testing = match js_obj.as_bool() {
-        Some(cfg_str) => cfg_str,
-        None => return,
-    };
-    if !is_testing {
-        return;
-    }
 
     // If we're here, we're testing
     // We dispatch a console warning to reduce the likelihood of literal 'testing in

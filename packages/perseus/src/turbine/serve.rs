@@ -1,12 +1,11 @@
-use std::{cell::RefCell, collections::HashMap, pin::Pin, rc::Rc};
-
 use chrono::{DateTime, Utc};
 use fmterr::fmt_err;
 use futures::{
     future::{try_join_all, BoxFuture},
-    Future, FutureExt,
+    FutureExt,
 };
 use serde_json::Value;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use sycamore::{
     prelude::create_scope_immediate, utils::hydrate::with_hydration_context, view::View,
     web::SsrNode,
@@ -202,7 +201,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // Ignore the capsule name (needed internally only, we'll `match_route` on the
                 // browser-side anyway). We also need to turn `TemplateState` into
                 // its underlying `Value`.
-                .map(|(k, res)| (k, res.map(|(v, s)| s.state)))
+                .map(|(k, res)| (k, res.map(|(_, s)| s.state)))
                 .collect::<HashMap<_, _>>();
 
             Ok((
@@ -530,7 +529,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 Err(err) => return Err(err.into()),
             };
 
-            if let Some(built_state) = built_state {
+            if built_state.is_some() {
                 // This has been generated already, so we need to check for the possibility of
                 // revalidation
                 let should_revalidate = self

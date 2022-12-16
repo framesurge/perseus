@@ -12,8 +12,6 @@ mod start;
 mod state;
 #[cfg(target_arch = "wasm32")]
 mod subsequent_load;
-#[cfg(target_arch = "wasm32")]
-mod widget_disposers;
 mod widget_state;
 
 #[cfg(target_arch = "wasm32")]
@@ -22,22 +20,14 @@ pub(crate) use initial_load::InitialView;
 pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
+#[cfg(target_arch = "wasm32")]
+use crate::template::TemplateNodeType;
 use crate::{
-    errors::ClientError,
     i18n::Translator,
-    plugins::PluginAction,
-    router::RouterState,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
-    template::TemplateNodeType,
-};
-use std::{
-    cell::{Cell, RefCell},
-    collections::HashMap,
-    rc::Rc,
 };
 use sycamore::{
     prelude::{provide_context, use_context, Scope},
-    view::View,
     web::Html,
 };
 
@@ -45,15 +35,14 @@ use sycamore::{
 
 // --- Browser-side imports ---
 #[cfg(target_arch = "wasm32")]
-use self::widget_disposers::WidgetDisposers;
-#[cfg(target_arch = "wasm32")]
 use crate::{
     error_views::ErrorViews,
-    errors::{ClientInvariantError, PluginError},
+    errors::ClientError,
+    errors::ClientInvariantError,
     i18n::{ClientTranslationsManager, Locales, TranslationsManager},
     init::PerseusAppBase,
-    plugins::Plugins,
-    router::PageDisposer,
+    plugins::PluginAction,
+    router::RouterState,
     state::{FrozenApp, ThawPrefs},
     stores::MutableStore,
     template::TemplateMap,
@@ -63,7 +52,16 @@ use serde::{de::DeserializeOwned, Serialize};
 #[cfg(target_arch = "wasm32")]
 use serde_json::Value;
 #[cfg(target_arch = "wasm32")]
-use sycamore::reactive::{create_rc_signal, RcSignal};
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
+#[cfg(target_arch = "wasm32")]
+use sycamore::{
+    reactive::{create_rc_signal, RcSignal},
+    view::View,
+};
 
 /// The core of Perseus' browser-side systems. This forms a central point for
 /// all the Perseus state and rendering logic to operate from. In your own code,
@@ -75,6 +73,7 @@ pub struct Reactor<G: Html> {
     /// preloads.
     pub(crate) state_store: PageStateStore,
     /// The router state.
+    #[cfg(target_arch = "wasm32")]
     pub(crate) router_state: RouterState<G>,
     /// The user-provided global state, stored with similar mechanics to the
     /// state store, although optimised.
@@ -106,9 +105,6 @@ pub struct Reactor<G: Html> {
     /// The app's locales.
     #[cfg(target_arch = "wasm32")]
     pub(crate) locales: Locales,
-    /// The app's plugins.
-    #[cfg(target_arch = "wasm32")]
-    plugins: Rc<Plugins>,
     /// The browser-side translations manager.
     #[cfg(target_arch = "wasm32")]
     translations_manager: ClientTranslationsManager,
@@ -199,7 +195,6 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             templates,
             locales,
             render_cfg,
-            plugins,
             error_views,
             root,
         })
@@ -267,7 +262,6 @@ impl<G: Html> Reactor<G> {
         translator: Option<&Translator>,
     ) -> Self {
         Self {
-            router_state: RouterState::default(),
             state_store: PageStateStore::new(0), /* There will be no need for the state store on
                                                   * the
                                                   * server-side (but is still has to be
@@ -286,7 +280,7 @@ impl<G: Html> Reactor<G> {
 /// The possible states a window variable injected by the server/export process
 /// can be found in.
 #[cfg(target_arch = "wasm32")]
-enum WindowVariable<T: Serialize + DeserializeOwned> {
+pub(crate) enum WindowVariable<T: Serialize + DeserializeOwned> {
     /// It existed and coudl be deserialized into the correct type.
     Some(T),
     /// It was not present.
@@ -324,7 +318,12 @@ impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
 impl WindowVariable<bool> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with boolean window variables.
-    fn new_bool(name: &str) -> Self {
+    ///
+    /// While it may seem that a boolean cannot be 'malformed', it most
+    /// certainly can be if you think it is boolean, but it actually isn't!
+    ///
+    /// This is generally used internally for managing flags.
+    pub(crate) fn new_bool(name: &str) -> Self {
         let val_opt = web_sys::window().unwrap().get(name);
         let js_bool = match val_opt {
             Some(js_bool) => js_bool,

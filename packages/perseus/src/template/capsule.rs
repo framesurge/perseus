@@ -1,5 +1,5 @@
 use super::Template;
-use std::{ops::Deref, rc::Rc, sync::Arc};
+use std::{ops::Deref, sync::Arc};
 use sycamore::{prelude::Scope, view::View, web::Html};
 
 /// A *capsule*, a special type of template in Perseus that can also accept

@@ -1,10 +1,5 @@
-use crate::{path::PathWithoutLocale, template::TemplateNodeType};
-use std::any::TypeId;
-use sycamore::{
-    prelude::Scope,
-    view::View,
-    web::{Html, SsrNode},
-};
+use crate::path::PathWithoutLocale;
+use sycamore::{prelude::Scope, view::View, web::Html};
 
 /// An alternative to [`Widget`] that delays the rendering of the widget until
 /// the rest of the page has loaded.
@@ -43,6 +38,7 @@ use sycamore::{
 // request that will do the exact same thing: it will *always* take longer, unless the network speed
 // is greater than infinity.
 #[sycamore::component]
+#[allow(unused_variables)]
 pub fn DelayedWidget<G: Html>(cx: Scope, path: &str) -> View<G> {
     // On the engine-side, we expect absolutely nothing, no matter what
     // TODO Hydration??
@@ -97,6 +93,7 @@ pub fn Widget<G: Html>(cx: Scope, path: &str) -> View<G> {
 #[cfg(target_arch = "wasm32")]
 fn browser_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     use crate::{
+        errors::ClientInvariantError,
         path::PathMaybeWithLocale,
         reactor::Reactor,
         router::{match_route, RouteInfo, RouteVerdict},
@@ -130,7 +127,7 @@ fn browser_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
 
     match verdict {
         RouteVerdict::Found(RouteInfo {
-            path,
+            path: _,
             template: capsule,
             was_incremental_match,
             locale,
@@ -149,13 +146,19 @@ fn browser_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
                 },
             ) {
                 Ok(view) => view,
-                Err(err) => todo!("error page"),
+                Err(err) => reactor.error_views.handle_widget(&err, cx),
             }
         }
         // Widgets are all resolved on the server-side, meaning they are checked then too (be it at
         // build-time or request-time). If this happpens, the user is rendering an invalid
         // widget on the browser-side only.
-        _ => todo!("error page"),
+        _ => reactor.error_views.handle_widget(
+            &(ClientInvariantError::BadWidgetRouteMatch {
+                path: (*path).to_string(),
+            }
+            .into()),
+            cx,
+        ),
     }
 }
 
@@ -163,7 +166,6 @@ fn browser_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
 #[cfg(not(target_arch = "wasm32"))]
 fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
     use crate::errors::{ClientError, ServerError};
-    use crate::i18n::Translator;
     use crate::path::PathMaybeWithLocale;
     use crate::reactor::{Reactor, RenderMode, RenderStatus};
     use crate::state::TemplateState;
@@ -221,7 +223,7 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
                     // store is really just a filesystem API, and we have no choice
                     // but to block here.
                     let state = match block_on(
-                        immutable_store.read(&format!("static/{}.head.html", path_encoded)),
+                        immutable_store.read(&format!("static/{}.json", path_encoded)),
                     ) {
                         Ok(state) => state,
                         Err(err) => {

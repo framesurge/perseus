@@ -174,7 +174,7 @@ impl<G: Html> Reactor<G> {
                 sycamore_router::navigate(&dest);
                 todo!()
             }
-            RouteVerdict::NotFound { locale } => {
+            RouteVerdict::NotFound { .. } => {
                 checkpoint("not_found");
 
                 // Neatly return a `ClientError::ServerError`, which will be displayed somehow

@@ -3,11 +3,9 @@ use crate::{
     error_views::ServerErrorData,
     errors::*,
     i18n::TranslationsManager,
-    init::PerseusAppBase,
     internal::{PageData, PageDataPartial},
     path::PathMaybeWithLocale,
     plugins::PluginAction,
-    server::HtmlShell,
     state::TemplateState,
     stores::MutableStore,
     utils::get_path_prefix_server,
@@ -15,8 +13,7 @@ use crate::{
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::future::{try_join, try_join_all};
 use serde_json::Value;
-use std::{collections::HashMap, fs, path::PathBuf, rc::Rc, sync::Arc};
-use sycamore::web::SsrNode;
+use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Exports your app to a series of static files. If any templates/capsules

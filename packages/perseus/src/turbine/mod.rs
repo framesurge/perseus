@@ -153,7 +153,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             self.index_view_str.to_string(),
             &self.root_id,
             &self.render_cfg,
-            &self.immutable_store,
             &self.plugins,
         )
         .await?;

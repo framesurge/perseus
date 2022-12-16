@@ -2,6 +2,7 @@ use crate::errors::{ClientError, ClientInvariantError};
 use crate::page_data::PageDataPartial;
 use crate::path::*;
 use crate::state::AnyFreeze;
+#[cfg(target_arch = "wasm32")]
 use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -261,6 +262,7 @@ impl PageStateStore {
     /// # Panics
     /// This function will panic if the given page and widget paths are not
     /// already registered in the state store.
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn declare_dependency(
         &self,
         widget_path: &PathMaybeWithLocale,
@@ -268,12 +270,12 @@ impl PageStateStore {
     ) {
         let mut map = self.map.borrow_mut();
         {
-            let mut caller = map.get_mut(caller_path).expect("page/widget that was part of dependency declaration was not present in the state store");
+            let caller = map.get_mut(caller_path).expect("page/widget that was part of dependency declaration was not present in the state store");
             caller.add_dependency(widget_path.clone());
         }
 
         {
-            let mut widget = map.get_mut(widget_path).expect(
+            let widget = map.get_mut(widget_path).expect(
                 "widget that was part of dependency declaration was not present in the state store",
             );
             widget.add_dependent(caller_path.clone());
@@ -368,6 +370,7 @@ impl PageStateStore {
     /// Adds the given widget to the preload list so it can be later accessed
     /// during the initial load render. This is not used for widgets in
     /// subsequently loaded pages, which are fetched separately.
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn add_initial_widget(&self, url: PathMaybeWithLocale, state: Value) {
         let mut preloaded = self.preloaded.borrow_mut();
         // Widgets never have heads
@@ -556,10 +559,12 @@ impl PssEntry {
         self.head = Some(head);
     }
     /// Declares a widget that this page/widget depends on, by its path.
+    #[cfg(target_arch = "wasm32")]
     fn add_dependency(&mut self, path: PathMaybeWithLocale) {
         self.dependencies.push(path);
     }
     /// Declares a page/widget that this widget is used by, by its path.
+    #[cfg(target_arch = "wasm32")]
     fn add_dependent(&mut self, path: PathMaybeWithLocale) {
         self.dependents.push(path);
     }

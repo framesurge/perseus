@@ -1,4 +1,5 @@
-mod freeze;
+#[cfg(target_arch = "wasm32")]
+mod freeze; // This has `FrozenApp` etc.
 mod global_state;
 mod rx_result;
 mod rx_state;
@@ -8,7 +9,9 @@ mod state_store;
 mod suspense;
 mod template_state;
 
+#[cfg(target_arch = "wasm32")]
 pub use freeze::{FrozenApp, PageThawPrefs, ThawPrefs};
+#[cfg(target_arch = "wasm32")]
 pub(crate) use global_state::FrozenGlobalState;
 pub use global_state::{GlobalState, GlobalStateCreator, GlobalStateType};
 pub use rx_result::{RxResult, RxResultIntermediate, RxResultRef, SerdeInfallible};

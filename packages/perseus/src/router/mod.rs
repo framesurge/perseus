@@ -11,6 +11,7 @@ mod page_disposer;
 mod route_verdict;
 // #[cfg(target_arch = "wasm32")]
 // mod router_component;
+#[cfg(target_arch = "wasm32")]
 mod router_state;
 
 #[cfg(target_arch = "wasm32")]
@@ -21,6 +22,7 @@ pub use match_route::{
 pub use route_verdict::{RouteInfo, RouteInfoAtomic, RouteVerdict, RouteVerdictAtomic};
 // #[cfg(target_arch = "wasm32")]
 // pub(crate) use router_component::{perseus_router, PerseusRouterProps};
+#[cfg(target_arch = "wasm32")]
 pub use router_state::{RouterLoadState, RouterState};
 
 // #[cfg(target_arch = "wasm32")]

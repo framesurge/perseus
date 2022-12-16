@@ -1,15 +1,17 @@
 use super::Reactor;
 use crate::{
-    errors::{ClientError, ClientInvariantError, ClientThawError},
+    errors::*,
     path::PathMaybeWithLocale,
+    state::{AnyFreeze, MakeRx, MakeUnrx, TemplateState},
+};
+#[cfg(target_arch = "wasm32")]
+use crate::{
     router::RouterLoadState,
-    state::{
-        AnyFreeze, Freeze, FrozenApp, FrozenGlobalState, GlobalStateType, MakeRx, MakeRxRef,
-        MakeUnrx, TemplateState, ThawPrefs,
-    },
+    state::{Freeze, FrozenApp, ThawPrefs},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::web::Html;
+#[cfg(target_arch = "wasm32")]
 use sycamore_router::navigate;
 
 // Explicitly prevent the user from trying to freeze on the engine-side
@@ -219,6 +221,7 @@ impl<G: Html> Reactor<G> {
 
     /// Attempts to the get the active state for a page or widget. Of course,
     /// this does not register anything in the state store.
+    #[cfg(target_arch = "wasm32")]
     fn get_active_state<S>(&self, url: &PathMaybeWithLocale) -> Option<S::Rx>
     where
         S: MakeRx,
@@ -240,7 +243,7 @@ impl<G: Html> Reactor<G> {
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         let frozen_app_full = self.frozen_app.borrow();
-        if let Some((frozen_app, thaw_prefs, is_hsr)) = &*frozen_app_full {
+        if let Some((frozen_app, _, is_hsr)) = &*frozen_app_full {
             #[cfg(not(all(debug_assertions, feature = "hsr")))]
             assert!(
                 !is_hsr,

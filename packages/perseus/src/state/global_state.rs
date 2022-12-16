@@ -1,17 +1,24 @@
 use super::rx_state::AnyFreeze;
 use super::TemplateState;
-use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx};
+use super::{MakeRx, MakeUnrx};
 #[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
 use crate::errors::{ClientError, ClientInvariantError};
-use crate::stores::ImmutableStore;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::make_async_trait;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::{BlamedGeneratorResult, GeneratorResult};
+#[cfg(not(target_arch = "wasm32"))]
 use crate::utils::AsyncFnReturn;
-use crate::{make_async_trait, Request};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Request;
+#[cfg(not(target_arch = "wasm32"))]
 use futures::Future;
+#[cfg(not(target_arch = "wasm32"))]
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+#[cfg(target_arch = "wasm32")]
+use serde::Deserialize;
+use serde::Serialize;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -337,6 +344,7 @@ impl std::fmt::Debug for GlobalState {
 }
 
 /// Frozen global state.
+#[cfg(target_arch = "wasm32")]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum FrozenGlobalState {
     /// There is state that should be instantiated.
@@ -354,6 +362,7 @@ pub enum FrozenGlobalState {
     /// this purpose.
     Used,
 }
+#[cfg(target_arch = "wasm32")]
 impl From<&GlobalStateType> for FrozenGlobalState {
     fn from(val: &GlobalStateType) -> Self {
         match val {

@@ -3,6 +3,7 @@ use std::pin::Pin;
 
 /// A generic return type for asynchronous functions that we need to store in a
 /// struct.
+#[doc(hidden)]
 pub type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
 
 /// Creates traits that prevent users from having to pin their functions' return

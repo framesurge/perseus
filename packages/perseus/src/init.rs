@@ -1,5 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::HtmlShell;
+use crate::stores::ImmutableStore;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::template::ArcTemplateMap;
 #[cfg(target_arch = "wasm32")]
@@ -15,10 +16,10 @@ use crate::{
     template::Template,
     Html, SsrNode,
 };
+#[cfg(target_arch = "wasm32")]
 use crate::{
     error_views::{ErrorContext, ErrorPosition},
     errors::ClientError,
-    stores::ImmutableStore,
 };
 use crate::{errors::PluginError, template::Capsule};
 use futures::Future;
@@ -26,8 +27,10 @@ use futures::Future;
 use std::marker::PhantomData;
 #[cfg(not(target_arch = "wasm32"))]
 use std::pin::Pin;
+#[cfg(target_arch = "wasm32")]
+use std::rc::Rc;
 use std::sync::Arc;
-use std::{collections::HashMap, panic::PanicInfo, rc::Rc};
+use std::{collections::HashMap, panic::PanicInfo};
 use sycamore::prelude::Scope;
 use sycamore::utils::hydrate::with_no_hydration_context;
 use sycamore::{
@@ -444,6 +447,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     // Internally, this will extract a copy of the main handler for panic
     // usage. Note that the default value of this is extracted from the default
     // error views.
+    #[allow(unused_mut)]
     pub fn error_views(mut self, mut val: ErrorViews<G>) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
@@ -723,7 +727,6 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         index_view_str: String,
         root: &str,
         render_cfg: &HashMap<String, String>,
-        immutable_store: &ImmutableStore,
         plugins: &Plugins,
     ) -> Result<HtmlShell, PluginError> {
         // Construct an HTML shell

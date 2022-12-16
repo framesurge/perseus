@@ -18,6 +18,7 @@ use crate::template::TemplateNodeType;
 // TODO Make sure hydration will work when it's targeted at a blank canvas...
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details! (TODO PR for `hydrate_to_with_scope` etc.)
+#[allow(unused_variables)]
 pub(crate) fn render_or_hydrate(
     cx: Scope,
     view: View<TemplateNodeType>,

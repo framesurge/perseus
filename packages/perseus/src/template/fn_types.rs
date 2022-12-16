@@ -1,8 +1,6 @@
-use super::core::PreloadInfo;
 use crate::{
     errors::*,
     make_async_trait,
-    path::PathMaybeWithLocale,
     state::{BuildPaths, MakeRx, StateGeneratorInfo, TemplateState, UnknownStateType},
     utils::AsyncFnReturn,
     Request,
@@ -10,11 +8,7 @@ use crate::{
 use futures::Future;
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::{
-    prelude::{Scope, ScopeDisposer},
-    view::View,
-    web::SsrNode,
-};
+use sycamore::{prelude::Scope, view::View, web::SsrNode};
 
 /// A custom `enum` representation of a `Result`-style type whose error is a
 /// `Box` that can accept any thread-safe error type. This is used internally as
