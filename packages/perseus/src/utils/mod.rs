@@ -11,8 +11,7 @@ mod log;
 #[cfg(not(target_arch = "wasm32"))]
 mod minify;
 mod path_prefix;
-#[cfg(target_arch = "wasm32")]
-mod render_or_hydrate;
+mod render;
 #[cfg(target_arch = "wasm32")]
 mod replace_head;
 mod test;
@@ -30,6 +29,8 @@ pub(crate) use fetch::fetch;
 pub(crate) use minify::minify;
 pub use path_prefix::*;
 #[cfg(target_arch = "wasm32")]
-pub(crate) use render_or_hydrate::render_or_hydrate;
+pub(crate) use render::render_or_hydrate;
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) use render::ssr_fallible;
 #[cfg(target_arch = "wasm32")]
 pub(crate) use replace_head::replace_head;

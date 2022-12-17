@@ -4,7 +4,6 @@ use sycamore::prelude::*;
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "Hello World!" }
-        // a(href = "about", id = "about-link") { "About!" }
     }
 }
 

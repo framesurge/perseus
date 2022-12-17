@@ -1,11 +1,12 @@
+#[cfg(not(target_arch = "wasm32"))]
+use crate::errors::ServerError;
 #[cfg(not(feature = "hydrate"))]
 use sycamore::web::DomNode;
 #[cfg(feature = "hydrate")]
 use sycamore::web::HydrateNode;
+#[cfg(not(target_arch = "wasm32"))]
+use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, utils::render::insert, view::View};
-use web_sys::Element;
-
-use crate::template::TemplateNodeType;
 
 /// Renders or hydrates the given view to the given node,
 /// depending on feature flags. This will atuomatically handle
@@ -18,11 +19,12 @@ use crate::template::TemplateNodeType;
 // TODO Make sure hydration will work when it's targeted at a blank canvas...
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details! (TODO PR for `hydrate_to_with_scope` etc.)
+#[cfg(target_arch = "wasm32")]
 #[allow(unused_variables)]
 pub(crate) fn render_or_hydrate(
     cx: Scope,
-    view: View<TemplateNodeType>,
-    parent: Element,
+    view: View<crate::template::TemplateNodeType>,
+    parent: web_sys::Element,
     force_render: bool,
 ) {
     #[cfg(feature = "hydrate")]
@@ -66,4 +68,36 @@ pub(crate) fn render_or_hydrate(
             false,
         );
     }
+}
+
+/// Renders the given view to a string in a fallible manner, managing hydration
+/// automatically.
+// XXX This is *highly* dependent on internal Sycamore implementation
+// details!
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn ssr_fallible<E>(
+    view_fn: impl FnOnce(Scope) -> Result<View<SsrNode>, E>,
+) -> Result<String, E> {
+    use sycamore::web::WriteToString;
+    use sycamore::{prelude::create_scope_immediate, utils::hydrate::with_hydration_context}; // XXX This may become private one day!
+
+    let mut ret = Ok(String::new());
+    create_scope_immediate(|cx| {
+        // Usefully, this wrapper can return anything!
+        let view_res = with_hydration_context(|| view_fn(cx));
+        match view_res {
+            Ok(view) => {
+                let mut view_str = String::new();
+                for node in view.flatten() {
+                    node.write_to_string(&mut view_str);
+                }
+                ret = Ok(view_str);
+            }
+            Err(err) => {
+                ret = Err(err);
+            }
+        }
+    });
+
+    ret
 }

@@ -6,13 +6,9 @@ use futures::{
 };
 use serde_json::Value;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
-use sycamore::{
-    prelude::create_scope_immediate, utils::hydrate::with_hydration_context, view::View,
-    web::SsrNode,
-};
+use sycamore::web::SsrNode;
 
 use super::Turbine;
-use crate::state::{TemplateState, UnknownStateType};
 use crate::{error_views::ServerErrorData, reactor::RenderMode};
 use crate::{
     errors::*,
@@ -26,6 +22,10 @@ use crate::{
     template::States,
     template::Template,
     Request,
+};
+use crate::{
+    state::{TemplateState, UnknownStateType},
+    utils::ssr_fallible,
 };
 
 /// This is `PageDataPartial`, but it keeps the state as `TemplateState` for
@@ -280,21 +280,16 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // which is dropped when this is done. So, we can safely get the widget states
         // back.
         // Now prerender the actual content (a bit roundabout for error handling)
-        let mut prerender_view = Ok(View::empty());
-        create_scope_immediate(|cx| {
-            prerender_view = with_hydration_context(|| {
-                entity.render_for_template_server(
-                    full_path.clone(),
-                    state.clone(),
-                    global_state.clone(),
-                    mode.clone(),
-                    cx,
-                    translator,
-                )
-            });
-        });
-        let prerender_view = prerender_view?;
-        let prerendered = sycamore::render_to_string(|_| prerender_view);
+        let prerendered = ssr_fallible(|cx| {
+            entity.render_for_template_server(
+                full_path.clone(),
+                state.clone(),
+                global_state.clone(),
+                mode.clone(),
+                cx,
+                translator,
+            )
+        })?;
         // As explained above, this should never fail, because all references have been
         // dropped
         let mut widget_states = Rc::try_unwrap(widget_states_rc).unwrap();

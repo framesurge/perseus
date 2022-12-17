@@ -197,7 +197,6 @@ impl Reactor<TemplateNodeType> {
         // reactivity going as long as it isn't dropped). Popup errors do *not*
         // get access to a router or the like. Ever time `popup_err_view` is
         // updated, this will update too.
-        // TODO
         render_or_hydrate(
             cx,
             view! { cx,
