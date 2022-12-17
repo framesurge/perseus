@@ -2,14 +2,13 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "PageStateRx")]
 struct PageState {
     message: String,
 }
 
-#[perseus::template]
-fn amalgamation_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
+fn amalgamation_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: PageStateRx<'b>) -> View<G> {
     view! { cx,
         p { (format!("The message is: '{}'", state.message.get())) }
     }
@@ -22,37 +21,40 @@ pub fn get_template<G: Html>() -> Template<G> {
         .request_state_fn(get_request_state)
         // But Perseus doesn't know which one to use, so we provide a function to unify them
         .amalgamate_states_fn(amalgamate_states)
-        .template_with_state(amalgamation_page)
+        .template_with_state::<PageState, _>(amalgamation_page)
 }
 
+// Could be fallible with a `BlamedError`
 #[engine_only_fn]
 async fn amalgamate_states(
     // This takes the same information as build state, request state, etc.
     _info: StateGeneratorInfo<()>,
     build_state: PageState,
     req_state: PageState,
-) -> RenderFnResultWithCause<PageState> {
-    Ok(PageState {
+) -> PageState {
+    PageState {
         message: format!(
             "Hello from the amalgamation! (Build says: '{}', server says: '{}'.)",
             build_state.message, req_state.message
         ),
-    })
+    }
 }
 
+// Could be fallible with a `BlamedError`
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
-    Ok(PageState {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> PageState {
+    PageState {
         message: "Hello from the build process!".to_string(),
-    })
+    }
 }
 
+// Could be fallible
 #[engine_only_fn]
 async fn get_request_state(
     _info: StateGeneratorInfo<()>,
     _req: Request,
-) -> RenderFnResultWithCause<PageState> {
-    Ok(PageState {
+) -> PageState {
+    PageState {
         message: "Hello from the server!".to_string(),
-    })
+    }
 }

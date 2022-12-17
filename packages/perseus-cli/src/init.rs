@@ -144,7 +144,7 @@ perseus-warp = { version = "=%perseus_version", features = [ "dflt-server" ] }
 static DFLT_INIT_GITIGNORE: &str = r#"dist/"#;
 static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 
-use perseus::{Html, PerseusApp};
+use perseus::prelude::*;
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {

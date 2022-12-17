@@ -9,8 +9,8 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
     // It's faster to get this only once and rely on reactivity
     // But it's unused when this runs on the server-side because of the target-gate
     // below
-    let render_ctx = RenderCtx::from_ctx(cx);
-    let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
+    let reactor = Reactor::<G>::from_cx(cx);
+    let global_state = reactor.get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         p(id = "global_state") { (global_state.test.get()) }
@@ -26,7 +26,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
             perseus::spawn_local_scoped(cx, async move {
                 use perseus::state::{IdbFrozenStateStore, Freeze};
                 // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
-                let frozen_state = render_ctx.freeze();
+                let frozen_state = reactor.freeze();
                 let idb_store = match IdbFrozenStateStore::new().await {
                     Ok(idb_store) => idb_store,
                     Err(_) => {

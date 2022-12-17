@@ -1,5 +1,4 @@
 use perseus::prelude::*;
-use perseus::state::Freeze;
 use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
@@ -8,7 +7,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
     let frozen_app = create_signal(cx, String::new());
-    let render_ctx = RenderCtx::from_ctx(cx);
+    let render_ctx = Reactor::<G>::from_cx(cx);
 
     let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
 
@@ -21,7 +20,11 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
         button(id = "freeze_button", on:click = |_| {
-            frozen_app.set(render_ctx.freeze());
+            #[cfg(target_arch = "wasm32")]
+            {
+                use perseus::state::Freeze;
+                frozen_app.set(render_ctx.freeze());
+            }
         }) { "Freeze!" }
         p(id = "frozen_app") { (frozen_app.get()) }
     }

@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 use crate::global_state::AppStateRx;
 
 fn about_page<G: Html>(cx: Scope) -> View<G> {
-    let global_state = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
+    let global_state = Reactor::<G>::from_cx(cx).get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         // The user can change the global state through an input, and the changes they make will be reflected throughout the app

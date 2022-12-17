@@ -1,7 +1,6 @@
-mod error_pages;
 mod templates;
 
-use perseus::{Html, PerseusApp};
+use perseus::prelude::*;
 
 // Note: we use fully-qualified paths in the types to this function so we don't
 // have to target-gate some more imports
@@ -11,7 +10,8 @@ pub async fn dflt_server<
     M: perseus::stores::MutableStore + 'static,
     T: perseus::i18n::TranslationsManager + 'static,
 >(
-    props: perseus::server::ServerProps<M, T>,
+    turbine: &'static perseus::turbine::Turbine<M, T>,
+    opts: perseus::server::ServerOptions,
     (host, port): (String, u16),
 ) {
     use perseus_warp::perseus_routes;
@@ -28,7 +28,7 @@ pub async fn dflt_server<
     // those universal properties Usually, you shouldn't ever have to worry
     // about the value of the properties, which are set from your `PerseusApp`
     // config
-    let perseus_routes = perseus_routes(props).await;
+    let perseus_routes = perseus_routes(turbine, opts).await;
     // And now set up our own routes
     // You could set up as many of these as you like in a production app
     // Note that they mustn't define anything under `/.perseus` or anything
@@ -57,5 +57,5 @@ pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
         .template(crate::templates::about::get_template())
-        .error_pages(crate::error_pages::get_error_pages())
+        .error_views(ErrorViews::unlocalized_development_default())
 }

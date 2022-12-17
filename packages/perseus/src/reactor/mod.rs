@@ -74,7 +74,7 @@ pub struct Reactor<G: Html> {
     pub(crate) state_store: PageStateStore,
     /// The router state.
     #[cfg(target_arch = "wasm32")]
-    pub(crate) router_state: RouterState<G>,
+    pub router_state: RouterState<G>,
     /// The user-provided global state, stored with similar mechanics to the
     /// state store, although optimised.
     global_state: GlobalState,

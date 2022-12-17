@@ -1,7 +1,6 @@
-mod error_pages;
 mod templates;
 
-use perseus::{Html, PerseusApp};
+use perseus::prelude::*;
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
@@ -13,5 +12,5 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .template(crate::templates::revalidation::get_template())
         .template(crate::templates::revalidation_and_incremental_generation::get_template())
         .template(crate::templates::amalgamation::get_template())
-        .error_pages(crate::error_pages::get_error_pages())
+        .error_views(ErrorViews::unlocalized_development_default())
 }

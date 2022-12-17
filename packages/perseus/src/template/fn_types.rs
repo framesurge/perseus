@@ -115,6 +115,22 @@ impl<E: std::error::Error + Send + Sync + 'static> From<Result<BuildPaths, E>>
         }
     }
 }
+// Global build state (*not* blamed)
+impl<S: Serialize + DeserializeOwned + MakeRx> From<S> for GeneratorResult<S> {
+    fn from(val: S) -> Self {
+        Self::Ok(val)
+    }
+}
+impl<S: Serialize + DeserializeOwned + MakeRx, E: std::error::Error + Send + Sync + 'static>
+    From<Result<S, E>> for GeneratorResult<S>
+{
+    fn from(val: Result<S, E>) -> Self {
+        match val {
+            Ok(val) => Self::Ok(val),
+            Err(err) => Self::Err(err.into()),
+        }
+    }
+}
 // Head
 impl From<View<SsrNode>> for GeneratorResult<View<SsrNode>> {
     fn from(val: View<SsrNode>) -> Self {

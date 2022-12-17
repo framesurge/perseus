@@ -1,8 +1,7 @@
 mod components;
-mod error_pages;
 mod templates;
 
-use perseus::{Html, PerseusApp, PerseusRoot};
+use perseus::prelude::*;
 use sycamore::prelude::view;
 
 #[perseus::main(perseus_warp::dflt_server)]
@@ -10,7 +9,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
         .template(crate::templates::long::get_template())
-        .error_pages(crate::error_pages::get_error_pages())
+        .error_views(ErrorViews::unlocalized_development_default())
         .index_view(|cx| {
             view! { cx,
                 html {

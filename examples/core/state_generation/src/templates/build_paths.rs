@@ -2,15 +2,14 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "PageStateRx")]
 struct PageState {
     title: String,
     content: String,
 }
 
-#[perseus::template]
-fn build_paths_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
+fn build_paths_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: PageStateRx<'b>) -> View<G> {
     let title = state.title;
     let content = state.content;
     view! { cx,
@@ -27,21 +26,23 @@ pub fn get_template<G: Html>() -> Template<G> {
     Template::new("build_paths")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
-        .template_with_state(build_paths_page)
+        .template_with_state::<PageState, _>(build_paths_page)
 }
 
 // We take in `StateGeneratorInfo`, which has the path we're generating for
 // (*not* including the template name), along with the locale, and some
 // arbitrary helper state (which we're not using, hence the `()`)
+//
+// This could be fallible with a `BlamedError`
 #[engine_only_fn]
-async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
+async fn get_build_state(info: StateGeneratorInfo<()>) -> PageState {
     let title = info.path.clone();
     let content = format!(
         "This is a post entitled 'build_paths/{}'. Its original slug was 'build_paths/{}'.",
         &title, &info.path
     );
 
-    Ok(PageState { title, content })
+    PageState { title, content }
 }
 
 // This just returns a special `struct` containing all the paths we want to
@@ -53,8 +54,13 @@ async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCaus
 // Note also that there's almost no point in using build paths without build
 // state, as every page would come out exactly the same (unless you
 // differentiated them on the client...)
+//
+// This could return `BuildPaths` directly; this example just shows that it could
+// also return an error (which is *not* blamed, since this function, which generates
+// paths at build-time, is only going to be run at...well, build-time, so the client
+// can't be responsible for any errors we might encounter)
 #[engine_only_fn]
-async fn get_build_paths() -> RenderFnResult<BuildPaths> {
+async fn get_build_paths() -> Result<BuildPaths, std::convert::Infallible> {
     Ok(BuildPaths {
         // These are the paths we want to generate for, with an empty string being at the root of
         // the template name (here, `/build_paths`)

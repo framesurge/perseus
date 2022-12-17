@@ -2,14 +2,13 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "PageStateRx")]
 struct PageState {
     greeting: String,
 }
 
-#[perseus::template]
-fn index_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
+fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: PageStateRx<'b>) -> View<G> {
     view! { cx,
         p { (state.greeting.get()) }
     }
@@ -24,17 +23,18 @@ fn head(cx: Scope) -> View<SsrNode> {
 
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
-        .template_with_state(index_page)
+        .template_with_state::<PageState, _>(index_page)
         .head(head)
         .build_state_fn(get_build_state)
-        .set_headers_fn(set_headers)
+        // There is also `.set_headers()`, which takes a function that does not use the page state
+        .set_headers_with_state(set_headers)
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
-    Ok(PageState {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> PageState {
+    PageState {
         greeting: "Hello World!".to_string(),
-    })
+    }
 }
 
 // Unfortunately, this return type does have

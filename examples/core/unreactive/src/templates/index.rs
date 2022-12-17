@@ -39,8 +39,8 @@ fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
-    Ok(IndexPageState {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
+    IndexPageState {
         greeting: "Hello World!".to_string(),
-    })
+    }
 }

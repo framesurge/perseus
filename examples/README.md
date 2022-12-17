@@ -9,3 +9,5 @@ Each of the examples here are fully self-contained Perseus apps, though they use
 If any of these examples don't work, please [open an issue](https://github.com/arctic-hen7/perseus/issues/choose) and let us know!
 
 *Note: by default, all examples are assumed to use the `perseus-integration` helper crate, which allows testing them with all integrations. If this is not the case, add a `.integration_locked` file to the root of the example.*
+
+**Warning:** all of the `core` examples use `ErrorViews::unlocalized_default()` for their error views, except for the example that specifically regards error views. This is done solely for convenience and to reduce the burden of maintaining all the examples. In real apps, error views will be provided for you in development for convenience, but you'll have to provide your own in production (unless you explicitly force the development error views to come with you to production, with `::unlocalized_default()`, which is **not** recommended).

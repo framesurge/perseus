@@ -10,7 +10,6 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
 
-    // The greeting was passed through using build state
     wait_for_checkpoint!("initial_state_present", 0, c);
     wait_for_checkpoint!("page_interactive", 0, c);
     let greeting = c.find(Locator::Css("p")).await?.text().await?;
@@ -20,18 +19,10 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let title = c.find(Locator::Css("title")).await?.html(false).await?;
     assert!(title.contains("Index Page"));
 
-    // Go to `/about`, which should've been modified by a plugin
-    c.find(Locator::Id("about-link")).await?.click().await?;
-    let url = c.current_url().await?;
-    assert!(url.as_ref().starts_with("http://localhost:8080/about"));
-    wait_for_checkpoint!("initial_state_not_present", 0, c);
-    wait_for_checkpoint!("page_interactive", 1, c);
-    // Make sure the hardcoded text there exists
-    let text = c.find(Locator::Css("p")).await?.text().await?;
-    assert_eq!(text, "Hey from a plugin!");
-    // Make sure we get initial state if we refresh
-    c.refresh().await?;
-    wait_for_checkpoint!("initial_state_present", 0, c);
+    // Check that the static alias to `Cargo.toml` worked
+    c.goto("http://localhost:8080/Cargo.toml").await?;
+    let text = c.find(Locator::Css("body")).await?.text().await?;
+    assert!(text.starts_with("[package]"));
 
     Ok(())
 }

@@ -9,16 +9,8 @@ pub fn main<G: Html>() -> PerseusApp<G> {
                 p { "Hello World!" }
             }
         }))
-        .error_pages(ErrorPages::new(
-            |cx, url, status, err, _| {
-                view! { cx,
-                    p { (format!("An error with HTTP code {} occurred: '{}'.", status, err)) }
-                }
-            },
-            |cx, _, _, _, _| {
-                view! { cx,
-                    title { "Error" }
-                }
-            },
-        ))
+        // This forces Perseus to use the development defaults in production, which just
+        // lets you easily deploy this app. In a real app, you should always provide your own
+        // error pages!
+        .error_views(ErrorViews::unlocalized_development_default())
 }
