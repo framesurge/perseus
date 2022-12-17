@@ -10,7 +10,7 @@ use crate::reactor::RenderMode;
 use crate::state::TemplateState;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::state::{BuildPaths, StateGeneratorInfo, UnknownStateType};
-use crate::template::Template;
+use crate::template::TemplateInner;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
 #[cfg(not(target_arch = "wasm32"))]
@@ -22,7 +22,7 @@ use sycamore::web::Html;
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View};
 
-impl<G: Html> Template<G> {
+impl<G: Html> TemplateInner<G> {
     /// Executes the user-given function that renders the template on the
     /// client-side ONLY. This takes in an existing global state.
     ///

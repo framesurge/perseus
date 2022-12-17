@@ -1,6 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 use super::super::fn_types::*;
-use super::Template;
+use super::TemplateInner;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::errors::*;
 use crate::{
@@ -16,7 +16,7 @@ use sycamore::prelude::BoundedScope;
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
 
-impl<G: Html> Template<G> {
+impl<G: Html> TemplateInner<G> {
     /// Sets the template rendering function to use, if the template takes
     /// state. Templates that do not take state should use `.template()`
     /// instead.
@@ -29,7 +29,7 @@ impl<G: Html> Template<G> {
     /// function, which can always be left as `_` (e.g.
     /// `.template_with_state::<IndexPageState, _>(index_page)`).
     // Generics are swapped here for nicer manual specification
-    pub fn template_with_state<S, F>(mut self, val: F) -> Template<G>
+    pub fn template_with_state<S, F>(mut self, val: F) -> Self
     where
         // The state is made reactive on the child
         F: for<'app, 'child> Fn(
@@ -87,7 +87,7 @@ impl<G: Html> Template<G> {
     }
     /// Sets the template rendering function to use, if the template takes
     /// unreactive state.
-    pub fn template_with_unreactive_state<F, S>(mut self, val: F) -> Template<G>
+    pub fn template_with_unreactive_state<F, S>(mut self, val: F) -> Self
     where
         F: Fn(Scope, S) -> View<G> + Clone + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
@@ -133,7 +133,7 @@ impl<G: Html> Template<G> {
     /// Sets the template rendering function to use for templates that take no
     /// state. Templates that do take state should use
     /// `.template_with_state()` instead.
-    pub fn template<F>(mut self, val: F) -> Template<G>
+    pub fn template<F>(mut self, val: F) -> Self
     where
         F: Fn(Scope) -> View<G> + Send + Sync + 'static,
     {
@@ -164,7 +164,7 @@ impl<G: Html> Template<G> {
     pub fn head_with_state<S, V>(
         mut self,
         val: impl Fn(Scope, S) -> V + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
         V: Into<GeneratorResult<View<SsrNode>>>,
@@ -215,7 +215,7 @@ impl<G: Html> Template<G> {
     pub fn set_headers_with_state<S, V>(
         mut self,
         val: impl Fn(S) -> V + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
         V: Into<GeneratorResult<HeaderMap>>,
@@ -252,7 +252,7 @@ impl<G: Html> Template<G> {
     /// header defaults. This should only be used when your header-setting
     /// requires knowing the state.
     #[cfg(target_arch = "wasm32")]
-    pub fn set_headers_with_state(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn set_headers_with_state(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 }

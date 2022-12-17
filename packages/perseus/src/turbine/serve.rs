@@ -9,18 +9,16 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use sycamore::web::SsrNode;
 
 use super::Turbine;
-use crate::{error_views::ServerErrorData, reactor::RenderMode};
+use crate::{error_views::ServerErrorData, reactor::RenderMode, router::{RouteVerdict, match_route}, template::Entity};
 use crate::{
     errors::*,
     i18n::{TranslationsManager, Translator},
     internal::{PageData, PageDataPartial},
     path::*,
-    router::{match_route_atomic, RouteVerdictAtomic},
     server::get_path_slice,
     state::StateGeneratorInfo,
     stores::MutableStore,
     template::States,
-    template::Template,
     Request,
 };
 use crate::{
@@ -100,7 +98,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         &self,
         path: PathWithoutLocale,
         translator: &Translator,
-        template: &Template<SsrNode>,
+        template: &Entity<SsrNode>,
         was_incremental: bool,
         req: Request,
     ) -> Result<(PageData, TemplateState), ServerError> {
@@ -238,7 +236,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         path: PathWithoutLocale,
         locale: String,
         state: TemplateState,
-        entity: &'a Template<SsrNode>, // This will recurse, so this could be a template of capsule
+        entity: &'a Entity<SsrNode>, // Recursion could make this either a template or a capsule
         global_state: TemplateState,
         req: &'a Request,
         translator: &'a Translator,
@@ -271,7 +269,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let mode = RenderMode::Request {
             widget_states: widget_states_rc.clone(),
             // This is a bunch of `Arc`s
-            templates: self.templates.clone(),
+            entities: self.entities.clone(),
             error_views: self.error_views.clone(),
             unresolved_widget_accumulator: unresolved_widget_accumulator.clone(),
         };
@@ -318,16 +316,16 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         // Get a route verdict to determine the capsule this widget path maps to
                         let localized_widget_path = PathMaybeWithLocale::new(&widget_path, &locale);
                         let path_slice = get_path_slice(&localized_widget_path);
-                        let verdict = match_route_atomic(
+                        let verdict = match_route(
                             &path_slice,
                             &self.render_cfg,
-                            &self.templates,
+                            &self.entities,
                             &self.locales,
                         );
 
                         let res = match verdict {
-                            RouteVerdictAtomic::Found(route_info) => {
-                                let capsule_name = route_info.template.get_path();
+                            RouteVerdict::Found(route_info) => {
+                                let capsule_name = route_info.entity.get_path();
 
                                 // Now build the state; if this fails, we won't fail the whole
                                 // page, we'll just load an error for this particular widget
@@ -341,7 +339,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                                     route_info.was_incremental_match,
                                     clone_req(req),
                                     // We do happen to actually have this from the routing
-                                    Some(route_info.template),
+                                    Some(&route_info.entity),
                                     Some(global_state),
                                 )
                                 .await
@@ -358,14 +356,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                             }
                             // This is just completely wrong, and implies a corruption, so it's made
                             // a page-level error
-                            RouteVerdictAtomic::LocaleDetection(_) => {
+                            RouteVerdict::LocaleDetection(_) => {
                                 return Err(ServerError::ResolveDepLocaleRedirection {
                                     locale: locale.to_string(),
                                     widget: widget_path.to_string(),
                                 })
                             }
                             // But a widget that isn't found will be made a widget-only error
-                            RouteVerdictAtomic::NotFound { .. } => {
+                            RouteVerdict::NotFound { .. } => {
                                 let err = ServerError::ResolveDepNotFound {
                                     locale: locale.to_string(),
                                     widget: widget_path.to_string(),
@@ -416,7 +414,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         was_incremental: bool,
         req: Request,
         // If these are `None`, we'll generate them
-        entity: Option<&Template<SsrNode>>, // Not for recursion, just convenience
+        entity: Option<&Entity<SsrNode>>, // Not for recursion, just convenience
         global_state: Option<TemplateState>,
     ) -> Result<StateAndHead, ServerError> {
         let locale = translator.get_locale();
@@ -432,7 +430,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let entity = match entity {
             Some(entity) => entity,
             None => self
-                .templates
+                .entities
                 .get(entity_name)
                 .ok_or(ServeError::PageNotFound {
                     path: path.to_string(),
@@ -679,7 +677,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     async fn page_or_widget_should_revalidate(
         &self,
         path_encoded: &str,
-        entity: &Template<SsrNode>,
+        entity: &Entity<SsrNode>,
         build_info: StateGeneratorInfo<UnknownStateType>,
         req: Request,
     ) -> Result<bool, ServerError> {

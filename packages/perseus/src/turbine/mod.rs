@@ -17,25 +17,15 @@ mod tinker;
 
 pub use server::{ApiResponse, SubsequentLoadQueryParams};
 
-use crate::{
-    error_views::ErrorViews,
-    errors::*,
-    i18n::{Locales, TranslationsManager},
-    init::PerseusAppBase,
-    plugins::Plugins,
-    server::HtmlShell,
-    state::{GlobalStateCreator, TemplateState},
-    stores::{ImmutableStore, MutableStore},
-    template::ArcTemplateMap,
-};
+use crate::{error_views::ErrorViews, errors::*, i18n::{Locales, TranslationsManager}, init::PerseusAppBase, plugins::Plugins, server::HtmlShell, state::{GlobalStateCreator, TemplateState}, stores::{ImmutableStore, MutableStore}, template::Entity};
 use futures::executor::block_on;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use sycamore::web::SsrNode;
 
 /// The Perseus state generator.
 pub struct Turbine<M: MutableStore, T: TranslationsManager> {
-    /// All the templates in the app.
-    templates: ArcTemplateMap<SsrNode>,
+    /// All the templates and capsules in the app.
+    entities: HashMap<String, Entity<SsrNode>>,
     /// The app's error views.
     error_views: Arc<ErrorViews<SsrNode>>,
     /// The app's locales data.
@@ -77,7 +67,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
     type Error = PluginError;
 
     fn try_from(app: PerseusAppBase<SsrNode, M, T>) -> Result<Self, Self::Error> {
-        let templates = app.get_atomic_templates_map();
+        let entities = app.get_entities_map();
         let locales = app.get_locales()?;
         let immutable_store = app.get_immutable_store()?;
         let mutable_store = app.get_mutable_store();
@@ -93,7 +83,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
         let translations_manager = block_on(app.get_translations_manager());
 
         Ok(Self {
-            templates,
+            entities,
             locales,
             immutable_store,
             mutable_store,

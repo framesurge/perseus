@@ -1,9 +1,9 @@
-use super::Template;
+use super::TemplateInner;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
 use sycamore::web::Html;
 
-impl<G: Html> Template<G> {
+impl<G: Html> TemplateInner<G> {
     /// Gets the path of the template. This is the root path under which any
     /// generated pages will be served. In the simplest case, there will
     /// only be one page rendered, and it will occupy that root position.

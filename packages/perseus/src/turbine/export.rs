@@ -123,7 +123,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         };
 
         // Get the template itself
-        let template = self.templates.get(template_path);
+        let template = self.entities.get(template_path);
         let template = match template {
             Some(template) => template,
             None => {

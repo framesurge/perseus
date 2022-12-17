@@ -54,13 +54,13 @@ impl<G: Html> Reactor<G> {
         let verdict = match_route(
             &path_segments,
             &self.render_cfg,
-            &self.templates,
+            &self.entities,
             &self.locales,
         );
         match &verdict {
             RouteVerdict::Found(RouteInfo {
                 path,
-                template,
+                entity,
                 locale,
                 // Since we're not requesting anything from the server, we don't need to worry about
                 // whether it's an incremental match or not
@@ -70,7 +70,7 @@ impl<G: Html> Reactor<G> {
                 // Update the router state as we try to load (since this is the initial
                 // view, this will be the first change since the server)
                 self.router_state.set_load_state(RouterLoadState::Loading {
-                    template_name: template.get_path(),
+                    template_name: entity.get_path(),
                     path: full_path.clone(),
                 });
                 self.router_state.set_last_verdict(verdict.clone());
@@ -137,7 +137,7 @@ impl<G: Html> Reactor<G> {
 
                 // Render the actual template to the root (done imperatively due to child
                 // scopes)
-                let (view, disposer) = template.render_for_template_client(full_path, state, cx)?;
+                let (view, disposer) = entity.render_for_template_client(full_path, state, cx)?;
 
                 Ok(InitialView::View(view, disposer))
             }

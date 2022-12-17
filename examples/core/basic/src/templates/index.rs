@@ -20,6 +20,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .build_state_fn(get_build_state)
         .template_with_state::<IndexPageState, _>(index_page)
         .head_with_state(head)
+        .build()
 }
 
 #[engine_only_fn]

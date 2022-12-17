@@ -1,10 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::HtmlShell;
-use crate::stores::ImmutableStore;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::template::ArcTemplateMap;
-#[cfg(target_arch = "wasm32")]
-use crate::template::TemplateMap;
+use crate::{stores::ImmutableStore, template::Entity};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::get_path_prefix_server;
 use crate::{
@@ -105,12 +101,8 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
     /// injected.
     root: String,
-    /// A list of all the templates that the app uses, including the underlying
-    /// templates beneath all its capsules.
-    #[cfg(target_arch = "wasm32")]
-    templates: TemplateMap<G>,
-    #[cfg(not(target_arch = "wasm32"))]
-    templates: ArcTemplateMap<G>,
+    /// A list of all the templates and capsules that the app uses.
+    entities: HashMap<String, Entity<G>>,
     /// The app's error pages.
     #[cfg(target_arch = "wasm32")]
     error_views: Rc<ErrorViews<G>>,
@@ -293,7 +285,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             root: "root".to_string(),
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
-            templates: HashMap::new(),
+            entities: HashMap::new(),
             // We do offer default error views, but they'll panic if they're called for production
             // building
             error_views: Default::default(),
@@ -342,7 +334,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             root: "root".to_string(),
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
-            templates: HashMap::new(),
+            entities: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
             error_views: Default::default(),
@@ -393,12 +385,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// rather than manually constructing this more inconvenient type.
     pub fn templates(mut self, val: Vec<Template<G>>) -> Self {
         for template in val.into_iter() {
-            #[cfg(target_arch = "wasm32")]
-            self.templates
-                .insert(template.get_path(), Rc::new(template));
-            #[cfg(not(target_arch = "wasm32"))]
-            self.templates
-                .insert(template.get_path(), Arc::new(template));
+            self = self.template(template);
         }
         self
     }
@@ -407,10 +394,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ///
     /// See [`Template`] for further details.
     pub fn template(mut self, val: Template<G>) -> Self {
-        #[cfg(target_arch = "wasm32")]
-        self.templates.insert(val.get_path(), Rc::new(val));
-        #[cfg(not(target_arch = "wasm32"))]
-        self.templates.insert(val.get_path(), Arc::new(val));
+        let entity = val.inner;
+        self.entities.insert(entity.get_path(), entity);
         self
     }
     /// Sets all the app's capsules. This takes a vector of capsules.
@@ -428,19 +413,16 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ///
     /// See [`Capsule`] for further details.
     pub fn capsule(mut self, val: Capsule<G>) -> Self {
-        let val = val.template;
-        let path = val.get_path();
+        let entity = val.inner;
+        let path = entity.get_path();
         // Enforce that capsules must have defined fallbacks
-        if val.fallback.is_none() {
+        if entity.fallback.is_none() {
             panic!(
                 "capsule '{}' has no fallback (please register one)",
-                val.get_path()
+                entity.get_path()
             )
         }
-        #[cfg(target_arch = "wasm32")]
-        self.templates.insert(path, Rc::new(val));
-        #[cfg(not(target_arch = "wasm32"))]
-        self.templates.insert(path, Arc::new(val));
+        self.entities.insert(path, entity);
         self
     }
     /// Sets the app's error views. See [`ErrorViews`] for further details.
@@ -808,16 +790,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         Ok(html_shell)
     }
-    /// Gets the templates in an `Rc`-based `HashMap` for non-concurrent access.
-    #[cfg(target_arch = "wasm32")]
-    pub fn get_templates_map(&self) -> TemplateMap<G> {
-        self.templates.clone()
-    }
-    /// Gets the templates in an `Arc`-based `HashMap` for concurrent access.
-    /// This should only be relevant on the server-side.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_templates_map(&self) -> ArcTemplateMap<G> {
-        self.templates.clone()
+    /// Gets the map of entities (i.e. templates and capsules combined).
+    pub fn get_entities_map(&self) -> HashMap<String, Entity<G>> {
+        // This is cheap to clone
+        self.entities.clone()
     }
     /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
     #[cfg(target_arch = "wasm32")]

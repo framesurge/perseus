@@ -37,14 +37,14 @@ impl<G: Html> Reactor<G> {
         match &verdict {
             RouteVerdict::Found(RouteInfo {
                 path,
-                template,
+                entity,
                 locale,
                 was_incremental_match,
             }) => {
                 let full_path = PathMaybeWithLocale::new(&path, &locale);
                 // Update the router state
                 self.router_state.set_load_state(RouterLoadState::Loading {
-                    template_name: template.get_path(),
+                    template_name: entity.get_path(),
                     path: full_path.clone(),
                 });
                 self.router_state.set_last_verdict(verdict.clone());
@@ -65,7 +65,7 @@ impl<G: Html> Reactor<G> {
                             get_path_prefix_client(),
                             locale,
                             **path,
-                            template.get_path(),
+                            entity.get_path(),
                             was_incremental_match
                         );
                         // If this doesn't exist, then it's a 404 (we went here by explicit
@@ -147,7 +147,7 @@ impl<G: Html> Reactor<G> {
                     .set_translator_for_locale(&locale)
                     .await?;
 
-                let template_name = template.get_path();
+                let template_name = entity.get_path();
                 // Pre-emptively update the router state
                 checkpoint("page_interactive");
                 // Update the router state
@@ -156,7 +156,7 @@ impl<G: Html> Reactor<G> {
                     path: full_path.clone(),
                 });
                 // Now return the view that should be rendered
-                let (view, disposer) = template.render_for_template_client(
+                let (view, disposer) = entity.render_for_template_client(
                     full_path,
                     TemplateState::from_value(page_data.state),
                     cx,

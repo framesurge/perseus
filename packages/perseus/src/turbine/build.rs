@@ -1,16 +1,5 @@
 use super::Turbine;
-use crate::{
-    errors::*,
-    i18n::TranslationsManager,
-    init::PerseusAppBase,
-    path::*,
-    plugins::PluginAction,
-    reactor::{RenderMode, RenderStatus},
-    state::{BuildPaths, StateGeneratorInfo, TemplateState},
-    stores::MutableStore,
-    template::Template,
-    utils::{minify, ssr_fallible},
-};
+use crate::{errors::*, i18n::TranslationsManager, init::PerseusAppBase, path::*, plugins::PluginAction, reactor::{RenderMode, RenderStatus}, state::{BuildPaths, StateGeneratorInfo, TemplateState}, stores::MutableStore, template::Entity, utils::{minify, ssr_fallible}};
 use futures::future::try_join_all;
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 use sycamore::web::SsrNode;
@@ -70,7 +59,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Now build every capsule's state in parallel (capsules are never rendered
         // outside a page)
         let mut capsule_futs = Vec::new();
-        for capsule in self.templates.values() {
+        for capsule in self.entities.values() {
             if capsule.is_capsule {
                 capsule_futs.push(self.build_template_or_capsule(capsule, exporting));
             }
@@ -89,7 +78,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         // Now build every template's state in parallel
         let mut template_futs = Vec::new();
-        for template in self.templates.values() {
+        for template in self.entities.values() {
             if !template.is_capsule {
                 template_futs.push(self.build_template_or_capsule(template, exporting));
             }
@@ -171,7 +160,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     // widget/capsule
     async fn build_template_or_capsule(
         &self,
-        entity: &Template<SsrNode>,
+        entity: &Entity<SsrNode>,
         exporting: bool,
     ) -> Result<HashMap<String, String>, ServerError> {
         // If we're exporting, ensure that all the capsule's strategies are export-safe
@@ -275,7 +264,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     pub(super) async fn build_path_or_widget_for_locale(
         &self,
         path: PurePath,
-        entity: &Template<SsrNode>,
+        entity: &Entity<SsrNode>,
         extra: &TemplateState,
         locale: &str,
         global_state: TemplateState,
@@ -386,7 +375,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let mode = RenderMode::Build {
                     render_status: render_status.clone(),
                     widget_render_cfg: self.render_cfg.clone(),
-                    templates: self.templates.clone(),
+                    entities: self.entities.clone(),
                     immutable_store: self.immutable_store.clone(),
                     widget_states: widget_states.clone(),
                 };

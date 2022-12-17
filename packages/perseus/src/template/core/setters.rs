@@ -1,4 +1,4 @@
-use super::Template;
+use super::TemplateInner;
 use crate::utils::PerseusDuration;
 use sycamore::web::Html;
 
@@ -16,7 +16,7 @@ use serde::{de::DeserializeOwned, Serialize};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::{prelude::Scope, view::View, web::SsrNode};
 
-impl<G: Html> Template<G> {
+impl<G: Html> TemplateInner<G> {
     // The server-only ones have a different version for Wasm that takes in an empty
     // function (this means we don't have to bring in function types, and therefore
     // we can avoid bringing in the whole `http` module --- a very significant
@@ -32,7 +32,7 @@ impl<G: Html> Template<G> {
     pub fn head<V: Into<GeneratorResult<View<SsrNode>>>>(
         mut self,
         val: impl Fn(Scope) -> V + Send + Sync + 'static,
-    ) -> Template<G> {
+    ) -> Self {
         let template_name = self.get_path();
         self.head = Box::new(move |cx, _template_state| {
             let template_name = template_name.clone();
@@ -47,7 +47,7 @@ impl<G: Html> Template<G> {
     /// This is for heads that do not require state. Those that do should use
     /// `.head_with_state()` instead.
     #[cfg(target_arch = "wasm32")]
-    pub fn head(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn head(self, _val: impl Fn() + 'static) -> Self {
         self
     }
     /// Sets the function to set headers. This will override Perseus' inbuilt
@@ -57,7 +57,7 @@ impl<G: Html> Template<G> {
     pub fn set_headers<V: Into<GeneratorResult<HeaderMap>>>(
         mut self,
         val: impl Fn() -> V + Send + Sync + 'static,
-    ) -> Template<G> {
+    ) -> Self {
         let template_name = self.get_path();
         self.set_headers = Box::new(move |_template_state| {
             let template_name = template_name.clone();
@@ -71,7 +71,7 @@ impl<G: Html> Template<G> {
     /// header defaults. This should only be used when your header-setting
     /// does not need state.
     #[cfg(target_arch = "wasm32")]
-    pub fn set_headers(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn set_headers(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -80,7 +80,7 @@ impl<G: Html> Template<G> {
     pub fn build_paths_fn<V: Into<GeneratorResult<BuildPaths>>>(
         mut self,
         val: impl GetBuildPathsUserFnType<V> + Clone + Send + Sync + 'static,
-    ) -> Template<G> {
+    ) -> Self {
         let template_name = self.get_path();
         self.get_build_paths = Some(Box::new(move || {
             let val = val.clone();
@@ -96,19 +96,19 @@ impl<G: Html> Template<G> {
     }
     /// Enables the *build paths* strategy with the given function.
     #[cfg(target_arch = "wasm32")]
-    pub fn build_paths_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn build_paths_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
     /// Enables the *incremental generation* strategy.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn incremental_generation(mut self) -> Template<G> {
+    pub fn incremental_generation(mut self) -> Self {
         self.incremental_generation = true;
         self
     }
     /// Enables the *incremental generation* strategy.
     #[cfg(target_arch = "wasm32")]
-    pub fn incremental_generation(self) -> Template<G> {
+    pub fn incremental_generation(self) -> Self {
         self
     }
 
@@ -117,7 +117,7 @@ impl<G: Html> Template<G> {
     pub fn build_state_fn<S, B, V>(
         mut self,
         val: impl GetBuildStateUserFnType<S, B, V> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
@@ -144,7 +144,7 @@ impl<G: Html> Template<G> {
     }
     /// Enables the *build state* strategy with the given function.
     #[cfg(target_arch = "wasm32")]
-    pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -153,7 +153,7 @@ impl<G: Html> Template<G> {
     pub fn request_state_fn<S, B, V>(
         mut self,
         val: impl GetRequestStateUserFnType<S, B, V> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
@@ -180,7 +180,7 @@ impl<G: Html> Template<G> {
     }
     /// Enables the *request state* strategy with the given function.
     #[cfg(target_arch = "wasm32")]
-    pub fn request_state_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn request_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -190,7 +190,7 @@ impl<G: Html> Template<G> {
     pub fn should_revalidate_fn<B, V>(
         mut self,
         val: impl ShouldRevalidateUserFnType<B, V> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
         V: Into<BlamedGeneratorResult<bool>>,
@@ -214,7 +214,7 @@ impl<G: Html> Template<G> {
     /// Enables the *revalidation* strategy (logic variant) with the given
     /// function.
     #[cfg(target_arch = "wasm32")]
-    pub fn should_revalidate_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn should_revalidate_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
@@ -230,7 +230,7 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn revalidate_after<I: PerseusDuration>(mut self, val: I) -> Template<G> {
+    pub fn revalidate_after<I: PerseusDuration>(mut self, val: I) -> Self {
         let computed_duration = match val.into_computed() {
             Ok(val) => val,
             // This is fine, because this will be checked when we try to build the app (i.e. it'll
@@ -252,7 +252,7 @@ impl<G: Html> Template<G> {
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
     #[cfg(target_arch = "wasm32")]
-    pub fn revalidate_after<I: PerseusDuration>(self, _val: I) -> Template<G> {
+    pub fn revalidate_after<I: PerseusDuration>(self, _val: I) -> Self {
         self
     }
 
@@ -266,7 +266,7 @@ impl<G: Html> Template<G> {
     pub fn amalgamate_states_fn<S, B, V>(
         mut self,
         val: impl AmalgamateStatesUserFnType<S, B, V> + Clone + Send + Sync + 'static,
-    ) -> Template<G>
+    ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + Send + Sync + 'static,
         B: Serialize + DeserializeOwned + Send + Sync + 'static,
@@ -317,7 +317,7 @@ impl<G: Html> Template<G> {
     /// and this will be run just after the request state function
     /// completes. See [`States`] for further details.
     #[cfg(target_arch = "wasm32")]
-    pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Template<G> {
+    pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
     /// Allow the building of this page's templates to be rescheduled from

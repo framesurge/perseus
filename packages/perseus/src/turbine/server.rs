@@ -1,16 +1,5 @@
 use super::Turbine;
-use crate::{
-    error_views::ServerErrorData,
-    errors::{err_to_status_code, ServerError},
-    i18n::{TranslationsManager, Translator},
-    path::{PathMaybeWithLocale, PathWithoutLocale},
-    router::{match_route_atomic, RouteInfoAtomic, RouteVerdictAtomic},
-    server::get_path_slice,
-    state::TemplateState,
-    stores::MutableStore,
-    utils::get_path_prefix_server,
-    Request,
-};
+use crate::{Request, error_views::ServerErrorData, errors::{err_to_status_code, ServerError}, i18n::{TranslationsManager, Translator}, path::{PathMaybeWithLocale, PathWithoutLocale}, router::{RouteInfo, RouteVerdict, match_route}, server::get_path_slice, state::TemplateState, stores::MutableStore, utils::get_path_prefix_server};
 use fmterr::fmt_err;
 use http::{
     header::{self, HeaderName},
@@ -196,16 +185,16 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         // Run the routing algorithm to figure out what to do here
         let path_slice = get_path_slice(&raw_path);
-        let verdict = match_route_atomic(
+        let verdict = match_route(
             &path_slice,
             &self.render_cfg,
-            &self.templates,
+            &self.entities,
             &self.locales,
         );
         match verdict {
-            RouteVerdictAtomic::Found(RouteInfoAtomic {
+            RouteVerdict::Found(RouteInfo {
                 path,
-                template,
+                entity,
                 locale,
                 was_incremental_match,
             }) => {
@@ -239,7 +228,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .get_initial_load_for_path(
                         path,
                         &translator,
-                        template,
+                        &entity,
                         was_incremental_match,
                         req,
                     )
@@ -268,7 +257,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let mut response = ApiResponse::ok(&final_html).content_type("text/html");
 
                 // Generate and add HTTP headers
-                let headers = match template.get_headers(TemplateState::from_value(page_data.state))
+                let headers = match entity.get_headers(TemplateState::from_value(page_data.state))
                 {
                     Ok(headers) => headers,
                     // The pointlessness of returning an error here is well documented
@@ -286,7 +275,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
                 response
             }
-            RouteVerdictAtomic::LocaleDetection(redirect_path) => {
+            RouteVerdict::LocaleDetection(redirect_path) => {
                 // TODO Parse the `Accept-Language` header and return a proper redirect
                 // Construct a locale redirection fallback
                 let html = self
@@ -312,7 +301,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 ApiResponse::err(StatusCode::FOUND, &html).content_type("text/html")
             }
             // Any unlocalized 404s would go to a redirect first
-            RouteVerdictAtomic::NotFound { locale } => {
+            RouteVerdict::NotFound { locale } => {
                 // Get the translations to interpolate into the page
                 let translations_str = self
                     .translations_manager

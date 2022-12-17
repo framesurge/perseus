@@ -9,12 +9,8 @@ mod router_state;
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) use app_route::PerseusRoute;
-pub use match_route::{
-    get_template_for_path, get_template_for_path_atomic, match_route, match_route_atomic,
-};
-pub use route_verdict::{RouteInfo, RouteInfoAtomic, RouteVerdict, RouteVerdictAtomic};
-// #[cfg(target_arch = "wasm32")]
-// pub(crate) use router_component::{perseus_router, PerseusRouterProps};
+pub(crate) use match_route::match_route;
+pub use route_verdict::{RouteInfo, RouteVerdict};
 #[cfg(target_arch = "wasm32")]
 pub use router_state::{RouterLoadState, RouterState};
 

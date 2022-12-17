@@ -9,7 +9,7 @@ use sycamore::{
 
 /// The state for the router. This makes use of `RcSignal`s internally, and can
 /// be cheaply cloned.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RouterState<G: Html> {
     /// The router's current load state. This is in an `RcSignal` because users
     /// need to be able to create derived state from it.

@@ -21,11 +21,8 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
 #[cfg(target_arch = "wasm32")]
-use crate::template::TemplateNodeType;
-use crate::{
-    i18n::Translator,
-    state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
-};
+use crate::template::{TemplateNodeType, Entity};
+use crate::{i18n::Translator, state::{GlobalState, GlobalStateType, PageStateStore, TemplateState}};
 use sycamore::{
     prelude::{provide_context, use_context, Scope},
     web::Html,
@@ -45,7 +42,6 @@ use crate::{
     router::RouterState,
     state::{FrozenApp, ThawPrefs},
     stores::MutableStore,
-    template::TemplateMap,
 };
 #[cfg(target_arch = "wasm32")]
 use serde::{de::DeserializeOwned, Serialize};
@@ -99,9 +95,9 @@ pub struct Reactor<G: Html> {
     /// rendering.
     #[cfg(target_arch = "wasm32")]
     pub(crate) render_cfg: HashMap<String, String>,
-    /// The app's templates for use in routing.
+    /// The app's templates and capsules for use in routing.
     #[cfg(target_arch = "wasm32")]
-    pub(crate) templates: TemplateMap<G>,
+    pub(crate) entities: HashMap<String, Entity<G>>,
     /// The app's locales.
     #[cfg(target_arch = "wasm32")]
     pub(crate) locales: Locales,
@@ -145,7 +141,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
 
     fn try_from(app: PerseusAppBase<G, M, T>) -> Result<Self, Self::Error> {
         let pss_max_size = app.get_pss_max_size();
-        let templates = app.get_templates_map();
+        let entities = app.get_entities_map();
         let locales = app.get_locales()?;
         let plugins = app.get_plugins();
         let error_views = app.get_error_views();
@@ -192,7 +188,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             is_first: Cell::new(true),
             current_view: create_rc_signal(View::empty()),
             popup_error_view: create_rc_signal(View::empty()),
-            templates,
+            entities,
             locales,
             render_cfg,
             error_views,

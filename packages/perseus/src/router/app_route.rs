@@ -54,7 +54,7 @@ impl<'cx> Route for PerseusRoute<'cx> {
         let verdict = match_route(
             &path_segments,
             &reactor.render_cfg,
-            &reactor.templates,
+            &reactor.entities,
             &reactor.locales,
         );
         Self {
