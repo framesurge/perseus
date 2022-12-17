@@ -55,10 +55,10 @@ async fn get_build_state(info: StateGeneratorInfo<()>) -> PageState {
 // state, as every page would come out exactly the same (unless you
 // differentiated them on the client...)
 //
-// This could return `BuildPaths` directly; this example just shows that it could
-// also return an error (which is *not* blamed, since this function, which generates
-// paths at build-time, is only going to be run at...well, build-time, so the client
-// can't be responsible for any errors we might encounter)
+// This could return `BuildPaths` directly; this example just shows that it
+// could also return an error (which is *not* blamed, since this function, which
+// generates paths at build-time, is only going to be run at...well, build-time,
+// so the client can't be responsible for any errors we might encounter)
 #[engine_only_fn]
 async fn get_build_paths() -> Result<BuildPaths, std::convert::Infallible> {
     Ok(BuildPaths {

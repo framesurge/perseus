@@ -27,14 +27,14 @@ fn router_state_page<G: Html>(cx: Scope) -> View<G> {
                     path,
                 } => format!("Loading {} (template: {}).", *path, template_name),
                 RouterLoadState::Server => "We're on the server.".to_string(),
-                // Since this code is running in a page, it's a little pointless to handle an error page,
-                // which would replace this page (we wouldn't be able to display anything if this happened)
+                // Since this code is running in a page, it's a little pointless to handle an error
+                // page, which would replace this page (we wouldn't be able to
+                // display anything if this happened)
                 RouterLoadState::ErrorLoaded { .. } => unreachable!(),
             };
             load_state_str.set(new_str);
         });
     }
-
 
     view! { cx,
         a(href = "about", id = "about-link") { "About!" }

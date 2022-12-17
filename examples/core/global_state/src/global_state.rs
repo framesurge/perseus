@@ -14,9 +14,10 @@ pub struct AppState {
     pub test: String,
 }
 
-// All the below functions can return either `AppState`, or `Result<AppState, E>`, where
-// `E` is some error type. For concision, these examples cannot return errors. Request state
-// and state amalgamation use `BlamedError`s if they're fallible.
+// All the below functions can return either `AppState`, or `Result<AppState,
+// E>`, where `E` is some error type. For concision, these examples cannot
+// return errors. Request state and state amalgamation use `BlamedError`s if
+// they're fallible.
 
 // Global state will be generated for each locale in your app (but we don't
 // worry about that in this example)

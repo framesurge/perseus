@@ -59,10 +59,7 @@ async fn get_build_paths() -> BuildPaths {
 // revalidated This acts as a secondary check, and can perform arbitrary logic
 // to check if we should actually revalidate a page
 #[engine_only_fn]
-async fn should_revalidate(
-    _info: StateGeneratorInfo<()>,
-    _req: perseus::Request,
-) -> bool {
+async fn should_revalidate(_info: StateGeneratorInfo<()>, _req: perseus::Request) -> bool {
     // For simplicity's sake, this will always say we should revalidate, but you
     // could make this check any condition
     true

@@ -8,7 +8,10 @@ struct PageState {
     ip: String,
 }
 
-fn request_state_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: PageStateRx<'b>) -> View<G> {
+fn request_state_page<'a, 'b, G: Html>(
+    cx: BoundedScope<'a, 'b>,
+    state: PageStateRx<'b>,
+) -> View<G> {
     view! { cx,
         p {
             (
@@ -25,10 +28,11 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // This returns a `Result<T, BlamedError<E>>` (or just `T`) because, obviously,
-// it will be run at request-time: any errors could be a mising file (our fault),
-// or a malformed cookie (the client's fault), etc., so we have to note the blame
-// to get an accurate HTTP status code. This example is really infallible, but
-// we've spelled it all out rather than using `T` so you can see how it works.
+// it will be run at request-time: any errors could be a mising file (our
+// fault), or a malformed cookie (the client's fault), etc., so we have to note
+// the blame to get an accurate HTTP status code. This example is really
+// infallible, but we've spelled it all out rather than using `T` so you can see
+// how it works.
 #[engine_only_fn]
 async fn get_request_state(
     // We get all the same info as build state in here

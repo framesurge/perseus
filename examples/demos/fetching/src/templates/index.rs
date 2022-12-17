@@ -67,7 +67,9 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> Result<IndexPageState, BlamedError<reqwest::Error>> {
+async fn get_build_state(
+    _info: StateGeneratorInfo<()>,
+) -> Result<IndexPageState, BlamedError<reqwest::Error>> {
     // We'll cache the result with `try_cache_res`, which means we only make the
     // request once, and future builds will use the cached result (speeds up
     // development)
@@ -80,7 +82,8 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> Result<IndexPageState
         },
         false,
     )
-    .await?; // Note that `?` is able to convert from `reqwest::Error` -> `BlamedError<reqwest::Error>`
+    .await?; // Note that `?` is able to convert from `reqwest::Error` ->
+             // `BlamedError<reqwest::Error>`
 
     Ok(IndexPageState {
         server_ip: body,

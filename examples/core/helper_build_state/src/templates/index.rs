@@ -33,9 +33,7 @@ struct HelperState(String);
 // type parameter is the type of your helper state! (Make sure you don't confuse
 // this with your *template* state!)
 #[engine_only_fn]
-async fn get_build_state(
-    info: StateGeneratorInfo<HelperState>,
-) -> PageState {
+async fn get_build_state(info: StateGeneratorInfo<HelperState>) -> PageState {
     let title = format!("Path: {}", &info.path);
     let content = format!(
         "This post's original slug was '{}'. Extra state: {}",

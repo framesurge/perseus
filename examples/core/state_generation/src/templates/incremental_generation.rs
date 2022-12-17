@@ -12,7 +12,10 @@ struct PageState {
     content: String,
 }
 
-fn incremental_generation_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: PageStateRx<'b>) -> View<G> {
+fn incremental_generation_page<'a, 'b, G: Html>(
+    cx: BoundedScope<'a, 'b>,
+    state: PageStateRx<'b>,
+) -> View<G> {
     let title = state.title;
     let content = state.content;
     view! { cx,
@@ -39,9 +42,10 @@ pub fn get_template<G: Html>() -> Template<G> {
 
 // This will be executed at build-time for all the paths in `get_build_paths()`,
 // and then again for any other paths that a user might request while the app is
-// live, meaning any errors could come from either the server or the client, hence
-// why this returns a `BlamedError`. We use a `std::io::Error` because we need
-// soemthing that implements `std::error::Error`, but you could use anything here.
+// live, meaning any errors could come from either the server or the client,
+// hence why this returns a `BlamedError`. We use a `std::io::Error` because we
+// need soemthing that implements `std::error::Error`, but you could use
+// anything here.
 #[engine_only_fn]
 async fn get_build_state(
     StateGeneratorInfo { path, .. }: StateGeneratorInfo<()>,
@@ -52,15 +56,16 @@ async fn get_build_state(
     if path == "incremental_generation/tests" {
         // This tells Perseus to return an error that's the client's fault, with the
         // HTTP status code 404 (not found) and the message 'illegal page'. Note that
-        // this is a `BlamedError<String>`, but we could use any error type that implements
-        // `std::error::Error` (note that this does make `anyhow` a bit tricky, if you use
-        // it).
+        // this is a `BlamedError<String>`, but we could use any error type that
+        // implements `std::error::Error` (note that this does make `anyhow` a
+        // bit tricky, if you use it).
         return Err(BlamedError {
-            // If we used `None` instead, it would default to 400 for the client and 500 for the server
+            // If we used `None` instead, it would default to 400 for the client and 500 for the
+            // server
             blame: ErrorBlame::Client(Some(404)),
             // This is just an example, and you could put any error type here, usually your own
-            error: std::io::Error::new(std::io::ErrorKind::NotFound, "illegal page")
-        })
+            error: std::io::Error::new(std::io::ErrorKind::NotFound, "illegal page"),
+        });
     }
     let title = path.clone();
     let content = format!(

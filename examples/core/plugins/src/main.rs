@@ -1,7 +1,7 @@
 mod plugin;
 mod templates;
 
-use perseus::{prelude::*, plugins::Plugins};
+use perseus::{plugins::Plugins, prelude::*};
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {

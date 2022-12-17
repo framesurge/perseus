@@ -27,11 +27,13 @@ pub fn get_template<G: Html>() -> Template<G> {
 // helper state we generated with build paths (which we aren't using, hence the
 // `()`)
 //
-// This returns a `Result` with a `BlamedError`, because, if we were using *incremental
-// generation*, then build state might be executed again in future (see `incremental_generation.rs`
-// for an example of that).
+// This returns a `Result` with a `BlamedError`, because, if we were using
+// *incremental generation*, then build state might be executed again in future
+// (see `incremental_generation.rs` for an example of that).
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> Result<PageState, BlamedError<std::io::Error>> {
+async fn get_build_state(
+    _info: StateGeneratorInfo<()>,
+) -> Result<PageState, BlamedError<std::io::Error>> {
     Ok(PageState {
         greeting: "Hello World!".to_string(),
     })

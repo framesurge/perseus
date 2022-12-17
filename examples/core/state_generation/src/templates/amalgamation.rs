@@ -50,10 +50,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> PageState {
 
 // Could be fallible
 #[engine_only_fn]
-async fn get_request_state(
-    _info: StateGeneratorInfo<()>,
-    _req: Request,
-) -> PageState {
+async fn get_request_state(_info: StateGeneratorInfo<()>, _req: Request) -> PageState {
     PageState {
         message: "Hello from the server!".to_string(),
     }
