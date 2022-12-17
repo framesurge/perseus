@@ -80,6 +80,15 @@ where
             }
         },
         EngineOperation::ExportErrorPage => {
+            // Assume the app has already been built and prepare the turbine
+            match turbine.populate_after_build().await {
+                Ok(_) => (),
+                Err(err) => {
+                    eprintln!("{}", fmt_err(&err));
+                    return 1;
+                }
+            };
+
             // Get the HTTP status code to build from the arguments to this executable
             // We print errors directly here because we can, and because this behavior is
             // unique to the default engine
