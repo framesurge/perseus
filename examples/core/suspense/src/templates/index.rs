@@ -94,7 +94,7 @@ async fn greeting_handler<'a>(
 #[browser_only_fn]
 async fn test_handler<'a>(
     _cx: Scope<'a>,
-    test: RxResultRef<'a, Test, String>,
+    test: &'a RxResultRx<Test, String>,
 ) -> Result<(), String> {
     sleep(Duration::from_secs(1)).await;
     // Unfortunately, this verbosity is necessary until `Try` is stabilized so we
@@ -139,4 +139,5 @@ pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .template_with_state(index_page)
         .build_state_fn(get_build_state)
+        .build()
 }
