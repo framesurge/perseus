@@ -85,7 +85,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
                     // We don't have a reactor, so render a critical popup error, hoping the user
                     // can see something prerendered that makes sense (this
                     // displays and everything)
-                    Reactor::handle_critical_error(cx, &err, &error_views);
+                    Reactor::handle_critical_error(cx, err, &error_views);
                     // We can't do anything without a reactor
                     false
                 }

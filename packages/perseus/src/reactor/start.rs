@@ -253,7 +253,7 @@ impl Reactor<TemplateNodeType> {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
                 let (head_str, body_view, disposer) =
-                    self.error_views.handle(cx, &err, ErrorPosition::Page);
+                    self.error_views.handle(cx, err, ErrorPosition::Page);
                 replace_head(&head_str);
 
                 // SAFETY: There's nothing in there right now, and we know that for sure
@@ -274,7 +274,7 @@ impl Reactor<TemplateNodeType> {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
                 let (_, body_view, _disposer) =
-                    self.error_views.handle(cx, &err, ErrorPosition::Popup);
+                    self.error_views.handle(cx, err, ErrorPosition::Popup);
                 self.popup_error_view.set(body_view); // Popups never hydrate
 
                 // Signal the top-level disposer, which will also call the child scope disposer
@@ -326,7 +326,7 @@ impl Reactor<TemplateNodeType> {
                         Err(err) => {
                             // Any errors should be gracefully reported, and their disposers
                             // placed into the correct `Signal` for future managament
-                            let (disposer, pagewide) = self.report_err(cx, &err);
+                            let (disposer, pagewide) = self.report_err(cx, err);
                             // SAFETY: We're outside the old error/page's scope
                             if pagewide {
                                 unsafe {
@@ -384,7 +384,7 @@ impl Reactor<TemplateNodeType> {
                                         Err(err) => {
                                             // Any errors should be gracefully reported, and their disposers
                                             // placed into the correct `Signal` for future managament
-                                            let (disposer, pagewide) = self.report_err(cx, &err);
+                                            let (disposer, pagewide) = self.report_err(cx, err);
                                             // SAFETY: We're outside the old error/page's scope
                                             if pagewide {
                                                 unsafe { page_disposer_2.update(disposer); }

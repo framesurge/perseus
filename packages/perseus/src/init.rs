@@ -158,7 +158,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// This is in an `Arc` because panic hooks are `Fn`s, not `FnOnce`s.
     #[cfg(target_arch = "wasm32")]
     panic_handler_view: Arc<
-        dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync,
     >,
@@ -933,7 +933,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ) -> (
         Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
         Arc<
-            dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+            dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
                 + Send
                 + Sync,
         >,

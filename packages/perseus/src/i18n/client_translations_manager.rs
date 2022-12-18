@@ -45,6 +45,10 @@ impl ClientTranslationsManager {
     ///
     /// This will return `false` if the caller needs to take no further action
     /// to set this translator, or `true` if it shoudl go ahead.
+    ///
+    /// # Panics
+    ///
+    /// This will panic if the given locale is not supported.
     fn preflight_check(&self, locale: &str) -> Result<bool, ClientError> {
         // Check if we've already cached
         let mut cached_translator = self.cached_translator.borrow_mut();
@@ -65,9 +69,8 @@ impl ClientTranslationsManager {
                 // Now return that
                 Ok(false)
             } else {
-                Err(ClientError::LocaleNotSupported {
-                    locale: locale.to_string(),
-                })
+                // This is an internal total invariant (due to `match_route`)
+                panic!("locale not supported (this is a bug)");
             }
         }
     }
@@ -81,6 +84,9 @@ impl ClientTranslationsManager {
     /// string. This is intended to be used when fetching the translations
     /// string from the window variable provided by the server for initial
     /// loads.
+    ///
+    /// # Panics
+    /// This will panic if the given locale is not supported.
     pub(crate) fn set_translator_for_translations_str(
         &self,
         locale: &str,
@@ -108,6 +114,10 @@ impl ClientTranslationsManager {
     /// internally cached `Translator` if possible, and will otherwise fetch
     /// the translations from the server. This manages mutability for caching
     /// internally.
+    ///
+    /// # Panics
+    ///
+    /// This will panic if the given locale is not supported.
     pub(crate) async fn set_translator_for_locale<'a>(
         &'a self,
         locale: &'a str,

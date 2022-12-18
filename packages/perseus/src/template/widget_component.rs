@@ -146,17 +146,17 @@ fn browser_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
                 },
             ) {
                 Ok(view) => view,
-                Err(err) => reactor.error_views.handle_widget(&err, cx),
+                Err(err) => reactor.error_views.handle_widget(err, cx),
             }
         }
         // Widgets are all resolved on the server-side, meaning they are checked then too (be it at
         // build-time or request-time). If this happpens, the user is rendering an invalid
         // widget on the browser-side only.
         _ => reactor.error_views.handle_widget(
-            &(ClientInvariantError::BadWidgetRouteMatch {
+            ClientInvariantError::BadWidgetRouteMatch {
                 path: (*path).to_string(),
             }
-            .into()),
+            .into(),
             cx,
         ),
     }
@@ -307,7 +307,7 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
                             // internal (but they *really* shouldn't be,
                             // since those should've been handled when trying to fetch
                             // the state, as there's no active syste etc. on the engine-side)
-                            Err(err) => error_views.handle_widget(&err, cx),
+                            Err(err) => error_views.handle_widget(err, cx),
                         }
                     }
                     // We're to render an error page with the given error data (which will not
@@ -320,7 +320,7 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
                             message: err_data.msg.to_string(),
                         };
 
-                        error_views.handle_widget(&err, cx)
+                        error_views.handle_widget(err, cx)
                     }
                 },
                 None => {

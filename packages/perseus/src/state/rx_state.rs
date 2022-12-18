@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::any::Any;
+#[cfg(target_arch = "wasm32")]
 use sycamore::prelude::Scope;
 
 /// A trait for `struct`s that can be made reactive. Typically, this will be

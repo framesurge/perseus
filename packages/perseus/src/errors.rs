@@ -120,8 +120,6 @@ pub enum ClientError {
     FetchError(#[from] FetchError),
     #[error(transparent)]
     PlatformError(#[from] ClientPlatformError),
-    #[error("locale '{locale}' is not supported")]
-    LocaleNotSupported { locale: String },
     #[error(transparent)]
     PreloadError(#[from] ClientPreloadError), /* #[error(transparent)]
                                                * FetchError(#[from] FetchError),

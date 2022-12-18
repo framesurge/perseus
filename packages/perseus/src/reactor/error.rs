@@ -33,7 +33,7 @@ impl Reactor<TemplateNodeType> {
     pub(crate) fn report_err<'a>(
         &self,
         cx: Scope<'a>,
-        err: &ClientError,
+        err: ClientError,
     ) -> (ScopeDisposer<'a>, bool) {
         // Determine where this should be placed
         let pos = match self.is_first.get() {
@@ -43,7 +43,7 @@ impl Reactor<TemplateNodeType> {
                 _ => ErrorPosition::Popup,
             },
             // On a subsequent load, this is the responsibility of the user
-            false => match self.error_views.subsequent_err_should_be_popup(err) {
+            false => match self.error_views.subsequent_err_should_be_popup(&err) {
                 true => ErrorPosition::Popup,
                 false => ErrorPosition::Page,
             },
@@ -81,7 +81,7 @@ impl Reactor<TemplateNodeType> {
     /// entrypoint (do not do this unless you really need to).
     pub fn handle_critical_error(
         cx: Scope,
-        err: &ClientError,
+        err: ClientError,
         error_views: &ErrorViews<TemplateNodeType>,
     ) {
         // We do NOT want this called if there is a reactor (but, if it is, we have no
@@ -124,7 +124,7 @@ impl Reactor<TemplateNodeType> {
         handler: Arc<
             dyn Fn(
                     Scope,
-                    &ClientError,
+                    ClientError,
                     ErrorContext,
                     ErrorPosition,
                 ) -> (View<SsrNode>, View<TemplateNodeType>)
@@ -141,7 +141,7 @@ impl Reactor<TemplateNodeType> {
         create_scope_immediate(|cx| {
             let (_head, body) = handler(
                 cx,
-                &ClientError::Panic(msg),
+                ClientError::Panic(msg),
                 ErrorContext::Static,
                 ErrorPosition::Popup,
             );

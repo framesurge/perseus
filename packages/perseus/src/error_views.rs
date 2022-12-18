@@ -26,7 +26,7 @@ pub struct ErrorViews<G: Html> {
     /// and the second the body of the error.
     #[allow(clippy::type_complexity)]
     handler: Box<
-        dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync,
     >,
@@ -51,7 +51,7 @@ pub struct ErrorViews<G: Html> {
     /// will panic if called, so this should **never** be manually executed.
     #[cfg(target_arch = "wasm32")]
     panic_handler: Arc<
-        dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync,
     >,
@@ -69,7 +69,7 @@ impl<G: Html> ErrorViews<G> {
     /// `ErrorPosition::Widget`, the head view will be ignored,
     /// and would usually be returned as `View::empty()`.
     pub fn new(
-        handler: impl Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        handler: impl Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync
             + Clone
@@ -143,7 +143,7 @@ impl<G: Html> ErrorViews<G> {
         Self::new(|cx, err, _, _| {
             match err {
                 // Special case for 404 due to its frequency
-                ClientError::ServerError { status, .. } if *status == 404 => (
+                ClientError::ServerError { status, .. } if status == 404 => (
                     view! { cx,
                         title { "Page not found" }
                     },
@@ -152,7 +152,7 @@ impl<G: Html> ErrorViews<G> {
                     },
                 ),
                 err => {
-                    let err_msg = fmt_err(err);
+                    let err_msg = fmt_err(&err);
                     (
                         view! { cx,
                                 title { "Error" }
@@ -174,7 +174,7 @@ impl<G: Html> ErrorViews<G> {
     pub(crate) fn handle<'a>(
         &self,
         cx: Scope<'a>,
-        err: &ClientError,
+        err: ClientError,
         pos: ErrorPosition,
     ) -> (String, View<G>, ScopeDisposer<'a>) {
         let reactor = try_use_context::<Reactor<G>>(cx);
@@ -205,7 +205,7 @@ impl<G: Html> ErrorViews<G> {
     pub(crate) fn take_panic_handler(
         &mut self,
     ) -> Arc<
-        dyn Fn(Scope, &ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync,
     > {
@@ -260,7 +260,7 @@ impl ErrorViews<SsrNode> {
             // NOTE: No hydration context
             let (head_view, body_view) = (self.handler)(
                 cx,
-                &ClientError::ServerError {
+                ClientError::ServerError {
                     status: err.status,
                     message: err.msg,
                 },
@@ -287,7 +287,7 @@ impl<G: Html> ErrorViews<G> {
     /// `ErrorContext::Full` (since widgets shoudl not be rendered if a
     /// translator cannot be found, and certainly not if a reactor could not
     /// be instantiated).
-    pub(crate) fn handle_widget(&self, err: &ClientError, cx: Scope) -> View<G> {
+    pub(crate) fn handle_widget(&self, err: ClientError, cx: Scope) -> View<G> {
         let (_head, body) = (self.handler)(cx, err, ErrorContext::Full, ErrorPosition::Page);
         body
     }

@@ -121,9 +121,9 @@ impl<G: Html> Reactor<G> {
                                             create_ref(child_cx, intermediate_state),
                                         ),
                                         Ok(None) => unreachable!(),
-                                        Err(err) => self.error_views.handle_widget(&err, child_cx),
+                                        Err(err) => self.error_views.handle_widget(err, child_cx),
                                     },
-                                    Err(err) => self.error_views.handle_widget(&err, child_cx),
+                                    Err(err) => self.error_views.handle_widget(err, child_cx),
                                 }
                             };
 
@@ -230,9 +230,9 @@ impl<G: Html> Reactor<G> {
                                             template_fn(child_cx, intermediate_state.make_unrx())
                                         }
                                         Ok(None) => unreachable!(),
-                                        Err(err) => self.error_views.handle_widget(&err, child_cx),
+                                        Err(err) => self.error_views.handle_widget(err, child_cx),
                                     },
-                                    Err(err) => self.error_views.handle_widget(&err, child_cx),
+                                    Err(err) => self.error_views.handle_widget(err, child_cx),
                                 }
                             };
 

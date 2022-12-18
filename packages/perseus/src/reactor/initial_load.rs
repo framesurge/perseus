@@ -75,7 +75,8 @@ impl<G: Html> Reactor<G> {
                 });
                 self.router_state.set_last_verdict(verdict.clone());
 
-                // Get the initial state and decide what to do from that
+                // Get the initial state and decide what to do from that. We can guarantee that
+                // this locale is supported because it came from `match_route`.
                 let state = self.get_initial_state(locale)?;
                 checkpoint("initial_state_present"); // If we got past that `?`
 
@@ -104,7 +105,8 @@ impl<G: Html> Reactor<G> {
                     }
                 };
                 // This will cache the translator internally in the reactor (which can be
-                // accessed later through the`t!` macro etc.)
+                // accessed later through the`t!` macro etc.). This locale is guaranteed to
+                // be supported, because it came from a `match_route`.
                 self.translations_manager
                     .set_translator_for_translations_str(&locale, &translations_str)?;
 
@@ -161,6 +163,9 @@ impl<G: Html> Reactor<G> {
                 // that means the engine thought this page was valid, but we
                 // disagree. This should not happen without tampering,
                 // so we'll return an invariant error.
+                // We can guarantee that the locale is supported because it came from a
+                // `match_route`, even though the route wasn't found. If the app
+                // isn't using i18n, it will be `xx-XX`.
                 match self.get_initial_state(locale) {
                     Err(err) => Err(err),
                     Ok(_) => Err(ClientInvariantError::RouterMismatch.into()),
@@ -172,6 +177,9 @@ impl<G: Html> Reactor<G> {
     /// Gets the initial state injected by the server, if there was any. This is
     /// used to differentiate initial loads from subsequent ones, which have
     /// different log chains to prevent double-trips (a common SPA problem).
+    ///
+    /// # Panics
+    /// This will panic if the given locale is not supported.
     fn get_initial_state(&self, locale: &str) -> Result<TemplateState, ClientError> {
         let state_str = match WindowVariable::new_str("__PERSEUS_INITIAL_STATE") {
             WindowVariable::Some(state_str) => state_str,
@@ -220,6 +228,8 @@ impl<G: Html> Reactor<G> {
             // would be a locale redirection).
             match WindowVariable::new_str("__PERSEUS_TRANSLATIONS") {
                 // We have translations! Any errors in resolving them fully will be propagated.
+                // We guarantee that this locale is supported based on the invariants of this
+                // function.
                 WindowVariable::Some(translations_str) => self
                     .translations_manager
                     .set_translator_for_translations_str(locale, &translations_str)?,
