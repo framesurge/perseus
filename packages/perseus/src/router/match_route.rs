@@ -50,10 +50,7 @@ fn get_template_for_path<G: Html>(
     }
     // If we still have nothing, then the page doesn't exist
     if let Some(entity_name) = entity_name {
-        (
-            entities.get(&entity_name).cloned(),
-            was_incremental_match
-        )
+        (entities.get(&entity_name).cloned(), was_incremental_match)
     } else {
         (None, was_incremental_match)
     }

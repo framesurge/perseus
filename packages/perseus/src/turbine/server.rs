@@ -1,5 +1,16 @@
 use super::Turbine;
-use crate::{Request, error_views::ServerErrorData, errors::{err_to_status_code, ServerError}, i18n::{TranslationsManager, Translator}, path::{PathMaybeWithLocale, PathWithoutLocale}, router::{RouteInfo, RouteVerdict, match_route}, server::get_path_slice, state::TemplateState, stores::MutableStore, utils::get_path_prefix_server};
+use crate::{
+    error_views::ServerErrorData,
+    errors::{err_to_status_code, ServerError},
+    i18n::{TranslationsManager, Translator},
+    path::{PathMaybeWithLocale, PathWithoutLocale},
+    router::{match_route, RouteInfo, RouteVerdict},
+    server::get_path_slice,
+    state::TemplateState,
+    stores::MutableStore,
+    utils::get_path_prefix_server,
+    Request,
+};
 use fmterr::fmt_err;
 use http::{
     header::{self, HeaderName},
@@ -185,12 +196,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         // Run the routing algorithm to figure out what to do here
         let path_slice = get_path_slice(&raw_path);
-        let verdict = match_route(
-            &path_slice,
-            &self.render_cfg,
-            &self.entities,
-            &self.locales,
-        );
+        let verdict = match_route(&path_slice, &self.render_cfg, &self.entities, &self.locales);
         match verdict {
             RouteVerdict::Found(RouteInfo {
                 path,
@@ -257,8 +263,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let mut response = ApiResponse::ok(&final_html).content_type("text/html");
 
                 // Generate and add HTTP headers
-                let headers = match entity.get_headers(TemplateState::from_value(page_data.state))
-                {
+                let headers = match entity.get_headers(TemplateState::from_value(page_data.state)) {
                     Ok(headers) => headers,
                     // The pointlessness of returning an error here is well documented
                     Err(err) => {

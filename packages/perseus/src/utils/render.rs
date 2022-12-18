@@ -1,3 +1,5 @@
+#[cfg(target_arch = "wasm32")]
+use sycamore::utils::render::insert;
 #[cfg(all(not(feature = "hydrate"), target_arch = "wasm32"))]
 use sycamore::web::DomNode;
 #[cfg(feature = "hydrate")]
@@ -5,8 +7,6 @@ use sycamore::web::HydrateNode;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View};
-#[cfg(target_arch = "wasm32")]
-use sycamore::utils::render::insert;
 
 /// Renders or hydrates the given view to the given node,
 /// depending on feature flags. This will atuomatically handle

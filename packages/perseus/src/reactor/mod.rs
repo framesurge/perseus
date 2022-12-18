@@ -21,8 +21,11 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
 #[cfg(target_arch = "wasm32")]
-use crate::template::{TemplateNodeType, Entity};
-use crate::{i18n::Translator, state::{GlobalState, GlobalStateType, PageStateStore, TemplateState}};
+use crate::template::{Entity, TemplateNodeType};
+use crate::{
+    i18n::Translator,
+    state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
+};
 use sycamore::{
     prelude::{provide_context, use_context, Scope},
     web::Html,

@@ -13,8 +13,7 @@ pub struct Capsule<G: Html> {
 }
 impl<G: Html> std::fmt::Debug for Capsule<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Capsule")
-            .finish()
+        f.debug_struct("Capsule").finish()
     }
 }
 
@@ -24,12 +23,12 @@ impl<G: Html> std::fmt::Debug for Capsule<G> {
 ///
 /// Really, this is just a wrapper over [`TemplateInner`] with the additional
 /// methods capsules need. For example, templates have fallback views on their
-/// own, they just don't use them, and there's no way to set them as an end user.
-/// This means Perseus can treat templates and capsules in the same way internally,
-/// since they both have the same representation. Types like this are mere convenience
-/// wrappers.
+/// own, they just don't use them, and there's no way to set them as an end
+/// user. This means Perseus can treat templates and capsules in the same way
+/// internally, since they both have the same representation. Types like this
+/// are mere convenience wrappers.
 pub struct CapsuleInner<G: Html> {
-    template_inner: TemplateInner<G>
+    template_inner: TemplateInner<G>,
 }
 
 impl<G: Html> Capsule<G> {
@@ -78,13 +77,16 @@ impl<G: Html> CapsuleInner<G> {
         }
         self
     }
-    /// Builds a full [`Capsule`] from this [`CapsuleInner`], consuming it in the process.
-    /// Once called, the capsule cannot be modified anymore, and it will be placed into a
-    /// smart pointer, allowing it to be cloned freely with minimal costs.
+    /// Builds a full [`Capsule`] from this [`CapsuleInner`], consuming it in
+    /// the process. Once called, the capsule cannot be modified anymore,
+    /// and it will be placed into a smart pointer, allowing it to be cloned
+    /// freely with minimal costs.
     ///
     /// You should call this just before you return your capsule.
     pub fn build(self) -> Capsule<G> {
-        Capsule { inner: Entity::from(self.template_inner) }
+        Capsule {
+            inner: Entity::from(self.template_inner),
+        }
     }
 }
 

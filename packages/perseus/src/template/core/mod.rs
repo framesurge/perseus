@@ -6,13 +6,13 @@ mod renderers;
 mod setters;
 mod utils;
 // These are broken out because of state-management closure wrapping
-mod state_setters;
 mod entity;
+mod state_setters;
 
 use std::{ops::Deref, sync::Arc};
 
-pub(crate) use utils::*;
 pub(crate) use entity::Entity;
+pub(crate) use utils::*;
 
 #[cfg(not(target_arch = "wasm32"))]
 use super::fn_types::*;
@@ -46,10 +46,11 @@ impl<G: Html> Deref for Template<G> {
     }
 }
 impl<G: Html> Template<G> {
-    /// Creates a new [`TemplateInner`] (a builder for [`Template`]s). By default, this has absolutely no
-    /// associated data, and, if rendered, it would result in a blank screen. You
-    /// can call methods like `.view()` on this, and you should eventually
-    /// call `.build()` to turn it into a full template.
+    /// Creates a new [`TemplateInner`] (a builder for [`Template`]s). By
+    /// default, this has absolutely no associated data, and, if rendered,
+    /// it would result in a blank screen. You can call methods like
+    /// `.view()` on this, and you should eventually call `.build()` to turn
+    /// it into a full template.
     pub fn new(path: &str) -> TemplateInner<G> {
         TemplateInner::new(path)
     }
@@ -59,7 +60,8 @@ impl<G: Html> Template<G> {
 /// involved in creating and managing it. As this `struct` is not `Clone`,
 /// it will almost always appear wrapped in a full [`Template`], which allows
 /// cloning and passing the template around arbitrarily. As that dereferences
-/// to this, you will be able to use any of the methods on this `struct` on [`Template`].
+/// to this, you will be able to use any of the methods on this `struct` on
+/// [`Template`].
 pub struct TemplateInner<G: Html> {
     /// The path to the root of the template. Any build paths will be inserted
     /// under this.
@@ -138,11 +140,11 @@ pub struct TemplateInner<G: Html> {
     /// generated, request state will be prioritized.
     #[cfg(not(target_arch = "wasm32"))]
     amalgamate_states: Option<AmalgamateStatesFn>,
-    /// Whether or not this template is actually a capsule. This impacts significant
-    /// aspects of internal handling.
+    /// Whether or not this template is actually a capsule. This impacts
+    /// significant aspects of internal handling.
     ///
-    /// There is absolutely no circumstance in which you should ever change this. Ever.
-    /// You will break your app. Always.
+    /// There is absolutely no circumstance in which you should ever change
+    /// this. Ever. You will break your app. Always.
     pub is_capsule: bool,
     /// Whether or not this template's pages can have their builds rescheduled
     /// from build-time to request-time if they depend on capsules that aren't
@@ -173,8 +175,8 @@ impl<G: Html> std::fmt::Debug for Template<G> {
     }
 }
 impl<G: Html> TemplateInner<G> {
-    /// An internal creator for new inner templates. This is wrapped by `Template::new`
-    /// and `Capsule::new`.
+    /// An internal creator for new inner templates. This is wrapped by
+    /// `Template::new` and `Capsule::new`.
     fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
@@ -206,13 +208,16 @@ impl<G: Html> TemplateInner<G> {
             fallback: None,
         }
     }
-    /// Builds a full [`Template`] from this [`TemplateInner`], consuming it in the process.
-    /// Once called, the template cannot be modified anymore, and it will be placed into a
-    /// smart pointer, allowing it to be cloned freely with minimal costs.
+    /// Builds a full [`Template`] from this [`TemplateInner`], consuming it in
+    /// the process. Once called, the template cannot be modified anymore,
+    /// and it will be placed into a smart pointer, allowing it to be cloned
+    /// freely with minimal costs.
     ///
     /// You should call this just before you return your template.
     pub fn build(self) -> Template<G> {
-        Template { inner: Entity::from(self) }
+        Template {
+            inner: Entity::from(self),
+        }
     }
 }
 

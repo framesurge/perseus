@@ -122,22 +122,25 @@ pub enum ClientError {
     PlatformError(#[from] ClientPlatformError),
     #[error("locale '{locale}' is not supported")]
     LocaleNotSupported { locale: String },
-    // #[error(transparent)]
-    // FetchError(#[from] FetchError),
-    // ,
-    // // If the user is using the template macros, this should never be emitted because we can
-    // // ensure that the generated state is valid
-    // #[error("tried to deserialize invalid state (it was not malformed, but the state was not of
-    // the declared type)")] StateInvalid {
-    //     #[source]
-    //     source: serde_json::Error,
-    // },
-    // #[error("server informed us that a valid locale was invald (this almost certainly requires
-    // a hard reload)")] ValidLocaleNotProvided { locale: String },
-    // #[error("the given path for preloading leads to a locale detection page; you probably
-    // wanted to wrap the path in `link!(...)`")] PreloadLocaleDetection,
-    // #[error("the given path for preloading was not found")]
-    // PreloadNotFound,
+    #[error(transparent)]
+    PreloadError(#[from] ClientPreloadError), /* #[error(transparent)]
+                                               * FetchError(#[from] FetchError),
+                                               * ,
+                                               * // If the user is using the template macros, this should never be emitted because we can
+                                               * // ensure that the generated state is valid
+                                               * #[error("tried to deserialize invalid state
+                                               * (it was not malformed, but the state was not
+                                               * of
+                                               * the declared type)")] StateInvalid {
+                                               *     #[source]
+                                               *     source: serde_json::Error,
+                                               * },
+                                               * #[error("server informed us that a valid
+                                               * locale was invald (this almost certainly
+                                               * requires
+                                               * a hard reload)")] ValidLocaleNotProvided {
+                                               * locale: String },
+                                               */
 }
 
 /// Errors that can occur in the browser from certain invariants not being
@@ -192,6 +195,18 @@ pub enum ClientInvariantError {
     InvalidWidgetPssEntry,
     #[error("the widget with path '{path}' was not found, indicating you are rendering an invalid widget on the browser-side only (you should refactor to always render the widget, but only have it do anything on the browser-side; that way, it can be verified on the engine-side, leading to errors at build-time rather than execution-time)")]
     BadWidgetRouteMatch { path: String },
+}
+
+/// Errors that can occur as a result of user-instructed preloads. Note that
+/// this will not cover network-related errors, which are considered fetch
+/// errors (since they are likely not the fault of your code, whereas a
+/// `ClientPreloadError` probably is).
+#[derive(Debug, Error)]
+pub enum ClientPreloadError {
+    #[error("preloading '{path}' leads to a locale detection page, which implies a malformed url")]
+    PreloadLocaleDetection { path: String },
+    #[error("'{path}' was not found for preload")]
+    PreloadNotFound { path: String },
 }
 
 /// Errors that can occur in the browser while interfacing with browser

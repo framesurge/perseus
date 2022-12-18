@@ -1,7 +1,7 @@
 use super::Reactor;
 use crate::{
     errors::*,
-    path::PathMaybeWithLocale,
+    path::*,
     state::{AnyFreeze, MakeRx, MakeUnrx, TemplateState},
 };
 #[cfg(target_arch = "wasm32")]
@@ -10,6 +10,8 @@ use crate::{
     state::{Freeze, FrozenApp, ThawPrefs},
 };
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(target_arch = "wasm32")]
+use sycamore::prelude::Scope;
 use sycamore::web::Html;
 #[cfg(target_arch = "wasm32")]
 use sycamore_router::navigate;
@@ -102,6 +104,143 @@ impl<G: Html> Reactor<G> {
         }
 
         Ok(())
+    }
+
+    /// Preloads the given URL from the server and caches it, preventing
+    /// future network requests to fetch that page. Localization will be
+    /// handled automatically.
+    ///
+    /// This function automatically defers the asynchronous preloading
+    /// work to a browser future for convenience. If you would like to
+    /// access the underlying future, use `.try_preload()` instead.
+    ///
+    /// To preload a widget, you must prefix its path with `__capsule/`.
+    ///
+    /// # Panics
+    /// This function will panic if any errors occur in preloading, such as
+    /// the route being not found, or not localized. If the path you're
+    /// preloading is not hardcoded, use `.try_preload()` instead.
+    // Conveniently, we can use the lifetime mechanics of knowing that the render
+    // context is registered on the given scope to ensure that the future works
+    // out
+    pub fn preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+        use fmterr::fmt_err;
+        let url = url.to_string();
+
+        crate::spawn_local_scoped(cx, async move {
+            if let Err(err) = self.try_preload(&url).await {
+                panic!("{}", fmt_err(&err));
+            }
+        });
+    }
+    /// Preloads the given URL from the server and caches it for the current
+    /// route, preventing future network requests to fetch that page. On a
+    /// route transition, this will be removed. Localization will be
+    /// handled automatically.
+    ///
+    /// WARNING: the route preloading system is under heavy construction at
+    /// present!
+    ///
+    /// This function automatically defers the asynchronous preloading
+    /// work to a browser future for convenience. If you would like to
+    /// access the underlying future, use `.try_route_preload()` instead.
+    ///
+    /// To preload a widget, you must prefix its path with `__capsule/`.
+    ///
+    /// # Panics
+    /// This function will panic if any errors occur in preloading, such as
+    /// the route being not found, or not localized. If the path you're
+    /// preloading is not hardcoded, use `.try_route_preload()` instead.
+    // Conveniently, we can use the lifetime mechanics of knowing that the render
+    // context is registered on the given scope to ensure that the future works
+    // out
+    pub fn route_preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+        use fmterr::fmt_err;
+        let url = url.to_string();
+
+        crate::spawn_local_scoped(cx, async move {
+            if let Err(err) = self.try_route_preload(&url).await {
+                panic!("{}", fmt_err(&err));
+            }
+        });
+    }
+    /// A version of `.preload()` that returns a future that can resolve to an
+    /// error. If the path you're preloading is not hardcoded, you should
+    /// use this. Localization will be
+    /// handled automatically.
+    ///
+    /// To preload a widget, you must prefix its path with `__capsule/`.
+    pub async fn try_preload(&self, url: &str) -> Result<(), ClientError> {
+        self._preload(url, false).await
+    }
+    /// A version of `.route_preload()` that returns a future that can resolve
+    /// to an error. If the path you're preloading is not hardcoded, you
+    /// should use this. Localization will be
+    /// handled automatically.
+    ///
+    /// To preload a widget, you must prefix its path with `__capsule/`.
+    pub async fn try_route_preload(&self, url: &str) -> Result<(), ClientError> {
+        self._preload(url, true).await
+    }
+    /// Preloads the given URL from the server and caches it, preventing
+    /// future network requests to fetch that page. Localization will be
+    /// handled automatically.
+    ///
+    /// To preload a widget, you must prefix its path with `__capsule/`.
+    async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
+        use crate::router::{match_route, RouteVerdict};
+
+        // It is reasonable to assume that this function will not be called before the
+        // instantiation of a translator
+        let locale = self.get_translator().get_locale();
+        let full_path = PathMaybeWithLocale::new(&PathWithoutLocale(path.to_string()), &locale);
+
+        let path_segments = full_path
+            .split('/')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
+                                     // Get a route verdict on this so we know where we're going (this doesn't modify
+                                     // the router state)
+        let verdict = match_route(
+            &path_segments,
+            &self.render_cfg,
+            &self.entities,
+            &self.locales,
+        );
+        // Make sure we've got a valid verdict (otherwise the user should be told there
+        // was an error)
+        let route_info = match verdict {
+            RouteVerdict::Found(info) => info,
+            RouteVerdict::NotFound { .. } => {
+                return Err(ClientPreloadError::PreloadNotFound {
+                    path: path.to_string(),
+                }
+                .into())
+            }
+            RouteVerdict::LocaleDetection(_) => {
+                return Err(ClientPreloadError::PreloadLocaleDetection {
+                    path: path.to_string(),
+                }
+                .into())
+            }
+        };
+
+        // We just needed to acquire the arguments to this function
+        self.state_store
+            .preload(
+                // We want an unlocalized path, which will be amalgamated with the locale for the
+                // key
+                &route_info.path,
+                &route_info.locale,
+                &route_info.entity.get_path(),
+                route_info.was_incremental_match,
+                is_route_preload,
+                // While we might be preloading a widget, this just controls asset types, and,
+                // since this function is intended for end user abstractions, this should always
+                // use `AssetType::Preload`
+                false,
+            )
+            .await
     }
 }
 

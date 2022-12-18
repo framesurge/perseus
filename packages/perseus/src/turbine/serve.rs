@@ -9,7 +9,12 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use sycamore::web::SsrNode;
 
 use super::Turbine;
-use crate::{error_views::ServerErrorData, reactor::RenderMode, router::{RouteVerdict, match_route}, template::Entity};
+use crate::{
+    error_views::ServerErrorData,
+    reactor::RenderMode,
+    router::{match_route, RouteVerdict},
+    template::Entity,
+};
 use crate::{
     errors::*,
     i18n::{TranslationsManager, Translator},

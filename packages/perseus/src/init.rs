@@ -1,6 +1,5 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::server::HtmlShell;
-use crate::{stores::ImmutableStore, template::Entity};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::get_path_prefix_server;
 use crate::{
@@ -18,6 +17,7 @@ use crate::{
     errors::ClientError,
 };
 use crate::{errors::PluginError, template::Capsule};
+use crate::{stores::ImmutableStore, template::Entity};
 use futures::Future;
 #[cfg(target_arch = "wasm32")]
 use std::marker::PhantomData;

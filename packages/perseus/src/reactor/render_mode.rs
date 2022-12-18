@@ -1,4 +1,11 @@
-use crate::{error_views::{ErrorViews, ServerErrorData}, errors::ServerError, path::*, state::TemplateState, stores::ImmutableStore, template::Entity};
+use crate::{
+    error_views::{ErrorViews, ServerErrorData},
+    errors::ServerError,
+    path::*,
+    state::TemplateState,
+    stores::ImmutableStore,
+    template::Entity,
+};
 use serde_json::Value;
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 use sycamore::web::Html;
