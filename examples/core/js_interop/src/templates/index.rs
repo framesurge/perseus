@@ -15,7 +15,7 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_page)
+    Template::new("index").template(index_page).build()
 }
 
 // Of course, JS will only run in the browser, so this should be browser-only
