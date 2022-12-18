@@ -275,7 +275,7 @@ pub(crate) type HeadFn =
     Box<dyn Fn(Scope, TemplateState) -> Result<View<SsrNode>, ServerError> + Send + Sync>;
 /// The type of functions that modify HTTP response headers.
 pub(crate) type SetHeadersFn =
-    Box<dyn Fn(TemplateState) -> Result<HeaderMap, ServerError> + Send + Sync>;
+    Box<dyn Fn(Scope, TemplateState) -> Result<HeaderMap, ServerError> + Send + Sync>;
 /// The type of functions that get build paths.
 pub(crate) type GetBuildPathsFn = Box<dyn GetBuildPathsFnType + Send + Sync>;
 /// The type of functions that get build state.

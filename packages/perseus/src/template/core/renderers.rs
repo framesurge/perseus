@@ -243,9 +243,30 @@ impl<G: Html> TemplateInner<G> {
     }
     /// Gets the template's headers for the given state. These will be inserted
     /// into any successful HTTP responses for this template, and they have
-    /// the power to override.
+    /// the power to override existing headers, including `Content-Type`.
+    ///
+    /// This will automatically instantiate a scope and set up an engine-side
+    /// reactor so that the user's function can access global state and
+    /// translations, as localized headers are very much real. Locale
+    /// detection pages are considered internal to Perseus, and therefore do
+    /// not have support for user headers (at this time).
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_headers(&self, state: TemplateState) -> Result<HeaderMap, ServerError> {
-        (self.set_headers)(state)
+    pub fn get_headers(
+        &self,
+        state: TemplateState,
+        global_state: TemplateState,
+        translator: Option<&Translator>,
+    ) -> Result<HeaderMap, ServerError> {
+        use sycamore::prelude::create_scope_immediate;
+
+        let mut res = Ok(HeaderMap::new());
+        create_scope_immediate(|cx| {
+            let reactor = Reactor::<G>::engine(global_state, RenderMode::Headers, translator);
+            reactor.add_self_to_cx(cx);
+
+            res = (self.set_headers)(cx, state)
+        });
+
+        res
     }
 }

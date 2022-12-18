@@ -263,7 +263,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let mut response = ApiResponse::ok(&final_html).content_type("text/html");
 
                 // Generate and add HTTP headers
-                let headers = match entity.get_headers(TemplateState::from_value(page_data.state)) {
+                let headers = match entity.get_headers(
+                    TemplateState::from_value(page_data.state),
+                    global_state,
+                    Some(&translator),
+                ) {
                     Ok(headers) => headers,
                     // The pointlessness of returning an error here is well documented
                     Err(err) => {
@@ -341,8 +345,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         }
     }
 
+    // TODO If we ever support error headers, this would be the place to do it; PRs
+    // welcome!
     /// Creates an HTML error page for when the initial load handler needs one.
-    /// This will never provide a translator.
     ///
     /// This assumes that the app has already been actually built.
     ///

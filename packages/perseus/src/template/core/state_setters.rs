@@ -207,14 +207,14 @@ impl<G: Html> TemplateInner<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn set_headers_with_state<S, V>(
         mut self,
-        val: impl Fn(S) -> V + Send + Sync + 'static,
+        val: impl Fn(Scope, S) -> V + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
         V: Into<GeneratorResult<HeaderMap>>,
     {
         let template_name = self.get_path();
-        self.set_headers = Box::new(move |template_state| {
+        self.set_headers = Box::new(move |cx, template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
                 return Err(ClientError::InvariantError(ClientInvariantError::NoState).into());
@@ -235,7 +235,7 @@ impl<G: Html> TemplateInner<G> {
                 };
 
             let template_name = template_name.clone();
-            val(state)
+            val(cx, state)
                 .into()
                 .into_server_result("set_headers", template_name)
         });

@@ -87,8 +87,12 @@ pub(crate) enum RenderMode<G: Html> {
         /// different locale can never be included.
         unresolved_widget_accumulator: Rc<RefCell<Vec<PathWithoutLocale>>>,
     },
+    // These may have the same outcome for widgets, but they could in future be used for
+    // additional mode-specific data
     /// We're rendering a head, where widgets are not allowed.
     Head,
     /// We're rendering an error, where widgets are not allowed.
     Error,
+    /// We're rendering headers, where widgets are not allowed.
+    Headers,
 }

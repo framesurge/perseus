@@ -333,5 +333,7 @@ fn engine_widget<G: Html>(cx: Scope, path: PathWithoutLocale) -> View<G> {
         }
         RenderMode::Head => panic!("widgets cannot be used in heads"),
         RenderMode::Error => panic!("widgets cannot be used in error views"),
+        // This would be exceptionally weird...
+        RenderMode::Headers => panic!("widgets cannot be used in headers"),
     }
 }

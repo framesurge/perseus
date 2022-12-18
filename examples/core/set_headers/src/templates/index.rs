@@ -39,9 +39,13 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> PageState {
 
 // Unfortunately, this return type does have
 // to be fully qualified, or you have to import it with a server-only
-// target-gate
+// target-gate.
+//
+// This function takes a a scope so it can get at a `Reactor`, which will have
+// the global state and, potentially, a translator. This can allow you to create
+// localized headers.
 #[engine_only_fn]
-fn set_headers(state: PageState) -> perseus::http::header::HeaderMap {
+fn set_headers(_cx: Scope, state: PageState) -> perseus::http::header::HeaderMap {
     // These imports are only available on the server-side, which this function is
     // automatically gated to
     use perseus::http::header::{HeaderMap, HeaderName};

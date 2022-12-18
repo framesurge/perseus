@@ -187,7 +187,7 @@ impl<G: Html> TemplateInner<G> {
             head: Box::new(|_, _| Ok(View::empty())),
             // We create sensible header defaults here
             #[cfg(not(target_arch = "wasm32"))]
-            set_headers: Box::new(|_| Ok(default_headers())),
+            set_headers: Box::new(|_, _| Ok(default_headers())),
             #[cfg(not(target_arch = "wasm32"))]
             get_build_paths: None,
             #[cfg(not(target_arch = "wasm32"))]

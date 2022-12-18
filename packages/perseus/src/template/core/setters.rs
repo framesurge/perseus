@@ -56,12 +56,12 @@ impl<G: Html> TemplateInner<G> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn set_headers<V: Into<GeneratorResult<HeaderMap>>>(
         mut self,
-        val: impl Fn() -> V + Send + Sync + 'static,
+        val: impl Fn(Scope) -> V + Send + Sync + 'static,
     ) -> Self {
         let template_name = self.get_path();
-        self.set_headers = Box::new(move |_template_state| {
+        self.set_headers = Box::new(move |cx, _template_state| {
             let template_name = template_name.clone();
-            val()
+            val(cx)
                 .into()
                 .into_server_result("set_headers", template_name)
         });
