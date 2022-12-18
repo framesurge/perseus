@@ -76,7 +76,6 @@ impl<G: Html> TemplateInner<G> {
                         // Compute suspended states
                         #[cfg(target_arch = "wasm32")]
                         intermediate_state.compute_suspense(child_cx);
-                        // let ref_struct = intermediate_state.to_ref_struct(child_cx);
                         view = val(child_cx, intermediate_state.to_ref_struct(child_cx));
                     });
                     Ok((view, disposer))

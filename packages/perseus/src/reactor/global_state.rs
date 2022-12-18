@@ -6,12 +6,11 @@ use crate::{
     state::{AnyFreeze, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef},
 };
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::{prelude::Scope, web::Html};
+use sycamore::{prelude::{Scope, create_ref}, web::Html};
 
 // These methods are used for acquiring the global state on both the
 // browser-side and the engine-side
 impl<G: Html> Reactor<G> {
-    // TODO Fix these type bounds
     /// Gets the global state. Note that this can only be used for reactive
     /// global state, since Perseus always expects your global state to be
     /// reactive.
@@ -22,7 +21,7 @@ impl<G: Html> Reactor<G> {
     /// instead.
     // This function takes the final ref struct as a type parameter! That
     // complicates everything substantially.
-    pub fn get_global_state<'a, R>(&self, cx: Scope<'a>) -> R
+    pub fn get_global_state<'a, R>(&self, cx: Scope<'a>) -> &'a R
     where
         R: RxRef,
         R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
@@ -36,7 +35,7 @@ impl<G: Html> Reactor<G> {
     ///
     /// This will return an error if the state from the server was found to be
     /// invalid.
-    pub fn try_get_global_state<'a, R>(&self, cx: Scope<'a>) -> Result<Option<R>, ClientError>
+    pub fn try_get_global_state<'a, R>(&self, cx: Scope<'a>) -> Result<Option<&'a R>, ClientError>
     where
         R: RxRef,
         R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
@@ -80,7 +79,13 @@ impl<G: Html> Reactor<G> {
             }
         };
 
-        Ok(Some(intermediate_state.to_ref_struct(cx)))
+        // We need to first turn this into a reference `struct`, and then into a full blown reference in the scope
+        // so that not just fields, but the whole thing can be ergonomically passed around (allowing, for instance,
+        // method calls in closures)
+        let ref_state = intermediate_state.to_ref_struct(cx);
+        let full_ref = create_ref(cx, ref_state);
+
+        Ok(Some(full_ref))
     }
 
     /// Determines if the global state should use the state given by the server,

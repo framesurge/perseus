@@ -4,9 +4,8 @@ use sycamore::prelude::*;
 use crate::global_state::*;
 
 fn index_view<G: Html>(cx: Scope) -> View<G> {
-    let app_state = Reactor::<G>::from_cx(cx).get_global_state::<AppStateRx>(cx);
-
-    let AuthDataRx { state, username } = app_state.auth;
+    let AppStateRx { auth } = Reactor::<G>::from_cx(cx).get_global_state::<AppStateRx>(cx);
+    let AuthDataRx { state, username } = auth;
     // This isn't part of our data model because it's only used here to pass to the
     // login function
     let entered_username = create_signal(cx, String::new());
@@ -17,7 +16,7 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
     // because this function just returns straight away if the state is already
     // known
     #[cfg(target_arch = "wasm32")]
-    app_state.auth.detect_state();
+    auth.detect_state();
 
     view! { cx,
         (
@@ -27,8 +26,8 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
                     view! { cx,
                             h1 { (format!("Welcome back, {}!", &username)) }
                             button(on:click =  |_| {
-                                // #[cfg(target_arch = "wasm32")]
-                                // auth.logout();
+                                #[cfg(target_arch = "wasm32")]
+                                auth.logout();
                             }) { "Logout" }
                     }
                 }
@@ -38,7 +37,7 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
                     input(bind:value = entered_username, placeholder = "Username")
                     button(on:click = |_| {
                         #[cfg(target_arch = "wasm32")]
-                        app_state.auth.login(&entered_username.get())
+                        auth.login(&entered_username.get())
                     }) { "Login" }
                 },
                 // This will appear for a few moments while we figure out if the user is logged in or not
@@ -51,5 +50,5 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_view)
+    Template::new("index").template(index_view).build()
 }
