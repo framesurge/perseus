@@ -1,4 +1,4 @@
-use super::{rx_result::RxResultIntermediate, Freeze, MakeRx, MakeRxRef, MakeUnrx};
+use super::{rx_result::RxResultRx, Freeze, MakeRx, MakeUnrx};
 use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::prelude::{RcSignal, Scope};
@@ -21,16 +21,13 @@ use sycamore_futures::spawn_local_scoped;
 /// The handler this takes is a future, so the asynchronous function handler
 /// itself should be called without `.await` before being provided to this
 /// function.
-pub fn compute_nested_suspense<'a, T, E, F>(
-    cx: Scope<'a>,
-    state: RxResultIntermediate<T, E>,
-    handler: F,
-) where
+pub fn compute_nested_suspense<'a, T, E, F>(cx: Scope<'a>, state: RxResultRx<T, E>, handler: F)
+where
     F: Future<Output = Result<(), E>> + 'a,
     T: MakeRx + Serialize + DeserializeOwned + Clone + 'static, /* Note this `Clone` bound!
                                                                  * (Otherwise cloning goes to
                                                                  * the undelrying `RcSignal`) */
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
     spawn_local_scoped(cx, async move {

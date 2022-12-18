@@ -19,6 +19,10 @@ pub trait MakeRx {
 /// opposite of `MakeRx`, and is intended particularly for state freezing. Like
 /// `MakeRx`, this will usually be derived automatically with the `#[make_rx]`
 /// macro, but you can also implement it manually.
+///
+/// The types that implement this are typically referred to as the *intermediate
+/// state* types, as they are rendered far more ergonomic to use by being put
+/// through Sycamore's `create_ref()` function.
 pub trait MakeUnrx {
     /// The type of the unreactive version that we'll convert to.
     type Unrx: Serialize + for<'de> Deserialize<'de> + MakeRx;
@@ -52,28 +56,6 @@ pub trait MakeUnrx {
     /// system.
     #[cfg(target_arch = "wasm32")]
     fn compute_suspense<'a>(&self, cx: Scope<'a>);
-}
-
-/// A trait for reactive `struct`s that can be made to use `&'a Signal`s
-/// rather than `RcSignal`s, when provided with a Sycamore reactive scope.
-/// This is necessary for reaping the benefits of the ergonomics of Sycamore's
-/// v2 reactive primitives.
-pub trait MakeRxRef {
-    /// The type of the reactive `struct` using `&'a Signal`s (into which
-    /// the type implementing this trait can be converted).
-    type RxRef<'a>;
-    /// Convert this into a version using `&'a Signal`s using `create_ref()`.
-    // Lifetimes are all the same here (but elided)
-    fn to_ref_struct(self, cx: Scope) -> Self::RxRef<'_>;
-}
-
-/// A trait for `struct`s that are both reactive *and* using `&'a Signal`s
-/// to store their underlying data. This exists solely to link such types to
-/// their intermediate, `RcSignal`, equivalents.
-pub trait RxRef {
-    /// The linked intermediate type using `RcSignal`s. Note that this is
-    /// itself reactive, just not very ergonomic.
-    type RxNonRef: MakeUnrx;
 }
 
 /// A trait for reactive `struct`s that can be made unreactive and serialized to

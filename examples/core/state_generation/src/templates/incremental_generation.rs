@@ -37,7 +37,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         // filter the path because some are invalid (e.g. entries that aren't in some database), we
         // can filter them out at the state of the build state function
         .incremental_generation()
-        .template_with_state::<PageState, _>(incremental_generation_page)
+        .template_with_state(incremental_generation_page)
 }
 
 // This will be executed at build-time for all the paths in `get_build_paths()`,

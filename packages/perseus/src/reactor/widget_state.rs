@@ -5,11 +5,11 @@ use super::Reactor;
 use crate::{
     errors::{ClientError, ClientInvariantError},
     path::*,
-    state::{AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, PssContains, TemplateState, UnreactiveState},
+    state::{AnyFreeze, MakeRx, MakeUnrx, PssContains, TemplateState, UnreactiveState},
 };
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::{
-    prelude::{create_child_scope, BoundedScope, Scope, ScopeDisposer},
+    prelude::{create_child_scope, create_ref, BoundedScope, Scope, ScopeDisposer},
     view::View,
     web::Html,
 };
@@ -45,16 +45,13 @@ impl<G: Html> Reactor<G> {
     where
         // Note: these bounds replicate those for `.template_with_state()`, except the app lifetime is
         // known
-        F: for<'app, 'child> Fn(
-                BoundedScope<'app, 'child>,
-                <S::Rx as MakeRxRef>::RxRef<'child>,
-            ) -> View<G>
+        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child S::Rx) -> View<G>
             + Clone
             + Send
             + Sync
             + 'static,
         S: MakeRx + Serialize + DeserializeOwned + 'static,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         match self.get_widget_state_no_fetch::<S>(&path, template_state)? {
             Some(intermediate_state) => {
@@ -62,7 +59,7 @@ impl<G: Html> Reactor<G> {
                 let disposer = create_child_scope(app_cx, |child_cx| {
                     // We go back from the unreactive state type wrapper to the base type (since
                     // it's unreactive)
-                    view = template_fn(child_cx, intermediate_state.to_ref_struct(child_cx));
+                    view = template_fn(child_cx, create_ref(child_cx, intermediate_state));
                 });
                 Ok((view, disposer))
             }
@@ -121,7 +118,7 @@ impl<G: Html> Reactor<G> {
                                     ) {
                                         Ok(Some(intermediate_state)) => template_fn(
                                             child_cx,
-                                            intermediate_state.to_ref_struct(child_cx),
+                                            create_ref(child_cx, intermediate_state),
                                         ),
                                         Ok(None) => unreachable!(),
                                         Err(err) => self.error_views.handle_widget(&err, child_cx),

@@ -9,7 +9,7 @@ struct IndexPageState {
     username: String,
 }
 
-fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: IndexPageStateRx<'b>) -> View<G> {
+fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b IndexPageStateRx) -> View<G> {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
     let frozen_app = create_signal(cx, String::new());
@@ -51,7 +51,7 @@ fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: IndexPageStateRx
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template_with_state::<IndexPageState, _>(index_page)
+        .template_with_state(index_page)
 }
 
 #[engine_only_fn]

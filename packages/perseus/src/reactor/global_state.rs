@@ -3,10 +3,13 @@ use super::Reactor;
 use crate::state::FrozenGlobalState;
 use crate::{
     errors::*,
-    state::{AnyFreeze, GlobalStateType, MakeRx, MakeRxRef, MakeUnrx, RxRef},
+    state::{AnyFreeze, GlobalStateType, MakeRx, MakeUnrx},
 };
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::{prelude::{Scope, create_ref}, web::Html};
+use sycamore::{
+    prelude::{create_ref, Scope},
+    web::Html,
+};
 
 // These methods are used for acquiring the global state on both the
 // browser-side and the engine-side
@@ -21,25 +24,23 @@ impl<G: Html> Reactor<G> {
     /// instead.
     // This function takes the final ref struct as a type parameter! That
     // complicates everything substantially.
-    pub fn get_global_state<'a, R>(&self, cx: Scope<'a>) -> &'a R
+    pub fn get_global_state<'a, I>(&self, cx: Scope<'a>) -> &'a I
     where
-        R: RxRef,
-        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
-        <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>,
+        I: MakeUnrx + AnyFreeze + Clone,
+        I::Unrx: MakeRx<Rx = I>,
     {
         // Warn the user about the perils of having no build-time global state handler
-        self.try_get_global_state::<R>(cx).unwrap().expect("you requested global state, but none exists for this app (if you;re generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
+        self.try_get_global_state::<I>(cx).unwrap().expect("you requested global state, but none exists for this app (if you;re generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
     }
     /// The underlying logic for `.get_global_state()`, except this will return
     /// `None` if the app does not have global state.
     ///
     /// This will return an error if the state from the server was found to be
     /// invalid.
-    pub fn try_get_global_state<'a, R>(&self, cx: Scope<'a>) -> Result<Option<&'a R>, ClientError>
+    pub fn try_get_global_state<'a, I>(&self, cx: Scope<'a>) -> Result<Option<&'a I>, ClientError>
     where
-        R: RxRef,
-        R::RxNonRef: MakeUnrx + AnyFreeze + Clone + MakeRxRef<RxRef<'a> = R>,
-        <<R as RxRef>::RxNonRef as MakeUnrx>::Unrx: MakeRx<Rx = R::RxNonRef>,
+        I: MakeUnrx + AnyFreeze + Clone,
+        I::Unrx: MakeRx<Rx = I>,
     {
         let global_state_ty = self.global_state.0.borrow();
         // Bail early if the app doesn't support global state
@@ -47,45 +48,36 @@ impl<G: Html> Reactor<G> {
             return Ok(None);
         }
 
-        let intermediate_state = if let Some(held_state) =
-            self.get_held_global_state::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>()?
-        {
-            held_state
-        } else {
-            // We'll get the server-given global state
-            if let GlobalStateType::Server(server_state) = &*global_state_ty {
-                // Fall back to the state we were given, first
-                // giving it a type (this just sets a phantom type parameter)
-                let typed_state = server_state
-                    .clone()
-                    .change_type::<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx>();
-                // This attempts a deserialization from a `Value`, which could fail
-                let unrx = typed_state
-                    .into_concrete()
-                    .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
-                let rx = unrx.make_rx();
-                // Set that as the new active global state
-                let mut active_global_state = self.global_state.0.borrow_mut();
-                *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
-
-                rx
+        let intermediate_state =
+            if let Some(held_state) = self.get_held_global_state::<I::Unrx>()? {
+                held_state
             } else {
-                // There are two alternatives: `None` (handled with an early bail above) and
-                // `Loaded`, the latter of which would have been handled as the
-                // active state above (even if we prioritized frozen state, that
-                // would have returned something; if there was an active global state,
-                // we would've dealt with it). If we're here it was `Server`.
-                unreachable!()
-            }
-        };
+                // We'll get the server-given global state
+                if let GlobalStateType::Server(server_state) = &*global_state_ty {
+                    // Fall back to the state we were given, first
+                    // giving it a type (this just sets a phantom type parameter)
+                    let typed_state = server_state.clone().change_type::<I::Unrx>();
+                    // This attempts a deserialization from a `Value`, which could fail
+                    let unrx = typed_state
+                        .into_concrete()
+                        .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+                    let rx = unrx.make_rx();
+                    // Set that as the new active global state
+                    let mut active_global_state = self.global_state.0.borrow_mut();
+                    *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
 
-        // We need to first turn this into a reference `struct`, and then into a full blown reference in the scope
-        // so that not just fields, but the whole thing can be ergonomically passed around (allowing, for instance,
-        // method calls in closures)
-        let ref_state = intermediate_state.to_ref_struct(cx);
-        let full_ref = create_ref(cx, ref_state);
+                    rx
+                } else {
+                    // There are two alternatives: `None` (handled with an early bail above) and
+                    // `Loaded`, the latter of which would have been handled as the
+                    // active state above (even if we prioritized frozen state, that
+                    // would have returned something; if there was an active global state,
+                    // we would've dealt with it). If we're here it was `Server`.
+                    unreachable!()
+                }
+            };
 
-        Ok(Some(full_ref))
+        Ok(Some(create_ref(cx, intermediate_state)))
     }
 
     /// Determines if the global state should use the state given by the server,

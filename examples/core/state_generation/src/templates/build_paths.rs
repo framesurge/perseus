@@ -9,7 +9,7 @@ struct PageState {
     content: String,
 }
 
-fn build_paths_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: PageStateRx<'b>) -> View<G> {
+fn build_paths_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b PageStateRx) -> View<G> {
     let title = state.title;
     let content = state.content;
     view! { cx,
@@ -26,7 +26,7 @@ pub fn get_template<G: Html>() -> Template<G> {
     Template::new("build_paths")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
-        .template_with_state::<PageState, _>(build_paths_page)
+        .template_with_state(build_paths_page)
 }
 
 // We take in `StateGeneratorInfo`, which has the path we're generating for

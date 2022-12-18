@@ -122,9 +122,7 @@ pub mod prelude {
     pub use crate::errors::{BlamedError, ErrorBlame};
     pub use crate::init::*;
     pub use crate::reactor::Reactor;
-    pub use crate::state::{
-        BuildPaths, RxResult, RxResultRef, SerdeInfallible, StateGeneratorInfo,
-    };
+    pub use crate::state::{BuildPaths, RxResult, RxResultRx, SerdeInfallible, StateGeneratorInfo};
     pub use crate::template::{Capsule, Template};
     pub use sycamore::web::Html;
 

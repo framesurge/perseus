@@ -5,13 +5,13 @@ use super::TemplateInner;
 use crate::errors::*;
 use crate::{
     reactor::Reactor,
-    state::{AnyFreeze, MakeRx, MakeRxRef, MakeUnrx, UnreactiveState},
+    state::{AnyFreeze, MakeRx, MakeUnrx, UnreactiveState},
 };
 #[cfg(not(target_arch = "wasm32"))]
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::prelude::create_child_scope;
 use sycamore::prelude::BoundedScope;
+use sycamore::prelude::{create_child_scope, create_ref};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
@@ -23,25 +23,17 @@ impl<G: Html> TemplateInner<G> {
     ///
     /// The closure wrapping this performs will automatically handle suspense
     /// state.
-    ///
-    /// You will need tp provide this your original state type, so that it can
-    /// be made reactive, and the second type parameter is for the actual
-    /// function, which can always be left as `_` (e.g.
-    /// `.template_with_state::<IndexPageState, _>(index_page)`).
     // Generics are swapped here for nicer manual specification
-    pub fn template_with_state<S, F>(mut self, val: F) -> Self
+    pub fn template_with_state<I, F>(mut self, val: F) -> Self
     where
         // The state is made reactive on the child
-        F: for<'app, 'child> Fn(
-                BoundedScope<'app, 'child>,
-                <S::Rx as MakeRxRef>::RxRef<'child>,
-            ) -> View<G>
+        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child I) -> View<G>
             + Clone
             + Send
             + Sync
             + 'static,
-        S: MakeRx + Serialize + DeserializeOwned + Send + Sync + Clone + 'static,
-        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone + MakeRxRef,
+        I: MakeUnrx + AnyFreeze + Clone,
+        I::Unrx: MakeRx<Rx = I> + Serialize + DeserializeOwned + Send + Sync + Clone + 'static,
     {
         #[cfg(target_arch = "wasm32")]
         let entity_name = self.get_path();
@@ -52,7 +44,7 @@ impl<G: Html> TemplateInner<G> {
             move |app_cx, preload_info, template_state, path| {
                 let reactor = Reactor::<G>::from_cx(app_cx);
                 if self.is_capsule {
-                    reactor.get_widget_view::<S, _>(
+                    reactor.get_widget_view::<I::Unrx, _>(
                         app_cx,
                         path,
                         #[cfg(target_arch = "wasm32")]
@@ -66,7 +58,8 @@ impl<G: Html> TemplateInner<G> {
                     )
                 } else {
                     // This will handle frozen/active state prioritization, etc.
-                    let intermediate_state = reactor.get_page_state::<S>(&path, template_state)?;
+                    let intermediate_state =
+                        reactor.get_page_state::<I::Unrx>(&path, template_state)?;
                     // Run the user's code in a child scope so any effects they start are killed
                     // when the page ends (otherwise we basically get a series of
                     // continuous pseudo-memory leaks, which can also cause accumulations of
@@ -76,7 +69,8 @@ impl<G: Html> TemplateInner<G> {
                         // Compute suspended states
                         #[cfg(target_arch = "wasm32")]
                         intermediate_state.compute_suspense(child_cx);
-                        view = val(child_cx, intermediate_state.to_ref_struct(child_cx));
+                        // view = val(child_cx, intermediate_state.to_ref_struct(child_cx));
+                        view = val(child_cx, create_ref(child_cx, intermediate_state));
                     });
                     Ok((view, disposer))
                 }

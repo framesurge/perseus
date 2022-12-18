@@ -14,8 +14,8 @@ pub use freeze::{FrozenApp, PageThawPrefs, ThawPrefs};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use global_state::FrozenGlobalState;
 pub use global_state::{GlobalState, GlobalStateCreator, GlobalStateType};
-pub use rx_result::{RxResult, RxResultIntermediate, RxResultRef, SerdeInfallible};
-pub use rx_state::{AnyFreeze, Freeze, MakeRx, MakeRxRef, MakeUnrx, RxRef, UnreactiveState};
+pub use rx_result::{RxResult, RxResultRx, SerdeInfallible};
+pub use rx_state::{AnyFreeze, Freeze, MakeRx, MakeUnrx, UnreactiveState};
 pub use state_generator_info::{BuildPaths, StateGeneratorInfo};
 pub use state_store::{PageStateStore, PssContains, PssEntry, PssState};
 pub use template_state::{TemplateState, TemplateStateWithType, UnknownStateType};

@@ -23,7 +23,7 @@ fn revalidation_and_incremental_generation_page<'a, 'b, G: Html>(
 
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("revalidation_and_incremental_generation")
-        .template_with_state::<PageState, _>(revalidation_and_incremental_generation_page)
+        .template_with_state(revalidation_and_incremental_generation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
         .revalidate_after(Duration::new(5, 0))
         // This is an alternative method of revalidation that uses logic, which will be executed

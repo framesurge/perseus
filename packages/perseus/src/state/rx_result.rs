@@ -1,7 +1,9 @@
-use super::{Freeze, MakeRx, MakeRxRef, MakeUnrx, RxRef};
+use super::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
+#[cfg(target_arch = "wasm32")]
+use sycamore::prelude::Scope;
+use sycamore::prelude::{create_rc_signal, RcSignal};
 
 /// A wrapper for fallible reactive state.
 ///
@@ -30,20 +32,20 @@ pub struct RxResult<T, E>(Result<T, E>)
 where
     T: MakeRx + 'static, /* Serialize + DeserializeOwned are handled automatically by the derive
                           * macro on both `T` and `E` */
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Clone + 'static;
 impl<T, E> MakeRx for RxResult<T, E>
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
-    type Rx = RxResultIntermediate<T, E>;
+    type Rx = RxResultRx<T, E>;
 
     fn make_rx(self) -> Self::Rx {
         match self.0 {
-            Ok(state) => RxResultIntermediate(create_rc_signal(Ok(state.make_rx()))),
-            Err(err) => RxResultIntermediate(create_rc_signal(Err(err))),
+            Ok(state) => RxResultRx(create_rc_signal(Ok(state.make_rx()))),
+            Err(err) => RxResultRx(create_rc_signal(Err(err))),
         }
     }
 }
@@ -51,15 +53,15 @@ where
 /// The intermediate reactive type for [`RxResult`]. You shouldn't need to
 /// interface with this manually.
 #[derive(Clone)]
-pub struct RxResultIntermediate<T, E>(RcSignal<Result<T::Rx, E>>)
+pub struct RxResultRx<T, E>(RcSignal<Result<T::Rx, E>>)
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static;
-impl<T, E> MakeUnrx for RxResultIntermediate<T, E>
+impl<T, E> MakeUnrx for RxResultRx<T, E>
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
     type Unrx = RxResult<T, E>;
@@ -77,10 +79,10 @@ where
     #[cfg(target_arch = "wasm32")]
     fn compute_suspense<'a>(&self, _cx: Scope<'a>) {}
 }
-impl<T, E> Freeze for RxResultIntermediate<T, E>
+impl<T, E> Freeze for RxResultRx<T, E>
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
     fn freeze(&self) -> String {
@@ -89,62 +91,16 @@ where
         serde_json::to_string(&unrx).unwrap()
     }
 }
-impl<T, E> MakeRxRef for RxResultIntermediate<T, E>
-where
-    T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
-    E: Serialize + DeserializeOwned + Clone + 'static,
-{
-    type RxRef<'rx> = RxResultRef<'rx, T, E>; // where <<T as MakeRx>::Rx as MakeRxRef>::RxRef<'rx>: 'rx;
-
-    fn to_ref_struct(self, cx: Scope) -> Self::RxRef<'_> {
-        RxResultRef(create_ref(cx, self.0))
-    }
-}
-
-/// The final reference reactive type for [`RxResult`]. This is what you'll get
-/// passed to suspense handlers that deal with a field wrapper in [`RxResult`].
-///
-/// Note that the underlying nested type will not be in its final reference
-/// form, it will be in its intermediate form (otherwise dependency tracking is
-/// impossible), although, due to the high-level scoped wrapping, ergonomics are
-/// preserved.
-#[derive(Clone)]
-pub struct RxResultRef<'rx, T, E>(&'rx RcSignal<Result<T::Rx, E>>)
-where
-    T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
-    E: Serialize + DeserializeOwned + Clone + 'static;
-impl<'rx, T, E> RxRef for RxResultRef<'rx, T, E>
-where
-    T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
-    E: Serialize + DeserializeOwned + Clone + 'static,
-{
-    type RxNonRef = T::Rx;
-}
 
 // We can implement all the `Signal` etc. methods by simply implementing the
 // appropriate dereferencing
-impl<T, E> Deref for RxResultIntermediate<T, E>
+impl<T, E> Deref for RxResultRx<T, E>
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
     type Target = RcSignal<Result<T::Rx, E>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-impl<'rx, T, E> Deref for RxResultRef<'rx, T, E>
-where
-    T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
-    E: Serialize + DeserializeOwned + Clone + 'static,
-{
-    type Target = &'rx RcSignal<Result<T::Rx, E>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -156,7 +112,7 @@ where
 impl<T, E> From<Result<T, E>> for RxResult<T, E>
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
-    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + MakeRxRef + Clone + 'static,
+    <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
     fn from(val: Result<T, E>) -> Self {

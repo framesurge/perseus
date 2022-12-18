@@ -24,7 +24,7 @@ fn request_state_page<'a, 'b, G: Html>(
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("request_state")
         .request_state_fn(get_request_state)
-        .template_with_state::<PageState, _>(request_state_page)
+        .template_with_state(request_state_page)
 }
 
 // This returns a `Result<T, BlamedError<E>>` (or just `T`) because, obviously,

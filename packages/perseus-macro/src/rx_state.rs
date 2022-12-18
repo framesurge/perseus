@@ -66,9 +66,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     // Now go through them and create what we want for both the intermediate and the
     // reactive `struct`s
     let mut intermediate_fields = quote!();
-    let mut ref_fields = quote!();
     let mut intermediate_field_makers = quote!();
-    let mut ref_field_makers = quote!(); // These start at the intermediate
     let mut unrx_field_makers = quote!();
     let mut suspense_commands = quote!();
     for field in fields.iter() {
@@ -87,12 +85,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 #field_attrs
                 #field_vis #field_ident: <#old_ty as ::perseus::state::MakeRx>::Rx,
             });
-            ref_fields.extend(quote! {
-                #field_attrs
-                #field_vis #field_ident: <<#old_ty as ::perseus::state::MakeRx>::Rx as ::perseus::state::MakeRxRef>::RxRef<'__derived_rx>,
-            });
             intermediate_field_makers.extend(quote! { #field_ident: self.#field_ident.make_rx(), });
-            ref_field_makers.extend(quote! { #field_ident: self.#field_ident.to_ref_struct(cx), });
             unrx_field_makers
                 .extend(quote! { #field_ident: self.#field_ident.clone().make_unrx(), });
 
@@ -122,15 +115,8 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 #field_attrs
                 #field_vis #field_ident: ::sycamore::prelude::RcSignal<#old_ty>,
             });
-            ref_fields.extend(quote! {
-                #field_attrs
-                #field_vis #field_ident: &'__derived_rx ::sycamore::prelude::RcSignal<#old_ty>,
-            });
             intermediate_field_makers.extend(
                 quote! { #field_ident: ::sycamore::prelude::create_rc_signal(self.#field_ident), },
-            );
-            ref_field_makers.extend(
-                quote! { #field_ident: ::sycamore::prelude::create_ref(cx, self.#field_ident), },
             );
             // All fields must be `Clone`
             unrx_field_makers
@@ -170,13 +156,15 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
         &(ident.to_string() + "PerseusRxIntermediate"),
         Span::call_site(),
     );
-    let ref_ident = Ident::new(&(ident.to_string() + "PerseusRxRef"), Span::call_site());
 
     // Create a type alias for the final reactive version for convenience, if the
     // user asked for one
     let ref_alias = if let Some(alias) = alias {
-        // We use the full form for a cleaner expansion in IDEs
-        quote! { #vis type #alias<'__derived_rx> = <<#ident as ::perseus::state::MakeRx>::Rx as ::perseus::state::MakeRxRef>::RxRef<'__derived_rx>; }
+        // // We use the full form for a cleaner expansion in IDEs
+        // quote! { #vis type #alias<'__derived_rx> = <<#ident as
+        // ::perseus::state::MakeRx>::Rx as
+        // ::perseus::state::MakeRxRef>::RxRef<'__derived_rx>; }
+        quote! { #vis type #alias = #intermediate_ident; }
     } else {
         quote!()
     };
@@ -187,11 +175,6 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
         #[derive(Clone)]
         #vis struct #intermediate_ident {
             #intermediate_fields
-        }
-
-        #attrs
-        #vis struct #ref_ident<'__derived_rx> {
-            #ref_fields
         }
 
         impl ::perseus::state::MakeRx for #ident {
@@ -213,7 +196,6 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             }
             #[cfg(target_arch = "wasm32")]
             fn compute_suspense<'a>(&self, cx: ::sycamore::prelude::Scope<'a>) {
-                use ::perseus::state::MakeRxRef; // Needs to be in scope
                 #suspense_commands
             }
         }
@@ -224,17 +206,6 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 // TODO Is this `.unwrap()` safe?
                 ::serde_json::to_string(&unrx).unwrap()
             }
-        }
-        impl ::perseus::state::MakeRxRef for #intermediate_ident {
-            type RxRef<'__derived_rx> = #ref_ident<'__derived_rx>;
-            fn to_ref_struct<'__derived_rx>(self, cx: ::sycamore::prelude::Scope<'__derived_rx>) -> Self::RxRef<'__derived_rx> {
-                Self::RxRef {
-                    #ref_field_makers
-                }
-            }
-        }
-        impl<'__derived_rx> ::perseus::state::RxRef for #ref_ident<'__derived_rx> {
-            type RxNonRef = #intermediate_ident;
         }
 
         #ref_alias

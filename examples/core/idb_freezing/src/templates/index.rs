@@ -9,7 +9,7 @@ struct IndexProps {
     username: String,
 }
 
-fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: IndexPropsRx<'b>) -> View<G> {
+fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b IndexPropsRx) -> View<G> {
     // This is not part of our data model
     let freeze_status = create_signal(cx, String::new());
     let thaw_status = create_signal(cx, String::new());
@@ -90,7 +90,7 @@ fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: IndexPropsRx<'b>
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template_with_state::<IndexProps, _>(index_page)
+        .template_with_state(index_page)
 }
 
 #[engine_only_fn]

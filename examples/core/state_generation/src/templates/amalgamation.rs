@@ -8,7 +8,7 @@ struct PageState {
     message: String,
 }
 
-fn amalgamation_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: PageStateRx<'b>) -> View<G> {
+fn amalgamation_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b PageStateRx) -> View<G> {
     view! { cx,
         p { (format!("The message is: '{}'", state.message.get())) }
     }
@@ -21,7 +21,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         .request_state_fn(get_request_state)
         // But Perseus doesn't know which one to use, so we provide a function to unify them
         .amalgamate_states_fn(amalgamate_states)
-        .template_with_state::<PageState, _>(amalgamation_page)
+        .template_with_state(amalgamation_page)
 }
 
 // Could be fallible with a `BlamedError`
