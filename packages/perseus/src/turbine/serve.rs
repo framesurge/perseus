@@ -232,10 +232,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // we go through. That way, we can just run the exact same render over and over
         // again, getting to a new layer each time, since, if a widget finds its state in
         // this, it'll use it. This will be progressively accumulated over many layers.
-        widget_states: HashMap<
-            PathMaybeWithLocale,
-            Result<TemplateState, ServerErrorData>,
-        >,
+        widget_states: HashMap<PathMaybeWithLocale, Result<TemplateState, ServerErrorData>>,
         path: PathWithoutLocale,
         locale: String,
         state: TemplateState,

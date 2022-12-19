@@ -1,21 +1,24 @@
 use crate::path::PathWithoutLocale;
-use sycamore::{prelude::Scope, view::View, web::Html};
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::prelude::create_child_scope;
+use sycamore::{prelude::Scope, view::View, web::Html};
 
 use super::Capsule;
 
 impl<G: Html, P: Clone + 'static> Capsule<G, P> {
-    /// Creates a component for a single widget that this capsule can produce, based on the given
-    /// path. This is designed to be used inside the Sycamore `view!` macro.
+    /// Creates a component for a single widget that this capsule can produce,
+    /// based on the given path. This is designed to be used inside the
+    /// Sycamore `view!` macro.
     ///
-    /// Note that this will not behave like a normal Sycamore component, and it is effectively
-    /// a normal function (for now).
+    /// Note that this will not behave like a normal Sycamore component, and it
+    /// is effectively a normal function (for now).
     ///
-    /// The path provided to this should not include the name of the capsule itself. For example,
-    /// if the capsule path is `foo`, and you want the `bar` widget within `foo` (i.e. `foo/bar`),
-    /// you should provide `/bar` to this function. If you want to render the index widget, just
-    /// use `/` or the empty string (leading forward slashes will automatically be normalized).
+    /// The path provided to this should not include the name of the capsule
+    /// itself. For example, if the capsule path is `foo`, and you want the
+    /// `bar` widget within `foo` (i.e. `foo/bar`), you should provide
+    /// `/bar` to this function. If you want to render the index widget, just
+    /// use `/` or the empty string (leading forward slashes will automatically
+    /// be normalized).
     pub fn widget(
         &self,
         cx: Scope,
@@ -25,41 +28,43 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ) -> View<G> {
         self.__widget(cx, path, props, false)
     }
-    /// An alternative to `.widget()` that delays the rendering of the widget until
-    /// the rest of the page has loaded.
+    /// An alternative to `.widget()` that delays the rendering of the widget
+    /// until the rest of the page has loaded.
     ///
-    /// Normally, a widget will have its state generated at the earliest possible
-    /// opportunity (e.g. if it only uses build state, it will be generated at
-    /// build-time, but one using request state would have to wait until
-    /// request-time) and its contents prerendered with the pages that use it.
-    /// However, sometimes, you may have a particularly 'heavy' widget that involves
-    /// a large amount of state. If you're finding a certain page is loading a
-    /// bit slowly due to such a widget, then you may wish to use `DelayedWidget`
-    /// instead, which will generate state as usual, but, when it comes time to
-    /// actually render the widget in this page, a placeholder will be inserted, and
-    /// the whole widget will only be rendered on the browser-side with an
-    /// asynchronous fetch of the state.
+    /// Normally, a widget will have its state generated at the earliest
+    /// possible opportunity (e.g. if it only uses build state, it will be
+    /// generated at build-time, but one using request state would have to
+    /// wait until request-time) and its contents prerendered with the pages
+    /// that use it. However, sometimes, you may have a particularly 'heavy'
+    /// widget that involves a large amount of state. If you're finding a
+    /// certain page is loading a bit slowly due to such a widget, then you
+    /// may wish to use `DelayedWidget` instead, which will generate state
+    /// as usual, but, when it comes time to actually render the widget in
+    /// this page, a placeholder will be inserted, and the whole widget will
+    /// only be rendered on the browser-side with an asynchronous fetch of
+    /// the state.
     ///
     /// Usually, you won't need to delay a widget, and choosing to use this over
     /// `.widget()` should be based on real-world testing.
     ///
-    /// Note that using other widgets inside a delayed widget will cause those other
-    /// widgets to be delayed in this context. Importantly, a widget that is delayed
-    /// in one page can be non-delayed in another page: think of widgets as little
-    /// modules that are imported into pages. Delaying is just one importing
-    /// strategy, by that logic. In fact, one of the reasons you may wish to delay a
-    /// widget's load is if it has a very large nesting of depdendencies, which
-    /// would slow down server-side processing (although fetching on the
-    /// browser-side will almost always be quite a bit slower). Again, you should
+    /// Note that using other widgets inside a delayed widget will cause those
+    /// other widgets to be delayed in this context. Importantly, a widget
+    /// that is delayed in one page can be non-delayed in another page:
+    /// think of widgets as little modules that are imported into pages.
+    /// Delaying is just one importing strategy, by that logic. In fact, one
+    /// of the reasons you may wish to delay a widget's load is if it has a
+    /// very large nesting of depdendencies, which would slow down
+    /// server-side processing (although fetching on the browser-side will
+    /// almost always be quite a bit slower). Again, you should
     /// base your choices with delaying on empirical data!
     pub fn delayed_widget(&self, cx: Scope, path: &str, props: P) -> View<G> {
         self.__widget(cx, path, props, true)
     }
 
-    /// The internal widget component logic. Note that this ignores scope disposers
-    /// entirely, as all scopes used are children of the given, which is assumed to
-    /// be the page-level scope. As such, widgets will automatically be cleaned up
-    /// with pages.
+    /// The internal widget component logic. Note that this ignores scope
+    /// disposers entirely, as all scopes used are children of the given,
+    /// which is assumed to be the page-level scope. As such, widgets will
+    /// automatically be cleaned up with pages.
     #[allow(unused_variables)]
     fn __widget(&self, cx: Scope, path: &str, props: P, delayed: bool) -> View<G> {
         // Handle leading and trailing slashes
@@ -85,8 +90,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
 
             view
         };
-        // On the browser-side, delayed and non-delayed are the same (it just matters as to
-        // what's been preloaded)
+        // On the browser-side, delayed and non-delayed are the same (it just matters as
+        // to what's been preloaded)
         #[cfg(target_arch = "wasm32")]
         return self.browser_widget(cx, path, props);
     }
@@ -134,14 +139,16 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 was_incremental_match,
                 locale,
             }) => {
-                // We have the capsule we want as `self`, but we also need to run the routing algorithm to
-                // handle incremental matching and localization. Obviously, the router should return the same
-                // capsule as we actually have, otherwise there would be some *seriously* weird stuff going on!
-                // If you're seeing this as a user, my best suggestion is that you might have two templates
-                // that somehow overlap: e.g. `foo/bar` and `gloo/bar`. You might have used `GLOO.widget()`,
-                // but that somehow put out `foo/bar` as the path. This should not be possible, and will, unless
-                // you have seriously modified the router or other internals, indicate a Perseus bug: please
-                // report this!
+                // We have the capsule we want as `self`, but we also need to run the routing
+                // algorithm to handle incremental matching and localization.
+                // Obviously, the router should return the same capsule as we
+                // actually have, otherwise there would be some *seriously* weird stuff going
+                // on! If you're seeing this as a user, my best suggestion is
+                // that you might have two templates that somehow overlap: e.g.
+                // `foo/bar` and `gloo/bar`. You might have used `GLOO.widget()`,
+                // but that somehow put out `foo/bar` as the path. This should not be possible,
+                // and will, unless you have seriously modified the router or
+                // other internals, indicate a Perseus bug: please report this!
                 debug_assert_eq!(entity.get_path(), self.inner.get_path());
 
                 // Declare the dependency relationship so state store eviction works nicely
@@ -162,9 +169,9 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     Err(err) => reactor.error_views.handle_widget(err, cx),
                 }
             }
-            // Widgets are all resolved on the server-side, meaning they are checked then too (be it at
-            // build-time or request-time). If this happpens, the user is rendering an invalid
-            // widget on the browser-side only.
+            // Widgets are all resolved on the server-side, meaning they are checked then too (be it
+            // at build-time or request-time). If this happpens, the user is rendering
+            // an invalid widget on the browser-side only.
             _ => reactor.error_views.handle_widget(
                 ClientInvariantError::BadWidgetRouteMatch {
                     path: (*path).to_string(),
@@ -223,11 +230,12 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                             // The user provided this
                             urlencoding::encode(&path)
                         );
-                        // Since this widget has state built at build-time that will never change, it
-                        // *must* be in the immutable store (only revalidating
-                        // states go into the mutable store, and this would be
-                        // `false` in the map if it revalidated!). The immutable
-                        // store is really just a filesystem API, and we have no choice
+                        // Since this widget has state built at build-time that will never change,
+                        // it *must* be in the immutable store (only
+                        // revalidating states go into the mutable store,
+                        // and this would be `false` in the map if it
+                        // revalidated!). The immutable store is really just
+                        // a filesystem API, and we have no choice
                         // but to block here.
                         let state = match block_on(
                             immutable_store.read(&format!("static/{}.json", path_encoded)),
@@ -242,12 +250,15 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                             Ok(state) => state,
                             Err(err) => {
                                 *render_status.borrow_mut() =
-                                    RenderStatus::Err(ServerError::InvalidPageState { source: err });
+                                    RenderStatus::Err(ServerError::InvalidPageState {
+                                        source: err,
+                                    });
                                 return View::empty();
                             }
                         };
 
-                        // Add this to the list of widget states so they can be written for later use
+                        // Add this to the list of widget states so they can be written for later
+                        // use
                         widget_states.borrow_mut().insert(
                             path.to_string(),
                             (capsule_name.to_string(), state.state.clone()),
@@ -303,17 +314,19 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                                 cx,
                             ) {
                                 Ok(view) => view,
-                                // We'll render any errors to the whole widget, even if they might be
-                                // internal (but they *really* shouldn't be,
-                                // since those should've been handled when trying to fetch
+                                // We'll render any errors to the whole widget, even if they might
+                                // be internal (but they *really*
+                                // shouldn't be, since those
+                                // should've been handled when trying to fetch
                                 // the state, as there's no active syste etc. on the engine-side)
                                 Err(err) => error_views.handle_widget(err, cx),
                             }
                         }
                         // We're to render an error page with the given error data (which will not
                         // impact the rest of the page). Since this whole `Request`
-                        // variant can only happen for initial loads, and since this is a `ServerError`,
-                        // we'll make this take up the widget.
+                        // variant can only happen for initial loads, and since this is a
+                        // `ServerError`, we'll make this take up the
+                        // widget.
                         Err(err_data) => {
                             let err = ClientError::ServerError {
                                 status: err_data.status,
@@ -324,8 +337,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                         }
                     },
                     None => {
-                        // Just add this path to the list of unresolved ones, and it will be resolved in
-                        // time for the next pass
+                        // Just add this path to the list of unresolved ones, and it will be
+                        // resolved in time for the next pass
                         unresolved_widget_accumulator.borrow_mut().push(path);
                         View::empty()
                     }

@@ -35,7 +35,10 @@ impl<G: Html> TemplateInner<G> {
         state: TemplateState,
         cx: Scope<'a>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> {
-        assert!(!self.is_capsule, "tried to render capsule with template logic");
+        assert!(
+            !self.is_capsule,
+            "tried to render capsule with template logic"
+        );
 
         // Only widgets use the preload info
         (self.view)(
@@ -61,7 +64,10 @@ impl<G: Html> TemplateInner<G> {
         cx: Scope,
         translator: &Translator,
     ) -> Result<View<G>, ClientError> {
-        assert!(!self.is_capsule, "tried to render capsule with template logic");
+        assert!(
+            !self.is_capsule,
+            "tried to render capsule with template logic"
+        );
 
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)

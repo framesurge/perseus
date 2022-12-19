@@ -17,9 +17,8 @@ use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
 
 impl<G: Html> TemplateInner<G> {
-
-    // The view functions below are shadowed for widgets, and therefore these definitions only apply to templates,
-    // not capsules!
+    // The view functions below are shadowed for widgets, and therefore these
+    // definitions only apply to templates, not capsules!
 
     /// Sets the template rendering function to use, if the template takes
     /// state. Templates that do not take state should use `.template()`

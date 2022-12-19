@@ -70,8 +70,7 @@ pub(crate) enum RenderMode<G: Html> {
         /// fallible, and the widget component will render an
         /// appropriate error page if necessary.
         #[allow(clippy::type_complexity)]
-        widget_states:
-            Rc<HashMap<PathMaybeWithLocale, Result<TemplateState, ServerErrorData>>>,
+        widget_states: Rc<HashMap<PathMaybeWithLocale, Result<TemplateState, ServerErrorData>>>,
         /// The app's error views.
         error_views: Arc<ErrorViews<G>>,
         /// A list of the paths to widgets that haven't yet been resolved in any

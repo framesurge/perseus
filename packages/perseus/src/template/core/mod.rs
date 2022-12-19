@@ -21,11 +21,7 @@ use super::TemplateFn;
 use crate::template::default_headers;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
-use sycamore::{
-    prelude::create_scope,
-    view::View,
-    web::Html,
-};
+use sycamore::{prelude::create_scope, view::View, web::Html};
 
 /// A single template in an app. Each template is comprised of a Sycamore view,
 /// a state type, and some functions involved with generating that state. Pages

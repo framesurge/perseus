@@ -1,11 +1,21 @@
-use crate::{errors::ClientError, path::PathMaybeWithLocale, reactor::Reactor, state::{AnyFreeze, MakeRx, MakeUnrx, TemplateState, UnreactiveState}};
+use crate::{
+    errors::ClientError,
+    path::PathMaybeWithLocale,
+    reactor::Reactor,
+    state::{AnyFreeze, MakeRx, MakeUnrx, TemplateState, UnreactiveState},
+};
 
 use super::{Entity, PreloadInfo, Template, TemplateInner};
+use serde::{de::DeserializeOwned, Serialize};
 use std::{ops::Deref, sync::Arc};
-use serde::{Serialize, de::DeserializeOwned};
-use sycamore::{prelude::{BoundedScope, Scope, ScopeDisposer, create_child_scope, create_scope}, view::View, web::Html};
+use sycamore::{
+    prelude::{create_child_scope, create_scope, BoundedScope, Scope, ScopeDisposer},
+    view::View,
+    web::Html,
+};
 
-/// The type of functions that are given a state and properties to render a widget.
+/// The type of functions that are given a state and properties to render a
+/// widget.
 pub(crate) type CapsuleFn<G, P> = Box<
     dyn for<'a> Fn(
             Scope<'a>,
@@ -29,7 +39,8 @@ pub(crate) type CapsuleFn<G, P> = Box<
 pub struct Capsule<G: Html, P: Clone + 'static> {
     /// The underlying entity (in this case, a capsule).
     pub(crate) inner: Entity<G>,
-    /// The capsule rendering function, which is a template function that also takes properties.
+    /// The capsule rendering function, which is a template function that also
+    /// takes properties.
     capsule_view: CapsuleFn<G, P>,
     /// A function that returns the fallback view to be rendered between when
     /// the page is ready and when the capsule's state has been fetched.
@@ -83,9 +94,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         template_inner.is_capsule = true;
         CapsuleInner {
             template_inner,
-            capsule_view: Box::new(|_, _, _, _, _| {
-                Ok((View::empty(), create_scope(|_| {})))
-            }),
+            capsule_view: Box::new(|_, _, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
             // This must be manually specified
             fallback: None,
         }
@@ -110,7 +119,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ) -> Result<View<G>, ClientError> {
         // The template state is ignored by widgets, they fetch it themselves
         // asynchronously
-        let (view, _disposer) = (self.capsule_view)(cx, preload_info, TemplateState::empty(), props, path)?;
+        let (view, _disposer) =
+            (self.capsule_view)(cx, preload_info, TemplateState::empty(), props, path)?;
         Ok(view)
     }
     /// Executes the user-given function that renders the capsule on the
@@ -125,7 +135,6 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         props: P,
         cx: Scope,
     ) -> Result<View<G>, ClientError> {
-
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway
@@ -176,18 +185,18 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         Capsule {
             inner: Entity::from(self.template_inner),
             capsule_view: self.capsule_view,
-            fallback: self.fallback
+            fallback: self.fallback,
         }
     }
 
     // --- Shadow `.view()` functions for properties ---
-    // These will set dummy closures for the underlying templates, as capsules maintain
-    // their own separate functions, which can use properties in line with the known
-    // generics. As capsules are themselves used as their own components, these functions
-    // can therefore be accessed.
+    // These will set dummy closures for the underlying templates, as capsules
+    // maintain their own separate functions, which can use properties in line
+    // with the known generics. As capsules are themselves used as their own
+    // components, these functions can therefore be accessed.
 
-    /// Sets the rendering function to use for capsules that take reactive state.
-    /// Capsules that do not take state should use `.view()` instead.
+    /// Sets the rendering function to use for capsules that take reactive
+    /// state. Capsules that do not take state should use `.view()` instead.
     ///
     /// The closure wrapping this performs will automatically handle suspense
     /// state.
@@ -203,9 +212,8 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         I: MakeUnrx + AnyFreeze + Clone,
         I::Unrx: MakeRx<Rx = I> + Serialize + DeserializeOwned + Send + Sync + Clone + 'static,
     {
-        self.template_inner.view = Box::new(|_, _, _, _| {
-            panic!("attempted to call template rendering logic for widget")
-        });
+        self.template_inner.view =
+            Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
         #[cfg(target_arch = "wasm32")]
         let entity_name = self.get_path();
         #[cfg(target_arch = "wasm32")]
@@ -231,16 +239,16 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         );
         self
     }
-    /// Sets the rendering function to use for capsules that take unreactive state.
+    /// Sets the rendering function to use for capsules that take unreactive
+    /// state.
     pub fn view_with_unreactive_state<F, S>(mut self, val: F) -> Self
     where
         F: Fn(Scope, S, P) -> View<G> + Clone + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
-        self.template_inner.view = Box::new(|_, _, _, _| {
-            panic!("attempted to call template rendering logic for widget")
-        });
+        self.template_inner.view =
+            Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
         #[cfg(target_arch = "wasm32")]
         let entity_name = self.get_path();
         #[cfg(target_arch = "wasm32")]
@@ -267,15 +275,14 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         self
     }
 
-    /// Sets the rendering function for capsules that take no state. Capsules that do
-    /// take state should use `.view_with_state()` instead.
+    /// Sets the rendering function for capsules that take no state. Capsules
+    /// that do take state should use `.view_with_state()` instead.
     pub fn view<F>(mut self, val: F) -> Self
     where
         F: Fn(Scope, P) -> View<G> + Send + Sync + 'static,
     {
-        self.template_inner.view = Box::new(|_, _, _, _| {
-            panic!("attempted to call template rendering logic for widget")
-        });
+        self.template_inner.view =
+            Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
         self.capsule_view = Box::new(move |app_cx, _preload_info, _template_state, props, path| {
             let reactor = Reactor::<G>::from_cx(app_cx);
             // Declare that this page/widget will never take any state to enable full
