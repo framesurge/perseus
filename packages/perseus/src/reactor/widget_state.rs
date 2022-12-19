@@ -32,21 +32,21 @@ impl<G: Html> Reactor<G> {
     /// `.get_unreactive_widget_view()` for widgets that use unreactive
     /// state.
     // HRTB explanation: 'a = 'app, but the compiler hates that.
-    pub(crate) fn get_widget_view<'a, S, F>(
+    pub(crate) fn get_widget_view<'a, S, F, P: Clone + 'static>(
         &'a self,
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
         #[cfg(target_arch = "wasm32")] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
+        props: P,
         #[cfg(target_arch = "wasm32")] preload_info: PreloadInfo,
-        template_fn: F,
-        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope) -> View<G> + Send + Sync>,
+        view_fn: F,
+        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
     where
-        // Note: these bounds replicate those for `.template_with_state()`, except the app lifetime is
+        // Note: these bounds replicate those for `.view_with_state()`, except the app lifetime is
         // known
-        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child S::Rx) -> View<G>
-            + Clone
+        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child S::Rx, P) -> View<G>
             + Send
             + Sync
             + 'static,
@@ -59,7 +59,7 @@ impl<G: Html> Reactor<G> {
                 let disposer = create_child_scope(app_cx, |child_cx| {
                     // We go back from the unreactive state type wrapper to the base type (since
                     // it's unreactive)
-                    view = template_fn(child_cx, create_ref(child_cx, intermediate_state));
+                    view = view_fn(child_cx, create_ref(child_cx, intermediate_state), props);
                 });
                 Ok((view, disposer))
             }
@@ -74,11 +74,10 @@ impl<G: Html> Reactor<G> {
                     let disposer = create_child_scope(app_cx, |child_cx| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        view.set((fallback_fn)(child_cx));
+                        view.set((fallback_fn)(child_cx, props.clone()));
                         // Note: this uses `child_cx`, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
-                        let template_fn = template_fn.clone();
                         let capsule_name = capsule_name.clone();
                         spawn_local_scoped(child_cx, async move {
                             // Any errors that occur in here will be converted into proper error
@@ -116,9 +115,10 @@ impl<G: Html> Reactor<G> {
                                         &path,
                                         TemplateState::empty(),
                                     ) {
-                                        Ok(Some(intermediate_state)) => template_fn(
+                                        Ok(Some(intermediate_state)) => view_fn(
                                             child_cx,
                                             create_ref(child_cx, intermediate_state),
+                                            props,
                                         ),
                                         Ok(None) => unreachable!(),
                                         Err(err) => self.error_views.handle_widget(err, child_cx),
@@ -148,18 +148,19 @@ impl<G: Html> Reactor<G> {
     ///
     /// This is intended for use with widgets that use unreactive state. See
     /// `.get_widget_view()` for widgets that use reactive state.
-    pub(crate) fn get_unreactive_widget_view<'a, F, S>(
+    pub(crate) fn get_unreactive_widget_view<'a, F, S, P: Clone + 'static>(
         &'a self,
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
         #[cfg(target_arch = "wasm32")] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
+        props: P,
         #[cfg(target_arch = "wasm32")] preload_info: PreloadInfo,
-        template_fn: F,
-        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope) -> View<G> + Send + Sync>,
+        view_fn: F,
+        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
     where
-        F: Fn(Scope, S) -> View<G> + Clone + Send + Sync + 'static,
+        F: Fn(Scope, S, P) -> View<G> + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
@@ -169,7 +170,7 @@ impl<G: Html> Reactor<G> {
                 let disposer = create_child_scope(app_cx, |child_cx| {
                     // We go back from the unreactive state type wrapper to the base type (since
                     // it's unreactive)
-                    view = template_fn(child_cx, intermediate_state.make_unrx());
+                    view = view_fn(child_cx, intermediate_state.make_unrx(), props);
                 });
                 Ok((view, disposer))
             }
@@ -184,11 +185,10 @@ impl<G: Html> Reactor<G> {
                     let disposer = create_child_scope(app_cx, |child_cx| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        view.set((fallback_fn)(child_cx));
+                        view.set((fallback_fn)(child_cx, props.clone()));
                         // Note: this uses `child_cx`, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
-                        let template_fn = template_fn.clone();
                         let capsule_name = capsule_name.clone();
                         spawn_local_scoped(child_cx, async move {
                             // Any errors that occur in here will be converted into proper error
@@ -227,7 +227,7 @@ impl<G: Html> Reactor<G> {
                                         TemplateState::empty(),
                                     ) {
                                         Ok(Some(intermediate_state)) => {
-                                            template_fn(child_cx, intermediate_state.make_unrx())
+                                            view_fn(child_cx, intermediate_state.make_unrx(), props)
                                         }
                                         Ok(None) => unreachable!(),
                                         Err(err) => self.error_views.handle_widget(err, child_cx),

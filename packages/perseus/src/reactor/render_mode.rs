@@ -4,7 +4,6 @@ use crate::{
     path::*,
     state::TemplateState,
     stores::ImmutableStore,
-    template::Entity,
 };
 use serde_json::Value;
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
@@ -52,8 +51,6 @@ pub(crate) enum RenderMode<G: Html> {
         widget_render_cfg: HashMap<String, String>,
         /// The app's immutable store. (This is cheap to clone.)
         immutable_store: ImmutableStore,
-        /// The app's templates and capsules.
-        entities: HashMap<String, Entity<G>>,
         /// An accumulator of the widget states involved in rendering this
         /// template. We need to be able to collect these to later send
         /// them to clients for hydration.
@@ -74,9 +71,7 @@ pub(crate) enum RenderMode<G: Html> {
         /// appropriate error page if necessary.
         #[allow(clippy::type_complexity)]
         widget_states:
-            Rc<HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>>,
-        /// The app's templates and capsules.
-        entities: HashMap<String, Entity<G>>,
+            Rc<HashMap<PathMaybeWithLocale, Result<TemplateState, ServerErrorData>>>,
         /// The app's error views.
         error_views: Arc<ErrorViews<G>>,
         /// A list of the paths to widgets that haven't yet been resolved in any

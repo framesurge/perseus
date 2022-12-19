@@ -268,6 +268,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             // Delete old build artifacts
+            // TODO Why aren't we also removing the `mutable/` directory here (and elsewhere)?
             delete_artifacts(dir.clone(), "static")?;
             build(dir, build_opts, &tools, &opts)?
         }

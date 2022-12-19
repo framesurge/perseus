@@ -201,10 +201,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Convert the `TemplateState`s into `Value`s
             let final_widget_states = final_widget_states
                 .into_iter()
-                // Ignore the capsule name (needed internally only, we'll `match_route` on the
-                // browser-side anyway). We also need to turn `TemplateState` into
-                // its underlying `Value`.
-                .map(|(k, res)| (k, res.map(|(_, s)| s.state)))
+                // We need to turn `TemplateState` into its underlying `Value`
+                .map(|(k, res)| (k, res.map(|s| s.state)))
                 .collect::<HashMap<_, _>>();
 
             Ok((
@@ -230,13 +228,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     #[allow(clippy::type_complexity)]
     fn render_all<'a>(
         &'a self,
-        // This is a map of widget paths to their states and capsule names, which we'll populate as
+        // This is a map of widget paths to their states, which we'll populate as
         // we go through. That way, we can just run the exact same render over and over
         // again, getting to a new layer each time, since, if a widget finds its state in
         // this, it'll use it. This will be progressively accumulated over many layers.
         widget_states: HashMap<
             PathMaybeWithLocale,
-            Result<(String, TemplateState), ServerErrorData>,
+            Result<TemplateState, ServerErrorData>,
         >,
         path: PathWithoutLocale,
         locale: String,
@@ -250,7 +248,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             'a,
             Result<
                 (
-                    HashMap<PathMaybeWithLocale, Result<(String, TemplateState), ServerErrorData>>,
+                    HashMap<PathMaybeWithLocale, Result<TemplateState, ServerErrorData>>,
                     String,
                 ),
                 ServerError,
@@ -273,8 +271,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // non-build-safe widgets).
         let mode = RenderMode::Request {
             widget_states: widget_states_rc.clone(),
-            // This is a bunch of `Arc`s
-            entities: self.entities.clone(),
             error_views: self.error_views.clone(),
             unresolved_widget_accumulator: unresolved_widget_accumulator.clone(),
         };
@@ -355,9 +351,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                                     status: err_to_status_code(&err),
                                     msg: fmt_err(&err),
                                 })
-                                // And discard the head (it's a widget), adding the capsule name
-                                // instead
-                                .map(|state| (capsule_name, state.state))
+                                // And discard the head (it's a widget)
+                                .map(|state| state.state)
                             }
                             // This is just completely wrong, and implies a corruption, so it's made
                             // a page-level error

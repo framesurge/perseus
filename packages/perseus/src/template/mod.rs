@@ -20,7 +20,6 @@ pub(crate) use default_headers::default_headers;
 pub use capsule::Capsule;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use states::States;
-pub use widget_component::{DelayedWidget, Widget};
 
 use crate::{errors::ClientError, path::PathMaybeWithLocale, state::TemplateState};
 use sycamore::{

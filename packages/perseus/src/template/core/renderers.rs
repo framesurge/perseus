@@ -35,8 +35,10 @@ impl<G: Html> TemplateInner<G> {
         state: TemplateState,
         cx: Scope<'a>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> {
+        assert!(!self.is_capsule, "tried to render capsule with template logic");
+
         // Only widgets use the preload info
-        (self.template)(
+        (self.view)(
             cx,
             PreloadInfo {
                 locale: String::new(),
@@ -45,27 +47,6 @@ impl<G: Html> TemplateInner<G> {
             state,
             path,
         )
-    }
-    /// Executes the user-given function that renders the *widget* on the
-    /// client-side ONLY. This takes in an existing global state. This will
-    /// ignore its internal scope disposer, since the given scope **must**
-    /// be a page-level scope, which will be disposed from the root when the
-    /// page changes, thereby disposing of all the child scopes, like those
-    /// used for widgets.
-    ///
-    /// This should NOT be used to render pages!
-    #[cfg(target_arch = "wasm32")]
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn render_widget_for_template_client(
-        &self,
-        path: PathMaybeWithLocale,
-        cx: Scope,
-        preload_info: PreloadInfo,
-    ) -> Result<View<G>, ClientError> {
-        // The template state is ignored by widgets, they fetch it themselves
-        // asynchronously
-        let (view, _disposer) = (self.template)(cx, preload_info, TemplateState::empty(), path)?;
-        Ok(view)
     }
     /// Executes the user-given function that renders the template on the
     /// server-side ONLY. This automatically initializes an isolated global
@@ -80,6 +61,8 @@ impl<G: Html> TemplateInner<G> {
         cx: Scope,
         translator: &Translator,
     ) -> Result<View<G>, ClientError> {
+        assert!(!self.is_capsule, "tried to render capsule with template logic");
+
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
@@ -87,24 +70,7 @@ impl<G: Html> TemplateInner<G> {
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway
-        let (view, _) = (self.template)(cx, preload_info, state, path)?;
-        Ok(view)
-    }
-    /// Executes the user-given function that renders the capsule on the
-    /// server-side ONLY. This takes the scope from a previous call of
-    /// `.render_for_template_server()`, assuming the reactor has already
-    /// been fully instantiated.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn render_widget_for_template_server(
-        &self,
-        path: PathMaybeWithLocale,
-        state: TemplateState,
-        cx: Scope,
-    ) -> Result<View<G>, ClientError> {
-        // This is used for widget preloading, which doesn't occur on the engine-side
-        let preload_info = PreloadInfo {};
-        // We don't care about the scope disposer, since this scope is unique anyway
-        let (view, _) = (self.template)(cx, preload_info, state, path)?;
+        let (view, _) = (self.view)(cx, preload_info, state, path)?;
         Ok(view)
     }
     /// Executes the user-given function that renders the document `<head>`,

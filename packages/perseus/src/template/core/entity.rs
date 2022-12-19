@@ -12,6 +12,14 @@ use super::TemplateInner;
 ///
 /// You can determine if this is a capsule or not by checking the underlying
 /// `is_capsule` property.
+///
+/// # Capsule specifics
+///
+/// Although this functionally represents either a template or a capsule, there
+/// are some parts of capsule functionality that are only accessible through the
+/// `Capsule` type itself, such as fallback views and properties. This is fine,
+/// however, as capsules are used by calling a component method on them, meaning
+/// the widget rendering process always has access to the capsule itself.
 #[derive(Clone)] // Smart pointers make this cheap
 pub struct Entity<G: Html>(
     // Note: these target-gates can confuse IDEs and make them think there are two properties...

@@ -386,7 +386,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let mode = RenderMode::Build {
                     render_status: render_status.clone(),
                     widget_render_cfg: self.render_cfg.clone(),
-                    entities: self.entities.clone(),
                     immutable_store: self.immutable_store.clone(),
                     widget_states: widget_states.clone(),
                 };

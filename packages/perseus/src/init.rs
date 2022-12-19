@@ -398,25 +398,26 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         self.entities.insert(entity.get_path(), entity);
         self
     }
-    /// Sets all the app's capsules. This takes a vector of capsules.
-    ///
-    /// Usually, it's preferred to run `.capsule()` once for each capsule,
-    /// rather than manually constructing this more inconvenient type.
-    pub fn capsules(mut self, val: Vec<Capsule<G>>) -> Self {
-        for capsule in val.into_iter() {
-            self = self.capsule(capsule);
-        }
-        self
-    }
+    // TODO
+    // /// Sets all the app's capsules. This takes a vector of capsules.
+    // ///
+    // /// Usually, it's preferred to run `.capsule()` once for each capsule,
+    // /// rather than manually constructing this more inconvenient type.
+    // pub fn capsules(mut self, val: Vec<Capsule<G>>) -> Self {
+    //     for capsule in val.into_iter() {
+    //         self = self.capsule(capsule);
+    //     }
+    //     self
+    // }
     /// Adds a single new template to the app (convenience function). This takes
     /// a *function that returns a template* (for internal reasons).
     ///
     /// See [`Capsule`] for further details.
-    pub fn capsule(mut self, val: Capsule<G>) -> Self {
+    pub fn capsule<P: Clone + 'static>(mut self, val: Capsule<G, P>) -> Self {
         let entity = val.inner;
         let path = entity.get_path();
         // Enforce that capsules must have defined fallbacks
-        if entity.fallback.is_none() {
+        if val.fallback.is_none() {
             panic!(
                 "capsule '{}' has no fallback (please register one)",
                 entity.get_path()

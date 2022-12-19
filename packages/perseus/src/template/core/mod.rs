@@ -9,7 +9,7 @@ mod utils;
 mod entity;
 mod state_setters;
 
-use std::{ops::Deref, sync::Arc};
+use std::ops::Deref;
 
 pub(crate) use entity::Entity;
 pub(crate) use utils::*;
@@ -22,7 +22,7 @@ use crate::template::default_headers;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
 use sycamore::{
-    prelude::{create_scope, Scope},
+    prelude::create_scope,
     view::View,
     web::Html,
 };
@@ -74,7 +74,8 @@ pub struct TemplateInner<G: Html> {
     /// return a `Template<SsrNode>`. This takes an `Option<Props>`
     /// because otherwise efficient typing is almost impossible for templates
     /// without any properties (solutions welcome in PRs!).
-    template: TemplateFn<G>,
+    // Public to the crate so capsules can shadow these functions for property support
+    pub(crate) view: TemplateFn<G>,
     /// A function that will be used to populate the document's `<head>` with
     /// metadata such as the title. This will be passed state in
     /// the same way as `template`, but will always be rendered to a string,
@@ -153,15 +154,6 @@ pub struct TemplateInner<G: Html> {
     /// is needed and it hasn't been explicitly allowed, an error will be
     /// returned from the build process.
     pub(crate) can_be_rescheduled: bool,
-    /// A function that returns the fallback view to be rendered between when
-    /// the page is ready and when the capsule's state has been fetched.
-    ///
-    /// Note that this starts as `None`, but, if it's not set, `PerseusApp` will
-    /// panic. So, for later code, this can be assumed to be always `Some`.
-    ///
-    /// This will not be defined for templates, only for capsules.
-    #[allow(clippy::type_complexity)]
-    pub(crate) fallback: Option<Arc<dyn Fn(Scope) -> View<G> + Send + Sync>>,
 }
 impl<G: Html> std::fmt::Debug for Template<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -181,7 +173,7 @@ impl<G: Html> TemplateInner<G> {
         Self {
             path: path.to_string(),
             // Because of the scope disposer return type, this isn't as trivial as an empty function
-            template: Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
+            view: Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(not(target_arch = "wasm32"))]
             head: Box::new(|_, _| Ok(View::empty())),
@@ -205,7 +197,6 @@ impl<G: Html> TemplateInner<G> {
             // There is no mechanism to set this to `true`, except through the `Capsule` struct
             is_capsule: false,
             can_be_rescheduled: false,
-            fallback: None,
         }
     }
     /// Builds a full [`Template`] from this [`TemplateInner`], consuming it in
