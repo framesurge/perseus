@@ -48,7 +48,7 @@ If you want to start working with Perseus right away, run the following commands
 
 ``` shell
 cargo install perseus-cli --version 0.4.0-beta.11
-perseus new my-app --wasm-opt-version version_110 # Temporary due to an upstream issue
+perseus new my-app
 cd my-app/
 perseus serve -w
 ```
