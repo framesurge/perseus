@@ -21,7 +21,7 @@ fn build_paths_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateR
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("build_paths")
+    Template::build("build_paths")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
         .view_with_state(build_paths_page)

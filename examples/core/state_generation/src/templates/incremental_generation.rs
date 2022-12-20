@@ -27,7 +27,7 @@ fn incremental_generation_page<'a, G: Html>(
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("incremental_generation")
+    Template::build("incremental_generation")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
         // This line makes Perseus try to render any given path under the template's root path

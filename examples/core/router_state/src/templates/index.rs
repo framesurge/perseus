@@ -44,5 +44,5 @@ fn router_state_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").view(router_state_page).build()
+    Template::build("index").view(router_state_page).build()
 }

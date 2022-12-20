@@ -15,7 +15,7 @@ fn revalidation_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageState
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("revalidation")
+    Template::build("revalidation")
         .view_with_state(revalidation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
         .revalidate_after("5s")

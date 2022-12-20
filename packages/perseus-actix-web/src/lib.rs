@@ -88,7 +88,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
                 "/.perseus/translations/{locale}",
                 web::get().to(move |http_req: HttpRequest| async move {
                     let locale = http_req.match_info().query("locale");
-                    ApiResponse(turbine.get_translations(&locale).await)
+                    ApiResponse(turbine.get_translations(locale).await)
                 }),
             )
             .route(
@@ -108,7 +108,7 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
                         entity_name,
                         was_incremental_match,
                         http_req
-                    ).await.into())
+                    ).await)
                 }),
             );
         // --- Static directory and alias handlers

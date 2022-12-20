@@ -59,7 +59,7 @@ async fn get_build_paths() -> BuildPaths {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index")
+    Template::build("index")
         .view_with_state(index_page)
         .build_state_fn(get_build_state)
         .build_paths_fn(get_build_paths)

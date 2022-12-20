@@ -50,5 +50,5 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").view(index_view).build()
+    Template::build("index").view(index_view).build()
 }

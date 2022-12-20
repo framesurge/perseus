@@ -136,7 +136,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
 
 pub fn get_template<G: Html>() -> Template<G> {
     // Note that suspense handlers are registered through the state, not here
-    Template::new("index")
+    Template::build("index")
         .view_with_state(index_page)
         .build_state_fn(get_build_state)
         .build()

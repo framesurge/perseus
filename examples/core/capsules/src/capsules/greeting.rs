@@ -36,7 +36,7 @@ pub struct GreetingProps {
 }
 
 pub fn get_capsule<G: Html>() -> Capsule<G, GreetingProps> {
-    Capsule::new(Template::new("greeting").build_state_fn(get_build_state))
+    Capsule::build(Template::build("greeting").build_state_fn(get_build_state))
         // This method is on `CapsuleInner`, and must be called before the others...
         .empty_fallback()
         .view_with_state(greeting_capsule)

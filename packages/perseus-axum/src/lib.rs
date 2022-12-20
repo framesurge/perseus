@@ -72,7 +72,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         )
         .route(
             "/.perseus/snippets/*path",
-            get_service(ServeDir::new(opts.snippets.clone())).handle_error(handle_fs_error),
+            get_service(ServeDir::new(opts.snippets)).handle_error(handle_fs_error),
         );
     // --- Translation and subsequent load handlers ---
     let mut router = router
@@ -110,8 +110,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
                                 was_incremental_match,
                                 req,
                             )
-                            .await
-                            .into(),
+                            .await,
                     )
                 },
             ),

@@ -22,7 +22,7 @@ fn revalidation_and_incremental_generation_page<'a, G: Html>(
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("revalidation_and_incremental_generation")
+    Template::build("revalidation_and_incremental_generation")
         .view_with_state(revalidation_and_incremental_generation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
         .revalidate_after(Duration::new(5, 0))

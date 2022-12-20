@@ -236,7 +236,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .get_initial_load_for_path(
                         path,
                         &translator,
-                        &entity,
+                        entity,
                         was_incremental_match,
                         req,
                     )

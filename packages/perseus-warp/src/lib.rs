@@ -98,8 +98,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let wasm_js_bundle = warp::path!(".perseus" / "bundle.wasm.js")
         .and(warp::path::end())
         .and(warp::fs::file(opts.wasm_js_bundle.clone()));
-    let snippets =
-        warp::path!(".perseus" / "snippets" / ..).and(warp::fs::dir(opts.snippets.clone()));
+    let snippets = warp::path!(".perseus" / "snippets" / ..).and(warp::fs::dir(opts.snippets));
 
     // --- Translation and subsequent load handlers ---
     let translations =
@@ -127,8 +126,7 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
                             was_incremental_match,
                             http_req,
                         )
-                        .await
-                        .into(),
+                        .await,
                 )
             },
         );

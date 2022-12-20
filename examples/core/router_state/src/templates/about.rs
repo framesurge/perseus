@@ -15,5 +15,5 @@ fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("about").view(about_page).head(head).build()
+    Template::build("about").view(about_page).head(head).build()
 }

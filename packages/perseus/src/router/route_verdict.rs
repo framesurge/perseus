@@ -72,10 +72,10 @@ impl RouteInfo {
     /// This will panic if the entity name held by `Self` is not in the given
     /// map, which is only a concern if you `Self` didn't come from
     /// `match_route`.
-    pub(crate) fn into_full<'a, G: Html>(
+    pub(crate) fn into_full<G: Html>(
         self,
-        entities: &'a HashMap<String, Entity<G>>,
-    ) -> FullRouteInfo<'a, G> {
+        entities: &HashMap<String, Entity<G>>,
+    ) -> FullRouteInfo<G> {
         let entity = entities.get(&self.entity_name).expect("conversion to full route info failed, given entities did not contain given entity name");
         FullRouteInfo {
             path: self.path,
@@ -118,10 +118,10 @@ impl RouteVerdict {
     /// This will panic if the entity name held by `Self` is not in the given
     /// map, which is only a concern if you `Self` didn't come from
     /// `match_route` (this only applies when `Self` is `Self::Found(..)`).
-    pub(crate) fn into_full<'a, G: Html>(
+    pub(crate) fn into_full<G: Html>(
         self,
-        entities: &'a HashMap<String, Entity<G>>,
-    ) -> FullRouteVerdict<'a, G> {
+        entities: &HashMap<String, Entity<G>>,
+    ) -> FullRouteVerdict<G> {
         match self {
             Self::Found(info) => FullRouteVerdict::Found(info.into_full(entities)),
             Self::NotFound { locale } => FullRouteVerdict::NotFound { locale },

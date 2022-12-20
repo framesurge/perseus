@@ -15,7 +15,7 @@ fn amalgamation_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageState
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("amalgamation")
+    Template::build("amalgamation")
         // We'll generate some state at build time and some more at request time
         .build_state_fn(get_build_state)
         .request_state_fn(get_request_state)

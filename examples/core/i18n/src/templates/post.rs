@@ -24,7 +24,7 @@ fn post_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, props: &'a PostPageStateRx) 
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("post")
+    Template::build("post")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
         .view_with_state(post_page)

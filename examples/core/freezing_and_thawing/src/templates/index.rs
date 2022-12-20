@@ -49,7 +49,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index")
+    Template::build("index")
         .build_state_fn(get_build_state)
         .view_with_state(index_page)
         .build()

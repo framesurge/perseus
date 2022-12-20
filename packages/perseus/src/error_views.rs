@@ -80,8 +80,8 @@ impl<G: Html> ErrorViews<G> {
             + Clone
             + 'static,
     ) -> Self {
+        #[allow(clippy::redundant_clone)]
         Self {
-            #[allow(clippy::redundant_clone)]
             handler: Box::new(handler.clone()),
             // Sensible defaults are fine here
             subsequent_load_determinant: Box::new(|err| {

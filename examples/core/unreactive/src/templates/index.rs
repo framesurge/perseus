@@ -25,7 +25,7 @@ fn index_page<G: Html>(cx: Scope, state: IndexPageState) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index")
+    Template::build("index")
         .build_state_fn(get_build_state)
         .view_with_unreactive_state(index_page)
         .head_with_state(head)

@@ -48,7 +48,7 @@ impl<G: Html> Template<G> {
     /// it would result in a blank screen. You can call methods like
     /// `.view()` on this, and you should eventually call `.build()` to turn
     /// it into a full template.
-    pub fn new(path: &str) -> TemplateInner<G> {
+    pub fn build(path: &str) -> TemplateInner<G> {
         TemplateInner::new(path)
     }
 }
@@ -162,7 +162,7 @@ impl<G: Html> std::fmt::Debug for TemplateInner<G> {
 }
 impl<G: Html> TemplateInner<G> {
     /// An internal creator for new inner templates. This is wrapped by
-    /// `Template::new` and `Capsule::new`.
+    /// `Template::build` and `Capsule::build`.
     fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),

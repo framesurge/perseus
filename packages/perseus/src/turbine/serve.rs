@@ -344,7 +344,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                                     route_info.was_incremental_match,
                                     clone_req(req),
                                     // We do happen to actually have this from the routing
-                                    Some(&route_info.entity),
+                                    Some(route_info.entity),
                                     Some(global_state),
                                 )
                                 .await

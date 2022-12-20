@@ -90,11 +90,12 @@ impl<G: Html, P: Clone + 'static> std::fmt::Debug for CapsuleInner<G, P> {
 }
 
 impl<G: Html, P: Clone + 'static> Capsule<G, P> {
-    /// Creates a new [`Capsule`] from the given [`TemplateInner`]. In Perseus,
-    /// capsules are really just special kinds of pages, so you create them by
-    /// first creating the underlying template. To make sure you get a capsule
-    /// instead of a template, you just don't call `.build()` on the template,
-    /// instead passing the [`TemplateInner`] to this function.
+    /// Creates a new [`CapsuleInner`] from the given [`TemplateInner`]. In
+    /// Perseus, capsules are really just special kinds of pages, so you
+    /// create them by first creating the underlying template. To make sure
+    /// you get a capsule instead of a template, you just don't call
+    /// `.build()` on the template, instead passing the [`TemplateInner`] to
+    /// this function.
     ///
     /// **Warning:** [`TemplateInner`] has methods like `.view()` and
     /// `.view_with_state()` for setting the views of your templates, but you
@@ -108,7 +109,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ///
     /// You will need to call `.build()` when you're done with this to get a
     /// full [`Capsule`].
-    pub fn new(mut template_inner: TemplateInner<G>) -> CapsuleInner<G, P> {
+    pub fn build(mut template_inner: TemplateInner<G>) -> CapsuleInner<G, P> {
         template_inner.is_capsule = true;
         // Wipe the template's view function to make sure the errors aren't obscenely
         // weird

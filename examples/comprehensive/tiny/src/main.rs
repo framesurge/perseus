@@ -5,7 +5,7 @@ use sycamore::prelude::*;
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(
-            Template::new("index")
+            Template::build("index")
                 .view(|cx| {
                     view! { cx,
                         p { "Hello World!" }

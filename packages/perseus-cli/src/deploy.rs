@@ -121,13 +121,13 @@ fn deploy_full(
             }
         }
         // Create the `dist/` directory in the output directory
-        if let Err(err) = fs::create_dir(&output_path.join("dist")) {
+        if let Err(err) = fs::create_dir(output_path.join("dist")) {
             return Err(DeployError::CreateDistDirFailed { source: err }.into());
         }
         // Copy in the different parts of the `dist/` directory that we need (they all
         // have to exist)
         let from = dir.join("dist/static");
-        if let Err(err) = copy_dir(&from, &output_path.join("dist"), &CopyOptions::new()) {
+        if let Err(err) = copy_dir(&from, output_path.join("dist"), &CopyOptions::new()) {
             return Err(DeployError::MoveDirFailed {
                 to: output,
                 from: from.to_str().map(|s| s.to_string()).unwrap(),
@@ -136,7 +136,7 @@ fn deploy_full(
             .into());
         }
         let from = dir.join("dist/pkg"); // Note: this handles snippets and the like
-        if let Err(err) = copy_dir(&from, &output_path.join("dist"), &CopyOptions::new()) {
+        if let Err(err) = copy_dir(&from, output_path.join("dist"), &CopyOptions::new()) {
             return Err(DeployError::MoveDirFailed {
                 to: output,
                 from: from.to_str().map(|s| s.to_string()).unwrap(),
@@ -145,7 +145,7 @@ fn deploy_full(
             .into());
         }
         let from = dir.join("dist/render_conf.json");
-        if let Err(err) = fs::copy(&from, &output_path.join("dist/render_conf.json")) {
+        if let Err(err) = fs::copy(&from, output_path.join("dist/render_conf.json")) {
             return Err(DeployError::MoveAssetFailed {
                 to: output,
                 from: from.to_str().map(|s| s.to_string()).unwrap(),
