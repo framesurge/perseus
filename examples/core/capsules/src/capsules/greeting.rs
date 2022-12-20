@@ -1,7 +1,7 @@
+use lazy_static::lazy_static;
 use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
-use lazy_static::lazy_static;
 
 #[cfg(target_arch = "wasm32")]
 lazy_static! {
@@ -12,7 +12,11 @@ lazy_static! {
     pub static ref GREETING: Capsule<SsrNode, GreetingProps> = get_capsule();
 }
 
-fn greeting_capsule<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b GreetingStateRx, props: GreetingProps) -> View<G> {
+fn greeting_capsule<'a, 'b, G: Html>(
+    cx: BoundedScope<'a, 'b>,
+    state: &'b GreetingStateRx,
+    props: GreetingProps,
+) -> View<G> {
     view! { cx,
         p(style = format!("color: {};", props.color)) { (state.greeting.get()) }
     }
@@ -30,10 +34,7 @@ pub struct GreetingProps {
 }
 
 pub fn get_capsule<G: Html>() -> Capsule<G, GreetingProps> {
-    Capsule::new(
-        Template::new("greeting")
-            .build_state_fn(get_build_state)
-    )
+    Capsule::new(Template::new("greeting").build_state_fn(get_build_state))
         // This method is on `CapsuleInner`, and must be called before the others...
         .empty_fallback()
         .view_with_state(greeting_capsule)

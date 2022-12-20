@@ -17,7 +17,17 @@ mod tinker;
 
 pub use server::{ApiResponse, SubsequentLoadQueryParams};
 
-use crate::{error_views::ErrorViews, errors::*, i18n::{Locales, TranslationsManager}, init::{PerseusAppBase, Tm}, plugins::Plugins, server::HtmlShell, state::{GlobalStateCreator, TemplateState}, stores::{ImmutableStore, MutableStore}, template::Entity};
+use crate::{
+    error_views::ErrorViews,
+    errors::*,
+    i18n::{Locales, TranslationsManager},
+    init::{PerseusAppBase, Tm},
+    plugins::Plugins,
+    server::HtmlShell,
+    state::{GlobalStateCreator, TemplateState},
+    stores::{ImmutableStore, MutableStore},
+    template::Entity,
+};
 use futures::executor::block_on;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use sycamore::web::SsrNode;

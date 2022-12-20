@@ -16,9 +16,7 @@ use super::TemplateInner;
 /// `Capsule` type itself, such as fallback views and properties. This is fine,
 /// however, as capsules are used by calling a component method on them, meaning
 /// the widget rendering process always has access to the capsule itself.
-pub struct Entity<G: Html>(
-    TemplateInner<G>
-);
+pub struct Entity<G: Html>(TemplateInner<G>);
 
 impl<G: Html> From<TemplateInner<G>> for Entity<G> {
     fn from(val: TemplateInner<G>) -> Self {

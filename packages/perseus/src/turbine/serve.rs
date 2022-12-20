@@ -182,7 +182,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     state: page_state.state.state,
                     widget_states: widget_states
                         .into_iter()
-                        // Discard the capsule names and create results (to match with the possibility of request-time failure)
+                        // Discard the capsule names and create results (to match with the
+                        // possibility of request-time failure)
                         .map(|(k, (_, v))| (k, Ok(v)))
                         .collect(),
                 },

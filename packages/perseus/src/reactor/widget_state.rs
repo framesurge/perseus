@@ -2,7 +2,12 @@
 use std::sync::Arc;
 
 use super::Reactor;
-use crate::{error_views::ServerErrorData, errors::{ClientError, ClientInvariantError}, path::*, state::{AnyFreeze, MakeRx, MakeUnrx, PssContains, TemplateState, UnreactiveState}};
+use crate::{
+    error_views::ServerErrorData,
+    errors::{ClientError, ClientInvariantError},
+    path::*,
+    state::{AnyFreeze, MakeRx, MakeUnrx, PssContains, TemplateState, UnreactiveState},
+};
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::{
     prelude::{create_child_scope, create_ref, BoundedScope, Scope, ScopeDisposer},
@@ -279,7 +284,8 @@ impl<G: Html> Reactor<G> {
                     // Register an empty head
                     self.state_store.add_head(url, String::new(), true);
                     // And reactivize the state for registration
-                    let typed_state = TemplateState::from_value(page_data.state).change_type::<Result<S, ServerErrorData>>();
+                    let typed_state = TemplateState::from_value(page_data.state)
+                        .change_type::<Result<S, ServerErrorData>>();
                     // This attempts a deserialization from a `Value`, which could fail
                     let unrx_res = typed_state
                         .into_concrete()
@@ -291,9 +297,13 @@ impl<G: Html> Reactor<G> {
                             self.state_store.add_state(url, rx.clone(), false)?;
 
                             Ok(Some(rx))
-                        },
-                        // This would occur if there were an error in the widget that were transmitted to us
-                        Err(ServerErrorData { status, msg }) => Err(ClientError::ServerError { status, message: msg }),
+                        }
+                        // This would occur if there were an error in the widget that were
+                        // transmitted to us
+                        Err(ServerErrorData { status, msg }) => Err(ClientError::ServerError {
+                            status,
+                            message: msg,
+                        }),
                     }
                 }
                 // We need to fetch the state from the server, which will require

@@ -69,21 +69,25 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// automatically be cleaned up with pages.
     ///
     /// # Node Types
-    /// This method is implemented on the `Capsule`, which is already associated with
-    /// a node type, however, in order for this to be usable with lazy statics, which
-    /// cannot have type parameters, one must create a lazy static for the engine-side
-    /// using `SsrNode`, and another for the browser-side using `DomNode`/`HydrateNode`
-    /// (through `BrowserNodeType`). However, since Sycamore is unaware of these target-
-    /// gated distinctions, it will cause Rust to believe the types may be out of sync.
-    /// Hence, this function uses a shadow parameter `H` with the same bounds as `G`,
-    /// and confirms that the two are equal, then performing a low-cost byte-level copy
-    /// and transmutation to assert the types as equal for the compiler.
+    /// This method is implemented on the `Capsule`, which is already associated
+    /// with a node type, however, in order for this to be usable with lazy
+    /// statics, which cannot have type parameters, one must create a lazy
+    /// static for the engine-side using `SsrNode`, and another for the
+    /// browser-side using `DomNode`/`HydrateNode`
+    /// (through `BrowserNodeType`). However, since Sycamore is unaware of these
+    /// target- gated distinctions, it will cause Rust to believe the types
+    /// may be out of sync. Hence, this function uses a shadow parameter `H`
+    /// with the same bounds as `G`, and confirms that the two are equal,
+    /// then performing a low-cost byte-level copy and transmutation to
+    /// assert the types as equal for the compiler.
     ///
-    /// As a result, it is impossible to render widgets to a string in the browser.
+    /// As a result, it is impossible to render widgets to a string in the
+    /// browser.
     ///
-    /// The `transmute_copy` performed is considered cheap because it either copies `&self`,
-    /// or `&Arc<ErrorView<G>>`, both of which use indirection internally, meaning only pointers
-    /// are every copied. This stands in contrast with the approach of copying entire `View`s,
+    /// The `transmute_copy` performed is considered cheap because it either
+    /// copies `&self`, or `&Arc<ErrorView<G>>`, both of which use
+    /// indirection internally, meaning only pointers are every copied. This
+    /// stands in contrast with the approach of copying entire `View`s,
     /// which leads to worse performance as the compexity of the views grows.
     #[allow(unused_variables)]
     fn __widget<H: Html>(&self, cx: Scope, path: &str, props: P, delayed: bool) -> View<H> {
@@ -336,7 +340,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 unresolved_widget_accumulator,
             } => {
                 // SAFETY: We asserted above that `G == H`.
-                let error_views: &Arc<ErrorViews<H>> = unsafe { std::mem::transmute_copy(&error_views) };
+                let error_views: &Arc<ErrorViews<H>> =
+                    unsafe { std::mem::transmute_copy(&error_views) };
                 // This won't panic, because the reactor has been fully instantiated with a
                 // translator on the engine-side (unless we're in an error page,
                 // which is totally invalid)
@@ -349,7 +354,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                         // There were no problems with getting the state
                         Ok(state) => {
                             // SAFETY: We asserted above that `G == H`.
-                            let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
+                            let self_copy: &Capsule<H, P> =
+                                unsafe { std::mem::transmute_copy(&self) };
                             // Use that to render the widget for the server-side (this should *not*
                             // create a new reactor)
                             match self_copy.render_widget_for_template_server(

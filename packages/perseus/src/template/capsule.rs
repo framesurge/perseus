@@ -91,22 +91,21 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ///
     /// **Warning:** [`TemplateInner`] has methods like `.view()` and
     /// `.view_with_state()` for setting the views of your templates, but you
-    /// shouldn't use those when you're building a capsule, because those functions
-    /// won't let you use *properties* that can be passed from pages that use your
-    /// capsule. Instead, construct a [`TemplateInner`] that has no views, and
-    /// then use the `.view()` etc. functions on [`CapsuleInner`] instead.
-    /// (Unfortunately, dereferncing doesn't work with the builder pattern,
-    /// so this is the best we can do in Rust right now.)
+    /// shouldn't use those when you're building a capsule, because those
+    /// functions won't let you use *properties* that can be passed from
+    /// pages that use your capsule. Instead, construct a [`TemplateInner`]
+    /// that has no views, and then use the `.view()` etc. functions on
+    /// [`CapsuleInner`] instead. (Unfortunately, dereferncing doesn't work
+    /// with the builder pattern, so this is the best we can do in Rust
+    /// right now.)
     ///
-    /// You will need to call `.build()` when you're done with this to get a full
-    /// [`Capsule`].
+    /// You will need to call `.build()` when you're done with this to get a
+    /// full [`Capsule`].
     pub fn new(mut template_inner: TemplateInner<G>) -> CapsuleInner<G, P> {
         template_inner.is_capsule = true;
         // Wipe the template's view function to make sure the errors aren't obscenely
         // weird
-        template_inner.view = Box::new(|_, _, _, _| {
-            Ok((View::empty(), create_scope(|_| {})))
-        });
+        template_inner.view = Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {}))));
         CapsuleInner {
             template_inner,
             capsule_view: Box::new(|_, _, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
@@ -135,13 +134,17 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ) -> Result<View<G>, ClientError> {
         // The template state is ignored by widgets, they fetch it themselves
         // asynchronously
-        let (view, _disposer) =
-            (self.capsule_view)(cx, preload_info, TemplateState::empty(), props, path.clone())?;
-        // The widget will have been registered in the state store, so declare the dependency
+        let (view, _disposer) = (self.capsule_view)(
+            cx,
+            preload_info,
+            TemplateState::empty(),
+            props,
+            path.clone(),
+        )?;
+        // The widget will have been registered in the state store, so declare the
+        // dependency
         let reactor = Reactor::<G>::from_cx(cx);
-        reactor
-            .state_store
-            .declare_dependency(&path, caller_path);
+        reactor.state_store.declare_dependency(&path, caller_path);
         Ok(view)
     }
     /// Executes the user-given function that renders the capsule on the

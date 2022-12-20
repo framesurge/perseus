@@ -1,6 +1,6 @@
+use crate::capsules::greeting::{GreetingProps, GREETING};
 use perseus::prelude::*;
 use sycamore::prelude::*;
-use crate::capsules::greeting::{GREETING, GreetingProps};
 
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,

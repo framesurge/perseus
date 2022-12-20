@@ -88,8 +88,8 @@ pub(crate) fn match_route<G: Html>(
                     locale: locale.to_string(),
                     // This will be used in asset fetching from the server
                     path: path_without_locale,
-                    // The user can get the full entity again if they want to, we just use it to make
-                    // sure the path exists
+                    // The user can get the full entity again if they want to, we just use it to
+                    // make sure the path exists
                     entity_name: entity.get_path(),
                     was_incremental_match,
                 }),

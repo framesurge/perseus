@@ -210,9 +210,11 @@ impl<G: Html> TemplateInner<G> {
 
 // The engine needs to know whether or not to use hydration, this is how we pass
 // those feature settings through
-/// An alias for `DomNode` or `HydrateNode`, depending on the feature flags enabled.
+/// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
+/// enabled.
 #[cfg(all(not(feature = "hydrate"), target_arch = "wasm32"))]
 pub type BrowserNodeType = sycamore::prelude::DomNode;
-/// An alias for `DomNode` or `HydrateNode`, depending on the feature flags enabled.
+/// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
+/// enabled.
 #[cfg(all(feature = "hydrate", target_arch = "wasm32"))]
 pub type BrowserNodeType = sycamore::prelude::HydrateNode;

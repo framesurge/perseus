@@ -49,8 +49,8 @@ pub enum FullRouteVerdict<'a, G: Html> {
 /// client-side translations manager, allows the initialization of the app shell
 /// and the rendering of a page.
 ///
-/// Unlike [`FullRouteInfo`], this does not store the actual template being used,
-/// instead it only stores its name, making it much easier to store.
+/// Unlike [`FullRouteInfo`], this does not store the actual template being
+/// used, instead it only stores its name, making it much easier to store.
 #[derive(Clone)]
 pub struct RouteInfo {
     /// The actual path of the route. This does *not* include the locale!
@@ -69,9 +69,13 @@ impl RouteInfo {
     /// Converts this [`RouteInfo`] into a [`FullRouteInfo`].
     ///
     /// # Panics
-    /// This will panic if the entity name held by `Self` is not in the given map,
-    /// which is only a concern if you `Self` didn't come from `match_route`.
-    pub(crate) fn into_full<'a, G: Html>(self, entities: &'a HashMap<String, Entity<G>>) -> FullRouteInfo<'a, G> {
+    /// This will panic if the entity name held by `Self` is not in the given
+    /// map, which is only a concern if you `Self` didn't come from
+    /// `match_route`.
+    pub(crate) fn into_full<'a, G: Html>(
+        self,
+        entities: &'a HashMap<String, Entity<G>>,
+    ) -> FullRouteInfo<'a, G> {
         let entity = entities.get(&self.entity_name).expect("conversion to full route info failed, given entities did not contain given entity name");
         FullRouteInfo {
             path: self.path,
@@ -84,8 +88,8 @@ impl RouteInfo {
 
 /// The possible outcomes of matching a route in an app.
 ///
-/// Unlike [`FullRouteVerdict`], this does not store the actual template being used,
-/// instead it only stores its name, making it much easier to store.
+/// Unlike [`FullRouteVerdict`], this does not store the actual template being
+/// used, instead it only stores its name, making it much easier to store.
 #[derive(Clone)]
 pub enum RouteVerdict {
     /// The given route was found, and route information is attached.
@@ -111,10 +115,13 @@ impl RouteVerdict {
     /// Converts this [`RouteVerdict`] into a [`FullRouteVerdict`].
     ///
     /// # Panics
-    /// This will panic if the entity name held by `Self` is not in the given map,
-    /// which is only a concern if you `Self` didn't come from `match_route` (this only
-    /// applies when `Self` is `Self::Found(..)`).
-    pub(crate) fn into_full<'a, G: Html>(self, entities: &'a HashMap<String, Entity<G>>) -> FullRouteVerdict<'a, G> {
+    /// This will panic if the entity name held by `Self` is not in the given
+    /// map, which is only a concern if you `Self` didn't come from
+    /// `match_route` (this only applies when `Self` is `Self::Found(..)`).
+    pub(crate) fn into_full<'a, G: Html>(
+        self,
+        entities: &'a HashMap<String, Entity<G>>,
+    ) -> FullRouteVerdict<'a, G> {
         match self {
             Self::Found(info) => FullRouteVerdict::Found(info.into_full(entities)),
             Self::NotFound { locale } => FullRouteVerdict::NotFound { locale },

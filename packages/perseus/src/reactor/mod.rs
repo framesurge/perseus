@@ -21,7 +21,7 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
 #[cfg(target_arch = "wasm32")]
-use crate::template::{Entity, BrowserNodeType};
+use crate::template::{BrowserNodeType, Entity};
 use crate::{
     i18n::Translator,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
