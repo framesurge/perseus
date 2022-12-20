@@ -11,7 +11,6 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         wait_for_checkpoint!("initial_state_present", 0, c);
         // There should be a heading with the slug
         let heading = c.find(Locator::Css("h1")).await?.text().await?;
-        dbg!(&heading);
         assert!(heading.contains(&format!("Path: {}", page)));
         // The helper state should be the same on every page
         let text = c.find(Locator::Css("p")).await?.text().await?;

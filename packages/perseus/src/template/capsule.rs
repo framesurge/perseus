@@ -128,6 +128,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     pub(crate) fn render_widget_for_template_client(
         &self,
         path: PathMaybeWithLocale,
+        caller_path: &PathMaybeWithLocale,
         props: P,
         cx: Scope,
         preload_info: PreloadInfo,
@@ -135,7 +136,12 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         // The template state is ignored by widgets, they fetch it themselves
         // asynchronously
         let (view, _disposer) =
-            (self.capsule_view)(cx, preload_info, TemplateState::empty(), props, path)?;
+            (self.capsule_view)(cx, preload_info, TemplateState::empty(), props, path.clone())?;
+        // The widget will have been registered in the state store, so declare the dependency
+        let reactor = Reactor::<G>::from_cx(cx);
+        reactor
+            .state_store
+            .declare_dependency(&path, caller_path);
         Ok(view)
     }
     /// Executes the user-given function that renders the capsule on the

@@ -135,8 +135,9 @@ impl<G: Html> Reactor<G> {
                             return Err(ClientInvariantError::WidgetStates.into())
                         }
                     };
-                for (widget_path, state) in widget_states.into_iter() {
-                    self.state_store.add_initial_widget(widget_path, state);
+                for (widget_path, state_res) in widget_states.into_iter() {
+                    // NOTE: `state_res` could be `ServerErrorData`!
+                    self.state_store.add_initial_widget(widget_path, state_res);
                 }
 
                 // Render the actual template to the root (done imperatively due to child

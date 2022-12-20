@@ -186,15 +186,11 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 // other internals, indicate a Perseus bug: please report this!
                 debug_assert_eq!(entity.get_path(), self.inner.get_path());
 
-                // Declare the dependency relationship so state store eviction works nicely
-                reactor
-                    .state_store
-                    .declare_dependency(&full_path, &caller_path);
-
                 // SAFETY: We asserted that `G == H` above.
                 let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
                 match self_copy.render_widget_for_template_client(
                     full_path,
+                    &caller_path,
                     props,
                     cx,
                     PreloadInfo {
