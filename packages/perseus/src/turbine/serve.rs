@@ -169,7 +169,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .await?
             };
             let widget_states = match serde_json::from_str::<
-                HashMap<PathMaybeWithLocale, Result<Value, ServerErrorData>>,
+                HashMap<PathMaybeWithLocale, (String, Value)>,
             >(&widget_states)
             {
                 Ok(widget_states) => widget_states,
@@ -180,7 +180,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     content: prerendered_fragment,
                     head: page_state.head,
                     state: page_state.state.state,
-                    widget_states,
+                    widget_states: widget_states
+                        .into_iter()
+                        // Discard the capsule names and create results (to match with the possibility of request-time failure)
+                        .map(|(k, (_, v))| (k, Ok(v)))
+                        .collect(),
                 },
                 global_state,
             ))
