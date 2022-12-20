@@ -123,8 +123,6 @@ pub mod prelude {
     pub use crate::init::*;
     pub use crate::reactor::Reactor;
     pub use crate::state::{BuildPaths, RxResult, RxResultRx, SerdeInfallible, StateGeneratorInfo};
-    #[cfg(target_arch = "wasm32")]
-    pub use crate::template::BrowserNodeType;
     pub use crate::template::{Capsule, Template};
     pub use sycamore::web::Html;
 
@@ -139,4 +137,32 @@ pub mod prelude {
     };
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};
+
+    /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
+    /// `hydrate` feature flag and compilation target.
+    ///
+    /// You **should not** use this in your return types (e.g.
+    /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
+    /// This is intended for `lazy_static!`s and the like, for capsules. See
+    /// the book and capsule examples for further details.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub type PerseusNodeType = sycamore::web::SsrNode;
+    /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
+    /// `hydrate` feature flag and compilation target.
+    ///
+    /// You **should not** use this in your return types (e.g.
+    /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
+    /// This is intended for `lazy_static!`s and the like, for capsules. See
+    /// the book and capsule examples for further details.
+    #[cfg(all(target_arch = "wasm32", not(feature = "hydrate")))]
+    pub type PerseusNodeType = sycamore::web::DomNode;
+    /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
+    /// `hydrate` feature flag and compilation target.
+    ///
+    /// You **should not** use this in your return types (e.g.
+    /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
+    /// This is intended for `lazy_static!`s and the like, for capsules. See
+    /// the book and capsule examples for further details.
+    #[cfg(all(target_arch = "wasm32", feature = "hydrate"))]
+    pub type PerseusNodeType = sycamore::web::HydrateNode;
 }

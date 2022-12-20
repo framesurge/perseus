@@ -3,15 +3,11 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-// TODO Just have a `PerseusNodeType` that resolves to `SsrNode` too when
-// needed, then this all gets so much simpler.
-#[cfg(target_arch = "wasm32")]
 lazy_static! {
-    pub static ref GREETING: Capsule<BrowserNodeType, GreetingProps> = get_capsule();
-}
-#[cfg(not(target_arch = "wasm32"))]
-lazy_static! {
-    pub static ref GREETING: Capsule<SsrNode, GreetingProps> = get_capsule();
+    // This `PerseusNodeType` alias will resolve to `SsrNode`/`DomNode`/`HydrateNode` automatically
+    // as needed. This is needed because `lazy_static!` doesn't support generics, like `G: Html`.
+    // Perseus can bridge the gap internally with type coercions, so this "just works"!
+    pub static ref GREETING: Capsule<PerseusNodeType, GreetingProps> = get_capsule();
 }
 
 fn greeting_capsule<'a, G: Html>(

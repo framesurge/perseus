@@ -26,7 +26,7 @@ use crate::{
     server::HtmlShell,
     state::{GlobalStateCreator, TemplateState},
     stores::{ImmutableStore, MutableStore},
-    template::Entity,
+    template::EntityMap,
 };
 use futures::executor::block_on;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
@@ -36,7 +36,7 @@ use sycamore::web::SsrNode;
 #[derive(Debug)]
 pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// All the templates and capsules in the app.
-    entities: HashMap<String, Entity<SsrNode>>,
+    entities: EntityMap<SsrNode>,
     /// The app's error views.
     error_views: Arc<ErrorViews<SsrNode>>,
     /// The app's locales data.

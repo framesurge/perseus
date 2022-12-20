@@ -11,7 +11,7 @@ mod state_setters;
 
 use std::ops::Deref;
 
-pub(crate) use entity::Entity;
+pub(crate) use entity::{Entity, EntityMap, Forever};
 pub(crate) use utils::*;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -211,8 +211,8 @@ impl<G: Html> TemplateInner<G> {
 /// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
 /// enabled.
 #[cfg(all(not(feature = "hydrate"), target_arch = "wasm32"))]
-pub type BrowserNodeType = sycamore::prelude::DomNode;
+pub(crate) type BrowserNodeType = sycamore::prelude::DomNode;
 /// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
 /// enabled.
 #[cfg(all(feature = "hydrate", target_arch = "wasm32"))]
-pub type BrowserNodeType = sycamore::prelude::HydrateNode;
+pub(crate) type BrowserNodeType = sycamore::prelude::HydrateNode;

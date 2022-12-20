@@ -21,7 +21,7 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
 #[cfg(target_arch = "wasm32")]
-use crate::template::{BrowserNodeType, Entity};
+use crate::template::{BrowserNodeType, EntityMap};
 use crate::{
     i18n::Translator,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
@@ -101,7 +101,7 @@ pub struct Reactor<G: Html> {
     pub(crate) render_cfg: HashMap<String, String>,
     /// The app's templates and capsules for use in routing.
     #[cfg(target_arch = "wasm32")]
-    pub(crate) entities: HashMap<String, Entity<G>>,
+    pub(crate) entities: EntityMap<G>,
     /// The app's locales.
     #[cfg(target_arch = "wasm32")]
     pub(crate) locales: Locales,

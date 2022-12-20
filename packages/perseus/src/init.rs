@@ -8,7 +8,7 @@ use crate::{
     plugins::{PluginAction, Plugins},
     state::GlobalStateCreator,
     stores::MutableStore,
-    template::Template,
+    template::{Entity, Forever, Template},
     Html, SsrNode,
 };
 #[cfg(target_arch = "wasm32")]
@@ -17,7 +17,7 @@ use crate::{
     errors::ClientError,
 };
 use crate::{errors::PluginError, template::Capsule};
-use crate::{stores::ImmutableStore, template::Entity};
+use crate::{stores::ImmutableStore, template::EntityMap};
 use futures::Future;
 #[cfg(target_arch = "wasm32")]
 use std::marker::PhantomData;
@@ -25,7 +25,7 @@ use std::marker::PhantomData;
 use std::pin::Pin;
 #[cfg(target_arch = "wasm32")]
 use std::rc::Rc;
-use std::sync::Arc;
+use std::{any::TypeId, sync::Arc};
 use std::{collections::HashMap, panic::PanicInfo};
 use sycamore::prelude::Scope;
 use sycamore::utils::hydrate::with_no_hydration_context;
@@ -97,12 +97,23 @@ where
 /// The options for constructing a Perseus app. This `struct` will tie
 /// together all your code, declaring to Perseus where your templates,
 /// error pages, static content, etc. are.
+///
+/// # Memory leaks
+///
+/// This `struct` internally stores all templates and capsules as static
+/// references, since they will definitionally be required for the lifetime
+/// of the app, and since this enables support for capsules created and
+/// managed through a `lazy_static!`, a very convenient and efficient pattern.
+///
+/// However, this does mean that the methods on this `struct` for adding
+/// templates and capsules perform `Box::leak` calls internally, creating
+/// deliberate memory leaks. This would be ...
 pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
     /// injected.
     pub(crate) root: String,
     /// A list of all the templates and capsules that the app uses.
-    pub(crate) entities: HashMap<String, Entity<G>>,
+    pub(crate) entities: EntityMap<G>,
     /// The app's error pages.
     #[cfg(target_arch = "wasm32")]
     pub(crate) error_views: Rc<ErrorViews<G>>,
@@ -427,13 +438,46 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
         self
     }
-    /// Adds a single new template to the app (convenience function). This takes
-    /// a *function that returns a template* (for internal reasons).
+    /// Adds a single new template to the app. This expects the output of
+    /// a function that is generic over `G: Html`. If you have something with a
+    /// predetermined type, like a `lazy_static!` that's using
+    /// `PerseusNodeType`, you should use `.template_ref()` instead. For
+    /// more information on the differences between the function and referrence
+    /// patterns, see the book.
     ///
     /// See [`Template`] for further details.
-    pub fn template(mut self, val: Template<G>) -> Self {
-        let entity = val.inner;
-        self.entities.insert(entity.get_path(), entity);
+    pub fn template(self, val: impl Into<Forever<Template<G>>>) -> Self {
+        self.template_ref(val)
+    }
+    /// Adds a single new template to the app. This can accept either an owned
+    /// [`Template`] or a static reference to one, as might be created by a
+    /// `lazy_static!`. The latter would force you to specify the rendering
+    /// backend type (`G`) manually, using a smart alias like
+    /// `PerseusNodeType`. This method performs internal type coercions to make
+    /// statics work neatly.
+    ///
+    /// If your templates come from functions like `get_template`, that are
+    /// generic over `G: Html`, you can use `.template()`, to avoid having
+    /// to specify `::<G>` manually.
+    ///
+    /// See [`Template`] for further details, and the book for further details
+    /// on the differences between the function and reference patterns.
+    pub fn template_ref<H: Html>(mut self, val: impl Into<Forever<Template<H>>>) -> Self {
+        assert_eq!(
+            TypeId::of::<G>(),
+            TypeId::of::<H>(),
+            "mismatched render backends"
+        );
+        let val = val.into();
+        let val: Forever<Template<G>> = unsafe { std::mem::transmute(val) };
+
+        let entity: Forever<Entity<G>> = match val {
+            Forever::Owned(capsule) => capsule.inner.into(),
+            Forever::StaticRef(capsule_ref) => (&capsule_ref.inner).into(),
+        };
+
+        let path = entity.get_path();
+        self.entities.insert(path, entity);
         self
     }
     // TODO
@@ -447,20 +491,47 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     //     }
     //     self
     // }
-    /// Adds a single new template to the app (convenience function). This takes
-    /// a *function that returns a template* (for internal reasons).
+    /// Adds a single new capsule to the app. Like `.template()`, this expects
+    /// the output of a function that is generic over `G: Html`. If you have
+    /// something with a predetermined type, like a `lazy_static!` that's
+    /// using `PerseusNodeType`, you should use `.capsule_ref()`
+    /// instead. For more information on the differences between the function
+    /// and reference patterns, see the book.
     ///
     /// See [`Capsule`] for further details.
-    pub fn capsule<P: Clone + 'static>(mut self, val: Capsule<G, P>) -> Self {
-        let entity = val.inner;
-        let path = entity.get_path();
+    pub fn capsule<P: Clone + 'static>(self, val: impl Into<Forever<Capsule<G, P>>>) -> Self {
+        self.capsule_ref(val)
+    }
+    /// Adds a single new capsule to the app. This behaves like
+    /// `.template_ref()`, but for capsules.
+    ///
+    /// See [`Capsule`] for further details.
+    pub fn capsule_ref<H: Html, P: Clone + 'static>(
+        mut self,
+        val: impl Into<Forever<Capsule<H, P>>>,
+    ) -> Self {
+        assert_eq!(
+            TypeId::of::<G>(),
+            TypeId::of::<H>(),
+            "mismatched render backends"
+        );
+        let val = val.into();
         // Enforce that capsules must have defined fallbacks
         if val.fallback.is_none() {
             panic!(
                 "capsule '{}' has no fallback (please register one)",
-                entity.get_path()
+                val.inner.get_path()
             )
         }
+
+        let val: Forever<Capsule<G, P>> = unsafe { std::mem::transmute(val) };
+
+        let entity: Forever<Entity<G>> = match val {
+            Forever::Owned(capsule) => capsule.inner.into(),
+            Forever::StaticRef(capsule_ref) => (&capsule_ref.inner).into(),
+        };
+
+        let path = entity.get_path();
         self.entities.insert(path, entity);
         self
     }
@@ -830,7 +901,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         Ok(html_shell)
     }
     // /// Gets the map of entities (i.e. templates and capsules combined).
-    // pub fn get_entities_map(&self) -> HashMap<String, Entity<G>> {
+    // pub fn get_entities_map(&self) -> EntityMap<G> {
     //     // This is cheap to clone
     //     self.entities.clone()
     // }

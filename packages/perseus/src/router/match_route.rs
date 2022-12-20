@@ -1,6 +1,6 @@
 use super::{RouteInfo, RouteVerdict};
 use crate::i18n::Locales;
-use crate::template::Entity;
+use crate::template::{Entity, EntityMap, Forever};
 use crate::{path::*, Html};
 use std::collections::HashMap;
 
@@ -19,8 +19,8 @@ use std::collections::HashMap;
 fn get_template_for_path<'a, G: Html>(
     path: &str,
     render_cfg: &HashMap<String, String>,
-    entities: &'a HashMap<String, Entity<G>>,
-) -> (Option<&'a Entity<G>>, bool) {
+    entities: &'a EntityMap<G>,
+) -> (Option<&'a Forever<Entity<G>>>, bool) {
     let mut was_incremental_match = false;
     // Match the path to one of the entities
     let mut entity_name = None;
@@ -64,7 +64,7 @@ fn get_template_for_path<'a, G: Html>(
 pub(crate) fn match_route<G: Html>(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
-    entities: &HashMap<String, Entity<G>>,
+    entities: &EntityMap<G>,
     locales: &Locales,
 ) -> RouteVerdict {
     let path_vec = path_slice.to_vec();
