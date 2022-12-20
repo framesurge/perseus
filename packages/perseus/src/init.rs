@@ -469,6 +469,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             "mismatched render backends"
         );
         let val = val.into();
+        // SAFETY: We asserted that `G == H` above.
         let val: Forever<Template<G>> = unsafe { std::mem::transmute(val) };
 
         let entity: Forever<Entity<G>> = match val {
@@ -524,6 +525,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             )
         }
 
+        // SAFETY: We asserted that `G == H` above.
         let val: Forever<Capsule<G, P>> = unsafe { std::mem::transmute(val) };
 
         let entity: Forever<Entity<G>> = match val {
