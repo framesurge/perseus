@@ -94,7 +94,10 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         let path = path.strip_suffix('/').unwrap_or(path);
 
         // This will also add `__capsule/` implicitly
-        let path = PathWithoutLocale(format!("{}/{}", self.inner.get_path(), path));
+        let path = format!("{}/{}", self.inner.get_path(), path);
+        // This is needed for index widgets
+        let path = path.strip_suffix('/').unwrap_or(&path);
+        let path = PathWithoutLocale(path.to_string());
 
         #[cfg(not(target_arch = "wasm32"))]
         return {

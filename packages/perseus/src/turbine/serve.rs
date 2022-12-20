@@ -289,6 +289,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // As explained above, this should never fail, because all references have been
         // dropped
         let mut widget_states = Rc::try_unwrap(widget_states_rc).unwrap();
+        // // TODO Avoid cloning here
+        // let mut widget_states = (*widget_states_rc).clone();
 
         // We'll just have accumulated a ton of unresolved widgets, probably. If not,
         // then we're done! If yes, we'll need to build all their states.
