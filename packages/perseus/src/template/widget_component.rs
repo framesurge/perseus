@@ -192,7 +192,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     .declare_dependency(&full_path, &caller_path);
 
                 // SAFETY: We asserted that `G == H` above.
-                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
+                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
                 match self_copy.render_widget_for_template_client(
                     full_path,
                     props,
@@ -308,7 +308,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                         );
 
                         // SAFETY: We asserted above that `G == H`.
-                        let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
+                        let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
                         match self_copy.render_widget_for_template_server(
                             PathMaybeWithLocale::new(&path, &locale),
                             state,
@@ -353,7 +353,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                         // There were no problems with getting the state
                         Ok(state) => {
                             // SAFETY: We asserted above that `G == H`.
-                            let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
+                            let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
                             // Use that to render the widget for the server-side (this should *not*
                             // create a new reactor)
                             match self_copy.render_widget_for_template_server(
