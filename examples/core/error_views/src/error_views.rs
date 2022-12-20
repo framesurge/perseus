@@ -41,13 +41,14 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
     // load extra material like new stylesheets on an error, as it might be a
     // network error), and the second one for the body (to be displayed in
     // `err_pos`).
-    ErrorViews::new(|cx, err, err_info, err_pos| {
+    ErrorViews::new(|cx, err, _err_info, _err_pos| {
         match err {
             // Errors from the server, like 404s; these are best displayed over the whole
             // page
             ClientError::ServerError {
                 status,
-                message
+                // This is fully formatted with newlines and tabs for the error and its causes
+                message: _
             } => match status {
                 // This one is usually handled separately
                 404 => (
@@ -59,7 +60,7 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
                     }
                 ),
                 // If the status is 4xx, it's a client-side problem (which is weird, and might indicate tampering)
-                _ if status >= 400 && status < 500 => (
+                _ if (400..500).contains(&status) => (
                     view! { cx,
                         title { "Error" }
                     },
@@ -79,7 +80,9 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
             },
             // A panic (yes, you can handle them here!). After this error is displayed, the entire
             // app will terminate, so buttons or other reactive elements are pointless.
-            ClientError::Panic(msg) => (
+            //
+            // The argument here is the formatted panic message.
+            ClientError::Panic(_) => (
                 view! { cx,
                     title { "Critical error" }
                 },
@@ -88,7 +91,7 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
                 }
             ),
             // Network errors (but these could be caused by unexpected server rejections)
-            ClientError::FetchError(err) => (
+            ClientError::FetchError(_) => (
                 view! { cx,
                     title { "Error" }
                 },
@@ -118,7 +121,7 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
                     title { "Error" }
                 },
                 view! { cx,
-                    p { (format!("An internal error has occurred: '{}'.", err.to_string())) }
+                    p { (format!("An internal error has occurred: '{}'.", err)) }
                 }
             )
         }

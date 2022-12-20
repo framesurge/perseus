@@ -10,5 +10,5 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("about").template(about_page)
+    Template::new("about").view(about_page).build()
 }

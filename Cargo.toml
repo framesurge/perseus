@@ -4,7 +4,8 @@ members = [
     "examples/core/*",
     "examples/demos/*",
     "examples/comprehensive/*",
-    "examples/website/*",
+    # TODO Update these before the release of v0.4.0!
+    # "examples/website/*",
     "website",
 ]
 resolver = "2"

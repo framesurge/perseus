@@ -9,12 +9,12 @@ struct IndexPageState {
     browser_ip: Option<String>,
 }
 
-fn index_page<'a, 'b, G: Html>(
-    cx: BoundedScope<'a, 'b>,
+fn index_page<'a, G: Html>(
+    cx: BoundedScope<'_, 'a>,
     IndexPageStateRx {
         server_ip,
         browser_ip,
-    }: IndexPageStateRx<'b>,
+    }: &'a IndexPageStateRx,
 ) -> View<G> {
     // This will only run in the browser
     // `reqwasm` wraps browser-specific APIs, so we don't want it running on the
@@ -63,7 +63,8 @@ fn index_page<'a, 'b, G: Html>(
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template_with_state(index_page)
+        .view_with_state(index_page)
+        .build()
 }
 
 #[engine_only_fn]

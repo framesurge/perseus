@@ -12,9 +12,9 @@ struct PageState {
     time: String,
 }
 
-fn revalidation_and_incremental_generation_page<'a, 'b, G: Html>(
-    cx: BoundedScope<'a, 'b>,
-    state: PageStateRx<'b>,
+fn revalidation_and_incremental_generation_page<'a, G: Html>(
+    cx: BoundedScope<'_, 'a>,
+    state: &'a PageStateRx,
 ) -> View<G> {
     view! { cx,
         p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }
@@ -23,7 +23,7 @@ fn revalidation_and_incremental_generation_page<'a, 'b, G: Html>(
 
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("revalidation_and_incremental_generation")
-        .template_with_state(revalidation_and_incremental_generation_page)
+        .view_with_state(revalidation_and_incremental_generation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
         .revalidate_after(Duration::new(5, 0))
         // This is an alternative method of revalidation that uses logic, which will be executed
@@ -37,6 +37,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         // WARNING: this will revalidate on every reload in development, because incremental
         // generation is recalculated on every request in development
         .incremental_generation()
+        .build()
 }
 
 // This will get the system time when the app was built

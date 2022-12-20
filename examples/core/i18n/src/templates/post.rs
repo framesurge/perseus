@@ -9,7 +9,7 @@ struct PostPageState {
     content: String,
 }
 
-fn post_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, props: &'b PostPageStateRx) -> View<G> {
+fn post_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, props: &'a PostPageStateRx) -> View<G> {
     view! { cx,
         h1 {
             (props.title.get())
@@ -27,7 +27,7 @@ pub fn get_template<G: Html>() -> Template<G> {
     Template::new("post")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
-        .template_with_state(post_page)
+        .view_with_state(post_page)
         .build()
 }
 

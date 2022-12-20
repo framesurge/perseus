@@ -41,7 +41,7 @@ struct OtherTest {
     third_greeting: Result<String, SerdeInfallible>,
 }
 
-fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b IndexPageStateRx) -> View<G> {
+fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
     let greeting = create_memo(cx, || match &*state.greeting.get() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
@@ -137,7 +137,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
 pub fn get_template<G: Html>() -> Template<G> {
     // Note that suspense handlers are registered through the state, not here
     Template::new("index")
-        .template_with_state(index_page)
+        .view_with_state(index_page)
         .build_state_fn(get_build_state)
         .build()
 }

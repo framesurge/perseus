@@ -2,8 +2,6 @@
 use sycamore::utils::render::insert;
 #[cfg(all(not(feature = "hydrate"), target_arch = "wasm32"))]
 use sycamore::web::DomNode;
-#[cfg(feature = "hydrate")]
-use sycamore::web::HydrateNode;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View};
@@ -29,6 +27,8 @@ pub(crate) fn render_or_hydrate(
 ) {
     #[cfg(feature = "hydrate")]
     {
+        use sycamore::web::HydrateNode;
+
         // We need `sycamore::hydrate_to_with_scope()`!
         // --- Verbatim copy from Sycamore, changed for known scope ---
         // Get children from parent into a View to set as the initial node value.

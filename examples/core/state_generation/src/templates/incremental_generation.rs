@@ -12,18 +12,16 @@ struct PageState {
     content: String,
 }
 
-fn incremental_generation_page<'a, 'b, G: Html>(
-    cx: BoundedScope<'a, 'b>,
-    state: PageStateRx<'b>,
+fn incremental_generation_page<'a, G: Html>(
+    cx: BoundedScope<'_, 'a>,
+    state: &'a PageStateRx,
 ) -> View<G> {
-    let title = state.title;
-    let content = state.content;
     view! { cx,
         h1 {
-            (title.get())
+            (state.title.get())
         }
         p {
-            (content.get())
+            (state.content.get())
         }
     }
 }
@@ -37,7 +35,8 @@ pub fn get_template<G: Html>() -> Template<G> {
         // filter the path because some are invalid (e.g. entries that aren't in some database), we
         // can filter them out at the state of the build state function
         .incremental_generation()
-        .template_with_state(incremental_generation_page)
+        .view_with_state(incremental_generation_page)
+        .build()
 }
 
 // This will be executed at build-time for all the paths in `get_build_paths()`,

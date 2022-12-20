@@ -11,7 +11,7 @@ struct IndexPageState {
 // This macro will make our state reactive *and* store it in the page state
 // store, which means it'll be the same even if we go to the about page and come
 // back (as long as we're in the same session)
-fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b IndexPageStateRx) -> View<G> {
+fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
     view! { cx,
         p { (format!("Greetings, {}!", state.username.get())) }
         input(bind:value = state.username, placeholder = "Username")
@@ -29,9 +29,10 @@ fn head(cx: Scope) -> View<SsrNode> {
 
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
-        .template_with_state(index_page)
+        .view_with_state(index_page)
         .head(head)
         .build_state_fn(get_build_state)
+        .build()
 }
 
 #[engine_only_fn]

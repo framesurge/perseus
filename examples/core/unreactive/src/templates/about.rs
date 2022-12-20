@@ -8,7 +8,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("about").template(about_page).head(head)
+    Template::new("about").view(about_page).head(head).build()
 }
 
 #[engine_only_fn]

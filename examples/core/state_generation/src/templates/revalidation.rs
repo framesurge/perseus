@@ -8,7 +8,7 @@ struct PageState {
     time: String,
 }
 
-fn revalidation_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b PageStateRx) -> View<G> {
+fn revalidation_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
     view! { cx,
         p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }
     }
@@ -16,7 +16,7 @@ fn revalidation_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b PageS
 
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("revalidation")
-        .template_with_state(revalidation_page)
+        .view_with_state(revalidation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)
         .revalidate_after("5s")
         // This is an alternative method of revalidation that uses logic, which will be executed
@@ -26,6 +26,7 @@ pub fn get_template<G: Html>() -> Template<G> {
         // tells Perseus that it should revalidate.
         .should_revalidate_fn(should_revalidate)
         .build_state_fn(get_build_state)
+        .build()
 }
 
 // This will get the system time when the app was built

@@ -8,9 +8,9 @@ struct PageState {
     ip: String,
 }
 
-fn request_state_page<'a, 'b, G: Html>(
-    cx: BoundedScope<'a, 'b>,
-    state: PageStateRx<'b>,
+fn request_state_page<'a, G: Html>(
+    cx: BoundedScope<'_, 'a>,
+    state: &'a PageStateRx,
 ) -> View<G> {
     view! { cx,
         p {
@@ -24,7 +24,8 @@ fn request_state_page<'a, 'b, G: Html>(
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("request_state")
         .request_state_fn(get_request_state)
-        .template_with_state(request_state_page)
+        .view_with_state(request_state_page)
+        .build()
 }
 
 // This returns a `Result<T, BlamedError<E>>` (or just `T`) because, obviously,

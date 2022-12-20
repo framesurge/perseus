@@ -8,7 +8,7 @@ struct IndexPageState {
     pub greeting: String,
 }
 
-fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b IndexPageStateRx) -> View<G> {
+fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
     view! { cx,
         p { (state.greeting.get()) }
         a(href = "about", id = "about-link") { "About!" }
@@ -18,7 +18,7 @@ fn index_page<'a, 'b, G: Html>(cx: BoundedScope<'a, 'b>, state: &'b IndexPageSta
 pub fn get_template<G: Html>() -> Template<G> {
     Template::new("index")
         .build_state_fn(get_build_state)
-        .template_with_state(index_page)
+        .view_with_state(index_page)
         .head_with_state(head)
         .build()
 }

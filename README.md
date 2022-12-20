@@ -31,12 +31,13 @@ pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(
             Template::new("index")
-                .template(|cx| {
+                .view(|cx| {
                     view! { cx,
                         p { "Hello World!" }
                     }
                 })
-            )
+                .build()
+        )
 }
 ```
 

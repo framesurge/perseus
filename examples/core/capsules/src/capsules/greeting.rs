@@ -14,9 +14,9 @@ lazy_static! {
     pub static ref GREETING: Capsule<SsrNode, GreetingProps> = get_capsule();
 }
 
-fn greeting_capsule<'a, 'b, G: Html>(
-    cx: BoundedScope<'a, 'b>,
-    state: &'b GreetingStateRx,
+fn greeting_capsule<'a, G: Html>(
+    cx: BoundedScope<'_, 'a>,
+    state: &'a GreetingStateRx,
     props: GreetingProps,
 ) -> View<G> {
     view! { cx,

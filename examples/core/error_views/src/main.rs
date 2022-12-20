@@ -20,5 +20,5 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         // Note that Perseus automatically writes an explanatory message to the console
         // before any further panic action is taken, just in case the visual message
         // doesn't work out for whatever reason, so there's no need to do that here.
-        .panic_handler(|panic_info| perseus::web_log!("The app has panicked."))
+        .panic_handler(|_panic_info| perseus::web_log!("The app has panicked."))
 }
