@@ -30,6 +30,7 @@ use sycamore::{prelude::create_scope, view::View, web::Html};
 /// which could then render as many pages as desired.
 ///
 /// You can read more about the templates system [here](https://arctic-hen7.github.io/perseus/en-US/docs/next/core-principles).
+#[derive(Debug)]
 pub struct Template<G: Html> {
     /// The inner entity.
     pub(crate) inner: Entity<G>,
@@ -151,14 +152,11 @@ pub struct TemplateInner<G: Html> {
     /// returned from the build process.
     pub(crate) can_be_rescheduled: bool,
 }
-impl<G: Html> std::fmt::Debug for Template<G> {
+impl<G: Html> std::fmt::Debug for TemplateInner<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Template")
             .field("path", &self.path)
-            .field("template", &"TemplateFn")
-            .field("head", &"HeadFn")
-            .field("set_headers", &"SetHeadersFn")
-            // TODO Server-specific stuff
+            .field("is_capsule", &self.is_capsule)
             .finish()
     }
 }

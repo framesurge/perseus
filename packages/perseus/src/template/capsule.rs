@@ -81,6 +81,13 @@ pub struct CapsuleInner<G: Html, P: Clone + 'static> {
     #[allow(clippy::type_complexity)]
     pub(crate) fallback: Option<Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>>,
 }
+impl<G: Html, P: Clone + 'static> std::fmt::Debug for CapsuleInner<G, P> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CapsuleInner")
+            .field("template_inner", &self.template_inner)
+            .finish_non_exhaustive()
+    }
+}
 
 impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// Creates a new [`Capsule`] from the given [`TemplateInner`]. In Perseus,

@@ -7,6 +7,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 */
 
 #![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
 
 // Serving files from a map is *really* convoluted
 mod static_content;
@@ -62,6 +63,7 @@ pub fn get_http_req() -> impl Filter<Extract = (http::Request<()>,), Error = Rej
 
 // ----- Newtype wrapper for response implementation -----
 
+#[derive(Debug)]
 struct ApiResponse(PerseusApiResponse);
 impl From<PerseusApiResponse> for ApiResponse {
     fn from(val: PerseusApiResponse) -> Self {

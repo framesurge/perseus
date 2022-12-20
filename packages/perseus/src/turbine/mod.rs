@@ -33,6 +33,7 @@ use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use sycamore::web::SsrNode;
 
 /// The Perseus state generator.
+#[derive(Debug)]
 pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// All the templates and capsules in the app.
     entities: HashMap<String, Entity<SsrNode>>,

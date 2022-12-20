@@ -67,7 +67,7 @@ pub(crate) enum Tm<T: TranslationsManager> {
 #[cfg(not(target_arch = "wasm32"))]
 impl<T: TranslationsManager> std::fmt::Debug for Tm<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Tm").finish()
+        f.debug_struct("Tm").finish_non_exhaustive()
     }
 }
 
@@ -165,6 +165,44 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     // We need this on the client-side to account for the unused type parameters
     #[cfg(target_arch = "wasm32")]
     _marker: PhantomData<(M, T)>,
+}
+impl<G: Html, M: MutableStore, T: TranslationsManager> std::fmt::Debug for PerseusAppBase<G, M, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // We have to do the commons, and then the target-gates separately (otherwise
+        // Rust uses the dummy methods)
+        let mut debug = f.debug_struct("PerseusAppBase");
+        debug
+            .field("root", &self.root)
+            .field("entities", &self.entities)
+            .field("error_views", &self.error_views)
+            .field("pss_max_size", &self.pss_max_size)
+            .field("locale", &self.locales)
+            .field("plugins", &self.plugins)
+            .field("index_view", &self.index_view);
+        #[cfg(target_arch = "wasm32")]
+        {
+            return debug
+                .field(
+                    "panic_handler",
+                    &self
+                        .panic_handler
+                        .as_ref()
+                        .map(|_| "dyn Fn(&PanicInfo) + Send + Sync + 'static"),
+                )
+                .finish_non_exhaustive();
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            return debug
+                .field("global_state_creator", &self.global_state_creator)
+                .field("mutable_store", &self.mutable_store)
+                .field("translations_manager", &self.translations_manager)
+                .field("static_dir", &self.static_dir)
+                .field("static_aliases", &self.static_aliases)
+                .field("immutable_store", &self.immutable_store)
+                .finish_non_exhaustive();
+        }
+    }
 }
 
 // The usual implementation in which the default mutable store is used

@@ -6,7 +6,7 @@ use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
 
 /// The state for the router. This makes use of `RcSignal`s internally, and can
 /// be cheaply cloned.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RouterState {
     /// The router's current load state. This is in an `RcSignal` because users
     /// need to be able to create derived state from it.

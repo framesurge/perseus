@@ -507,6 +507,7 @@ impl std::fmt::Debug for PageStateStore {
 ///
 /// Note: while it is hypothetically possible for this to hold neither a state
 /// nor document metadata, that will never happen without user intervention.
+#[derive(Debug)]
 pub struct PssEntry {
     /// The page state, if any exists. This may come with a guarantee that no
     /// state will ever exist.
@@ -592,6 +593,7 @@ impl PssEntry {
 
 /// The page state of a PSS entry. This is used to determine whether or not we
 /// need to request data from the server.
+#[derive(Debug)]
 pub enum PssState<T> {
     /// There is state.
     Some(T),

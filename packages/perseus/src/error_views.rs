@@ -56,6 +56,11 @@ pub struct ErrorViews<G: Html> {
             + Sync,
     >,
 }
+impl<G: Html> std::fmt::Debug for ErrorViews<G> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ErrorViews").finish_non_exhaustive()
+    }
+}
 impl<G: Html> ErrorViews<G> {
     /// Creates an error handling system for your app with the given handler
     /// function. This will be provided a [`ClientError`] to match against,
@@ -296,6 +301,7 @@ impl<G: Html> ErrorViews<G> {
 /// The context of an error, which determines what is available to your views.
 /// This *must* be checked before using things like translators, which may not
 /// be available, depending on the information in here.
+#[derive(Debug, Clone, Copy)]
 pub enum ErrorContext {
     /// Perseus has suffered an unrecoverable error in initialization, and
     /// routing/interactivity is impossible. Your error view will be
@@ -357,7 +363,7 @@ pub enum ErrorContext {
 /// Note that you should also always check if you have a `Popup`-style error, in
 /// which case there will be no router available, so any links will be handled
 /// by the browser's default behavior.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ErrorPosition {
     /// The error will take up the whole page.
     Page,

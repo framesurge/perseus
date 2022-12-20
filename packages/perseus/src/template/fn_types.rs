@@ -27,6 +27,7 @@ use sycamore::{prelude::Scope, view::View, web::SsrNode};
 ///
 /// You should never need to use this type yourself, consider it an internal
 /// conversion type.
+#[derive(Debug)]
 pub enum GeneratorResult<T> {
     /// Equivalent to `Result::Ok`.
     Ok(T),
@@ -67,6 +68,7 @@ impl<T> GeneratorResult<T> {
 /// either `T` directly, or `Result<T, BlamedError<E>>`: see [`BlamedError`] for
 /// further information. (Note that the `?` operator can automatically turn `E`
 /// into `BlamedError<E>`, setting the server as the one to blame.)
+#[derive(Debug)]
 pub enum BlamedGeneratorResult<T> {
     /// Equivalent to `Result::Ok`.
     Ok(T),

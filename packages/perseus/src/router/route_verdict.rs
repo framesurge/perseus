@@ -6,7 +6,7 @@ use crate::{path::PathWithoutLocale, Html};
 /// Information about a route, which, combined with error pages and a
 /// client-side translations manager, allows the initialization of the app shell
 /// and the rendering of a page.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FullRouteInfo<'a, G: Html> {
     /// The actual path of the route. This does *not* include the locale!
     pub path: PathWithoutLocale,
@@ -23,7 +23,7 @@ pub struct FullRouteInfo<'a, G: Html> {
 }
 
 /// The possible outcomes of matching a route in an app.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum FullRouteVerdict<'a, G: Html> {
     /// The given route was found, and route information is attached.
     Found(FullRouteInfo<'a, G>),
@@ -51,7 +51,7 @@ pub enum FullRouteVerdict<'a, G: Html> {
 ///
 /// Unlike [`FullRouteInfo`], this does not store the actual template being
 /// used, instead it only stores its name, making it much easier to store.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RouteInfo {
     /// The actual path of the route. This does *not* include the locale!
     pub path: PathWithoutLocale,
@@ -90,7 +90,7 @@ impl RouteInfo {
 ///
 /// Unlike [`FullRouteVerdict`], this does not store the actual template being
 /// used, instead it only stores its name, making it much easier to store.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RouteVerdict {
     /// The given route was found, and route information is attached.
     Found(RouteInfo),

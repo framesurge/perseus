@@ -27,7 +27,7 @@ use sycamore::prelude::{create_rc_signal, RcSignal};
 ///
 /// If you want non-nested, fallible, suspended state, you can simply use
 /// `Result<T, E>` from the standard library.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RxResult<T, E>(Result<T, E>)
 where
     T: MakeRx + 'static, /* Serialize + DeserializeOwned are handled automatically by the derive
@@ -52,7 +52,7 @@ where
 
 /// The intermediate reactive type for [`RxResult`]. You shouldn't need to
 /// interface with this manually.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RxResultRx<T, E>(RcSignal<Result<T::Rx, E>>)
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,

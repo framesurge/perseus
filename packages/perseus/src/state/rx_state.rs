@@ -80,6 +80,12 @@ impl<T: Any + Freeze> AnyFreeze for T {
         self
     }
 }
+impl std::fmt::Debug for (dyn AnyFreeze + 'static) {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // See Rust std/core/any.rs:213
+        f.debug_struct("AnyFreeze").finish_non_exhaustive()
+    }
+}
 
 /// A marker trait for types that you want to be able to use with the Perseus
 /// state platform, without using `#[make_rx]`. If you want to use unreactive
@@ -99,7 +105,7 @@ pub trait UnreactiveState {}
 /// This wrapper will automatically implement all the necessary `trait`s to
 /// interface with Perseus' reactive state platform, along with `Serialize` and
 /// `Deserialize` (provided the underlying type also implements the latter two).
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UnreactiveStateWrapper<
     T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone,
 >(pub T);

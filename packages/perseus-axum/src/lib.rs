@@ -7,6 +7,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 */
 
 #![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
 
 use axum::{
     body::Body,
@@ -33,6 +34,7 @@ use tower_http::services::{ServeDir, ServeFile};
 
 // ----- Newtype wrapper for response implementation -----
 
+#[derive(Debug)]
 struct ApiResponse(PerseusApiResponse);
 impl From<PerseusApiResponse> for ApiResponse {
     fn from(val: PerseusApiResponse) -> Self {

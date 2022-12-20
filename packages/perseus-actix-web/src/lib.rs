@@ -7,6 +7,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 */
 
 #![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
 
 use actix_files::Files;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
@@ -44,6 +45,7 @@ pub fn convert_req(raw: &actix_web::HttpRequest) -> Result<Request, String> {
 
 // ----- Newtype wrapper for response implementation -----
 
+#[derive(Debug)]
 struct ApiResponse(PerseusApiResponse);
 impl From<PerseusApiResponse> for ApiResponse {
     fn from(val: PerseusApiResponse) -> Self {

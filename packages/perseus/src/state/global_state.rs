@@ -305,6 +305,7 @@ impl GlobalState {
 }
 
 /// The backend for the different types of global state.
+#[derive(Debug)]
 pub enum GlobalStateType {
     /// The global state has been deserialized and loaded, and is ready for use.
     Loaded(Box<dyn AnyFreeze>),

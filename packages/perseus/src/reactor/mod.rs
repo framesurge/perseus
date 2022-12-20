@@ -67,6 +67,7 @@ use sycamore::{
 /// this will always be available in the Sycamore context system.
 ///
 /// Note that this is also used on the engine-side for rendering.
+#[derive(Debug)]
 pub struct Reactor<G: Html> {
     /// The state store, which is used to hold all reactive states, along with
     /// preloads.

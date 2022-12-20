@@ -3,6 +3,8 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
+// TODO Just have a `PerseusNodeType` that resolves to `SsrNode` too when
+// needed, then this all gets so much simpler.
 #[cfg(target_arch = "wasm32")]
 lazy_static! {
     pub static ref GREETING: Capsule<BrowserNodeType, GreetingProps> = get_capsule();
