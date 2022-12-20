@@ -1,5 +1,5 @@
 use super::{match_route, RouteVerdict};
-use crate::{reactor::Reactor, template::TemplateNodeType};
+use crate::{reactor::Reactor, template::BrowserNodeType};
 use sycamore::prelude::Scope;
 use sycamore_router::Route;
 
@@ -9,7 +9,7 @@ pub(crate) struct PerseusRoute<'cx> {
     /// The current route verdict. The initialization value of this is
     /// completely irrelevant (it will be overridden immediately by the internal
     /// routing logic).
-    pub verdict: RouteVerdict<TemplateNodeType>,
+    pub verdict: RouteVerdict,
     /// The Sycamore scope that allows us to access the render context.
     ///
     /// This will *always* be `Some(_)` in actual applications.
@@ -32,7 +32,7 @@ impl<'cx> Default for PerseusRoute<'cx> {
 }
 impl<'cx> PerseusRoute<'cx> {
     /// Gets the current route verdict.
-    pub fn get_verdict(&self) -> &RouteVerdict<TemplateNodeType> {
+    pub fn get_verdict(&self) -> &RouteVerdict {
         &self.verdict
     }
 }
@@ -50,7 +50,7 @@ impl<'cx> Route for PerseusRoute<'cx> {
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
 
-        let reactor = Reactor::from_cx(self.cx.unwrap()); // We know the scope will always exist
+        let reactor = Reactor::<BrowserNodeType>::from_cx(self.cx.unwrap()); // We know the scope will always exist
         let verdict = match_route(
             &path_segments,
             &reactor.render_cfg,

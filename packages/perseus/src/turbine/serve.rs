@@ -12,7 +12,7 @@ use super::Turbine;
 use crate::{
     error_views::ServerErrorData,
     reactor::RenderMode,
-    router::{match_route, RouteVerdict},
+    router::{match_route, FullRouteVerdict},
     template::Entity,
 };
 use crate::{
@@ -321,8 +321,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                             &self.locales,
                         );
 
-                        let res = match verdict {
-                            RouteVerdict::Found(route_info) => {
+                        let res = match verdict.into_full(&self.entities) {
+                            FullRouteVerdict::Found(route_info) => {
                                 let capsule_name = route_info.entity.get_path();
 
                                 // Now build the state; if this fails, we won't fail the whole
@@ -353,14 +353,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                             }
                             // This is just completely wrong, and implies a corruption, so it's made
                             // a page-level error
-                            RouteVerdict::LocaleDetection(_) => {
+                            FullRouteVerdict::LocaleDetection(_) => {
                                 return Err(ServerError::ResolveDepLocaleRedirection {
                                     locale: locale.to_string(),
                                     widget: widget_path.to_string(),
                                 })
                             }
                             // But a widget that isn't found will be made a widget-only error
-                            RouteVerdict::NotFound { .. } => {
+                            FullRouteVerdict::NotFound { .. } => {
                                 let err = ServerError::ResolveDepNotFound {
                                     locale: locale.to_string(),
                                     widget: widget_path.to_string(),

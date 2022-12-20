@@ -2,28 +2,25 @@ use super::RouteVerdict;
 use crate::{path::PathMaybeWithLocale, router::RouteInfo};
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::{
-    prelude::{create_rc_signal, create_ref, RcSignal, Scope},
-    web::Html,
-};
+use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
 
 /// The state for the router. This makes use of `RcSignal`s internally, and can
 /// be cheaply cloned.
 #[derive(Clone)]
-pub struct RouterState<G: Html> {
+pub struct RouterState {
     /// The router's current load state. This is in an `RcSignal` because users
     /// need to be able to create derived state from it.
     load_state: RcSignal<RouterLoadState>,
     /// The last route verdict. We can come back to this if we need to reload
     /// the current page without losing context etc.
-    last_verdict: Rc<RefCell<Option<RouteVerdict<G>>>>,
+    last_verdict: Rc<RefCell<Option<RouteVerdict>>>,
     /// A flip-flop `RcSignal`. Whenever this is changed, the router will reload
     /// the current page in the SPA style (maintaining state). As a user, you
     /// should rarely ever need to do this, but it's used internally in the
     /// thawing process.
     pub(crate) reload_commander: RcSignal<bool>,
 }
-impl<G: Html> Default for RouterState<G> {
+impl Default for RouterState {
     /// Creates a default instance of the router state intended for usage at the
     /// startup of an app.
     fn default() -> Self {
@@ -35,7 +32,7 @@ impl<G: Html> Default for RouterState<G> {
         }
     }
 }
-impl<G: Html> RouterState<G> {
+impl RouterState {
     /// Gets the load state of the router. You'll still need to call `.get()`
     /// after this (this just returns a `&'a RcSignal` to derive other state
     /// from in a `create_memo` or the like).
@@ -59,14 +56,14 @@ impl<G: Html> RouterState<G> {
         self.load_state.set(new);
     }
     /// Gets the last verdict.
-    pub fn get_last_verdict(&self) -> Option<RouteVerdict<G>> {
+    pub fn get_last_verdict(&self) -> Option<RouteVerdict> {
         (*self.last_verdict.borrow()).clone()
     }
     /// Sets the last verdict.
     ///
     /// The router state upholds a number of invariants, and allowing the user
     /// control of this could lead to unreachable code being executed.
-    pub(crate) fn set_last_verdict(&self, new: RouteVerdict<G>) {
+    pub(crate) fn set_last_verdict(&self, new: RouteVerdict) {
         let mut last_verdict = self.last_verdict.borrow_mut();
         *last_verdict = Some(new);
     }

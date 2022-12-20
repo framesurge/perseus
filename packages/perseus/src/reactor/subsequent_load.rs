@@ -11,7 +11,7 @@ use crate::{
     i18n::detect_locale,
     page_data::PageDataPartial,
     path::PathMaybeWithLocale,
-    router::{RouteInfo, RouteVerdict, RouterLoadState},
+    router::{FullRouteInfo, FullRouteVerdict, RouteVerdict, RouterLoadState},
     state::{PssContains, TemplateState},
     utils::{fetch, get_path_prefix_client, replace_head},
 };
@@ -27,15 +27,21 @@ impl<G: Html> Reactor<G> {
     /// # Panics
     /// This function will panic on a locale redirection if a router has not
     /// been created on the given scope.
+    ///
+    /// This function will also panic if the given route verdict stores a template
+    /// name that is not known to this reactor (i.e. it must have been generated
+    /// by `match_route`).
     pub(crate) async fn get_subsequent_view<'a>(
         &self,
         cx: Scope<'a>,
-        verdict: RouteVerdict<G>,
+        verdict: RouteVerdict,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> {
         checkpoint("router_entry");
+        // We'll need this for setting the router load state later
+        let slim_verdict = verdict.clone();
 
-        match &verdict {
-            RouteVerdict::Found(RouteInfo {
+        match &verdict.into_full(&self.entities) {
+            FullRouteVerdict::Found(FullRouteInfo {
                 path,
                 entity,
                 locale,
@@ -47,7 +53,7 @@ impl<G: Html> Reactor<G> {
                     template_name: entity.get_path(),
                     path: full_path.clone(),
                 });
-                self.router_state.set_last_verdict(verdict.clone());
+                self.router_state.set_last_verdict(slim_verdict);
 
                 checkpoint("initial_state_not_present");
 
@@ -166,7 +172,7 @@ impl<G: Html> Reactor<G> {
             }
             // For subsequent loads, this should only be possible if the dev forgot `link!()`
             // TODO Debug assertion that this doesn't happen perhaps?
-            RouteVerdict::LocaleDetection(path) => {
+            FullRouteVerdict::LocaleDetection(path) => {
                 let dest = detect_locale(path.clone(), &self.locales);
                 // Since this is only for subsequent loads, we know the router is instantiated
                 // This shouldn't be a replacement navigation, since the user has deliberately
@@ -174,7 +180,7 @@ impl<G: Html> Reactor<G> {
                 sycamore_router::navigate(&dest);
                 todo!()
             }
-            RouteVerdict::NotFound { .. } => {
+            FullRouteVerdict::NotFound { .. } => {
                 checkpoint("not_found");
 
                 // Neatly return a `ClientError::ServerError`, which will be displayed somehow

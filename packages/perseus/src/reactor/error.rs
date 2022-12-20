@@ -2,7 +2,7 @@ use super::Reactor;
 use crate::{
     error_views::{ErrorContext, ErrorPosition, ErrorViews},
     errors::ClientError,
-    template::TemplateNodeType,
+    template::BrowserNodeType,
     utils::{render_or_hydrate, replace_head},
 };
 #[cfg(not(target_arch = "wasm32"))]
@@ -14,7 +14,7 @@ use sycamore::{
     web::SsrNode,
 };
 
-impl Reactor<TemplateNodeType> {
+impl Reactor<BrowserNodeType> {
     /// This reports an error to the failsafe mechanism, which will handle it
     /// appropriately. This will determine the capabilities the error view
     /// will have access to from the scope provided.
@@ -82,11 +82,11 @@ impl Reactor<TemplateNodeType> {
     pub fn handle_critical_error(
         cx: Scope,
         err: ClientError,
-        error_views: &ErrorViews<TemplateNodeType>,
+        error_views: &ErrorViews<BrowserNodeType>,
     ) {
         // We do NOT want this called if there is a reactor (but, if it is, we have no
         // clue about the calling situation, so it's safest to just panic)
-        assert!(try_use_context::<Reactor<TemplateNodeType>>(cx).is_none(), "attempted to handle 'critical' error, but a reactor was found (this is a programming error)");
+        assert!(try_use_context::<Reactor<BrowserNodeType>>(cx).is_none(), "attempted to handle 'critical' error, but a reactor was found (this is a programming error)");
 
         let popup_error_root = Self::get_popup_err_elem();
         // This will determine the `Static` error context (we guaranteed there's no
@@ -127,7 +127,7 @@ impl Reactor<TemplateNodeType> {
                     ClientError,
                     ErrorContext,
                     ErrorPosition,
-                ) -> (View<SsrNode>, View<TemplateNodeType>)
+                ) -> (View<SsrNode>, View<BrowserNodeType>)
                 + Send
                 + Sync,
         >,

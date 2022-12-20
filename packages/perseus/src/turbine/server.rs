@@ -4,7 +4,7 @@ use crate::{
     errors::{err_to_status_code, ServerError},
     i18n::{TranslationsManager, Translator},
     path::{PathMaybeWithLocale, PathWithoutLocale},
-    router::{match_route, RouteInfo, RouteVerdict},
+    router::{match_route, FullRouteInfo, FullRouteVerdict},
     server::get_path_slice,
     state::TemplateState,
     stores::MutableStore,
@@ -197,8 +197,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Run the routing algorithm to figure out what to do here
         let path_slice = get_path_slice(&raw_path);
         let verdict = match_route(&path_slice, &self.render_cfg, &self.entities, &self.locales);
-        match verdict {
-            RouteVerdict::Found(RouteInfo {
+        match verdict.into_full(&self.entities) {
+            FullRouteVerdict::Found(FullRouteInfo {
                 path,
                 entity,
                 locale,
@@ -284,7 +284,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
                 response
             }
-            RouteVerdict::LocaleDetection(redirect_path) => {
+            FullRouteVerdict::LocaleDetection(redirect_path) => {
                 // TODO Parse the `Accept-Language` header and return a proper redirect
                 // Construct a locale redirection fallback
                 let html = self
@@ -310,7 +310,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 ApiResponse::err(StatusCode::FOUND, &html).content_type("text/html")
             }
             // Any unlocalized 404s would go to a redirect first
-            RouteVerdict::NotFound { locale } => {
+            FullRouteVerdict::NotFound { locale } => {
                 // Get the translations to interpolate into the page
                 let translations_str = self
                     .translations_manager

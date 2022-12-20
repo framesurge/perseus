@@ -16,11 +16,11 @@ use std::collections::HashMap;
 /// ISR, and we can infer about them based on template root path domains. If
 /// that domain system is violated, this routing algorithm will not behave as
 /// expected whatsoever (as far as routing goes, it's undefined behavior)!
-fn get_template_for_path<G: Html>(
+fn get_template_for_path<'a, G: Html>(
     path: &str,
     render_cfg: &HashMap<String, String>,
-    entities: &HashMap<String, Entity<G>>,
-) -> (Option<Entity<G>>, bool) {
+    entities: &'a HashMap<String, Entity<G>>,
+) -> (Option<&'a Entity<G>>, bool) {
     let mut was_incremental_match = false;
     // Match the path to one of the entities
     let mut entity_name = None;
@@ -50,7 +50,7 @@ fn get_template_for_path<G: Html>(
     }
     // If we still have nothing, then the page doesn't exist
     if let Some(entity_name) = entity_name {
-        (entities.get(&entity_name).cloned(), was_incremental_match)
+        (entities.get(&entity_name), was_incremental_match)
     } else {
         (None, was_incremental_match)
     }
@@ -61,20 +61,16 @@ fn get_template_for_path<G: Html>(
 /// i18n is being used. The path this takes should be raw, it may or may not
 /// have a locale, but should be split into segments by `/`, with empty ones
 /// having been removed.
-///
-/// *Note:* in the vast majority of cases, you should never need to use
-/// this function.
 pub(crate) fn match_route<G: Html>(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
     entities: &HashMap<String, Entity<G>>,
     locales: &Locales,
-) -> RouteVerdict<G> {
+) -> RouteVerdict {
     let path_vec = path_slice.to_vec();
     let path_joined = PathMaybeWithLocale(path_vec.join("/")); // This should not have a leading forward slash, it's used for asset fetching by
                                                                // the app shell
 
-    let verdict;
     // There are different logic chains if we're using i18n, so we fork out early
     if locales.using_i18n && !path_slice.is_empty() {
         let locale = path_slice[0];
@@ -87,18 +83,20 @@ pub(crate) fn match_route<G: Html>(
             // Get the template to use
             let (entity, was_incremental_match) =
                 get_template_for_path(&path_without_locale, render_cfg, entities);
-            verdict = match entity {
+            match entity {
                 Some(entity) => RouteVerdict::Found(RouteInfo {
                     locale: locale.to_string(),
                     // This will be used in asset fetching from the server
                     path: path_without_locale,
-                    entity,
+                    // The user can get the full entity again if they want to, we just use it to make
+                    // sure the path exists
+                    entity_name: entity.get_path(),
                     was_incremental_match,
                 }),
                 None => RouteVerdict::NotFound {
                     locale: locale.to_string(),
                 },
-            };
+            }
         } else {
             // If the locale isn't supported, we assume that it's part of a route that still
             // needs a locale (we'll detect the user's preferred)
@@ -106,32 +104,32 @@ pub(crate) fn match_route<G: Html>(
             // determined after that We'll just pass through the path to be
             // redirected to (after it's had a locale placed in front)
             let path_joined = PathWithoutLocale(path_joined.0);
-            verdict = RouteVerdict::LocaleDetection(path_joined)
+            RouteVerdict::LocaleDetection(path_joined)
         }
     } else if locales.using_i18n {
         // If we're here, then we're using i18n, but we're at the root path, which is a
         // locale detection point
         let path_joined = PathWithoutLocale(path_joined.0);
-        verdict = RouteVerdict::LocaleDetection(path_joined);
+        RouteVerdict::LocaleDetection(path_joined)
     } else {
         // We're not using i18n
         let path_joined = PathWithoutLocale(path_joined.0);
         // Get the template to use
         let (entity, was_incremental_match) =
             get_template_for_path(&path_joined, render_cfg, entities);
-        verdict = match entity {
+        match entity {
             Some(entity) => RouteVerdict::Found(RouteInfo {
                 locale: locales.default.to_string(),
                 // This will be used in asset fetching from the server
                 path: path_joined,
-                entity,
+                // The user can get the full entity again if they want to, we just use it to make
+                // sure the path exists
+                entity_name: entity.get_path(),
                 was_incremental_match,
             }),
             None => RouteVerdict::NotFound {
                 locale: "xx-XX".to_string(),
             },
-        };
+        }
     }
-
-    verdict
 }

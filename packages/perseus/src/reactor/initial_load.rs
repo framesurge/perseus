@@ -6,7 +6,7 @@ use crate::{
     errors::*,
     i18n::detect_locale,
     path::PathMaybeWithLocale,
-    router::{match_route, RouteInfo, RouteVerdict, RouterLoadState},
+    router::{match_route, FullRouteInfo, FullRouteVerdict, RouterLoadState},
     state::TemplateState,
     utils::get_path_prefix_client,
 };
@@ -57,8 +57,10 @@ impl<G: Html> Reactor<G> {
             &self.entities,
             &self.locales,
         );
-        match &verdict {
-            RouteVerdict::Found(RouteInfo {
+        // We'll need this later for setting the router state
+        let slim_verdict = verdict.clone();
+        match &verdict.into_full(&self.entities) {
+            FullRouteVerdict::Found(FullRouteInfo {
                 path,
                 entity,
                 locale,
@@ -73,7 +75,7 @@ impl<G: Html> Reactor<G> {
                     template_name: entity.get_path(),
                     path: full_path.clone(),
                 });
-                self.router_state.set_last_verdict(verdict.clone());
+                self.router_state.set_last_verdict(slim_verdict);
 
                 // Get the initial state and decide what to do from that. We can guarantee that
                 // this locale is supported because it came from `match_route`.
@@ -146,7 +148,7 @@ impl<G: Html> Reactor<G> {
             // If the user is using i18n, then they'll want to detect the locale on any paths
             // missing a locale. Those all go to the same system that redirects to the
             // appropriate locale. This returns a full URL to imperatively redirect to.
-            RouteVerdict::LocaleDetection(path) => Ok(InitialView::Redirect(detect_locale(
+            FullRouteVerdict::LocaleDetection(path) => Ok(InitialView::Redirect(detect_locale(
                 path.clone(),
                 &self.locales,
             ))),
@@ -154,7 +156,7 @@ impl<G: Html> Reactor<G> {
             // the server is being remotely reasonable, we should have translations too,
             // *unless* the error page was exported, in which case we're up the creek.
             // TODO Fetch translations with exported error pages? Solution??
-            RouteVerdict::NotFound { locale } => {
+            FullRouteVerdict::NotFound { locale } => {
                 checkpoint("not_found");
                 // Check what we have in the error page data. We would expect this to be a
                 // `ClientError::ServerError { status: 404, source: "page not found" }`, but

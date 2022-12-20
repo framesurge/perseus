@@ -188,7 +188,7 @@ impl<G: Html> Reactor<G> {
     ///
     /// To preload a widget, you must prefix its path with `__capsule/`.
     async fn _preload(&self, path: &str, is_route_preload: bool) -> Result<(), ClientError> {
-        use crate::router::{match_route, RouteVerdict};
+        use crate::router::{match_route, FullRouteVerdict};
 
         // It is reasonable to assume that this function will not be called before the
         // instantiation of a translator
@@ -209,15 +209,15 @@ impl<G: Html> Reactor<G> {
         );
         // Make sure we've got a valid verdict (otherwise the user should be told there
         // was an error)
-        let route_info = match verdict {
-            RouteVerdict::Found(info) => info,
-            RouteVerdict::NotFound { .. } => {
+        let route_info = match verdict.into_full(&self.entities) {
+            FullRouteVerdict::Found(info) => info,
+            FullRouteVerdict::NotFound { .. } => {
                 return Err(ClientPreloadError::PreloadNotFound {
                     path: path.to_string(),
                 }
                 .into())
             }
-            RouteVerdict::LocaleDetection(_) => {
+            FullRouteVerdict::LocaleDetection(_) => {
                 return Err(ClientPreloadError::PreloadLocaleDetection {
                     path: path.to_string(),
                 }

@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 use crate::path::PathWithoutLocale;
 #[cfg(not(target_arch = "wasm32"))]
 use sycamore::prelude::create_child_scope;
@@ -19,13 +21,13 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// `/bar` to this function. If you want to render the index widget, just
     /// use `/` or the empty string (leading forward slashes will automatically
     /// be normalized).
-    pub fn widget(
+    pub fn widget<H: Html>(
         &self,
         cx: Scope,
         // This is a `PurePath`, meaning it *does not* have a locale or the capsule name!
         path: &str,
         props: P,
-    ) -> View<G> {
+    ) -> View<H> {
         self.__widget(cx, path, props, false)
     }
     /// An alternative to `.widget()` that delays the rendering of the widget
@@ -57,7 +59,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// server-side processing (although fetching on the browser-side will
     /// almost always be quite a bit slower). Again, you should
     /// base your choices with delaying on empirical data!
-    pub fn delayed_widget(&self, cx: Scope, path: &str, props: P) -> View<G> {
+    pub fn delayed_widget<H: Html>(&self, cx: Scope, path: &str, props: P) -> View<H> {
         self.__widget(cx, path, props, true)
     }
 
@@ -65,8 +67,28 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// disposers entirely, as all scopes used are children of the given,
     /// which is assumed to be the page-level scope. As such, widgets will
     /// automatically be cleaned up with pages.
+    ///
+    /// # Node Types
+    /// This method is implemented on the `Capsule`, which is already associated with
+    /// a node type, however, in order for this to be usable with lazy statics, which
+    /// cannot have type parameters, one must create a lazy static for the engine-side
+    /// using `SsrNode`, and another for the browser-side using `DomNode`/`HydrateNode`
+    /// (through `BrowserNodeType`). However, since Sycamore is unaware of these target-
+    /// gated distinctions, it will cause Rust to believe the types may be out of sync.
+    /// Hence, this function uses a shadow parameter `H` with the same bounds as `G`,
+    /// and confirms that the two are equal, then performing a low-cost byte-level copy
+    /// and transmutation to assert the types as equal for the compiler.
+    ///
+    /// As a result, it is impossible to render widgets to a string in the browser.
+    ///
+    /// The `transmute_copy` performed is considered cheap because it either copies `&self`,
+    /// or `&Arc<ErrorView<G>>`, both of which use indirection internally, meaning only pointers
+    /// are every copied. This stands in contrast with the approach of copying entire `View`s,
+    /// which leads to worse performance as the compexity of the views grows.
     #[allow(unused_variables)]
-    fn __widget(&self, cx: Scope, path: &str, props: P, delayed: bool) -> View<G> {
+    fn __widget<H: Html>(&self, cx: Scope, path: &str, props: P, delayed: bool) -> View<H> {
+        assert_eq!(TypeId::of::<H>(), TypeId::of::<G>(), "attempted to use widget in mismatched render context (you're either trying to render a widget to a string on the browser, or you're trying to render a widget to the browser on the engine-side; or this is a bug)");
+
         // Handle leading and trailing slashes
         let path = path.strip_prefix('/').unwrap_or(path);
         let path = path.strip_suffix('/').unwrap_or(path);
@@ -78,9 +100,11 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         return {
             let mut view = View::empty();
             if delayed {
+                // SAFETY: We asserted that `G == H` above.
+                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
                 // On the engine-side, delayed widgets should just render their
                 // fallback views
-                let fallback_fn = self.fallback.as_ref().unwrap();
+                let fallback_fn = self_copy.fallback.as_ref().unwrap();
                 create_child_scope(cx, |child_cx| {
                     view = (fallback_fn)(child_cx, props);
                 });
@@ -93,21 +117,29 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         // On the browser-side, delayed and non-delayed are the same (it just matters as
         // to what's been preloaded)
         #[cfg(target_arch = "wasm32")]
-        return self.browser_widget(cx, path, props);
+        return {
+            let view = self.browser_widget(cx, path, props);
+            view
+        };
     }
 
     /// The internal browser-side logic for widgets, both delayed and not.
+    ///
+    /// See `.__widget()` for explanation of transmutation.
     #[cfg(target_arch = "wasm32")]
-    pub(crate) fn browser_widget(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<G> {
+    fn browser_widget<H: Html>(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<H> {
         use crate::{
             errors::ClientInvariantError,
             path::PathMaybeWithLocale,
             reactor::Reactor,
-            router::{match_route, RouteInfo, RouteVerdict},
+            router::{match_route, FullRouteInfo, FullRouteVerdict},
             template::PreloadInfo,
         };
+        assert_eq!(TypeId::of::<H>(), TypeId::of::<G>(), "attempted to use widget in mismatched render context (you're either trying to render a widget to a string on the browser, or you're trying to render a widget to the browser on the engine-side; or this is a bug)");
 
-        let reactor = Reactor::from_cx(cx);
+        let reactor = Reactor::<G>::from_cx(cx);
+        // SAFETY: We asserted that `G == H` above.
+        let reactor: &Reactor<H> = unsafe { std::mem::transmute_copy(&reactor) };
         // This won't panic, because widgets won't be rendered until the initial laod is
         // ready for them
         let locale = reactor.get_translator().get_locale();
@@ -132,8 +164,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
             &reactor.locales,
         );
 
-        match verdict {
-            RouteVerdict::Found(RouteInfo {
+        match verdict.into_full(&reactor.entities) {
+            FullRouteVerdict::Found(FullRouteInfo {
                 path: _,
                 entity,
                 was_incremental_match,
@@ -156,7 +188,9 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     .state_store
                     .declare_dependency(&full_path, &caller_path);
 
-                match self.render_widget_for_template_client(
+                // SAFETY: We asserted that `G == H` above.
+                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
+                match self_copy.render_widget_for_template_client(
                     full_path,
                     props,
                     cx,
@@ -183,14 +217,20 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     }
 
     /// The internal engine-side logic for widgets.
+    ///
+    /// See `.widget()` for explanation of transmutation.
     #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn engine_widget(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<G> {
+    fn engine_widget<H: Html>(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<H> {
+        use std::sync::Arc;
+
+        use crate::error_views::ErrorViews;
         use crate::errors::{ClientError, ServerError};
         use crate::path::PathMaybeWithLocale;
         use crate::reactor::{Reactor, RenderMode, RenderStatus};
         use crate::state::TemplateState;
         use futures::executor::block_on;
         use sycamore::prelude::*;
+        assert_eq!(TypeId::of::<H>(), TypeId::of::<G>(), "attempted to use widget in mismatched render context (you're either trying to render a widget to a string on the browser, or you're trying to render a widget to the browser on the engine-side; or this is a bug)");
 
         // This will always be rendered with access to the Perseus render context, which
         // we will be working with a lot!
@@ -264,7 +304,9 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                             (capsule_name.to_string(), state.state.clone()),
                         );
 
-                        match self.render_widget_for_template_server(
+                        // SAFETY: We asserted above that `G == H`.
+                        let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
+                        match self_copy.render_widget_for_template_server(
                             PathMaybeWithLocale::new(&path, &locale),
                             state,
                             props,
@@ -294,6 +336,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 error_views,
                 unresolved_widget_accumulator,
             } => {
+                // SAFETY: We asserted above that `G == H`.
+                let error_views: &Arc<ErrorViews<H>> = unsafe { std::mem::transmute_copy(&error_views) };
                 // This won't panic, because the reactor has been fully instantiated with a
                 // translator on the engine-side (unless we're in an error page,
                 // which is totally invalid)
@@ -305,9 +349,11 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     Some(res) => match res {
                         // There were no problems with getting the state
                         Ok(state) => {
+                            // SAFETY: We asserted above that `G == H`.
+                            let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
                             // Use that to render the widget for the server-side (this should *not*
                             // create a new reactor)
-                            match self.render_widget_for_template_server(
+                            match self_copy.render_widget_for_template_server(
                                 full_path,
                                 state.clone(),
                                 props,

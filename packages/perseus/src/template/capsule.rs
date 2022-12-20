@@ -5,9 +5,9 @@ use crate::{
     state::{AnyFreeze, MakeRx, MakeUnrx, TemplateState, UnreactiveState},
 };
 
-use super::{Entity, PreloadInfo, Template, TemplateInner};
+use super::{Entity, PreloadInfo, TemplateInner};
 use serde::{de::DeserializeOwned, Serialize};
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 use sycamore::{
     prelude::{create_child_scope, create_scope, BoundedScope, Scope, ScopeDisposer},
     view::View,
@@ -83,15 +83,30 @@ pub struct CapsuleInner<G: Html, P: Clone + 'static> {
 }
 
 impl<G: Html, P: Clone + 'static> Capsule<G, P> {
-    /// Creates a new [`Capsule`] with the given path. The argument provided
-    /// here functions in the same way as the argument given to [`Template`]
-    /// does.
+    /// Creates a new [`Capsule`] from the given [`TemplateInner`]. In Perseus,
+    /// capsules are really just special kinds of pages, so you create them by
+    /// first creating the underlying template. To make sure you get a capsule
+    /// instead of a template, you just don't call `.build()` on the template,
+    /// instead passing the [`TemplateInner`] to this function.
     ///
-    /// You will need to call `.build()` when you're done with this.
-    pub fn new(path: &str) -> CapsuleInner<G, P> {
-        // We create a template with this path, and then turn it into a capsule
-        let mut template_inner = Template::new(path);
+    /// **Warning:** [`TemplateInner`] has methods like `.view()` and
+    /// `.view_with_state()` for setting the views of your templates, but you
+    /// shouldn't use those when you're building a capsule, because those functions
+    /// won't let you use *properties* that can be passed from pages that use your
+    /// capsule. Instead, construct a [`TemplateInner`] that has no views, and
+    /// then use the `.view()` etc. functions on [`CapsuleInner`] instead.
+    /// (Unfortunately, dereferncing doesn't work with the builder pattern,
+    /// so this is the best we can do in Rust right now.)
+    ///
+    /// You will need to call `.build()` when you're done with this to get a full
+    /// [`Capsule`].
+    pub fn new(mut template_inner: TemplateInner<G>) -> CapsuleInner<G, P> {
         template_inner.is_capsule = true;
+        // Wipe the template's view function to make sure the errors aren't obscenely
+        // weird
+        template_inner.view = Box::new(|_, _, _, _| {
+            Ok((View::empty(), create_scope(|_| {})))
+        });
         CapsuleInner {
             template_inner,
             capsule_view: Box::new(|_, _, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
@@ -215,7 +230,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
         #[cfg(target_arch = "wasm32")]
-        let entity_name = self.get_path();
+        let entity_name = self.template_inner.get_path();
         #[cfg(target_arch = "wasm32")]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
@@ -250,7 +265,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
         #[cfg(target_arch = "wasm32")]
-        let entity_name = self.get_path();
+        let entity_name = self.template_inner.get_path();
         #[cfg(target_arch = "wasm32")]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
@@ -298,14 +313,5 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
             Ok((view, disposer))
         });
         self
-    }
-}
-
-// We want all the methods of `TemplateInner` directly accessible
-impl<G: Html, P: Clone + 'static> Deref for CapsuleInner<G, P> {
-    type Target = TemplateInner<G>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.template_inner
     }
 }

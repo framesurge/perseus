@@ -5,7 +5,7 @@ use crate::{
     errors::ClientError,
     reactor::InitialView,
     router::{PageDisposer, PerseusRoute, RouteVerdict, RouterLoadState},
-    template::TemplateNodeType,
+    template::BrowserNodeType,
     utils::{render_or_hydrate, replace_head},
 };
 use sycamore::prelude::{create_effect, create_signal, view, ReadSignal, Scope, View};
@@ -29,7 +29,7 @@ const ROUTE_ANNOUNCER_STYLES: &str = r#"
     word-wrap: normal;
 "#;
 
-impl Reactor<TemplateNodeType> {
+impl Reactor<BrowserNodeType> {
     /// Sets the handlers necessary to run the event-driven components of
     /// Perseus (in a reactive web framework, there are quite a few of
     /// these). This should only be executed at the beginning of the

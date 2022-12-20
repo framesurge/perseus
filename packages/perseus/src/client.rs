@@ -1,5 +1,5 @@
 use crate::reactor::Reactor;
-use crate::{checkpoint, plugins::PluginAction, template::TemplateNodeType};
+use crate::{checkpoint, plugins::PluginAction, template::BrowserNodeType};
 use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
 use sycamore::prelude::create_scope;
 #[cfg(feature = "hydrate")]
@@ -23,7 +23,7 @@ use wasm_bindgen::JsValue;
 /// This function performs all error handling internally, and will do its level
 /// best not to fail, including through setting panic handlers.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
-    app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
+    app: impl Fn() -> PerseusAppBase<BrowserNodeType, M, T>,
 ) {
     let mut app = app();
     // The latter of these is a clone of the handler used for other errors
@@ -61,7 +61,8 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         // hook.
     }));
 
-    let plugins = app.get_plugins();
+    let plugins = app.plugins.clone();
+    let error_views = app.error_views.clone();
 
     // This variable acts as a signal to determine whether or not there was a
     // show-stopping failure that should trigger root scope disposal
@@ -70,9 +71,6 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     // === IF THIS DISPOSER IS CALLED, PERSEUS WILL TERMINATE! ===
     let app_disposer = create_scope(|cx| {
         let core = move || {
-            // Get the error views, just in case the reactor can't be instantiated
-            let error_views = app.get_error_views();
-
             // Create the reactor
             match Reactor::try_from(app) {
                 Ok(reactor) => {

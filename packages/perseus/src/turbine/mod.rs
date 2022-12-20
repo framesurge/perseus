@@ -17,17 +17,7 @@ mod tinker;
 
 pub use server::{ApiResponse, SubsequentLoadQueryParams};
 
-use crate::{
-    error_views::ErrorViews,
-    errors::*,
-    i18n::{Locales, TranslationsManager},
-    init::PerseusAppBase,
-    plugins::Plugins,
-    server::HtmlShell,
-    state::{GlobalStateCreator, TemplateState},
-    stores::{ImmutableStore, MutableStore},
-    template::Entity,
-};
+use crate::{error_views::ErrorViews, errors::*, i18n::{Locales, TranslationsManager}, init::{PerseusAppBase, Tm}, plugins::Plugins, server::HtmlShell, state::{GlobalStateCreator, TemplateState}, stores::{ImmutableStore, MutableStore}, template::Entity};
 use futures::executor::block_on;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use sycamore::web::SsrNode;
@@ -77,34 +67,30 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
     type Error = PluginError;
 
     fn try_from(app: PerseusAppBase<SsrNode, M, T>) -> Result<Self, Self::Error> {
-        let entities = app.get_entities_map();
         let locales = app.get_locales()?;
         let immutable_store = app.get_immutable_store()?;
-        let mutable_store = app.get_mutable_store();
-        let global_state_creator = app.get_global_state_creator();
-        let plugins = app.get_plugins();
         let index_view_str = app.get_index_view_str();
         let root_id = app.get_root()?;
-        let static_dir = app.get_static_dir();
         let static_aliases = app.get_static_aliases()?;
-        let error_views = app.get_atomic_error_views();
-        // This consumes the app
-        // Note that we can't do anything in parallel with this anyway
-        let translations_manager = block_on(app.get_translations_manager());
 
         Ok(Self {
-            entities,
+            entities: app.entities,
             locales,
             immutable_store,
-            mutable_store,
-            global_state_creator,
-            plugins,
+            mutable_store: app.mutable_store,
+            global_state_creator: app.global_state_creator,
+            plugins: app.plugins,
             index_view_str,
             root_id,
-            static_dir: PathBuf::from(&static_dir),
+            static_dir: PathBuf::from(&app.static_dir),
             static_aliases,
-            error_views,
-            translations_manager,
+            error_views: app.error_views,
+            // This consumes the app
+            // Note that we can't do anything in parallel with this anyway
+            translations_manager: match app.translations_manager {
+                Tm::Dummy(tm) => tm,
+                Tm::Full(tm) => block_on(tm),
+            },
 
             // If we're going from a `PerseusApp`, these will be filled in later
             render_cfg: HashMap::new(),

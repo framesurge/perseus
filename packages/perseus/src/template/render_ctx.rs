@@ -1,5 +1,5 @@
 #[cfg(target_arch = "wasm32")]
-use super::TemplateNodeType;
+use super::BrowserNodeType;
 use super::{ArcTemplateMap, TemplateState, TemplateStateWithType};
 use crate::{PathMaybeWithLocale, PathWithoutLocale, errors::*};
 use crate::router::{RouterLoadState, RouterState};
@@ -68,7 +68,7 @@ pub struct RenderCtx {
     /// should always return a build-time error rather than produce a page
     /// with an error in it.
     #[cfg(target_arch = "wasm32")]
-    pub error_pages: Rc<crate::error_pages::ErrorPages<TemplateNodeType>>,
+    pub error_pages: Rc<crate::error_pages::ErrorPages<BrowserNodeType>>,
     // --- PRIVATE FIELDS ---
     // Any users accessing these are *extremely* likely to shoot themselves in the foot!
     /// Whether or not this page is the very first to have been rendered since
@@ -82,7 +82,7 @@ pub struct RenderCtx {
     pub(crate) locales: crate::i18n::Locales,
     /// The map of all templates in the app, for use in routing.
     #[cfg(target_arch = "wasm32")]
-    pub(crate) templates: crate::template::TemplateMap<TemplateNodeType>,
+    pub(crate) templates: crate::template::TemplateMap<BrowserNodeType>,
     /// The render configuration, for use in routing.
     #[cfg(target_arch = "wasm32")]
     pub(crate) render_cfg: Rc<std::collections::HashMap<String, String>>,
@@ -149,9 +149,9 @@ impl RenderCtx {
     pub(crate) fn new(
         pss_max_size: usize,
         locales: crate::i18n::Locales,
-        templates: crate::template::TemplateMap<TemplateNodeType>,
+        templates: crate::template::TemplateMap<BrowserNodeType>,
         render_cfg: Rc<std::collections::HashMap<String, String>>,
-        error_pages: Rc<crate::error_pages::ErrorPages<TemplateNodeType>>,
+        error_pages: Rc<crate::error_pages::ErrorPages<BrowserNodeType>>,
     ) -> Self {
         let translations_manager = crate::i18n::ClientTranslationsManager::new(&locales);
         Self {

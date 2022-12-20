@@ -124,6 +124,8 @@ pub mod prelude {
     pub use crate::reactor::Reactor;
     pub use crate::state::{BuildPaths, RxResult, RxResultRx, SerdeInfallible, StateGeneratorInfo};
     pub use crate::template::{Capsule, Template};
+    #[cfg(target_arch = "wasm32")]
+    pub use crate::template::BrowserNodeType;
     pub use sycamore::web::Html;
 
     #[cfg(not(target_arch = "wasm32"))]

@@ -21,7 +21,7 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
 #[cfg(target_arch = "wasm32")]
-use crate::template::{Entity, TemplateNodeType};
+use crate::template::{Entity, BrowserNodeType};
 use crate::{
     i18n::Translator,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
@@ -73,7 +73,7 @@ pub struct Reactor<G: Html> {
     pub(crate) state_store: PageStateStore,
     /// The router state.
     #[cfg(target_arch = "wasm32")]
-    pub router_state: RouterState<G>,
+    pub router_state: RouterState,
     /// The user-provided global state, stored with similar mechanics to the
     /// state store, although optimised.
     global_state: GlobalState,
@@ -114,10 +114,10 @@ pub struct Reactor<G: Html> {
     /// contain the contents of the current page, but it may also contain a
     /// page-wide error. This will be wrapped in a router.
     #[cfg(target_arch = "wasm32")]
-    current_view: RcSignal<View<TemplateNodeType>>,
+    current_view: RcSignal<View<BrowserNodeType>>,
     /// A reactive container for any popup errors.
     #[cfg(target_arch = "wasm32")]
-    popup_error_view: RcSignal<View<TemplateNodeType>>,
+    popup_error_view: RcSignal<View<BrowserNodeType>>,
     /// The app's root div ID.
     #[cfg(target_arch = "wasm32")]
     root: String,
@@ -143,12 +143,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
     type Error = ClientError;
 
     fn try_from(app: PerseusAppBase<G, M, T>) -> Result<Self, Self::Error> {
-        let pss_max_size = app.get_pss_max_size();
-        let entities = app.get_entities_map();
         let locales = app.get_locales()?;
-        let plugins = app.get_plugins();
-        let error_views = app.get_error_views();
         let root = app.get_root()?;
+        let plugins = &app.plugins;
 
         plugins
             .functional_actions
@@ -183,7 +180,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
         Ok(Self {
             // This instantiates as if for the engine-side, but it will rapidly be changed
             router_state: RouterState::default(),
-            state_store: PageStateStore::new(pss_max_size),
+            state_store: PageStateStore::new(app.pss_max_size),
             global_state: GlobalState::new(global_state_ty),
             translations_manager: ClientTranslationsManager::new(&locales),
             // This will be filled out by a `.thaw()` call or HSR
@@ -191,10 +188,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             is_first: Cell::new(true),
             current_view: create_rc_signal(View::empty()),
             popup_error_view: create_rc_signal(View::empty()),
-            entities,
+            entities: app.entities,
             locales,
             render_cfg,
-            error_views,
+            error_views: app.error_views,
             root,
         })
     }

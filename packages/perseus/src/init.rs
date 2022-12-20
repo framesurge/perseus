@@ -60,7 +60,7 @@ static DFLT_PSS_MAX_SIZE: usize = 25;
 /// If this stores a full translations manager though, it will store it as a
 /// `Future`, which is later evaluated.
 #[cfg(not(target_arch = "wasm32"))]
-enum Tm<T: TranslationsManager> {
+pub(crate) enum Tm<T: TranslationsManager> {
     Dummy(T),
     Full(Pin<Box<dyn Future<Output = T>>>),
 }
@@ -100,64 +100,64 @@ where
 pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
     /// injected.
-    root: String,
+    pub(crate) root: String,
     /// A list of all the templates and capsules that the app uses.
-    entities: HashMap<String, Entity<G>>,
+    pub(crate) entities: HashMap<String, Entity<G>>,
     /// The app's error pages.
     #[cfg(target_arch = "wasm32")]
-    error_views: Rc<ErrorViews<G>>,
+    pub(crate) error_views: Rc<ErrorViews<G>>,
     #[cfg(not(target_arch = "wasm32"))]
-    error_views: Arc<ErrorViews<G>>,
+    pub(crate) error_views: Arc<ErrorViews<G>>,
     /// The maximum size for the page state store.
-    pss_max_size: usize,
+    pub(crate) pss_max_size: usize,
     /// The global state creator for the app.
     // This is wrapped in an `Arc` so we can pass it around on the engine-side (which is solely for
     // Actix's benefit...)
     #[cfg(not(target_arch = "wasm32"))]
-    global_state_creator: Arc<GlobalStateCreator>,
+    pub(crate) global_state_creator: Arc<GlobalStateCreator>,
     /// The internationalization information for the app.
-    locales: Locales,
+    pub(crate) locales: Locales,
     /// The static aliases the app serves.
     #[cfg(not(target_arch = "wasm32"))]
-    static_aliases: HashMap<String, String>,
+    pub(crate) static_aliases: HashMap<String, String>,
     /// The plugins the app uses.
     #[cfg(not(target_arch = "wasm32"))]
-    plugins: Arc<Plugins>,
+    pub(crate) plugins: Arc<Plugins>,
     #[cfg(target_arch = "wasm32")]
-    plugins: Rc<Plugins>,
+    pub(crate) plugins: Rc<Plugins>,
     /// The app's immutable store.
     #[cfg(not(target_arch = "wasm32"))]
-    immutable_store: ImmutableStore,
+    pub(crate) immutable_store: ImmutableStore,
     /// The HTML template that'll be used to render the app into. This must be
     /// static, but can be generated or sourced in any way. Note that this MUST
     /// contain a `<div>` with the `id` set to whatever the value of `self.root`
     /// is.
-    index_view: String,
+    pub(crate) index_view: String,
     /// The app's mutable store.
     #[cfg(not(target_arch = "wasm32"))]
-    mutable_store: M,
+    pub(crate) mutable_store: M,
     /// The app's translations manager, expressed as a function yielding a
     /// `Future`. This is only ever needed on the server-side, and can't be set
     /// up properly on the client-side because we can't use futures in the
     /// app initialization in Wasm.
     #[cfg(not(target_arch = "wasm32"))]
-    translations_manager: Tm<T>,
+    pub(crate) translations_manager: Tm<T>,
     /// The location of the directory to use for static assets that will placed
     /// under the URL `/.perseus/static/`. By default, this is the `static/`
     /// directory at the root of your project. Note that the directory set
     /// here will only be used if it exists.
     #[cfg(not(target_arch = "wasm32"))]
-    static_dir: String,
+    pub(crate) static_dir: String,
     /// A handler for panics on the browser-side.
     #[cfg(target_arch = "wasm32")]
-    panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+    pub(crate) panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
     /// A duplicate of the app's error handling function intended for panic
     /// handling. This must be extracted as an owned value and provided in a
     /// thread-safe manner to the panic hook system.
     ///
     /// This is in an `Arc` because panic hooks are `Fn`s, not `FnOnce`s.
     #[cfg(target_arch = "wasm32")]
-    panic_handler_view: Arc<
+    pub(crate) panic_handler_view: Arc<
         dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync,
@@ -679,13 +679,13 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .unwrap_or_else(|| self.root.to_string());
         Ok(root)
     }
-    /// Gets the directory containing static assets to be hosted under the URL
-    /// `/.perseus/static/`.
-    // TODO Plugin action for this?
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_static_dir(&self) -> String {
-        self.static_dir.to_string()
-    }
+    // /// Gets the directory containing static assets to be hosted under the URL
+    // /// `/.perseus/static/`.
+    // // TODO Plugin action for this?
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_static_dir(&self) -> String {
+    //     self.static_dir.to_string()
+    // }
     /// Gets the index view as a string, without generating an HTML shell (pass
     /// this into `::get_html_shell()` to do that).
     ///
@@ -791,32 +791,32 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         Ok(html_shell)
     }
-    /// Gets the map of entities (i.e. templates and capsules combined).
-    pub fn get_entities_map(&self) -> HashMap<String, Entity<G>> {
-        // This is cheap to clone
-        self.entities.clone()
-    }
-    /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
-    #[cfg(target_arch = "wasm32")]
-    pub fn get_error_views(&self) -> Rc<ErrorViews<G>> {
-        self.error_views.clone()
-    }
-    /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_error_views(&self) -> Arc<ErrorViews<G>> {
-        self.error_views.clone()
-    }
-    /// Gets the maximum number of pages that can be stored in the page state
-    /// store before the oldest are evicted.
-    pub fn get_pss_max_size(&self) -> usize {
-        self.pss_max_size
-    }
-    /// Gets the [`GlobalStateCreator`]. This can't be directly modified by
-    /// plugins because of reactive type complexities.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_global_state_creator(&self) -> Arc<GlobalStateCreator> {
-        self.global_state_creator.clone()
-    }
+    // /// Gets the map of entities (i.e. templates and capsules combined).
+    // pub fn get_entities_map(&self) -> HashMap<String, Entity<G>> {
+    //     // This is cheap to clone
+    //     self.entities.clone()
+    // }
+    // /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
+    // #[cfg(target_arch = "wasm32")]
+    // pub fn get_error_views(&self) -> Rc<ErrorViews<G>> {
+    //     self.error_views.clone()
+    // }
+    // /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_atomic_error_views(&self) -> Arc<ErrorViews<G>> {
+    //     self.error_views.clone()
+    // }
+    // /// Gets the maximum number of pages that can be stored in the page state
+    // /// store before the oldest are evicted.
+    // pub fn get_pss_max_size(&self) -> usize {
+    //     self.pss_max_size
+    // }
+    // /// Gets the [`GlobalStateCreator`]. This can't be directly modified by
+    // /// plugins because of reactive type complexities.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_global_state_creator(&self) -> Arc<GlobalStateCreator> {
+    //     self.global_state_creator.clone()
+    // }
     /// Gets the locales information.
     pub fn get_locales(&self) -> Result<Locales, PluginError> {
         let locales = self.locales.clone();
@@ -854,23 +854,23 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .unwrap_or(immutable_store);
         Ok(immutable_store)
     }
-    /// Gets the [`MutableStore`]. This can't be modified by plugins due to
-    /// trait complexities, so plugins should instead expose a function that
-    /// the user can use to manually set it.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_mutable_store(&self) -> M {
-        self.mutable_store.clone()
-    }
-    /// Gets the plugins registered for the app.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_plugins(&self) -> Arc<Plugins> {
-        self.plugins.clone()
-    }
-    /// Gets the plugins registered for the app.
-    #[cfg(target_arch = "wasm32")]
-    pub fn get_plugins(&self) -> Rc<Plugins> {
-        self.plugins.clone()
-    }
+    // /// Gets the [`MutableStore`]. This can't be modified by plugins due to
+    // /// trait complexities, so plugins should instead expose a function that
+    // /// the user can use to manually set it.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_mutable_store(&self) -> M {
+    //     self.mutable_store.clone()
+    // }
+    // /// Gets the plugins registered for the app.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_plugins(&self) -> Arc<Plugins> {
+    //     self.plugins.clone()
+    // }
+    // /// Gets the plugins registered for the app.
+    // #[cfg(target_arch = "wasm32")]
+    // pub fn get_plugins(&self) -> Rc<Plugins> {
+    //     self.plugins.clone()
+    // }
     /// Gets the static aliases. This will check all provided resource paths to
     /// ensure they don't reference files outside the project directory, due to
     /// potential security risks in production (we don't want to
