@@ -1,8 +1,9 @@
 use super::{RouteInfo, RouteVerdict};
 use crate::i18n::Locales;
+use crate::path::*;
 use crate::template::{Entity, EntityMap, Forever};
-use crate::{path::*, Html};
 use std::collections::HashMap;
+use sycamore::web::Html;
 
 /// Determines the template to use for the given path by checking against the
 /// render configuration, also returning whether we matched a simple page or an

@@ -72,7 +72,6 @@ pub mod turbine;
 pub use http;
 #[cfg(not(target_arch = "wasm32"))]
 pub use http::Request as HttpRequest;
-pub use sycamore_futures::spawn_local_scoped;
 
 /// All HTTP requests use empty bodies for simplicity of passing them around.
 /// They'll never need payloads (value in path requested).
@@ -89,8 +88,6 @@ pub type Request = ();
 
 #[cfg(feature = "macros")]
 pub use perseus_macro::*;
-pub use sycamore::prelude::{DomNode, Html, HydrateNode, SsrNode};
-pub use sycamore_router::{navigate, navigate_replace};
 
 // Browser-side only
 #[cfg(target_arch = "wasm32")]
@@ -112,6 +109,34 @@ pub mod log {
     pub use web_sys::console::log_1 as log_js_value;
 }
 
+/// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
+/// `hydrate` feature flag and compilation target.
+///
+/// You **should not** use this in your return types (e.g.
+/// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
+/// This is intended for `lazy_static!`s and the like, for capsules. See
+/// the book and capsule examples for further details.
+#[cfg(not(target_arch = "wasm32"))]
+pub type PerseusNodeType = sycamore::web::SsrNode;
+/// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
+/// `hydrate` feature flag and compilation target.
+///
+/// You **should not** use this in your return types (e.g.
+/// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
+/// This is intended for `lazy_static!`s and the like, for capsules. See
+/// the book and capsule examples for further details.
+#[cfg(all(target_arch = "wasm32", not(feature = "hydrate")))]
+pub type PerseusNodeType = sycamore::web::DomNode;
+/// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
+/// `hydrate` feature flag and compilation target.
+///
+/// You **should not** use this in your return types (e.g.
+/// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
+/// This is intended for `lazy_static!`s and the like, for capsules. See
+/// the book and capsule examples for further details.
+#[cfg(all(target_arch = "wasm32", feature = "hydrate"))]
+pub type PerseusNodeType = sycamore::web::HydrateNode;
+
 /// A series of imports needed by most Perseus apps, in some form. This should
 /// be used in conjunction with the Sycamore prelude.
 pub mod prelude {
@@ -125,6 +150,7 @@ pub mod prelude {
     pub use crate::state::{BuildPaths, RxResult, RxResultRx, SerdeInfallible, StateGeneratorInfo};
     pub use crate::template::{Capsule, Template};
     pub use sycamore::web::Html;
+    pub use sycamore_router::{navigate, navigate_replace};
 
     #[cfg(not(target_arch = "wasm32"))]
     pub use crate::utils::{cache_fallible_res, cache_res};
@@ -134,35 +160,8 @@ pub mod prelude {
         auto_scope, browser, browser_main, browser_only_fn, engine, engine_main, engine_only_fn,
         main, main_export, template_rx, test, ReactiveState, UnreactiveState,
     };
-    pub use crate::{blame_err, make_blamed_err, spawn_local_scoped, Request};
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};
-
-    /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
-    /// `hydrate` feature flag and compilation target.
-    ///
-    /// You **should not** use this in your return types (e.g.
-    /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
-    /// This is intended for `lazy_static!`s and the like, for capsules. See
-    /// the book and capsule examples for further details.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub type PerseusNodeType = sycamore::web::SsrNode;
-    /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
-    /// `hydrate` feature flag and compilation target.
-    ///
-    /// You **should not** use this in your return types (e.g.
-    /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
-    /// This is intended for `lazy_static!`s and the like, for capsules. See
-    /// the book and capsule examples for further details.
-    #[cfg(all(target_arch = "wasm32", not(feature = "hydrate")))]
-    pub type PerseusNodeType = sycamore::web::DomNode;
-    /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
-    /// `hydrate` feature flag and compilation target.
-    ///
-    /// You **should not** use this in your return types (e.g.
-    /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
-    /// This is intended for `lazy_static!`s and the like, for capsules. See
-    /// the book and capsule examples for further details.
-    #[cfg(all(target_arch = "wasm32", feature = "hydrate"))]
-    pub type PerseusNodeType = sycamore::web::HydrateNode;
+    pub use crate::{PerseusNodeType, Request};
+    pub use sycamore_futures::spawn_local_scoped;
 }

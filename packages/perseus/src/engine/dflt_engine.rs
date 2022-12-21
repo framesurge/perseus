@@ -4,10 +4,11 @@ use super::serve::get_host_and_port;
 use super::EngineOperation;
 use crate::server::ServerOptions;
 use crate::turbine::Turbine;
-use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore, SsrNode};
+use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
 use fmterr::fmt_err;
 use futures::Future;
 use std::env;
+use sycamore::web::SsrNode;
 
 /// A wrapper around `run_dflt_engine` for apps that only use exporting, and so
 /// don't need to bring in a server integration. This is designed to avoid extra

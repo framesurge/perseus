@@ -1,5 +1,6 @@
+use crate::path::PathWithoutLocale;
 use crate::template::{Entity, EntityMap};
-use crate::{path::PathWithoutLocale, Html};
+use sycamore::web::Html;
 
 /// Information about a route, which, combined with error pages and a
 /// client-side translations manager, allows the initialization of the app shell

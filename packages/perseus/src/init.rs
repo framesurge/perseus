@@ -9,7 +9,6 @@ use crate::{
     state::GlobalStateCreator,
     stores::MutableStore,
     template::{Entity, Forever, Template},
-    Html, SsrNode,
 };
 #[cfg(target_arch = "wasm32")]
 use crate::{
@@ -29,6 +28,7 @@ use std::{any::TypeId, sync::Arc};
 use std::{collections::HashMap, panic::PanicInfo};
 use sycamore::prelude::Scope;
 use sycamore::utils::hydrate::with_no_hydration_context;
+use sycamore::web::{Html, SsrNode};
 use sycamore::{
     prelude::{component, view},
     view::View,

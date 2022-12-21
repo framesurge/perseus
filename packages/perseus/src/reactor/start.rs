@@ -148,7 +148,7 @@ impl Reactor<BrowserNodeType> {
             // another crate And, Sycamore's `RcSignal` doesn't like being put into
             // a `Closure::wrap()` one bit
             let (live_reload_tx, live_reload_rx) = futures::channel::oneshot::channel();
-            crate::spawn_local_scoped(cx, async move {
+            sycamore_futures::spawn_local_scoped(cx, async move {
                 match live_reload_rx.await {
                     // This will trigger only once, and then can't be used again
                     // That shouldn't be a problem, because we'll reload immediately
@@ -177,7 +177,7 @@ impl Reactor<BrowserNodeType> {
         // This handles HSR thawing
         #[cfg(all(feature = "hsr", debug_assertions))]
         {
-            crate::spawn_local_scoped(cx, async move {
+            sycamore_futures::spawn_local_scoped(cx, async move {
                 // We need to make sure we don't run this more than once, because that would
                 // lead to a loop It also shouldn't run on any pages after the
                 // initial load

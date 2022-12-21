@@ -86,7 +86,7 @@ impl<G: Html> TemplateInner<G> {
     /// function will not take effect due to this string rendering. Note that
     /// this function will provide a translator context.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn render_head_str(
+    pub(crate) fn render_head_str(
         &self,
         state: TemplateState,
         global_state: TemplateState,
@@ -121,7 +121,7 @@ impl<G: Html> TemplateInner<G> {
     }
     /// Gets the list of templates that should be prerendered for at build-time.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn get_build_paths(&self) -> Result<BuildPaths, ServerError> {
+    pub(crate) async fn get_build_paths(&self) -> Result<BuildPaths, ServerError> {
         if let Some(get_build_paths) = &self.get_build_paths {
             get_build_paths.call().await
         } else {
@@ -138,7 +138,7 @@ impl<G: Html> TemplateInner<G> {
     /// that more complex applications like custom documentation systems can
     /// be enabled.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn get_build_state(
+    pub(crate) async fn get_build_state(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
     ) -> Result<TemplateState, ServerError> {
@@ -159,7 +159,7 @@ impl<G: Html> TemplateInner<G> {
     /// client, so the user must specify an [`ErrorBlame`]. This is also passed
     /// the locale being rendered to.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn get_request_state(
+    pub(crate) async fn get_request_state(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
         req: Request,
@@ -182,7 +182,7 @@ impl<G: Html> TemplateInner<G> {
     /// no `None`s for either of the states. This will only be called if both
     /// states are generated.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn amalgamate_states(
+    pub(crate) async fn amalgamate_states(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
         build_state: TemplateState,
@@ -206,7 +206,7 @@ impl<G: Html> TemplateInner<G> {
     /// can be caused by either the server or the client, so the
     /// user must specify an [`ErrorBlame`].
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn should_revalidate(
+    pub(crate) async fn should_revalidate(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
         req: Request,
@@ -231,7 +231,7 @@ impl<G: Html> TemplateInner<G> {
     /// detection pages are considered internal to Perseus, and therefore do
     /// not have support for user headers (at this time).
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_headers(
+    pub(crate) fn get_headers(
         &self,
         state: TemplateState,
         global_state: TemplateState,

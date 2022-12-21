@@ -127,7 +127,7 @@ impl<G: Html> Reactor<G> {
         use fmterr::fmt_err;
         let url = url.to_string();
 
-        crate::spawn_local_scoped(cx, async move {
+        sycamore_futures::spawn_local_scoped(cx, async move {
             if let Err(err) = self.try_preload(&url).await {
                 panic!("{}", fmt_err(&err));
             }
@@ -158,7 +158,7 @@ impl<G: Html> Reactor<G> {
         use fmterr::fmt_err;
         let url = url.to_string();
 
-        crate::spawn_local_scoped(cx, async move {
+        sycamore_futures::spawn_local_scoped(cx, async move {
             if let Err(err) = self.try_route_preload(&url).await {
                 panic!("{}", fmt_err(&err));
             }
