@@ -1,13 +1,9 @@
-use std::str::FromStr;
-
-use darling::ToTokens;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
-use regex::Regex;
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, Block, FnArg, Generics, Ident, Item, ItemFn, PatType, Result, ReturnType, Type,
-    TypeTuple, Visibility,
+    Attribute, Block, FnArg, Ident, Item, ItemFn, PatType, Result, ReturnType, Type, TypeReference,
+    Visibility,
 };
 
 /// A function that can be wrapped in the Perseus test sub-harness.
@@ -26,9 +22,6 @@ pub struct TemplateFn {
     pub name: Ident,
     /// The return type of the function.
     pub return_type: Box<Type>,
-    /// Any generics the function takes (should be one for the Sycamore
-    /// `GenericNode`).
-    pub generics: Generics,
 }
 impl Parse for TemplateFn {
     fn parse(input: ParseStream) -> Result<Self> {
@@ -82,10 +75,11 @@ impl Parse for TemplateFn {
                     }
                     args.push(arg.clone())
                 }
-                // We can have 2 arguments only (scope, state)
+                // We can have 2 arguments only (scope, state), or 3 if it's
+                // a capsule
                 // Any other kind of template doesn't need this macro
-                if args.len() != 2 {
-                    return Err(syn::Error::new_spanned(&sig.inputs, "you only need to use `[#template]` if you're using reactive state (which requires two arguments)"));
+                if args.len() != 2 && args.len() != 3 {
+                    return Err(syn::Error::new_spanned(&sig.inputs, "`#[template]` is only useful if you're using reactive state (which requires two arguments)"));
                 }
 
                 Ok(Self {
@@ -95,7 +89,6 @@ impl Parse for TemplateFn {
                     attrs,
                     name: sig.ident,
                     return_type,
-                    generics: sig.generics,
                 })
             }
             item => Err(syn::Error::new_spanned(
@@ -106,68 +99,39 @@ impl Parse for TemplateFn {
     }
 }
 
-/// Converts the user-given name of a final reactive `struct` with lifetimes
-/// into the same type, just without those lifetimes, so we can use it outside
-/// the scope in which those lifetimes have been defined.
-///
-/// See the callers of this function to see exactly why it's necessary.
-fn remove_lifetimes(ty: &Type) -> Type {
-    // Don't run any transformation if this is the unit type
-    match ty {
-        Type::Tuple(TypeTuple { elems, .. }) if elems.is_empty() => ty.clone(),
-        _ => {
-            let ty_str = ty.to_token_stream().to_string();
-            // Remove any lifetimes from the type (anything in angular brackets beginning
-            // with `'`) This regex just removes any lifetimes next to generics
-            // or on their own, allowing for the whitespace Syn seems to insert
-            let ty_str = Regex::new(r#"(('.*?) |<\s*('[^, ]*?)\s*>)"#)
-                .unwrap()
-                .replace_all(&ty_str, "");
-            Type::Verbatim(TokenStream::from_str(&ty_str).unwrap())
-        }
-    }
-}
-
 pub fn template_impl(input: TemplateFn) -> TokenStream {
     let TemplateFn {
         block,
         // We know that these are all typed (none are `self`)
         args: fn_args,
-        generics,
         vis,
         attrs,
         name,
         return_type,
     } = input;
 
-    let component_name = Ident::new(&(name.to_string() + "_component"), Span::call_site());
-
-    // Get the argument for the reactive scope
-    let cx_arg = &fn_args[0];
-    // There's an argument for page properties that needs to have state extracted,
-    // so the wrapper will deserialize it We'll also make it reactive and
-    // add it to the page state store
     let arg = &fn_args[1];
-    let rx_props_ty = match arg {
-        FnArg::Typed(PatType { ty, .. }) => remove_lifetimes(ty),
+    let state_arg = match arg {
+        FnArg::Typed(PatType { ty, .. }) => match &**ty {
+            Type::Reference(TypeReference { elem, .. }) => elem,
+            _ => return syn::Error::new_spanned(arg, "the state argument must be a reference (e.g. `&MyStateTypeRx`); if you're using unreactive state (i.e. you're deriving `UnreactiveState` instead of `ReactiveState`), you don't need this macro!").to_compile_error()
+        },
         FnArg::Receiver(_) => unreachable!(),
     };
+    let props_arg = match fn_args.get(2) {
+        Some(arg) => quote!( #arg ),
+        None => quote!(),
+    };
     quote! {
-        #vis fn #name<G: ::sycamore::prelude::Html>(
-            cx: ::sycamore::prelude::Scope,
-            state: <#rx_props_ty as ::perseus::state::RxRef>::RxNonRef
+        // All we do is set up the lifetimes correctly
+        #(#attrs)*
+        #vis fn #name<'__page, G: ::sycamore::prelude::Html>(
+            cx: ::sycamore::prelude::BoundedScope<'_, '__page>,
+            state: &'__page #state_arg,
+            // Capsules have another argument for properties
+            #props_arg
         ) -> #return_type {
-            use ::perseus::state::MakeRxRef;
-
-            // The user's function, with Sycamore component annotations and the like preserved
-            // We know this won't be async because Sycamore doesn't allow that
-            #(#attrs)*
-            #[::sycamore::component]
-            fn #component_name #generics(#cx_arg, #arg) -> #return_type {
-                #block
-            }
-
-            #component_name(cx, state.to_ref_struct(cx))
+            #block
         }
     }
 }

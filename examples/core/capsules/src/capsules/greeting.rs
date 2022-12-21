@@ -10,11 +10,8 @@ lazy_static! {
     pub static ref GREETING: Capsule<PerseusNodeType, GreetingProps> = get_capsule();
 }
 
-fn greeting_capsule<'a, G: Html>(
-    cx: BoundedScope<'_, 'a>,
-    state: &'a GreetingStateRx,
-    props: GreetingProps,
-) -> View<G> {
+#[auto_scope]
+fn greeting_capsule<G: Html>(cx: Scope, state: &GreetingStateRx, props: GreetingProps) -> View<G> {
     view! { cx,
         p(style = format!("color: {};", props.color)) { (state.greeting.get()) }
     }

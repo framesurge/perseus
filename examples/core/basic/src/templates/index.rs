@@ -8,7 +8,8 @@ struct IndexPageState {
     pub greeting: String,
 }
 
-fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
+#[auto_scope]
+fn index_page<G: Html>(cx: Scope, state: &IndexPageStateRx) -> View<G> {
     view! { cx,
         p { (state.greeting.get()) }
         a(href = "about", id = "about-link") { "About!" }

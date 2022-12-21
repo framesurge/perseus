@@ -129,12 +129,12 @@ pub mod prelude {
     #[cfg(not(target_arch = "wasm32"))]
     pub use crate::utils::{cache_fallible_res, cache_res};
     pub use crate::web_log;
-    pub use crate::{blame_err, make_blamed_err, spawn_local_scoped, Request};
     #[cfg(feature = "macros")]
     pub use crate::{
-        browser, browser_main, browser_only_fn, engine, engine_main, engine_only_fn, main,
-        main_export, template, template_rx, test, ReactiveState, UnreactiveState,
+        auto_scope, browser, browser_main, browser_only_fn, engine, engine_main, engine_only_fn,
+        main, main_export, template_rx, test, ReactiveState, UnreactiveState,
     };
+    pub use crate::{blame_err, make_blamed_err, spawn_local_scoped, Request};
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};
 
