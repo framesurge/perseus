@@ -125,6 +125,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             )
             .await?;
 
+        let path = PathWithoutLocale(path.strip_suffix('/').unwrap_or(&*path).to_string());
         // Yes, this is created twice; no, we don't care
         // If we're interacting with the stores, this is the path this page/widget will
         // be under
@@ -291,8 +292,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 translator,
             )
         })?;
-        // // As explained above, this should never fail, because all references have been
-        // // dropped
+        // // As explained above, this should never fail, because all references have
+        // been // dropped
         // let mut widget_states = Rc::try_unwrap(widget_states_rc).unwrap();
         // TODO Avoid cloning here...
         let mut widget_states = (*widget_states_rc).clone();
@@ -440,6 +441,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 })?,
         };
 
+        let path = PathWithoutLocale(path.strip_suffix('/').unwrap_or(&*path).to_string());
         // If we're interacting with the stores, this is the path this page/widget will
         // be under
         let path_encoded = format!("{}-{}", locale, urlencoding::encode(&path));
@@ -474,7 +476,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // always exist)
         let build_extra = match self
             .immutable_store
-            .read(&format!("static/{}.extra.json", urlencoding::encode(&entity.get_path())))
+            .read(&format!(
+                "static/{}.extra.json",
+                urlencoding::encode(&entity.get_path())
+            ))
             .await
         {
             Ok(state) => {
@@ -502,24 +507,25 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // im/mutable store is the latest and most valid version of the build
         // state, if we're even using build state.
         //
-        // If incremental and generated and not revalidating; get from immutable.
+        // Note that `was_incremental_match` will not be `true` for pages built
+        // with build paths, even if the template uses incremental generation. Thus,
+        // if it is `true`, we use the mutable store.
+        //
+        // If incremental and generated and not revalidating; get from *mutable*.
         // If incremental and not generated; generate.
         // If incremental and generated and revalidating; either get from mutable or
-        // revalidate. If not incremental and revalidating; either get from
-        // mutable or revalidate. If not incremental and not revalidating; get
+        // revalidate.
+        // If not incremental and revalidating; either get from
+        // mutable or revalidate.
+        // If not incremental and not revalidating; get
         // from immutable.
         if was_incremental {
-            // If we have something in the appropriate store, then this has already been
+            // If we have something in the mutable store, then this has already been
             // generated
-            let res = if entity.revalidates() {
-                self.mutable_store
-                    .read(&format!("static/{}.json", &path_encoded))
-                    .await
-            } else {
-                self.immutable_store
-                    .read(&format!("static/{}.json", &path_encoded))
-                    .await
-            };
+            let res = self
+                .mutable_store
+                .read(&format!("static/{}.json", &path_encoded))
+                .await;
             // Propagate any errors, but if the asset wasn't found, then record that as
             // `None`
             let built_state = match res {
@@ -540,7 +546,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     )
                     .await?;
                 if should_revalidate {
-                    // We need to rebuild, which we can do with the build-time logic
+                    // We need to rebuild, which we can do with the build-time logic (which will use
+                    // the mutable store)
                     self.build_path_or_widget_for_locale(
                         pure_path,
                         entity,
@@ -548,11 +555,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         &locale,
                         global_state.clone(),
                         false,
+                        true,
                     )
                     .await?;
                 } else {
                     // We don't need to revalidate, so whatever is in the
-                    // immutable store is valid
+                    // mutable store is valid
                 }
             } else {
                 // This is a new page, we need to actually generate it (which will handle any
@@ -560,7 +568,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // build state logic, which will perform a full render, unless the
                 // dependencies aren't build-safe. Of course, we can guarantee if we're actually
                 // generating it now that it won't be revalidating.
-                // We can provide the most up-to-date global state to this
+                // We can provide the most up-to-date global state to this.
                 self.build_path_or_widget_for_locale(
                     pure_path,
                     entity,
@@ -568,6 +576,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     &locale,
                     global_state.clone(),
                     false,
+                    // This makes sure we use the mutable store no matter what (incremental)
+                    true,
                 )
                 .await?;
             }
@@ -589,6 +599,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     &locale,
                     global_state.clone(),
                     false,
+                    false,
                 )
                 .await?;
             } else {
@@ -599,7 +610,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         // Whatever is in the im/mutable store is now valid and up-to-date, so fetch it
         let build_state = if entity.uses_build_state() {
-            let state_str = if entity.revalidates() {
+            let state_str = if was_incremental || entity.revalidates() {
                 self.mutable_store
                     .read(&format!("static/{}.json", &path_encoded))
                     .await?
@@ -655,7 +666,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // The im/mutable store was updated by the last whole block (since any
                 // incremental generation or revalidation would have re-written
                 // the head if request state isn't being used)
-                if entity.revalidates() {
+                if was_incremental || entity.revalidates() {
                     self.mutable_store
                         .read(&format!("static/{}.head.html", &path_encoded))
                         .await?

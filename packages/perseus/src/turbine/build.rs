@@ -228,7 +228,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // We write the extra state even if it's empty
         self.immutable_store
             .write(
-                &format!("static/{}.extra.json", urlencoding::encode(&entity.get_path())),
+                &format!(
+                    "static/{}.extra.json",
+                    urlencoding::encode(&entity.get_path())
+                ),
                 &extra.state.to_string(),
             )
             .await?;
@@ -254,6 +257,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         locale,
                         global_state,
                         exporting,
+                        false,
                     ));
                 }
             }
@@ -280,6 +284,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         locale: &str,
         global_state: TemplateState,
         exporting: bool,
+        // This is used in request-time incremental generation
+        force_mutable: bool,
     ) -> Result<(), ServerError> {
         let translator = self
             .translations_manager
@@ -287,7 +293,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .await?;
 
         let full_path_without_locale = PathWithoutLocale(match entity.uses_build_paths() {
-            true => format!("{}/{}", &entity.get_path(), path.0),
+            // Note the stripping of trailing `/`s here (otherwise index build paths fail)
+            true => {
+                let full = format!("{}/{}", &entity.get_path(), path.0);
+                full.strip_suffix('/').unwrap_or(&full).to_string()
+            }
             // We don't want to concatenate the name twice if we don't have to
             false => entity.get_path(),
         });
@@ -336,7 +346,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .await?;
             // Write the state to the appropriate store (mutable if the entity revalidates)
             let state_str = build_state.state.to_string();
-            if entity.revalidates() {
+            if force_mutable || entity.revalidates() {
                 self.mutable_store
                     .write(&format!("static/{}.json", full_path_encoded), &state_str)
                     .await?;
@@ -360,7 +370,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             let head_str =
                 entity.render_head_str(state.clone(), global_state.clone(), &translator)?;
             let head_str = minify(&head_str, true)?;
-            if entity.revalidates() {
+            if force_mutable || entity.revalidates() {
                 self.mutable_store
                     .write(
                         &format!("static/{}.head.html", full_path_encoded),
@@ -423,7 +433,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     // therefore this will be blindly returned at request-time).
                     // We also write a JSON file with a map of all the widget states, since the
                     // browser will need to know them for hydration.
-                    if entity.revalidates() {
+                    if force_mutable || entity.revalidates() {
                         self.mutable_store
                             .write(&format!("static/{}.html", full_path_encoded), &prerendered)
                             .await?;

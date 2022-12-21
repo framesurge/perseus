@@ -421,8 +421,8 @@ impl Reactor<BrowserNodeType> {
             root,
             // BUG Hydration is currently disabled at the system level due to critical bugs
             true,
-            /* force_render, */ /* Depending on whether or not there's an error, we might force a full
-                           * render */
+            /* force_render, */ /* Depending on whether or not there's an error, we might force
+             * a full render */
         );
 
         // If we successfully got here, the app is running!
