@@ -91,7 +91,11 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// which leads to worse performance as the compexity of the views grows.
     #[allow(unused_variables)]
     fn __widget<H: Html>(&self, cx: Scope, path: &str, props: P, delayed: bool) -> View<H> {
-        assert_eq!(TypeId::of::<H>(), TypeId::of::<G>(), "mismatched render backends");
+        assert_eq!(
+            TypeId::of::<H>(),
+            TypeId::of::<G>(),
+            "mismatched render backends"
+        );
 
         // Handle leading and trailing slashes
         let path = path.strip_prefix('/').unwrap_or(path);
@@ -142,7 +146,11 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
             router::{match_route, FullRouteInfo, FullRouteVerdict},
             template::PreloadInfo,
         };
-        assert_eq!(TypeId::of::<H>(), TypeId::of::<G>(), "mismatched render backends");
+        assert_eq!(
+            TypeId::of::<H>(),
+            TypeId::of::<G>(),
+            "mismatched render backends"
+        );
 
         let reactor = Reactor::<G>::from_cx(cx);
         // SAFETY: We asserted that `G == H` above.
@@ -233,7 +241,11 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         use crate::state::TemplateState;
         use futures::executor::block_on;
         use sycamore::prelude::*;
-        assert_eq!(TypeId::of::<H>(), TypeId::of::<G>(), "mismatched render backends");
+        assert_eq!(
+            TypeId::of::<H>(),
+            TypeId::of::<G>(),
+            "mismatched render backends"
+        );
 
         // This will always be rendered with access to the Perseus render context, which
         // we will be working with a lot!

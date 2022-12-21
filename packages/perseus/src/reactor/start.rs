@@ -242,12 +242,15 @@ impl Reactor<BrowserNodeType> {
             }
             // On a redirect, return a view that just redirects straight away (of course,
             // this will be created inside a router, so everything works nicely)
-            Ok(InitialView::Redirect(dest)) => (view! { cx,
-                ({
-                    navigate_replace(&dest);
-                    View::empty()
-                })
-            }, false),
+            Ok(InitialView::Redirect(dest)) => (
+                view! { cx,
+                    ({
+                        navigate_replace(&dest);
+                        View::empty()
+                    })
+                },
+                false,
+            ),
             // We still need the page-wide view
             Err(err @ ClientError::ServerError { .. }) => {
                 // Rather than worrying about multi-file invariants, just do the error

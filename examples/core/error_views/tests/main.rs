@@ -9,7 +9,11 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     assert!(url.as_ref().starts_with("http://localhost:8080"));
 
     wait_for_checkpoint!("page_interactive", 0, c);
-    let panic_msg = c.find(Locator::Css("#__perseus_popup_error > p")).await?.text().await?;
+    let panic_msg = c
+        .find(Locator::Css("#__perseus_popup_error > p"))
+        .await?
+        .text()
+        .await?;
     assert!(panic_msg.contains("critical internal error"));
 
     // Try out a 404
@@ -22,7 +26,6 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // work
     let title = c.find(Locator::Css("title")).await?.html(false).await?;
     assert!(title.contains("Page not found"));
-
 
     Ok(())
 }
