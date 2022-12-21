@@ -8,4 +8,5 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .template(crate::templates::index::get_template())
         .template(crate::templates::about::get_template())
         .error_views(ErrorViews::unlocalized_development_default())
+        .locales_and_translations_manager("en-US", &["fr-FR"])
 }

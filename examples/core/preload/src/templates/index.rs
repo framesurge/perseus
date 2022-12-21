@@ -10,14 +10,21 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
         let reactor = Reactor::<G>::from_cx(cx);
         // This spawns a future in the background, and will panic if the page you give
         // doesn't exist (to handle those errors and manage the future, use
-        // `.try_preload` instead)
+        // `.try_preload` instead).
+        //
+        // Note that there is no `link!` macro here, and preloading is expressly
+        // disallowed across locales (i.e. you can only preload things in the
+        // current locale). This is to prevent unnecessary translations
+        // requests, which can be quite heavy.
         reactor.preload(cx, "about");
     }
 
     view! { cx,
-        p { "Open up your browser's DevTools, go to the network tab, and then click the link below..." }
+        p { (t!("index-msg", cx)) }
 
-        a(href = "about") { "About" }
+        a(href = link!("about", cx)) { (t!("index-about-link", cx)) }
+        a(href = "fr-FR/about") { "About (French)" }
+        a(href = "en-US/about") { "About (English)" }
     }
 }
 

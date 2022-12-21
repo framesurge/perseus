@@ -1,6 +1,6 @@
 use serde_json::Value;
 use sycamore::{
-    prelude::{Scope, ScopeDisposer},
+    prelude::{create_scope, Scope, ScopeDisposer},
     view::View,
     web::Html,
 };
@@ -176,7 +176,8 @@ impl<G: Html> Reactor<G> {
                 // This shouldn't be a replacement navigation, since the user has deliberately
                 // navigated here
                 sycamore_router::navigate(&dest);
-                todo!()
+                // We'll ever get here
+                Ok((View::empty(), create_scope(|_| {})))
             }
             FullRouteVerdict::NotFound { .. } => {
                 checkpoint("not_found");

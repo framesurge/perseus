@@ -8,7 +8,7 @@ use crate::{
     template::BrowserNodeType,
     utils::{render_or_hydrate, replace_head},
 };
-use sycamore::prelude::{create_effect, create_signal, view, ReadSignal, Scope, View};
+use sycamore::prelude::{create_effect, create_signal, on_mount, view, ReadSignal, Scope, View};
 use sycamore_futures::spawn_local_scoped;
 use sycamore_router::{navigate_replace, HistoryIntegration, RouterBase};
 use web_sys::Element;
@@ -242,15 +242,21 @@ impl Reactor<BrowserNodeType> {
             }
             // On a redirect, return a view that just redirects straight away (of course,
             // this will be created inside a router, so everything works nicely)
-            Ok(InitialView::Redirect(dest)) => (
-                view! { cx,
-                    ({
-                        navigate_replace(&dest);
-                        View::empty()
-                    })
-                },
-                false,
-            ),
+            Ok(InitialView::Redirect(dest)) => {
+                force_render = true;
+                (
+                    view! { cx,
+                            ({
+                                let dest = dest.clone();
+                                on_mount(cx, move || {
+                                    navigate_replace(&dest);
+                                });
+                                View::empty()
+                            })
+                    },
+                    false,
+                )
+            }
             // We still need the page-wide view
             Err(err @ ClientError::ServerError { .. }) => {
                 // Rather than worrying about multi-file invariants, just do the error
