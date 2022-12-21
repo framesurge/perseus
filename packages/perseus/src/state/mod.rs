@@ -8,6 +8,8 @@ mod state_store;
 #[cfg(target_arch = "wasm32")]
 mod suspense;
 mod template_state;
+// #[cfg(feature = "rx-collections")]
+pub mod rx_collections;
 
 #[cfg(target_arch = "wasm32")]
 pub use freeze::{FrozenApp, PageThawPrefs, ThawPrefs};

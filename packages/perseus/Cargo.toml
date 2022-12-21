@@ -84,3 +84,5 @@ wasm2js = []
 live-reload = [ "js-sys", "web-sys/WebSocket", "web-sys/MessageEvent", "web-sys/ErrorEvent", "web-sys/BinaryType", "web-sys/Location" ]
 # Enables hot state reloading, whereby your entire app's state can be frozen and thawed automatically every time you change code in your app
 hsr = [ "live-reload", "idb-freezing" ]
+# Enables reactive versions of common Rust collections, like `Vec<T>` and `HashMap<K, V>`. (Note that `RxResult` is always present, as it's needed for suspended state.)
+rx-collections = []
