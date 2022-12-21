@@ -199,13 +199,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Add all the paths to the render config (stripping erroneous slashes as we go)
             for mut page_path in paths.iter_mut() {
                 // Strip any erroneous slashes
-                let stripped = page_path.strip_suffix('/').unwrap_or(page_path);
-                let stripped = stripped.strip_prefix('/').unwrap_or(stripped);
+                let stripped = page_path.strip_prefix('/').unwrap_or(page_path);
                 let mut stripped = stripped.to_string();
                 page_path = &mut stripped;
 
                 let full_path = format!("{}/{}", &entity.get_path(), &page_path);
-                render_cfg_frag.insert(full_path, entity.get_path());
+                // And perform another strip for index pages to work
+                let full_path = full_path.strip_suffix('/').unwrap_or(&full_path);
+                render_cfg_frag.insert(full_path.to_string(), entity.get_path());
             }
 
             // Now if the page uses ISR, add an explicit `/*` in there after the template
