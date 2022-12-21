@@ -34,10 +34,10 @@ impl<G: Html> TemplateInner<G> {
         val: impl Fn(Scope) -> V + Send + Sync + 'static,
     ) -> Self {
         let template_name = self.get_path();
-        self.head = Box::new(move |cx, _template_state| {
+        self.head = Some(Box::new(move |cx, _template_state| {
             let template_name = template_name.clone();
             val(cx).into().into_server_result("head", template_name)
-        });
+        }));
         self
     }
     /// Sets the document `<head>` rendering function to use. The [`View`]
@@ -59,12 +59,12 @@ impl<G: Html> TemplateInner<G> {
         val: impl Fn(Scope) -> V + Send + Sync + 'static,
     ) -> Self {
         let template_name = self.get_path();
-        self.set_headers = Box::new(move |cx, _template_state| {
+        self.set_headers = Some(Box::new(move |cx, _template_state| {
             let template_name = template_name.clone();
             val(cx)
                 .into()
                 .into_server_result("set_headers", template_name)
-        });
+        }));
         self
     }
     /// Sets the function to set headers. This will override Perseus' inbuilt

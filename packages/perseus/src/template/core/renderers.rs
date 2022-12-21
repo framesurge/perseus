@@ -10,6 +10,8 @@ use crate::reactor::RenderMode;
 use crate::state::TemplateState;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::state::{BuildPaths, StateGeneratorInfo, UnknownStateType};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::template::default_headers;
 use crate::template::TemplateInner;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Request;
@@ -104,7 +106,13 @@ impl<G: Html> TemplateInner<G> {
             Reactor::<G>::engine(global_state, RenderMode::Head, Some(translator))
                 .add_self_to_cx(cx);
 
-            prerender_view = with_no_hydration_context(|| (self.head)(cx, state));
+            prerender_view = with_no_hydration_context(|| {
+                if let Some(head_fn) = &self.head {
+                    (head_fn)(cx, state)
+                } else {
+                    Ok(View::empty())
+                }
+            });
         });
         let prerender_view = prerender_view?;
         let prerendered = sycamore::render_to_string(|_| prerender_view);
@@ -236,7 +244,11 @@ impl<G: Html> TemplateInner<G> {
             let reactor = Reactor::<G>::engine(global_state, RenderMode::Headers, translator);
             reactor.add_self_to_cx(cx);
 
-            res = (self.set_headers)(cx, state)
+            if let Some(header_fn) = &self.set_headers {
+                res = (header_fn)(cx, state);
+            } else {
+                res = Ok(default_headers());
+            }
         });
 
         res

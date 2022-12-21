@@ -18,8 +18,6 @@ pub(crate) use utils::*;
 use super::fn_types::*;
 use super::TemplateFn;
 #[cfg(not(target_arch = "wasm32"))]
-use crate::template::default_headers;
-#[cfg(not(target_arch = "wasm32"))]
 use crate::utils::ComputedDuration;
 use sycamore::{prelude::create_scope, view::View, web::Html};
 
@@ -79,7 +77,7 @@ pub struct TemplateInner<G: Html> {
     /// which will then be interpolated directly into the `<head>`,
     /// so reactivity here will not work!
     #[cfg(not(target_arch = "wasm32"))]
-    head: HeadFn,
+    pub(crate) head: Option<HeadFn>,
     /// A function to be run when the server returns an HTTP response. This
     /// should return headers for said response, given the template's state.
     /// The most common use-case of this is to add cache control that respects
@@ -87,7 +85,7 @@ pub struct TemplateInner<G: Html> {
     /// does have the power to override existing headers. By default, this will
     /// create sensible cache control headers.
     #[cfg(not(target_arch = "wasm32"))]
-    set_headers: SetHeadersFn,
+    pub(crate) set_headers: Option<SetHeadersFn>,
     /// A function that generates the information to begin building a template.
     /// This is responsible for generating all the paths that will built for
     /// that template at build-time (which may later be extended with
@@ -170,10 +168,9 @@ impl<G: Html> TemplateInner<G> {
             view: Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(not(target_arch = "wasm32"))]
-            head: Box::new(|_, _| Ok(View::empty())),
-            // We create sensible header defaults here
+            head: None,
             #[cfg(not(target_arch = "wasm32"))]
-            set_headers: Box::new(|_, _| Ok(default_headers())),
+            set_headers: None,
             #[cfg(not(target_arch = "wasm32"))]
             get_build_paths: None,
             #[cfg(not(target_arch = "wasm32"))]

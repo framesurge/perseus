@@ -111,6 +111,19 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// full [`Capsule`].
     pub fn build(mut template_inner: TemplateInner<G>) -> CapsuleInner<G, P> {
         template_inner.is_capsule = true;
+        // Produce nice errors to make it clear that heads and headers don't work with
+        // capsules
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            assert!(
+                template_inner.head.is_none(),
+                "capsules cannot set document metadata"
+            );
+            assert!(
+                template_inner.set_headers.is_none(),
+                "capsules cannot set headers"
+            );
+        }
         // Wipe the template's view function to make sure the errors aren't obscenely
         // weird
         template_inner.view = Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {}))));

@@ -127,7 +127,7 @@ impl<G: Html> TemplateInner<G> {
         V: Into<GeneratorResult<View<SsrNode>>>,
     {
         let template_name = self.get_path();
-        self.head = Box::new(move |cx, template_state| {
+        self.head = Some(Box::new(move |cx, template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
                 return Err(ClientError::InvariantError(ClientInvariantError::NoState).into());
@@ -151,7 +151,7 @@ impl<G: Html> TemplateInner<G> {
             val(cx, state)
                 .into()
                 .into_server_result("head", template_name)
-        });
+        }));
         self
     }
     /// Sets the document `<head>` rendering function to use. The [`View`]
@@ -178,7 +178,7 @@ impl<G: Html> TemplateInner<G> {
         V: Into<GeneratorResult<HeaderMap>>,
     {
         let template_name = self.get_path();
-        self.set_headers = Box::new(move |cx, template_state| {
+        self.set_headers = Some(Box::new(move |cx, template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
                 return Err(ClientError::InvariantError(ClientInvariantError::NoState).into());
@@ -202,7 +202,7 @@ impl<G: Html> TemplateInner<G> {
             val(cx, state)
                 .into()
                 .into_server_result("set_headers", template_name)
-        });
+        }));
         self
     }
     /// Sets the function to set headers. This will override Perseus' inbuilt
