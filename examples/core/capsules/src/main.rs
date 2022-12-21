@@ -14,5 +14,6 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         // `.capsule_ref()` can perform internal type coercions to bridge this
         // gap. (It learn more about the reference pattern vs. the function one, see the book.)
         .capsule_ref(&*crate::capsules::greeting::GREETING)
+        .capsule_ref(&*crate::capsules::wrapper::WRAPPER)
         .error_views(ErrorViews::unlocalized_development_default())
 }

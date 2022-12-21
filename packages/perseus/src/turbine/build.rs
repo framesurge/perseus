@@ -228,7 +228,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // We write the extra state even if it's empty
         self.immutable_store
             .write(
-                &format!("static/{}.extra.json", entity.get_path()),
+                &format!("static/{}.extra.json", urlencoding::encode(&entity.get_path())),
                 &extra.state.to_string(),
             )
             .await?;

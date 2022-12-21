@@ -3,6 +3,7 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
+// Putting our capsule in a static means it can easily be included in templates!
 lazy_static! {
     // This `PerseusNodeType` alias will resolve to `SsrNode`/`DomNode`/`HydrateNode` automatically
     // as needed. This is needed because `lazy_static!` doesn't support generics, like `G: Html`.
@@ -23,15 +24,20 @@ struct GreetingState {
     greeting: String,
 }
 
+// This needs to be public, because it will be passed to us by templates
 #[derive(Clone)]
 pub struct GreetingProps {
     pub color: String,
 }
 
 pub fn get_capsule<G: Html>() -> Capsule<G, GreetingProps> {
+    // Template properties, to do with state generation, are set on a template that's
+    // passed to the capsule. Note that we don't call `.build()` on the template,
+    // because we want a capsule, not a template (we're using the `TemplateInner`).
     Capsule::build(Template::build("greeting").build_state_fn(get_build_state))
-        // This method is on `CapsuleInner`, and must be called before the others...
         .empty_fallback()
+        // Very importantly, we declare our views on the capsule, **not** the template!
+        // This lets us use properties.
         .view_with_state(greeting_capsule)
         .build()
 }

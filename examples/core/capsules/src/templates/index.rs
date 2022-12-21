@@ -1,11 +1,13 @@
-use crate::capsules::greeting::{GreetingProps, GREETING};
+use crate::capsules::greeting::GreetingProps;
+use crate::capsules::wrapper::WRAPPER;
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "Hello World!" }
-        (GREETING.widget(cx, "", GreetingProps { color: "red".to_string() }))
+        // This capsule wraps another capsule
+        (WRAPPER.widget(cx, "", GreetingProps { color: "red".to_string() }))
     }
 }
 
