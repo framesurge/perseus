@@ -229,7 +229,7 @@ impl Reactor<BrowserNodeType> {
         // can simply report errors, but, because we don't actually have a place to put
         // page-wide errors yet, we need to know what this will return so we know if we
         // should proceed.
-        let starting_view = match self.get_initial_view(cx) {
+        let (starting_view, is_err) = match self.get_initial_view(cx) {
             Ok(InitialView::View(view, disposer)) => {
                 // SAFETY: There's nothing in there right now, and we know that for sure
                 // because it's the initial load (asserted above). Also, we're in the app-level
@@ -238,16 +238,16 @@ impl Reactor<BrowserNodeType> {
                     page_disposer.update(disposer);
                 }
 
-                view
+                (view, false)
             }
             // On a redirect, return a view that just redirects straight away (of course,
             // this will be created inside a router, so everything works nicely)
-            Ok(InitialView::Redirect(dest)) => view! { cx,
+            Ok(InitialView::Redirect(dest)) => (view! { cx,
                 ({
                     navigate_replace(&dest);
                     View::empty()
                 })
-            },
+            }, false),
             // We still need the page-wide view
             Err(err @ ClientError::ServerError { .. }) => {
                 // Rather than worrying about multi-file invariants, just do the error
@@ -266,7 +266,7 @@ impl Reactor<BrowserNodeType> {
                 // For apps using exporting, it's very possible that the prerendered may be
                 // unlocalized, and this may be localized. Hence, we clear the contents.
                 force_render = true;
-                body_view
+                (body_view, true)
             }
             // Popup error: we will not create a router, terminating immediately
             // and instructing the caller to dispose of the scope
@@ -344,7 +344,12 @@ impl Reactor<BrowserNodeType> {
         });
 
         // --- Router! ---
-        checkpoint("page_interactive");
+
+        if is_err {
+            checkpoint("error");
+        } else {
+            checkpoint("page_interactive");
+        }
 
         // Now set up the full router
         // let popup_error_disposer_2 = popup_error_disposer.clone();

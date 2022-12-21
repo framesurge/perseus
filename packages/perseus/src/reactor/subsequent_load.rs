@@ -55,8 +55,6 @@ impl<G: Html> Reactor<G> {
                 });
                 self.router_state.set_last_verdict(slim_verdict);
 
-                checkpoint("initial_state_not_present");
-
                 // Before we fetch anything, first check if there's an entry in the PSS already
                 // (if there is, we can avoid a network request)
                 let page_data = match self.state_store.contains(&full_path) {

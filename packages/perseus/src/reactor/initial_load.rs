@@ -80,7 +80,6 @@ impl<G: Html> Reactor<G> {
                 // Get the initial state and decide what to do from that. We can guarantee that
                 // this locale is supported because it came from `match_route`.
                 let state = self.get_initial_state(locale)?;
-                checkpoint("initial_state_present"); // If we got past that `?`
 
                 // TODO Fairly certain we don't need this anymore, but check
                 // // Unset the initial state variable so we perform subsequent renders
