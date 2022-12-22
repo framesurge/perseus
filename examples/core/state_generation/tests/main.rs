@@ -68,7 +68,12 @@ async fn incremental_generation(c: &mut Client) -> Result<(), fantoccini::error:
     // Finally, test an illegal URL
     c.goto("http://localhost:8080/incremental_generation/tests")
         .await?;
-    wait_for_checkpoint!("initial_state_error", 0, c);
+    // This is actually very important: incremental pages that are invalidated on
+    // the engine-side will appear valid to the browser, leading to a
+    // `FullRouteVerdict::Found` variant. It is imperative that the `not_found`
+    // checkpoint is executed somehow even in this case, otherwise
+    // users are likely to find themselves with almost undiagnosable errors.
+    wait_for_checkpoint!("not_found", 0, c);
     // There should be an error page
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert!(text.contains("not found"));

@@ -60,6 +60,8 @@ impl<G: Html> Reactor<G> {
         // We'll need this later for setting the router state
         let slim_verdict = verdict.clone();
         match &verdict.into_full(&self.entities) {
+            // WARNING: This will be triggered on *all* incremental paths, even if
+            // the serber returns a 404!
             FullRouteVerdict::Found(FullRouteInfo {
                 path,
                 entity,
@@ -80,20 +82,6 @@ impl<G: Html> Reactor<G> {
                 // Get the initial state and decide what to do from that. We can guarantee that
                 // this locale is supported because it came from `match_route`.
                 let state = self.get_initial_state(locale)?;
-
-                // TODO Fairly certain we don't need this anymore, but check
-                // // Unset the initial state variable so we perform subsequent renders
-                // correctly // This monstrosity is needed until `web-sys` adds
-                // a `.set()` method on `Window` // We don't do this for the
-                // global state because it should hang around // uninitialized
-                // until a template wants it (if we remove it before then, we're
-                // // stuffed)
-                // Reflect::set(
-                //     &JsValue::from(web_sys::window().unwrap()),
-                //     &JsValue::from("__PERSEUS_INITIAL_STATE"),
-                //     &JsValue::undefined(),
-                // )
-                //     .unwrap();
 
                 // Get the translator from the page (this has to exist, or the server stuffed
                 // up); doing this without a network request minimizes
@@ -157,7 +145,6 @@ impl<G: Html> Reactor<G> {
             // *unless* the error page was exported, in which case we're up the creek.
             // TODO Fetch translations with exported error pages? Solution??
             FullRouteVerdict::NotFound { locale } => {
-                checkpoint("not_found");
                 // Check what we have in the error page data. We would expect this to be a
                 // `ClientError::ServerError { status: 404, source: "page not found" }`, but
                 // other invariants could have been broken. So, we propagate any errors up
@@ -214,6 +201,11 @@ impl<G: Html> Reactor<G> {
                 status: err_page_data.status,
                 message: err_page_data.msg,
             };
+            // We do this in here so that even incremental pages that appear fine to the
+            // router, but that actually error out, trigger this checkpoint
+            if err_page_data.status == 404 {
+                checkpoint("not_found");
+            }
             // In some nice cases, the server will have been able to figure out the locale,
             // which we should have (this is one of those things that most sites
             // don't bother with because it's not easy to build, and *this* is
