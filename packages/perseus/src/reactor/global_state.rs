@@ -30,7 +30,7 @@ impl<G: Html> Reactor<G> {
         I::Unrx: MakeRx<Rx = I>,
     {
         // Warn the user about the perils of having no build-time global state handler
-        self.try_get_global_state::<I>(cx).unwrap().expect("you requested global state, but none exists for this app (if you;re generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
+        self.try_get_global_state::<I>(cx).unwrap().expect("you requested global state, but none exists for this app (if you're generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
     }
     /// The underlying logic for `.get_global_state()`, except this will return
     /// `None` if the app does not have global state.
@@ -47,11 +47,14 @@ impl<G: Html> Reactor<G> {
         if let GlobalStateType::None = *global_state_ty {
             return Ok(None);
         }
+        // Getting the held state may change this, so we have to drop it
+        drop(global_state_ty);
 
         let intermediate_state =
             if let Some(held_state) = self.get_held_global_state::<I::Unrx>()? {
                 held_state
             } else {
+                let global_state_ty = self.global_state.0.borrow();
                 // We'll get the server-given global state
                 if let GlobalStateType::Server(server_state) = &*global_state_ty {
                     // Fall back to the state we were given, first
@@ -63,6 +66,7 @@ impl<G: Html> Reactor<G> {
                         .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
                     let rx = unrx.make_rx();
                     // Set that as the new active global state
+                    drop(global_state_ty);
                     let mut active_global_state = self.global_state.0.borrow_mut();
                     *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
 

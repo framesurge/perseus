@@ -72,6 +72,8 @@ impl<G: Html> Reactor<G> {
         thaw_prefs: ThawPrefs,
         is_hsr: bool,
     ) -> Result<(), ClientError> {
+        // This won't check the data model, just that it is valid in some Perseus app
+        // that could exist (therefore fine with HSR)
         let new_frozen_app: FrozenApp = serde_json::from_str(new_frozen_app)
             .map_err(|err| ClientThawError::InvalidFrozenApp { source: err })?;
         let route = new_frozen_app.route.clone();
