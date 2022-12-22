@@ -206,6 +206,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let full_path = format!("{}/{}", &entity.get_path(), &page_path);
                 // And perform another strip for index pages to work
                 let full_path = full_path.strip_suffix('/').unwrap_or(&full_path);
+                let full_path = full_path.strip_prefix('/').unwrap_or(full_path);
                 render_cfg_frag.insert(full_path.to_string(), entity.get_path());
             }
 
@@ -297,7 +298,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Note the stripping of trailing `/`s here (otherwise index build paths fail)
             true => {
                 let full = format!("{}/{}", &entity.get_path(), path.0);
-                full.strip_suffix('/').unwrap_or(&full).to_string()
+                let full = full.strip_suffix('/').unwrap_or(&full);
+                full.strip_prefix('/').unwrap_or(full).to_string()
             }
             // We don't want to concatenate the name twice if we don't have to
             false => entity.get_path(),
