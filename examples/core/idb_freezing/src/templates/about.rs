@@ -23,7 +23,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
         button(id = "freeze_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
             #[cfg(target_arch = "wasm32")]
-            perseus::spawn_local_scoped(cx, async move {
+            spawn_local_scoped(cx, async move {
                 use perseus::state::{IdbFrozenStateStore, Freeze};
                 // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
                 let frozen_state = reactor.freeze();
