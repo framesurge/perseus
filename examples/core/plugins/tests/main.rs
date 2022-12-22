@@ -10,7 +10,6 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
 
-    wait_for_checkpoint!("initial_state_present", 0, c);
     wait_for_checkpoint!("page_interactive", 0, c);
     let greeting = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(greeting, "Hello World!");

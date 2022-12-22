@@ -4,7 +4,7 @@ use perseus::wait_for_checkpoint;
 #[perseus::test]
 async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080").await?;
-    wait_for_checkpoint!("router_entry", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     let url = c.current_url().await?;
     // We only test for one locale here because changing the browser's preferred
     // languages is very hard, we do unit testing on the locale detection system
@@ -18,7 +18,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.find(Locator::Css("a")).await?.click().await?;
     // This tests i18n linking (locale should be auto-detected)
     let url = c.current_url().await?;
-    wait_for_checkpoint!("initial_state_not_present", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     assert!(url
         .as_ref()
         .starts_with("http://localhost:8080/en-US/about"));

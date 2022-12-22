@@ -31,9 +31,10 @@ pub struct GreetingProps {
 }
 
 pub fn get_capsule<G: Html>() -> Capsule<G, GreetingProps> {
-    // Template properties, to do with state generation, are set on a template that's
-    // passed to the capsule. Note that we don't call `.build()` on the template,
-    // because we want a capsule, not a template (we're using the `TemplateInner`).
+    // Template properties, to do with state generation, are set on a template
+    // that's passed to the capsule. Note that we don't call `.build()` on the
+    // template, because we want a capsule, not a template (we're using the
+    // `TemplateInner`).
     Capsule::build(Template::build("greeting").build_state_fn(get_build_state))
         .empty_fallback()
         // Very importantly, we declare our views on the capsule, **not** the template!

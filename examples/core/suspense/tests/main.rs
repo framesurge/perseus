@@ -10,8 +10,6 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080"));
 
-    wait_for_checkpoint!("initial_state_present", 0, c);
-
     // Get each of the greetings
     let mut first = c.find(Locator::Id("first")).await?;
     let mut second = c.find(Locator::Id("second")).await?;

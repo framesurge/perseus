@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-use super::greeting::{GREETING, GreetingProps};
+use super::greeting::{GreetingProps, GREETING};
 
 lazy_static! {
     pub static ref WRAPPER: Capsule<PerseusNodeType, GreetingProps> = get_capsule();
