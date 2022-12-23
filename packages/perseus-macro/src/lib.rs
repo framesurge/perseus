@@ -42,13 +42,13 @@ pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
 /// In fact, even if you're using fully reactive state, this macro isn't even
 /// mandated anymore! It just exists to turn function signatures like this
 ///
-/// ```
+/// ```text
 /// fn my_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a MyStateRx) -> View<G>
 /// ```
 ///
 /// into this
 ///
-/// ```
+/// ```text
 /// #[auto_scope]
 /// fn my_page<G: Html>(cx: Scope, state: &MyStateRx) -> View<G>
 /// ```
