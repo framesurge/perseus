@@ -66,6 +66,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 req,
                 None,
                 None,
+                false, /* This is not an initial load (so the browser will need a little `Ok` in
+                        * the `Value`) */
             )
             .await?;
 
@@ -122,6 +124,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 clone_req(&req),
                 Some(template),
                 Some(global_state.clone()),
+                true, // This is an initial load
             )
             .await?;
 
@@ -346,6 +349,8 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                                     // We do happen to actually have this from the routing
                                     Some(route_info.entity),
                                     Some(global_state),
+                                    true, /* This is an initial load, so don't put an `Ok` in
+                                           * the `Value` */
                                 )
                                 .await
                                 // The error handling systems will need a client-style error,
@@ -420,6 +425,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // If these are `None`, we'll generate them
         entity: Option<&Entity<SsrNode>>, // Not for recursion, just convenience
         global_state: Option<TemplateState>,
+        is_initial: bool,
     ) -> Result<StateAndHead, ServerError> {
         let locale = translator.get_locale();
         // This could be very different from the build-time global state
@@ -686,7 +692,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // that the kinds of `Err` variants on widget states that can be caused
         // in the initial load process would just be returned directly as errors
         // earlier from here (and would be accordingly handled on the browser-side).
-        let final_state = if entity.is_capsule {
+        //
+        // We should only do this on subsequent loads (initial loads do error handling
+        // more normally).
+        let final_state = if entity.is_capsule && !is_initial {
             let val = final_state.state;
             let ok_val = serde_json::to_value(Ok::<Value, ()>(val)).unwrap();
             TemplateState::from_value(ok_val)
