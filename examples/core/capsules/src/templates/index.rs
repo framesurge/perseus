@@ -6,6 +6,7 @@ use sycamore::prelude::*;
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "Hello World!" }
+        a(href = "about") { "About" }
         // This capsule wraps another capsule
         (WRAPPER.widget(cx, "", GreetingProps { color: "red".to_string() }))
     }
