@@ -3,11 +3,7 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-// Putting our capsule in a static means it can easily be included in templates!
 lazy_static! {
-    // This `PerseusNodeType` alias will resolve to `SsrNode`/`DomNode`/`HydrateNode` automatically
-    // as needed. This is needed because `lazy_static!` doesn't support generics, like `G: Html`.
-    // Perseus can bridge the gap internally with type coercions, so this "just works"!
     pub static ref IP: Capsule<PerseusNodeType, ()> = get_capsule();
 }
 
