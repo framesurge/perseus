@@ -6,4 +6,6 @@ mod icons;
 mod search_bar;
 mod template;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use get_file_at_version::get_file_at_version;
 pub use template::get_template;

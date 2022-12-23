@@ -8,6 +8,8 @@ Each of the examples here are fully self-contained Perseus apps, though they use
 
 If any of these examples don't work, please [open an issue](https://github.com/arctic-hen7/perseus/issues/choose) and let us know!
 
+The `website/` directory contains the examples you see on the front page of the Perseus website, [here](https://framesurge.sh/perseus/en-US). These should be kept as concise as possible, but it doesn't matter if they're updated on `main` or in a PR for code that hasn't been published yet, since the website gets them from the `stable` branch. That way, those examples will always be for the latest published version of Perseus (even if it's a beta version).
+
 *Note: by default, all examples are assumed to use the `perseus-integration` helper crate, which allows testing them with all integrations. If this is not the case, add a `.integration_locked` file to the root of the example.*
 
 **Warning:** all of the `core` examples use `ErrorViews::unlocalized_default()` for their error views, except for the example that specifically regards error views. This is done solely for convenience and to reduce the burden of maintaining all the examples. In real apps, error views will be provided for you in development for convenience, but you'll have to provide your own in production (unless you explicitly force the development error views to come with you to production, with `::unlocalized_default()`, which is **not** recommended).
