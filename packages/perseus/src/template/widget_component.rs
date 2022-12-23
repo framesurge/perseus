@@ -202,7 +202,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
                 match self_copy.render_widget_for_template_client(
                     full_path,
-                    &caller_path,
+                    caller_path,
                     props,
                     cx,
                     PreloadInfo {

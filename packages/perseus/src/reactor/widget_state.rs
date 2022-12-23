@@ -37,6 +37,7 @@ impl<G: Html> Reactor<G> {
         &'a self,
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
+        #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
         #[cfg(target_arch = "wasm32")] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
@@ -116,11 +117,18 @@ impl<G: Html> Reactor<G> {
                                         &path,
                                         TemplateState::empty(),
                                     ) {
-                                        Ok(Some(intermediate_state)) => view_fn(
-                                            child_cx,
-                                            create_ref(child_cx, intermediate_state),
-                                            props,
-                                        ),
+                                        Ok(Some(intermediate_state)) => {
+                                            // Declare the relationship between the widget and its
+                                            // caller
+                                            self.state_store
+                                                .declare_dependency(&path, &caller_path);
+
+                                            view_fn(
+                                                child_cx,
+                                                create_ref(child_cx, intermediate_state),
+                                                props,
+                                            )
+                                        }
                                         Ok(None) => unreachable!(),
                                         Err(err) => self.error_views.handle_widget(err, child_cx),
                                     },
@@ -153,6 +161,7 @@ impl<G: Html> Reactor<G> {
         &'a self,
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
+        #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
         #[cfg(target_arch = "wasm32")] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
@@ -228,6 +237,11 @@ impl<G: Html> Reactor<G> {
                                         TemplateState::empty(),
                                     ) {
                                         Ok(Some(intermediate_state)) => {
+                                            // Declare the relationship between the widget and its
+                                            // caller
+                                            self.state_store
+                                                .declare_dependency(&path, &caller_path);
+
                                             view_fn(child_cx, intermediate_state.make_unrx(), props)
                                         }
                                         Ok(None) => unreachable!(),

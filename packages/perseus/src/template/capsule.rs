@@ -22,7 +22,8 @@ pub(crate) type CapsuleFn<G, P> = Box<
             PreloadInfo,
             TemplateState,
             P,
-            PathMaybeWithLocale,
+            PathMaybeWithLocale, // Widget path
+            PathMaybeWithLocale, // Caller path
         ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
         + Send
         + Sync,
@@ -129,7 +130,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         template_inner.view = Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {}))));
         CapsuleInner {
             template_inner,
-            capsule_view: Box::new(|_, _, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
+            capsule_view: Box::new(|_, _, _, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
             // This must be manually specified
             fallback: None,
         }
@@ -148,7 +149,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     pub(crate) fn render_widget_for_template_client(
         &self,
         path: PathMaybeWithLocale,
-        caller_path: &PathMaybeWithLocale,
+        caller_path: PathMaybeWithLocale,
         props: P,
         cx: Scope,
         preload_info: PreloadInfo,
@@ -160,12 +161,9 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
             preload_info,
             TemplateState::empty(),
             props,
-            path.clone(),
+            path,
+            caller_path,
         )?;
-        // The widget will have been registered in the state store, so declare the
-        // dependency
-        let reactor = Reactor::<G>::from_cx(cx);
-        reactor.state_store.declare_dependency(&path, caller_path);
         Ok(view)
     }
     /// Executes the user-given function that renders the capsule on the
@@ -182,8 +180,16 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ) -> Result<View<G>, ClientError> {
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {};
-        // We don't care about the scope disposer, since this scope is unique anyway
-        let (view, _) = (self.capsule_view)(cx, preload_info, state, props, path)?;
+        // We don't care about the scope disposer, since this scope is unique anyway;
+        // the caller path is also irrelevant except on the browser
+        let (view, _) = (self.capsule_view)(
+            cx,
+            preload_info,
+            state,
+            props,
+            path,
+            PathMaybeWithLocale(String::new()),
+        )?;
         Ok(view)
     }
 }
@@ -265,11 +271,12 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
-            move |app_cx, preload_info, template_state, props, path| {
+            move |app_cx, preload_info, template_state, props, path, caller_path| {
                 let reactor = Reactor::<G>::from_cx(app_cx);
                 reactor.get_widget_view::<I::Unrx, _, P>(
                     app_cx,
                     path,
+                    caller_path,
                     #[cfg(target_arch = "wasm32")]
                     entity_name.clone(),
                     template_state,
@@ -300,11 +307,12 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
-            move |app_cx, preload_info, template_state, props, path| {
+            move |app_cx, preload_info, template_state, props, path, caller_path| {
                 let reactor = Reactor::<G>::from_cx(app_cx);
                 reactor.get_unreactive_widget_view(
                     app_cx,
                     path,
+                    caller_path,
                     #[cfg(target_arch = "wasm32")]
                     entity_name.clone(),
                     template_state,
@@ -328,20 +336,26 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
-        self.capsule_view = Box::new(move |app_cx, _preload_info, _template_state, props, path| {
-            let reactor = Reactor::<G>::from_cx(app_cx);
-            // Declare that this page/widget will never take any state to enable full
-            // caching
-            reactor.register_no_state(&path, true);
+        self.capsule_view = Box::new(
+            #[allow(unused_variables)]
+            move |app_cx, _preload_info, _template_state, props, path, caller_path| {
+                let reactor = Reactor::<G>::from_cx(app_cx);
+                // Declare that this page/widget will never take any state to enable full
+                // caching
+                reactor.register_no_state(&path, true);
+                // And declare the relationship between the widget and its caller
+                #[cfg(target_arch = "wasm32")]
+                reactor.state_store.declare_dependency(&path, &caller_path);
 
-            // Nicely, if this is a widget, this means there need be no network requests
-            // at all!
-            let mut view = View::empty();
-            let disposer = create_child_scope(app_cx, |child_cx| {
-                view = val(child_cx, props);
-            });
-            Ok((view, disposer))
-        });
+                // Nicely, if this is a widget, this means there need be no network requests
+                // at all!
+                let mut view = View::empty();
+                let disposer = create_child_scope(app_cx, |child_cx| {
+                    view = val(child_cx, props);
+                });
+                Ok((view, disposer))
+            },
+        );
         self
     }
 }

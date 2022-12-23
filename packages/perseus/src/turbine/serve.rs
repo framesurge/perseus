@@ -680,6 +680,20 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             String::new()
         };
 
+        // On the browser-side, widgets states will always be parsed as fallible, so, if
+        // this is from a capsule, we'll wrap it in `Ok` (working around this on
+        // the browser-side is more complex than a simple fix here) --- note
+        // that the kinds of `Err` variants on widget states that can be caused
+        // in the initial load process would just be returned directly as errors
+        // earlier from here (and would be accordingly handled on the browser-side).
+        let final_state = if entity.is_capsule {
+            let val = final_state.state;
+            let ok_val = serde_json::to_value(Ok::<Value, ()>(val)).unwrap();
+            TemplateState::from_value(ok_val)
+        } else {
+            final_state
+        };
+
         Ok(StateAndHead {
             state: final_state,
             head: head_str,
