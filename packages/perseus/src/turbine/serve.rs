@@ -466,10 +466,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         if entity.is_basic() {
             // Get the head (since this is basic, it has no state, and therefore
             // this would've been written at build-time)
-            let head = self
-                .immutable_store
-                .read(&format!("static/{}.head.html", &path_encoded))
-                .await?;
+            let head = if entity.is_capsule {
+                String::new()
+            } else {
+                self
+                    .immutable_store
+                    .read(&format!("static/{}.head.html", &path_encoded))
+                    .await?
+            };
 
             return Ok(StateAndHead {
                 // No, this state is never written anywhere at build-time
