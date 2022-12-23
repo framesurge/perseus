@@ -342,7 +342,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         } else if entity.uses_build_state() {
             let build_state = entity
                 .get_build_state(StateGeneratorInfo {
-                    path: (*full_path_without_locale).clone(),
+                    // IMPORTANT: It is very easy to break Perseus here; always make sure this is
+                    // the pure path, without the template name!
+                    // TODO Compat mode for v0.3.0x?
+                    path: (*path).clone(),
                     locale: translator.get_locale(),
                     extra: extra.clone(),
                 })
