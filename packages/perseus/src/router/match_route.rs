@@ -33,8 +33,8 @@ fn get_template_for_path<'a, G: Html>(
     // an exact match above
     if entity_name.is_none() {
         // We progressively look for more and more specificity of the path, adding each
-        // segment That way, we're searching forwards rather than backwards,
-        // which is more efficient
+        // segment. That way, we're searching forwards rather than backwards,
+        // which is more efficient.
         let path_segments: Vec<&str> = path.split('/').collect();
         for (idx, _) in path_segments.iter().enumerate() {
             // Make a path out of this and all the previous segments
@@ -44,8 +44,6 @@ fn get_template_for_path<'a, G: Html>(
             if let Some(entity_root_path) = render_cfg.get(&path_to_try) {
                 was_incremental_match = true;
                 entity_name = Some(entity_root_path.to_string());
-            } else {
-                break;
             }
         }
     }
