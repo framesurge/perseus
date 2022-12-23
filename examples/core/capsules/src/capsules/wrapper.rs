@@ -17,7 +17,7 @@ fn wrapper_capsule<G: Html>(cx: Scope, props: GreetingProps) -> View<G> {
 }
 
 pub fn get_capsule<G: Html>() -> Capsule<G, GreetingProps> {
-    Capsule::build(Template::build("greeting"))
+    Capsule::build(Template::build("wrapper"))
         .empty_fallback()
         .view(wrapper_capsule)
         .build()

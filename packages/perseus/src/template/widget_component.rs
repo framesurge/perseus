@@ -235,7 +235,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         use std::sync::Arc;
 
         use crate::error_views::ErrorViews;
-        use crate::errors::{ClientError, ServerError};
+        use crate::errors::{ClientError, ServerError, StoreError};
         use crate::path::PathMaybeWithLocale;
         use crate::reactor::{Reactor, RenderMode, RenderStatus};
         use crate::state::TemplateState;
@@ -296,6 +296,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                             immutable_store.read(&format!("static/{}.json", path_encoded)),
                         ) {
                             Ok(state) => state,
+                            // If there's no state file, we'll assume an empty state
+                            Err(StoreError::NotFound { .. }) => "null".to_string(),
                             Err(err) => {
                                 *render_status.borrow_mut() = RenderStatus::Err(err.into());
                                 return View::empty();
