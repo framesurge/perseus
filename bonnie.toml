@@ -187,7 +187,7 @@ test.subcommands.example.args = [ "category", "example", "integration" ]
 test.subcommands.example.desc = "tests a single example with the given integration (assumes geckodriver running in background), use `--headless` to run headlessly"
 test.subcommands.example-all-integrations.cmd = [
     "rust-script scripts/test.rs %category %example actix-web %%",
-    "rust-script scripts/test.rs %category %example warp %%"
+    "rust-script scripts/test.rs %category %example warp %%",
     "rust-script scripts/test.rs %category %example axum %%"
 ]
 test.subcommands.example-all-integrations.args = [ "category", "example" ]
