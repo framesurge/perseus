@@ -9,6 +9,8 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .template(crate::templates::index::get_template())
         .template(crate::templates::about::get_template())
         .template(crate::templates::clock::get_template())
+        .template(crate::templates::calc::get_template())
+        .template(crate::templates::four::get_template())
         // We use the reference pattern here, storing the capsule in a static. However, we had
         // to specify a concrete type for `G`, the rendering backend. Since we used
         // `PerseusNodeType`, which will always intelligently line up with the `G` here, we
@@ -19,5 +21,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .capsule_ref(&*crate::capsules::wrapper::WRAPPER)
         .capsule_ref(&*crate::capsules::ip::IP)
         .capsule_ref(&*crate::capsules::time::TIME)
+        .capsule_ref(&*crate::capsules::number::NUMBER)
+        .capsule_ref(&*crate::capsules::links::LINKS)
         .error_views(ErrorViews::unlocalized_development_default())
 }

@@ -4,7 +4,6 @@ members = [
     "examples/core/*",
     "examples/demos/*",
     "examples/comprehensive/*",
-    # TODO Update these before the release of v0.4.0!
     # "examples/website/*",
     "website",
 ]

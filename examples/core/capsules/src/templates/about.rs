@@ -1,4 +1,5 @@
 use crate::capsules::ip::IP;
+use crate::capsules::links::LINKS;
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
@@ -6,6 +7,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         // This will display the user's IP address
         (IP.widget(cx, "", ()))
+        (LINKS.widget(cx, "", ()))
     }
 }
 

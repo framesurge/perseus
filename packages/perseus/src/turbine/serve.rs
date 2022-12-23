@@ -469,8 +469,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             let head = if entity.is_capsule {
                 String::new()
             } else {
-                self
-                    .immutable_store
+                self.immutable_store
                     .read(&format!("static/{}.head.html", &path_encoded))
                     .await?
             };

@@ -12,7 +12,7 @@ struct PageState {
 fn build_paths_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
     view! { cx,
         h1 {
-            (state.title.get())
+            (format!("build_paths/{}", state.title.get()))
         }
         p {
             (state.content.get())
