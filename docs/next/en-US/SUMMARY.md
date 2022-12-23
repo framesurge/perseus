@@ -2,11 +2,7 @@
 
 -   [Introduction](/docs/intro)
 -   [What is Perseus?](/docs/what-is-perseus)
--   [Getting Started](/docs/getting-started/intro)
-    - [Installation](/docs/getting-started/installation)
-    - [Your First App](/docs/getting-started/first-app)
 -   [Core Principles](/docs/core-principles)
--   [Your Second App](/docs/tutorials/second-app)
 
 # Reference
 
