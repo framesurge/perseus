@@ -399,11 +399,13 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // which means we might find some that can't be built at build-time.
                 let render_status = Rc::new(RefCell::new(RenderStatus::Ok));
                 let widget_states = Rc::new(RefCell::new(HashMap::new()));
+                let possibly_incremental_paths = Rc::new(RefCell::new(Vec::new()));
                 let mode = RenderMode::Build {
                     render_status: render_status.clone(),
                     widget_render_cfg: self.render_cfg.clone(),
                     immutable_store: self.immutable_store.clone(),
                     widget_states: widget_states.clone(),
+                    possibly_incremental_paths: possibly_incremental_paths.clone(),
                 };
 
                 // Now prerender the actual content (a bit roundabout for error handling)
@@ -432,40 +434,56 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             // Check how the render went
             match render_status {
                 RenderStatus::Ok => {
-                    let prerendered = minify(&prerendered, true)?;
-                    // Write that prerendered HTML to a static file (whose presence is used to
-                    // indicate that this page/widget was fine to be built at
-                    // build-time, and will not change at request-time;
-                    // therefore this will be blindly returned at request-time).
-                    // We also write a JSON file with a map of all the widget states, since the
-                    // browser will need to know them for hydration.
-                    if force_mutable || entity.revalidates() {
-                        self.mutable_store
-                            .write(&format!("static/{}.html", full_path_encoded), &prerendered)
-                            .await?;
-                        self.mutable_store
-                            .write(
-                                &format!("static/{}.widgets.json", full_path_encoded),
-                                &widget_states,
-                            )
-                            .await?;
+                    // `Ok` does not necessarily mean all is well: anything in `possibly_incremental_paths`
+                    // constitutes a widget that could not be rendered because it wasn't in the
+                    // render config (either needs to be incrementally rendered, or it doesn't exist).
+                    let paps = possibly_incremental_paths.borrow();
+                    if paps.is_empty() {
+                        let prerendered = minify(&prerendered, true)?;
+                        // Write that prerendered HTML to a static file (whose presence is used to
+                        // indicate that this page/widget was fine to be built at
+                        // build-time, and will not change at request-time;
+                        // therefore this will be blindly returned at request-time).
+                        // We also write a JSON file with a map of all the widget states, since the
+                        // browser will need to know them for hydration.
+                        if force_mutable || entity.revalidates() {
+                            self.mutable_store
+                                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
+                                .await?;
+                            self.mutable_store
+                                .write(
+                                    &format!("static/{}.widgets.json", full_path_encoded),
+                                    &widget_states,
+                                )
+                                .await?;
+                        } else {
+                            self.immutable_store
+                                .write(&format!("static/{}.html", full_path_encoded), &prerendered)
+                                .await?;
+                            self.immutable_store
+                                .write(
+                                    &format!("static/{}.widgets.json", full_path_encoded),
+                                    &widget_states,
+                                )
+                                .await?;
+                        }
                     } else {
-                        self.immutable_store
-                            .write(&format!("static/{}.html", full_path_encoded), &prerendered)
-                            .await?;
-                        self.immutable_store
-                            .write(
-                                &format!("static/{}.widgets.json", full_path_encoded),
-                                &widget_states,
-                            )
-                            .await?;
+                        // Incremental generation is purely side-effect based
+                        // TODO Put all this in a recursing async fucntion that takes a `HashMap` for the
+                        // render cfg that we cosntruct by adding the new components to it; then this whole function
+                        // should return those tidbits to be added to the render config, and that should all work.
                     }
                 }
                 RenderStatus::Err(err) => return Err(err),
                 // One of the dependencies couldn't be built at build-time,
                 // so, by not writing a prerender to the store, we implicitly
                 // reschedule it (unless this hasn't been allowed by the user,
-                // or if we're exporting)
+                // or if we're exporting).
+                //
+                // Important: this will **not** be returned for pages including
+                // incremental widgets that haven't been built yet, those are handled
+                // through `Ok`. Potentially non-existent widgets will also be handled
+                // through there.
                 RenderStatus::Cancelled => {
                     if exporting {
                         return Err(ExportError::DependenciesNotExportable {

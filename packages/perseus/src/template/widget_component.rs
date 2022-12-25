@@ -256,6 +256,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 widget_render_cfg,
                 immutable_store,
                 widget_states,
+                possibly_incremental_paths,
             } => {
                 // If the render status isn't good, don't even bother proceeding, and fail-fast
                 // instead
@@ -338,12 +339,16 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                         }
                     }
                 } else {
-                    // This widget will be incrementally generated (TODO should we try to build it
-                    // now?). It could also just not exist, but we can't confirm
-                    // that until request time (since incremenally generated
-                    // page could also be invalid). Remember that this will only get through if the
-                    // user has explicitly allowed deferring renders.
-                    *render_status.borrow_mut() = RenderStatus::Cancelled;
+                    // Either this widget can be incrementally generated, or it doesn't exist. We'll
+                    // yield to the build process, which will build this if it's incremental, and
+                    // just throw an error if it's not.
+                    //
+                    // Note that reschedulings can't arise from this, as incremental generation is
+                    // a flexible pattern: it can be either build-time or request-time. Only request
+                    // state or revalidation can trigger that.
+                    possibly_incremental_paths.borrow_mut().push(path);
+                    // We don't change the render status, because that would prevent other widgets from
+                    // loading (and there might be multiple incrementals).
                     View::empty()
                 }
             }
