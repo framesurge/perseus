@@ -61,6 +61,9 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// The app's render configuration, a map of paths in the app to the names
     /// of the templates that generated them. (Since templates can have
     /// multiple `/` delimiters in their names.)
+    ///
+    /// Since the paths are not actually valid paths, we leave them typed as
+    /// `String`s, but these keys are in effect `PathWithoutLocale` instances.
     render_cfg: HashMap<String, String>,
     /// A map of locale to global state. This is kept cached throughout the
     /// build process, since every template we build will require it to be

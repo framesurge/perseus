@@ -57,12 +57,13 @@ pub(crate) enum RenderMode<G: Html> {
         widget_states: Rc<RefCell<HashMap<String, (String, Value)>>>,
         /// A list of widget paths that are either nonexistent, or able to be
         /// incrementally generated. The build process should parse these and
-        /// try to build them all (failing entirely on any that actually don't exist,
-        /// or whose generation processes fail).
+        /// try to build them all (failing entirely on any that actually don't
+        /// exist, or whose generation processes fail).
         ///
-        /// This system means widget paths that aren't in build paths declarations can
-        /// still be used without template rescheduling being required, which is just
-        /// logical (Perseus should be able to just figure this one out).
+        /// This system means widget paths that aren't in build paths
+        /// declarations can still be used without template rescheduling
+        /// being required, which is just logical (Perseus should be
+        /// able to just figure this one out).
         possibly_incremental_paths: Rc<RefCell<Vec<PathWithoutLocale>>>,
     },
     /// We're rendering at request-time in order to determine what the

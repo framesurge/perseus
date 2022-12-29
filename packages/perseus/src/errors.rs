@@ -280,10 +280,13 @@ pub enum ServerError {
         #[source]
         source: serde_json::Error,
     },
+
+    // `PathWithoutLocale`
     #[error("attempting to resolve dependency '{widget}' in locale '{locale}' produced a locale redirection verdict (this shouldn't be possible)")]
     ResolveDepLocaleRedirection { widget: String, locale: String },
     #[error("attempting to resolve dependency '{widget}' in locale '{locale}' produced a not found verdict (did you mistype the widget path?)")]
     ResolveDepNotFound { widget: String, locale: String },
+
     #[error("template '{template_name}' cannot be built at build-time due to one or more of its dependencies having state that may change later; to allow this template to be built later, add `.allow_rescheduling()` to your template definition")]
     TemplateCannotBeRescheduled { template_name: String },
     // This is a serious error in programming

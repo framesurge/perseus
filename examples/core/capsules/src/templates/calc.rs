@@ -8,9 +8,12 @@ use sycamore::prelude::*;
 fn calc_page<G: Html>(cx: Scope, state: &CalcStateRx) -> View<G> {
     view! { cx,
         // This was *not* built at build-time in `number`, so we're incrementally
-        // generating it
+        // generating it. Importantly, Perseus can figure out that this should just
+        // be added to the build paths list of the `number` widget, so we don't need
+        // to reschedule the building of this widget
         p {
-            "The number five: "
+            "The number fifty-six: "
+            // See `number.rs` for why this yields `56`
             (NUMBER.widget(cx, "/5", ()))
             "."
         }
@@ -64,8 +67,6 @@ pub fn get_template<G: Html>() -> Template<G> {
     Template::build("calc")
         .view_with_state(calc_page)
         .build_state_fn(get_build_state)
-        // See `about.rs` for an explanation of this
-        .allow_rescheduling()
         .build()
 }
 

@@ -453,7 +453,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let path_encoded = format!("{}-{}", locale, urlencoding::encode(&path));
 
         // Any work we do with the build logic will expect the path without the template
-        // name, so we need to strip it (this could only fail if we'd mismatches
+        // name, so we need to strip it (this could only fail if we'd mismatched
         // the path to the entity name, which would be either a malformed
         // request or a *critical* Perseus routing bug)
         let pure_path = path

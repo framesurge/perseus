@@ -347,8 +347,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     // a flexible pattern: it can be either build-time or request-time. Only request
                     // state or revalidation can trigger that.
                     possibly_incremental_paths.borrow_mut().push(path);
-                    // We don't change the render status, because that would prevent other widgets from
-                    // loading (and there might be multiple incrementals).
+                    // We don't change the render status, because that would prevent other widgets
+                    // from loading (and there might be multiple incrementals).
                     View::empty()
                 }
             }
