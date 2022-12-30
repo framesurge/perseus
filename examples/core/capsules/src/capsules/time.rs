@@ -13,7 +13,7 @@ lazy_static! {
 fn time_capsule<G: Html>(cx: Scope, state: &TimeStateRx, _props: ()) -> View<G> {
     view! { cx,
         // We'll put this inside a `p`, so we'll use a `span`
-        span { (state.time.get()) }
+        span(id = "time") { (state.time.get()) }
     }
 }
 

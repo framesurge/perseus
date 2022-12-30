@@ -11,7 +11,7 @@ fn calc_page<G: Html>(cx: Scope, state: &CalcStateRx) -> View<G> {
         // generating it. Importantly, Perseus can figure out that this should just
         // be added to the build paths list of the `number` widget, so we don't need
         // to reschedule the building of this widget
-        p {
+        p(id = "fifty-six") {
             "The number fifty-six: "
             // See `number.rs` for why this yields `56`
             (NUMBER.widget(cx, "/5", ()))
@@ -28,7 +28,7 @@ fn calc_page<G: Html>(cx: Scope, state: &CalcStateRx) -> View<G> {
         // since you've already typed in `3` before.
         //
         // This works because *everything* is reactive, literally everything.
-        p {
+        p(id = "sum") {
             "The sum of the state numbers: "
             (NUMBER.widget(
                 cx,

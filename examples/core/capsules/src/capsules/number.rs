@@ -17,15 +17,18 @@ lazy_static! {
 // properties
 fn time_capsule<G: Html>(cx: Scope, state: Number, _props: ()) -> View<G> {
     view! { cx,
-        span { (state.number) }
-        // This is an example to demonstrate self-recursion, as well as taking
-        // a particular incremental path that has incremental dependencies
-        // itself. Perseus resolves this without problems.
-        (if state.number == 5 {
-            view! { cx, (NUMBER.widget(cx, "/6", ())) }
-        } else {
-            View::empty()
-        })
+        span {
+            (state.number)
+
+            // This is an example to demonstrate self-recursion, as well as taking
+            // a particular incremental path that has incremental dependencies
+            // itself. Perseus resolves this without problems.
+            (if state.number == 5 {
+                view! { cx, (NUMBER.widget(cx, "/6", ())) }
+            } else {
+                View::empty()
+            })
+        }
     }
 }
 

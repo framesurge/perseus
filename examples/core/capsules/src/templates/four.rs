@@ -5,7 +5,7 @@ use sycamore::prelude::*;
 
 fn four_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
-        p {
+        p(id = "four") {
             "The number four: "
             // We're using the second argument to provide a *widget path* within the capsule
             (NUMBER.widget(cx, "/4", ()))

@@ -14,7 +14,7 @@ lazy_static! {
 #[auto_scope]
 fn greeting_capsule<G: Html>(cx: Scope, state: &GreetingStateRx, props: GreetingProps) -> View<G> {
     view! { cx,
-        p(style = format!("color: {};", props.color)) { (state.greeting.get()) }
+        p(id = "greeting", style = format!("color: {};", props.color)) { (state.greeting.get()) }
     }
 }
 

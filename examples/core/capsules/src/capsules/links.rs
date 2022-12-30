@@ -12,16 +12,16 @@ lazy_static! {
 
 fn links_capsule<G: Html>(cx: Scope, _: ()) -> View<G> {
     view! { cx,
-        div(style = "margin-top: 1rem;") {
-            a(href = "") { "Index" }
+        div(id = "links", style = "margin-top: 1rem;") {
+            a(id = "index-link", href = "") { "Index" }
             br {}
-            a(href = "about") { "About" }
+            a(id = "about-link", href = "about") { "About" }
             br {}
-            a(href = "clock") { "Clock" }
+            a(id = "clock-link", href = "clock") { "Clock" }
             br {}
-            a(href = "four") { "4" }
+            a(id = "four-link", href = "four") { "4" }
             br {}
-            a(href = "calc") { "Calc" }
+            a(id = "calc-link", href = "calc") { "Calc" }
         }
     }
 }

@@ -11,7 +11,7 @@ lazy_static! {
 // properties
 fn ip_capsule<G: Html>(cx: Scope, state: IpState, _props: ()) -> View<G> {
     view! { cx,
-        p { (state.ip) }
+        p(id = "ip") { (state.ip) }
     }
 }
 
