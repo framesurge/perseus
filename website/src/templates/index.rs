@@ -731,16 +731,17 @@ async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCa
 #[cfg(not(target_arch = "wasm32"))]
 async fn get_example(path: &str) -> Result<Example, std::io::Error> {
     use super::docs::get_file_at_version;
+    use std::fs;
     use std::path::PathBuf;
 
-    // Get each example file from the `stable` branch (that branch corresponds to an
-    // actual version, even if it's a beta, meaning the code is guaranteed to
-    // work for the user, otherwise the version wouldn't have passed pre-release
-    // checks). This also makes sure that there is a version in which the user
-    // can run the actual code they're seeing. Further, it means these examples can
-    // be fearlessly updated in `main` and PRs without sending users on a wild goose
-    // chase.
-    let raw = get_file_at_version(path, "stable", PathBuf::from("../"))?;
+    let version_lock = fs::read_to_string("../examples/website/.version-lock")?;
+    let version_lock = version_lock.trim();
+
+    // Get each example file from a stable version. This also makes sure that there
+    // is a version in which the user can run the actual code they're seeing.
+    // Further, it means these examples can be fearlessly updated in `main` and
+    // PRs without sending users on a wild goose chase.
+    let raw = get_file_at_version(path, version_lock, PathBuf::from("../"))?;
 
     // Get rid of anything after a snip comment
     let snipped_parts = raw.split("// SNIP").collect::<Vec<_>>();
