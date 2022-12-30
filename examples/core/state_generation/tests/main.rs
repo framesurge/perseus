@@ -4,7 +4,7 @@ use perseus::wait_for_checkpoint;
 #[perseus::test]
 async fn build_state(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080/build_state").await?;
-    wait_for_checkpoint!("initial_state_present", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     // This greeting is passed in as a build state prop
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(text, "Hello World!");
@@ -20,7 +20,7 @@ async fn build_paths(c: &mut Client) -> Result<(), fantoccini::error::CmdError> 
     ) -> Result<(), fantoccini::error::CmdError> {
         c.goto(&format!("http://localhost:8080/build_paths{}", page))
             .await?;
-        wait_for_checkpoint!("initial_state_present", 0, c);
+        wait_for_checkpoint!("page_interactive", 0, c);
         // There should be a heading with the slug
         let text = c.find(Locator::Css("h1")).await?.text().await?;
         assert!(text.contains(&format!("build_paths{}", page)));
@@ -52,10 +52,10 @@ async fn incremental_generation(c: &mut Client) -> Result<(), fantoccini::error:
             page
         ))
         .await?;
-        wait_for_checkpoint!("initial_state_present", 0, c);
+        wait_for_checkpoint!("page_interactive", 0, c);
         // There should be a heading with the slug
         let text = c.find(Locator::Css("h1")).await?.text().await?;
-        assert!(text.contains(page));
+        assert!(text.contains(page.strip_prefix("/").unwrap_or(&page)));
 
         Ok(())
     }
@@ -68,7 +68,12 @@ async fn incremental_generation(c: &mut Client) -> Result<(), fantoccini::error:
     // Finally, test an illegal URL
     c.goto("http://localhost:8080/incremental_generation/tests")
         .await?;
-    wait_for_checkpoint!("initial_state_error", 0, c);
+    // This is actually very important: incremental pages that are invalidated on
+    // the engine-side will appear valid to the browser, leading to a
+    // `FullRouteVerdict::Found` variant. It is imperative that the `not_found`
+    // checkpoint is executed somehow even in this case, otherwise
+    // users are likely to find themselves with almost undiagnosable errors.
+    wait_for_checkpoint!("not_found", 0, c);
     // There should be an error page
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert!(text.contains("not found"));
@@ -80,7 +85,7 @@ async fn incremental_generation(c: &mut Client) -> Result<(), fantoccini::error:
 #[perseus::test]
 async fn amalgamation(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080/amalgamation").await?;
-    wait_for_checkpoint!("initial_state_present", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     // This page naively combines build and request states into a single message
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert_eq!(text, "The message is: 'Hello from the amalgamation! (Build says: 'Hello from the build process!', server says: 'Hello from the server!'.)'");
@@ -92,7 +97,7 @@ async fn amalgamation(c: &mut Client) -> Result<(), fantoccini::error::CmdError>
 #[perseus::test]
 async fn request_state(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080/request_state").await?;
-    wait_for_checkpoint!("initial_state_present", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
     // Unfortunately, we can't easily make the headless browser set the necessary
     // headers to allow Perseus to actually get the IP address
@@ -105,7 +110,7 @@ async fn request_state(c: &mut Client) -> Result<(), fantoccini::error::CmdError
 #[perseus::test]
 async fn revalidation(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.goto("http://localhost:8080/revalidation").await?;
-    wait_for_checkpoint!("initial_state_present", 0, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
     // We'll wait for five seconds, then reload the page and expect the content to
     // be different
@@ -129,7 +134,7 @@ async fn revalidation_and_incremental_generation(
             page
         ))
         .await?;
-        wait_for_checkpoint!("initial_state_present", 0, c);
+        wait_for_checkpoint!("page_interactive", 0, c);
         let text = c.find(Locator::Css("p")).await?.text().await?;
         // We'll wait for five seconds, then reload the page and expect the content to
         // be different

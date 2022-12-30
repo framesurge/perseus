@@ -1,30 +1,34 @@
-use crate::errors::PluginError;
 #[cfg(not(target_arch = "wasm32"))]
-use crate::server::{get_render_cfg, HtmlShell};
-use crate::stores::ImmutableStore;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::template::ArcTemplateMap;
-#[cfg(target_arch = "wasm32")]
-use crate::template::TemplateMap;
+use crate::server::HtmlShell;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::utils::get_path_prefix_server;
 use crate::{
+    error_views::ErrorViews,
     i18n::{Locales, TranslationsManager},
     plugins::{PluginAction, Plugins},
     state::GlobalStateCreator,
     stores::MutableStore,
-    ErrorPages, Html, SsrNode, Template,
+    template::{Entity, Forever, Template},
 };
+#[cfg(target_arch = "wasm32")]
+use crate::{
+    error_views::{ErrorContext, ErrorPosition},
+    errors::ClientError,
+};
+use crate::{errors::PluginError, template::Capsule};
+use crate::{stores::ImmutableStore, template::EntityMap};
 use futures::Future;
 #[cfg(target_arch = "wasm32")]
 use std::marker::PhantomData;
 #[cfg(not(target_arch = "wasm32"))]
 use std::pin::Pin;
-#[cfg(not(target_arch = "wasm32"))]
-use std::sync::Arc;
-use std::{collections::HashMap, panic::PanicInfo, rc::Rc};
+#[cfg(target_arch = "wasm32")]
+use std::rc::Rc;
+use std::{any::TypeId, sync::Arc};
+use std::{collections::HashMap, panic::PanicInfo};
 use sycamore::prelude::Scope;
 use sycamore::utils::hydrate::with_no_hydration_context;
+use sycamore::web::{Html, SsrNode};
 use sycamore::{
     prelude::{component, view},
     view::View,
@@ -56,14 +60,14 @@ static DFLT_PSS_MAX_SIZE: usize = 25;
 /// If this stores a full translations manager though, it will store it as a
 /// `Future`, which is later evaluated.
 #[cfg(not(target_arch = "wasm32"))]
-enum Tm<T: TranslationsManager> {
+pub(crate) enum Tm<T: TranslationsManager> {
     Dummy(T),
     Full(Pin<Box<dyn Future<Output = T>>>),
 }
 #[cfg(not(target_arch = "wasm32"))]
 impl<T: TranslationsManager> std::fmt::Debug for Tm<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Tm").finish()
+        f.debug_struct("Tm").finish_non_exhaustive()
     }
 }
 
@@ -93,66 +97,123 @@ where
 /// The options for constructing a Perseus app. This `struct` will tie
 /// together all your code, declaring to Perseus where your templates,
 /// error pages, static content, etc. are.
+///
+/// # Memory leaks
+///
+/// This `struct` internally stores all templates and capsules as static
+/// references, since they will definitionally be required for the lifetime
+/// of the app, and since this enables support for capsules created and
+/// managed through a `lazy_static!`, a very convenient and efficient pattern.
+///
+/// However, this does mean that the methods on this `struct` for adding
+/// templates and capsules perform `Box::leak` calls internally, creating
+/// deliberate memory leaks. This would be ...
 pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// The HTML ID of the root `<div>` element into which Perseus will be
     /// injected.
-    root: String,
-    /// A list of function that produce templates for the app to use. These are
-    /// stored as functions so that they can be called an arbitrary number of
-    /// times.
-    #[cfg(target_arch = "wasm32")]
-    templates: TemplateMap<G>,
-    #[cfg(not(target_arch = "wasm32"))]
-    templates: ArcTemplateMap<G>,
+    pub(crate) root: String,
+    /// A list of all the templates and capsules that the app uses.
+    pub(crate) entities: EntityMap<G>,
     /// The app's error pages.
     #[cfg(target_arch = "wasm32")]
-    error_pages: Rc<ErrorPages<G>>,
+    pub(crate) error_views: Rc<ErrorViews<G>>,
     #[cfg(not(target_arch = "wasm32"))]
-    error_pages: Arc<ErrorPages<G>>,
+    pub(crate) error_views: Arc<ErrorViews<G>>,
     /// The maximum size for the page state store.
-    pss_max_size: usize,
+    pub(crate) pss_max_size: usize,
     /// The global state creator for the app.
     // This is wrapped in an `Arc` so we can pass it around on the engine-side (which is solely for
     // Actix's benefit...)
     #[cfg(not(target_arch = "wasm32"))]
-    global_state_creator: Arc<GlobalStateCreator>,
+    pub(crate) global_state_creator: Arc<GlobalStateCreator>,
     /// The internationalization information for the app.
-    locales: Locales,
+    pub(crate) locales: Locales,
     /// The static aliases the app serves.
     #[cfg(not(target_arch = "wasm32"))]
-    static_aliases: HashMap<String, String>,
+    pub(crate) static_aliases: HashMap<String, String>,
     /// The plugins the app uses.
-    plugins: Rc<Plugins<G>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) plugins: Arc<Plugins>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) plugins: Rc<Plugins>,
     /// The app's immutable store.
     #[cfg(not(target_arch = "wasm32"))]
-    immutable_store: ImmutableStore,
+    pub(crate) immutable_store: ImmutableStore,
     /// The HTML template that'll be used to render the app into. This must be
     /// static, but can be generated or sourced in any way. Note that this MUST
     /// contain a `<div>` with the `id` set to whatever the value of `self.root`
     /// is.
-    index_view: String,
+    pub(crate) index_view: String,
     /// The app's mutable store.
     #[cfg(not(target_arch = "wasm32"))]
-    mutable_store: M,
+    pub(crate) mutable_store: M,
     /// The app's translations manager, expressed as a function yielding a
     /// `Future`. This is only ever needed on the server-side, and can't be set
     /// up properly on the client-side because we can't use futures in the
     /// app initialization in Wasm.
     #[cfg(not(target_arch = "wasm32"))]
-    translations_manager: Tm<T>,
+    pub(crate) translations_manager: Tm<T>,
     /// The location of the directory to use for static assets that will placed
     /// under the URL `/.perseus/static/`. By default, this is the `static/`
     /// directory at the root of your project. Note that the directory set
     /// here will only be used if it exists.
     #[cfg(not(target_arch = "wasm32"))]
-    static_dir: String,
-    /// A handler for panics on the client-side. This could create an arbitrary
-    /// message for the user, or do anything else.
+    pub(crate) static_dir: String,
+    /// A handler for panics on the browser-side.
     #[cfg(target_arch = "wasm32")]
-    panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+    pub(crate) panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+    /// A duplicate of the app's error handling function intended for panic
+    /// handling. This must be extracted as an owned value and provided in a
+    /// thread-safe manner to the panic hook system.
+    ///
+    /// This is in an `Arc` because panic hooks are `Fn`s, not `FnOnce`s.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) panic_handler_view: Arc<
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+            + Send
+            + Sync,
+    >,
     // We need this on the client-side to account for the unused type parameters
     #[cfg(target_arch = "wasm32")]
     _marker: PhantomData<(M, T)>,
+}
+impl<G: Html, M: MutableStore, T: TranslationsManager> std::fmt::Debug for PerseusAppBase<G, M, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // We have to do the commons, and then the target-gates separately (otherwise
+        // Rust uses the dummy methods)
+        let mut debug = f.debug_struct("PerseusAppBase");
+        debug
+            .field("root", &self.root)
+            .field("entities", &self.entities)
+            .field("error_views", &self.error_views)
+            .field("pss_max_size", &self.pss_max_size)
+            .field("locale", &self.locales)
+            .field("plugins", &self.plugins)
+            .field("index_view", &self.index_view);
+        #[cfg(target_arch = "wasm32")]
+        {
+            return debug
+                .field(
+                    "panic_handler",
+                    &self
+                        .panic_handler
+                        .as_ref()
+                        .map(|_| "dyn Fn(&PanicInfo) + Send + Sync + 'static"),
+                )
+                .finish_non_exhaustive();
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            return debug
+                .field("global_state_creator", &self.global_state_creator)
+                .field("mutable_store", &self.mutable_store)
+                .field("translations_manager", &self.translations_manager)
+                .field("static_dir", &self.static_dir)
+                .field("static_aliases", &self.static_aliases)
+                .field("immutable_store", &self.immutable_store)
+                .finish_non_exhaustive();
+        }
+    }
 }
 
 // The usual implementation in which the default mutable store is used
@@ -273,10 +334,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             root: "root".to_string(),
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
-            templates: HashMap::new(),
-            // We do offer default error pages, but they'll panic if they're called for production
+            entities: HashMap::new(),
+            // We do offer default error views, but they'll panic if they're called for production
             // building
-            error_pages: Default::default(),
+            error_views: Default::default(),
             pss_max_size: DFLT_PSS_MAX_SIZE,
             #[cfg(not(target_arch = "wasm32"))]
             global_state_creator: Arc::new(GlobalStateCreator::default()),
@@ -291,6 +352,9 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             #[cfg(not(target_arch = "wasm32"))]
             static_aliases: HashMap::new(),
             // By default, we won't use any plugins
+            #[cfg(not(target_arch = "wasm32"))]
+            plugins: Arc::new(Plugins::new()),
+            #[cfg(target_arch = "wasm32")]
             plugins: Rc::new(Plugins::new()),
             #[cfg(not(target_arch = "wasm32"))]
             immutable_store: ImmutableStore::new("./dist".to_string()),
@@ -305,6 +369,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             #[cfg(target_arch = "wasm32")]
             panic_handler: None,
             #[cfg(target_arch = "wasm32")]
+            panic_handler_view: ErrorViews::unlocalized_development_default().take_panic_handler(),
+            #[cfg(target_arch = "wasm32")]
             _marker: PhantomData,
         }
     }
@@ -317,10 +383,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             root: "root".to_string(),
             // We do initialize with no templates, because an app without templates is in theory
             // possible (and it's more convenient to call `.template()` for each one)
-            templates: HashMap::new(),
+            entities: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
-            error_pages: Default::default(),
+            error_views: Default::default(),
             pss_max_size: DFLT_PSS_MAX_SIZE,
             // By default, we'll disable i18n (as much as I may want more websites to support more
             // languages...)
@@ -334,6 +400,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
             panic_handler: None,
+            panic_handler_view: ErrorViews::unlocalized_development_default().take_panic_handler(),
             _marker: PhantomData,
         }
     }
@@ -361,43 +428,132 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
         self
     }
-    /// Sets all the app's templates. This takes a vector of boxed functions
-    /// that return templates.
+    /// Sets all the app's templates. This takes a vector of templates.
     ///
     /// Usually, it's preferred to run `.template()` once for each template,
     /// rather than manually constructing this more inconvenient type.
     pub fn templates(mut self, val: Vec<Template<G>>) -> Self {
         for template in val.into_iter() {
-            #[cfg(target_arch = "wasm32")]
-            self.templates
-                .insert(template.get_path(), Rc::new(template));
-            #[cfg(not(target_arch = "wasm32"))]
-            self.templates
-                .insert(template.get_path(), Arc::new(template));
+            self = self.template(template);
         }
         self
     }
-    /// Adds a single new template to the app (convenience function). This takes
-    /// a *function that returns a template* (for internal reasons).
+    /// Adds a single new template to the app. This expects the output of
+    /// a function that is generic over `G: Html`. If you have something with a
+    /// predetermined type, like a `lazy_static!` that's using
+    /// `PerseusNodeType`, you should use `.template_ref()` instead. For
+    /// more information on the differences between the function and referrence
+    /// patterns, see the book.
     ///
     /// See [`Template`] for further details.
-    pub fn template(mut self, val: Template<G>) -> Self {
-        #[cfg(target_arch = "wasm32")]
-        self.templates.insert(val.get_path(), Rc::new(val));
-        #[cfg(not(target_arch = "wasm32"))]
-        self.templates.insert(val.get_path(), Arc::new(val));
+    pub fn template(self, val: impl Into<Forever<Template<G>>>) -> Self {
+        self.template_ref(val)
+    }
+    /// Adds a single new template to the app. This can accept either an owned
+    /// [`Template`] or a static reference to one, as might be created by a
+    /// `lazy_static!`. The latter would force you to specify the rendering
+    /// backend type (`G`) manually, using a smart alias like
+    /// `PerseusNodeType`. This method performs internal type coercions to make
+    /// statics work neatly.
+    ///
+    /// If your templates come from functions like `get_template`, that are
+    /// generic over `G: Html`, you can use `.template()`, to avoid having
+    /// to specify `::<G>` manually.
+    ///
+    /// See [`Template`] for further details, and the book for further details
+    /// on the differences between the function and reference patterns.
+    pub fn template_ref<H: Html>(mut self, val: impl Into<Forever<Template<H>>>) -> Self {
+        assert_eq!(
+            TypeId::of::<G>(),
+            TypeId::of::<H>(),
+            "mismatched render backends"
+        );
+        let val = val.into();
+        // SAFETY: We asserted that `G == H` above.
+        let val: Forever<Template<G>> = unsafe { std::mem::transmute(val) };
+
+        let entity: Forever<Entity<G>> = match val {
+            Forever::Owned(capsule) => capsule.inner.into(),
+            Forever::StaticRef(capsule_ref) => (&capsule_ref.inner).into(),
+        };
+
+        let path = entity.get_path();
+        self.entities.insert(path, entity);
         self
     }
-    /// Sets the app's error pages. See [`ErrorPages`] for further details.
-    pub fn error_pages(mut self, val: ErrorPages<G>) -> Self {
+    // TODO
+    // /// Sets all the app's capsules. This takes a vector of capsules.
+    // ///
+    // /// Usually, it's preferred to run `.capsule()` once for each capsule,
+    // /// rather than manually constructing this more inconvenient type.
+    // pub fn capsules(mut self, val: Vec<Capsule<G>>) -> Self {
+    //     for capsule in val.into_iter() {
+    //         self = self.capsule(capsule);
+    //     }
+    //     self
+    // }
+    /// Adds a single new capsule to the app. Like `.template()`, this expects
+    /// the output of a function that is generic over `G: Html`. If you have
+    /// something with a predetermined type, like a `lazy_static!` that's
+    /// using `PerseusNodeType`, you should use `.capsule_ref()`
+    /// instead. For more information on the differences between the function
+    /// and reference patterns, see the book.
+    ///
+    /// See [`Capsule`] for further details.
+    pub fn capsule<P: Clone + 'static>(self, val: impl Into<Forever<Capsule<G, P>>>) -> Self {
+        self.capsule_ref(val)
+    }
+    /// Adds a single new capsule to the app. This behaves like
+    /// `.template_ref()`, but for capsules.
+    ///
+    /// See [`Capsule`] for further details.
+    pub fn capsule_ref<H: Html, P: Clone + 'static>(
+        mut self,
+        val: impl Into<Forever<Capsule<H, P>>>,
+    ) -> Self {
+        assert_eq!(
+            TypeId::of::<G>(),
+            TypeId::of::<H>(),
+            "mismatched render backends"
+        );
+        let val = val.into();
+        // Enforce that capsules must have defined fallbacks
+        if val.fallback.is_none() {
+            panic!(
+                "capsule '{}' has no fallback (please register one)",
+                val.inner.get_path()
+            )
+        }
+
+        // SAFETY: We asserted that `G == H` above.
+        let val: Forever<Capsule<G, P>> = unsafe { std::mem::transmute(val) };
+
+        let entity: Forever<Entity<G>> = match val {
+            Forever::Owned(capsule) => capsule.inner.into(),
+            Forever::StaticRef(capsule_ref) => (&capsule_ref.inner).into(),
+        };
+
+        let path = entity.get_path();
+        self.entities.insert(path, entity);
+        self
+    }
+    /// Sets the app's error views. See [`ErrorViews`] for further details.
+    // Internally, this will extract a copy of the main handler for panic
+    // usage. Note that the default value of this is extracted from the default
+    // error views.
+    #[allow(unused_mut)]
+    pub fn error_views(mut self, mut val: ErrorViews<G>) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
-            self.error_pages = Rc::new(val);
+            let panic_handler = val.take_panic_handler();
+            self.error_views = Rc::new(val);
+            self.panic_handler_view = panic_handler;
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            self.error_pages = Arc::new(val);
+            self.error_views = Arc::new(val);
         }
+
         self
     }
     /// Sets the app's [`GlobalStateCreator`].
@@ -509,8 +665,16 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     }
     /// Sets the plugins that the app will use. See [`Plugins`] for
     /// further details.
-    pub fn plugins(mut self, val: Plugins<G>) -> Self {
-        self.plugins = Rc::new(val);
+    pub fn plugins(mut self, val: Plugins) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.plugins = Rc::new(val);
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.plugins = Arc::new(val);
+        }
+
         self
     }
     /// Sets the [`MutableStore`] for the app to use, which you would change for
@@ -581,14 +745,27 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Sets the browser-side panic handler for your app. This is a function
     /// that will be executed if your app panics (which should never be caused
     /// by Perseus unless something is seriously wrong, it's much more likely
-    /// to come from your code, or third-party code). If this happens, your page
-    /// would become totally uninteractive, with no warning to the user, since
-    /// Wasm will simply abort. In such cases, it is strongly recommended to
-    /// generate a warning message that notifies the user.
+    /// to come from your code, or third-party code).
+    ///
+    /// In the case of a panic, Perseus will automatically try to render a full
+    /// popup error to explain the situation to the user before terminating,
+    /// but, since it's impossible to use the plugins in the case of a
+    /// panic, this function is provided as an alternative in case you want
+    /// to perform other work, like sending a crash report.
+    ///
+    /// This function **must not** panic itself, because Perseus renders the
+    /// message *after* your handler is executed. If it panics, that popup
+    /// will never get to the user, leading to very poor UX. That said,
+    /// don't stress about calling things like `web_sys::window().unwrap()`,
+    /// because, if that fails, then trying to render a popup will
+    /// *definitely* fail anyway. Perseus will attempt to write an error
+    /// message to the console before this, just in case anything panics.
     ///
     /// Note that there is no access within this function to Sycamore, page
     /// state, global state, or translators. Assume that your code has
-    /// completely imploded when you write this function.
+    /// completely imploded when you write this function. Anything more advanced
+    /// should be left to your error views system, when it handles
+    /// `ClientError::Panic`.
     ///
     /// This has no default value.
     #[allow(unused_variables)]
@@ -613,13 +790,13 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .unwrap_or_else(|| self.root.to_string());
         Ok(root)
     }
-    /// Gets the directory containing static assets to be hosted under the URL
-    /// `/.perseus/static/`.
-    // TODO Plugin action for this?
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_static_dir(&self) -> String {
-        self.static_dir.to_string()
-    }
+    // /// Gets the directory containing static assets to be hosted under the URL
+    // /// `/.perseus/static/`.
+    // // TODO Plugin action for this?
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_static_dir(&self) -> String {
+    //     self.static_dir.to_string()
+    // }
     /// Gets the index view as a string, without generating an HTML shell (pass
     /// this into `::get_html_shell()` to do that).
     ///
@@ -640,23 +817,15 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// is, it's necessitated, otherwise exporting would try to access the built
     /// app before it had actually been built.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn get_html_shell(
+    pub(crate) async fn get_html_shell(
         index_view_str: String,
         root: &str,
-        immutable_store: &ImmutableStore,
-        plugins: &Plugins<G>,
+        render_cfg: &HashMap<String, String>,
+        plugins: &Plugins,
     ) -> Result<HtmlShell, PluginError> {
         // Construct an HTML shell
-        let mut html_shell = HtmlShell::new(
-            index_view_str,
-            root,
-            // TODO Handle this properly (good enough for now because that's what we were already
-            // doing)
-            &get_render_cfg(immutable_store)
-                .await
-                .expect("Couldn't get render configuration!"),
-            &get_path_prefix_server(),
-        );
+        let mut html_shell =
+            HtmlShell::new(index_view_str, root, render_cfg, &get_path_prefix_server());
 
         // Apply the myriad plugin actions to the HTML shell (replacing the whole thing
         // first if need be)
@@ -733,74 +902,32 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         Ok(html_shell)
     }
-    /// Gets the templates in an `Rc`-based `HashMap` for non-concurrent access.
-    #[cfg(target_arch = "wasm32")]
-    pub fn get_templates_map(&self) -> Result<TemplateMap<G>, PluginError> {
-        // One the browser-side, this is already a `TemplateMap` internally
-        let mut map = self.templates.clone();
-
-        // This will return a map of plugin name to a vector of templates to add
-        let extra_templates = self
-            .plugins
-            .functional_actions
-            .settings_actions
-            .add_templates
-            .run((), self.plugins.get_plugin_data())?;
-        for (_plugin_name, plugin_templates) in extra_templates {
-            // Turn that vector into a template map by extracting the template root paths as
-            // keys
-            for template in plugin_templates {
-                map.insert(template.get_path(), Rc::new(template));
-            }
-        }
-
-        Ok(map)
-    }
-    /// Gets the templates in an `Arc`-based `HashMap` for concurrent access.
-    /// This should only be relevant on the server-side.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_templates_map(&self) -> Result<ArcTemplateMap<G>, PluginError> {
-        // One the engine-side, this is already an `ArcTemplateMap` internally
-        let mut map = self.templates.clone();
-
-        // This will return a map of plugin name to a vector of templates to add
-        let extra_templates = self
-            .plugins
-            .functional_actions
-            .settings_actions
-            .add_templates
-            .run((), self.plugins.get_plugin_data())?;
-        for (_plugin_name, plugin_templates) in extra_templates {
-            // Turn that vector into a template map by extracting the template root paths as
-            // keys
-            for template in plugin_templates {
-                map.insert(template.get_path(), Arc::new(template));
-            }
-        }
-
-        Ok(map)
-    }
-    /// Gets the [`ErrorPages`] used in the app. This returns an `Rc`.
-    #[cfg(target_arch = "wasm32")]
-    pub fn get_error_pages(&self) -> Rc<ErrorPages<G>> {
-        self.error_pages.clone()
-    }
-    /// Gets the [`ErrorPages`] used in the app. This returns an `Arc`.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_atomic_error_pages(&self) -> Arc<ErrorPages<G>> {
-        self.error_pages.clone()
-    }
-    /// Gets the maximum number of pages that can be stored in the page state
-    /// store before the oldest are evicted.
-    pub fn get_pss_max_size(&self) -> usize {
-        self.pss_max_size
-    }
-    /// Gets the [`GlobalStateCreator`]. This can't be directly modified by
-    /// plugins because of reactive type complexities.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_global_state_creator(&self) -> Arc<GlobalStateCreator> {
-        self.global_state_creator.clone()
-    }
+    // /// Gets the map of entities (i.e. templates and capsules combined).
+    // pub fn get_entities_map(&self) -> EntityMap<G> {
+    //     // This is cheap to clone
+    //     self.entities.clone()
+    // }
+    // /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
+    // #[cfg(target_arch = "wasm32")]
+    // pub fn get_error_views(&self) -> Rc<ErrorViews<G>> {
+    //     self.error_views.clone()
+    // }
+    // /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_atomic_error_views(&self) -> Arc<ErrorViews<G>> {
+    //     self.error_views.clone()
+    // }
+    // /// Gets the maximum number of pages that can be stored in the page state
+    // /// store before the oldest are evicted.
+    // pub fn get_pss_max_size(&self) -> usize {
+    //     self.pss_max_size
+    // }
+    // /// Gets the [`GlobalStateCreator`]. This can't be directly modified by
+    // /// plugins because of reactive type complexities.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_global_state_creator(&self) -> Arc<GlobalStateCreator> {
+    //     self.global_state_creator.clone()
+    // }
     /// Gets the locales information.
     pub fn get_locales(&self) -> Result<Locales, PluginError> {
         let locales = self.locales.clone();
@@ -838,19 +965,23 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             .unwrap_or(immutable_store);
         Ok(immutable_store)
     }
-    /// Gets the [`MutableStore`]. This can't be modified by plugins due to
-    /// trait complexities, so plugins should instead expose a function that
-    /// the user can use to manually set it.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn get_mutable_store(&self) -> M {
-        self.mutable_store.clone()
-    }
-    /// Gets the plugins registered for the app. These are passed around and
-    /// used in a way that doesn't require them to be concurrently accessible,
-    /// and so are provided in an `Rc`.
-    pub fn get_plugins(&self) -> Rc<Plugins<G>> {
-        self.plugins.clone()
-    }
+    // /// Gets the [`MutableStore`]. This can't be modified by plugins due to
+    // /// trait complexities, so plugins should instead expose a function that
+    // /// the user can use to manually set it.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_mutable_store(&self) -> M {
+    //     self.mutable_store.clone()
+    // }
+    // /// Gets the plugins registered for the app.
+    // #[cfg(not(target_arch = "wasm32"))]
+    // pub fn get_plugins(&self) -> Arc<Plugins> {
+    //     self.plugins.clone()
+    // }
+    // /// Gets the plugins registered for the app.
+    // #[cfg(target_arch = "wasm32")]
+    // pub fn get_plugins(&self) -> Rc<Plugins> {
+    //     self.plugins.clone()
+    // }
     /// Gets the static aliases. This will check all provided resource paths to
     /// ensure they don't reference files outside the project directory, due to
     /// potential security risks in production (we don't want to
@@ -902,13 +1033,30 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 
         Ok(scoped_static_aliases)
     }
-    /// Takes the user-set panic handler out and returns it as an owned value,
-    /// allowing it to be used as an actual panic hook.
+    /// Takes the user-set panic handlers out and returns them as an owned
+    /// tuple, allowing them to be used in an actual panic hook.
+    ///
+    /// # Future panics
+    /// If this is called more than once, the view panic handler will panic when
+    /// called.
     #[cfg(target_arch = "wasm32")]
-    pub fn take_panic_handler(
+    pub fn take_panic_handlers(
         &mut self,
-    ) -> Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>> {
-        self.panic_handler.take()
+    ) -> (
+        Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+        Arc<
+            dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+                + Send
+                + Sync,
+        >,
+    ) {
+        let panic_handler_view = std::mem::replace(
+            &mut self.panic_handler_view,
+            Arc::new(|_, _, _, _| unreachable!()),
+        );
+        let general_panic_handler = self.panic_handler.take();
+
+        (general_panic_handler, panic_handler_view)
     }
 }
 

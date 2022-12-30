@@ -1,5 +1,5 @@
 use super::{match_route, RouteVerdict};
-use crate::template::{RenderCtx, TemplateNodeType};
+use crate::{reactor::Reactor, template::BrowserNodeType};
 use sycamore::prelude::Scope;
 use sycamore_router::Route;
 
@@ -9,7 +9,7 @@ pub(crate) struct PerseusRoute<'cx> {
     /// The current route verdict. The initialization value of this is
     /// completely irrelevant (it will be overridden immediately by the internal
     /// routing logic).
-    pub verdict: RouteVerdict<TemplateNodeType>,
+    pub verdict: RouteVerdict,
     /// The Sycamore scope that allows us to access the render context.
     ///
     /// This will *always* be `Some(_)` in actual applications.
@@ -22,7 +22,9 @@ pub(crate) struct PerseusRoute<'cx> {
 impl<'cx> Default for PerseusRoute<'cx> {
     fn default() -> Self {
         Self {
-            verdict: RouteVerdict::NotFound,
+            verdict: RouteVerdict::NotFound {
+                locale: "xx-XX".to_string(),
+            },
             // Again, this will never be accessed
             cx: None,
         }
@@ -30,7 +32,7 @@ impl<'cx> Default for PerseusRoute<'cx> {
 }
 impl<'cx> PerseusRoute<'cx> {
     /// Gets the current route verdict.
-    pub fn get_verdict(&self) -> &RouteVerdict<TemplateNodeType> {
+    pub fn get_verdict(&self) -> &RouteVerdict {
         &self.verdict
     }
 }
@@ -48,12 +50,12 @@ impl<'cx> Route for PerseusRoute<'cx> {
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>(); // This parsing is identical to the Sycamore router's
 
-        let render_ctx = RenderCtx::from_ctx(self.cx.unwrap()); // We know the scope will always exist
+        let reactor = Reactor::<BrowserNodeType>::from_cx(self.cx.unwrap()); // We know the scope will always exist
         let verdict = match_route(
             &path_segments,
-            &render_ctx.render_cfg,
-            &render_ctx.templates,
-            &render_ctx.locales,
+            &reactor.render_cfg,
+            &reactor.entities,
+            &reactor.locales,
         );
         Self {
             verdict,

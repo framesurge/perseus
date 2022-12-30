@@ -1,22 +1,21 @@
 use crate::global_state::AppStateRx;
-use perseus::{prelude::*, state::Freeze};
+use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "IndexPropsRx")]
-struct IndexProps {
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
+#[rx(alias = "IndexPageStateRx")]
+struct IndexPageState {
     username: String,
 }
 
-#[perseus::template]
-fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
+fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
     let frozen_app = create_signal(cx, String::new());
-    let render_ctx = RenderCtx::from_ctx(cx);
+    let reactor = Reactor::<G>::from_cx(cx);
 
-    let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
+    let global_state = reactor.get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
@@ -30,13 +29,18 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
         br()
 
         button(id = "freeze_button", on:click = |_| {
-            frozen_app.set(render_ctx.freeze());
+            #[cfg(target_arch = "wasm32")]
+            {
+                use perseus::state::Freeze;
+                frozen_app.set(reactor.freeze());
+            }
         }) { "Freeze!" }
         p(id = "frozen_app") { (frozen_app.get()) }
 
         input(id = "thaw_input", bind:value = frozen_app, placeholder = "Frozen state")
         button(id = "thaw_button", on:click = |_| {
-            render_ctx.thaw(&frozen_app.get(), perseus::state::ThawPrefs {
+            #[cfg(target_arch = "wasm32")]
+            reactor.thaw(&frozen_app.get(), perseus::state::ThawPrefs {
                 page: perseus::state::PageThawPrefs::IncludeAll,
                 global_prefer_frozen: true
             }).unwrap();
@@ -45,14 +49,15 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPropsRx<'a>) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index")
+    Template::build("index")
         .build_state_fn(get_build_state)
-        .template_with_state(index_page)
+        .view_with_state(index_page)
+        .build()
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexProps> {
-    Ok(IndexProps {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
+    IndexPageState {
         username: "".to_string(),
-    })
+    }
 }

@@ -4,7 +4,6 @@ use sycamore::prelude::*;
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { "Hello World!" }
-        a(href = "about", id = "about-link") { "About!" }
     }
 }
 
@@ -16,5 +15,5 @@ fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_page).head(head)
+    Template::build("index").view(index_page).head(head).build()
 }

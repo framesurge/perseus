@@ -9,7 +9,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         // Create a new template at `index`, which maps to our landing page
         .template(
-            Template::new("index")
+            Template::build("index")
                 .template_with_state(index_page)
                 .build_state_fn(get_index_build_state),
         )

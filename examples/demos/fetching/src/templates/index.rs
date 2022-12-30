@@ -2,20 +2,19 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "IndexPageStateRx")]
 struct IndexPageState {
     server_ip: String,
     browser_ip: Option<String>,
 }
 
-#[perseus::template]
 fn index_page<'a, G: Html>(
-    cx: Scope<'a>,
+    cx: BoundedScope<'_, 'a>,
     IndexPageStateRx {
         server_ip,
         browser_ip,
-    }: IndexPageStateRx<'a>,
+    }: &'a IndexPageStateRx,
 ) -> View<G> {
     // This will only run in the browser
     // `reqwasm` wraps browser-specific APIs, so we don't want it running on the
@@ -62,13 +61,16 @@ fn index_page<'a, G: Html>(
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index")
+    Template::build("index")
         .build_state_fn(get_build_state)
-        .template_with_state(index_page)
+        .view_with_state(index_page)
+        .build()
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
+async fn get_build_state(
+    _info: StateGeneratorInfo<()>,
+) -> Result<IndexPageState, BlamedError<reqwest::Error>> {
     // We'll cache the result with `try_cache_res`, which means we only make the
     // request once, and future builds will use the cached result (speeds up
     // development)
@@ -81,7 +83,8 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCau
         },
         false,
     )
-    .await?;
+    .await?; // Note that `?` is able to convert from `reqwest::Error` ->
+             // `BlamedError<reqwest::Error>`
 
     Ok(IndexPageState {
         server_ip: body,

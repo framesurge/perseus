@@ -1,13 +1,9 @@
-use crate::errors::PluginError;
-use crate::{
-    checkpoint,
-    plugins::PluginAction,
-    router::{perseus_router, PerseusRouterProps},
-    template::TemplateNodeType,
-};
-use crate::{i18n::TranslationsManager, stores::MutableStore, PerseusAppBase};
-use fmterr::fmt_err;
-use std::collections::HashMap;
+use crate::reactor::Reactor;
+use crate::{checkpoint, plugins::PluginAction, template::BrowserNodeType};
+use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
+use sycamore::prelude::create_scope;
+#[cfg(feature = "hydrate")]
+use sycamore::utils::hydrate::with_hydration_context;
 use wasm_bindgen::JsValue;
 
 /// The entrypoint into the app itself. This will be compiled to Wasm and
@@ -20,111 +16,108 @@ use wasm_bindgen::JsValue;
 ///
 /// For consistency with `run_dflt_engine`, this takes a function that returns
 /// the `PerseusApp`.
+///
+/// Note that, by the time this, or any of our code, is executing, the user can
+/// already see something due to engine-side rendering.
+///
+/// This function performs all error handling internally, and will do its level
+/// best not to fail, including through setting panic handlers.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(
-    app: impl Fn() -> PerseusAppBase<TemplateNodeType, M, T>,
-) -> Result<(), JsValue> {
+    app: impl Fn() -> PerseusAppBase<BrowserNodeType, M, T>,
+) {
     let mut app = app();
-    let panic_handler = app.take_panic_handler();
+    // The latter of these is a clone of the handler used for other errors
+    let (general_panic_handler, view_panic_handler) = app.take_panic_handlers();
 
     checkpoint("begin");
 
-    // Handle panics (this works for unwinds and aborts)
+    // Handle panics (this works for both unwinds and aborts)
     std::panic::set_hook(Box::new(move |panic_info| {
-        // Print to the console in development
+        // Print to the console in development (details are withheld in production,
+        // they'll just get 'unreachable executed')
         #[cfg(debug_assertions)]
         console_error_panic_hook::hook(panic_info);
-        // If the user wants a little warning dialogue, create that
-        if let Some(panic_handler) = &panic_handler {
+
+        // In case anything after this fails (which, since we're calling out to
+        // view rendering and user code, is reasonably likely), put out a console
+        // message to try to explain things (differentiated for end users)
+        #[cfg(debug_assertions)]
+        crate::web_log!("[CRITICAL ERROR]: Perseus has panicked! An error message has hopefully been displayed on your screen explaining this; if not, then something has gone terribly wrong, and, unless your code is panicking, you should report this as a bug. (If you're seeing this as an end user, please report it to the website administrator.)");
+        #[cfg(not(debug_assertions))]
+        crate::web_log!("[CRITICAL ERROR]: Perseus has panicked! An error message has hopefully been displayed on your screen explaining this; if not, then reloading the page might help.");
+
+        // Run the user's arbitrary panic handler
+        if let Some(panic_handler) = &general_panic_handler {
             panic_handler(panic_info);
         }
+
+        // Try to render an error page
+        Reactor::handle_panic(panic_info, view_panic_handler.clone());
+
+        // There is **not** a plugin opportunity here because that would require
+        // cloning the plugins into here. Any of that can be managed by the
+        // arbitrary user-given panic handler. Please appreciate how
+        // unreasonably difficult it is to get variables into a panic
+        // hook.
     }));
 
-    let res = client_core(app);
-    if let Err(err) = res {
-        // This will go to the panic handler we defined above
-        // Unfortunately, at this stage, we really can't do anything else
-        panic!("plugin error: {}", fmt_err(&err));
+    let plugins = app.plugins.clone();
+    let error_views = app.error_views.clone();
+
+    // This variable acts as a signal to determine whether or not there was a
+    // show-stopping failure that should trigger root scope disposal
+    // (terminating Perseus and rendering the app inoperable)
+    let mut running = true;
+    // === IF THIS DISPOSER IS CALLED, PERSEUS WILL TERMINATE! ===
+    let app_disposer = create_scope(|cx| {
+        let core = move || {
+            // Create the reactor
+            match Reactor::try_from(app) {
+                Ok(reactor) => {
+                    // We're away!
+                    reactor.add_self_to_cx(cx);
+                    let reactor = Reactor::from_cx(cx);
+                    reactor.start(cx)
+                }
+                Err(err) => {
+                    // We don't have a reactor, so render a critical popup error, hoping the user
+                    // can see something prerendered that makes sense (this
+                    // displays and everything)
+                    Reactor::handle_critical_error(cx, err, &error_views);
+                    // We can't do anything without a reactor
+                    false
+                }
+            }
+        };
+
+        // If we're using hydration, everything has to be done inside a hydration
+        // context (because of all the custom view handling)
+        #[cfg(feature = "hydrate")]
+        {
+            running = with_hydration_context(|| core());
+        }
+        #[cfg(not(feature = "hydrate"))]
+        {
+            running = core();
+        }
+    });
+
+    // If we failed, terminate
+    if !running {
+        // SAFETY We're outside the app's scope.
+        unsafe { app_disposer.dispose() }
+        // This is one of the best places in Perseus for crash analytics
+        plugins
+            .functional_actions
+            .client_actions
+            .crash
+            .run((), plugins.get_plugin_data())
+            .expect("plugin action on crash failed");
+
+        // Goodbye, dear friends.
     }
-
-    Ok(())
-}
-
-/// This executes the actual underlying browser-side logic, including
-/// instantiating the user's app. This is broken out due to plugin fallibility.
-fn client_core<M: MutableStore, T: TranslationsManager>(
-    app: PerseusAppBase<TemplateNodeType, M, T>,
-) -> Result<(), PluginError> {
-    let plugins = app.get_plugins();
-
-    plugins
-        .functional_actions
-        .client_actions
-        .start
-        .run((), plugins.get_plugin_data())?;
-    checkpoint("initial_plugins_complete");
-
-    // Get the root we'll be injecting the router into
-    let root = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .query_selector(&format!("#{}", app.get_root()?))
-        .unwrap()
-        .unwrap();
-
-    // Set up the properties we'll pass to the router
-    let router_props = PerseusRouterProps {
-        locales: app.get_locales()?,
-        error_pages: app.get_error_pages(),
-        templates: app.get_templates_map()?,
-        render_cfg: get_render_cfg().expect("render configuration invalid or not injected"),
-        pss_max_size: app.get_pss_max_size(),
-    };
-
-    // At this point, the user can already see something from the server-side
-    // rendering, so we now have time to figure out exactly what to render.
-    // Having done that, we can render/hydrate, depending on the feature flags.
-    // All that work is done inside the router.
-
-    // This top-level context is what we use for everything, allowing page state to
-    // be registered and stored for the lifetime of the app
-    // Note: root lifetime creation occurs here
-    #[cfg(feature = "hydrate")]
-    sycamore::hydrate_to(move |cx| perseus_router(cx, router_props), &root);
-    #[cfg(not(feature = "hydrate"))]
-    {
-        // We have to delete the existing content before we can render the new stuff
-        // (which should be the same)
-        root.set_inner_html("");
-        sycamore::render_to(move |cx| perseus_router(cx, router_props), &root);
-    }
-
-    Ok(())
 }
 
 /// A convenience type wrapper for the type returned by nearly all client-side
 /// entrypoints.
 pub type ClientReturn = Result<(), JsValue>;
-
-/// Gets the render configuration from the JS global variable
-/// `__PERSEUS_RENDER_CFG`, which should be inlined by the server. This will
-/// return `None` on any error (not found, serialization failed, etc.), which
-/// should reasonably lead to a `panic!` in the caller.
-fn get_render_cfg() -> Option<HashMap<String, String>> {
-    let val_opt = web_sys::window().unwrap().get("__PERSEUS_RENDER_CFG");
-    let js_obj = match val_opt {
-        Some(js_obj) => js_obj,
-        None => return None,
-    };
-    // The object should only actually contain the string value that was injected
-    let cfg_str = match js_obj.as_string() {
-        Some(cfg_str) => cfg_str,
-        None => return None,
-    };
-    let render_cfg = match serde_json::from_str::<HashMap<String, String>>(&cfg_str) {
-        Ok(render_cfg) => render_cfg,
-        Err(_) => return None,
-    };
-
-    Some(render_cfg)
-}

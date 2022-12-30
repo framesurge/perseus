@@ -6,7 +6,7 @@ use sycamore::prelude::*;
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new().template(
-        Template::new("post")
+        Template::build("post")
             .template_with_state(post_page)
             .build_paths_fn(get_build_paths)
             .build_state_fn(get_build_state)

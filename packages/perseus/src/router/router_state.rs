@@ -1,19 +1,19 @@
 use super::RouteVerdict;
-use crate::template::TemplateNodeType;
+use crate::{path::PathMaybeWithLocale, router::RouteInfo};
 use std::cell::RefCell;
 use std::rc::Rc;
 use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
 
 /// The state for the router. This makes use of `RcSignal`s internally, and can
 /// be cheaply cloned.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct RouterState {
     /// The router's current load state. This is in an `RcSignal` because users
     /// need to be able to create derived state from it.
     load_state: RcSignal<RouterLoadState>,
     /// The last route verdict. We can come back to this if we need to reload
     /// the current page without losing context etc.
-    last_verdict: Rc<RefCell<Option<RouteVerdict<TemplateNodeType>>>>,
+    last_verdict: Rc<RefCell<Option<RouteVerdict>>>,
     /// A flip-flop `RcSignal`. Whenever this is changed, the router will reload
     /// the current page in the SPA style (maintaining state). As a user, you
     /// should rarely ever need to do this, but it's used internally in the
@@ -21,8 +21,8 @@ pub struct RouterState {
     pub(crate) reload_commander: RcSignal<bool>,
 }
 impl Default for RouterState {
-    /// Creates a default instance of the router state intended for server-side
-    /// usage.
+    /// Creates a default instance of the router state intended for usage at the
+    /// startup of an app.
     fn default() -> Self {
         Self {
             load_state: create_rc_signal(RouterLoadState::Server),
@@ -49,15 +49,21 @@ impl RouterState {
         self.load_state.clone() // TODO Better approach than cloning here?
     }
     /// Sets the load state of the router.
-    pub fn set_load_state(&self, new: RouterLoadState) {
+    ///
+    /// The router state upholds a number of invariants, and allowing the user
+    /// control of this could lead to unreachable code being executed.
+    pub(crate) fn set_load_state(&self, new: RouterLoadState) {
         self.load_state.set(new);
     }
     /// Gets the last verdict.
-    pub fn get_last_verdict(&self) -> Option<RouteVerdict<TemplateNodeType>> {
+    pub fn get_last_verdict(&self) -> Option<RouteVerdict> {
         (*self.last_verdict.borrow()).clone()
     }
     /// Sets the last verdict.
-    pub fn set_last_verdict(&self, new: RouteVerdict<TemplateNodeType>) {
+    ///
+    /// The router state upholds a number of invariants, and allowing the user
+    /// control of this could lead to unreachable code being executed.
+    pub(crate) fn set_last_verdict(&self, new: RouteVerdict) {
         let mut last_verdict = self.last_verdict.borrow_mut();
         *last_verdict = Some(new);
     }
@@ -70,6 +76,24 @@ impl RouterState {
     pub fn reload(&self) {
         self.reload_commander
             .set(!*self.reload_commander.get_untracked())
+    }
+    /// Gets the current path within the app, including the locale if the app is
+    /// using i18n. This will not have a leading/trailing forward slash.
+    ///
+    /// If you're executing this from within a page, it will always be
+    /// `Some(..)`. `None` will be returned if no page has been rendered yet
+    /// (if you managed to call this from a plugin...), or, more likely, if
+    /// an error occurred (i.e. this will probably be `None` in error pages,
+    /// which are given the path anyway), or if we're diverting to a
+    /// localized version of the current path (in which case
+    /// your code should not be running).
+    pub fn get_path(&self) -> Option<PathMaybeWithLocale> {
+        let verdict = self.last_verdict.borrow();
+        if let Some(RouteVerdict::Found(RouteInfo { path, locale, .. })) = &*verdict {
+            Some(PathMaybeWithLocale::new(path, locale))
+        } else {
+            None
+        }
     }
 }
 
@@ -84,13 +108,13 @@ pub enum RouterLoadState {
         template_name: String,
         /// The full path to the new page being loaded (including the locale, if
         /// we're using i18n).
-        path: String,
+        path: PathMaybeWithLocale,
     },
-    /// An error page has been loaded.
+    /// An error page has been loaded. Note that this will not account for any
+    /// popup errors.
     ErrorLoaded {
-        /// The full path to the page we intended to load, on which the error
-        /// occurred (including the locale, if we're using i18n).
-        path: String,
+        /// The path of this error.
+        path: PathMaybeWithLocale,
     },
     /// A new page is being loaded, and will soon replace whatever is currently
     /// loaded. The name of the new template is attached.
@@ -99,10 +123,11 @@ pub enum RouterLoadState {
         template_name: String,
         /// The full path to the new page being loaded (including the locale, if
         /// we're using i18n).
-        path: String,
+        path: PathMaybeWithLocale,
     },
-    /// We're on the server, and there is no router. Whatever you render based
-    /// on this state will appear when the user first loads the page, before
-    /// it's made interactive.
+    /// We're still warming up, and the router state hasn't been updated yet. As
+    /// the router doesn't actually exist on the engine-side, this won't
+    /// appear on the engine-side, since the type is target-gated to the
+    /// browser-side.
     Server,
 }

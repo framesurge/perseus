@@ -3,6 +3,7 @@ use std::pin::Pin;
 
 /// A generic return type for asynchronous functions that we need to store in a
 /// struct.
+#[doc(hidden)]
 pub type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
 
 /// Creates traits that prevent users from having to pin their functions' return
@@ -11,15 +12,15 @@ pub type AsyncFnReturn<T> = Pin<Box<dyn Future<Output = T> + Send + Sync>>;
 #[doc(hidden)]
 macro_rules! make_async_trait {
     (
-        $name:tt
-        // This is capable of supporting HRTBs, though that's no longer needed. Left in for future cases.
-        $(< $( $g_name:ident $( : $g_restr_1:tt $( + $g_restr_extra:tt )* $( - for<$g_lt:lifetime> $g_restr_hrtb:tt<$g_lt_1:lifetime> )* )? $(,)? )+ >)?,
+        $vis:vis $name:ident
+        // Because of `Into<GeneratorResult<T>>`, this is capable of supporting generics on trait bounds to two levels
+        $(< $( $g_name:ident $( : $g_restr_1:tt $( < $g_restr_1_g:ident $( < $g_restr_1_g_1:ident > )? > )? $( + $g_restr_extra:tt )* )? $(,)? )+ >)?,
         $return_ty:ty
         $(, $arg_name:ident: $arg:ty)*
     ) => {
         // These traits should be purely internal, the user is likely to shoot themselves in the foot
         #[doc(hidden)]
-        pub trait $name$( <$( $g_name $( : $g_restr_1 $( + $g_restr_extra )* $( + for<$g_lt> $g_restr_hrtb<$g_lt_1> )* )?, )*> )? {
+        pub trait $name$( <$( $g_name $( : $g_restr_1 $( < $g_restr_1_g $( < $g_restr_1_g_1 > )? > )? $( + $g_restr_extra )* )?, )*> )? {
             fn call(
                 &self,
                 // Each given argument is repeated
@@ -28,7 +29,7 @@ macro_rules! make_async_trait {
                 )*
             ) -> AsyncFnReturn<$return_ty>;
         }
-        impl<T, F, $($( $g_name $( : $g_restr_1 $( + $g_restr_extra )* $( + for<$g_lt> $g_restr_hrtb<$g_lt_1> )* )?, )*)?> $name$( <$( $g_name, )*> )? for T
+        impl<T, F, $($( $g_name $( : $g_restr_1 $( < $g_restr_1_g $( < $g_restr_1_g_1 > )? > )? $( + $g_restr_extra )* )?, )*)?> $name$( <$( $g_name, )*> )? for T
         where
             T: Fn(
                 $(

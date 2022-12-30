@@ -95,8 +95,10 @@ fn log(msg: &str) {
 /// effect.
 ///
 /// # Panics
-/// This will panic if it was impossible to reload (which would be caused by a
-/// *very* old browser).
+/// This will panic if it was impossible to reload (which could be caused by a
+/// *very* old browser). Don't worry about this, because the panic handler has
+/// probably already been fired long ago if that's the kind of environment
+/// we're working in.
 pub(crate) fn force_reload() {
     web_sys::window()
         .unwrap()

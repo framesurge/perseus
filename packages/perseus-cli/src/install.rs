@@ -460,7 +460,7 @@ impl Tool {
                 "https://api.github.com/repos/{}/releases/latest",
                 self.gh_repo
             ))
-            // TODO Is this compliant with GH's ToS?
+            // This needs to display the name of the app for GH
             .header("User-Agent", "perseus-cli")
             .send()
             .await

@@ -4,8 +4,7 @@ use sycamore::prelude::*;
 use crate::global_state::*;
 
 fn index_view<G: Html>(cx: Scope) -> View<G> {
-    let AppStateRx { auth } = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
-
+    let AppStateRx { auth } = Reactor::<G>::from_cx(cx).get_global_state::<AppStateRx>(cx);
     let AuthDataRx { state, username } = auth;
     // This isn't part of our data model because it's only used here to pass to the
     // login function
@@ -51,5 +50,5 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_view)
+    Template::build("index").view(index_view).build()
 }

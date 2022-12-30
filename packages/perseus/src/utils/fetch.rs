@@ -3,10 +3,10 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 
-/// Fetches the given resource. This should NOT be used by end users, but it's
-/// required by the CLI.
-pub(crate) async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
-    let js_err_handler = |err: JsValue| ClientError::Js(format!("{:?}", err));
+/// Fetches the given resource. This is heavily intertwined with the Perseus
+/// error management system, and should not be used by end users.
+pub(crate) async fn fetch(url: &str, ty: AssetType) -> Result<Option<String>, ClientError> {
+    let js_err_handler = |err: JsValue| FetchError::Js(format!("{:?}", err));
     let mut opts = RequestInit::new();
     opts.method("GET").mode(RequestMode::Cors);
 
@@ -20,7 +20,8 @@ pub(crate) async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
     // Turn that into a proper response object
     let res: Response = res_value.dyn_into().unwrap();
     // If the status is 404, we should return that the request worked but no file
-    // existed
+    // existed (there is a `NotFound` error type, but that's only used for
+    // preloading)
     if res.status() == 404 {
         return Ok(None);
     }
@@ -36,6 +37,7 @@ pub(crate) async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
         None => {
             return Err(FetchError::NotString {
                 url: url.to_string(),
+                ty,
             }
             .into())
         }
@@ -48,6 +50,7 @@ pub(crate) async fn fetch(url: &str) -> Result<Option<String>, ClientError> {
             url: url.to_string(),
             status: res.status(),
             err: body_str,
+            ty,
         }
         .into())
     }

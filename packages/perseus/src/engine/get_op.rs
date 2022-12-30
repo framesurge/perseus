@@ -42,6 +42,7 @@ pub fn get_op() -> Option<EngineOperation> {
 }
 
 /// A representation of the server-side engine operations that can be performed.
+#[derive(Debug, Clone, Copy)]
 pub enum EngineOperation {
     /// Run the server for the app. This assumes the app has already been built.
     Serve,

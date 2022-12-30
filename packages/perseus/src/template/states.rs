@@ -1,6 +1,5 @@
 use crate::errors::*;
-
-use super::TemplateState;
+use crate::state::TemplateState;
 
 /// Represents all the different states that can be generated for a single
 /// template, allowing amalgamation logic to be run with the knowledge
@@ -13,20 +12,14 @@ pub(crate) struct States {
     pub request_state: TemplateState,
 }
 impl States {
-    /// Creates a new instance of the states, setting both to `None`.
-    pub fn new() -> Self {
-        Self {
-            build_state: TemplateState::empty(),
-            request_state: TemplateState::empty(),
-        }
-    }
     /// Checks if both request state and build state are defined.
     pub fn both_defined(&self) -> bool {
         !self.build_state.is_empty() && !self.request_state.is_empty()
     }
     /// Gets the only defined state if only one is defined. If no states are
     /// defined, this will just return `None`. If both are defined,
-    /// this will return an error.
+    /// this will return an error. (Under no other conditions may this
+    /// ever return an error.)
     pub fn get_defined(&self) -> Result<TemplateState, ServeError> {
         if self.both_defined() {
             return Err(ServeError::BothStatesDefined);

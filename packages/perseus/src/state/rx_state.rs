@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::any::Any;
+#[cfg(target_arch = "wasm32")]
 use sycamore::prelude::Scope;
 
 /// A trait for `struct`s that can be made reactive. Typically, this will be
@@ -19,6 +20,10 @@ pub trait MakeRx {
 /// opposite of `MakeRx`, and is intended particularly for state freezing. Like
 /// `MakeRx`, this will usually be derived automatically with the `#[make_rx]`
 /// macro, but you can also implement it manually.
+///
+/// The types that implement this are typically referred to as the *intermediate
+/// state* types, as they are rendered far more ergonomic to use by being put
+/// through Sycamore's `create_ref()` function.
 pub trait MakeUnrx {
     /// The type of the unreactive version that we'll convert to.
     type Unrx: Serialize + for<'de> Deserialize<'de> + MakeRx;
@@ -54,27 +59,6 @@ pub trait MakeUnrx {
     fn compute_suspense<'a>(&self, cx: Scope<'a>);
 }
 
-/// A trait for reactive `struct`s that can be made to use `&'a Signal`s
-/// rather than `RcSignal`s, when provided with a Sycamore reactive scope.
-/// This is necessary for reaping the benefits of the ergonomics of Sycamore's
-/// v2 reactive primitives.
-pub trait MakeRxRef {
-    /// The type of the reactive `struct` using `&'a Signal`s (into which
-    /// the type implementing this trait can be converted).
-    type RxRef<'a>;
-    /// Convert this into a version using `&'a Signal`s using `create_ref()`.
-    fn to_ref_struct<'a>(self, cx: Scope<'a>) -> Self::RxRef<'a>;
-}
-
-/// A trait for `struct`s that are both reactive *and* using `&'a Signal`s
-/// to store their underlying data. This exists solely to link such types to
-/// their intermediate, `RcSignal`, equivalents.
-pub trait RxRef {
-    /// The linked intermediate type using `RcSignal`s. Note that this is
-    /// itself reactive, just not very ergonomic.
-    type RxNonRef: MakeUnrx;
-}
-
 /// A trait for reactive `struct`s that can be made unreactive and serialized to
 /// a `String`. `struct`s that implement this should implement `MakeUnrx` for
 /// simplicity, but they technically don't have to (they always do in Perseus
@@ -96,6 +80,12 @@ impl<T: Any + Freeze> AnyFreeze for T {
         self
     }
 }
+impl std::fmt::Debug for (dyn AnyFreeze + 'static) {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // See Rust std/core/any.rs:213
+        f.debug_struct("AnyFreeze").finish_non_exhaustive()
+    }
+}
 
 /// A marker trait for types that you want to be able to use with the Perseus
 /// state platform, without using `#[make_rx]`. If you want to use unreactive
@@ -115,7 +105,7 @@ pub trait UnreactiveState {}
 /// This wrapper will automatically implement all the necessary `trait`s to
 /// interface with Perseus' reactive state platform, along with `Serialize` and
 /// `Deserialize` (provided the underlying type also implements the latter two).
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UnreactiveStateWrapper<
     T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone,
 >(pub T);

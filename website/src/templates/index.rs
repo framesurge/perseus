@@ -717,21 +717,31 @@ async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCa
     // We know exactly where the examples we want are
     // TODO Join these futures separately
     let props = CodeExamples {
-        app_in_a_file: get_example("../examples/website/app_in_a_file/src/main.rs").await?,
-        state_generation: get_example("../examples/website/state_generation/src/main.rs").await?,
-        i18n: get_example("../examples/website/i18n/src/main.rs").await?,
-        cli: get_example("../examples/website/cli.txt").await?,
-        get_started: get_example("../examples/website/get_started.txt").await?,
+        app_in_a_file: get_example("examples/website/app_in_a_file/src/main.rs").await?,
+        state_generation: get_example("examples/website/state_generation/src/main.rs").await?,
+        i18n: get_example("examples/website/i18n/src/main.rs").await?,
+        cli: get_example("examples/website/cli.txt").await?,
+        get_started: get_example("examples/website/get_started.txt").await?,
     };
 
     Ok(props)
 }
 
+// Paths given to this function should be relative to the project root!
 #[cfg(not(target_arch = "wasm32"))]
 async fn get_example(path: &str) -> Result<Example, std::io::Error> {
-    use tokio::fs;
+    use super::docs::get_file_at_version;
+    use std::path::PathBuf;
 
-    let raw = fs::read_to_string(path).await?;
+    // Get each example file from the `stable` branch (that branch corresponds to an
+    // actual version, even if it's a beta, meaning the code is guaranteed to
+    // work for the user, otherwise the version wouldn't have passed pre-release
+    // checks). This also makes sure that there is a version in which the user
+    // can run the actual code they're seeing. Further, it means these examples can
+    // be fearlessly updated in `main` and PRs without sending users on a wild goose
+    // chase.
+    let raw = get_file_at_version(path, "stable", PathBuf::from("../"))?;
+
     // Get rid of anything after a snip comment
     let snipped_parts = raw.split("// SNIP").collect::<Vec<_>>();
     let full = snipped_parts[0].to_string();

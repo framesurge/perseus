@@ -1,5 +1,5 @@
 use super::Locales;
-use crate::utils::get_path_prefix_client;
+use crate::{path::PathWithoutLocale, utils::get_path_prefix_client};
 use sycamore::rt::Reflect;
 use wasm_bindgen::JsValue;
 
@@ -12,7 +12,7 @@ use wasm_bindgen::JsValue;
 ///
 /// Note that this does not actually redirect on its own, it merely provides an
 /// argument for `sycamore_router::navigate_replace()`.
-pub(crate) fn detect_locale(url: String, locales: &Locales) -> String {
+pub(crate) fn detect_locale(url: PathWithoutLocale, locales: &Locales) -> String {
     // If nothing matches, we'll use the default locale
     let mut locale = locales.default.clone();
 

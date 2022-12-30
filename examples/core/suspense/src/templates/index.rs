@@ -7,7 +7,7 @@ use gloo_timers::future::sleep;
 #[cfg(target_arch = "wasm32")]
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "IndexPageStateRx")]
 struct IndexPageState {
     #[rx(suspense = "greeting_handler")]
@@ -35,14 +35,13 @@ struct Test {
     // *will not execute*!
     second_greeting: String,
 }
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 struct OtherTest {
     #[rx(suspense = "other_test_handler")]
     third_greeting: Result<String, SerdeInfallible>,
 }
 
-#[template]
-fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G> {
+fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
     let greeting = create_memo(cx, || match &*state.greeting.get() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
@@ -64,6 +63,10 @@ fn index_page<'a, G: Html>(cx: Scope<'a>, state: IndexPageStateRx<'a>) -> View<G
         p(id = "third") { (third_greeting.get()) }
     }
 }
+
+// Unfortunately, you can't just return `T` from suspense handlers as you can
+// with state generation functions like `get_build_state`, due to constraints
+// within the Rust language. Hopefully, this will be one day possible!
 
 // This takes the same reactive scope as `index_page`, along with the individual
 // reactive version of the `greeting` field (notice the parallels to
@@ -91,7 +94,7 @@ async fn greeting_handler<'a>(
 #[browser_only_fn]
 async fn test_handler<'a>(
     _cx: Scope<'a>,
-    test: RxResultRef<'a, Test, String>,
+    test: &'a RxResultRx<Test, String>,
 ) -> Result<(), String> {
     sleep(Duration::from_secs(1)).await;
     // Unfortunately, this verbosity is necessary until `Try` is stabilized so we
@@ -117,8 +120,8 @@ async fn other_test_handler<'a>(
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<IndexPageState> {
-    Ok(IndexPageState {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
+    IndexPageState {
         greeting: Ok("Hello from the server!".to_string()),
         // `RxResult` can be created from a standard `Result` with a simple `.into()`
         test: Ok(Test {
@@ -128,12 +131,13 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCau
         other_test: OtherTest {
             third_greeting: Ok("Hello again again from the server!".to_string()),
         },
-    })
+    }
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
     // Note that suspense handlers are registered through the state, not here
-    Template::new("index")
-        .template_with_state(index_page)
+    Template::build("index")
+        .view_with_state(index_page)
         .build_state_fn(get_build_state)
+        .build()
 }

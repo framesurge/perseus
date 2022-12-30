@@ -269,6 +269,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             let tools = Tools::new(&dir, &opts).await?;
             // Delete old build artifacts
             delete_artifacts(dir.clone(), "static")?;
+            delete_artifacts(dir.clone(), "mutable")?;
             build(dir, build_opts, &tools, &opts)?
         }
         Subcommand::Export(ref export_opts) => {
@@ -276,6 +277,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             let tools = Tools::new(&dir, &opts).await?;
             // Delete old build/export artifacts
             delete_artifacts(dir.clone(), "static")?;
+            delete_artifacts(dir.clone(), "mutable")?;
             delete_artifacts(dir.clone(), "exported")?;
             let exit_code = export(dir.clone(), export_opts, &tools, &opts)?;
             if exit_code != 0 {
@@ -302,6 +304,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             let tools = Tools::new(&dir, &opts).await?;
             if !serve_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
+                delete_artifacts(dir.clone(), "mutable")?;
             }
             // This orders reloads internally
             let (exit_code, _server_path) = serve(dir, serve_opts, &tools, &opts)?;
@@ -315,6 +318,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             // Delete old build artifacts if `--no-build` wasn't specified
             if !test_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
+                delete_artifacts(dir.clone(), "mutable")?;
             }
             let (exit_code, _server_path) = serve(dir, test_opts, &tools, &opts)?;
             exit_code
@@ -331,6 +335,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             delete_artifacts(dir.clone(), "static")?;
+            delete_artifacts(dir.clone(), "mutable")?;
             delete_artifacts(dir.clone(), "exported")?;
             delete_artifacts(dir.clone(), "pkg")?;
             deploy(dir, deploy_opts, &tools, &opts)?
@@ -371,6 +376,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             let tools = Tools::new(&dir, &opts).await?;
             // Delete old build artifacts
             delete_artifacts(dir.clone(), "static")?;
+            delete_artifacts(dir.clone(), "mutable")?;
             check(dir, check_opts, &tools, &opts)?
         }
     };

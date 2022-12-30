@@ -1,8 +1,6 @@
-use fmterr::fmterr;
-
-use crate::error_pages::ErrorPageData;
+use crate::error_views::ServerErrorData;
 use crate::page_data::PageData;
-use crate::template::TemplateState;
+use crate::state::TemplateState;
 use crate::utils::minify;
 use std::collections::HashMap;
 use std::{env, fmt};
@@ -23,7 +21,7 @@ fn escape_page_data(data: &str) -> String {
 /// scripts and content defined by the user, components of the Perseus core, and
 /// plugins.
 #[derive(Clone, Debug)]
-pub struct HtmlShell {
+pub(crate) struct HtmlShell {
     /// The actual shell content, on which interpolations will be performed.
     pub shell: String,
     /// Additional contents of the head before the interpolation boundary.
@@ -53,7 +51,7 @@ pub struct HtmlShell {
 impl HtmlShell {
     /// Initializes the HTML shell by interpolating necessary scripts into it
     /// and adding the render configuration.
-    pub fn new(
+    pub(crate) fn new(
         shell: String,
         root_id: &str,
         render_cfg: &HashMap<String, String>,
@@ -152,7 +150,7 @@ impl HtmlShell {
     /// translator can be derived on the client-side. These are provided in
     /// a window variable to avoid page interactivity requiring a network
     /// request to get them.
-    pub fn page_data(
+    pub(crate) fn page_data(
         mut self,
         page_data: &PageData,
         global_state: &TemplateState,
@@ -163,6 +161,9 @@ impl HtmlShell {
         // doesn't contaminate later non-initial loads Error pages (above) will
         // set this to `error`
         let initial_state = escape_page_data(&page_data.state.to_string());
+        // We know the form of this, and it won't fail
+        let initial_widget_states =
+            escape_page_data(&serde_json::to_string(&page_data.widget_states).unwrap());
         let global_state = escape_page_data(&global_state.state.to_string());
         let translations = escape_page_data(translations);
 
@@ -170,6 +171,11 @@ impl HtmlShell {
         // it doesn't matter if it's expunged on subsequent loads
         let initial_state = format!("window.__PERSEUS_INITIAL_STATE = `{}`;", initial_state);
         self.scripts_after_boundary.push(initial_state);
+        let initial_widget_states = format!(
+            "window.__PERSEUS_INITIAL_WIDGET_STATES = `{}`;",
+            initial_widget_states
+        );
+        self.scripts_after_boundary.push(initial_widget_states);
         // But we'll need the global state as a variable until a template accesses it,
         // so we'll keep it around (even though it should actually instantiate validly
         // and not need this after the initial load)
@@ -205,7 +211,7 @@ impl HtmlShell {
     ///
     /// Further, this will preload the Wasm binary, making redirection snappier
     /// (but initial load slower), a tradeoff that generally improves UX.
-    pub fn locale_redirection_fallback(mut self, redirect_url: &str) -> Self {
+    pub(crate) fn locale_redirection_fallback(mut self, redirect_url: &str) -> Self {
         // This will be used if JavaScript is completely disabled (it's then the site's
         // responsibility to show a further message)
         let dumb_redirect = format!(
@@ -264,15 +270,16 @@ impl HtmlShell {
 
     /// Interpolates page error data into the shell in the event of a failure.
     ///
-    /// Importantly, this makes no assumptions about the availability of
-    /// translations, so error pages rendered from here will not be
-    /// internationalized.
-    // TODO Provide translations where we can at least?
-    pub fn error_page(
+    /// This takes an optional translations string if it's available, injecting
+    /// it if possible. If the reactor finds this variable to be empty on an
+    /// error extracted from the initial state variable, it will assume the
+    /// error is unlocalized.
+    pub(crate) fn error_page(
         mut self,
-        error_page_data: &ErrorPageData,
+        error_page_data: &ServerErrorData,
         error_html: &str,
         error_head: &str,
+        translations_str: Option<&str>,
     ) -> Self {
         let error = serde_json::to_string(error_page_data).unwrap();
         let state_var = format!(
@@ -280,6 +287,12 @@ impl HtmlShell {
             escape_page_data(&error),
         );
         self.scripts_after_boundary.push(state_var);
+
+        if let Some(translations) = translations_str {
+            let translations = format!("window.__PERSEUS_TRANSLATIONS = `{}`;", translations);
+            self.scripts_after_boundary.push(translations);
+        }
+
         self.head_after_boundary.push(error_head.to_string());
         self.content = error_html.into();
 
@@ -318,9 +331,16 @@ impl fmt::Display for HtmlShell {
 
         let body_start = self.before_content.join("\n");
         let body_end = self.after_content.join("\n");
+        // We also insert the popup error handler here
         let shell_with_body = shell_with_head
             .replace("<body>", &format!("<body>{}", body_start))
-            .replace("</body>", &format!("{}</body>", body_end));
+            .replace(
+                "</body>",
+                &format!(
+                    "{}<div id=\"__perseus_popup_error\"></div></body>",
+                    body_end
+                ),
+            );
 
         // The user MUST place have a `<div>` of this exact form (documented explicitly)
         // We permit either double or single quotes
@@ -342,10 +362,7 @@ impl fmt::Display for HtmlShell {
         // can't minify, we'll fall back to unminified)
         let minified = match minify(&new_shell, true) {
             Ok(minified) => minified,
-            Err(err) => {
-                eprintln!("{}", fmterr(&err));
-                new_shell
-            }
+            Err(_) => new_shell,
         };
 
         f.write_str(&minified)

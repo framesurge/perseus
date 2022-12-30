@@ -53,7 +53,15 @@ fn real_main() -> i32 {
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
 
         // Extract the last line of that (the executable name)
-        stdout.lines().last().expect("couldn't get server executable (the build failed)").trim().to_string()
+        match stdout.lines().last() {
+            Some(last) => last.trim().to_string(),
+            // If the build fails, we need to know why
+            None => {
+                std::io::stderr().write_all(&output.stdout).unwrap();
+                std::io::stderr().write_all(&output.stderr).unwrap();
+                panic!("couldn't get server executable (the build failed, details are above)");
+            }
+        }
     };
 
     // Run the server from that executable in the background

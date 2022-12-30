@@ -5,19 +5,26 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
     // We can't preload pages on the engine-side
     #[cfg(target_arch = "wasm32")]
     {
-        // Get the render context first, which is the one-stop-shop for everything
+        // Get the reactor first, which is the one-stop-shop for everything
         // internal to Perseus in the browser
-        let render_ctx = perseus::get_render_ctx!(cx);
+        let reactor = Reactor::<G>::from_cx(cx);
         // This spawns a future in the background, and will panic if the page you give
         // doesn't exist (to handle those errors and manage the future, use
-        // `.try_preload` instead)
-        render_ctx.preload(cx, "about");
+        // `.try_preload` instead).
+        //
+        // Note that there is no `link!` macro here, and preloading is expressly
+        // disallowed across locales (i.e. you can only preload things in the
+        // current locale). This is to prevent unnecessary translations
+        // requests, which can be quite heavy.
+        reactor.preload(cx, "about");
     }
 
     view! { cx,
-        p { "Open up your browser's DevTools, go to the network tab, and then click the link below..." }
+        p { (t!("index-msg", cx)) }
 
-        a(href = "about") { "About" }
+        a(href = link!("about", cx)) { (t!("index-about-link", cx)) }
+        a(href = "fr-FR/about") { "About (French)" }
+        a(href = "en-US/about") { "About (English)" }
     }
 }
 
@@ -29,5 +36,5 @@ fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_page).head(head)
+    Template::build("index").view(index_page).head(head).build()
 }

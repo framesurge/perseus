@@ -15,18 +15,11 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 [lib]
 proc-macro = true
 
-# [[test]]
-# name = "tests"
-# path = "tests/progress.rs"
-
 [dependencies]
 quote = "1"
 syn = "1"
 proc-macro2 = "1"
 darling = "0.13"
-serde_json = "1"
-sycamore-reactive = "^0.8.1"
-regex = "1"
 
 [dev-dependencies]
 trybuild = { version = "1.0", features = ["diff"] }

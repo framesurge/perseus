@@ -1,18 +1,26 @@
-mod freeze;
+#[cfg(target_arch = "wasm32")]
+mod freeze; // This has `FrozenApp` etc.
 mod global_state;
-mod page_state_store;
 mod rx_result;
 mod rx_state;
+mod state_generator_info;
+mod state_store;
 #[cfg(target_arch = "wasm32")]
 mod suspense;
+mod template_state;
+// #[cfg(feature = "rx-collections")]
+pub mod rx_collections;
 
+#[cfg(target_arch = "wasm32")]
 pub use freeze::{FrozenApp, PageThawPrefs, ThawPrefs};
-#[cfg(not(target_arch = "wasm32"))]
-pub use global_state::get_built_global_state;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use global_state::FrozenGlobalState;
 pub use global_state::{GlobalState, GlobalStateCreator, GlobalStateType};
-pub use page_state_store::{PageStateStore, PssContains, PssEntry, PssState};
-pub use rx_result::{RxResult, RxResultIntermediate, RxResultRef, SerdeInfallible};
-pub use rx_state::{AnyFreeze, Freeze, MakeRx, MakeRxRef, MakeUnrx, RxRef, UnreactiveState};
+pub use rx_result::{RxResult, RxResultRx, SerdeInfallible};
+pub use rx_state::{AnyFreeze, Freeze, MakeRx, MakeUnrx, UnreactiveState};
+pub use state_generator_info::{BuildPaths, StateGeneratorInfo};
+pub use state_store::{PageStateStore, PssContains, PssEntry, PssState};
+pub use template_state::{TemplateState, TemplateStateWithType, UnknownStateType};
 
 #[cfg(all(feature = "idb-freezing", target_arch = "wasm32"))]
 mod freeze_idb;
@@ -29,8 +37,3 @@ pub(crate) use live_reload::connect_to_reload_server;
 pub(crate) use live_reload::force_reload;
 #[cfg(target_arch = "wasm32")]
 pub use suspense::{compute_nested_suspense, compute_suspense};
-
-#[cfg(all(feature = "hsr", debug_assertions, target_arch = "wasm32"))]
-mod hsr;
-#[cfg(all(feature = "hsr", debug_assertions, target_arch = "wasm32"))]
-pub(crate) use hsr::{hsr_freeze, hsr_thaw};

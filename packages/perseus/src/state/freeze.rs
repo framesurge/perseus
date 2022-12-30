@@ -1,3 +1,5 @@
+use super::global_state::FrozenGlobalState;
+use crate::path::PathMaybeWithLocale;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -7,14 +9,19 @@ use std::collections::HashMap;
 /// seriously know what you're doing!
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FrozenApp {
-    /// The frozen global state. If it was never initialized, this will be
-    /// `None`.
-    pub global_state: String,
-    /// The frozen route.
-    pub route: String,
-    /// The frozen page state store. We store this as a `HashMap` as this level
+    /// The frozen global state. This will serialize to a `TemplateState`,
+    /// unless it is set to
+    pub global_state: FrozenGlobalState,
+    /// The frozen route. This will be `None` if the app hadn't properly
+    /// hydrated when it was frozen.
+    pub route: Option<PathMaybeWithLocale>,
+    /// The frozen state store. We store this as a `HashMap` as this level
     /// so that we can avoid another deserialization.
-    pub page_state_store: HashMap<String, String>,
+    ///
+    /// Note that this only contains the active state store, preloads are *not*
+    /// preserved to save space (and because they can always be
+    /// re-instantiated )
+    pub state_store: HashMap<PathMaybeWithLocale, String>,
 }
 
 /// The user's preferences on state thawing.
@@ -48,9 +55,9 @@ pub enum PageThawPrefs {
     Exclude(Vec<String>),
 }
 impl PageThawPrefs {
-    /// Checks whether or not the given URl should prioritize frozen state over
+    /// Checks whether or not the given URL should prioritize frozen state over
     /// active state.
-    pub fn should_use_frozen_state(&self, url: &str) -> bool {
+    pub(crate) fn should_prefer_frozen_state(&self, url: &str) -> bool {
         match &self {
             // If we're only including some pages, this page should be on the include list
             Self::Include(pages) => pages.iter().any(|v| v == url),

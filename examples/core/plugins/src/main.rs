@@ -1,19 +1,17 @@
-mod error_pages;
 mod plugin;
 mod templates;
 
-use perseus::{plugins::Plugins, Html, PerseusApp};
+use perseus::{plugins::Plugins, prelude::*};
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
-        .template(crate::templates::about::get_template())
-        .error_pages(crate::error_pages::get_error_pages())
+        .error_views(ErrorViews::unlocalized_development_default())
         .plugins(Plugins::new().plugin_with_client_privilege(
             plugin::get_test_plugin,
             plugin::TestPluginData {
-                about_page_greeting: "Hey from a plugin!".to_string(),
+                console_greeting: "Hey from a plugin!".to_string(),
             },
         ))
 }

@@ -160,19 +160,24 @@ test.cmd = [
     "cargo test", # This will ignore Wasm tests
     # Run tests for each example
     "bonnie test example-all-integrations core basic --headless",
-    "bonnie test example-all-integrations core unreactive --headless",
-    "bonnie test example-all-integrations core i18n --headless",
-    "bonnie test example-all-integrations core plugins --headless",
-    "bonnie test example-all-integrations core state_generation --headless",
+    "bonnie test example-all-integrations core custom_server --headless",
+    "bonnie test example-all-integrations core error_views --headless",
     "bonnie test example-all-integrations core freezing_and_thawing --headless",
     "bonnie test example-all-integrations core global_state --headless",
+    "bonnie test example-all-integrations core helper_build_state --headless",
+    "bonnie test example-all-integrations core i18n --headless",
     "bonnie test example-all-integrations core idb_freezing --headless",
+    "bonnie test example-all-integrations core index_view --headless",
+    "bonnie test example-all-integrations core js_interop --headless",
+    "bonnie test example-all-integrations core plugins --headless",
+    # TODO core/preload
     "bonnie test example-all-integrations core router_state --headless",
     "bonnie test example-all-integrations core rx_state --headless",
-    "bonnie test example-all-integrations core index_view --headless",
     "bonnie test example-all-integrations core set_headers --headless",
+    "bonnie test example-all-integrations core state_generation --headless",
     "bonnie test example-all-integrations core static_content --headless",
-    "bonnie test example-all-integrations core custom_server --headless"
+    "bonnie test example-all-integrations core suspense --headless",
+    "bonnie test example-all-integrations core unreactive --headless",
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 test.subcommands.core.cmd = "cargo test"

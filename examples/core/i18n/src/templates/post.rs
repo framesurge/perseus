@@ -2,23 +2,20 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "PostPageStateRx")]
 struct PostPageState {
     title: String,
     content: String,
 }
 
-#[perseus::template]
-fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostPageStateRx<'a>) -> View<G> {
-    let title = props.title;
-    let content = props.content;
+fn post_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, props: &'a PostPageStateRx) -> View<G> {
     view! { cx,
         h1 {
-            (title.get())
+            (props.title.get())
         }
         p {
-            (content.get())
+            (props.content.get())
         }
         a(href = link!("/post", cx)) { "Root post page" }
         br()
@@ -27,14 +24,15 @@ fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostPageStateRx<'a>) -> View<G> 
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("post")
+    Template::build("post")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
-        .template_with_state(post_page)
+        .view_with_state(post_page)
+        .build()
 }
 
 #[engine_only_fn]
-async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PostPageState> {
+async fn get_build_state(info: StateGeneratorInfo<()>) -> PostPageState {
     // This is just an example
     let title = urlencoding::decode(&info.path).unwrap();
     let content = format!(
@@ -42,15 +40,15 @@ async fn get_build_state(info: StateGeneratorInfo<()>) -> RenderFnResultWithCaus
         title, info.path
     );
 
-    Ok(PostPageState {
+    PostPageState {
         title: title.to_string(),
         content,
-    })
+    }
 }
 
 #[engine_only_fn]
-async fn get_build_paths() -> RenderFnResult<BuildPaths> {
-    Ok(BuildPaths {
+async fn get_build_paths() -> BuildPaths {
+    BuildPaths {
         paths: vec![
             "".to_string(),
             "test".to_string(),
@@ -58,5 +56,5 @@ async fn get_build_paths() -> RenderFnResult<BuildPaths> {
         ],
         // We're not using any extra helper state
         extra: ().into(),
-    })
+    }
 }

@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming", "development-tools", "asynchronous", "g
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sycamore = { version = "^0.8.1", features = [ "ssr" ] }
+sycamore = { version = "^0.8.1", features = [ "ssr", "suspense" ] }
 sycamore-router = "0.8"
 sycamore-futures = "0.8"
 perseus-macro = { path = "../perseus-macro", version = "0.4.0-beta.11", optional = true }
@@ -84,3 +84,5 @@ wasm2js = []
 live-reload = [ "js-sys", "web-sys/WebSocket", "web-sys/MessageEvent", "web-sys/ErrorEvent", "web-sys/BinaryType", "web-sys/Location" ]
 # Enables hot state reloading, whereby your entire app's state can be frozen and thawed automatically every time you change code in your app
 hsr = [ "live-reload", "idb-freezing" ]
+# Enables reactive versions of common Rust collections, like `Vec<T>` and `HashMap<K, V>`. (Note that `RxResult` is always present, as it's needed for suspended state.)
+rx-collections = []

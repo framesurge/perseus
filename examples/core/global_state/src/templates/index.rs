@@ -7,7 +7,7 @@ use sycamore::prelude::*;
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     // We access the global state through the render context, extracted from
     // Sycamore's context system
-    let global_state = RenderCtx::from_ctx(cx).get_global_state::<AppStateRx>(cx);
+    let global_state = Reactor::<G>::from_cx(cx).get_global_state::<AppStateRx>(cx);
 
     view! { cx,
         // The user can change the global state through an input, and the changes they make will be reflected throughout the app
@@ -26,5 +26,5 @@ fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_page).head(head)
+    Template::build("index").view(index_page).head(head).build()
 }

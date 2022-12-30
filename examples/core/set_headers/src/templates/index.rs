@@ -2,14 +2,13 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "PageStateRx")]
 struct PageState {
     greeting: String,
 }
 
-#[perseus::template]
-fn index_page<'a, G: Html>(cx: Scope<'a>, state: PageStateRx<'a>) -> View<G> {
+fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
     view! { cx,
         p { (state.greeting.get()) }
     }
@@ -23,25 +22,31 @@ fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index")
-        .template_with_state(index_page)
+    Template::build("index")
+        .view_with_state(index_page)
         .head(head)
         .build_state_fn(get_build_state)
-        .set_headers_fn(set_headers)
+        // There is also `.set_headers()`, which takes a function that does not use the page state
+        .set_headers_with_state(set_headers)
+        .build()
 }
 
 #[engine_only_fn]
-async fn get_build_state(_info: StateGeneratorInfo<()>) -> RenderFnResultWithCause<PageState> {
-    Ok(PageState {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> PageState {
+    PageState {
         greeting: "Hello World!".to_string(),
-    })
+    }
 }
 
 // Unfortunately, this return type does have
 // to be fully qualified, or you have to import it with a server-only
-// target-gate
+// target-gate.
+//
+// This function takes a a scope so it can get at a `Reactor`, which will have
+// the global state and, potentially, a translator. This can allow you to create
+// localized headers.
 #[engine_only_fn]
-fn set_headers(state: PageState) -> perseus::http::header::HeaderMap {
+fn set_headers(_cx: Scope, state: PageState) -> perseus::http::header::HeaderMap {
     // These imports are only available on the server-side, which this function is
     // automatically gated to
     use perseus::http::header::{HeaderMap, HeaderName};

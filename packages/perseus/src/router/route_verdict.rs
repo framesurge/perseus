@@ -1,17 +1,17 @@
-use crate::template::Template;
-use crate::Html;
-use std::rc::Rc;
+use crate::path::PathWithoutLocale;
+use crate::template::{Entity, EntityMap};
+use sycamore::web::Html;
 
 /// Information about a route, which, combined with error pages and a
 /// client-side translations manager, allows the initialization of the app shell
 /// and the rendering of a page.
-#[derive(Debug, Clone)]
-pub struct RouteInfo<G: Html> {
-    /// The actual path of the route.
-    pub path: String,
+#[derive(Clone, Debug)]
+pub struct FullRouteInfo<'a, G: Html> {
+    /// The actual path of the route. This does *not* include the locale!
+    pub path: PathWithoutLocale,
     /// The template that will be used. The app shell will derive props and a
     /// translator to pass to the template function.
-    pub template: Rc<Template<G>>,
+    pub entity: &'a Entity<G>,
     /// Whether or not the matched page was incrementally-generated at runtime
     /// (if it has been yet). If this is `true`, the server will
     /// use a mutable store rather than an immutable one. See the book for more
@@ -22,32 +22,40 @@ pub struct RouteInfo<G: Html> {
 }
 
 /// The possible outcomes of matching a route in an app.
-#[derive(Debug, Clone)]
-pub enum RouteVerdict<G: Html> {
+#[derive(Clone, Debug)]
+pub enum FullRouteVerdict<'a, G: Html> {
     /// The given route was found, and route information is attached.
-    Found(RouteInfo<G>),
+    Found(FullRouteInfo<'a, G>),
     /// The given route was not found, and a `404 Not Found` page should be
-    /// shown.
-    NotFound,
+    /// shown. In apps using i18n, an invalid page without a locale will
+    /// first be redirected, before being later resolved as 404. Hence,
+    /// we can always provide a locale here, allowing the error view to be
+    /// appropriately translated. (I.e. there will never be a non-localized
+    /// 404 page in Perseus.)
+    NotFound {
+        /// The active locale.
+        locale: String,
+    },
     /// The given route maps to the locale detector, which will redirect the
     /// user to the attached path (in the appropriate locale).
-    LocaleDetection(String),
+    ///
+    /// The attached path will have the appropriate locale prepended during the
+    /// detection process.
+    LocaleDetection(PathWithoutLocale),
 }
 
 /// Information about a route, which, combined with error pages and a
 /// client-side translations manager, allows the initialization of the app shell
 /// and the rendering of a page.
 ///
-/// This version is designed for multithreaded scenarios, and stores a reference
-/// to a template rather than an `Rc<Template<G>>`. That means this is not
-/// compatible with Perseus on the client-side, only on the server-side.
-#[derive(Debug)]
-pub struct RouteInfoAtomic<'a, G: Html> {
-    /// The actual path of the route.
-    pub path: String,
-    /// The template that will be used. The app shell will derive props and a
-    /// translator to pass to the template function.
-    pub template: &'a Template<G>,
+/// Unlike [`FullRouteInfo`], this does not store the actual template being
+/// used, instead it only stores its name, making it much easier to store.
+#[derive(Clone, Debug)]
+pub struct RouteInfo {
+    /// The actual path of the route. This does *not* include the locale!
+    pub path: PathWithoutLocale,
+    /// The name of the template that should be used.
+    pub entity_name: String,
     /// Whether or not the matched page was incrementally-generated at runtime
     /// (if it has been yet). If this is `true`, the server will
     /// use a mutable store rather than an immutable one. See the book for more
@@ -56,22 +64,61 @@ pub struct RouteInfoAtomic<'a, G: Html> {
     /// The locale for the template to be rendered in.
     pub locale: String,
 }
+impl RouteInfo {
+    /// Converts this [`RouteInfo`] into a [`FullRouteInfo`].
+    ///
+    /// # Panics
+    /// This will panic if the entity name held by `Self` is not in the given
+    /// map, which is only a concern if you `Self` didn't come from
+    /// `match_route`.
+    pub(crate) fn into_full<G: Html>(self, entities: &EntityMap<G>) -> FullRouteInfo<G> {
+        let entity = entities.get(&self.entity_name).expect("conversion to full route info failed, given entities did not contain given entity name");
+        FullRouteInfo {
+            path: self.path,
+            entity,
+            was_incremental_match: self.was_incremental_match,
+            locale: self.locale,
+        }
+    }
+}
 
-/// The possible outcomes of matching a route. This is an alternative
-/// implementation of Sycamore's `Route` trait to enable greater control and
-/// tighter integration of routing with templates. This can only be used if
-/// `Routes` has been defined in context (done automatically by the CLI).
+/// The possible outcomes of matching a route in an app.
 ///
-/// This version uses `RouteInfoAtomic`, and is designed for multithreaded
-/// scenarios (i.e. on the server).
-#[derive(Debug)]
-pub enum RouteVerdictAtomic<'a, G: Html> {
+/// Unlike [`FullRouteVerdict`], this does not store the actual template being
+/// used, instead it only stores its name, making it much easier to store.
+#[derive(Clone, Debug)]
+pub enum RouteVerdict {
     /// The given route was found, and route information is attached.
-    Found(RouteInfoAtomic<'a, G>),
+    Found(RouteInfo),
     /// The given route was not found, and a `404 Not Found` page should be
-    /// shown.
-    NotFound,
+    /// shown. In apps using i18n, an invalid page without a locale will
+    /// first be redirected, before being later resolved as 404. Hence,
+    /// we can always provide a locale here, allowing the error view to be
+    /// appropriately translated. (I.e. there will never be a non-localized
+    /// 404 page in Perseus.)
+    NotFound {
+        /// The active locale.
+        locale: String,
+    },
     /// The given route maps to the locale detector, which will redirect the
     /// user to the attached path (in the appropriate locale).
-    LocaleDetection(String),
+    ///
+    /// The attached path will have the appropriate locale prepended during the
+    /// detection process.
+    LocaleDetection(PathWithoutLocale),
+}
+impl RouteVerdict {
+    /// Converts this [`RouteVerdict`] into a [`FullRouteVerdict`].
+    ///
+    /// # Panics
+    /// This will panic if the entity name held by `Self` is not in the given
+    /// map, which is only a concern if you `Self` didn't come from
+    /// `match_route` (this only applies when `Self` is `Self::Found(..)`).
+    pub(crate) fn into_full<G: Html>(self, entities: &EntityMap<G>) -> FullRouteVerdict<G> {
+        match self {
+            Self::Found(info) => FullRouteVerdict::Found(info.into_full(entities)),
+            Self::NotFound { locale } => FullRouteVerdict::NotFound { locale },
+            Self::LocaleDetection(dest) => FullRouteVerdict::LocaleDetection(dest),
+        }
+    }
 }

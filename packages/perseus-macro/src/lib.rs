@@ -11,9 +11,9 @@ This is the API documentation for the `perseus-macro` package, which manages Per
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
 */
 
+mod auto_scope;
 mod entrypoint;
 mod rx_state;
-mod template;
 mod test;
 
 use darling::{FromDeriveInput, FromMeta};
@@ -36,22 +36,46 @@ pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
 /// A helper macro for templates that use reactive state. Once, this was needed
 /// on all Perseus templates, however, today, templates that take no state, or
 /// templates that take unreactive state, can be provided as normal functions
-/// to the methods `.template()` and `.template_with_unreactive_state()`
+/// to the methods `.view()` and `.view_with_unreactive_state()`
 /// respectively, on Perseus' `Template` type.
 ///
-/// The only function of this macro is to convert the provided intermediate
-/// reactive type to a reference reactive type (see the book to learn more about
-/// Perseus' state platform).
+/// In fact, even if you're using fully reactive state, this macro isn't even
+/// mandated anymore! It just exists to turn function signatures like this
 ///
-/// For those coming from Sycamore, be aware that Perseus templates are *not*
-/// Sycamore components, they are normal functions that return a Sycamore
-/// `View<G>`.
+/// ```text
+/// fn my_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a MyStateRx) -> View<G>
+/// ```
 ///
-/// *Note:* this macro will eventually be removed entirely.
+/// into this
+///
+/// ```text
+/// #[auto_scope]
+/// fn my_page<G: Html>(cx: Scope, state: &MyStateRx) -> View<G>
+/// ```
+///
+/// In other words, all this does is rewrites some lifetimes for you so Perseus
+/// is a little more convenient to use! It's worth remembering, however, when
+/// you use this macro, that the `Scope` is actually a `BoundedScope<'app,
+/// 'page>`, meaning it is a *child scope* of the whole app. Your state is a
+/// reference with the lifetime `'page`, which links to an owned type that the
+/// app controls. All this lifetime complexity is needed to make sure Rust
+/// understands that all your pages are part of your app, and that, when one of
+/// your users goes to a new page, the previous page will be dropped, along with
+/// all its artifacts (e.g. any `create_effect` calls). It also makes it really
+/// convenient to use your state, because we can prove to Sycamore that it will
+/// live long enough to be interpolated anywhere in your page's `view!`.
+///
+/// If you dislike macros, or if you want to make the lifetimes of a page very
+/// clear, it's recommended that you don't use this macro, and manually write
+/// the longer function signatures instead. However, if you like the convenience
+/// of it, this macro is here to help!
+///
+/// *Note: this can also be used for capsules that take reactive state, it's not
+/// just limited to templates.*
 #[proc_macro_attribute]
-pub fn template(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(input as template::TemplateFn);
-    template::template_impl(parsed).into()
+pub fn auto_scope(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let parsed = syn::parse_macro_input!(input as auto_scope::TemplateFn);
+    auto_scope::template_impl(parsed).into()
 }
 
 /// Marks the given function as a Perseus test. Functions marked with this

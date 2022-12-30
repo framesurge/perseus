@@ -20,6 +20,11 @@ use tokio::{
 /// a database, though this should be as low-latency as possible, since reads
 /// and writes are required at extremely short-notice as new user requests
 /// arrive.
+///
+/// **Warning:** the `NotFound` error is integral to Perseus' internal
+/// operation, and must be returned if an asset does not exist. Do NOT return
+/// any other error if everything else worked, but an asset simply did not
+/// exist, or the entire render system will come crashing down around you!
 #[async_trait::async_trait]
 pub trait MutableStore: std::fmt::Debug + Clone + Send + Sync {
     /// Reads data from the named asset.

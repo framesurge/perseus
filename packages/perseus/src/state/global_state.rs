@@ -1,13 +1,23 @@
 use super::rx_state::AnyFreeze;
-use super::{Freeze, MakeRx, MakeUnrx};
+use super::TemplateState;
+use super::{MakeRx, MakeUnrx};
 #[cfg(not(target_arch = "wasm32"))] // To suppress warnings
 use crate::errors::*;
-use crate::stores::ImmutableStore;
-use crate::template::{RenderFnResult, TemplateState};
+use crate::errors::{ClientError, ClientInvariantError};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::make_async_trait;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::template::{BlamedGeneratorResult, GeneratorResult};
+#[cfg(not(target_arch = "wasm32"))]
 use crate::utils::AsyncFnReturn;
-use crate::{make_async_trait, RenderFnResultWithCause, Request};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::Request;
+#[cfg(not(target_arch = "wasm32"))]
 use futures::Future;
+#[cfg(not(target_arch = "wasm32"))]
 use serde::de::DeserializeOwned;
+#[cfg(target_arch = "wasm32")]
+use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -15,20 +25,20 @@ use std::rc::Rc;
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GlobalStateBuildFnType,
-    RenderFnResult<TemplateState>,
+    Result<TemplateState, ServerError>,
     locale: String
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GlobalStateRequestFnType,
-    RenderFnResultWithCause<TemplateState>,
+    Result<TemplateState, ServerError>,
     locale: String,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
     GlobalStateAmalgamationFnType,
-    RenderFnResultWithCause<TemplateState>,
+    Result<TemplateState, ServerError>,
     locale: String,
     build_state: TemplateState,
     request_state: TemplateState
@@ -36,21 +46,21 @@ make_async_trait!(
 
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    GlobalStateBuildUserFnType<S: Serialize + DeserializeOwned + MakeRx>,
-    RenderFnResult<S>,
+    GlobalStateBuildUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< GeneratorResult<S> > >,
+    V,
     locale: String
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    GlobalStateRequestUserFnType<S: Serialize + DeserializeOwned + MakeRx>,
-    RenderFnResultWithCause<S>,
+    GlobalStateRequestUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
+    V,
     locale: String,
     req: Request
 );
 #[cfg(not(target_arch = "wasm32"))]
 make_async_trait!(
-    GlobalStateAmalgamationUserFnType<S: Serialize + DeserializeOwned + MakeRx>,
-    RenderFnResultWithCause<S>,
+    GlobalStateAmalgamationUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
+    V,
     locale: String,
     build_state: S,
     request_state: S
@@ -101,17 +111,22 @@ impl GlobalStateCreator {
 
     /// Adds a function to generate global state at build-time.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn build_state_fn<S>(
+    pub fn build_state_fn<S, V>(
         mut self,
-        val: impl GlobalStateBuildUserFnType<S> + Clone + Send + Sync + 'static,
+        val: impl GlobalStateBuildUserFnType<S, V> + Clone + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
+        V: Into<GeneratorResult<S>>,
     {
         self.build = Some(Box::new(move |locale| {
             let val = val.clone();
             async move {
-                let user_state = val.call(locale).await?;
+                let user_state = val
+                    .call(locale)
+                    .await
+                    .into()
+                    .into_server_result("global_build_state", "GLOBAL_STATE".to_string())?;
                 let template_state: TemplateState = user_state.into();
                 Ok(template_state)
             }
@@ -126,17 +141,22 @@ impl GlobalStateCreator {
 
     /// Adds a function to generate global state at request-time.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn request_state_fn<S>(
+    pub fn request_state_fn<S, V>(
         mut self,
-        val: impl GlobalStateRequestUserFnType<S> + Clone + Send + Sync + 'static,
+        val: impl GlobalStateRequestUserFnType<S, V> + Clone + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx,
+        V: Into<BlamedGeneratorResult<S>>,
     {
         self.request = Some(Box::new(move |locale, req| {
             let val = val.clone();
             async move {
-                let user_state = val.call(locale, req).await?;
+                let user_state = val
+                    .call(locale, req)
+                    .await
+                    .into()
+                    .into_server_result("global_request_state", "GLOBAL_STATE".to_string())?;
                 let template_state: TemplateState = user_state.into();
                 Ok(template_state)
             }
@@ -151,12 +171,13 @@ impl GlobalStateCreator {
 
     /// Adds a function to amalgamate build-time and request-time global state.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn amalgamate_states_fn<S>(
+    pub fn amalgamate_states_fn<S, V>(
         mut self,
-        val: impl GlobalStateAmalgamationUserFnType<S> + Clone + Send + Sync + 'static,
+        val: impl GlobalStateAmalgamationUserFnType<S, V> + Clone + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + Send + Sync + 'static,
+        V: Into<BlamedGeneratorResult<S>>,
     {
         self.amalgamation = Some(Box::new(
             move |locale, build_state: TemplateState, request_state: TemplateState| {
@@ -164,7 +185,7 @@ impl GlobalStateCreator {
                 async move {
                     // Amalgamation logic will only be called if both states are indeed defined
                     let typed_build_state = build_state.change_type::<S>();
-                    let user_build_state = match typed_build_state.to_concrete() {
+                    let user_build_state = match typed_build_state.into_concrete() {
                         Ok(state) => state,
                         Err(err) => panic!(
                             "unrecoverable error in state amalgamation parameter derivation: {:#?}",
@@ -172,7 +193,7 @@ impl GlobalStateCreator {
                         ),
                     };
                     let typed_request_state = request_state.change_type::<S>();
-                    let user_request_state = match typed_request_state.to_concrete() {
+                    let user_request_state = match typed_request_state.into_concrete() {
                         Ok(state) => state,
                         Err(err) => panic!(
                             "unrecoverable error in state amalgamation parameter derivation: {:#?}",
@@ -181,7 +202,12 @@ impl GlobalStateCreator {
                     };
                     let user_state = val
                         .call(locale, user_build_state, user_request_state)
-                        .await?;
+                        .await
+                        .into()
+                        .into_server_result(
+                            "global_amalgamate_states",
+                            "GLOBAL_STATE".to_string(),
+                        )?;
                     let template_state: TemplateState = user_state.into();
                     Ok(template_state)
                 }
@@ -199,18 +225,7 @@ impl GlobalStateCreator {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_build_state(&self, locale: String) -> Result<TemplateState, ServerError> {
         if let Some(get_build_state) = &self.build {
-            let res = get_build_state.call(locale).await;
-            match res {
-                Ok(res) => Ok(res),
-                // Unlike template build state, there's no incremental generation here, so the
-                // client can't have caused an error
-                Err(err) => Err(ServerError::RenderFnFailed {
-                    fn_name: "get_build_state".to_string(),
-                    template_name: "GLOBAL_STATE".to_string(),
-                    cause: ErrorCause::Server(None),
-                    source: err,
-                }),
-            }
+            get_build_state.call(locale).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),
@@ -227,16 +242,7 @@ impl GlobalStateCreator {
         req: Request,
     ) -> Result<TemplateState, ServerError> {
         if let Some(get_request_state) = &self.request {
-            let res = get_request_state.call(locale, req).await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "get_request_state".to_string(),
-                    template_name: "GLOBAL_STATE".to_string(),
-                    cause,
-                    source: error,
-                }),
-            }
+            get_request_state.call(locale, req).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),
@@ -255,18 +261,9 @@ impl GlobalStateCreator {
         request_state: TemplateState,
     ) -> Result<TemplateState, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamation {
-            let res = amalgamate_states
+            amalgamate_states
                 .call(locale, build_state, request_state)
-                .await;
-            match res {
-                Ok(res) => Ok(res),
-                Err(GenericErrorWithCause { error, cause }) => Err(ServerError::RenderFnFailed {
-                    fn_name: "amalgamate_states".to_string(),
-                    template_name: "GLOBAL_STATE".to_string(),
-                    cause,
-                    source: error,
-                }),
-            }
+                .await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),
@@ -308,47 +305,39 @@ impl GlobalState {
 }
 
 /// The backend for the different types of global state.
+#[derive(Debug)]
 pub enum GlobalStateType {
     /// The global state has been deserialized and loaded, and is ready for use.
     Loaded(Box<dyn AnyFreeze>),
     /// The global state is in string form from the server.
     Server(TemplateState),
-    /// There was no global state provided by the server.
+    /// The global state provided by the server was empty, indicating that this
+    /// app does not use global state.
     None,
 }
 impl GlobalStateType {
     /// Parses the global state into the given reactive type if possible. If the
     /// state from the server hasn't been parsed yet, this will return
-    /// `None`.
+    /// `None`. This will return an error if a type mismatch occurred.
     ///
     /// In other words, this will only return something if the global state has
     /// already been requested and loaded.
-    pub fn parse_active<R>(&self) -> Option<<R::Unrx as MakeRx>::Rx>
+    pub fn parse_active<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
-        R: Clone + AnyFreeze + MakeUnrx,
-        // We need this so that the compiler understands that the reactive version of the
-        // unreactive version of `R` has the same properties as `R` itself
-        <<R as MakeUnrx>::Unrx as MakeRx>::Rx: Clone + AnyFreeze + MakeUnrx,
+        S: MakeRx,
+        S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         match &self {
             // If there's an issue deserializing to this type, we'll fall back to the server
-            Self::Loaded(any) => any
-                .as_any()
-                .downcast_ref::<<R::Unrx as MakeRx>::Rx>()
-                .cloned(),
-            Self::Server(_) => None,
-            Self::None => None,
-        }
-    }
-}
-impl Freeze for GlobalStateType {
-    fn freeze(&self) -> String {
-        match &self {
-            Self::Loaded(state) => state.freeze(),
-            // There's no point in serializing state that was sent from the server, since we can
-            // easily get it again later (it can't possibly have been changed on the browser-side)
-            Self::Server(_) => "Server".to_string(),
-            Self::None => "None".to_string(),
+            Self::Loaded(any) => {
+                let rx = any
+                    .as_any()
+                    .downcast_ref::<S::Rx>()
+                    .ok_or(ClientInvariantError::GlobalStateDowncast)?
+                    .clone();
+                Ok(Some(rx))
+            }
+            Self::Server(_) | Self::None => Ok(None),
         }
     }
 }
@@ -358,34 +347,32 @@ impl std::fmt::Debug for GlobalState {
     }
 }
 
-// /// A representation of global state parsed into a specific type.
-// pub enum ParsedGlobalState<R> {
-//     /// The global state has been deserialized and loaded, and is ready for
-// use.     Loaded(R),
-//     /// We couldn't parse to the desired reactive type.
-//     ParseError,
-//     /// The global state is in string form from the server.
-//     Server(String),
-//     /// There was no global state provided by the server.
-//     None,
-// }
-
-/// A utility function for getting the global state that has already been built
-/// at build-time. If there was none built, then this will return an empty
-/// [`TemplateState`] (hence, a `StoreError::NotFound` is impossible from this
-/// function).
-#[cfg(not(target_arch = "wasm32"))]
-pub async fn get_built_global_state(
-    immutable_store: &ImmutableStore,
-) -> Result<TemplateState, ServerError> {
-    let res = immutable_store.read("static/global_state.json").await;
-    match res {
-        Ok(state) => {
-            let state = TemplateState::from_str(&state)
-                .map_err(|err| ServerError::InvalidPageState { source: err })?;
-            Ok(state)
+/// Frozen global state.
+#[cfg(target_arch = "wasm32")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum FrozenGlobalState {
+    /// There is state that should be instantiated.
+    Some(String),
+    /// The global state had not been modified from the engine-side. In this
+    /// case, we don't bother storing the frozen state, since it can be
+    /// trivially re-instantiated.
+    Server,
+    /// There was no global state.
+    None,
+    /// The frozen global state has already been used. This could be used to
+    /// ignore a global state in the frozen version of an app that does use
+    /// global state (as opposed to using `None` in such an app, which would
+    /// cause an invariant error), however thaw preferences exsit for exactly
+    /// this purpose.
+    Used,
+}
+#[cfg(target_arch = "wasm32")]
+impl From<&GlobalStateType> for FrozenGlobalState {
+    fn from(val: &GlobalStateType) -> Self {
+        match val {
+            GlobalStateType::Loaded(state) => Self::Some(state.freeze()),
+            GlobalStateType::None => Self::None,
+            GlobalStateType::Server(_) => Self::Server,
         }
-        Err(StoreError::NotFound { .. }) => Ok(TemplateState::empty()),
-        Err(err) => Err(err.into()),
     }
 }

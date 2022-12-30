@@ -6,14 +6,14 @@ pub fn get_global_state_creator() -> GlobalStateCreator {
 }
 
 #[engine_only_fn]
-async fn get_build_state(_locale: String) -> RenderFnResult<AppState> {
-    Ok(AppState {
+async fn get_build_state(_locale: String) -> AppState {
+    AppState {
         // We explicitly tell the first page that no login state has been checked yet
         auth: AuthData {
             state: LoginState::Server,
             username: String::new(),
         },
-    })
+    }
 }
 
 #[derive(Serialize, Deserialize, ReactiveState)]
@@ -50,13 +50,16 @@ pub struct AuthData {
 // here (hence the `.get()`s and `.set()`s, all the fields become `Signal`s)
 // There's no point in implementing it on the unreactive version, since this
 // will only be called from within the browser, in which we have a reactive
-// version
+// version.
+//
+// Unfortunately, Rust doesn't let us use the reference alias for this, so
+// we add `PerseusRxRef`, which is the internal name.
 #[cfg(target_arch = "wasm32")] // These functions all use `web_sys`, and so won't work on the server-side
-impl<'a> AuthDataRx<'a> {
+impl<'a> AuthDataPerseusRxRef<'a> {
     /// Checks whether or not the user is logged in and modifies the internal
     /// state accordingly. If this has already been run, it won't do anything
     /// (aka. it will only run if it's `Server`)
-    pub fn detect_state(&self) {
+    pub fn detect_state(&'a self) {
         // If we've checked the login status before, then we should assume the status
         // hasn't changed (we'd change this in a login/logout page)
         if let LoginState::Yes | LoginState::No = *self.state.get() {
@@ -84,14 +87,14 @@ impl<'a> AuthDataRx<'a> {
     }
 
     /// Logs the user in with the given username.
-    pub fn login(&self, username: &str) {
+    pub fn login(&'a self, username: &str) {
         let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
         storage.set("username", username).unwrap();
         self.state.set(LoginState::Yes);
         self.username.set(username.to_string());
     }
     /// Logs the user out.
-    pub fn logout(&self) {
+    pub fn logout(&'a self) {
         let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
         storage.delete("username").unwrap();
         self.state.set(LoginState::No);

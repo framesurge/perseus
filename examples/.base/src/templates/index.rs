@@ -7,6 +7,7 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
+#[engine_only_fn]
 fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { "Index Page" }
@@ -14,5 +15,8 @@ fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index").template(index_page).head(head)
+    Template::new("index")
+        .view(index_page)
+        .head(head)
+        .build()
 }

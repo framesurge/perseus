@@ -19,7 +19,7 @@ impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
     fn run(
         &self,
         action_data: A,
-        plugin_data: &HashMap<String, Box<dyn Any + Send>>,
+        plugin_data: &HashMap<String, Box<dyn Any + Send + Sync>>,
     ) -> Result<Option<R>, PluginError> {
         // If no runner is defined, this won't have any effect (same as functional
         // actions with no registered runners)
@@ -47,7 +47,10 @@ impl<A, R> PluginAction<A, R, Option<R>> for ControlPluginAction<A, R> {
     fn register_plugin(
         &mut self,
         name: &str,
-        runner: impl Fn(&A, &(dyn Any + Send)) -> Result<R, Box<dyn std::error::Error>> + Send + 'static,
+        runner: impl Fn(&A, &(dyn Any + Send + Sync)) -> Result<R, Box<dyn std::error::Error + Send + Sync>>
+            + Send
+            + Sync
+            + 'static,
     ) {
         self.register_plugin_box(name, Box::new(runner))
     }
@@ -79,8 +82,7 @@ impl<A, R> std::fmt::Debug for ControlPluginAction<A, R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ControlPluginAction")
             .field("controller_name", &self.controller_name)
-            .field("runner", &self.runner.as_ref().map(|_| "Runner"))
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
