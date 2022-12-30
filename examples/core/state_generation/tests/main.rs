@@ -55,7 +55,7 @@ async fn incremental_generation(c: &mut Client) -> Result<(), fantoccini::error:
         wait_for_checkpoint!("page_interactive", 0, c);
         // There should be a heading with the slug
         let text = c.find(Locator::Css("h1")).await?.text().await?;
-        assert!(text.contains(page));
+        assert!(text.contains(page.strip_prefix("/").unwrap_or(&page)));
 
         Ok(())
     }

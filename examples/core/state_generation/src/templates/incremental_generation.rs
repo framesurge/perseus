@@ -52,7 +52,7 @@ async fn get_build_state(
     // This path is illegal, and can't be rendered
     // Because we're using incremental generation, we could get literally anything
     // as the `path`
-    if path == "incremental_generation/tests" {
+    if path == "tests" {
         // This tells Perseus to return an error that's the client's fault, with the
         // HTTP status code 404 (not found) and the message 'illegal page'. Note that
         // this is a `BlamedError<String>`, but we could use any error type that
