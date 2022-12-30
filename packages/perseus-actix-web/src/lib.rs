@@ -9,7 +9,9 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-use actix_files::Files;
+use std::sync::Arc;
+
+use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 use perseus::{
@@ -77,12 +79,14 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
     opts: ServerOptions,
 ) -> impl FnOnce(&mut actix_web::web::ServiceConfig) {
     move |cfg: &mut web::ServiceConfig| {
+        let snippets_dir = opts.snippets.clone();
         cfg
+            .app_data(web::Data::new(opts))
             // --- File handlers ---
-            .service(Files::new("/.perseus/bundle.js", &opts.js_bundle))
-            .service(Files::new("/.perseus/bundle.wasm", &opts.wasm_bundle))
-            .service(Files::new("/.perseus/bundle.wasm.js", &opts.wasm_js_bundle))
-            .service(Files::new("/.perseus/snippets", &opts.snippets))
+            .route("/.perseus/bundle.js", web::get().to(js_bundle))
+            .route("/.perseus/bundle.wasm", web::get().to(wasm_bundle))
+            .route("/.perseus/bundle.wasm.js", web::get().to(wasm_js_bundle))
+            .service(Files::new("/.perseus/snippets", &snippets_dir))
             // --- Translation and subsequent load handlers
             .route(
                 "/.perseus/translations/{locale}",
@@ -92,7 +96,8 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
                 }),
             )
             .route(
-                "/.perseus/page/{locale}/{filename:.*}.json",
+                // We capture the `.json` ending in the handler
+                "/.perseus/page/{locale}/{filename:.*}",
                 web::get().to(move |http_req: HttpRequest, web::Query(query_params): web::Query<SubsequentLoadQueryParams>| async move {
                     let raw_path = http_req.match_info().query("filename").to_string();
                     let locale = http_req.match_info().query("locale");
@@ -115,8 +120,11 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
         if turbine.static_dir.exists() {
             cfg.service(Files::new("/.perseus/static", &turbine.static_dir));
         }
-        for (url, static_path) in turbine.static_aliases.iter() {
-            cfg.service(Files::new(url, static_path));
+        for url in turbine.static_aliases.keys() {
+            cfg.route(
+                url,
+                web::get().to(|req| async { static_alias(turbine, req).await }),
+            );
         }
         // --- Initial load handler ---
         cfg.route(
@@ -139,28 +147,28 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
     }
 }
 
-// // File handlers (these have to be broken out for Actix)
-// async fn js_bundle(opts: web::Data<ServerOptions>) ->
-// std::io::Result<NamedFile> {     NamedFile::open(&opts.js_bundle)
-// }
-// async fn wasm_bundle(opts: web::Data<ServerOptions>) ->
-// std::io::Result<NamedFile> {     NamedFile::open(&opts.wasm_bundle)
-// }
-// async fn wasm_js_bundle(opts: web::Data<ServerOptions>) ->
-// std::io::Result<NamedFile> {     NamedFile::open(&opts.wasm_js_bundle)
-// }
-// async fn static_alias<M: MutableStore, T: TranslationsManager>(
-//     turbine: &'static Turbine<M, T>,
-//     req: HttpRequest,
-// ) -> std::io::Result<NamedFile> {
-//     let filename = turbine.static_aliases.get(req.path());
-//     let filename = match filename {
-//         Some(filename) => filename,
-//         // If the path doesn't exist, then the alias is not found
-//         None => return
-// Err(std::io::Error::from(std::io::ErrorKind::NotFound)),     };
-//     NamedFile::open(filename)
-// }
+// File handlers (these have to be broken out for Actix)
+async fn js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
+    NamedFile::open(&opts.js_bundle)
+}
+async fn wasm_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
+    NamedFile::open(&opts.wasm_bundle)
+}
+async fn wasm_js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<NamedFile> {
+    NamedFile::open(&opts.wasm_js_bundle)
+}
+async fn static_alias<M: MutableStore, T: TranslationsManager>(
+    turbine: &'static Turbine<M, T>,
+    req: HttpRequest,
+) -> std::io::Result<NamedFile> {
+    let filename = turbine.static_aliases.get(req.path());
+    let filename = match filename {
+        Some(filename) => filename,
+        // If the path doesn't exist, then the alias is not found
+        None => return Err(std::io::Error::from(std::io::ErrorKind::NotFound)),
+    };
+    NamedFile::open(filename)
+}
 
 // ----- Default server -----
 
