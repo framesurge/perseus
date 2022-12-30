@@ -52,3 +52,7 @@ Alternately, this error can occur if you try to do something very inadvisable, l
 Note that this doesn't mean it's actually impossible to server-side render a widget on the browser-side, you can use the functional pattern to do this easily. Rather than using `MY_CAPSULE.widget()`, just use `crate::path::to::my::widget::get_capsule().widget()`, because `get_capsule()` is generic over `G: Html` meaning it will just work with Rust's normal typing system.
 
 If you're still getting this error, and none of these solutions make sense with what you're doing, then you've possibly encountered a rather serious Perseus bug, which we'd like to know about so we can fix it! Please report it [on GitHub](https://github.com/framesurge/perseus/issues/new/choose).
+
+## Problem binding to `http://localhost:3100`
+
+This means another instance of Persues is already running. The reason this talks about <http://localhost:3100> rather than port 8080 is because 3100 is where the live reload server runs by default.
