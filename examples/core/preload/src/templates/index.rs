@@ -22,9 +22,9 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { (t!("index-msg", cx)) }
 
-        a(href = link!("about", cx)) { (t!("index-about-link", cx)) }
-        a(href = "fr-FR/about") { "About (French)" }
-        a(href = "en-US/about") { "About (English)" }
+        a(id = "about", href = link!("about", cx)) { (t!("index-about-link", cx)) }
+        a(id = "fr-about", href = "fr-FR/about") { "About (French)" }
+        a(id = "en-about", href = "en-US/about") { "About (English)" }
     }
 }
 
