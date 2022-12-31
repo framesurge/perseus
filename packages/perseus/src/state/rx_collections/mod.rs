@@ -78,8 +78,17 @@
 //! although there is presently no defined reactive container for this.*
 //!
 //! **Note:** as a user, you will still have to use `#[rx(nested)]` over any
-//! reactive types you use!
+//! reactive types you use, even those that are not nested! This is because,
+//! without this attribute, the `ReactiveState` derive macro will just wrap
+//! the whole field in an `RcSignal` and call it a day, rather than using the
+//! fine-grained reactivity enabled by these types.
 
+mod rx_hash_map;
+mod rx_hash_map_nested;
+mod rx_vec;
 mod rx_vec_nested;
 
+pub use rx_hash_map::{RxHashMap, RxHashMapRx};
+pub use rx_hash_map_nested::{RxHashMapNested, RxHashMapNestedRx};
+pub use rx_vec::{RxVec, RxVecRx};
 pub use rx_vec_nested::{RxVecNested, RxVecNestedRx};
