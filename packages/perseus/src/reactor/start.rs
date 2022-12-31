@@ -11,7 +11,7 @@ use crate::{
 use sycamore::prelude::{create_effect, create_signal, on_mount, view, ReadSignal, Scope, View};
 use sycamore_futures::spawn_local_scoped;
 use sycamore_router::{navigate_replace, HistoryIntegration, RouterBase};
-use web_sys::Element;
+use web_sys::{CustomEvent, CustomEventInit, Element};
 
 // We don't want to bring in a styling library, so we do this the old-fashioned
 // way! We're particularly comprehensive with these because the user could

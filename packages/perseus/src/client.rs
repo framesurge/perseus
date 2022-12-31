@@ -5,6 +5,7 @@ use sycamore::prelude::create_scope;
 #[cfg(feature = "hydrate")]
 use sycamore::utils::hydrate::with_hydration_context;
 use wasm_bindgen::JsValue;
+use web_sys::{CustomEvent, CustomEventInit};
 
 /// The entrypoint into the app itself. This will be compiled to Wasm and
 /// actually executed, rendering the rest of the app. Runs the app in the
@@ -45,6 +46,15 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         crate::web_log!("[CRITICAL ERROR]: Perseus has panicked! An error message has hopefully been displayed on your screen explaining this; if not, then something has gone terribly wrong, and, unless your code is panicking, you should report this as a bug. (If you're seeing this as an end user, please report it to the website administrator.)");
         #[cfg(not(debug_assertions))]
         crate::web_log!("[CRITICAL ERROR]: Perseus has panicked! An error message has hopefully been displayed on your screen explaining this; if not, then reloading the page might help.");
+
+        // Make it clear that apps compiled with unwinding panics might continue now
+        // (for completeness)
+        #[cfg(panic = "unwind")]
+        crate::web_log!("[WARNING]: The app has been compiled with unwinding panics, and it is possible that the app will now continue normal operation if this panic is handled.");
+
+        // Make sure the load event is submitted so interaction isn't totally suspended
+        // forever
+        dispatch_loaded(false, true);
 
         // Run the user's arbitrary panic handler
         if let Some(panic_handler) = &general_panic_handler {
@@ -102,6 +112,8 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
         }
     });
 
+    dispatch_loaded(running, false);
+
     // If we failed, terminate
     if !running {
         // SAFETY We're outside the app's scope.
@@ -121,3 +133,23 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 /// A convenience type wrapper for the type returned by nearly all client-side
 /// entrypoints.
 pub type ClientReturn = Result<(), JsValue>;
+
+/// Regardless of whether an error or a proper render was triggered, allow the
+/// browser to send through click events etc. (these are suspended until we've
+/// rendered to improve user experience and apparent responsiveness, but this
+/// has no impact on machine-measured metrics on UX). This also allows neat
+/// interoperability with other code running outside Perseus.
+///
+/// This will provide as part of the event whether or not the app is running. If
+/// this is `false`, the app will terminate immediately afterward. If it is
+/// `null` (thank you dynamic typing!), the app has panicked, and further
+/// behavior is unspecified, because the app might have been built with
+/// unwinding panics, and there could be a user function for catching panics.
+fn dispatch_loaded(running: bool, panic: bool) {
+    let document = web_sys::window().unwrap().document().unwrap();
+    let mut ev_init = CustomEventInit::new();
+    // We provide whether or not the app is actually running to this
+    ev_init.detail(&if panic { JsValue::NULL } else { running.into() });
+    let ev = CustomEvent::new_with_event_init_dict("__perseus_loaded", &ev_init).unwrap();
+    document.dispatch_event(&ev).unwrap();
+}

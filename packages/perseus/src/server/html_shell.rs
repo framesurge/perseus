@@ -75,6 +75,39 @@ impl HtmlShell {
             scripts_before_boundary.push("window.__PERSEUS_TESTING = true;".into());
         }
 
+        // This script stores all user-provided clicks in a JS array, blocking them
+        // until the app has loaded, at which time they'll all be re-emitted.
+        // This *can* improve user experience in some cases, and it's available
+        // as a feature flag. Clicks on links are deliberately exempted from
+        // this, because they can be resolved by the browser without needing
+        // interactivity (it'll be slower, but instant navigation is generally a
+        // better experience).
+        //
+        // This feature is heavily opinionated, and should not be enabled by default.
+        #[cfg(feature = "suspended-interaction")]
+        let suspend_script = r#"
+        window.__PERSEUS_SUSPENDED = true;
+        window.__PERSEUS_SUSPENDED_EVENTS = [];
+
+        const clickHandler = (ev) => {{
+            if (window.__PERSEUS_SUSPENDED && ev.target.tagName !== "A") {{
+                ev.preventDefault();
+                ev.stopPropagation();
+                window.__PERSEUS_SUSPENDED_EVENTS.push(ev);
+            }}
+        }};
+
+        document.addEventListener("click", clickHandler, true);
+        document.addEventListener("__perseus_loaded", () => {{
+            window.__PERSEUS_SUSPENDED = false;
+            for (const ev of window.__PERSEUS_SUSPENDED_EVENTS) {{
+                ev.target.dispatchEvent(ev);
+            }}
+            document.removeEventListener("click", clickHandler);
+        }});
+        "#;
+        #[cfg(not(feature = "suspended-interaction"))]
+        let suspend_script = "";
         // Define the script that will load the Wasm bundle (inlined to avoid
         // unnecessary extra requests) If we're using the `wasm2js` feature,
         // this will try to load a JS version instead (expected to be at
@@ -90,6 +123,8 @@ impl HtmlShell {
             await init("{path_prefix}/.perseus/bundle.wasm");
         }}
         main();
+
+        {suspend_script}
         "#,
             path_prefix = path_prefix
         );
@@ -101,6 +136,8 @@ impl HtmlShell {
             await init("{path_prefix}/.perseus/bundle.wasm.js");
         }}
         main();
+
+        {suspend_script}
         "#,
             path_prefix = path_prefix
         );

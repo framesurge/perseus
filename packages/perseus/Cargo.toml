@@ -43,7 +43,7 @@ js-sys = { version = "0.3", optional = true }
 # Note that this is not needed in production, but that can't be specified, so it will just be compiled away to nothing
 console_error_panic_hook = { version = "0.1.6", optional = true }
 # TODO review feature flags here
-web-sys = { version = "0.3", features = [ "Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window" ] }
+web-sys = { version = "0.3", features = [ "Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window", "CustomEvent", "CustomEventInit" ] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 
@@ -53,6 +53,8 @@ wasm-bindgen-futures = "0.4"
 default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine", "minify", "minify-css", "cache-initial-load" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 translator-lightweight = []
+# Suspends all `click` events at the document root until Perseus is fully loaded, then passing them through.
+suspended-interaction = []
 # This feature adds support for a number of macros that will make your life MUCH easier (read: use this unless you have very specific needs or are completely insane)
 macros = [ "perseus-macro" ]
 # This feature enable support for functions that make using the default engine configuration much easier.
