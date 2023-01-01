@@ -111,9 +111,9 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     } = input;
 
     let arg = &fn_args[1];
-    let state_arg = match arg {
-        FnArg::Typed(PatType { ty, .. }) => match &**ty {
-            Type::Reference(TypeReference { elem, .. }) => elem,
+    let (state_pat, state_arg) = match arg {
+        FnArg::Typed(PatType { ty, pat, .. }) => match &**ty {
+            Type::Reference(TypeReference { elem, .. }) => (pat, elem),
             _ => return syn::Error::new_spanned(arg, "the state argument must be a reference (e.g. `&MyStateTypeRx`); if you're using unreactive state (i.e. you're deriving `UnreactiveState` instead of `ReactiveState`), you don't need this macro!").to_compile_error()
         },
         FnArg::Receiver(_) => unreachable!(),
@@ -127,7 +127,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         #(#attrs)*
         #vis fn #name<'__page, G: ::sycamore::prelude::Html>(
             cx: ::sycamore::prelude::BoundedScope<'_, '__page>,
-            state: &'__page #state_arg,
+            #state_pat: &'__page #state_arg,
             // Capsules have another argument for properties
             #props_arg
         ) -> #return_type {
