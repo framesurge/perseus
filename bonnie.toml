@@ -170,7 +170,7 @@ test.cmd = [
     "bonnie test example-all-integrations core index_view --headless",
     "bonnie test example-all-integrations core js_interop --headless",
     "bonnie test example-all-integrations core plugins --headless",
-    # TODO core/preload
+    "bonnie test example-all-integrations core preload --headless",
     "bonnie test example-all-integrations core router_state --headless",
     "bonnie test example-all-integrations core rx_state --headless",
     "bonnie test example-all-integrations core set_headers --headless",
@@ -180,9 +180,12 @@ test.cmd = [
     "bonnie test example-all-integrations core unreactive --headless",
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
+# This sometimes works, and sometimes fails, depending on the mood of Cargo's caching (just re-run it a few times, restart, the usual)
 test.subcommands.core.cmd = [
-    "RUSTFLAGS=\"--cfg=engine\" cargo test", # This will ignore Wasm tests
-    "RUSTFLAGS=\"--cfg=browser\" cargo test"
+    # This will ignore end-to-end tests
+    "RUSTFLAGS=\"--cfg=engine\" RUSTDOCFLAGS=\"--cfg=engine\" cargo test --all",
+    # We should only test documentation on the client-side
+    "RUSTFLAGS=\"--cfg=client\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
 ]
 test.subcommands.core.desc = "runs cargo tests only"
 test.subcommands.example.cmd = "rust-script scripts/test.rs %category %example %integration %%" # A script can do backgrounding properly
