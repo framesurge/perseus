@@ -60,7 +60,7 @@ where
     }
 
     #[cfg(client)]
-    fn compute_suspense(&self, cx: Scope) {}
+    fn compute_suspense(&self, _cx: Scope) {}
 }
 // --- Dereferencing ---
 impl<K, V> Deref for RxHashMap<K, V>

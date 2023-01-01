@@ -2,7 +2,7 @@ use crate::{reactor::Reactor, translator::errors::*, PerseusNodeType};
 use fluent_bundle::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::sync::Arc;
-use sycamore::prelude::{use_context, Scope, Signal};
+use sycamore::prelude::{use_context, Scope};
 use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 /// The file extension used by the Fluent translator, which expects FTL files.

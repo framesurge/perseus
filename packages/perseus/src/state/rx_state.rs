@@ -41,7 +41,7 @@ pub trait MakeUnrx {
     /// user's handlers. Each handler must have the following function
     /// signature:
     ///
-    /// ```
+    /// ```text
     /// Fn(Scope<'a>, RxRef<'a>);
     /// ```
     ///

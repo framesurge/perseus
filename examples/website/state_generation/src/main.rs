@@ -55,7 +55,7 @@ async fn get_build_state(
         Err(err) => {
             return Err(BlamedError {
                 blame: ErrorBlame::Client(Some(404)),
-                error: MyError,
+                error: MyError(err),
             })
         }
     };
@@ -84,8 +84,8 @@ async fn get_build_paths() -> BuildPaths {
 
 // SNIP
 #[derive(thiserror::Error, Debug)]
-#[error("an error!")]
-struct MyError;
+#[error(transparent)]
+struct MyError(io::Error);
 fn get_post_for_path(_path: String) -> Result<Post, io::Error> {
     unimplemented!()
 }

@@ -10,8 +10,6 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-use std::sync::Arc;
-
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
