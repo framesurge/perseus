@@ -23,10 +23,21 @@ Perseus v0.4.x added a significant number of breaking changes, as almost the ent
 17. Replace your `ErrorPages` with `ErrorViews` (see the documentation of this `struct`, and the `core/error_views` example for further details).
 18. Update any manual destructuring of your state to use references (e.g. `let content = state.content;` -> `let content = &state.content;`).
 19. Change `MyStateRx<'b>` to `&MyStateRx` (you'll need `&'b MyStateRx` if you're not using `#[auto_scope]`).
-20. Update your code for any smaller breaking changes that might affect you, as per the [changelog](https://github.com/framesurge/perseus/blob/main/CHANGELOG.md).
-21. Run `cargo update` and then `perseus build` to get everything up to date and ensure that your app works! (This might take a while the first time.)
+20. In your `PerseusApp`, change all the times you've provided functions to actually *call* those functions (e.g. `.template(crate::templates::index::get_template)` -> `.template(crate::templates::index::get_template())`).
+21. Change any `#[cfg(target_arch = "wasm32")]` instances to be `#[cfg(client)]`, and any `#[cfg(not(target_arch = "wasm32"))]` ones to say `#[cfg(engine)]`.
+22. Update your code for any smaller breaking changes that might affect you, as per the [changelog](https://github.com/framesurge/perseus/blob/main/CHANGELOG.md).
+23. Run `cargo update` and then `perseus build` to get everything up to date and ensure that your app works! (This might take a while the first time.)
 
 We realize that this is a mammoth number of breaking changes, and there will be several more if you're a plugin developer. However, Perseus v0.4.0 brings extraordinary levels of performance and ergonomics to Perseus, removing old quirks and streamlining the internals massively. With the introduction of the new capsules system, Perseus is by far the most powerful frontend framework in the world. If you're having any trouble with updating, please do not hesitate to let us know on [Discord](https://discord.com/invite/GNqWYWNTdp), and we'll happily help you out as soon as we can!
+
+Note that, in order to make `rust-analyzer` etc. work with the new version of Perseus, you'll need to tell it to compile your app for the engine-side by default. You can do this by adding a `.cargo/config.toml` file to the root of your project with the following contents:
+
+```toml
+[build]
+rustflags = [ "--cfg", "engine" ]
+```
+
+If you later want to work on a browser-only part of your app, you can just change `engine` to `client` while you work, and Rust will compile your code accordingly!
 
 ## If You've Ejected
 
