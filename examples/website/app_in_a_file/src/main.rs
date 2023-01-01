@@ -10,44 +10,42 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         // Create a new template at `index`, which maps to our landing page
         .template(
             Template::build("index")
-                .template_with_state(index_page)
-                .build_state_fn(get_index_build_state),
+                .view_with_state(index_page)
+                .build_state_fn(get_build_state)
+                .build(),
         )
-        .template(Template::new("about").template(about_page))
+        .template(Template::build("about").view(about_page).build())
 }
 
+#[auto_scope]
 // EXCERPT_START
-#[perseus::template]
-fn index_page<'a, G: Html>(cx: Scope<'a>, props: IndexPropsRx<'a>) -> View<G> {
+fn index_page<G: Html>(cx: Scope, state: &IndexStateRx) -> View<G> {
     view! { cx,
         h1 { (format!(
             "Hello, {}!",
-            props.name.get()
+            state.name.get()
         )) }
         input(
             placeholder = "Name",
-            bind:value = props.name
+            bind:value = state.name
         )
         a(href = "about") { "About" }
     }
 }
 
-#[derive(Serialize, Deserialize, ReactiveState)]
-#[rx(alias = "IndexPropsRx")]
-struct IndexProps {
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
+#[rx(alias = "IndexStateRx")]
+struct IndexState {
     name: String,
 }
 
 // This function will be run when you build your app, to generate default state
 // ahead-of-time
 #[engine_only_fn]
-async fn get_index_build_state(
-    _info: StateGeneratorInfo<()>,
-) -> RenderFnResultWithCause<IndexProps> {
-    let props = IndexProps {
+async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexState {
+    IndexState {
         name: "User".to_string(),
-    };
-    Ok(props)
+    }
 }
 // EXCERPT_END
 

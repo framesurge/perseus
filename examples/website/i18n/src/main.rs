@@ -1,10 +1,10 @@
-use perseus::{t, Html, PerseusApp, Template};
+use perseus::prelude::*;
 use sycamore::prelude::*;
 
 #[perseus::main(perseus_warp::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
-        .template(Template::new("index").template(index_page))
+        .template(Template::build("index").view(index_page).build())
         // EXCERPT_START
         .locales_and_translations_manager(
             "en-US",             // Default locale

@@ -1,5 +1,6 @@
 use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::io;
 use std::time::Duration;
 use sycamore::prelude::*;
 
@@ -7,7 +8,7 @@ use sycamore::prelude::*;
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new().template(
         Template::build("post")
-            .template_with_state(post_page)
+            .view_with_state(post_page)
             .build_paths_fn(get_build_paths)
             .build_state_fn(get_build_state)
             // Reload every blog post every day, in case it's changed
@@ -15,24 +16,25 @@ pub fn main<G: Html>() -> PerseusApp<G> {
             // If the user requests a page we haven't created yet, still
             // pass it to `get_build_state()` and cache the output for
             // future users (lazy page building)
-            .incremental_generation(),
+            .incremental_generation()
+            .build(),
     )
 }
 
+#[auto_scope]
 // EXCERPT_START
-#[perseus::template]
-fn post_page<'a, G: Html>(cx: Scope<'a>, props: PostRx<'a>) -> View<G> {
+fn post_page<G: Html>(cx: Scope, state: &PostRx) -> View<G> {
     view! { cx,
-        h1 { (props.title.get()) }
-        p { (props.author.get()) }
+        h1 { (state.title.get()) }
+        p { (state.author.get()) }
         div(
-            dangerously_set_inner_html = &props.content.get()
+            dangerously_set_inner_html = &state.content.get()
         )
     }
 }
 // EXCERPT_END
 
-#[derive(Serialize, Deserialize, ReactiveState)]
+#[derive(Serialize, Deserialize, Clone, ReactiveState)]
 #[rx(alias = "PostRx")]
 struct Post {
     title: String,
@@ -45,24 +47,29 @@ struct Post {
 #[engine_only_fn]
 async fn get_build_state(
     StateGeneratorInfo { path, .. }: StateGeneratorInfo<()>,
-) -> RenderFnResultWithCause<Post> {
+) -> Result<Post, BlamedError<MyError>> {
     let raw_post = match get_post_for_path(path) {
         Ok(post) => post,
         // If the user sends us some bogus path with incremental generation,
         // return a 404 appropriately
-        Err(err) => blame_err!(client, 404, err),
+        Err(err) => {
+            return Err(BlamedError {
+                blame: ErrorBlame::Client(Some(404)),
+                error: MyError,
+            })
+        }
     };
     let html_content = parse_markdown(raw_post.content);
-    let props = Post {
+    let post = Post {
         title: raw_post.title,
         author: raw_post.author,
         content: html_content,
     };
-    Ok(props)
+    Ok(post)
 }
 #[engine_only_fn]
-async fn get_build_paths() -> RenderFnResult<BuildPaths> {
-    Ok(BuildPaths {
+async fn get_build_paths() -> BuildPaths {
+    BuildPaths {
         // These will all become URLs at `/post/<name>`
         paths: vec![
             "welcome".to_string(),
@@ -71,12 +78,15 @@ async fn get_build_paths() -> RenderFnResult<BuildPaths> {
         ],
         // Perseus supports helper state, but we don't need it here
         extra: ().into(),
-    })
+    }
 }
 // EXCERPT_END
 
 // SNIP
-fn get_post_for_path(_path: String) -> Result<Post, std::io::Error> {
+#[derive(thiserror::Error, Debug)]
+#[error("an error!")]
+struct MyError;
+fn get_post_for_path(_path: String) -> Result<Post, io::Error> {
     unimplemented!()
 }
 fn parse_markdown(_content: String) -> String {
