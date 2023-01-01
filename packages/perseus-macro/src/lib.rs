@@ -23,16 +23,6 @@ use syn::{parse_macro_input, DeriveInput, ItemFn, Path, Signature};
 
 use crate::rx_state::ReactiveStateDeriveInput;
 
-// TODO(0.5.x) Remove this entirely
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn template_rx(_args: TokenStream, _input: TokenStream) -> TokenStream {
-    quote! {
-        compile_error!("the `template_rx` macro has been replaced by the `template` macro")
-    }
-    .into()
-}
-
 /// A helper macro for templates that use reactive state. Once, this was needed
 /// on all Perseus templates, however, today, templates that take no state, or
 /// templates that take unreactive state, can be provided as normal functions
