@@ -1,8 +1,8 @@
-use std::num::ParseIntError;
-
 use lazy_static::lazy_static;
 use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
+#[cfg(engine)]
+use std::num::ParseIntError;
 use sycamore::prelude::*;
 
 // This is a fairly pointless capsule that uses incremental generation to

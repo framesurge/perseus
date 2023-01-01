@@ -139,12 +139,12 @@ site.subcommands.run.cmd = [
 site.subcommands.run.desc = "runs the website without watching for changes"
 
 check.cmd = [
-    "cargo check --all",
-    "cargo fmt --all -- --check",
-    "cargo clippy --all",
-    # We also have to check the `perseus` package in particular on Wasm (the examples are handled by the E2E tests)
-    "cd packages/perseus",
-    "cargo check --target wasm32-unknown-unknown"
+    "RUSTFLAGS=\"--cfg=engine\" cargo check --all",
+    "RUSTFLAGS=\"--cfg=engine\" cargo fmt --all -- --check",
+    "RUSTFLAGS=\"--cfg=engine\" cargo clippy --all",
+    "RUSTFLAGS=\"--cfg=client\" cargo check --all",
+    "RUSTFLAGS=\"--cfg=client\" cargo fmt --all -- --check",
+    "RUSTFLAGS=\"--cfg=client\" cargo clippy --all",
 ]
 check.desc = "checks code for formatting errors and the like"
 
