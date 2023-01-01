@@ -157,7 +157,7 @@ spellcheck.subcommands.store.desc = "overrides and recreates the dictionary at `
 spellcheck.desc = "checks docs and code for possible spelling errors (requires `cspell`)"
 
 test.cmd = [
-    "cargo test", # This will ignore Wasm tests
+    "bonnie test core",
     # Run tests for each example
     "bonnie test example-all-integrations core basic --headless",
     "bonnie test example-all-integrations core custom_server --headless",
@@ -180,7 +180,10 @@ test.cmd = [
     "bonnie test example-all-integrations core unreactive --headless",
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
-test.subcommands.core.cmd = "cargo test"
+test.subcommands.core.cmd = [
+    "RUSTFLAGS=\"--cfg=engine\" cargo test", # This will ignore Wasm tests
+    "RUSTFLAGS=\"--cfg=browser\" cargo test"
+]
 test.subcommands.core.desc = "runs cargo tests only"
 test.subcommands.example.cmd = "rust-script scripts/test.rs %category %example %integration %%" # A script can do backgrounding properly
 test.subcommands.example.args = [ "category", "example", "integration" ]

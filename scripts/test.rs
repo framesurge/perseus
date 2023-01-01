@@ -91,9 +91,9 @@ fn real_main() -> i32 {
             // TODO Confirm that this syntax works on Windows
             .args([shell_param, &format!("cargo test {} -- --test-threads 1", &cargo_features)])
             .envs(if is_headless {
-                vec![("PERSEUS_RUN_WASM_TESTS", "true"), ("PERSEUS_RUN_WASM_TESTS_HEADLESS", "true")]
+                vec![("RUSTFLAGS", "--cfg=engine"), ("PERSEUS_RUN_WASM_TESTS", "true"), ("PERSEUS_RUN_WASM_TESTS_HEADLESS", "true")]
             } else {
-                vec![("PERSEUS_RUN_WASM_TESTS", "true")]
+                vec![("RUSTFLAGS", "--cfg=engine"), ("PERSEUS_RUN_WASM_TESTS", "true")]
             })
             .output()
             .expect("couldn't run tests (command execution failed)");
