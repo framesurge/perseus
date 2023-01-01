@@ -2,9 +2,9 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use gloo_timers::future::sleep;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Clone, ReactiveState)]

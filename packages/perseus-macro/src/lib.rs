@@ -196,33 +196,6 @@ pub fn reactive_state(input: TokenStream) -> TokenStream {
     rx_state::make_rx_impl(input).into()
 }
 
-/// Marks the annotated code as only to be run as part of the engine (the
-/// server, the builder, the exporter, etc.). This resolves to a target-gate
-/// that makes the annotated code run only on targets that are not `wasm32`.
-#[proc_macro_attribute]
-pub fn engine(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let input_2: proc_macro2::TokenStream = input.into();
-    quote! {
-        #[cfg(not(target_arch = "wasm32"))]
-        #input_2
-    }
-    .into()
-}
-
-/// Marks the annotated code as only to be run in the browser. This is the
-/// opposite of (and mutually exclusive with) `#[engine]`. This resolves to a
-/// target-gate that makes the annotated code run only on targets that are
-/// `wasm32`.
-#[proc_macro_attribute]
-pub fn browser(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let input_2: proc_macro2::TokenStream = input.into();
-    quote! {
-        #[cfg(target_arch = "wasm32")]
-        #input_2
-    }
-    .into()
-}
-
 /// A convenience macro that makes sure the given function is only defined on
 /// the engine-side, creating an empty function on the browser-side. Perseus
 /// implicitly expects most of your state generation functions to be defined in
@@ -240,10 +213,10 @@ pub fn engine_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
     } = parse_macro_input!(input as ItemFn);
 
     quote! {
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         #vis fn #ident () {}
         // On the engine-side, the function is unmodified
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         #input_2
     }
     .into()
@@ -266,10 +239,10 @@ pub fn browser_only_fn(_args: TokenStream, input: TokenStream) -> TokenStream {
     } = parse_macro_input!(input as ItemFn);
 
     quote! {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         #vis fn #ident () {}
         // One the browser-side, the function is unmodified
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         #input_2
     }
     .into()

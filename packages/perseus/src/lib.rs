@@ -24,7 +24,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 
 /// Utilities for working with the engine-side, particularly with regards to
 /// setting up the entrypoint for your app's build/export/server processes.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub mod engine;
 /// Utilities surrounding `ErrorViews` and their management.
 pub mod error_views;
@@ -39,7 +39,7 @@ pub mod plugins;
 pub mod router;
 /// Utilities for working with the server. These are fairly low-level, and
 /// are intended for use by those developing new server integrations.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub mod server;
 /// Utilities for working with Perseus' state platform.
 pub mod state;
@@ -52,7 +52,7 @@ pub mod template;
 /// General utilities that may be useful while building Perseus apps.
 pub mod utils;
 
-#[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
+#[cfg(all(feature = "client-helpers", client))]
 mod client;
 mod init;
 mod page_data;
@@ -63,46 +63,46 @@ pub mod path;
 pub mod reactor;
 mod translator;
 /// The core of the Perseus state generation system.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub mod turbine;
 
 // The rest of this file is devoted to module structuring
 // Re-exports
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub use http;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub use http::Request as HttpRequest;
 
 /// All HTTP requests use empty bodies for simplicity of passing them around.
 /// They'll never need payloads (value in path requested).
 ///
 /// **Warning:** on the browser-side, this is defined as `()`.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub type Request = HttpRequest<()>;
 /// All HTTP requests use empty bodies for simplicity of passing them around.
 /// They'll never need payloads (value in path requested).
 ///
 /// **Warning:** on the browser-side, this is defined as `()`.
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub type Request = ();
 
 #[cfg(feature = "macros")]
 pub use perseus_macro::*;
 
 // Browser-side only
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub use crate::utils::checkpoint;
-#[cfg(all(feature = "client-helpers", target_arch = "wasm32"))]
+#[cfg(all(feature = "client-helpers", client))]
 pub use client::{run_client, ClientReturn};
 
 /// Internal utilities for lower-level work.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub mod internal {
     pub use crate::page_data::*;
 }
 /// Internal utilities for logging. These are just re-exports so that users
 /// don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 #[doc(hidden)]
 pub mod log {
     pub use wasm_bindgen::JsValue;
@@ -116,7 +116,7 @@ pub mod log {
 /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
 /// This is intended for `lazy_static!`s and the like, for capsules. See
 /// the book and capsule examples for further details.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub type PerseusNodeType = sycamore::web::SsrNode;
 /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
 /// `hydrate` feature flag and compilation target.
@@ -125,7 +125,7 @@ pub type PerseusNodeType = sycamore::web::SsrNode;
 /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
 /// This is intended for `lazy_static!`s and the like, for capsules. See
 /// the book and capsule examples for further details.
-#[cfg(all(target_arch = "wasm32", not(feature = "hydrate")))]
+#[cfg(all(client, not(feature = "hydrate")))]
 pub type PerseusNodeType = sycamore::web::DomNode;
 /// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
 /// `hydrate` feature flag and compilation target.
@@ -134,7 +134,7 @@ pub type PerseusNodeType = sycamore::web::DomNode;
 /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
 /// This is intended for `lazy_static!`s and the like, for capsules. See
 /// the book and capsule examples for further details.
-#[cfg(all(target_arch = "wasm32", feature = "hydrate"))]
+#[cfg(all(client, feature = "hydrate"))]
 pub type PerseusNodeType = sycamore::web::HydrateNode;
 
 /// A series of imports needed by most Perseus apps, in some form. This should
@@ -143,7 +143,7 @@ pub mod prelude {
     pub use crate::error_views::ErrorViews;
     // Target-gating doesn't matter, because the prelude is intended to be used all
     // at once
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub use crate::errors::{BlamedError, ErrorBlame};
     pub use crate::init::*;
     pub use crate::reactor::Reactor;
@@ -152,16 +152,13 @@ pub mod prelude {
     pub use sycamore::web::Html;
     pub use sycamore_router::{navigate, navigate_replace};
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub use crate::utils::{cache_fallible_res, cache_res};
     pub use crate::web_log;
-    #[cfg(feature = "macros")]
-    pub use crate::{
-        auto_scope, browser, browser_main, browser_only_fn, engine, engine_main, engine_only_fn,
-        main, main_export, template_rx, test, ReactiveState, UnreactiveState,
-    };
     #[cfg(any(feature = "translator-fluent", feature = "translator-lightweight"))]
     pub use crate::{link, t};
     pub use crate::{PerseusNodeType, Request};
+    #[cfg(feature = "macros")]
+    pub use perseus_macro::*;
     pub use sycamore_futures::spawn_local_scoped;
 }

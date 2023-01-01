@@ -3,7 +3,7 @@ use sycamore::prelude::*;
 
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     // We can't preload pages on the engine-side
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     {
         // Get the reactor first, which is the one-stop-shop for everything
         // internal to Perseus in the browser

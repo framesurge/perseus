@@ -1,13 +1,13 @@
 use crate::{errors::*, reactor::Reactor};
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::{i18n::Translator, reactor::RenderMode, state::TemplateState};
 use fmterr::fmt_err;
 use serde::{Deserialize, Serialize};
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use std::sync::Arc;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use sycamore::prelude::create_scope_immediate;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::prelude::{create_child_scope, try_use_context, ScopeDisposer};
 use sycamore::{
     prelude::{view, Scope},
@@ -49,7 +49,7 @@ pub struct ErrorViews<G: Html> {
     /// This will be extracted by the `PerseusApp` creation process and put in a
     /// place where it can be safely extracted. The replacement function
     /// will panic if called, so this should **never** be manually executed.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     panic_handler: Arc<
         dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
@@ -93,7 +93,7 @@ impl<G: Html> ErrorViews<G> {
                     _ => false,
                 }
             }),
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             panic_handler: Arc::new(handler),
         }
     }
@@ -125,7 +125,7 @@ impl<G: Html> ErrorViews<G> {
     /// Returns `true` if the given error, which must have occurred during a
     /// subsequent load, should be displayed as a popup, as opposed to
     /// occupying the entire page/widget.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) fn subsequent_err_should_be_popup(&self, err: &ClientError) -> bool {
         !(self.subsequent_load_determinant)(err)
     }
@@ -171,7 +171,7 @@ impl<G: Html> ErrorViews<G> {
         })
     }
 }
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 impl<G: Html> ErrorViews<G> {
     /// Invokes the user's handling function, producing head/body views for the
     /// given error. From the given scope, this will determine the
@@ -220,7 +220,7 @@ impl<G: Html> ErrorViews<G> {
         )
     }
 }
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 impl ErrorViews<SsrNode> {
     /// Renders an error view on the engine-side. This takes an optional
     /// translator. This will return a tuple of `String`ified views for the

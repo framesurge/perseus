@@ -20,7 +20,7 @@ fn index_page<'a, G: Html>(
     // `reqwasm` wraps browser-specific APIs, so we don't want it running on the
     // server If the browser IP has already been fetched (e.g. if we've come
     // here for the second time in the same session), we won't bother re-fetching
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     // Because we only have `reqwasm` on the client-side, we make sure this is only *compiled* in
     // the browser as well
     if browser_ip.get().is_none() {
@@ -30,7 +30,7 @@ fn index_page<'a, G: Html>(
         //
         // We want to access the `message` `Signal`, so we'll clone it in (and then we
         // need `move` because this has to be `'static`)
-        perseus::spawn_local_scoped(cx, async {
+        spawn_local_scoped(cx, async {
             // This interface may seem weird, that's because it wraps the browser's Fetch
             // API We request from a local path here because of CORS
             // restrictions (see the book)

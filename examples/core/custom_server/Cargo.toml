@@ -11,12 +11,12 @@ sycamore = "^0.8.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+[target.'cfg(engine)'.dev-dependencies]
 fantoccini = "0.17"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
 warp = { package = "warp-fix-171", version = "0.3" } # Temporary until Warp #171 is resolved
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
+[target.'cfg(client)'.dependencies]

@@ -4,8 +4,8 @@ use perseus::prelude::*;
 
 // Note: we use fully-qualified paths in the types to this function so we don't
 // have to target-gate some more imports
-#[cfg(not(target_arch = "wasm32"))] // We only have access to `warp` etc. on the engine-side, so this function
-                                    // should only exist there
+#[cfg(engine)] // We only have access to `warp` etc. on the engine-side, so this function
+               // should only exist there
 pub async fn dflt_server<
     M: perseus::stores::MutableStore + 'static,
     T: perseus::i18n::TranslationsManager + 'static,

@@ -51,15 +51,12 @@ pub struct AuthData {
 // There's no point in implementing it on the unreactive version, since this
 // will only be called from within the browser, in which we have a reactive
 // version.
-//
-// Unfortunately, Rust doesn't let us use the reference alias for this, so
-// we add `PerseusRxRef`, which is the internal name.
-#[cfg(target_arch = "wasm32")] // These functions all use `web_sys`, and so won't work on the server-side
-impl<'a> AuthDataPerseusRxRef<'a> {
+#[cfg(client)] // These functions all use `web_sys`, and so won't work on the server-side
+impl AuthDataRx {
     /// Checks whether or not the user is logged in and modifies the internal
     /// state accordingly. If this has already been run, it won't do anything
     /// (aka. it will only run if it's `Server`)
-    pub fn detect_state(&'a self) {
+    pub fn detect_state(&self) {
         // If we've checked the login status before, then we should assume the status
         // hasn't changed (we'd change this in a login/logout page)
         if let LoginState::Yes | LoginState::No = *self.state.get() {
@@ -87,14 +84,14 @@ impl<'a> AuthDataPerseusRxRef<'a> {
     }
 
     /// Logs the user in with the given username.
-    pub fn login(&'a self, username: &str) {
+    pub fn login(&self, username: &str) {
         let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
         storage.set("username", username).unwrap();
         self.state.set(LoginState::Yes);
         self.username.set(username.to_string());
     }
     /// Logs the user out.
-    pub fn logout(&'a self) {
+    pub fn logout(&self) {
         let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
         storage.delete("username").unwrap();
         self.state.set(LoginState::No);

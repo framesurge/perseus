@@ -11,15 +11,15 @@ sycamore = "^0.8.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+[target.'cfg(engine)'.dev-dependencies]
 fantoccini = "0.17"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 ## **WARNING!** Before running this example outside the Perseus repo, replace the below line with
 ## the one commented out below it (changing the path dependency to the version you want to use)
 perseus-warp = { package = "perseus-integration", path = "../../../packages/perseus-integration", default-features = false }
 # perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
+[target.'cfg(client)'.dependencies]
 gloo-timers = { version = "0.2", features = [ "futures" ] } # Just for this example to show that handlers are truly async

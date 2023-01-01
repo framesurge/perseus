@@ -1,8 +1,8 @@
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::utils::render::insert;
-#[cfg(all(not(feature = "hydrate"), target_arch = "wasm32"))]
+#[cfg(all(not(feature = "hydrate"), client))]
 use sycamore::web::DomNode;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View};
 
@@ -17,7 +17,7 @@ use sycamore::{prelude::Scope, view::View};
 // TODO Make sure hydration will work when it's targeted at a blank canvas...
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details! (TODO PR for `hydrate_to_with_scope` etc.)
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 #[allow(unused_variables)]
 pub(crate) fn render_or_hydrate(
     cx: Scope,
@@ -74,7 +74,7 @@ pub(crate) fn render_or_hydrate(
 /// automatically.
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details!
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub(crate) fn ssr_fallible<E>(
     view_fn: impl FnOnce(Scope) -> Result<View<SsrNode>, E>,
 ) -> Result<String, E> {

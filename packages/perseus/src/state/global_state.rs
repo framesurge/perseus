@@ -1,41 +1,41 @@
 use super::rx_state::AnyFreeze;
 use super::TemplateState;
 use super::{MakeRx, MakeUnrx};
-#[cfg(not(target_arch = "wasm32"))] // To suppress warnings
+#[cfg(engine)] // To suppress warnings
 use crate::errors::*;
 use crate::errors::{ClientError, ClientInvariantError};
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::make_async_trait;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::template::{BlamedGeneratorResult, GeneratorResult};
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::utils::AsyncFnReturn;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::Request;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use futures::Future;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use serde::de::DeserializeOwned;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 make_async_trait!(
     GlobalStateBuildFnType,
     Result<TemplateState, ServerError>,
     locale: String
 );
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 make_async_trait!(
     GlobalStateRequestFnType,
     Result<TemplateState, ServerError>,
     locale: String,
     req: Request
 );
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 make_async_trait!(
     GlobalStateAmalgamationFnType,
     Result<TemplateState, ServerError>,
@@ -44,20 +44,20 @@ make_async_trait!(
     request_state: TemplateState
 );
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 make_async_trait!(
     GlobalStateBuildUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< GeneratorResult<S> > >,
     V,
     locale: String
 );
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 make_async_trait!(
     GlobalStateRequestUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
     V,
     locale: String,
     req: Request
 );
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 make_async_trait!(
     GlobalStateAmalgamationUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
     V,
@@ -67,13 +67,13 @@ make_async_trait!(
 );
 
 /// The type of functions that generate global state at build-time.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub type GlobalStateBuildFn = Box<dyn GlobalStateBuildFnType + Send + Sync>;
 /// The type of functions that generate global state at build-time.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub type GlobalStateRequestFn = Box<dyn GlobalStateRequestFnType + Send + Sync>;
 /// The type of functions that generate global state at build-time.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub type GlobalStateAmalgamationFn = Box<dyn GlobalStateAmalgamationFnType + Send + Sync>;
 
 /// A creator for global state. This stores user-provided functions that will be
@@ -86,16 +86,16 @@ pub type GlobalStateAmalgamationFn = Box<dyn GlobalStateAmalgamationFnType + Sen
 pub struct GlobalStateCreator {
     /// The function that creates state at build-time. This is roughly
     /// equivalent to the *build state* strategy for templates.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     build: Option<GlobalStateBuildFn>,
     /// The function that creates state at request-time. This is roughly
     /// equivalent to the *request state* strategy for templates.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     request: Option<GlobalStateRequestFn>,
     /// The function that amalgamates state from build-time and request-time.
     /// This is roughly equivalent to the *state amalgamation* strategy for
     /// templates.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     amalgamation: Option<GlobalStateAmalgamationFn>,
 }
 impl std::fmt::Debug for GlobalStateCreator {
@@ -110,7 +110,7 @@ impl GlobalStateCreator {
     }
 
     /// Adds a function to generate global state at build-time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn build_state_fn<S, V>(
         mut self,
         val: impl GlobalStateBuildUserFnType<S, V> + Clone + Send + Sync + 'static,
@@ -134,13 +134,13 @@ impl GlobalStateCreator {
         self
     }
     /// Adds a function to generate global state at build-time.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
     /// Adds a function to generate global state at request-time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn request_state_fn<S, V>(
         mut self,
         val: impl GlobalStateRequestUserFnType<S, V> + Clone + Send + Sync + 'static,
@@ -164,13 +164,13 @@ impl GlobalStateCreator {
         self
     }
     /// Adds a function to generate global state at request-time.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub fn request_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
     /// Adds a function to amalgamate build-time and request-time global state.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn amalgamate_states_fn<S, V>(
         mut self,
         val: impl GlobalStateAmalgamationUserFnType<S, V> + Clone + Send + Sync + 'static,
@@ -216,13 +216,13 @@ impl GlobalStateCreator {
         self
     }
     /// Adds a function to amalgamate build-time and request-time global state.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
 
     /// Gets the global state at build-time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub async fn get_build_state(&self, locale: String) -> Result<TemplateState, ServerError> {
         if let Some(get_build_state) = &self.build {
             get_build_state.call(locale).await
@@ -235,7 +235,7 @@ impl GlobalStateCreator {
         }
     }
     /// Gets the global state at request-time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub async fn get_request_state(
         &self,
         locale: String,
@@ -253,7 +253,7 @@ impl GlobalStateCreator {
     }
     /// Amalgamates global state that was generated at build-time with that
     /// generated at request-time, according to custom user-provided logic.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub async fn amalgamate_states(
         &self,
         locale: String,
@@ -274,18 +274,18 @@ impl GlobalStateCreator {
     }
 
     /// Checks if this state needs to do anything on requests for it.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn uses_request_state(&self) -> bool {
         self.request.is_some()
     }
     /// Checks if this state needs to do anything at build time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn uses_build_state(&self) -> bool {
         self.build.is_some()
     }
     /// Checks if this state has custom logic to amalgamate build and
     /// request states if both are generated.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn can_amalgamate_states(&self) -> bool {
         self.amalgamation.is_some()
     }
@@ -348,7 +348,7 @@ impl std::fmt::Debug for GlobalState {
 }
 
 /// Frozen global state.
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum FrozenGlobalState {
     /// There is state that should be instantiated.
@@ -366,7 +366,7 @@ pub enum FrozenGlobalState {
     /// this purpose.
     Used,
 }
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 impl From<&GlobalStateType> for FrozenGlobalState {
     fn from(val: &GlobalStateType) -> Self {
         match val {

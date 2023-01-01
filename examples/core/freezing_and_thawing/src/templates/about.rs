@@ -20,7 +20,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
         button(id = "freeze_button", on:click = |_| {
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             {
                 use perseus::state::Freeze;
                 frozen_app.set(render_ctx.freeze());

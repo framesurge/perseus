@@ -135,12 +135,12 @@ serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 
 # Engine-only dependencies go here
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(browser)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-warp = { version = "=%perseus_version", features = [ "dflt-server" ] }
 
 # Browser-only dependencies go here
-[target.'cfg(target_arch = "wasm32")'.dependencies]"#;
+[target.'cfg(client)'.dependencies]"#;
 static DFLT_INIT_GITIGNORE: &str = r#"dist/"#;
 static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 

@@ -1,4 +1,4 @@
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use std::sync::Arc;
 
 use super::Reactor;
@@ -15,11 +15,11 @@ use sycamore::{
     web::Html,
 };
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use crate::template::PreloadInfo;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::prelude::create_signal;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore_futures::spawn_local_scoped;
 
 impl<G: Html> Reactor<G> {
@@ -38,12 +38,12 @@ impl<G: Html> Reactor<G> {
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
         #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
-        #[cfg(target_arch = "wasm32")] capsule_name: String,
+        #[cfg(client)] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
-        #[cfg(target_arch = "wasm32")] preload_info: PreloadInfo,
+        #[cfg(client)] preload_info: PreloadInfo,
         view_fn: F,
-        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
+        #[cfg(client)] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
     where
         // Note: these bounds replicate those for `.view_with_state()`, except the app lifetime is
@@ -67,7 +67,7 @@ impl<G: Html> Reactor<G> {
             }
             // We need to asynchronously fetch the state from the server, which doesn't work
             // ergonomically with the rest of the code, so we just break out entirely
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             None => {
                 return {
                     let view = create_signal(app_cx, View::empty());
@@ -144,7 +144,7 @@ impl<G: Html> Reactor<G> {
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             None => unreachable!(),
         }
     }
@@ -162,12 +162,12 @@ impl<G: Html> Reactor<G> {
         app_cx: Scope<'a>,
         path: PathMaybeWithLocale,
         #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
-        #[cfg(target_arch = "wasm32")] capsule_name: String,
+        #[cfg(client)] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
-        #[cfg(target_arch = "wasm32")] preload_info: PreloadInfo,
+        #[cfg(client)] preload_info: PreloadInfo,
         view_fn: F,
-        #[cfg(target_arch = "wasm32")] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
+        #[cfg(client)] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
     ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
     where
         F: Fn(Scope, S, P) -> View<G> + Send + Sync + 'static,
@@ -186,7 +186,7 @@ impl<G: Html> Reactor<G> {
             }
             // We need to asynchronously fetch the state from the server, which doesn't work
             // ergonomically with the rest of the code, so we just break out entirely
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             None => {
                 return {
                     let view = create_signal(app_cx, View::empty());
@@ -259,7 +259,7 @@ impl<G: Html> Reactor<G> {
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             None => unreachable!(),
         }
     }
@@ -287,7 +287,7 @@ impl<G: Html> Reactor<G> {
     {
         if let Some(held_state) = self.get_held_state::<S>(url, true)? {
             Ok(Some(held_state))
-        } else if cfg!(target_arch = "wasm32") {
+        } else if cfg!(client) {
             // On the browser-side, the given server state is empty, and we need to check
             // the preload
             match self.state_store.contains(url) {

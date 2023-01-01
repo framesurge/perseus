@@ -22,7 +22,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
         button(id = "freeze_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             spawn_local_scoped(cx, async move {
                 use perseus::state::{IdbFrozenStateStore, Freeze};
                 // We do this here (rather than when we get the render context) so that it's updated whenever we press the button

@@ -7,8 +7,8 @@ edition = "2021"
 perseus = { version = "=0.4.0-beta.11", features = [ "hydrate" ] }
 sycamore = "^0.8.1"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-warp = { version = "=0.4.0-beta.11", features = [ "dflt-server" ] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
+[target.'cfg(client)'.dependencies]

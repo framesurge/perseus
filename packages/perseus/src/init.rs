@@ -1,6 +1,6 @@
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::server::HtmlShell;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::utils::get_path_prefix_server;
 use crate::{
     error_views::ErrorViews,
@@ -10,7 +10,7 @@ use crate::{
     stores::MutableStore,
     template::{Entity, Forever, Template},
 };
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use crate::{
     error_views::{ErrorContext, ErrorPosition},
     errors::ClientError,
@@ -18,11 +18,11 @@ use crate::{
 use crate::{errors::PluginError, template::Capsule};
 use crate::{stores::ImmutableStore, template::EntityMap};
 use futures::Future;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use std::marker::PhantomData;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use std::pin::Pin;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use std::rc::Rc;
 use std::{any::TypeId, sync::Arc};
 use std::{collections::HashMap, panic::PanicInfo};
@@ -59,12 +59,12 @@ static DFLT_PSS_MAX_SIZE: usize = 25;
 /// us to store dummy translations managers directly, without holding futures.
 /// If this stores a full translations manager though, it will store it as a
 /// `Future`, which is later evaluated.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub(crate) enum Tm<T: TranslationsManager> {
     Dummy(T),
     Full(Pin<Box<dyn Future<Output = T>>>),
 }
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 impl<T: TranslationsManager> std::fmt::Debug for Tm<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Tm").finish_non_exhaustive()
@@ -115,29 +115,29 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// A list of all the templates and capsules that the app uses.
     pub(crate) entities: EntityMap<G>,
     /// The app's error pages.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) error_views: Rc<ErrorViews<G>>,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) error_views: Arc<ErrorViews<G>>,
     /// The maximum size for the page state store.
     pub(crate) pss_max_size: usize,
     /// The global state creator for the app.
     // This is wrapped in an `Arc` so we can pass it around on the engine-side (which is solely for
     // Actix's benefit...)
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) global_state_creator: Arc<GlobalStateCreator>,
     /// The internationalization information for the app.
     pub(crate) locales: Locales,
     /// The static aliases the app serves.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) static_aliases: HashMap<String, String>,
     /// The plugins the app uses.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) plugins: Arc<Plugins>,
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) plugins: Rc<Plugins>,
     /// The app's immutable store.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) immutable_store: ImmutableStore,
     /// The HTML template that'll be used to render the app into. This must be
     /// static, but can be generated or sourced in any way. Note that this MUST
@@ -145,36 +145,36 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     /// is.
     pub(crate) index_view: String,
     /// The app's mutable store.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) mutable_store: M,
     /// The app's translations manager, expressed as a function yielding a
     /// `Future`. This is only ever needed on the server-side, and can't be set
     /// up properly on the client-side because we can't use futures in the
     /// app initialization in Wasm.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) translations_manager: Tm<T>,
     /// The location of the directory to use for static assets that will placed
     /// under the URL `/.perseus/static/`. By default, this is the `static/`
     /// directory at the root of your project. Note that the directory set
     /// here will only be used if it exists.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) static_dir: String,
     /// A handler for panics on the browser-side.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
     /// A duplicate of the app's error handling function intended for panic
     /// handling. This must be extracted as an owned value and provided in a
     /// thread-safe manner to the panic hook system.
     ///
     /// This is in an `Arc` because panic hooks are `Fn`s, not `FnOnce`s.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) panic_handler_view: Arc<
         dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync,
     >,
     // We need this on the client-side to account for the unused type parameters
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     _marker: PhantomData<(M, T)>,
 }
 impl<G: Html, M: MutableStore, T: TranslationsManager> std::fmt::Debug for PerseusAppBase<G, M, T> {
@@ -190,7 +190,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> std::fmt::Debug for Perse
             .field("locale", &self.locales)
             .field("plugins", &self.plugins)
             .field("index_view", &self.index_view);
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         {
             return debug
                 .field(
@@ -202,7 +202,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> std::fmt::Debug for Perse
                 )
                 .finish_non_exhaustive();
         }
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             return debug
                 .field("global_state_creator", &self.global_state_creator)
@@ -233,7 +233,7 @@ impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
     /// This is asynchronous because it creates a translations manager in the
     /// background.
     // It makes no sense to implement `Default` on this, so we silence Clippy deliberately
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self::new_with_mutable_store(FsMutableStore::new("./dist/mutable".to_string()))
@@ -251,7 +251,7 @@ impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
     /// This is asynchronous because it creates a translations manager in the
     /// background.
     // It makes no sense to implement `Default` on this, so we silence Clippy deliberately
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self::new_wasm()
@@ -265,13 +265,13 @@ impl<G: Html, M: MutableStore> PerseusAppBase<G, M, FsTranslationsManager> {
     /// using [`FsTranslationsManager`] but when you don't know if your app is
     /// using i18n or not (almost always middleware).
     pub fn locales_lit_and_translations_manager(mut self, locales: Locales) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         let using_i18n = locales.using_i18n;
 
         self.locales = locales;
         // We only handle the translations manager on the server-side (it doesn't exist
         // on the client-side)
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             // If we're using i18n, do caching stuff
             // If not, use a dummy translations manager
@@ -339,7 +339,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // building
             error_views: Default::default(),
             pss_max_size: DFLT_PSS_MAX_SIZE,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             global_state_creator: Arc::new(GlobalStateCreator::default()),
             // By default, we'll disable i18n (as much as I may want more websites to support more
             // languages...)
@@ -349,34 +349,34 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
                 using_i18n: false,
             },
             // By default, we won't serve any static content outside the `static/` directory
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             static_aliases: HashMap::new(),
             // By default, we won't use any plugins
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             plugins: Arc::new(Plugins::new()),
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             plugins: Rc::new(Plugins::new()),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             immutable_store: ImmutableStore::new("./dist".to_string()),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             mutable_store,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             translations_manager: Tm::Dummy(T::new_dummy()),
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(engine)]
             static_dir: "./static".to_string(),
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             panic_handler: None,
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             panic_handler_view: ErrorViews::unlocalized_development_default().take_panic_handler(),
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             _marker: PhantomData,
         }
     }
     /// Internal function for Wasm initialization. This should never be called
     /// by the user!
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     #[doc(hidden)]
     fn new_wasm() -> Self {
         Self {
@@ -422,7 +422,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn static_dir(mut self, val: &str) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.static_dir = val.to_string();
         }
@@ -543,13 +543,13 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     // error views.
     #[allow(unused_mut)]
     pub fn error_views(mut self, mut val: ErrorViews<G>) -> Self {
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         {
             let panic_handler = val.take_panic_handler();
             self.error_views = Rc::new(val);
             self.panic_handler_view = panic_handler;
         }
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.error_views = Arc::new(val);
         }
@@ -560,7 +560,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn global_state_creator(mut self, val: GlobalStateCreator) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.global_state_creator = Arc::new(val);
         }
@@ -615,7 +615,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn translations_manager(mut self, val: impl Future<Output = T> + 'static) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.translations_manager = Tm::Full(Box::pin(val));
         }
@@ -632,7 +632,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         };
         // All translations manager must implement this function, which is designed for
         // this exact purpose
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.translations_manager = Tm::Dummy(T::new_dummy());
         }
@@ -645,7 +645,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn static_aliases(mut self, val: HashMap<String, String>) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.static_aliases = val;
         }
@@ -657,7 +657,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn static_alias(mut self, url: &str, resource: &str) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         // We don't elaborate the alias to an actual filesystem path until the getter
         self.static_aliases
             .insert(url.to_string(), resource.to_string());
@@ -666,11 +666,11 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Sets the plugins that the app will use. See [`Plugins`] for
     /// further details.
     pub fn plugins(mut self, val: Plugins) -> Self {
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         {
             self.plugins = Rc::new(val);
         }
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.plugins = Arc::new(val);
         }
@@ -684,7 +684,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn mutable_store(mut self, val: M) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.mutable_store = val;
         }
@@ -695,7 +695,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn immutable_store(mut self, val: ImmutableStore) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             self.immutable_store = val;
         }
@@ -771,7 +771,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn panic_handler(mut self, val: impl Fn(&PanicInfo) + Send + Sync + 'static) -> Self {
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         {
             self.panic_handler = Some(Box::new(val));
         }
@@ -793,7 +793,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     // /// Gets the directory containing static assets to be hosted under the URL
     // /// `/.perseus/static/`.
     // // TODO Plugin action for this?
-    // #[cfg(not(target_arch = "wasm32"))]
+    // #[cfg(engine)]
     // pub fn get_static_dir(&self) -> String {
     //     self.static_dir.to_string()
     // }
@@ -804,7 +804,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// HTML shell produced, which can only be overridden with a control plugin
     /// (though you should really never do this in Perseus, which targets
     /// HTML on the web).
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn get_index_view_str(&self) -> String {
         // We have to add an HTML document type declaration, otherwise the browser could
         // think it's literally anything! (This shouldn't be a problem, but it could be
@@ -816,7 +816,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// the translations manager, consuming `self`). As inconvenient as this
     /// is, it's necessitated, otherwise exporting would try to access the built
     /// app before it had actually been built.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) async fn get_html_shell(
         index_view_str: String,
         root: &str,
@@ -908,12 +908,12 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     //     self.entities.clone()
     // }
     // /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
-    // #[cfg(target_arch = "wasm32")]
+    // #[cfg(client)]
     // pub fn get_error_views(&self) -> Rc<ErrorViews<G>> {
     //     self.error_views.clone()
     // }
     // /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
-    // #[cfg(not(target_arch = "wasm32"))]
+    // #[cfg(engine)]
     // pub fn get_atomic_error_views(&self) -> Arc<ErrorViews<G>> {
     //     self.error_views.clone()
     // }
@@ -924,7 +924,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     // }
     // /// Gets the [`GlobalStateCreator`]. This can't be directly modified by
     // /// plugins because of reactive type complexities.
-    // #[cfg(not(target_arch = "wasm32"))]
+    // #[cfg(engine)]
     // pub fn get_global_state_creator(&self) -> Arc<GlobalStateCreator> {
     //     self.global_state_creator.clone()
     // }
@@ -945,7 +945,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ///
     /// This involves evaluating the future stored for the translations manager,
     /// and so this consumes `self`.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub async fn get_translations_manager(self) -> T {
         match self.translations_manager {
             Tm::Dummy(tm) => tm,
@@ -953,7 +953,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         }
     }
     /// Gets the [`ImmutableStore`].
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn get_immutable_store(&self) -> Result<ImmutableStore, PluginError> {
         let immutable_store = self.immutable_store.clone();
         let immutable_store = self
@@ -968,17 +968,17 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     // /// Gets the [`MutableStore`]. This can't be modified by plugins due to
     // /// trait complexities, so plugins should instead expose a function that
     // /// the user can use to manually set it.
-    // #[cfg(not(target_arch = "wasm32"))]
+    // #[cfg(engine)]
     // pub fn get_mutable_store(&self) -> M {
     //     self.mutable_store.clone()
     // }
     // /// Gets the plugins registered for the app.
-    // #[cfg(not(target_arch = "wasm32"))]
+    // #[cfg(engine)]
     // pub fn get_plugins(&self) -> Arc<Plugins> {
     //     self.plugins.clone()
     // }
     // /// Gets the plugins registered for the app.
-    // #[cfg(target_arch = "wasm32")]
+    // #[cfg(client)]
     // pub fn get_plugins(&self) -> Rc<Plugins> {
     //     self.plugins.clone()
     // }
@@ -987,7 +987,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// potential security risks in production (we don't want to
     /// accidentally serve an arbitrary in a production environment where a path
     /// may point to somewhere evil, like an alias to `/etc/passwd`).
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn get_static_aliases(&self) -> Result<HashMap<String, String>, PluginError> {
         let mut static_aliases = self.static_aliases.clone();
         // This will return a map of plugin name to another map of static aliases that
@@ -1039,7 +1039,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// # Future panics
     /// If this is called more than once, the view panic handler will panic when
     /// called.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub fn take_panic_handlers(
         &mut self,
     ) -> (

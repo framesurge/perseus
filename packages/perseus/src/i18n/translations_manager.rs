@@ -26,13 +26,13 @@ pub enum TranslationsManagerError {
 }
 
 use crate::translator::Translator;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use futures::future::join_all;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use std::collections::HashMap;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use tokio::fs::File;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use tokio::io::AsyncReadExt;
 
 /// A trait for systems that manage where to put translations. At simplest,
@@ -78,7 +78,7 @@ pub trait TranslationsManager: std::fmt::Debug + Clone + Send + Sync {
 
 /// A utility function for allowing parallel futures execution. This returns a
 /// tuple of the locale and the translations as a JSON string.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 async fn get_translations_str_and_cache(
     locale: String,
     manager: &FsTranslationsManager,
@@ -110,27 +110,27 @@ async fn get_translations_str_and_cache(
 /// source files cannot be updated while the system is running.
 #[derive(Clone, Debug)]
 pub struct FsTranslationsManager {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     root_path: String,
     /// A map of locales to cached translations. This decreases the number of
     /// file reads significantly for the locales specified. This
     /// does NOT cache dynamically, and will only cache the requested locales.
     /// Translators can be created when necessary from these.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     cached_translations: HashMap<String, String>,
     /// The locales being cached for easier access.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     cached_locales: Vec<String>,
     /// The file extension expected (e.g. JSON, FTL, etc). This allows for
     /// greater flexibility of translation engines (future).
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     file_ext: String,
     /// This will be `true` is this translations manager is being used for an
     /// app that's not using i18n.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     is_dummy: bool,
 }
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 impl FsTranslationsManager {
     /// Creates a new filesystem translations manager. You should provide a path
     /// like `translations/` here. You should also provide the locales you
@@ -168,7 +168,7 @@ impl FsTranslationsManager {
 // anything
 #[async_trait::async_trait]
 impl TranslationsManager for FsTranslationsManager {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     fn new_dummy() -> Self {
         Self {
             root_path: String::new(),
@@ -178,7 +178,7 @@ impl TranslationsManager for FsTranslationsManager {
             is_dummy: true,
         }
     }
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     async fn get_translations_str_for_locale(
         &self,
         locale: String,
@@ -224,7 +224,7 @@ impl TranslationsManager for FsTranslationsManager {
             }
         }
     }
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     async fn get_translator_for_locale(
         &self,
         locale: String,
@@ -258,7 +258,7 @@ impl TranslationsManager for FsTranslationsManager {
 
         Ok(translator)
     }
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     async fn get_translator_for_translations_str(
         &self,
         locale: String,
@@ -273,25 +273,25 @@ impl TranslationsManager for FsTranslationsManager {
 
         Ok(translator)
     }
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     fn new_dummy() -> Self {
         Self {}
     }
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     async fn get_translations_str_for_locale(
         &self,
         _locale: String,
     ) -> Result<String, TranslationsManagerError> {
         Ok(String::new())
     }
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     async fn get_translator_for_locale(
         &self,
         _locale: String,
     ) -> Result<Translator, TranslationsManagerError> {
         Ok(crate::i18n::Translator::new(String::new(), String::new()).unwrap())
     }
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     async fn get_translator_for_translations_str(
         &self,
         _locale: String,

@@ -1,18 +1,18 @@
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use super::super::fn_types::*;
 use super::TemplateInner;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::errors::*;
 use crate::{
     reactor::Reactor,
     state::{AnyFreeze, MakeRx, MakeUnrx, UnreactiveState},
 };
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::prelude::BoundedScope;
 use sycamore::prelude::{create_child_scope, create_ref};
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
 
@@ -51,7 +51,7 @@ impl<G: Html> TemplateInner<G> {
                 let mut view = View::empty();
                 let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
                     // Compute suspended states
-                    #[cfg(target_arch = "wasm32")]
+                    #[cfg(client)]
                     intermediate_state.compute_suspense(child_cx);
 
                     view = val(child_cx, create_ref(child_cx, intermediate_state));
@@ -117,7 +117,7 @@ impl<G: Html> TemplateInner<G> {
     ///
     /// This is for heads that do require state. Those that do not should use
     /// `.head()` instead.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn head_with_state<S, V>(
         mut self,
         val: impl Fn(Scope, S) -> V + Send + Sync + 'static,
@@ -160,7 +160,7 @@ impl<G: Html> TemplateInner<G> {
     ///
     /// This is for heads that do require state. Those that do not should use
     /// `.head()` instead.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub fn head_with_state(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -168,7 +168,7 @@ impl<G: Html> TemplateInner<G> {
     /// Sets the function to set headers. This will override Perseus' inbuilt
     /// header defaults. This should only be used when your header-setting
     /// requires knowing the state.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn set_headers_with_state<S, V>(
         mut self,
         val: impl Fn(Scope, S) -> V + Send + Sync + 'static,
@@ -208,7 +208,7 @@ impl<G: Html> TemplateInner<G> {
     /// Sets the function to set headers. This will override Perseus' inbuilt
     /// header defaults. This should only be used when your header-setting
     /// requires knowing the state.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub fn set_headers_with_state(self, _val: impl Fn() + 'static) -> Self {
         self
     }

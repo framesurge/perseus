@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Deref;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::prelude::Scope;
 
 /// A reactive version of [`Vec`] that uses nested reactivity on its elements.
@@ -57,7 +57,7 @@ where
         )
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     fn compute_suspense(&self, cx: Scope) {
         for elem in self.0.values() {
             elem.compute_suspense(cx);

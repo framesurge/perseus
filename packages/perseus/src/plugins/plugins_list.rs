@@ -43,17 +43,15 @@ impl Plugins {
     // We allow unused variables and the like for linting because otherwise any
     // errors in Wasm compilation will show these up, which is annoying
     pub fn plugin<D: Any + Send + Sync>(
-        #[cfg_attr(target_arch = "wasm32", allow(unused_mut))] mut self,
+        #[cfg_attr(client, allow(unused_mut))] mut self,
         // This is a function so that it never gets called if we're compiling for Wasm, which means
         // Rust eliminates it as dead code!
-        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin: impl Fn() -> Plugin<D>
-            + Send
-            + Sync,
-        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] plugin_data: D,
+        #[cfg_attr(client, allow(unused_variables))] plugin: impl Fn() -> Plugin<D> + Send + Sync,
+        #[cfg_attr(client, allow(unused_variables))] plugin_data: D,
     ) -> Self {
         // If we're compiling for Wasm, plugins that don't run on the client side
         // shouldn't be added (they'll then be eliminated as dead code)
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             let plugin = plugin();
             // If the plugin can run on the client-side, it should use `.client_plugin()`

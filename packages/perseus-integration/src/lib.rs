@@ -1,3 +1,5 @@
+#![cfg(engine)]
+
 #[cfg(feature = "actix-web")]
 pub use perseus_actix_web::dflt_server;
 #[cfg(feature = "axum")]

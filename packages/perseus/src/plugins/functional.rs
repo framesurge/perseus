@@ -1,10 +1,10 @@
 use super::*;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::errors::Error;
 use crate::errors::PluginError;
 use std::any::Any;
 use std::collections::HashMap;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use std::sync::Arc;
 
 /// An action which can be taken by many plugins. When run, a functional action
@@ -89,13 +89,13 @@ pub struct FunctionalPluginActions {
     /// `PerseusApp`.
     pub settings_actions: FunctionalPluginSettingsActions,
     /// Actions pertaining to the build process.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub build_actions: FunctionalPluginBuildActions,
     /// Actions pertaining to the export process.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub export_actions: FunctionalPluginExportActions,
     /// Actions pertaining to the process of exporting an error page.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub export_error_page_actions: FunctionalPluginExportErrorPageActions,
     /// Actions pertaining to the server.
     pub server_actions: FunctionalPluginServerActions,
@@ -150,7 +150,7 @@ pub struct FunctionalPluginHtmlShellActions {
 /// Functional actions that pertain to the build process. Note that these
 /// actions are not available for the build stage of the export process, and
 /// those should be registered separately.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginBuildActions {
     /// Runs before the build process.
@@ -161,7 +161,7 @@ pub struct FunctionalPluginBuildActions {
     pub after_failed_build: FunctionalPluginAction<Arc<Error>, ()>,
 }
 /// Functional actions that pertain to the export process.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginExportActions {
     /// Runs before the export process.
@@ -187,7 +187,7 @@ pub struct FunctionalPluginExportActions {
     pub after_successful_export: FunctionalPluginAction<(), ()>,
 }
 /// Functional actions that pertain to the process of exporting an error page.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 #[derive(Default, Debug)]
 pub struct FunctionalPluginExportErrorPageActions {
     /// Runs before the process of exporting an error page, providing the HTTP

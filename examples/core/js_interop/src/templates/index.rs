@@ -1,6 +1,6 @@
 use perseus::prelude::*;
 use sycamore::prelude::*;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use wasm_bindgen::prelude::wasm_bindgen;
 
 fn index_page<G: Html>(cx: Scope) -> View<G> {
@@ -8,7 +8,7 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
         // We'll use JS to change this message manually
         p(id = "message") { "Hello World!" }
         button(id = "change-message", on:click = |_| {
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             change_message()
         }) { "Change message with JS" }
     }
@@ -19,7 +19,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 // Of course, JS will only run in the browser, so this should be browser-only
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 // This path should be relative to the root of your project
 // That file will then be hosted behind `/.perseus/` and automatically fetched as needed
 #[wasm_bindgen(module = "/src/changeMessage.js")]

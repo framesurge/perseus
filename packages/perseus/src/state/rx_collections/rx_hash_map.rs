@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Deref;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::prelude::Scope;
 use sycamore::reactive::{create_rc_signal, RcSignal};
 
@@ -59,7 +59,7 @@ where
         )
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     fn compute_suspense(&self, cx: Scope) {}
 }
 // --- Dereferencing ---

@@ -44,13 +44,14 @@ pub fn build_internal(
     // We need to own this for the threads
     let tools = tools.clone();
     let Opts {
-        wasm_release_rustflags,
+        mut wasm_release_rustflags,
         cargo_engine_args,
         cargo_browser_args,
         wasm_bindgen_args,
         wasm_opt_args,
         ..
     } = global_opts.clone();
+    wasm_release_rustflags.push_str(" --cfg=client");
 
     let crate_name = get_user_crate_name(&dir)?;
     // Static generation message
@@ -90,7 +91,8 @@ pub fn build_internal(
                 &sg_msg,
                 vec![
                     ("PERSEUS_ENGINE_OPERATION", "build"),
-                    ("CARGO_TARGET_DIR", "dist/target_engine")
+                    ("CARGO_TARGET_DIR", "dist/target_engine"),
+                    ("RUSTFLAGS", "--cfg=engine")
                 ]
             )?);
 
@@ -101,22 +103,22 @@ pub fn build_internal(
     let wb_thread = spawn_thread(
         move || {
             let mut cmds = vec![
-            // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
-            format!(
-                "{} build --target wasm32-unknown-unknown {} {}",
-                tools.cargo_browser,
-                if is_release { "--release" } else { "" },
-                cargo_browser_args
-            ),
-            // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
-            format!(
-                "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
-                cmd=tools.wasm_bindgen,
-                profile={ if is_release { "release" } else { "debug" } },
-                args=wasm_bindgen_args,
-                crate_name=crate_name
-            )
-        ];
+                // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
+                format!(
+                    "{} build --target wasm32-unknown-unknown {} {}",
+                    tools.cargo_browser,
+                    if is_release { "--release" } else { "" },
+                    cargo_browser_args
+                ),
+                // NOTE The `wasm-bindgen` version has to be *identical* to the dependency version
+                format!(
+                    "{cmd} ./dist/target_wasm/wasm32-unknown-unknown/{profile}/{crate_name}.wasm --out-dir dist/pkg --out-name perseus_engine --target web {args}",
+                    cmd=tools.wasm_bindgen,
+                    profile={ if is_release { "release" } else { "debug" } },
+                    args=wasm_bindgen_args,
+                    crate_name=crate_name
+                )
+            ];
             // If we're building for release, then we should run `wasm-opt`
             if is_release {
                 cmds.push(format!(
@@ -137,7 +139,10 @@ pub fn build_internal(
                         ("RUSTFLAGS", &wasm_release_rustflags),
                     ]
                 } else {
-                    vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
+                    vec![
+                        ("CARGO_TARGET_DIR", "dist/target_wasm"),
+                        ("RUSTFLAGS", "--cfg=client"),
+                    ]
                 }
             )?);
 

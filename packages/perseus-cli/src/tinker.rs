@@ -62,7 +62,8 @@ pub fn tinker_internal(
                 &tk_msg,
                 vec![
                     ("PERSEUS_ENGINE_OPERATION", "tinker"),
-                    ("CARGO_TARGET_DIR", "dist/target_engine")
+                    ("CARGO_TARGET_DIR", "dist/target_engine"),
+                    ("RUSTFLAGS", "--cfg=engine")
                 ]
             )?);
 

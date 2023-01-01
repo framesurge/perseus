@@ -32,7 +32,8 @@ pub struct Opts {
     /// The path to `rustup`
     #[clap(long, default_value = "rustup", global = true)]
     pub rustup_path: String,
-    /// The value of `RUSTFLAGS` when building for Wasm in release mode
+    /// The value of `RUSTFLAGS` when building for Wasm in release mode (this
+    /// will not impact internal target-gating)
     #[clap(
         long,
         default_value = "-C opt-level=z -C codegen-units=1",

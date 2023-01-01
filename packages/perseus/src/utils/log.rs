@@ -1,7 +1,7 @@
 /// Logs the given `format!`-style data to the browser's console, or to stdout
 /// as usual on the server.
 #[macro_export]
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 macro_rules! web_log {
     ($format_str:literal $(, $data:expr)*) => {
         $crate::log::log_js_value(
@@ -15,7 +15,7 @@ macro_rules! web_log {
 /// Logs the given `format!`-style data to the browser's console, or to stdout
 /// on the server.
 #[macro_export]
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 macro_rules! web_log {
     ($format_str:literal $(, $data:expr)*) => {
         println!($format_str $(, $data)*)

@@ -6,6 +6,7 @@ This is the API documentation for the `perseus-actix-web` package, which allows 
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
 */
 
+#![cfg(engine)] // This crate needs to be run with the Perseus CLI
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 

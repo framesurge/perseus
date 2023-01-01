@@ -194,7 +194,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                     #unrx_field_makers
                 }
             }
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             fn compute_suspense<'a>(&self, cx: ::sycamore::prelude::Scope<'a>) {
                 #suspense_commands
             }

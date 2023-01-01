@@ -1,26 +1,26 @@
 use super::utils::PreloadInfo;
 use crate::errors::*;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::i18n::Translator;
 use crate::path::PathMaybeWithLocale;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::reactor::Reactor;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::reactor::RenderMode;
 use crate::state::TemplateState;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::state::{BuildPaths, StateGeneratorInfo, UnknownStateType};
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::template::default_headers;
 use crate::template::TemplateInner;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::Request;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use http::HeaderMap;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::prelude::ScopeDisposer;
 use sycamore::web::Html;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View};
 
@@ -29,7 +29,7 @@ impl<G: Html> TemplateInner<G> {
     /// client-side ONLY. This takes in an existing global state.
     ///
     /// This should NOT be used to render widgets!
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn render_for_template_client<'a>(
         &self,
@@ -56,7 +56,7 @@ impl<G: Html> TemplateInner<G> {
     /// Executes the user-given function that renders the template on the
     /// server-side ONLY. This automatically initializes an isolated global
     /// state.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) fn render_for_template_server(
         &self,
         path: PathMaybeWithLocale,
@@ -85,7 +85,7 @@ impl<G: Html> TemplateInner<G> {
     /// returning a string to be interpolated manually. Reactivity in this
     /// function will not take effect due to this string rendering. Note that
     /// this function will provide a translator context.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) fn render_head_str(
         &self,
         state: TemplateState,
@@ -120,7 +120,7 @@ impl<G: Html> TemplateInner<G> {
         Ok(prerendered)
     }
     /// Gets the list of templates that should be prerendered for at build-time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) async fn get_build_paths(&self) -> Result<BuildPaths, ServerError> {
         if let Some(get_build_paths) = &self.get_build_paths {
             get_build_paths.call().await
@@ -137,7 +137,7 @@ impl<G: Html> TemplateInner<G> {
     /// `.get_build_paths()`. This also needs the locale being rendered to so
     /// that more complex applications like custom documentation systems can
     /// be enabled.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) async fn get_build_state(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
@@ -158,7 +158,7 @@ impl<G: Html> TemplateInner<G> {
     /// the render. Errors here can be caused by either the server or the
     /// client, so the user must specify an [`ErrorBlame`]. This is also passed
     /// the locale being rendered to.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) async fn get_request_state(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
@@ -181,7 +181,7 @@ impl<G: Html> TemplateInner<G> {
     /// This takes a separate build state and request state to ensure there are
     /// no `None`s for either of the states. This will only be called if both
     /// states are generated.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) async fn amalgamate_states(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
@@ -205,7 +205,7 @@ impl<G: Html> TemplateInner<G> {
     /// network access etc., and can really do whatever it likes. Errors here
     /// can be caused by either the server or the client, so the
     /// user must specify an [`ErrorBlame`].
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) async fn should_revalidate(
         &self,
         info: StateGeneratorInfo<UnknownStateType>,
@@ -230,7 +230,7 @@ impl<G: Html> TemplateInner<G> {
     /// translations, as localized headers are very much real. Locale
     /// detection pages are considered internal to Perseus, and therefore do
     /// not have support for user headers (at this time).
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) fn get_headers(
         &self,
         state: TemplateState,

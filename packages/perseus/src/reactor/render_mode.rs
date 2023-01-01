@@ -31,7 +31,7 @@ impl Default for RenderStatus {
 ///
 /// Ths render mode is primarily used to inform the non-delayed widgets of how
 /// they should render.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 #[derive(Clone, Debug)]
 pub(crate) enum RenderMode<G: Html> {
     /// We're rendering at build-time. Any non-delayed widgets should render if

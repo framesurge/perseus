@@ -1,7 +1,7 @@
 use std::any::TypeId;
 
 use crate::path::PathWithoutLocale;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use sycamore::prelude::create_child_scope;
 use sycamore::{prelude::Scope, view::View, web::Html};
 
@@ -107,7 +107,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         let path = path.strip_suffix('/').unwrap_or(&path);
         let path = PathWithoutLocale(path.to_string());
 
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         return {
             let mut view = View::empty();
             if delayed {
@@ -127,7 +127,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         };
         // On the browser-side, delayed and non-delayed are the same (it just matters as
         // to what's been preloaded)
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         return {
             let view = self.browser_widget(cx, path, props);
             view
@@ -137,7 +137,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// The internal browser-side logic for widgets, both delayed and not.
     ///
     /// See `.__widget()` for explanation of transmutation.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     fn browser_widget<H: Html>(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<H> {
         use crate::{
             errors::ClientInvariantError,
@@ -230,7 +230,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// The internal engine-side logic for widgets.
     ///
     /// See `.widget()` for explanation of transmutation.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     fn engine_widget<H: Html>(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<H> {
         use std::sync::Arc;
 

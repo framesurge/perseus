@@ -1,5 +1,5 @@
 use super::TemplateInner;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use crate::utils::ComputedDuration;
 use sycamore::web::Html;
 
@@ -24,53 +24,53 @@ impl<G: Html> TemplateInner<G> {
         }
     }
     /// Gets the interval after which the template will next revalidate.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn get_revalidate_interval(&self) -> Option<ComputedDuration> {
         self.revalidate_after.clone()
     }
 
     // Render characteristic checkers
     /// Checks if this template can revalidate existing prerendered templates.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn revalidates(&self) -> bool {
         self.should_revalidate.is_some() || self.revalidate_after.is_some()
     }
     /// Checks if this template can revalidate existing prerendered templates
     /// after a given time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn revalidates_with_time(&self) -> bool {
         self.revalidate_after.is_some()
     }
     /// Checks if this template can revalidate existing prerendered templates
     /// based on some given logic.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn revalidates_with_logic(&self) -> bool {
         self.should_revalidate.is_some()
     }
     /// Checks if this template can render more templates beyond those paths it
     /// explicitly defines.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn uses_incremental(&self) -> bool {
         self.incremental_generation
     }
     /// Checks if this template is a template to generate paths beneath it.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn uses_build_paths(&self) -> bool {
         self.get_build_paths.is_some()
     }
     /// Checks if this template needs to do anything on requests for it.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn uses_request_state(&self) -> bool {
         self.get_request_state.is_some()
     }
     /// Checks if this template needs to do anything at build time.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn uses_build_state(&self) -> bool {
         self.get_build_state.is_some()
     }
     /// Checks if this template has custom logic to amalgamate build and
     /// request states if both are generated.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn can_amalgamate_states(&self) -> bool {
         self.amalgamate_states.is_some()
     }
@@ -78,7 +78,7 @@ impl<G: Html> TemplateInner<G> {
     /// templates will be rendered using SSG. Basic templates can
     /// still modify headers (which could hypothetically be using global state
     /// that's dependent on server-side generation).
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn is_basic(&self) -> bool {
         !self.uses_build_paths()
             && !self.uses_build_state()

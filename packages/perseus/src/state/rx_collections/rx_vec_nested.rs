@@ -1,7 +1,7 @@
 use crate::state::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::prelude::Scope;
 
 /// A reactive version of [`Vec`] that uses nested reactivity on its elements.
@@ -46,7 +46,7 @@ where
         RxVecNested(self.0.into_iter().map(|x| x.make_unrx()).collect())
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     fn compute_suspense(&self, cx: Scope) {
         for elem in self.0.iter() {
             elem.compute_suspense(cx);

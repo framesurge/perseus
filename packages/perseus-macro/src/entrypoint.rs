@@ -170,7 +170,7 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
     // engine (all based around the default engine)
     let output = quote! {
         // The engine-specific `main` function
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         #[tokio::main]
         async fn main() {
             // Get the operation we're supposed to run (serve, build, export, etc.) from an environment variable
@@ -180,7 +180,7 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
         }
 
         // The browser-specific `main` function
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         pub fn main() -> ::perseus::ClientReturn {
             ::perseus::run_client(__perseus_simple_main);
             Ok(())
@@ -209,7 +209,7 @@ pub fn main_export_impl(input: MainFn) -> TokenStream {
     // engine (all based around the default engine)
     let output = quote! {
         // The engine-specific `main` function
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         #[tokio::main]
         async fn main() {
             // Get the operation we're supposed to run (serve, build, export, etc.) from an environment variable
@@ -219,7 +219,7 @@ pub fn main_export_impl(input: MainFn) -> TokenStream {
         }
 
         // The browser-specific `main` function
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         pub fn main() -> ::perseus::ClientReturn {
             ::perseus::run_client(__perseus_simple_main);
             Ok(())
@@ -249,7 +249,7 @@ pub fn browser_main_impl(input: MainFn) -> TokenStream {
     let output = quote! {
         // The browser-specific `main` function
         // This absolutely MUST be called `main`, otherwise the hardcodes Wasm importer will fail (and then interactivity is gone completely with a really weird error message)
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         #(#attrs)*
         pub fn main() -> #return_type {
             #block
@@ -266,7 +266,7 @@ pub fn engine_main_impl(input: EngineMainFn) -> TokenStream {
     // engine (all based around the default engine)
     let output = quote! {
         // The engine-specific `main` function
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         #[tokio::main]
         #(#attrs)*
         async fn main() {

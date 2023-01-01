@@ -1,26 +1,26 @@
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 mod error;
 mod global_state;
-#[cfg(all(feature = "hsr", debug_assertions, target_arch = "wasm32"))]
+#[cfg(all(feature = "hsr", debug_assertions, client))]
 mod hsr;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 mod initial_load;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 mod render_mode;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 mod start;
 mod state;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 mod subsequent_load;
 mod widget_state;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub(crate) use initial_load::InitialView;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use crate::template::{BrowserNodeType, EntityMap};
 use crate::{
     i18n::Translator,
@@ -34,7 +34,7 @@ use sycamore::{
 // --- Engine-side imports ---
 
 // --- Browser-side imports ---
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use crate::{
     error_views::ErrorViews,
     errors::ClientError,
@@ -46,17 +46,17 @@ use crate::{
     state::{FrozenApp, ThawPrefs},
     stores::MutableStore,
 };
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use serde::{de::DeserializeOwned, Serialize};
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use serde_json::Value;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
     rc::Rc,
 };
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use sycamore::{
     reactive::{create_rc_signal, RcSignal},
     view::View,
@@ -73,7 +73,7 @@ pub struct Reactor<G: Html> {
     /// preloads.
     pub(crate) state_store: PageStateStore,
     /// The router state.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub router_state: RouterState,
     /// The user-provided global state, stored with similar mechanics to the
     /// state store, although optimised.
@@ -86,58 +86,58 @@ pub struct Reactor<G: Html> {
     /// The `bool` in here will be set to `true` if this was created through
     /// HSR, which has slightly more lenient thawing procedures to allow for
     /// data model changes.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs, bool)>>>,
     /// Whether or not this page is the very first to have been rendered since
     /// the browser loaded the app. This will be reset on full reloads, and is
     /// used internally to determine whether or not we should look for
     /// stored HSR state.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) is_first: Cell<bool>,
     /// The app's *full* render configuration. Note that a subset of this
     /// is contained in the [`RenderMode`] on the engine-side for widget
     /// rendering.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) render_cfg: HashMap<String, String>,
     /// The app's templates and capsules for use in routing.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) entities: EntityMap<G>,
     /// The app's locales.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) locales: Locales,
     /// The browser-side translations manager.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     translations_manager: ClientTranslationsManager,
     /// The app's error views.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub(crate) error_views: Rc<ErrorViews<G>>,
     /// A reactive container for the current page-wide view. This will usually
     /// contain the contents of the current page, but it may also contain a
     /// page-wide error. This will be wrapped in a router.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     current_view: RcSignal<View<BrowserNodeType>>,
     /// A reactive container for any popup errors.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     popup_error_view: RcSignal<View<BrowserNodeType>>,
     /// The app's root div ID.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     root: String,
 
     // --- Engine-side only ---
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) render_mode: RenderMode<G>,
     /// The currently active translator. On the browser-side, this is handled by
     /// the more fully-fledged [`ClientTranslationsManager`].
     ///
     /// This is provided to the engine-side reactor on instantiation. This can
     /// be `None` in certain error view renders.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     translator: Option<Translator>,
 }
 
 // This uses window variables set by the HTML shell, so it should never be used
 // on the engine-side
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G, M, T>>
     for Reactor<G>
 {
@@ -220,7 +220,7 @@ impl<G: Html> Reactor<G> {
     ///
     /// On the engine-side, this will return `None` under certain error
     /// conditions.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     pub fn try_get_translator(&self) -> Option<Translator> {
         self.translations_manager.get_translator()
     }
@@ -231,7 +231,7 @@ impl<G: Html> Reactor<G> {
     ///
     /// On the engine-side, this will return `None` under certain error
     /// conditions.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub fn try_get_translator(&self) -> Option<Translator> {
         self.translator.clone()
     }
@@ -250,7 +250,7 @@ impl<G: Html> Reactor<G> {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 impl<G: Html> Reactor<G> {
     /// Initializes a new [`Reactor`] on the engine-side.
     pub(crate) fn engine(
@@ -276,7 +276,7 @@ impl<G: Html> Reactor<G> {
 
 /// The possible states a window variable injected by the server/export process
 /// can be found in.
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub(crate) enum WindowVariable<T: Serialize + DeserializeOwned> {
     /// It existed and coudl be deserialized into the correct type.
     Some(T),
@@ -287,7 +287,7 @@ pub(crate) enum WindowVariable<T: Serialize + DeserializeOwned> {
     /// string to be deserialized, found a boolean instead).
     Malformed,
 }
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with window variables that have
@@ -311,7 +311,7 @@ impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
         Self::Some(val_typed)
     }
 }
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 impl WindowVariable<bool> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with boolean window variables.
@@ -333,7 +333,7 @@ impl WindowVariable<bool> {
         }
     }
 }
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 impl WindowVariable<String> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with `String` window variables.

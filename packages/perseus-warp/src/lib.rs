@@ -6,6 +6,7 @@ This is the API documentation for the `perseus-warp` package, which allows Perse
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
 */
 
+#![cfg(engine)]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 

@@ -159,10 +159,11 @@ pub fn export_internal(
         cargo_engine_args,
         wasm_bindgen_args,
         wasm_opt_args,
-        wasm_release_rustflags,
+        mut wasm_release_rustflags,
         ..
     } = global_opts.clone();
     let crate_name = get_user_crate_name(&dir)?;
+    wasm_release_rustflags.push_str(" --cfg=client");
 
     // Exporting pages message
     let ep_msg = format!(
@@ -201,7 +202,8 @@ pub fn export_internal(
                 &ep_msg,
                 vec![
                     ("PERSEUS_ENGINE_OPERATION", "export"),
-                    ("CARGO_TARGET_DIR", "dist/target_engine")
+                    ("CARGO_TARGET_DIR", "dist/target_engine"),
+                    ("RUSTFLAGS", "--cfg=engine")
                 ]
             )?);
 
@@ -248,7 +250,10 @@ pub fn export_internal(
                         ("RUSTFLAGS", &wasm_release_rustflags),
                     ]
                 } else {
-                    vec![("CARGO_TARGET_DIR", "dist/target_wasm")]
+                    vec![
+                        ("CARGO_TARGET_DIR", "dist/target_wasm"),
+                        ("RUSTFLAGS", "--cfg=client"),
+                    ]
                 }
             )?);
 

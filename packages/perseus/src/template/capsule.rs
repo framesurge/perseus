@@ -114,7 +114,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         template_inner.is_capsule = true;
         // Produce nice errors to make it clear that heads and headers don't work with
         // capsules
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(engine)]
         {
             assert!(
                 template_inner.head.is_none(),
@@ -144,7 +144,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// used for widgets.
     ///
     /// This should NOT be used to render pages!
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn render_widget_for_template_client(
         &self,
@@ -170,7 +170,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// server-side ONLY. This takes the scope from a previous call of
     /// `.render_for_template_server()`, assuming the reactor has already
     /// been fully instantiated.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(engine)]
     pub(crate) fn render_widget_for_template_server(
         &self,
         path: PathMaybeWithLocale,
@@ -265,9 +265,9 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         let entity_name = self.template_inner.get_path();
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
@@ -277,14 +277,14 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                     app_cx,
                     path,
                     caller_path,
-                    #[cfg(target_arch = "wasm32")]
+                    #[cfg(client)]
                     entity_name.clone(),
                     template_state,
                     props,
-                    #[cfg(target_arch = "wasm32")]
+                    #[cfg(client)]
                     preload_info,
                     val.clone(),
-                    #[cfg(target_arch = "wasm32")]
+                    #[cfg(client)]
                     fallback_fn.as_ref().unwrap(),
                 )
             },
@@ -301,9 +301,9 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         let entity_name = self.template_inner.get_path();
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(client)]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
@@ -313,14 +313,14 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                     app_cx,
                     path,
                     caller_path,
-                    #[cfg(target_arch = "wasm32")]
+                    #[cfg(client)]
                     entity_name.clone(),
                     template_state,
                     props,
-                    #[cfg(target_arch = "wasm32")]
+                    #[cfg(client)]
                     preload_info,
                     val.clone(),
-                    #[cfg(target_arch = "wasm32")]
+                    #[cfg(client)]
                     fallback_fn.as_ref().unwrap(),
                 )
             },
@@ -344,7 +344,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                 // caching
                 reactor.register_no_state(&path, true);
                 // And declare the relationship between the widget and its caller
-                #[cfg(target_arch = "wasm32")]
+                #[cfg(client)]
                 reactor.state_store.declare_dependency(&path, &caller_path);
 
                 // Nicely, if this is a widget, this means there need be no network requests

@@ -15,7 +15,7 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
     // on the server too) This will only cause a block on the first load,
     // because this function just returns straight away if the state is already
     // known
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     auth.detect_state();
 
     view! { cx,
@@ -26,7 +26,7 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
                     view! { cx,
                             h1 { (format!("Welcome back, {}!", &username)) }
                             button(on:click =  |_| {
-                                #[cfg(target_arch = "wasm32")]
+                                #[cfg(client)]
                                 auth.logout();
                             }) { "Logout" }
                     }
@@ -36,7 +36,7 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
                     h1 { "Welcome, stranger!" }
                     input(bind:value = entered_username, placeholder = "Username")
                     button(on:click = |_| {
-                        #[cfg(target_arch = "wasm32")]
+                        #[cfg(client)]
                         auth.login(&entered_username.get())
                     }) { "Login" }
                 },

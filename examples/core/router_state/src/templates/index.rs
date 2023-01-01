@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 fn router_state_page<G: Html>(cx: Scope) -> View<G> {
     let load_state_str = create_signal(cx, "We're on the server.".to_string());
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     {
         use perseus::router::RouterLoadState;
         let load_state = Reactor::<G>::from_cx(cx).router_state.get_load_state(cx);

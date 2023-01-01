@@ -37,7 +37,7 @@ impl<B: Serialize + DeserializeOwned + Send + Sync + 'static> StateGeneratorInfo
     /// Transform the underlying [`TemplateStateWithType`] into one with a
     /// different type. Once this is done, `.to_concrete()` can be used to
     /// get this type out of the container.
-    #[cfg(not(target_arch = "wasm32"))] // Just to silence clippy (if you need to remove this, do)
+    #[cfg(engine)] // Just to silence clippy (if you need to remove this, do)
     pub(crate) fn change_type<U: Serialize + DeserializeOwned + Send + Sync>(
         self,
     ) -> StateGeneratorInfo<U> {

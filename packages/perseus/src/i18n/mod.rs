@@ -1,16 +1,16 @@
 // This module file is controlled, because it's used as an external module as
 // well
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 mod client_translations_manager;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 mod locale_detector;
 mod locales;
 mod translations_manager;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub(crate) use client_translations_manager::ClientTranslationsManager;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub(crate) use locale_detector::detect_locale;
 pub use locales::Locales;
 pub use translations_manager::{

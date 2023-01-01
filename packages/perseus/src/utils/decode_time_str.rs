@@ -1,4 +1,4 @@
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 mod engine {
     use super::InvalidDuration;
     use chrono::Utc;
@@ -81,7 +81,7 @@ mod engine {
         }
     }
 }
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 mod browser {
     use super::InvalidDuration;
     use std::time;
@@ -116,9 +116,9 @@ mod browser {
 #[derive(Debug)]
 pub struct InvalidDuration;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub use browser::{ComputedDuration, PerseusDuration};
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub use engine::{ComputedDuration, PerseusDuration};
 
 // // We can convert from our duration type into the standard library's

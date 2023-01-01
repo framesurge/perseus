@@ -29,7 +29,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
         br()
 
         button(id = "freeze_button", on:click = |_| {
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             {
                 use perseus::state::Freeze;
                 frozen_app.set(reactor.freeze());
@@ -39,7 +39,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
 
         input(id = "thaw_input", bind:value = frozen_app, placeholder = "Frozen state")
         button(id = "thaw_button", on:click = |_| {
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(client)]
             reactor.thaw(&frozen_app.get(), perseus::state::ThawPrefs {
                 page: perseus::state::PageThawPrefs::IncludeAll,
                 global_prefer_frozen: true

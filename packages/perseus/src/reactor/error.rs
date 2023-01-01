@@ -5,7 +5,7 @@ use crate::{
     template::BrowserNodeType,
     utils::{render_or_hydrate, replace_head},
 };
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use std::rc::Rc;
 use std::{panic::PanicInfo, sync::Arc};
 use sycamore::{

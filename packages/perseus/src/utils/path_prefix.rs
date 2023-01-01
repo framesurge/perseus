@@ -3,7 +3,7 @@
 /// something as changeable as this into the final binary. Hence however, that
 /// variable must be the same as what's set in `<base>` (done automatically).
 /// Trailing forward slashes will be trimmed automatically.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 pub fn get_path_prefix_server() -> String {
     use std::env;
 
@@ -17,7 +17,7 @@ pub fn get_path_prefix_server() -> String {
 /// Gets the path prefix to apply in the browser. This uses the HTML `<base>`
 /// element, which would be required anyway to make Sycamore's router co-operate
 /// with a relative path hosting.
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 pub fn get_path_prefix_client() -> String {
     use wasm_bindgen::JsCast;
     use web_sys::{HtmlBaseElement, Url};
