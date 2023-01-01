@@ -229,16 +229,17 @@ publish.cmd = [
     "cargo publish %%",
     "sleep 60", # Wait for `crates.io` to be ready
     "cd ../perseus",
-    "cargo publish %%",
+    # We use the engine flag just to make sure everything vaguely works
+    "RUSTFLAGS=\"--cfg=engine\" cargo publish %%",
     "cd ../perseus-cli",
     "cargo publish %%",
     # We delay this so that `crates.io` can have time to host the core
     "cd ../perseus-actix-web",
-    "cargo publish %%",
+    "RUSTFLAGS=\"--cfg=engine\" cargo publish %%",
     "cd ../perseus-warp",
-    "cargo publish %%",
+    "RUSTFLAGS=\"--cfg=engine\" cargo publish %%",
     "cd ../perseus-axum",
-    "cargo publish %%"
+    "RUSTFLAGS=\"--cfg=engine\" cargo publish %%"
 ]
 publish.desc = "publishes all packages to crates.io (needs branch 'stable', Linux only)"
 
