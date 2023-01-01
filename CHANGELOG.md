@@ -2,6 +2,255 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.12](https://github.com/framesurge/perseus/compare/v0.4.0-beta.11...v0.4.0-beta.12) (2023-01-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* all target-gates should switch to `#[cfg(engine)]` and
+`#[cfg(client)]`, rather than using `target_arch`
+* removed nnow obsolete `#[perseus::engine]` and
+`#[perseus::browser]` macros
+* plugins can no longer add templates (provide the
+functions to the user for them to manually add)
+* `G` parameter removed entirely from plugins
+* you must now call `.build()` after creating a
+template/capsule with `::new(..)` and setting your various functions
+* header setting functions now take a `Scope` as their
+first argument
+* removed several outdated `checkpoint`s (see book for details)
+* global state is now built per-locale, and build state
+functions therefore take a `locale: String` argument now
+* functional plugin actions for failing global state have
+been removed due to alternate generation systems (you should hook into
+failed builds instead)
+* all plugin actions must now return `Result<T, Box<dyn
+std::error::Error>>` (return some arbitrary error and then use
+`.into()`)
+* all plugin actions that previously took
+`Rc<perseus::errors::EngineError>` now take `Rc<perseus::errors::Error>`
+* `.template()` and `.error_pages()` on `PerseusApp` now
+take actual values, rather than functions that return those values
+* any functions that took `path` and `locale` now take `StateGeneratorInfo`, which includes those as fields
+* all macros on state generator functions (e.g. `#[build_state]`) are replaced by the single macro `#[engine_only_fn]`
+* templates that take reactive state must have the `#[template]` annotation and be specified with `.template_with_state()`
+* templates that take unreactive state must have no macro annotation, and be specified wijth `.template_with_unreactive_state()`
+* templates that take no state must not have a `#[template]` annotation
+* `define_app!` has been completely removed in favor of `PerseusApp`
+* `#[make_rx(MyRxTypeName)]` must be changed to `#[derive(Serialize, Deserialize, ReactiveState)]`, followed by `#[rx(alias = "MyRxTypeName")]`
+* renamed `#[template_rx]` to `#[template]` (unreactive
+templates should now use `#[template(unreactive)]`)
+
+### Features
+
+* added more reactive collections ([04e1629](https://github.com/framesurge/perseus/commit/04e16290383fdfa445fee088de3ca647718ef103))
+* added support for wasm engines ([f6568e9](https://github.com/framesurge/perseus/commit/f6568e9ce11be97390982c69dedcd737b5692eac))
+* added suspended interactivity system ([5efcad4](https://github.com/framesurge/perseus/commit/5efcad48d61f599206cb8e93740a0dc196bf9e00))
+* added suspended state and request-time/amalgamated global state ([#242](https://github.com/framesurge/perseus/issues/242)) ([c174a69](https://github.com/framesurge/perseus/commit/c174a69a3f66538159d16807cc25b20b610a3a95)), closes [/github.com/framesurge/perseus/issues/150#issuecomment-1329785198](https://github.com/framesurge//github.com/framesurge/perseus/issues/150/issues/issuecomment-1329785198)
+* **cli:** made cli symlink exported content instead of copying it ([c54d884](https://github.com/framesurge/perseus/commit/c54d88462e37e68deaafd051989adbe3a765fde7))
+* created capsules system and rewrote just about everything ([#224](https://github.com/framesurge/perseus/issues/224)) ([a4c59f2](https://github.com/framesurge/perseus/commit/a4c59f22c572094c13d2840eb17cc2e75a6fd83d))
+* created version of `blame_err!` that doesn't return ([628405d](https://github.com/framesurge/perseus/commit/628405dd20c4a033588559dcd25d43d80f5cd9ec))
+* improved global state system ([#223](https://github.com/framesurge/perseus/issues/223)) ([85d7f4a](https://github.com/framesurge/perseus/commit/85d7f4a0b57ed5d956ab2571a9d386e9d2c109cd))
+* made `#[template_rx]` support unreactive state ([43fdf11](https://github.com/framesurge/perseus/commit/43fdf11485870810afd123bb169d139a4801e3cf))
+* made plugin actions return `Result` ([42f0d99](https://github.com/framesurge/perseus/commit/42f0d9937d59c1664c0741f837cc33a7b62b8ff0)), closes [#234](https://github.com/framesurge/perseus/issues/234)
+* removed all redundant macros! 🎉 ([#238](https://github.com/framesurge/perseus/issues/238)) ([dccb7a5](https://github.com/framesurge/perseus/commit/dccb7a5be85da4023394c996ddff19b8bd5ac759))
+* removed unnecessary panics and added custom panic handler system ([c232aed](https://github.com/framesurge/perseus/commit/c232aed6b70735df108fcdc645eda09fec2b9d3a))
+
+
+### Bug Fixes
+
+* 'fixed' hydration issues ([182f72b](https://github.com/framesurge/perseus/commit/182f72bcdf39171601411327b94f94d693a6f2f5))
+* allowed statenames other than `state` ([c80e647](https://github.com/framesurge/perseus/commit/c80e647db12b07e8508e7d2c0fa4ed38dc3207bf))
+* fixed `perseus new` ([659b911](https://github.com/framesurge/perseus/commit/659b911f5dc9eaa8165f4b76a225ce0f312e9dd6))
+* fixed js-interop example ([2928bb7](https://github.com/framesurge/perseus/commit/2928bb71637a0ed593604ccb8d22b35030dbd3c5))
+* made tool windows installations resilient against paths with whitespace ([#228](https://github.com/framesurge/perseus/issues/228)) ([0d3717f](https://github.com/framesurge/perseus/commit/0d3717fe140a766a4a2b9ca4055f400712b6d645)), closes [#227](https://github.com/framesurge/perseus/issues/227)
+* updated website examples ([6410f22](https://github.com/framesurge/perseus/commit/6410f2204909ec304e1ed350bf0450e790241a8e))
+* **website:** fixed index example sourcing ([88c29cd](https://github.com/framesurge/perseus/commit/88c29cdae1ceb387a2cd6897bebec20b34f01fd4))
+
+
+### Code Refactorings
+
+* cleaned up some things ([4df987e](https://github.com/framesurge/perseus/commit/4df987edfaf59cd4832d085f251f5c917c2659e4))
+* improved ergonomics of `PerseusApp` ([9c3444a](https://github.com/framesurge/perseus/commit/9c3444a80403b61838ea3febf726a8d7833a8bc1))
+* turn `#[make_rx]` into `#[derive(ReactiveState)]` ([#237](https://github.com/framesurge/perseus/issues/237)) ([8ec2d6f](https://github.com/framesurge/perseus/commit/8ec2d6f9b09601950fd20aefc6f2c77fb309d034))
+* use child scopes for pages ([#230](https://github.com/framesurge/perseus/issues/230)) ([6af8191](https://github.com/framesurge/perseus/commit/6af819165f01b4816cd3594b176d72fa9b27bc68))
+
+
+### Documentation Changes
+
+* alerted users to [#229](https://github.com/framesurge/perseus/issues/229) ([a825cec](https://github.com/framesurge/perseus/commit/a825cece49d6615a408927712bcb4567e59fdf27))
+* clarified warning ([0696e48](https://github.com/framesurge/perseus/commit/0696e48b97e8d6232bd853c2a67b3d0c87bdbed6))
+* fixed readme links ([75dd5ce](https://github.com/framesurge/perseus/commit/75dd5ced6a22cf0444493fff5bed35da61362183))
+* removed old installation instruction ([bd06110](https://github.com/framesurge/perseus/commit/bd06110ff334b5dcd1f4e455c632b22fd3d7705f))
+* removed readme warning about [#229](https://github.com/framesurge/perseus/issues/229) ([195078a](https://github.com/framesurge/perseus/commit/195078a6e65458fcc96b54dc03bf4f4296439d63))
+* updated v0.4.x docs and documented migration ([8a81a3e](https://github.com/framesurge/perseus/commit/8a81a3e8561b7c94afa9778d22adf1032d6f06f6))
+
+## [0.4.0-beta.12](https://github.com/framesurge/perseus/compare/v0.4.0-beta.11...v0.4.0-beta.12) (2023-01-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* all target-gates should switch to `#[cfg(engine)]` and
+`#[cfg(client)]`, rather than using `target_arch`
+* removed nnow obsolete `#[perseus::engine]` and
+`#[perseus::browser]` macros
+* plugins can no longer add templates (provide the
+functions to the user for them to manually add)
+* `G` parameter removed entirely from plugins
+* you must now call `.build()` after creating a
+template/capsule with `::new(..)` and setting your various functions
+* header setting functions now take a `Scope` as their
+first argument
+* removed several outdated `checkpoint`s (see book for details)
+* global state is now built per-locale, and build state
+functions therefore take a `locale: String` argument now
+* functional plugin actions for failing global state have
+been removed due to alternate generation systems (you should hook into
+failed builds instead)
+* all plugin actions must now return `Result<T, Box<dyn
+std::error::Error>>` (return some arbitrary error and then use
+`.into()`)
+* all plugin actions that previously took
+`Rc<perseus::errors::EngineError>` now take `Rc<perseus::errors::Error>`
+* `.template()` and `.error_pages()` on `PerseusApp` now
+take actual values, rather than functions that return those values
+* any functions that took `path` and `locale` now take `StateGeneratorInfo`, which includes those as fields
+* all macros on state generator functions (e.g. `#[build_state]`) are replaced by the single macro `#[engine_only_fn]`
+* templates that take reactive state must have the `#[template]` annotation and be specified with `.template_with_state()`
+* templates that take unreactive state must have no macro annotation, and be specified wijth `.template_with_unreactive_state()`
+* templates that take no state must not have a `#[template]` annotation
+* `define_app!` has been completely removed in favor of `PerseusApp`
+* `#[make_rx(MyRxTypeName)]` must be changed to `#[derive(Serialize, Deserialize, ReactiveState)]`, followed by `#[rx(alias = "MyRxTypeName")]`
+* renamed `#[template_rx]` to `#[template]` (unreactive
+templates should now use `#[template(unreactive)]`)
+
+### Features
+
+* added more reactive collections ([04e1629](https://github.com/framesurge/perseus/commit/04e16290383fdfa445fee088de3ca647718ef103))
+* added support for wasm engines ([f6568e9](https://github.com/framesurge/perseus/commit/f6568e9ce11be97390982c69dedcd737b5692eac))
+* added suspended interactivity system ([5efcad4](https://github.com/framesurge/perseus/commit/5efcad48d61f599206cb8e93740a0dc196bf9e00))
+* added suspended state and request-time/amalgamated global state ([#242](https://github.com/framesurge/perseus/issues/242)) ([c174a69](https://github.com/framesurge/perseus/commit/c174a69a3f66538159d16807cc25b20b610a3a95)), closes [/github.com/framesurge/perseus/issues/150#issuecomment-1329785198](https://github.com/framesurge//github.com/framesurge/perseus/issues/150/issues/issuecomment-1329785198)
+* **cli:** made cli symlink exported content instead of copying it ([c54d884](https://github.com/framesurge/perseus/commit/c54d88462e37e68deaafd051989adbe3a765fde7))
+* created capsules system and rewrote just about everything ([#224](https://github.com/framesurge/perseus/issues/224)) ([a4c59f2](https://github.com/framesurge/perseus/commit/a4c59f22c572094c13d2840eb17cc2e75a6fd83d))
+* created version of `blame_err!` that doesn't return ([628405d](https://github.com/framesurge/perseus/commit/628405dd20c4a033588559dcd25d43d80f5cd9ec))
+* improved global state system ([#223](https://github.com/framesurge/perseus/issues/223)) ([85d7f4a](https://github.com/framesurge/perseus/commit/85d7f4a0b57ed5d956ab2571a9d386e9d2c109cd))
+* made `#[template_rx]` support unreactive state ([43fdf11](https://github.com/framesurge/perseus/commit/43fdf11485870810afd123bb169d139a4801e3cf))
+* made plugin actions return `Result` ([42f0d99](https://github.com/framesurge/perseus/commit/42f0d9937d59c1664c0741f837cc33a7b62b8ff0)), closes [#234](https://github.com/framesurge/perseus/issues/234)
+* removed all redundant macros! 🎉 ([#238](https://github.com/framesurge/perseus/issues/238)) ([dccb7a5](https://github.com/framesurge/perseus/commit/dccb7a5be85da4023394c996ddff19b8bd5ac759))
+* removed unnecessary panics and added custom panic handler system ([c232aed](https://github.com/framesurge/perseus/commit/c232aed6b70735df108fcdc645eda09fec2b9d3a))
+
+
+### Bug Fixes
+
+* 'fixed' hydration issues ([182f72b](https://github.com/framesurge/perseus/commit/182f72bcdf39171601411327b94f94d693a6f2f5))
+* allowed statenames other than `state` ([c80e647](https://github.com/framesurge/perseus/commit/c80e647db12b07e8508e7d2c0fa4ed38dc3207bf))
+* fixed `perseus new` ([659b911](https://github.com/framesurge/perseus/commit/659b911f5dc9eaa8165f4b76a225ce0f312e9dd6))
+* fixed js-interop example ([2928bb7](https://github.com/framesurge/perseus/commit/2928bb71637a0ed593604ccb8d22b35030dbd3c5))
+* made tool windows installations resilient against paths with whitespace ([#228](https://github.com/framesurge/perseus/issues/228)) ([0d3717f](https://github.com/framesurge/perseus/commit/0d3717fe140a766a4a2b9ca4055f400712b6d645)), closes [#227](https://github.com/framesurge/perseus/issues/227)
+* updated website examples ([6410f22](https://github.com/framesurge/perseus/commit/6410f2204909ec304e1ed350bf0450e790241a8e))
+* **website:** fixed index example sourcing ([88c29cd](https://github.com/framesurge/perseus/commit/88c29cdae1ceb387a2cd6897bebec20b34f01fd4))
+
+
+### Code Refactorings
+
+* cleaned up some things ([4df987e](https://github.com/framesurge/perseus/commit/4df987edfaf59cd4832d085f251f5c917c2659e4))
+* improved ergonomics of `PerseusApp` ([9c3444a](https://github.com/framesurge/perseus/commit/9c3444a80403b61838ea3febf726a8d7833a8bc1))
+* turn `#[make_rx]` into `#[derive(ReactiveState)]` ([#237](https://github.com/framesurge/perseus/issues/237)) ([8ec2d6f](https://github.com/framesurge/perseus/commit/8ec2d6f9b09601950fd20aefc6f2c77fb309d034))
+* use child scopes for pages ([#230](https://github.com/framesurge/perseus/issues/230)) ([6af8191](https://github.com/framesurge/perseus/commit/6af819165f01b4816cd3594b176d72fa9b27bc68))
+
+
+### Documentation Changes
+
+* alerted users to [#229](https://github.com/framesurge/perseus/issues/229) ([a825cec](https://github.com/framesurge/perseus/commit/a825cece49d6615a408927712bcb4567e59fdf27))
+* clarified warning ([0696e48](https://github.com/framesurge/perseus/commit/0696e48b97e8d6232bd853c2a67b3d0c87bdbed6))
+* fixed readme links ([75dd5ce](https://github.com/framesurge/perseus/commit/75dd5ced6a22cf0444493fff5bed35da61362183))
+* removed old installation instruction ([bd06110](https://github.com/framesurge/perseus/commit/bd06110ff334b5dcd1f4e455c632b22fd3d7705f))
+* removed readme warning about [#229](https://github.com/framesurge/perseus/issues/229) ([195078a](https://github.com/framesurge/perseus/commit/195078a6e65458fcc96b54dc03bf4f4296439d63))
+* updated v0.4.x docs and documented migration ([8a81a3e](https://github.com/framesurge/perseus/commit/8a81a3e8561b7c94afa9778d22adf1032d6f06f6))
+
+## [0.4.0-beta.12](https://github.com/framesurge/perseus/compare/v0.4.0-beta.11...v0.4.0-beta.12) (2023-01-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* all target-gates should switch to `#[cfg(engine)]` and
+`#[cfg(client)]`, rather than using `target_arch`
+* removed nnow obsolete `#[perseus::engine]` and
+`#[perseus::browser]` macros
+* plugins can no longer add templates (provide the
+functions to the user for them to manually add)
+* `G` parameter removed entirely from plugins
+* you must now call `.build()` after creating a
+template/capsule with `::new(..)` and setting your various functions
+* header setting functions now take a `Scope` as their
+first argument
+* removed several outdated `checkpoint`s (see book for details)
+* global state is now built per-locale, and build state
+functions therefore take a `locale: String` argument now
+* functional plugin actions for failing global state have
+been removed due to alternate generation systems (you should hook into
+failed builds instead)
+* all plugin actions must now return `Result<T, Box<dyn
+std::error::Error>>` (return some arbitrary error and then use
+`.into()`)
+* all plugin actions that previously took
+`Rc<perseus::errors::EngineError>` now take `Rc<perseus::errors::Error>`
+* `.template()` and `.error_pages()` on `PerseusApp` now
+take actual values, rather than functions that return those values
+* any functions that took `path` and `locale` now take `StateGeneratorInfo`, which includes those as fields
+* all macros on state generator functions (e.g. `#[build_state]`) are replaced by the single macro `#[engine_only_fn]`
+* templates that take reactive state must have the `#[template]` annotation and be specified with `.template_with_state()`
+* templates that take unreactive state must have no macro annotation, and be specified wijth `.template_with_unreactive_state()`
+* templates that take no state must not have a `#[template]` annotation
+* `define_app!` has been completely removed in favor of `PerseusApp`
+* `#[make_rx(MyRxTypeName)]` must be changed to `#[derive(Serialize, Deserialize, ReactiveState)]`, followed by `#[rx(alias = "MyRxTypeName")]`
+* renamed `#[template_rx]` to `#[template]` (unreactive
+templates should now use `#[template(unreactive)]`)
+
+### Features
+
+* added more reactive collections ([04e1629](https://github.com/framesurge/perseus/commit/04e16290383fdfa445fee088de3ca647718ef103))
+* added support for wasm engines ([f6568e9](https://github.com/framesurge/perseus/commit/f6568e9ce11be97390982c69dedcd737b5692eac))
+* added suspended interactivity system ([5efcad4](https://github.com/framesurge/perseus/commit/5efcad48d61f599206cb8e93740a0dc196bf9e00))
+* added suspended state and request-time/amalgamated global state ([#242](https://github.com/framesurge/perseus/issues/242)) ([c174a69](https://github.com/framesurge/perseus/commit/c174a69a3f66538159d16807cc25b20b610a3a95)), closes [/github.com/framesurge/perseus/issues/150#issuecomment-1329785198](https://github.com/framesurge//github.com/framesurge/perseus/issues/150/issues/issuecomment-1329785198)
+* **cli:** made cli symlink exported content instead of copying it ([c54d884](https://github.com/framesurge/perseus/commit/c54d88462e37e68deaafd051989adbe3a765fde7))
+* created capsules system and rewrote just about everything ([#224](https://github.com/framesurge/perseus/issues/224)) ([a4c59f2](https://github.com/framesurge/perseus/commit/a4c59f22c572094c13d2840eb17cc2e75a6fd83d))
+* created version of `blame_err!` that doesn't return ([628405d](https://github.com/framesurge/perseus/commit/628405dd20c4a033588559dcd25d43d80f5cd9ec))
+* improved global state system ([#223](https://github.com/framesurge/perseus/issues/223)) ([85d7f4a](https://github.com/framesurge/perseus/commit/85d7f4a0b57ed5d956ab2571a9d386e9d2c109cd))
+* made `#[template_rx]` support unreactive state ([43fdf11](https://github.com/framesurge/perseus/commit/43fdf11485870810afd123bb169d139a4801e3cf))
+* made plugin actions return `Result` ([42f0d99](https://github.com/framesurge/perseus/commit/42f0d9937d59c1664c0741f837cc33a7b62b8ff0)), closes [#234](https://github.com/framesurge/perseus/issues/234)
+* removed all redundant macros! 🎉 ([#238](https://github.com/framesurge/perseus/issues/238)) ([dccb7a5](https://github.com/framesurge/perseus/commit/dccb7a5be85da4023394c996ddff19b8bd5ac759))
+* removed unnecessary panics and added custom panic handler system ([c232aed](https://github.com/framesurge/perseus/commit/c232aed6b70735df108fcdc645eda09fec2b9d3a))
+
+
+### Bug Fixes
+
+* 'fixed' hydration issues ([182f72b](https://github.com/framesurge/perseus/commit/182f72bcdf39171601411327b94f94d693a6f2f5))
+* allowed statenames other than `state` ([c80e647](https://github.com/framesurge/perseus/commit/c80e647db12b07e8508e7d2c0fa4ed38dc3207bf))
+* fixed `perseus new` ([659b911](https://github.com/framesurge/perseus/commit/659b911f5dc9eaa8165f4b76a225ce0f312e9dd6))
+* fixed js-interop example ([2928bb7](https://github.com/framesurge/perseus/commit/2928bb71637a0ed593604ccb8d22b35030dbd3c5))
+* made tool windows installations resilient against paths with whitespace ([#228](https://github.com/framesurge/perseus/issues/228)) ([0d3717f](https://github.com/framesurge/perseus/commit/0d3717fe140a766a4a2b9ca4055f400712b6d645)), closes [#227](https://github.com/framesurge/perseus/issues/227)
+* updated website examples ([6410f22](https://github.com/framesurge/perseus/commit/6410f2204909ec304e1ed350bf0450e790241a8e))
+* **website:** fixed index example sourcing ([88c29cd](https://github.com/framesurge/perseus/commit/88c29cdae1ceb387a2cd6897bebec20b34f01fd4))
+
+
+### Code Refactorings
+
+* cleaned up some things ([4df987e](https://github.com/framesurge/perseus/commit/4df987edfaf59cd4832d085f251f5c917c2659e4))
+* improved ergonomics of `PerseusApp` ([9c3444a](https://github.com/framesurge/perseus/commit/9c3444a80403b61838ea3febf726a8d7833a8bc1))
+* turn `#[make_rx]` into `#[derive(ReactiveState)]` ([#237](https://github.com/framesurge/perseus/issues/237)) ([8ec2d6f](https://github.com/framesurge/perseus/commit/8ec2d6f9b09601950fd20aefc6f2c77fb309d034))
+* use child scopes for pages ([#230](https://github.com/framesurge/perseus/issues/230)) ([6af8191](https://github.com/framesurge/perseus/commit/6af819165f01b4816cd3594b176d72fa9b27bc68))
+
+
+### Documentation Changes
+
+* alerted users to [#229](https://github.com/framesurge/perseus/issues/229) ([a825cec](https://github.com/framesurge/perseus/commit/a825cece49d6615a408927712bcb4567e59fdf27))
+* clarified warning ([0696e48](https://github.com/framesurge/perseus/commit/0696e48b97e8d6232bd853c2a67b3d0c87bdbed6))
+* fixed readme links ([75dd5ce](https://github.com/framesurge/perseus/commit/75dd5ced6a22cf0444493fff5bed35da61362183))
+* removed old installation instruction ([bd06110](https://github.com/framesurge/perseus/commit/bd06110ff334b5dcd1f4e455c632b22fd3d7705f))
+* removed readme warning about [#229](https://github.com/framesurge/perseus/issues/229) ([195078a](https://github.com/framesurge/perseus/commit/195078a6e65458fcc96b54dc03bf4f4296439d63))
+* updated v0.4.x docs and documented migration ([8a81a3e](https://github.com/framesurge/perseus/commit/8a81a3e8561b7c94afa9778d22adf1032d6f06f6))
+
 ## [0.4.0-beta.11](https://github.com/framesurge/perseus/compare/v0.4.0-beta.10...v0.4.0-beta.11) (2022-11-06)
 
 
