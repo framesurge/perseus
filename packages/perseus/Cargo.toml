@@ -89,6 +89,6 @@ hsr = [ "live-reload", "idb-freezing" ]
 # Enables reactive versions of common Rust collections, like `Vec<T>` and `HashMap<K, V>`. (Note that `RxResult` is always present, as it's needed for suspended state.)
 rx-collections = []
 
-[package.metadata.docs-rs]
+[package.metadata.docs.rs]
 rustc-args = ["--cfg=engine"]
 rustdoc-args = ["--cfg=engine"]

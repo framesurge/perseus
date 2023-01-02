@@ -23,6 +23,6 @@ futures = "0.3"
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
 dflt-server = []
 
-[package.metadata.docs-rs]
+[package.metadata.docs.rs]
 rustc-args = ["--cfg=engine"]
 rustdoc-args = ["--cfg=engine"]
