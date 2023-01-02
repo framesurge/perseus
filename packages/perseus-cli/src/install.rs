@@ -96,6 +96,7 @@ impl Tools {
         // right version of `wasm-bindgen`
         let metadata = MetadataCommand::new()
             .no_deps()
+            .cargo_path(&global_opts.cargo_engine_path)
             .exec()
             .map_err(|err| InstallError::MetadataFailed { source: err })?;
         let workspace_root = metadata.workspace_root.into_std_path_buf();
