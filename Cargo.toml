@@ -5,7 +5,7 @@ members = [
     "examples/demos/*",
     "examples/comprehensive/*",
     "examples/website/*",
-    # "website",
+    "website",
 ]
 resolver = "2"
 
