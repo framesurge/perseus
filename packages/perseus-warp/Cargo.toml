@@ -20,3 +20,7 @@ warp = { package = "warp-fix-171", version = "0.3" } # Temporary until Warp #171
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
 dflt-server = []
+
+[package.metadata.docs-rs]
+rustc-args = ["--cfg=engine"]
+rustdoc-args = ["--cfg=engine"]
