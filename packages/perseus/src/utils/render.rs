@@ -29,6 +29,11 @@ pub(crate) fn render_or_hydrate(
     {
         use sycamore::web::HydrateNode;
 
+        // If we're forcing a proper render, then we'll have to remove existing content
+        if force_render {
+            parent.set_inner_html("");
+        }
+
         // We need `sycamore::hydrate_to_with_scope()`!
         // --- Verbatim copy from Sycamore, changed for known scope ---
         // Get children from parent into a View to set as the initial node value.
