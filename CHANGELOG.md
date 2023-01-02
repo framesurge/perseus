@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.14](https://github.com/framesurge/perseus/compare/v0.4.0-beta.13...v0.4.0-beta.14) (2023-01-02)
+
+
+### Bug Fixes
+
+* **cli:** added missing `RUSTFLAGS` ([0735b8c](https://github.com/framesurge/perseus/commit/0735b8c6cb4330e30e4bca3a53d67b5d472ce813)), closes [#249](https://github.com/framesurge/perseus/issues/249)
+* **cli:** made `cargo metadata` invocation use given cargo path ([1784909](https://github.com/framesurge/perseus/commit/1784909a5da87b554756d8ea26c64e971d80f389))
+* **docs.rs:** added proper metadata config for docs.rs ([55861ac](https://github.com/framesurge/perseus/commit/55861acc243e6edc3e55241457dfdbdcd3c66045))
+* fixed typo in docs.rs settings ([b2b3e92](https://github.com/framesurge/perseus/commit/b2b3e929eb275d23a832b874053f3f2bd3ef4a6a))
+
 ## [0.4.0-beta.13](https://github.com/framesurge/perseus/compare/v0.4.0-beta.12...v0.4.0-beta.13) (2023-01-02)
 
 

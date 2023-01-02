@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-perseus = { version = "=0.4.0-beta.13", features = [ "hydrate" ] }
+perseus = { version = "=0.4.0-beta.14", features = [ "hydrate" ] }
 sycamore = "^0.8.1"
 
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
-perseus-warp = { version = "=0.4.0-beta.13", features = [ "dflt-server" ] }
+perseus-warp = { version = "=0.4.0-beta.14", features = [ "dflt-server" ] }
 
 [target.'cfg(client)'.dependencies]
