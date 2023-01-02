@@ -2,7 +2,7 @@
 
 First off, thanks so much for taking the time to contribute to Perseus, it's greatly appreciated!
 
-Perseus uses [Tribble](https://github.com/arctic-hen7/tribble) for managing contributions, see [here](https://arctic-hen7.github.io/perseus/tribble/workflow/perseus) for an interactive system that will guide you through making contributions to this repository. Please note that this system is still in beta, so please just open a GitHub issue as usual if something's not working properly there. Otherwise, issues should be created through Tribble (this allows you to basically triage your issue yourself, making things move more quickly).
+Perseus uses [Tribble](https://github.com/arctic-hen7/tribble) for managing contributions, see [here](https://framesurge.sh/perseus/tribble/workflow/perseus/) for an interactive system that will guide you through making contributions to this repository. Please note that this system is still in beta, so please just open a GitHub issue as usual if something's not working properly there. Otherwise, issues should be created through Tribble (this allows you to basically triage your issue yourself, making things move more quickly).
 
 The rest of this document is dedicated to explaining how to get a local copy of Perseus and open a pull request, and is primarily targeted toward those contributing to an open-source project for the first time.
 
