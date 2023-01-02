@@ -17,6 +17,7 @@ pub fn snoop_build(dir: PathBuf, tools: &Tools, global_opts: &Opts) -> Result<i3
         vec![
             ("PERSEUS_ENGINE_OPERATION", "build"),
             ("CARGO_TARGET_DIR", "dist/target_engine"),
+            ("RUSTFLAGS", "--cfg=engine"),
         ],
     )
 }
@@ -38,7 +39,10 @@ pub fn snoop_wasm_build(
             tools.cargo_browser, global_opts.cargo_browser_args
         ),
         &dir,
-        vec![("CARGO_TARGET_DIR", "dist/target_wasm")],
+        vec![
+            ("CARGO_TARGET_DIR", "dist/target_wasm"),
+            ("RUSTFLAGS", "--cfg=client"),
+        ],
     )?;
     if exit_code != 0 {
         return Ok(exit_code);
@@ -74,6 +78,7 @@ pub fn snoop_server(
             ("CARGO_TARGET_DIR", "dist/target_engine"),
             ("PERSEUS_HOST", &opts.host),
             ("PERSEUS_PORT", &opts.port.to_string()),
+            ("RUSTFLAGS", "--cfg=engine"),
         ], /* Unlike the `serve` command, we're both
             * building and running here, so we provide
             * the operation */

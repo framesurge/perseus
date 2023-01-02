@@ -104,11 +104,14 @@ impl Tools {
             let lf_msg = format!("{} Generating Cargo lockfile", GENERATING_LOCKFILE);
             let lf_spinner = cfg_spinner(ProgressBar::new_spinner(), &lf_msg);
             let (_stdout, _stderr, exit_code) = run_stage(
-                vec!["cargo generate-lockfile"],
+                vec![&format!(
+                    "{} generate-lockfile",
+                    global_opts.cargo_engine_path
+                )],
                 &workspace_root,
                 &lf_spinner,
                 &lf_msg,
-                Vec::new(),
+                vec![("RUSTFLAGS", "--cfg=engine")],
             )
             .map_err(|err| InstallError::LockfileGenerationFailed { source: err })?;
             if exit_code != 0 {

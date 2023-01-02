@@ -27,6 +27,7 @@ pub fn export_error_page(
         vec![
             ("PERSEUS_ENGINE_OPERATION", "export_error_page"),
             ("CARGO_TARGET_DIR", "dist/target_engine"),
+            ("RUSTFLAGS", "--cfg=engine"),
         ],
         || {},
     )?;
