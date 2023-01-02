@@ -1,10 +1,10 @@
 # Website
 
-This directory contains the website for Perseus, which is hosted at <https://arctic-hen7.github.io/perseus>!
+This directory contains the website for Perseus, which is hosted at <https://framesurge.sh/perseus>!
 
 ## Comparisons
 
-The website includes a [comparisons page](https://arctic-hen7.github.io/perseus/comparisons), which compares Perseus to a number of other frameworks. Of course, there are _a lot_ of frameworks out there, so we highly encourage contributions to this! It's designed to be quite easy to contribute to, just add a new file called `website/comparisons/framework.json` (substituting `framework` for the name of the framework) and fill in the following framework details:
+The website includes a [comparisons page](https://framesurge.sh/perseus/en-US/comparisons), which compares Perseus to a number of other frameworks. Of course, there are _a lot_ of frameworks out there, so we highly encourage contributions to this! It's designed to be quite easy to contribute to, just add a new file called `website/comparisons/framework.json` (substituting `framework` for the name of the framework) and fill in the following framework details:
 
 -   `name`: `String`,
 -   `supports_ssg`: `"full"`/`"partial"`/`"none"`,

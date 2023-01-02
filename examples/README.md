@@ -6,7 +6,7 @@ There's also a `.base/` folder that contains a template that new examples should
 
 Each of the examples here are fully self-contained Perseus apps, though they use relative path dependencies to the bleeding edge versions of the Perseus packages in this repository. They're also designed to be used with the local, bleeding-edge version of the CLI, which can be invoked by running `bonnie dev example <category> <example> <cli-command>`, where `<cli-command>` is any series of arguments you'd provide to the usual Perseus CLI.
 
-If any of these examples don't work, please [open an issue](https://github.com/arctic-hen7/perseus/issues/choose) and let us know!
+If any of these examples don't work, please [open an issue](https://github.com/framesurge/perseus/issues/choose) and let us know!
 
 The `website/` directory contains the examples you see on the front page of the Perseus website, [here](https://framesurge.sh/perseus/en-US). These should be kept as concise as possible, but it doesn't matter if they're updated on `main` or in a PR for code that hasn't been published yet, since the website gets them from the `stable` branch. That way, those examples will always be for the latest published version of Perseus (even if it's a beta version).
 

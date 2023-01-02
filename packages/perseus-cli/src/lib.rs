@@ -3,13 +3,13 @@
 ## Packages
 
 This is the API documentation for the `perseus-cli` package, which acts as a frontend for abstracting away a lot of Perseus' internal complexity. Note that Perseus mostly uses
-[the book](https://arctic-hen7.github.io/perseus/en-US) for documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples
-[here](https://github.com/arctic-hen7/perseus/tree/main/examples).
+[the book](https://framesurge.sh/perseus/en-US) for documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples
+[here](https://github.com/framesurge/perseus/tree/main/examples).
 
 ## Why is this here?
 
 Usually, binary packages wouldn't have API documentation like this, but the Perseus CLI uses a hybrid structure of a library and a binary, which allows it to be used as a library in applications
-that build on Perseus. Note that this area of using Perseus is currently almost entirely undocumented, and there may be major hiccups! If you'd like to help us out, please [open a PR](https://github.com/arctic-hen7/pulls/new) for
+that build on Perseus. Note that this area of using Perseus is currently almost entirely undocumented, and there may be major hiccups! If you'd like to help us out, please [open a PR](https://github.com/framesurge/perseus/pulls/new) for
 the documentation you'd like to see on this front!
 */
 

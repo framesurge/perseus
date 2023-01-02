@@ -248,7 +248,7 @@ pub enum InstallError {
     },
     // This will only be called after we've checked if the user has already installed the tool
     // themselves
-    #[error("couldn't install '{tool}', as there are no precompiled binaries for your platform and it's not currently installed; please install this tool manually (see https://arctic-hen7.github.io/perseus/en-US/docs/0.4.x/reference/faq)")]
+    #[error("couldn't install '{tool}', as there are no precompiled binaries for your platform and it's not currently installed; please install this tool manually (see https://framesurge.sh/perseus/en-US/docs/0.4.x/reference/faq)")]
     ExternalToolUnavailable {
         tool: String,
         // This is from checking if the tool is installed at the usual path

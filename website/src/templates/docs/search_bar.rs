@@ -38,7 +38,7 @@ pub fn SearchBar<G: Html>(_cx: Scope) -> View<G> {
 // fn search_site(search: &str) {
 //     use js_sys::encode_uri_component;
 
-//     let search_query = format!("site:arctic-hen7.github.io/perseus/en-US/docs
+//     let search_query = format!("site:framesurge.sh/perseus/en-US/docs
 // {}", search);     let search_query =
 // encode_uri_component(&search_query).to_string();     let search_url = format!("https://google.com/search?q={}", search_query);
 //     // Open that in a new tab

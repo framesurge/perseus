@@ -49,7 +49,7 @@ pub fn init(dir: PathBuf, opts: &InitOpts) -> Result<i32, InitError> {
     )?;
 
     // And now tell the user about some stuff
-    println!("Your new app has been created! Run `perseus serve -w` to get to work! You can find more details, including about improving compilation speeds in the Perseus docs (https://arctic-hen7.github.io/perseus/en-US/docs/).");
+    println!("Your new app has been created! Run `perseus serve -w` to get to work! You can find more details, including about improving compilation speeds in the Perseus docs (https://framesurge.sh/perseus/en-US/docs/).");
 
     Ok(0)
 }

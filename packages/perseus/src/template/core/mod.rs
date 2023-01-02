@@ -27,7 +27,7 @@ use sycamore::{prelude::create_scope, view::View, web::Html};
 /// template could have a state `struct` that stores a title and some content,
 /// which could then render as many pages as desired.
 ///
-/// You can read more about the templates system [here](https://arctic-hen7.github.io/perseus/en-US/docs/next/core-principles).
+/// You can read more about the templates system [here](https://framesurge.sh/perseus/en-US/docs/next/core-principles).
 #[derive(Debug)]
 pub struct Template<G: Html> {
     /// The inner entity.

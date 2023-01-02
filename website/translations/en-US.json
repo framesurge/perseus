@@ -34,7 +34,7 @@
     "comparisons-title": "Comparisons to Other Frameworks",
     "comparisons-heading": "Comparisons",
     "comparisons-subtitle": "See how Perseus compares to other web development frameworks.",
-    "comparisons-extra": "Is there anything we're missing here? Please <a href =\"https://github.com/arctic-hen7/perseus/issues/new/choose\" class=\"underline\">open an issue</a> and let us know!",
+    "comparisons-extra": "Is there anything we're missing here? Please <a href =\"https://github.com/framesurge/perseus/issues/new/choose\" class=\"underline\">open an issue</a> and let us know!",
     "comparisons-table-header": "Comparison",
     "comparisons-table-headings.name": "Name",
     "comparisons-table-headings.supports_ssg": "Static generation",
