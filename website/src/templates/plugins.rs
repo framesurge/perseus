@@ -5,19 +5,19 @@
 use crate::components::container::Container;
 use crate::components::header::HeaderProps;
 use crate::components::trusted_svg::TRUSTED_SVG;
-#[perseus::engine]
-use perseus::RenderFnResultWithCause;
-use perseus::{t, Template};
+#[cfg(engine)]
+use crate::Error;
+use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
-#[perseus::engine]
+#[cfg(engine)]
 use std::fs;
 use sycamore::prelude::*;
-#[perseus::engine]
+#[cfg(engine)]
 use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, UnreactiveState)]
 struct PluginsPageProps {
     /// The list of plugins with minimal details. These will be displayed in
     /// cards on the index page.
@@ -45,8 +45,6 @@ struct PluginDetails {
     url: String,
 }
 
-#[perseus::template(PluginsPage)]
-#[component]
 fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     let plugins = create_signal(cx, props.plugins);
     // This will store the plugins relevant to the user's search (all of them by
@@ -125,7 +123,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     }
 }
 
-#[perseus::head]
+#[engine_only_fn]
 fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { (format!("{} | {}", t!("plugins-title", cx), t!("perseus", cx))) }
@@ -134,28 +132,28 @@ fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("plugins")
-        .template(plugins_page)
+    Template::build("plugins")
+        .view_with_unreactive_state(plugins_page)
         .head(head)
         .build_state_fn(get_build_state)
+        .build()
 }
 
-#[perseus::build_state]
+#[engine_only_fn]
 async fn get_build_state(
-    _path: String,
-    locale: String,
-) -> RenderFnResultWithCause<PluginsPageProps> {
+    StateGeneratorInfo { locale, .. }: StateGeneratorInfo<()>,
+) -> Result<PluginsPageProps, BlamedError<Error>> {
     // This is the root page, so we want a list of plugins and a small amount of
     // information about each This directory loop is relative to `.perseus/`
     let mut plugins = Vec::new();
     for entry in WalkDir::new(&format!("plugins/{}", locale)) {
-        let entry = entry?;
+        let entry = entry.map_err(Error::from)?;
         let path = entry.path();
         // Ignore any empty directories or the like
         if path.is_file() {
             // Get the JSON contents and parse them as plugin details
-            let contents = fs::read_to_string(&path)?;
-            let details = serde_json::from_str::<PluginDetails>(&contents)?;
+            let contents = fs::read_to_string(&path).map_err(Error::from)?;
+            let details = serde_json::from_str::<PluginDetails>(&contents).map_err(Error::from)?;
 
             plugins.push(details);
         }

@@ -1,25 +1,23 @@
-#[perseus::engine]
+#[cfg(engine)]
 use crate::templates::docs::get_file_at_version::get_file_at_version;
 use crate::templates::docs::icons::{ERROR_ICON, WARNING_ICON};
-#[perseus::engine]
+#[cfg(engine)]
 use crate::templates::docs::template::DocsPageProps;
 use lazy_static::lazy_static;
-use perseus::t;
-#[perseus::engine]
-use perseus::{RenderFnResult, RenderFnResultWithCause};
-#[perseus::engine]
+#[cfg(engine)]
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs; /* The lazy static will never be evaluated on the web, but we still need the
               * import (TODO improve this...a lot) */
-#[perseus::engine]
+use perseus::prelude::*;
+#[cfg(engine)]
 use std::path::PathBuf;
 use sycamore::prelude::*;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 use walkdir::WalkDir;
 
-#[cfg(not(target_arch = "wasm32"))] // This is a generation helper
+#[cfg(engine)] // This is a generation helper
 pub fn parse_md_to_html(markdown: &str) -> String {
     let mut opts = Options::empty();
     opts.insert(Options::ENABLE_STRIKETHROUGH);
@@ -198,17 +196,21 @@ pub fn get_beta_versions(manifest: &DocsManifest) -> HashMap<String, VersionMani
     versions
 }
 
-#[perseus::build_state]
+#[engine_only_fn]
 pub async fn get_build_state(
-    path: String,
-    locale: String,
-) -> RenderFnResultWithCause<DocsPageProps> {
+    StateGeneratorInfo { path, locale, .. }: StateGeneratorInfo<()>,
+) -> Result<DocsPageProps, BlamedError<std::io::Error>> {
     use perseus::utils::get_path_prefix_server;
     use regex::Regex;
 
+    // Compat from earlier Perseus versions
+    // TODO Remove
+    let path = format!("docs/{}", path);
+    let path = path.strip_suffix("/").unwrap_or(&path).to_string();
+
     let path_vec: Vec<&str> = path.split('/').collect();
+    // TODO Use build helper state for all this
     // Localize the path again to what it'll be on the filesystem
-    // TODO get Perseus to pass in props from build paths for ease of use?
     // We'll do that differently if it doesn't have a version in front of it, which
     // would be the second part containing two dots Or it could be `next`
     // If the path is just `/docs` though, we'll render the introduction page for
@@ -316,7 +318,21 @@ pub async fn get_build_state(
                 // Now remove the suffix that specifies the lines to get
                 let (incl_path, lines_start, lines_end) = {
                     let vec: Vec<&str> = incl_path_with_lines_suffix.split(':').collect();
-                    (vec[0], vec[1].parse::<usize>()?, vec[2].parse::<usize>()?)
+                    (
+                        vec[0],
+                        vec[1].parse::<usize>().map_err(|_| {
+                            std::io::Error::new(
+                                std::io::ErrorKind::InvalidData,
+                                "invalid opening line bound",
+                            )
+                        })?,
+                        vec[2].parse::<usize>().map_err(|_| {
+                            std::io::Error::new(
+                                std::io::ErrorKind::InvalidData,
+                                "invalid closing line bound",
+                            )
+                        })?,
+                    )
                 };
                 // If we're on the `next` version, read from the filesystem directly
                 // Otherwise, use Git to get the appropriate version (otherwise we get #60)
@@ -461,8 +477,8 @@ pub async fn get_build_state(
     Ok(props)
 }
 
-#[perseus::build_paths]
-pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
+#[engine_only_fn]
+pub async fn get_build_paths() -> Result<BuildPaths, walkdir::Error> {
     // We start off by rendering the `/docs` page itself as an alias
     let mut paths = vec!["".to_string()];
     // Get the `docs/` directory (relative to `.perseus/`)
@@ -505,5 +521,8 @@ pub async fn get_build_paths() -> RenderFnResult<Vec<String>> {
         }
     }
 
-    Ok(paths)
+    Ok(BuildPaths {
+        paths,
+        extra: ().into(),
+    })
 }

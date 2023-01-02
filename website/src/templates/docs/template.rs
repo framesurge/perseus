@@ -2,11 +2,11 @@ use crate::templates::docs::container::{DocsContainer, DocsContainerProps};
 use crate::templates::docs::generation::{
     get_build_paths, get_build_state, DocsManifest, DocsVersionStatus,
 };
-use perseus::Template;
+use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, UnreactiveState)]
 pub struct DocsPageProps {
     // We don't need to use translation IDs here because the docs are i18ned at the filesystem
     // level
@@ -18,8 +18,6 @@ pub struct DocsPageProps {
     pub current_version: String,
 }
 
-#[perseus::template(DocsPage)]
-#[component]
 pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
     // These come pre-translated for the current locale
     // Note that all the docs files have a title emblazoned at the top already, so
@@ -53,8 +51,8 @@ pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
     }
 }
 
-#[perseus::head]
-pub fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
+#[engine_only_fn]
+fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
     use perseus::t;
 
     view! { cx,
@@ -66,9 +64,10 @@ pub fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("docs")
+    Template::build("docs")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)
-        .template(docs_page)
-        .head(head)
+        .view_with_unreactive_state(docs_page)
+        .head_with_state(head)
+        .build()
 }

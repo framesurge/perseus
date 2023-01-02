@@ -6,7 +6,7 @@ use crate::templates::docs::generation::{
     get_beta_versions, get_outdated_versions, get_stable_version, DocsManifest, DocsVersionStatus,
 };
 use perseus::i18n::Translator;
-use perseus::{navigate, t};
+use perseus::prelude::*;
 use sycamore::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -61,7 +61,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
 
     view! { cx,
         ({
-            locale.set(use_context::<Signal<Translator>>(cx).get_untracked().get_locale());
+            locale.set(use_context::<Reactor<G>>(cx).get_translator().get_locale());
             View::empty()
         })
 

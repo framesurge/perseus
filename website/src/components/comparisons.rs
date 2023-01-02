@@ -1,9 +1,6 @@
-use perseus::Html;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use sycamore::prelude::view;
-use sycamore::prelude::Scope;
-use sycamore::prelude::View;
+use sycamore::prelude::*;
 
 /// A comparison for the comparisons table. Perseus itself also has an entry
 /// here. Note that any changes to the properties measured here must also be

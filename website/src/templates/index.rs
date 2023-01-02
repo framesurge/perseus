@@ -1,12 +1,10 @@
 use crate::components::container::Container;
 use crate::components::github_svg::GITHUB_SVG;
 use crate::components::header::HeaderProps;
-#[perseus::engine]
-use perseus::RenderFnResultWithCause;
-use perseus::{link, t, Html, Template};
+use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
-#[cfg(target_arch = "wasm32")]
+#[cfg(client)]
 use web_sys::{Element, IntersectionObserver, IntersectionObserverEntry, IntersectionObserverInit};
 
 #[derive(Prop)]
@@ -137,7 +135,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                         // Blur the code
                                         let pre_node = pre_noderef_2.get::<DomNode>();
                                         pre_node.add_class("blur");
-                                        #[cfg(target_arch = "wasm32")]
+                                        #[cfg(client)]
                                         {
                                             let show_full_2 = show_full_2.clone();
                                             let timer = gloo_timers::callback::Timeout::new(150, move || {
@@ -282,7 +280,7 @@ fn AnimatedCircularProgressBar<G: Html>(
     // has passed into view If it has, then we'll re-play the animation
     // We only do this after the component has been mounted (`NodeRef` usage)
     // BUG This doesn't work in Chrome...
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(client)]
     on_mount(cx, || {
         use wasm_bindgen::prelude::Closure;
         use wasm_bindgen::JsCast;
@@ -381,9 +379,7 @@ fn AnimatedCircularProgressBar<G: Html>(
     }
 }
 
-#[perseus::template(IndexPage)]
-#[component]
-pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
+fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     // // Fix these on mobile
     // let nav_buttons = match props.nav_buttons {
     //     NavButtons::Both(prev_id, next_id) => view! { cx,
@@ -675,7 +671,7 @@ pub fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     }
 }
 
-#[perseus::head]
+#[engine_only_fn]
 pub fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { (t!("perseus", cx)) }
@@ -688,13 +684,14 @@ pub fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("index")
-        .template(index_page)
+    Template::build("index")
+        .view_with_unreactive_state(index_page)
         .head(head)
         .build_state_fn(get_build_state)
+        .build()
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, UnreactiveState)]
 struct CodeExamples {
     app_in_a_file: Example,
     state_generation: Example,
@@ -712,8 +709,10 @@ enum Example {
     WithExcerpts { excerpts: String, full: String },
 }
 
-#[perseus::build_state]
-async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCause<CodeExamples> {
+#[engine_only_fn]
+async fn get_build_state(
+    _: StateGeneratorInfo<()>,
+) -> Result<CodeExamples, BlamedError<std::io::Error>> {
     // We know exactly where the examples we want are
     // TODO Join these futures separately
     let props = CodeExamples {
@@ -728,7 +727,7 @@ async fn get_build_state(_path: String, _locale: String) -> RenderFnResultWithCa
 }
 
 // Paths given to this function should be relative to the project root!
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(engine)]
 async fn get_example(path: &str) -> Result<Example, std::io::Error> {
     use super::docs::get_file_at_version;
     use std::fs;

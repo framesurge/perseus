@@ -1,17 +1,17 @@
-#[perseus::engine]
+#[cfg(engine)]
 use crate::components::comparisons::RawComparison;
 use crate::components::comparisons::{render_lighthouse_score, Comparison};
 use crate::components::container::Container;
 use crate::components::header::HeaderProps;
 use crate::components::info_svg::INFO_SVG;
-use perseus::{t, Html, Template};
-#[perseus::engine]
-use perseus::{ErrorCause, GenericErrorWithCause, RenderFnResultWithCause};
+#[cfg(engine)]
+use crate::Error;
+use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-#[perseus::engine]
+#[cfg(engine)]
 use std::fs;
-#[perseus::engine]
+#[cfg(engine)]
 use std::path::PathBuf;
 use sycamore::prelude::*;
 
@@ -271,15 +271,13 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, UnreactiveState)]
 pub struct ComparisonsPageProps {
     pub comparisons: HashMap<String, Comparison>,
     /// The comparison data for Perseus itself.
     pub perseus_comparison: Comparison,
 }
 
-#[perseus::template(ComparisonsPage)]
-#[component]
 pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View<G> {
     let comparisons = props.comparisons.clone();
     let perseus_comparison = props.perseus_comparison;
@@ -368,7 +366,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
     }
 }
 
-#[perseus::head]
+#[engine_only_fn]
 pub fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
         title { (format!("{} | {}", t!("comparisons-title", cx), t!("perseus", cx))) }
@@ -376,17 +374,17 @@ pub fn head(cx: Scope) -> View<SsrNode> {
 }
 
 pub fn get_template<G: Html>() -> Template<G> {
-    Template::new("comparisons")
-        .template(comparisons_page)
+    Template::build("comparisons")
+        .view_with_unreactive_state(comparisons_page)
         .head(head)
         .build_state_fn(get_build_state)
+        .build()
 }
 
-#[perseus::build_state]
-pub async fn get_build_state(
-    _path: String,
-    locale: String,
-) -> RenderFnResultWithCause<ComparisonsPageProps> {
+#[engine_only_fn]
+async fn get_build_state(
+    StateGeneratorInfo { locale, .. }: StateGeneratorInfo<()>,
+) -> Result<ComparisonsPageProps, BlamedError<Error>> {
     use walkdir::WalkDir;
 
     // Get all the comparisons from JSON
@@ -400,35 +398,35 @@ pub async fn get_build_state(
     let comparisons_dir = PathBuf::from("comparisons");
     // Loop through it
     for entry in WalkDir::new(comparisons_dir) {
-        let entry = entry?;
+        let entry = entry.map_err(Error::from)?;
         let path = entry.path();
         // Ignore any empty directories or the like
         if path.is_file() {
             // There shouldn't be any non-Unicode comparison files
             let path_str = path.to_str().unwrap();
-            let contents = fs::read_to_string(&path)?;
+            let contents = fs::read_to_string(&path).map_err(Error::from)?;
             // If the file is `perseus.json`, we'll add this to a special variable,
             // otherwise it gets added to the generic map
             if path_str.ends_with("perseus.json") {
                 // The Perseus comparison has no localized text
-                let comparison = serde_json::from_str::<Comparison>(&contents)?;
+                let comparison =
+                    serde_json::from_str::<Comparison>(&contents).map_err(Error::from)?;
                 perseus_comparison = Some(comparison);
             } else {
                 // Other comparisons have multiple comparison paragraphs, one
                 // for each locale (we have to choose the right one)
-                let raw_comparison = serde_json::from_str::<RawComparison>(&contents)?;
+                let raw_comparison =
+                    serde_json::from_str::<RawComparison>(&contents).map_err(Error::from)?;
                 let comparison_text = match raw_comparison.text.get(&locale) {
                     Some(text) => text.to_string(),
-                    None => {
-                        return Err(GenericErrorWithCause {
-                            error: format!(
+                    None => return Err(BlamedError {
+                        error: format!(
                             "comparison {} does not have localized comparison text for locale {}",
                             raw_comparison.name, locale
                         )
-                            .into(),
-                            cause: ErrorCause::Server(None),
-                        })
-                    }
+                        .into(),
+                        blame: ErrorBlame::Server(None),
+                    }),
                 };
                 let comparison = Comparison {
                     name: raw_comparison.name,
@@ -458,9 +456,9 @@ pub async fn get_build_state(
         comparisons,
         perseus_comparison: match perseus_comparison {
             Some(perseus_comparison) => perseus_comparison,
-            None => return Err(GenericErrorWithCause {
-                error: "perseus comparison data not recorded, please ensure `comparisons/perseus.json` exists".into(),
-                cause: ErrorCause::Server(None)
+            None => return Err(BlamedError {
+                error: "perseus comparison data not recorded, please ensure `comparisons/perseus.json` exists".to_string().into(),
+                blame: ErrorBlame::Server(None)
             })
         }
     };
