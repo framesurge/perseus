@@ -27,7 +27,7 @@ Perseus v0.4.x added a significant number of breaking changes, as almost the ent
 21. Change any `#[cfg(target_arch = "wasm32")]` instances to be `#[cfg(client)]`, and any `#[cfg(not(target_arch = "wasm32"))]` ones to say `#[cfg(engine)]`.
 22. Change any head functions that take state to use `.head_with_state()` (the same applies for header setting functions, which can now take state too).
 23. Update your code for any smaller breaking changes that might affect you, as per the [changelog](https://github.com/framesurge/perseus/blob/main/CHANGELOG.md).
-24. Run `cargo update` and then `perseus build` to get everything up to date and ensure that your app works! (This might take a while the first time.)
+24. Run `cargo update` and then `perseus clean && perseus build` to get everything up to date and ensure that your app works! (This might take a while the first time.)
 
 We realize that this is a mammoth number of breaking changes, and there will be several more if you're a plugin developer. However, Perseus v0.4.0 brings extraordinary levels of performance and ergonomics to Perseus, removing old quirks and streamlining the internals massively. With the introduction of the new capsules system, Perseus is by far the most powerful frontend framework in the world. If you're having any trouble with updating, please do not hesitate to let us know on [Discord](https://discord.com/invite/GNqWYWNTdp), and we'll happily help you out as soon as we can!
 
@@ -40,8 +40,21 @@ rustflags = [ "--cfg", "engine" ]
 
 If you later want to work on a browser-only part of your app, you can just change `engine` to `client` while you work, and Rust will compile your code accordingly!
 
+**IMPORTANT:** One of the more subtle things that changed in beta 12 of v0.4.0 is that the `path` provided to `get_build_state` no longer includes the template path! This means what was once, say, `docs/foo` would now just be `foo`, which can cause a lot of problems for existing code. This was not a decision taken lightly, but the original choice was made due to routing constraints at the time, which no longer exist, and it has been decided that this will be better for future users. Until you've updated all your code to account for this, you may want to add the following compatibility snippet to the top of your `get_build_state` functions:
+
+```rust
+let path = format!("<template-name>/{}", path);
+let path = path.strip_suffix("/").unwrap_or(&path).to_string();
+```
+
+Of course, replace `<template-name>` with the name you put in `Template::build()`, like `docs`, or `posts`. The suffix strip is there to handle index pages to prevent trailing forward slashes that might otherwise confuse your application. Eventually, you should adapt your code to work with the new `path` system, but this provides a good fallback to at least make your app work until you have the time for that larger change.
+
 ## If You've Ejected
 
 If you were running Perseus v0.3.x and had ejected, your app's structure is likely to change significantly, as Perseus v0.4.x no longer uses `.perseus/`! For example, you can now directly modify the server Perseus runs, allowing you to add your own API routes trivially! (See the [custom server example](https://github.com/framesurge/tree/main/examples/core/custom_server) for details.)
 
 The migration process you follow will be highly unique to your app's structure, though most common use-cases should be covered y the custom server example, linked above. If you need any further help, feel free to ask in GitHub discussions or on [Discord](https://discord.com/invite/GNqWYWNTdp), and we're happy to help in any way we can!
+
+## `cargo-clif` Support
+
+As of the time of writing, the latest Perseus beta version appears to be failing for unknown reasons with the alternative `cargo-clif` backend, which is generally recommended as a much faster compiler than the default. This is considered a critical bug, and is currently tracked [here](https://github.com/framesurge/perseus/issues/246).
