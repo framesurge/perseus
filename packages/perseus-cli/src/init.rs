@@ -135,7 +135,7 @@ serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 
 # Engine-only dependencies go here
-[target.'cfg(browser)'.dependencies]
+[target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 perseus-warp = { version = "=%perseus_version", features = [ "dflt-server" ] }
 
