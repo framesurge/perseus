@@ -126,6 +126,20 @@ where
             }
         }
         EngineOperation::Serve => {
+            // In production, automatically set the working directory
+            // to be the parent of the actual binary. This means that disabling
+            // debug assertions in development will lead to utterly incomprehensible
+            // errors! You have been warned!
+            //
+            // This cannot be run ouutside the `serve` option, because that would
+            // corrupt the location of build artifcats built for deployment.
+            if !cfg!(debug_assertions) {
+                let binary_loc = env::current_exe().unwrap();
+                let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close
+                                                               // to sanity
+                env::set_current_dir(binary_dir).unwrap();
+            }
+
             // Assume the app has already been built and prepare the turbine
             match turbine.populate_after_build().await {
                 Ok(_) => (),
@@ -135,17 +149,6 @@ where
                     return 1;
                 }
             };
-
-            // In production, automatically set the working directory
-            // to be the parent of the actual binary. This means that disabling
-            // debug assertions in development will lead to utterly incomprehensible
-            // errors! You have been warned!
-            if !cfg!(debug_assertions) {
-                let binary_loc = env::current_exe().unwrap();
-                let binary_dir = binary_loc.parent().unwrap(); // It's a file, there's going to be a parent if we're working on anything close
-                                                               // to sanity
-                env::set_current_dir(binary_dir).unwrap();
-            }
 
             // This returns a `(String, u16)` of the host and port for maximum compatibility
             let addr = get_host_and_port();
