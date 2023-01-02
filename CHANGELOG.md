@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.13](https://github.com/framesurge/perseus/compare/v0.4.0-beta.12...v0.4.0-beta.13) (2023-01-02)
+
+
+### Bug Fixes
+
+* **docs.rs:** added `rustdocflags` ([f06eb48](https://github.com/framesurge/perseus/commit/f06eb48a48cdcbabdb3d768bb26a9de24a8a73ae))
+* fixed broken tribble link in contributing docs ([#247](https://github.com/framesurge/perseus/issues/247)) ([f6717fb](https://github.com/framesurge/perseus/commit/f6717fb61799b4e99272142ec2d2c8c76cceae23))
+* fixed deployment paths ([0f8127c](https://github.com/framesurge/perseus/commit/0f8127c94f9a0f279385756275ea3ffdfc52d8b9)), closes [#63](https://github.com/framesurge/perseus/issues/63)
+* fixed double error page display ([2454205](https://github.com/framesurge/perseus/commit/2454205961831cf0defb177fcf12e0a6623b1a74))
+* fixed error view deployment bugs ([f57f7f1](https://github.com/framesurge/perseus/commit/f57f7f1ef77eeeb514d880452730f39a2b450adb))
+* temporarily disabled website checking ([a63a1a9](https://github.com/framesurge/perseus/commit/a63a1a9962b9e11f681beaed221b7b05f3792472))
+* typo in `perseus new` Cargo.toml ([#248](https://github.com/framesurge/perseus/issues/248)) ([71bfaa1](https://github.com/framesurge/perseus/commit/71bfaa13a54e185acd147d84a61a3748f8d952a9))
+
+
+### Documentation Changes
+
+* added extra migration step for `.head_with_state()` ([ae93d77](https://github.com/framesurge/perseus/commit/ae93d77bb74efd2153813ebe73c9e46e95981b6a))
+* added further migration notes ([1e9fc70](https://github.com/framesurge/perseus/commit/1e9fc70d443dcce81fd72d4137201b3f76754c42))
+* added some more migration tips ([16cd9d5](https://github.com/framesurge/perseus/commit/16cd9d5965f8131d7cbcca81a101f1784b6429d7))
+* updated all old links ([c1f613c](https://github.com/framesurge/perseus/commit/c1f613cbd32b5b16661d4c9cc28efdd69d931de0))
+
 ## [0.4.0-beta.12](https://github.com/framesurge/perseus/compare/v0.4.0-beta.11...v0.4.0-beta.12) (2023-01-01)
 
 
