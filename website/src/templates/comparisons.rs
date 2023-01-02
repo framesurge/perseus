@@ -419,14 +419,16 @@ async fn get_build_state(
                     serde_json::from_str::<RawComparison>(&contents).map_err(Error::from)?;
                 let comparison_text = match raw_comparison.text.get(&locale) {
                     Some(text) => text.to_string(),
-                    None => return Err(BlamedError {
-                        error: format!(
+                    None => {
+                        return Err(BlamedError {
+                            error: format!(
                             "comparison {} does not have localized comparison text for locale {}",
                             raw_comparison.name, locale
                         )
-                        .into(),
-                        blame: ErrorBlame::Server(None),
-                    }),
+                            .into(),
+                            blame: ErrorBlame::Server(None),
+                        })
+                    }
                 };
                 let comparison = Comparison {
                     name: raw_comparison.name,

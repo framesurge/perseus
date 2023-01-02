@@ -98,7 +98,12 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
             root_id,
             static_dir: PathBuf::from(&app.static_dir),
             static_aliases,
-            error_views: app.error_views,
+            #[cfg(debug_assertions)]
+            error_views: app.error_views.unwrap_or_default(),
+            #[cfg(not(debug_assertions))]
+            error_views: app
+                .error_views
+                .expect("you must provide your own error pages in production"),
             // This consumes the app
             // Note that we can't do anything in parallel with this anyway
             translations_manager: match app.translations_manager {

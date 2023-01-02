@@ -72,7 +72,18 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     }));
 
     let plugins = app.plugins.clone();
-    let error_views = app.error_views.clone();
+    let error_views;
+    #[cfg(debug_assertions)]
+    {
+        error_views = app.error_views.clone().unwrap_or_default();
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        error_views = app
+            .error_views
+            .clone()
+            .expect("you must provide your own error views in production");
+    }
 
     // This variable acts as a signal to determine whether or not there was a
     // show-stopping failure that should trigger root scope disposal

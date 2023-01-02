@@ -116,9 +116,9 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     pub(crate) entities: EntityMap<G>,
     /// The app's error pages.
     #[cfg(client)]
-    pub(crate) error_views: Rc<ErrorViews<G>>,
+    pub(crate) error_views: Option<Rc<ErrorViews<G>>>,
     #[cfg(engine)]
-    pub(crate) error_views: Arc<ErrorViews<G>>,
+    pub(crate) error_views: Option<Arc<ErrorViews<G>>>,
     /// The maximum size for the page state store.
     pub(crate) pss_max_size: usize,
     /// The global state creator for the app.
@@ -337,7 +337,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             entities: HashMap::new(),
             // We do offer default error views, but they'll panic if they're called for production
             // building
-            error_views: Default::default(),
+            error_views: None,
             pss_max_size: DFLT_PSS_MAX_SIZE,
             #[cfg(engine)]
             global_state_creator: Arc::new(GlobalStateCreator::default()),
@@ -386,7 +386,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             entities: HashMap::new(),
             // We do offer default error pages, but they'll panic if they're called for production
             // building
-            error_views: Default::default(),
+            error_views: None,
             pss_max_size: DFLT_PSS_MAX_SIZE,
             // By default, we'll disable i18n (as much as I may want more websites to support more
             // languages...)
@@ -546,12 +546,12 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         #[cfg(client)]
         {
             let panic_handler = val.take_panic_handler();
-            self.error_views = Rc::new(val);
+            self.error_views = Some(Rc::new(val));
             self.panic_handler_view = panic_handler;
         }
         #[cfg(engine)]
         {
-            self.error_views = Arc::new(val);
+            self.error_views = Some(Arc::new(val));
         }
 
         self

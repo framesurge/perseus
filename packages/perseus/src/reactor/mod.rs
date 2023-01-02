@@ -192,7 +192,12 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             entities: app.entities,
             locales,
             render_cfg,
-            error_views: app.error_views,
+            #[cfg(debug_assertions)]
+            error_views: app.error_views.unwrap_or_default(),
+            #[cfg(not(debug_assertions))]
+            error_views: app
+                .error_views
+                .expect("you must provide your own error views in production"),
             root,
         })
     }
