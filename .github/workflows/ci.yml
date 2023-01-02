@@ -58,15 +58,29 @@ jobs:
                     # For now, we list all the examples we're testing, but in future this will be automatic
                     - name: basic
                       type: core
+                    - name: capsules
+                      type: core
+                    - name: custom_server
+                      type: core
+                    - name: error_views
+                      type: core
                     - name: freezing_and_thawing
                       type: core
                     - name: global_state
+                      type: core
+                    - name: helper_build_state
                       type: core
                     - name: i18n
                       type: core
                     - name: idb_freezing
                       type: core
+                    - name: index_view
+                      type: core
+                    - name: js_interop
+                      type: core
                     - name: plugins
+                      type: core
+                    - name: preload
                       type: core
                     - name: router_state
                       type: core
@@ -78,11 +92,9 @@ jobs:
                       type: core
                     - name: static_content
                       type: core
+                    - name: suspense
+                      type: core
                     - name: unreactive
-                      type: core
-                    - name: index_view
-                      type: core
-                    - name: custom_server
                       type: core
             # We want to run as many jobs as we can for debugging, so we can see easily what has actually failed (and re-run failed jobs more quickly)
             fail-fast: false
