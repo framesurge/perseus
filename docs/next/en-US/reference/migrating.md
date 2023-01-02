@@ -25,8 +25,9 @@ Perseus v0.4.x added a significant number of breaking changes, as almost the ent
 19. Change `MyStateRx<'b>` to `&MyStateRx` (you'll need `&'b MyStateRx` if you're not using `#[auto_scope]`).
 20. In your `PerseusApp`, change all the times you've provided functions to actually *call* those functions (e.g. `.template(crate::templates::index::get_template)` -> `.template(crate::templates::index::get_template())`).
 21. Change any `#[cfg(target_arch = "wasm32")]` instances to be `#[cfg(client)]`, and any `#[cfg(not(target_arch = "wasm32"))]` ones to say `#[cfg(engine)]`.
-22. Update your code for any smaller breaking changes that might affect you, as per the [changelog](https://github.com/framesurge/perseus/blob/main/CHANGELOG.md).
-23. Run `cargo update` and then `perseus build` to get everything up to date and ensure that your app works! (This might take a while the first time.)
+22. Change any head functions that take state to use `.head_with_state()` (the same applies for header setting functions, which can now take state too).
+23. Update your code for any smaller breaking changes that might affect you, as per the [changelog](https://github.com/framesurge/perseus/blob/main/CHANGELOG.md).
+24. Run `cargo update` and then `perseus build` to get everything up to date and ensure that your app works! (This might take a while the first time.)
 
 We realize that this is a mammoth number of breaking changes, and there will be several more if you're a plugin developer. However, Perseus v0.4.0 brings extraordinary levels of performance and ergonomics to Perseus, removing old quirks and streamlining the internals massively. With the introduction of the new capsules system, Perseus is by far the most powerful frontend framework in the world. If you're having any trouble with updating, please do not hesitate to let us know on [Discord](https://discord.com/invite/GNqWYWNTdp), and we'll happily help you out as soon as we can!
 
