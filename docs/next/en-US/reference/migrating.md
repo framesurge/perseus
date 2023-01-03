@@ -54,7 +54,3 @@ Of course, replace `<template-name>` with the name you put in `Template::build()
 If you were running Perseus v0.3.x and had ejected, your app's structure is likely to change significantly, as Perseus v0.4.x no longer uses `.perseus/`! For example, you can now directly modify the server Perseus runs, allowing you to add your own API routes trivially! (See the [custom server example](https://github.com/framesurge/tree/main/examples/core/custom_server) for details.)
 
 The migration process you follow will be highly unique to your app's structure, though most common use-cases should be covered y the custom server example, linked above. If you need any further help, feel free to ask in GitHub discussions or on [Discord](https://discord.com/invite/GNqWYWNTdp), and we're happy to help in any way we can!
-
-## `cargo-clif` Support
-
-As of the time of writing, the latest Perseus beta version appears to be failing for unknown reasons with the alternative `cargo-clif` backend, which is generally recommended as a much faster compiler than the default. This is considered a critical bug, and is currently tracked [here](https://github.com/framesurge/perseus/issues/246).
