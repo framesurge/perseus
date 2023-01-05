@@ -63,7 +63,8 @@ pub fn tinker_internal(
                 vec![
                     ("PERSEUS_ENGINE_OPERATION", "tinker"),
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
-                    ("RUSTFLAGS", "--cfg=engine")
+                    ("RUSTFLAGS", "--cfg=engine"),
+                    ("CARGO_TERM_COLOR", "always")
                 ]
             )?);
 

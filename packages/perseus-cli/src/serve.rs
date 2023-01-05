@@ -85,7 +85,8 @@ fn build_server(
                 &sb_msg,
                 vec![
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
-                    ("RUSTFLAGS", "--cfg=engine")
+                    ("RUSTFLAGS", "--cfg=engine"),
+                    ("CARGO_TERM_COLOR", "always")
                 ]
             )?);
 

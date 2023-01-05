@@ -112,7 +112,10 @@ impl Tools {
                 &workspace_root,
                 &lf_spinner,
                 &lf_msg,
-                vec![("RUSTFLAGS", "--cfg=engine")],
+                vec![
+                    ("RUSTFLAGS", "--cfg=engine"),
+                    ("CARGO_TERM_COLOR", "always"),
+                ],
             )
             .map_err(|err| InstallError::LockfileGenerationFailed { source: err })?;
             if exit_code != 0 {

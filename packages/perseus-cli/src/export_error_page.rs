@@ -28,6 +28,7 @@ pub fn export_error_page(
             ("PERSEUS_ENGINE_OPERATION", "export_error_page"),
             ("CARGO_TARGET_DIR", "dist/target_engine"),
             ("RUSTFLAGS", "--cfg=engine"),
+            ("CARGO_TERM_COLOR", "always"),
         ],
         || {},
     )?;

@@ -203,7 +203,8 @@ pub fn export_internal(
                 vec![
                     ("PERSEUS_ENGINE_OPERATION", "export"),
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
-                    ("RUSTFLAGS", "--cfg=engine")
+                    ("RUSTFLAGS", "--cfg=engine"),
+                    ("CARGO_TERM_COLOR", "always")
                 ]
             )?);
 
@@ -248,11 +249,13 @@ pub fn export_internal(
                     vec![
                         ("CARGO_TARGET_DIR", "dist/target_wasm"),
                         ("RUSTFLAGS", &wasm_release_rustflags),
+                        ("CARGO_TERM_COLOR", "always"),
                     ]
                 } else {
                     vec![
                         ("CARGO_TARGET_DIR", "dist/target_wasm"),
                         ("RUSTFLAGS", "--cfg=client"),
+                        ("CARGO_TERM_COLOR", "always"),
                     ]
                 }
             )?);

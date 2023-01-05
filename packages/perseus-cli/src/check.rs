@@ -123,7 +123,8 @@ fn cargo_check(
                     // and the browser simultaneously (different targets, so no
                     // commonalities gained by one directory)
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
-                    ("RUSTFLAGS", "--cfg=engine")
+                    ("RUSTFLAGS", "--cfg=engine"),
+                    ("CARGO_TERM_COLOR", "always")
                 ]
             )?);
 
@@ -143,7 +144,8 @@ fn cargo_check(
                 &browser_msg,
                 vec![
                     ("CARGO_TARGET_DIR", "dist/target_wasm"),
-                    ("RUSTFLAGS", "--cfg=client")
+                    ("RUSTFLAGS", "--cfg=client"),
+                    ("CARGO_TERM_COLOR", "always")
                 ]
             )?);
 
@@ -185,7 +187,8 @@ fn run_static_generation(
         vec![
             ("PERSEUS_ENGINE_OPERATION", "build"),
             ("CARGO_TARGET_DIR", "dist/target_engine"),
-            ("RUSTFLAGS", "--cfg=engine")
+            ("RUSTFLAGS", "--cfg=engine"),
+            ("CARGO_TERM_COLOR", "always")
         ]
     )?);
 

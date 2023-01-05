@@ -34,6 +34,7 @@ pub fn run_cmd(
         .args([shell_param, &cmd])
         .envs(envs)
         .current_dir(dir)
+        // A pipe is set for stdio
         .output()
         .map_err(|err| ExecutionError::CmdExecFailed { cmd, source: err })?;
 

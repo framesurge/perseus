@@ -4,6 +4,8 @@ use crate::parse::{Opts, SnoopServeOpts};
 use crate::{errors::*, get_user_crate_name};
 use std::path::PathBuf;
 
+// NOTE: Cargo colors are left to the terminal directly here.
+
 /// Runs static generation processes directly so the user can see detailed logs.
 /// This is commonly used for allowing users to see `dbg!` and the like in their
 /// builder functions.
