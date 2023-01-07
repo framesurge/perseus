@@ -8,7 +8,7 @@ use sycamore::prelude::Scope;
 /// That means the type inside the vector must implement [`MakeRx`] (usually
 /// derived with the `ReactiveState` macro). If you want to store simple types
 /// inside the vector, without nested reactivity (e.g. `String`s), you should
-/// use [`RxVec`].
+/// use [`super::RxVec`].
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RxVecNested<T>(Vec<T>)
 where

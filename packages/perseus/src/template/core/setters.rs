@@ -261,7 +261,7 @@ impl<G: Html> TemplateInner<G> {
     /// and request time. The function you provide here is responsible for
     /// rationalizing the two into one single state to be sent to the client,
     /// and this will be run just after the request state function
-    /// completes. See [`States`] for further details.
+    /// completes.
     #[cfg(engine)]
     pub fn amalgamate_states_fn<S, B, V>(
         mut self,

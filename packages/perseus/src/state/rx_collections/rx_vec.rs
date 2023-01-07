@@ -9,7 +9,7 @@ use sycamore::reactive::{create_rc_signal, RcSignal};
 /// This requires nothing by `Clone + 'static` of the elements inside the
 /// vector, and it wraps them in `RcSignal`s to make them reactive. If you want
 /// to store nested reactive types inside the vector (e.g. `String`s), you
-/// should use [`RxVecNested`].
+/// should use [`super::RxVecNested`].
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RxVec<T>(Vec<T>)
 where

@@ -44,7 +44,7 @@ pub mod server;
 /// Utilities for working with Perseus' state platform.
 pub mod state;
 /// Utilities for working with immutable and mutable stores. See
-/// [`ImmutableStore`] and [`MutableStore`] for details.
+/// [`stores::ImmutableStore`] and [`stores::MutableStore`] for details.
 pub mod stores;
 /// Utilities for working with templates and state generation. This is by far
 /// the module you'll probably access the most.

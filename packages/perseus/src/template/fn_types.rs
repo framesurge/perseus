@@ -56,7 +56,7 @@ impl<T> GeneratorResult<T> {
         }
     }
 }
-/// The same as [`GeneratorResult`], except this uses a [`GenericBlamedError`]
+/// The same as [`GeneratorResult`], except this uses a `GenericBlamedError`
 /// as its error type, which is essentially a `Box`ed generic error with an
 /// attached [`ErrorBlame`] denoting who is responsible for the error: the
 /// client or the server. You'll see this as a convertion type in the signatures

@@ -11,7 +11,7 @@ pub const FLUENT_TRANSLATOR_FILE_EXT: &str = "ftl";
 /// Manages translations on the client-side for a single locale using Mozilla's [Fluent](https://projectfluent.org/) syntax.
 /// This is safely `Clone`able, and is provided through Sycamore's context
 /// system to every template in your app automatically. Usually, you will
-/// use this only through the [`t!`] and [`link!`] macros.
+/// use this only through the [`crate::t!`] and [`crate::link!`] macros.
 ///
 /// Fluent supports compound messages, with many variants, which can specified
 /// here using the form `[id].[variant]` in a translation ID, as a `.` is not

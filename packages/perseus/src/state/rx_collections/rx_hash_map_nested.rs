@@ -6,11 +6,11 @@ use std::ops::Deref;
 #[cfg(client)]
 use sycamore::prelude::Scope;
 
-/// A reactive version of [`Vec`] that uses nested reactivity on its elements.
-/// That means the type inside the vector must implement [`MakeRx`] (usually
-/// derived with the `ReactiveState` macro). If you want to store simple types
-/// inside the vector, without nested reactivity (e.g. `String`s), you should
-/// use [`RxVec`].
+/// A reactive version of [`HashMap`] that uses nested reactivity on its
+/// elements. That means the type inside the vector must implement [`MakeRx`]
+/// (usually derived with the `ReactiveState` macro). If you want to store
+/// simple types inside the vector, without nested reactivity (e.g. `String`s),
+/// you should use [`super::RxHashMap`].
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RxHashMapNested<K, V>(HashMap<K, V>)
 where
@@ -19,7 +19,7 @@ where
     // including the actual bounds here
     V: MakeRx + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone;
-/// The reactive version of [`RxHashMap`].
+/// The reactive version of [`RxHashMapNested`].
 #[derive(Clone, Debug)]
 pub struct RxHashMapNestedRx<K, V>(HashMap<K, V::Rx>)
 where

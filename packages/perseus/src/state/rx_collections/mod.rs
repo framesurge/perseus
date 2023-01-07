@@ -31,7 +31,7 @@
 //! Finally, every file in this module follows the same code pattern, allowing
 //! maximal extensibility and self-documentation:
 //!
-//! ```
+//! ```text
 //! // --- Type definitions ---
 //! // ...
 //! // --- Reactivity implementations ---

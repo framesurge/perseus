@@ -127,7 +127,7 @@ pub struct Reactor<G: Html> {
     #[cfg(engine)]
     pub(crate) render_mode: RenderMode<G>,
     /// The currently active translator. On the browser-side, this is handled by
-    /// the more fully-fledged [`ClientTranslationsManager`].
+    /// the more fully-fledged `ClientTranslationsManager` type.
     ///
     /// This is provided to the engine-side reactor on instantiation. This can
     /// be `None` in certain error view renders.
