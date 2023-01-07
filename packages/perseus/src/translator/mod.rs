@@ -102,14 +102,14 @@ pub use DUMMY_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 #[macro_export]
 macro_rules! t {
     // When there are no arguments to interpolate
-    ($id:expr, $cx:expr) => {
+    ($cx:expr, $id:expr) => {
         $crate::i18n::t_macro_backend($id, $cx)
     };
     // When there are arguments to interpolate
-    ($id:expr, {
+    ($cx:expr, $id:expr, {
         // NOTE Using a colon here leads to literally impossible to solve cast errors based on compiler misinterpretations
         $($key:literal = $value:expr),+
-    }, $cx:expr) => {{
+    }) => {{
         let mut args = $crate::i18n::TranslationArgs::new();
         $(
             args.set($key, $value);
@@ -122,7 +122,7 @@ macro_rules! t {
 /// scope provided to the relevant Perseus template.
 #[macro_export]
 macro_rules! link {
-    ($url:expr, $cx:expr) => {
+    ($cx:expr, $url:expr) => {
         $crate::i18n::link_macro_backend($url, $cx)
     };
 }

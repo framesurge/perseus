@@ -3,7 +3,7 @@ use sycamore::prelude::*;
 
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
-        p { (t!("about", cx)) }
+        p { (t!(cx, "about")) }
         p {
             (
                 if !G::IS_BROWSER {

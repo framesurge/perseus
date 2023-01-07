@@ -4,9 +4,9 @@ use sycamore::view::View;
 
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
-        p { (t!("about-msg", cx)) }
+        p { (t!(cx, "about-msg")) }
 
-        a(id = "index", href = link!("", cx)) { (t!("about-index-link", cx)) }
+        a(id = "index", href = link!(cx, "")) { (t!(cx, "about-index-link")) }
     }
 }
 

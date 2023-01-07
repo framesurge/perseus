@@ -17,9 +17,9 @@ fn post_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, props: &'a PostPageStateRx) 
         p {
             (props.content.get())
         }
-        a(href = link!("/post", cx)) { "Root post page" }
+        a(href = link!(cx, "/post")) { "Root post page" }
         br()
-        a(href = link!("/post/blah/test/blah", cx)) { "Complex post page" }
+        a(href = link!(cx, "/post/blah/test/blah")) { "Complex post page" }
     }
 }
 

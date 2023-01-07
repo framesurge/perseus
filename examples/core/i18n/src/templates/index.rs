@@ -5,10 +5,10 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
     let username = "User";
 
     view! { cx,
-        p { (t!("hello", {
+        p { (t!(cx, "hello", {
             "user" = username
-        }, cx)) }
-        a(href = link!("/about", cx)) { "About" }
+        })) }
+        a(href = link!(cx, "/about")) { "About" }
     }
 }
 

@@ -20,7 +20,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 // used.
 fn index_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
-        h1 { (t!("greeting", cx)) }
+        h1 { (t!(cx, "greeting")) }
     }
 }
 
