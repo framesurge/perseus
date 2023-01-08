@@ -5,6 +5,7 @@ use std::hash::Hash;
 use std::ops::Deref;
 #[cfg(client)]
 use sycamore::prelude::Scope;
+use sycamore::reactive::{create_rc_signal, RcSignal};
 
 /// A reactive version of [`HashMap`] that uses nested reactivity on its
 /// elements. That means the type inside the vector must implement [`MakeRx`]
@@ -21,7 +22,7 @@ where
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone;
 /// The reactive version of [`RxHashMapNested`].
 #[derive(Clone, Debug)]
-pub struct RxHashMapNestedRx<K, V>(HashMap<K, V::Rx>)
+pub struct RxHashMapNestedRx<K, V>(RcSignal<HashMap<K, V::Rx>>)
 where
     K: Clone + Serialize + DeserializeOwned + Eq + Hash,
     V: MakeRx + Serialize + DeserializeOwned + 'static,
@@ -37,7 +38,9 @@ where
     type Rx = RxHashMapNestedRx<K, V>;
 
     fn make_rx(self) -> Self::Rx {
-        RxHashMapNestedRx(self.0.into_iter().map(|(k, v)| (k, v.make_rx())).collect())
+        RxHashMapNestedRx(create_rc_signal(
+            self.0.into_iter().map(|(k, v)| (k, v.make_rx())).collect(),
+        ))
     }
 }
 impl<K, V> MakeUnrx for RxHashMapNestedRx<K, V>
@@ -49,17 +52,15 @@ where
     type Unrx = RxHashMapNested<K, V>;
 
     fn make_unrx(self) -> Self::Unrx {
-        RxHashMapNested(
-            self.0
-                .into_iter()
-                .map(|(k, v)| (k, v.make_unrx()))
-                .collect(),
-        )
+        let map = (*self.0.get_untracked()).clone();
+        RxHashMapNested(map.into_iter().map(|(k, v)| (k, v.make_unrx())).collect())
     }
 
     #[cfg(client)]
     fn compute_suspense(&self, cx: Scope) {
-        for elem in self.0.values() {
+        // We do *not* want to recompute this every time the user changes the state!
+        // (There lie infinite loops.)
+        for elem in self.0.get_untracked().values() {
             elem.compute_suspense(cx);
         }
     }
@@ -83,7 +84,7 @@ where
     V: MakeRx + Serialize + DeserializeOwned + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone,
 {
-    type Target = HashMap<K, V::Rx>;
+    type Target = RcSignal<HashMap<K, V::Rx>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

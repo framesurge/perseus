@@ -18,7 +18,7 @@ where
     T: Clone + 'static;
 /// The reactive version of [`RxVec`].
 #[derive(Clone, Debug)]
-pub struct RxVecRx<T>(Vec<RcSignal<T>>)
+pub struct RxVecRx<T>(RcSignal<Vec<RcSignal<T>>>)
 where
     T: Clone + Serialize + DeserializeOwned + 'static;
 
@@ -30,7 +30,9 @@ where
     type Rx = RxVecRx<T>;
 
     fn make_rx(self) -> Self::Rx {
-        RxVecRx(self.0.into_iter().map(|x| create_rc_signal(x)).collect())
+        RxVecRx(create_rc_signal(
+            self.0.into_iter().map(|x| create_rc_signal(x)).collect(),
+        ))
     }
 }
 impl<T> MakeUnrx for RxVecRx<T>
@@ -40,9 +42,9 @@ where
     type Unrx = RxVec<T>;
 
     fn make_unrx(self) -> Self::Unrx {
+        let vec = (*self.0.get_untracked()).clone();
         RxVec(
-            self.0
-                .into_iter()
+            vec.into_iter()
                 .map(|x| (*x.get_untracked()).clone())
                 .collect(),
         )
@@ -66,7 +68,7 @@ impl<T> Deref for RxVecRx<T>
 where
     T: Clone + Serialize + DeserializeOwned + 'static,
 {
-    type Target = Vec<RcSignal<T>>;
+    type Target = RcSignal<Vec<RcSignal<T>>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

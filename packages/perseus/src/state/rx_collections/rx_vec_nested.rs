@@ -3,6 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
 #[cfg(client)]
 use sycamore::prelude::Scope;
+use sycamore::reactive::{create_rc_signal, RcSignal};
 
 /// A reactive version of [`Vec`] that uses nested reactivity on its elements.
 /// That means the type inside the vector must implement [`MakeRx`] (usually
@@ -18,7 +19,7 @@ where
     T::Rx: MakeUnrx<Unrx = T> + Freeze + Clone;
 /// The reactive version of [`RxVecNested`].
 #[derive(Clone, Debug)]
-pub struct RxVecNestedRx<T>(Vec<T::Rx>)
+pub struct RxVecNestedRx<T>(RcSignal<Vec<T::Rx>>)
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
     T::Rx: MakeUnrx<Unrx = T> + Freeze + Clone;
@@ -32,7 +33,9 @@ where
     type Rx = RxVecNestedRx<T>;
 
     fn make_rx(self) -> Self::Rx {
-        RxVecNestedRx(self.0.into_iter().map(|x| x.make_rx()).collect())
+        RxVecNestedRx(create_rc_signal(
+            self.0.into_iter().map(|x| x.make_rx()).collect(),
+        ))
     }
 }
 impl<T> MakeUnrx for RxVecNestedRx<T>
@@ -43,12 +46,15 @@ where
     type Unrx = RxVecNested<T>;
 
     fn make_unrx(self) -> Self::Unrx {
-        RxVecNested(self.0.into_iter().map(|x| x.make_unrx()).collect())
+        let vec = (*self.0.get_untracked()).clone();
+        RxVecNested(vec.into_iter().map(|x| x.make_unrx()).collect())
     }
 
     #[cfg(client)]
     fn compute_suspense(&self, cx: Scope) {
-        for elem in self.0.iter() {
+        // We do *not* want to recompute this every time the user changes the state!
+        // (There lie infinite loops.)
+        for elem in self.0.get_untracked().iter() {
             elem.compute_suspense(cx);
         }
     }
@@ -70,7 +76,7 @@ where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
     T::Rx: MakeUnrx<Unrx = T> + Freeze + Clone,
 {
-    type Target = Vec<T::Rx>;
+    type Target = RcSignal<Vec<T::Rx>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

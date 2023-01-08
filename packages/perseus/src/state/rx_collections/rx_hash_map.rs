@@ -21,7 +21,7 @@ where
     V: Clone + 'static;
 /// The reactive version of [`RxHashMap`].
 #[derive(Clone, Debug)]
-pub struct RxHashMapRx<K, V>(HashMap<K, RcSignal<V>>)
+pub struct RxHashMapRx<K, V>(RcSignal<HashMap<K, RcSignal<V>>>)
 where
     K: Clone + Serialize + DeserializeOwned + Eq + Hash,
     V: Clone + Serialize + DeserializeOwned + 'static;
@@ -35,12 +35,12 @@ where
     type Rx = RxHashMapRx<K, V>;
 
     fn make_rx(self) -> Self::Rx {
-        RxHashMapRx(
+        RxHashMapRx(create_rc_signal(
             self.0
                 .into_iter()
                 .map(|(k, v)| (k, create_rc_signal(v)))
                 .collect(),
-        )
+        ))
     }
 }
 impl<K, V> MakeUnrx for RxHashMapRx<K, V>
@@ -51,9 +51,9 @@ where
     type Unrx = RxHashMap<K, V>;
 
     fn make_unrx(self) -> Self::Unrx {
+        let map = (*self.0.get_untracked()).clone();
         RxHashMap(
-            self.0
-                .into_iter()
+            map.into_iter()
                 .map(|(k, v)| (k, (*v.get_untracked()).clone()))
                 .collect(),
         )
@@ -79,7 +79,7 @@ where
     K: Clone + Serialize + DeserializeOwned + Eq + Hash,
     V: Clone + Serialize + DeserializeOwned + 'static,
 {
-    type Target = HashMap<K, RcSignal<V>>;
+    type Target = RcSignal<HashMap<K, RcSignal<V>>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
