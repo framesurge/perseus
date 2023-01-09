@@ -3,7 +3,9 @@ use command_group::stdlib::CommandGroup;
 use directories::ProjectDirs;
 use fmterr::fmt_err;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
-use perseus_cli::parse::{CheckOpts, ExportOpts, ServeOpts, SnoopSubcommand};
+use perseus_cli::parse::{
+    BuildOpts, CheckOpts, ExportOpts, ServeOpts, SnoopServeOpts, SnoopSubcommand,
+};
 use perseus_cli::{
     build, check_env, delete_artifacts, deploy, export, init, new,
     parse::{Opts, Subcommand},
@@ -117,11 +119,29 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             custom_watch,
             ..
         })
+        | Subcommand::Build(BuildOpts {
+            watch,
+            custom_watch,
+            ..
+        })
         | Subcommand::Serve(ServeOpts {
             watch,
             custom_watch,
             ..
         })
+        | Subcommand::Snoop(SnoopSubcommand::Build {
+            watch,
+            custom_watch,
+        })
+        | Subcommand::Snoop(SnoopSubcommand::WasmBuild {
+            watch,
+            custom_watch,
+        })
+        | Subcommand::Snoop(SnoopSubcommand::Serve(SnoopServeOpts {
+            watch,
+            custom_watch,
+            ..
+        }))
         | Subcommand::Check(CheckOpts {
             watch,
             custom_watch,
@@ -355,9 +375,13 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
             create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
             match snoop_subcmd {
-                SnoopSubcommand::Build => snoop_build(dir, &tools, &opts)?,
-                SnoopSubcommand::WasmBuild => snoop_wasm_build(dir, &tools, &opts)?,
+                SnoopSubcommand::Build { .. } => snoop_build(dir, &tools, &opts)?,
+                SnoopSubcommand::WasmBuild { .. } => snoop_wasm_build(dir, &tools, &opts)?,
                 SnoopSubcommand::Serve(ref snoop_serve_opts) => {
+                    // Warn the user about the perils of watching `snoop serve`
+                    if snoop_serve_opts.watch {
+                        eprintln!("[WARNING]: Watching `snoop serve` may not be a good idea, because it requires you to have run `perseus build` first. It's not recommended to do this unless you have `perseus build` on a separate watch loop.");
+                    }
                     snoop_server(dir, snoop_serve_opts, &tools, &opts)?
                 }
             }

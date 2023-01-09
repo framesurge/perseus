@@ -112,6 +112,14 @@ pub struct BuildOpts {
     /// Build for production
     #[clap(long)]
     pub release: bool,
+    /// Watch the files in your working directory for changes (excluding
+    /// `target/` and `dist/`)
+    #[clap(short, long)]
+    pub watch: bool,
+    /// Marks a specific file/directory to be watched (directories will be
+    /// recursively watched)
+    #[clap(long)]
+    pub custom_watch: Vec<String>,
 }
 /// Exports your app to purely static files
 #[derive(Parser, Clone)]
@@ -226,9 +234,27 @@ pub struct InitOpts {
 pub enum SnoopSubcommand {
     /// Snoops on the static generation process (this will let you see `dbg!`
     /// calls and the like)
-    Build,
+    Build {
+        /// Watch the files in your working directory for changes (excluding
+        /// `target/` and `dist/`)
+        #[clap(short, long)]
+        watch: bool,
+        /// Marks a specific file/directory to be watched (directories will be
+        /// recursively watched)
+        #[clap(long)]
+        custom_watch: Vec<String>,
+    },
     /// Snoops on the Wasm building process (mostly for debugging errors)
-    WasmBuild,
+    WasmBuild {
+        /// Watch the files in your working directory for changes (excluding
+        /// `target/` and `dist/`)
+        #[clap(short, long)]
+        watch: bool,
+        /// Marks a specific file/directory to be watched (directories will be
+        /// recursively watched)
+        #[clap(long)]
+        custom_watch: Vec<String>,
+    },
     /// Snoops on the server process (run `perseus build` before this)
     Serve(SnoopServeOpts),
 }
@@ -241,6 +267,14 @@ pub struct SnoopServeOpts {
     /// The port to host your exported app on
     #[clap(long, default_value = "8080")]
     pub port: u16,
+    /// Watch the files in your working directory for changes (excluding
+    /// `target/` and `dist/`)
+    #[clap(short, long)]
+    pub watch: bool,
+    /// Marks a specific file/directory to be watched (directories will be
+    /// recursively watched)
+    #[clap(long)]
+    pub custom_watch: Vec<String>,
 }
 
 #[derive(Parser, Clone)]
