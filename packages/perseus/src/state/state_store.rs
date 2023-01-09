@@ -303,7 +303,7 @@ impl PageStateStore {
         is_widget: bool,
     ) -> Result<(), crate::errors::ClientError> {
         use crate::{
-            errors::{AssetType, FetchError},
+            errors::{AssetType, ClientPreloadError, FetchError},
             utils::{fetch, get_path_prefix_client},
         };
 
@@ -360,9 +360,8 @@ impl PageStateStore {
                 preloaded.insert(full_path, page_data);
                 Ok(())
             }
-            None => Err(FetchError::PreloadNotFound {
-                url: path.to_string(),
-                ty: asset_ty,
+            None => Err(ClientPreloadError::PreloadNotFound {
+                path: path.to_string(),
             }
             .into()),
         }

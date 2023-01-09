@@ -369,9 +369,6 @@ pub enum FetchError {
         source: Box<dyn std::error::Error + Send + Sync>,
         ty: AssetType,
     },
-    // This is not used by the `fetch` function, but it is used by the preloading system
-    #[error("preload asset fetched from '{url}' was not found")]
-    PreloadNotFound { url: String, ty: AssetType },
     /// This converts from a `JsValue` or the like.
     #[error("the following error occurred while interfacing with JavaScript: {0}")]
     Js(String),
