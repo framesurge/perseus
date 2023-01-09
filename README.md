@@ -72,6 +72,12 @@ We appreciate all kinds of contributions, check out our [contributing guidelines
 
 You can also chat about Perseus on [our channel on Sycamore's Discord server](https://discord.com/invite/GNqWYWNTdp).
 
+Perseus wouldn't be posible without the hard work of all these wonderful people!
+
+<a href="https://github.com/framesurge/perseus/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=framesurge/perseus" />
+</a>
+
 ## License
 
 See [`LICENSE`](https://github.com/framesurge/perseus/blob/main/LICENSE).
