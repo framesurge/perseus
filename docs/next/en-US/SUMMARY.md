@@ -17,6 +17,7 @@
 # Fundamentals
 
 -   [`PerseusApp`](/docs/fundamentals/perseus-app)
+-   [The reactor](/docs/fundamentals/reactor)
 -   [Routing and navigation](/docs/fundamentals/routing)
     -   [Preloading](/docs/fundamentals/preloading)
 -   [Internationalization](/docs/fundamentals/i18n)
