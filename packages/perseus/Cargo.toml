@@ -37,7 +37,8 @@ urlencoding = "2.1"
 chrono = "0.4"
 minify-html-onepass = "0.10.1"
 
-[target.'cfg(client)'.dependencies]
+# These dependencies will also be available in documentation
+[target.'cfg(any(client, clientdoc))'.dependencies]
 rexie = { version = "0.2", optional = true }
 js-sys = { version = "0.3", optional = true }
 # Note that this is not needed in production, but that can't be specified, so it will just be compiled away to nothing
