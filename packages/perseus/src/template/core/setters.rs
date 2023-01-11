@@ -46,7 +46,7 @@ impl<G: Html> TemplateInner<G> {
     ///
     /// This is for heads that do not require state. Those that do should use
     /// `.head_with_state()` instead.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn head(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -70,7 +70,7 @@ impl<G: Html> TemplateInner<G> {
     /// Sets the function to set headers. This will override Perseus' inbuilt
     /// header defaults. This should only be used when your header-setting
     /// does not need state.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn set_headers(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -95,7 +95,7 @@ impl<G: Html> TemplateInner<G> {
         self
     }
     /// Enables the *build paths* strategy with the given function.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn build_paths_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -107,7 +107,7 @@ impl<G: Html> TemplateInner<G> {
         self
     }
     /// Enables the *incremental generation* strategy.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn incremental_generation(self) -> Self {
         self
     }
@@ -143,7 +143,7 @@ impl<G: Html> TemplateInner<G> {
         self
     }
     /// Enables the *build state* strategy with the given function.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -179,7 +179,7 @@ impl<G: Html> TemplateInner<G> {
         self
     }
     /// Enables the *request state* strategy with the given function.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn request_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -213,7 +213,7 @@ impl<G: Html> TemplateInner<G> {
     }
     /// Enables the *revalidation* strategy (logic variant) with the given
     /// function.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn should_revalidate_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -251,7 +251,7 @@ impl<G: Html> TemplateInner<G> {
     ///    - M: month (30 days used here, 12M ≠ 1y!),
     ///    - y: year (365 days always, leap years ignored, if you want them add
     ///      them as days)
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn revalidate_after<I: PerseusDuration>(self, _val: I) -> Self {
         self
     }
@@ -315,8 +315,8 @@ impl<G: Html> TemplateInner<G> {
     /// and request time. The function you provide here is responsible for
     /// rationalizing the two into one single state to be sent to the client,
     /// and this will be run just after the request state function
-    /// completes. See [`States`] for further details.
-    #[cfg(client)]
+    /// completes.
+    #[cfg(any(client, doc))]
     pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }

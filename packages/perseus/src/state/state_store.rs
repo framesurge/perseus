@@ -2,7 +2,7 @@ use crate::errors::{ClientError, ClientInvariantError};
 use crate::page_data::PageDataPartial;
 use crate::path::*;
 use crate::state::AnyFreeze;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -262,7 +262,7 @@ impl PageStateStore {
     /// # Panics
     /// This function will panic if the given page and widget paths are not
     /// already registered in the state store.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) fn declare_dependency(
         &self,
         widget_path: &PathMaybeWithLocale,
@@ -291,7 +291,7 @@ impl PageStateStore {
     /// Note that this should generally be called through `Reactor`, to avoid
     /// having to manually collect the required arguments.
     // Note that this function bears striking resemblance to the subsequent load system!
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) async fn preload(
         &self,
         path: &PathWithoutLocale,
@@ -369,7 +369,7 @@ impl PageStateStore {
     /// Adds the given widget to the preload list so it can be later accessed
     /// during the initial load render. This is not used for widgets in
     /// subsequently loaded pages, which are fetched separately.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) fn add_initial_widget(&self, url: PathMaybeWithLocale, state: Value) {
         let mut preloaded = self.preloaded.borrow_mut();
         // Widgets never have heads
@@ -559,12 +559,12 @@ impl PssEntry {
         self.head = Some(head);
     }
     /// Declares a widget that this page/widget depends on, by its path.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn add_dependency(&mut self, path: PathMaybeWithLocale) {
         self.dependencies.push(path);
     }
     /// Declares a page/widget that this widget is used by, by its path.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn add_dependent(&mut self, path: PathMaybeWithLocale) {
         self.dependents.push(path);
     }

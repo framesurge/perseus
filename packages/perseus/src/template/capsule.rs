@@ -144,7 +144,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// used for widgets.
     ///
     /// This should NOT be used to render pages!
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn render_widget_for_template_client(
         &self,
@@ -265,9 +265,9 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         let entity_name = self.template_inner.get_path();
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
@@ -277,14 +277,14 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                     app_cx,
                     path,
                     caller_path,
-                    #[cfg(client)]
+                    #[cfg(any(client, doc))]
                     entity_name.clone(),
                     template_state,
                     props,
-                    #[cfg(client)]
+                    #[cfg(any(client, doc))]
                     preload_info,
                     val.clone(),
-                    #[cfg(client)]
+                    #[cfg(any(client, doc))]
                     fallback_fn.as_ref().unwrap(),
                 )
             },
@@ -301,9 +301,9 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         let entity_name = self.template_inner.get_path();
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
@@ -313,14 +313,14 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                     app_cx,
                     path,
                     caller_path,
-                    #[cfg(client)]
+                    #[cfg(any(client, doc))]
                     entity_name.clone(),
                     template_state,
                     props,
-                    #[cfg(client)]
+                    #[cfg(any(client, doc))]
                     preload_info,
                     val.clone(),
-                    #[cfg(client)]
+                    #[cfg(any(client, doc))]
                     fallback_fn.as_ref().unwrap(),
                 )
             },
@@ -344,7 +344,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                 // caching
                 reactor.register_no_state(&path, true);
                 // And declare the relationship between the widget and its caller
-                #[cfg(client)]
+                #[cfg(any(client, doc))]
                 reactor.state_store.declare_dependency(&path, &caller_path);
 
                 // Nicely, if this is a widget, this means there need be no network requests

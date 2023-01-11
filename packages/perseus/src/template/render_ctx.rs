@@ -1,4 +1,4 @@
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use super::BrowserNodeType;
 use super::{ArcTemplateMap, TemplateState, TemplateStateWithType};
 use crate::{PathMaybeWithLocale, PathWithoutLocale, errors::*};
@@ -67,7 +67,7 @@ pub struct RenderCtx {
     /// **Warning:** these don't exist on the engine-side! But, there, you
     /// should always return a build-time error rather than produce a page
     /// with an error in it.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub error_pages: Rc<crate::error_pages::ErrorPages<BrowserNodeType>>,
     // --- PRIVATE FIELDS ---
     // Any users accessing these are *extremely* likely to shoot themselves in the foot!
@@ -75,19 +75,19 @@ pub struct RenderCtx {
     /// the browser loaded the app. This will be reset on full reloads, and is
     /// used internally to determine whether or not we should look for
     /// stored HSR state.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) is_first: Rc<std::cell::Cell<bool>>,
     /// The locales, for use in routing.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) locales: crate::i18n::Locales,
     /// The map of all templates in the app, for use in routing.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) templates: crate::template::TemplateMap<BrowserNodeType>,
     /// The render configuration, for use in routing.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) render_cfg: Rc<std::collections::HashMap<String, String>>,
     /// The client-side translations manager.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) translations_manager: crate::i18n::ClientTranslationsManager,
     /// The mode we're currently rendering in. This will be used primarily in widget rendering.
     ///
@@ -145,7 +145,7 @@ impl RenderCtx {
     ///
     /// Note also that this will automatically extract global state from page
     /// variables.
-    #[cfg(client)] // To prevent foot-shooting
+    #[cfg(any(client, doc))] // To prevent foot-shooting
     pub(crate) fn new(
         pss_max_size: usize,
         locales: crate::i18n::Locales,
@@ -197,7 +197,7 @@ impl RenderCtx {
     /// preloading is not hardcoded, use `.try_preload()` instead.
     // Conveniently, we can use the lifetime mechanics of knowing that the render context
     // is registered on the given scope to ensure that the future works out
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &PathMaybeWithLocale) {
         use fmterr::fmt_err;
 
@@ -224,7 +224,7 @@ impl RenderCtx {
     /// preloading is not hardcoded, use `.try_route_preload()` instead.
     // Conveniently, we can use the lifetime mechanics of knowing that the render context
     // is registered on the given scope to ensure that the future works out
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn route_preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &PathMaybeWithLocale) {
         use fmterr::fmt_err;
 
@@ -237,20 +237,20 @@ impl RenderCtx {
     /// A version of `.preload()` that returns a future that can resolve to an
     /// error. If the path you're preloading is not hardcoded, you should
     /// use this.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub async fn try_preload(&self, url: &PathMaybeWithLocale) -> Result<(), ClientError> {
         self._preload(url, false).await
     }
     /// A version of `.route_preload()` that returns a future that can resolve
     /// to an error. If the path you're preloading is not hardcoded, you
     /// should use this.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub async fn try_route_preload(&self, url: &PathMaybeWithLocale) -> Result<(), ClientError> {
         self._preload(url, true).await
     }
     /// Preloads the given URL from the server and caches it, preventing
     /// future network requests to fetch that page.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     async fn _preload(&self, path: &PathMaybeWithLocale, is_route_preload: bool) -> Result<(), ClientError> {
         use crate::router::{match_route, RouteVerdict};
 
@@ -720,7 +720,7 @@ impl RenderCtx {
 ///
 /// Note that apps without global state will get `Some(..)` of an empty template
 /// state here.
-#[cfg(client)]
+#[cfg(any(client, doc))]
 fn get_global_state() -> Option<TemplateState> {
     let val_opt = web_sys::window().unwrap().get("__PERSEUS_GLOBAL_STATE");
     let js_obj = match val_opt {

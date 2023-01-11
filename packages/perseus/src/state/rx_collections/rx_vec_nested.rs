@@ -1,7 +1,7 @@
 use crate::state::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::prelude::Scope;
 use sycamore::reactive::{create_rc_signal, RcSignal};
 
@@ -50,7 +50,7 @@ where
         RxVecNested(vec.into_iter().map(|x| x.make_unrx()).collect())
     }
 
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn compute_suspense(&self, cx: Scope) {
         // We do *not* want to recompute this every time the user changes the state!
         // (There lie infinite loops.)

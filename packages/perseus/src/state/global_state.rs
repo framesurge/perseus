@@ -16,7 +16,7 @@ use crate::Request;
 use futures::Future;
 #[cfg(engine)]
 use serde::de::DeserializeOwned;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
@@ -134,7 +134,7 @@ impl GlobalStateCreator {
         self
     }
     /// Adds a function to generate global state at build-time.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn build_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -164,7 +164,7 @@ impl GlobalStateCreator {
         self
     }
     /// Adds a function to generate global state at request-time.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn request_state_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -216,7 +216,7 @@ impl GlobalStateCreator {
         self
     }
     /// Adds a function to amalgamate build-time and request-time global state.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn amalgamate_states_fn(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -348,7 +348,7 @@ impl std::fmt::Debug for GlobalState {
 }
 
 /// Frozen global state.
-#[cfg(client)]
+#[cfg(any(client, doc))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum FrozenGlobalState {
     /// There is state that should be instantiated.
@@ -366,7 +366,7 @@ pub enum FrozenGlobalState {
     /// this purpose.
     Used,
 }
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl From<&GlobalStateType> for FrozenGlobalState {
     fn from(val: &GlobalStateType) -> Self {
         match val {

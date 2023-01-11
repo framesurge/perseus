@@ -17,7 +17,7 @@ pub fn get_path_prefix_server() -> String {
 /// Gets the path prefix to apply in the browser. This uses the HTML `<base>`
 /// element, which would be required anyway to make Sycamore's router co-operate
 /// with a relative path hosting.
-#[cfg(client)]
+#[cfg(any(client, doc))]
 pub fn get_path_prefix_client() -> String {
     use wasm_bindgen::JsCast;
     use web_sys::{HtmlBaseElement, Url};

@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Deref;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::prelude::Scope;
 use sycamore::reactive::{create_rc_signal, RcSignal};
 
@@ -59,7 +59,7 @@ where
         )
     }
 
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn compute_suspense(&self, _cx: Scope) {}
 }
 // --- Dereferencing ---

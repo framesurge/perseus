@@ -17,7 +17,7 @@ use crate::template::TemplateInner;
 use crate::Request;
 #[cfg(engine)]
 use http::HeaderMap;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::prelude::ScopeDisposer;
 use sycamore::web::Html;
 #[cfg(engine)]
@@ -29,7 +29,7 @@ impl<G: Html> TemplateInner<G> {
     /// client-side ONLY. This takes in an existing global state.
     ///
     /// This should NOT be used to render widgets!
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn render_for_template_client<'a>(
         &self,

@@ -1,26 +1,26 @@
-#[cfg(client)]
+#[cfg(any(client, doc))]
 mod error;
 mod global_state;
-#[cfg(all(feature = "hsr", debug_assertions, client))]
+#[cfg(all(feature = "hsr", debug_assertions, any(client, doc)))]
 mod hsr;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 mod initial_load;
 #[cfg(engine)]
 mod render_mode;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 mod start;
 mod state;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 mod subsequent_load;
 mod widget_state;
 
-#[cfg(client)]
+#[cfg(any(client, doc))]
 pub(crate) use initial_load::InitialView;
 #[cfg(engine)]
 pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use crate::template::{BrowserNodeType, EntityMap};
 use crate::{
     i18n::Translator,
@@ -34,7 +34,7 @@ use sycamore::{
 // --- Engine-side imports ---
 
 // --- Browser-side imports ---
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use crate::{
     error_views::ErrorViews,
     errors::ClientError,
@@ -46,17 +46,17 @@ use crate::{
     state::{FrozenApp, ThawPrefs},
     stores::MutableStore,
 };
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use serde::{de::DeserializeOwned, Serialize};
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use serde_json::Value;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
     rc::Rc,
 };
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::{
     reactive::{create_rc_signal, RcSignal},
     view::View,
@@ -73,7 +73,7 @@ pub struct Reactor<G: Html> {
     /// preloads.
     pub(crate) state_store: PageStateStore,
     /// The router state.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub router_state: RouterState,
     /// The user-provided global state, stored with similar mechanics to the
     /// state store, although optimised.
@@ -86,41 +86,41 @@ pub struct Reactor<G: Html> {
     /// The `bool` in here will be set to `true` if this was created through
     /// HSR, which has slightly more lenient thawing procedures to allow for
     /// data model changes.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     frozen_app: Rc<RefCell<Option<(FrozenApp, ThawPrefs, bool)>>>,
     /// Whether or not this page is the very first to have been rendered since
     /// the browser loaded the app. This will be reset on full reloads, and is
     /// used internally to determine whether or not we should look for
     /// stored HSR state.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) is_first: Cell<bool>,
     /// The app's *full* render configuration. Note that a subset of this
     /// is contained in the [`RenderMode`] on the engine-side for widget
     /// rendering.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) render_cfg: HashMap<String, String>,
     /// The app's templates and capsules for use in routing.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) entities: EntityMap<G>,
     /// The app's locales.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) locales: Locales,
     /// The browser-side translations manager.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     translations_manager: ClientTranslationsManager,
     /// The app's error views.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) error_views: Rc<ErrorViews<G>>,
     /// A reactive container for the current page-wide view. This will usually
     /// contain the contents of the current page, but it may also contain a
     /// page-wide error. This will be wrapped in a router.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     current_view: RcSignal<View<BrowserNodeType>>,
     /// A reactive container for any popup errors.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     popup_error_view: RcSignal<View<BrowserNodeType>>,
     /// The app's root div ID.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     root: String,
 
     // --- Engine-side only ---
@@ -137,7 +137,7 @@ pub struct Reactor<G: Html> {
 
 // This uses window variables set by the HTML shell, so it should never be used
 // on the engine-side
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G, M, T>>
     for Reactor<G>
 {
@@ -225,7 +225,7 @@ impl<G: Html> Reactor<G> {
     ///
     /// On the engine-side, this will return `None` under certain error
     /// conditions.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn try_get_translator(&self) -> Option<Translator> {
         self.translations_manager.get_translator()
     }
@@ -281,7 +281,7 @@ impl<G: Html> Reactor<G> {
 
 /// The possible states a window variable injected by the server/export process
 /// can be found in.
-#[cfg(client)]
+#[cfg(any(client, doc))]
 pub(crate) enum WindowVariable<T: Serialize + DeserializeOwned> {
     /// It existed and coudl be deserialized into the correct type.
     Some(T),
@@ -292,7 +292,7 @@ pub(crate) enum WindowVariable<T: Serialize + DeserializeOwned> {
     /// string to be deserialized, found a boolean instead).
     Malformed,
 }
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with window variables that have
@@ -316,7 +316,7 @@ impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
         Self::Some(val_typed)
     }
 }
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl WindowVariable<bool> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with boolean window variables.
@@ -338,7 +338,7 @@ impl WindowVariable<bool> {
         }
     }
 }
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl WindowVariable<String> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with `String` window variables.

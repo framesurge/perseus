@@ -207,9 +207,9 @@ impl<G: Html> TemplateInner<G> {
 // those feature settings through
 /// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
 /// enabled.
-#[cfg(all(not(feature = "hydrate"), client))]
+#[cfg(all(not(feature = "hydrate"), any(client, doc)))]
 pub(crate) type BrowserNodeType = sycamore::prelude::DomNode;
 /// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
 /// enabled.
-#[cfg(all(feature = "hydrate", client))]
+#[cfg(all(feature = "hydrate", any(client, doc)))]
 pub(crate) type BrowserNodeType = sycamore::prelude::HydrateNode;

@@ -4,8 +4,8 @@
 /// This exists on the engine-side for type convenience, but only has fields
 /// on the browser-side.
 pub(crate) struct PreloadInfo {
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) locale: String,
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) was_incremental_match: bool,
 }

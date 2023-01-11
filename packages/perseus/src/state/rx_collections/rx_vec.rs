@@ -1,7 +1,7 @@
 use crate::state::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::prelude::Scope;
 use sycamore::reactive::{create_rc_signal, RcSignal};
 
@@ -50,7 +50,7 @@ where
         )
     }
 
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn compute_suspense(&self, _cx: Scope) {}
 }
 // --- Dereferencing ---

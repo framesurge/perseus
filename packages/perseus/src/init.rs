@@ -10,7 +10,7 @@ use crate::{
     stores::MutableStore,
     template::{Entity, Forever, Template},
 };
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use crate::{
     error_views::{ErrorContext, ErrorPosition},
     errors::ClientError,
@@ -18,11 +18,11 @@ use crate::{
 use crate::{errors::PluginError, template::Capsule};
 use crate::{stores::ImmutableStore, template::EntityMap};
 use futures::Future;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use std::marker::PhantomData;
 #[cfg(engine)]
 use std::pin::Pin;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use std::rc::Rc;
 use std::{any::TypeId, sync::Arc};
 use std::{collections::HashMap, panic::PanicInfo};
@@ -160,21 +160,21 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     #[cfg(engine)]
     pub(crate) static_dir: String,
     /// A handler for panics on the browser-side.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
     /// A duplicate of the app's error handling function intended for panic
     /// handling. This must be extracted as an owned value and provided in a
     /// thread-safe manner to the panic hook system.
     ///
     /// This is in an `Arc` because panic hooks are `Fn`s, not `FnOnce`s.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) panic_handler_view: Arc<
         dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
             + Sync,
     >,
     // We need this on the client-side to account for the unused type parameters
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     _marker: PhantomData<(M, T)>,
 }
 impl<G: Html, M: MutableStore, T: TranslationsManager> std::fmt::Debug for PerseusAppBase<G, M, T> {
@@ -190,7 +190,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> std::fmt::Debug for Perse
             .field("locale", &self.locales)
             .field("plugins", &self.plugins)
             .field("index_view", &self.index_view);
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         {
             return debug
                 .field(
@@ -251,7 +251,7 @@ impl<G: Html, T: TranslationsManager> PerseusAppBase<G, FsMutableStore, T> {
     /// This is asynchronous because it creates a translations manager in the
     /// background.
     // It makes no sense to implement `Default` on this, so we silence Clippy deliberately
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self::new_wasm()
@@ -354,7 +354,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             // By default, we won't use any plugins
             #[cfg(engine)]
             plugins: Arc::new(Plugins::new()),
-            #[cfg(client)]
+            #[cfg(any(client, doc))]
             plugins: Rc::new(Plugins::new()),
             #[cfg(engine)]
             immutable_store: ImmutableStore::new("./dist".to_string()),
@@ -366,17 +366,17 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
             index_view: DFLT_INDEX_VIEW.to_string(),
             #[cfg(engine)]
             static_dir: "./static".to_string(),
-            #[cfg(client)]
+            #[cfg(any(client, doc))]
             panic_handler: None,
-            #[cfg(client)]
+            #[cfg(any(client, doc))]
             panic_handler_view: ErrorViews::unlocalized_development_default().take_panic_handler(),
-            #[cfg(client)]
+            #[cfg(any(client, doc))]
             _marker: PhantomData,
         }
     }
     /// Internal function for Wasm initialization. This should never be called
     /// by the user!
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     #[doc(hidden)]
     fn new_wasm() -> Self {
         Self {
@@ -543,7 +543,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     // error views.
     #[allow(unused_mut)]
     pub fn error_views(mut self, mut val: ErrorViews<G>) -> Self {
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         {
             let panic_handler = val.take_panic_handler();
             self.error_views = Some(Rc::new(val));
@@ -666,7 +666,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// Sets the plugins that the app will use. See [`Plugins`] for
     /// further details.
     pub fn plugins(mut self, val: Plugins) -> Self {
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         {
             self.plugins = Rc::new(val);
         }
@@ -771,7 +771,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn panic_handler(mut self, val: impl Fn(&PanicInfo) + Send + Sync + 'static) -> Self {
-        #[cfg(client)]
+        #[cfg(any(client, doc))]
         {
             self.panic_handler = Some(Box::new(val));
         }
@@ -908,7 +908,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     //     self.entities.clone()
     // }
     // /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
-    // #[cfg(client)]
+    // #[cfg(any(client, doc))]
     // pub fn get_error_views(&self) -> Rc<ErrorViews<G>> {
     //     self.error_views.clone()
     // }
@@ -978,7 +978,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     //     self.plugins.clone()
     // }
     // /// Gets the plugins registered for the app.
-    // #[cfg(client)]
+    // #[cfg(any(client, doc))]
     // pub fn get_plugins(&self) -> Rc<Plugins> {
     //     self.plugins.clone()
     // }
@@ -1039,7 +1039,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// # Future panics
     /// If this is called more than once, the view panic handler will panic when
     /// called.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn take_panic_handlers(
         &mut self,
     ) -> (

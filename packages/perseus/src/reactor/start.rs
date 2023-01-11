@@ -153,7 +153,7 @@ impl Reactor<BrowserNodeType> {
                     // This will trigger only once, and then can't be used again
                     // That shouldn't be a problem, because we'll reload immediately
                     Ok(_) => {
-                        #[cfg(all(feature = "hsr"))]
+                        #[cfg(feature = "hsr")]
                         {
                             let frozen_state = self.freeze();
                             Self::hsr_freeze(frozen_state).await;

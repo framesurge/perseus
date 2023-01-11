@@ -1,6 +1,6 @@
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::utils::render::insert;
-#[cfg(all(not(feature = "hydrate"), client))]
+#[cfg(all(not(feature = "hydrate"), any(client, doc)))]
 use sycamore::web::DomNode;
 #[cfg(engine)]
 use sycamore::web::SsrNode;
@@ -17,7 +17,7 @@ use sycamore::{prelude::Scope, view::View};
 // TODO Make sure hydration will work when it's targeted at a blank canvas...
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details! (TODO PR for `hydrate_to_with_scope` etc.)
-#[cfg(client)]
+#[cfg(any(client, doc))]
 #[allow(unused_variables)]
 pub(crate) fn render_or_hydrate(
     cx: Scope,

@@ -3,11 +3,11 @@ use crate::{errors::*, reactor::Reactor};
 use crate::{i18n::Translator, reactor::RenderMode, state::TemplateState};
 use fmterr::fmt_err;
 use serde::{Deserialize, Serialize};
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use std::sync::Arc;
 #[cfg(engine)]
 use sycamore::prelude::create_scope_immediate;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::prelude::{create_child_scope, try_use_context, ScopeDisposer};
 use sycamore::{
     prelude::{view, Scope},
@@ -49,7 +49,7 @@ pub struct ErrorViews<G: Html> {
     /// This will be extracted by the `PerseusApp` creation process and put in a
     /// place where it can be safely extracted. The replacement function
     /// will panic if called, so this should **never** be manually executed.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     panic_handler: Arc<
         dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
@@ -93,7 +93,7 @@ impl<G: Html> ErrorViews<G> {
                     _ => false,
                 }
             }),
-            #[cfg(client)]
+            #[cfg(any(client, doc))]
             panic_handler: Arc::new(handler),
         }
     }
@@ -125,7 +125,7 @@ impl<G: Html> ErrorViews<G> {
     /// Returns `true` if the given error, which must have occurred during a
     /// subsequent load, should be displayed as a popup, as opposed to
     /// occupying the entire page/widget.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(crate) fn subsequent_err_should_be_popup(&self, err: &ClientError) -> bool {
         !(self.subsequent_load_determinant)(err)
     }
@@ -171,7 +171,7 @@ impl<G: Html> ErrorViews<G> {
         })
     }
 }
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl<G: Html> ErrorViews<G> {
     /// Invokes the user's handling function, producing head/body views for the
     /// given error. From the given scope, this will determine the

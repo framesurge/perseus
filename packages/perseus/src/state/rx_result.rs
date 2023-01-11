@@ -1,7 +1,7 @@
 use super::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::prelude::Scope;
 use sycamore::prelude::{create_rc_signal, RcSignal};
 
@@ -76,7 +76,7 @@ where
     // fields, is fine. When that top-level field is *also* suspended, that is
     // very much not okay! (We would have multiple handlers operating on the
     // same fields, which is not a pattern I want to encourage.)
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn compute_suspense<'a>(&self, _cx: Scope<'a>) {}
 }
 impl<T, E> Freeze for RxResultRx<T, E>

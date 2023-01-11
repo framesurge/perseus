@@ -4,20 +4,20 @@ use crate::{
     path::*,
     state::{AnyFreeze, MakeRx, MakeUnrx, TemplateState},
 };
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use crate::{
     router::RouterLoadState,
     state::{Freeze, FrozenApp, ThawPrefs},
 };
 use serde::{de::DeserializeOwned, Serialize};
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore::prelude::Scope;
 use sycamore::web::Html;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use sycamore_router::navigate;
 
 // Explicitly prevent the user from trying to freeze on the engine-side
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl<G: Html> Freeze for Reactor<G> {
     fn freeze(&self) -> String {
         // This constructs a `FrozenApp`, which has everything the thawing reactor will
@@ -41,7 +41,7 @@ impl<G: Html> Freeze for Reactor<G> {
     }
 }
 
-#[cfg(client)]
+#[cfg(any(client, doc))]
 impl<G: Html> Reactor<G> {
     /// Commands Perseus to 'thaw' the app from the given frozen state. You'll
     /// also need to provide preferences for thawing, which allow you to control
@@ -309,7 +309,7 @@ impl<G: Html> Reactor<G> {
     /// Note: on the engine-side, there is no such thing as frozen state, and
     /// the active state will always be empty, so this will simply return
     /// `None`.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub(super) fn get_held_state<S>(
         &self,
         url: &PathMaybeWithLocale,
@@ -360,7 +360,7 @@ impl<G: Html> Reactor<G> {
 
     /// Attempts to the get the active state for a page or widget. Of course,
     /// this does not register anything in the state store.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn get_active_state<S>(&self, url: &PathMaybeWithLocale) -> Option<S::Rx>
     where
         S: MakeRx,
@@ -371,7 +371,7 @@ impl<G: Html> Reactor<G> {
     /// Attempts to extract the frozen state for the given page from any
     /// currently registered frozen app, registering what it finds. This
     /// assumes that the thaw preferences have already been accounted for.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn get_frozen_state_and_register<S>(
         &self,
         url: &PathMaybeWithLocale,

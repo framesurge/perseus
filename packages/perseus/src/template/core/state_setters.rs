@@ -51,7 +51,7 @@ impl<G: Html> TemplateInner<G> {
                 let mut view = View::empty();
                 let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
                     // Compute suspended states
-                    #[cfg(client)]
+                    #[cfg(any(client, doc))]
                     intermediate_state.compute_suspense(child_cx);
 
                     view = val(child_cx, create_ref(child_cx, intermediate_state));
@@ -160,7 +160,7 @@ impl<G: Html> TemplateInner<G> {
     ///
     /// This is for heads that do require state. Those that do not should use
     /// `.head()` instead.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn head_with_state(self, _val: impl Fn() + 'static) -> Self {
         self
     }
@@ -208,7 +208,7 @@ impl<G: Html> TemplateInner<G> {
     /// Sets the function to set headers. This will override Perseus' inbuilt
     /// header defaults. This should only be used when your header-setting
     /// requires knowing the state.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     pub fn set_headers_with_state(self, _val: impl Fn() + 'static) -> Self {
         self
     }

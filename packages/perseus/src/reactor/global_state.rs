@@ -1,5 +1,5 @@
 use super::Reactor;
-#[cfg(client)]
+#[cfg(any(client, doc))]
 use crate::state::FrozenGlobalState;
 use crate::{
     errors::*,
@@ -96,7 +96,7 @@ impl<G: Html> Reactor<G> {
     /// Note: on the engine-side, there is no such thing as frozen state, and
     /// the active state will always be empty, so this will simply return
     /// `None`.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn get_held_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,
@@ -141,7 +141,7 @@ impl<G: Html> Reactor<G> {
     /// register anything in the state store. This may return an error on a
     /// downcast failure (which is probably the user's fault for providing
     /// the wrong type argument, but it's still an invariant failure).
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn get_active_global_state<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,
@@ -155,7 +155,7 @@ impl<G: Html> Reactor<G> {
     /// the thaw preferences have already been accounted for.
     ///
     /// This assumes that the app actually supports global state.
-    #[cfg(client)]
+    #[cfg(any(client, doc))]
     fn get_frozen_global_state_and_register<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
         S: MakeRx + Serialize + DeserializeOwned,

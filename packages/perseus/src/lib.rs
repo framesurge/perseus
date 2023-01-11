@@ -52,7 +52,7 @@ pub mod template;
 /// General utilities that may be useful while building Perseus apps.
 pub mod utils;
 
-#[cfg(all(feature = "client-helpers", client))]
+#[cfg(all(feature = "client-helpers", any(client, doc)))]
 mod client;
 mod init;
 mod page_data;
@@ -90,9 +90,9 @@ pub type Request = ();
 pub use perseus_macro::*;
 
 // Browser-side only
-#[cfg(client)]
+#[cfg(any(client, doc))]
 pub use crate::utils::checkpoint;
-#[cfg(all(feature = "client-helpers", client))]
+#[cfg(all(feature = "client-helpers", any(client, doc)))]
 pub use client::{run_client, ClientReturn};
 
 /// Internal utilities for lower-level work.
@@ -102,7 +102,7 @@ pub mod internal {
 }
 /// Internal utilities for logging. These are just re-exports so that users
 /// don't have to have `web_sys` and `wasm_bindgen` to use `web_log!`.
-#[cfg(client)]
+#[cfg(any(client, doc))]
 #[doc(hidden)]
 pub mod log {
     pub use wasm_bindgen::JsValue;
