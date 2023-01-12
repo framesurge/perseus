@@ -4,7 +4,7 @@ When you're working with Perseus, you usually won't need to use any JavaScript w
 
 A simple example of working with JS might be this, on the landing page of a hypothetical app:
 
-```
+```rust
 {{#include ../../../examples/core/js_interop/src/templates/index.rs}}
 ````
 

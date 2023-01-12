@@ -4,7 +4,7 @@ Once you've got all your dependencies installed, it's time to create the entrypo
 
 Remember, you can tell Rust to only compile some code on the engine-side by putting `#[cfg(engine)]` over it, and you can use `#[cfg(client)]` to do the same for the browser. So, our code in `main.rs` should logically look something like this:
 
-```
+```rust
 #[cfg(engine)]
 fn main() {
     // Engine code here
@@ -26,7 +26,7 @@ So what is this `PerseusApp`, you might ask? This `struct` forms the bridge betw
 
 So, our actual `src/main.rs` file would look something like this (theory over, *now* we start coding):
 
-```
+```rust
 {{#include ../../../examples/core/basic/src/main.rs}}
 ```
 

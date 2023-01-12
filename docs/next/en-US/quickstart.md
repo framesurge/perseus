@@ -12,7 +12,7 @@ cargo install perseus-cli --version 0.4.0-beta.14
 
 Now, pop over to some directory where you keep your projects, and run `perseus new my-app`. That will create a new directory called `my-app/`, which you can easily `cd` into, and, once you're there, you can run this command to start your app:
 
-```
+```sh
 perseus serve -w
 ```
 

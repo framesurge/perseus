@@ -6,7 +6,7 @@ In the same manner, Perseus doesn't want to produce bright red error messages in
 
 First, put the following in `src/error_views.rs`:
 
-```
+```rust
 {{#include ../../../examples/core/basic/src/error_views.rs}}
 ```
 

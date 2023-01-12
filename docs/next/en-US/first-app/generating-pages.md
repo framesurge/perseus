@@ -8,7 +8,7 @@ Re-read that a couple of times, because it's the core idea that underlies Perseu
 
 A template is like a page with some holes. A `post` template might have all the styling, the header, the footer, etc., with a gap for the title, a gap for the content, maybe a gap for some tags, etc. Think of them like stencils. You can then generate *state*, which is a term Perseus uses for data that can fill in a template. Generally speaking, if you list the gaps in your template, and make a `struct` with a field for each of those gaps, that's what your state should look like. So, if we were making a blog, we would have a struct that perhaps looks something like this:
 
-```
+```rust
 struct PostState {
     title: String,
     content: String,
@@ -24,7 +24,7 @@ But for this tutorial, we're just getting started, so we'll use *build-time stat
 
 To do this, first add `pub mod index;` to your `src/templates/mod.rs` file, and then out the following in `src/templates/index.rs`:
 
-```
+```rust
 {{#include ../../../examples/core/basic/src/templates/index.rs}}
 ```
 
@@ -60,7 +60,7 @@ This is called the *functional definition* pattern in Perseus: you define your `
 
 With all that out of the way, let's create an even simpler page to demonstrate Perseus routing, an about page. Add `pub mod about;` to `src/templates/mod.rs`, and then put this into `src/templates/about.rs`:
 
-```
+```rust
 {{#include ../../../examples/core/basic/src/templates/about.rs}}
 ```
 

@@ -20,7 +20,7 @@ Very often, there are a few things you want to apply throughout your app, like u
 
 Here's an example of an app definition using an index view:
 
-```
+```rust
 #{#include ../../../examples/core/index_view/src/main.rs}
 ```
 

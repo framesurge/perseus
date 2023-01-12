@@ -52,7 +52,7 @@ When you run `perseus deploy -e`, Perseus will build your Wasm in release mode a
 
 One thing exported apps often struggle with is proper error handling. Once the Wasm bundle has been delivered to the client, they're fine and dandy, and can display all the errors they like, but the server-side is trickier. When Perseus controls it, it can carefully format error pages with exactly the right information, but typical file servers aren't quite so subtle. Especially for internationalized apps, this can be a problem. The best solution is to export your error pages to static files, which can be done like so:
 
-```
+```sh
 perseus export-error-page --code 404 --output pkg/404.html
 ```
 

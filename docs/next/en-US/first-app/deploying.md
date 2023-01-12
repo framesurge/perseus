@@ -20,7 +20,7 @@ But enough development shenanigans, we want to deploy this thing! To deploy a Pe
 
 When you're ready, just run this command:
 
-```
+```sh
 perseus deploy
 ```
 

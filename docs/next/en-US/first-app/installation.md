@@ -4,20 +4,20 @@ Before you get to coding your first Perseus app, you'll need to install the Pers
 
 To install the Perseus CLI, first make sure you have Rust installed (preferably with [`rustup`]), and then run this command:
 
-```
+```sh
 cargo install perseus-cli --version 0.4.0-beta.14
 ```
 
 Once that's done, you can go ahead and create your first app! Although this would usually be done with the `perseus new` command, which spins up a scaffold for you, in this tutorial we'll do things manually so we can go through each line of code step by step. First, create a new Rust project:
 
-```
+```sh
 cargo new my-app
 cd my-app
 ```
 
 This will create a new directory called `my-app/` that's equipped for a binary project (i.e. something you can run, rather than a library, which other code uses). First of all, create `.cargo/config.toml` in the root of your project, with the following contents:
 
-```
+```toml
 [build]
 rustflags = [ "--cfg", "engine" ]
 ```

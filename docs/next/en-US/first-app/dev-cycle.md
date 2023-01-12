@@ -4,7 +4,7 @@ When you're developing a Perseus app, you'll generally have two "modes": coding,
 
 When you're using an IDE, like VS Code, you'll usually want proper syntax highlighting, and you may find that Perseus causea  few problems. This is because Perseus distinguishes between the engine and the browser by using a custom feature, so you'll need to create a `.cargo/config.toml` file in the root of your project with the following contents:
 
-```
+```toml
 [build]
 rustflags = [ "--cfg", "engine" ]
 ```

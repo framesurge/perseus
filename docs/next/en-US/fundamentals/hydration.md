@@ -26,7 +26,7 @@ As explained just now, Perseus *prerenders* your pages to HTML on the engine-sid
 
 Okay, if you're used to using vanilla JavaScript, you might be recalling how you could write something like this:
 
-```
+```html
 <button onclick="console.log('Clicked!')">Click!</button>
 ```
 

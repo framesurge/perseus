@@ -22,7 +22,7 @@ The comments in this file should make it fairly self-explanatory, but what it do
 
 You can then use this like so:
 
-```
+```rust
 {{#include ../../../examples/demos/full_page_layout/src/templates/index.rs}}
 ```
 

@@ -8,7 +8,7 @@ There are two ways of using this interface: there's the easy way, and the fine-g
 
 Here's an example of using preloading:
 
-```
+```rust
 #{include ../../../examples/core/preload/src/templates/index.rs}
 ```
 

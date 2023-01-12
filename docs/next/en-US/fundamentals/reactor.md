@@ -6,7 +6,7 @@ The other thing the reactor does is manage all reactivity in Perseus. See, react
 
 Accessing the reactor is very simple, as it's provided through Sycamore's context system, and it has a method for extracting itself therefrom:
 
-```
+```rust
 Reactor::<G>::from_cx(cx)
 ```
 

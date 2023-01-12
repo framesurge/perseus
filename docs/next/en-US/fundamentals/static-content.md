@@ -4,7 +4,7 @@ As nice as it is to write everything in Rust, you will, in web development, undo
 
 Sometimes, however, you'll want static content from outside `static/`, which is where *static aliases* come into play. These allow you to link in arbitrary files hosted at arbitrary paths, which will be served unquestioningly by Perseus. You can declare static aliases on your `PerseusApp` like so:
 
-```
+```rust
 {{#include ../../../examples/core/static_content/src/main.rs}}
 ```
 
