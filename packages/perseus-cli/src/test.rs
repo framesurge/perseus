@@ -48,7 +48,7 @@ pub fn test(
         host: test_opts.host.clone(),
         port: test_opts.port,
     };
-    let num_steps: u8 = if test_opts.no_build { 3 } else { 4 };
+    let num_steps: u8 = if test_opts.no_build { 2 } else { 4 };
     // This will do all sorts of things with spinners etc., but we've told it we're
     // testing, so things will be neater
     let spinners = MultiProgress::new();

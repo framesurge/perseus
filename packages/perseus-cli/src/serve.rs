@@ -37,7 +37,6 @@ fn build_server(
     dir: PathBuf,
     spinners: &MultiProgress,
     num_steps: u8,
-    step_offset: u8,
     exec: Arc<Mutex<String>>,
     is_release: bool,
     tools: &Tools,
@@ -54,7 +53,7 @@ fn build_server(
     // Server building message
     let sb_msg = format!(
         "{} {} Building server",
-        style(format!("[{}/{}]", num_steps - step_offset, num_steps))
+        style(format!("[{}/{}]", num_steps - 1, num_steps))
             .bold()
             .dim(),
         BUILDING_SERVER
@@ -63,7 +62,7 @@ fn build_server(
     // We'll parallelize the building of the server with any build commands that are
     // currently running We deliberately insert the spinner at the end of the
     // list
-    let sb_spinner = spinners.insert((num_steps - step_offset).into(), ProgressBar::new_spinner());
+    let sb_spinner = spinners.insert((num_steps - 1).into(), ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = dir;
     let sb_thread = spawn_thread(
@@ -220,15 +219,7 @@ pub fn serve(
     let should_run = !opts.no_run;
 
     // Weird naming here, but this is right
-    let num_steps = if testing && did_build {
-        4
-    } else if testing && !did_build {
-        3
-    } else if !testing && did_build {
-        4
-    } else {
-        2
-    };
+    let num_steps = if did_build { 4 } else { 2 };
 
     // We need to have a way of knowing what the executable path to the server is
     let exec = Arc::new(Mutex::new(String::new()));
@@ -238,7 +229,6 @@ pub fn serve(
         dir.clone(),
         &spinners,
         num_steps,
-        if testing { 2 } else { 1 },
         Arc::clone(&exec),
         opts.release,
         tools,
