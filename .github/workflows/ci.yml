@@ -146,4 +146,4 @@ jobs:
             - name: Run Firefox WebDriver
               run: geckodriver &
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
-              run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }} --headless
+              run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }}

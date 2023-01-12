@@ -159,45 +159,41 @@ spellcheck.desc = "checks docs and code for possible spelling errors (requires `
 test.cmd = [
     "bonnie test core",
     # Run tests for each example
-    "bonnie test example-all-integrations core basic --headless",
-    "bonnie test example-all-integrations core custom_server --headless",
-    "bonnie test example-all-integrations core error_views --headless",
-    "bonnie test example-all-integrations core freezing_and_thawing --headless",
-    "bonnie test example-all-integrations core global_state --headless",
-    "bonnie test example-all-integrations core helper_build_state --headless",
-    "bonnie test example-all-integrations core i18n --headless",
-    "bonnie test example-all-integrations core idb_freezing --headless",
-    "bonnie test example-all-integrations core index_view --headless",
-    "bonnie test example-all-integrations core js_interop --headless",
-    "bonnie test example-all-integrations core plugins --headless",
-    "bonnie test example-all-integrations core preload --headless",
-    "bonnie test example-all-integrations core router_state --headless",
-    "bonnie test example-all-integrations core rx_state --headless",
-    "bonnie test example-all-integrations core set_headers --headless",
-    "bonnie test example-all-integrations core state_generation --headless",
-    "bonnie test example-all-integrations core static_content --headless",
-    "bonnie test example-all-integrations core suspense --headless",
-    "bonnie test example-all-integrations core unreactive --headless",
+    "bonnie test example-all-integrations core basic",
+    "bonnie test example-all-integrations core custom_server",
+    "bonnie test example-all-integrations core error_views",
+    "bonnie test example-all-integrations core freezing_and_thawing",
+    "bonnie test example-all-integrations core global_state",
+    "bonnie test example-all-integrations core helper_build_state",
+    "bonnie test example-all-integrations core i18n",
+    "bonnie test example-all-integrations core idb_freezing",
+    "bonnie test example-all-integrations core index_view",
+    "bonnie test example-all-integrations core js_interop",
+    "bonnie test example-all-integrations core plugins",
+    "bonnie test example-all-integrations core preload",
+    "bonnie test example-all-integrations core router_state",
+    "bonnie test example-all-integrations core rx_state",
+    "bonnie test example-all-integrations core set_headers",
+    "bonnie test example-all-integrations core state_generation",
+    "bonnie test example-all-integrations core static_content",
+    "bonnie test example-all-integrations core suspense",
+    "bonnie test example-all-integrations core unreactive",
 ]
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 # This sometimes works, and sometimes fails, depending on the mood of Cargo's caching (just re-run it a few times, restart, the usual)
 test.subcommands.core.cmd = [
     # This will ignore end-to-end tests
-    "RUSTFLAGS=\"--cfg=engine\" RUSTDOCFLAGS=\"--cfg=engine\" cargo test --all",
+    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all",
     # We should only test documentation on the client-side
     "RUSTFLAGS=\"--cfg=client\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
 ]
-test.subcommands.core.desc = "runs cargo tests only"
-test.subcommands.example.cmd = "rust-script scripts/test.rs %category %example %integration %%" # A script can do backgrounding properly
-test.subcommands.example.args = [ "category", "example", "integration" ]
-test.subcommands.example.desc = "tests a single example with the given integration (assumes geckodriver running in background), use `--headless` to run headlessly"
 test.subcommands.example-all-integrations.cmd = [
-    "rust-script scripts/test.rs %category %example actix-web %%",
-    "rust-script scripts/test.rs %category %example warp %%",
-    "rust-script scripts/test.rs %category %example axum %%"
+    "EXAMPLE_INTEGRATION=actix-web bonnie dev example %category %example test",
+    "EXAMPLE_INTEGRATION=warp bonnie dev example %category %example test",
+    "EXAMPLE_INTEGRATION=axum bonnie dev example %category %example test"
 ]
 test.subcommands.example-all-integrations.args = [ "category", "example" ]
-test.subcommands.example-all-integrations.desc = "tests a single example with all integrations (assumes geckodriver running in background), use `--headless` to run headlessly"
+test.subcommands.example-all-integrations.desc = "tests a single example with all integrations (assumes geckodriver running in background)"
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version
