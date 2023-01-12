@@ -253,6 +253,27 @@ impl<G: Html> Reactor<G> {
     pub fn get_translator(&self) -> Translator {
         self.try_get_translator().expect("translator not available")
     }
+    /// Switches the current locale to the given locale. This will navigate to
+    /// the current page in the given locale.
+    ///
+    /// If a new page is being loaded, or if an error view is loaded, this will
+    /// simply have no effect whatsoever (to avoid users trying to switch
+    /// locales during a navigation and inadvertently causing a panic).
+    ///
+    /// # Panics
+    ///
+    /// This will panic if the given locale is not supported: use this only with
+    /// hardcoded locale values! This will also panic if used in an error
+    /// view without a translator.
+    #[cfg(client)]
+    pub fn switch_locale(&self, new_locale: &str) {
+        let path = self.router_state.get_path();
+        if let Some(path) = path {
+            let curr_locale = self.get_translator().get_locale();
+            let new_path = path.replace(&curr_locale, new_locale);
+            sycamore_router::navigate(&new_path);
+        }
+    }
 }
 
 #[cfg(engine)]

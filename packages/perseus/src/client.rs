@@ -1,6 +1,6 @@
 use crate::reactor::Reactor;
-use crate::{checkpoint, plugins::PluginAction, template::BrowserNodeType};
 use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
+use crate::{plugins::PluginAction, template::BrowserNodeType, utils::checkpoint};
 use sycamore::prelude::create_scope;
 #[cfg(feature = "hydrate")]
 use sycamore::utils::hydrate::with_hydration_context;

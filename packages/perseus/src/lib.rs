@@ -52,8 +52,9 @@ pub mod template;
 /// General utilities that may be useful while building Perseus apps.
 pub mod utils;
 
+/// Utilities for initializing the Perseus client.
 #[cfg(all(feature = "client-helpers", any(client, doc)))]
-mod client;
+pub mod client;
 mod init;
 mod page_data;
 /// Utilities for working with typed paths.

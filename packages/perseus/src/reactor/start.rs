@@ -1,12 +1,11 @@
 use super::Reactor;
 use crate::{
-    checkpoint,
     error_views::ErrorPosition,
     errors::ClientError,
     reactor::InitialView,
     router::{PageDisposer, PerseusRoute, RouteVerdict, RouterLoadState},
     template::BrowserNodeType,
-    utils::{render_or_hydrate, replace_head},
+    utils::{checkpoint, render_or_hydrate, replace_head},
 };
 use sycamore::prelude::{create_effect, create_signal, on_mount, view, ReadSignal, Scope, View};
 use sycamore_futures::spawn_local_scoped;

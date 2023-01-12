@@ -6,14 +6,13 @@ use sycamore::{
 };
 
 use crate::{
-    checkpoint,
     errors::{AssetType, ClientError, ClientInvariantError},
     i18n::detect_locale,
     page_data::PageDataPartial,
     path::PathMaybeWithLocale,
     router::{FullRouteInfo, FullRouteVerdict, RouteVerdict, RouterLoadState},
     state::{PssContains, TemplateState},
-    utils::{fetch, get_path_prefix_client, replace_head},
+    utils::{checkpoint, fetch, get_path_prefix_client, replace_head},
 };
 
 use super::Reactor;

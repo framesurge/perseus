@@ -181,8 +181,8 @@ pub fn main_impl(input: MainFn, server_fn: Path) -> TokenStream {
 
         // The browser-specific `main` function
         #[cfg(client)]
-        pub fn main() -> ::perseus::ClientReturn {
-            ::perseus::run_client(__perseus_simple_main);
+        pub fn main() -> ::perseus::client::ClientReturn {
+            ::perseus::client::run_client(__perseus_simple_main);
             Ok(())
         }
 

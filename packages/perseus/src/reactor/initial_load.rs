@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
-    checkpoint,
     error_views::ServerErrorData,
     errors::*,
     i18n::detect_locale,
     path::PathMaybeWithLocale,
     router::{match_route, FullRouteInfo, FullRouteVerdict, RouterLoadState},
     state::TemplateState,
-    utils::get_path_prefix_client,
+    utils::{checkpoint, get_path_prefix_client},
 };
 use serde_json::Value;
 use sycamore::{
