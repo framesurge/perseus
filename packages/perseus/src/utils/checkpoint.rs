@@ -17,11 +17,11 @@ use crate::reactor::WindowVariable;
 /// Note: this is not just for internal usage, it's highly recommended that you
 /// use this for your own checkpoints as well! Just make sure your tests don't
 /// conflict with any internal Perseus checkpoint names (preferably prefix yours
-/// with `custom-` or the like, as Perseus' checkpoints may change at any time,
+/// with `custom_` or the like, as Perseus' checkpoints may change at any time,
 /// but won't ever use that namespace).
 ///
-/// WARNING: your checkpoint names must not include hyphens! This will result in
-/// a `panic!`.
+/// **Warning:** your checkpoint names must not include hyphens! This will
+/// result in a `panic!`.
 pub fn checkpoint(name: &str) {
     if name.contains('-') {
         panic!("checkpoint must not contain hyphens, use underscores instead (hyphens are used as an internal delimiter)");

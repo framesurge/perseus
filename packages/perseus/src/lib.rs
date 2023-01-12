@@ -89,12 +89,6 @@ pub type Request = ();
 #[cfg(feature = "macros")]
 pub use perseus_macro::*;
 
-// Browser-side only
-#[cfg(any(client, doc))]
-pub use crate::utils::checkpoint;
-#[cfg(all(feature = "client-helpers", any(client, doc)))]
-pub use client::{run_client, ClientReturn};
-
 /// Internal utilities for lower-level work.
 #[cfg(engine)]
 pub mod internal {
@@ -161,4 +155,7 @@ pub mod prelude {
     #[cfg(feature = "macros")]
     pub use perseus_macro::*;
     pub use sycamore_futures::spawn_local_scoped;
+
+    #[cfg(any(client, doc))]
+    pub use crate::utils::checkpoint;
 }
