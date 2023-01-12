@@ -2,14 +2,15 @@ use clap::Parser;
 use command_group::stdlib::CommandGroup;
 use directories::ProjectDirs;
 use fmterr::fmt_err;
+use indicatif::MultiProgress;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 use perseus_cli::parse::{
-    BuildOpts, CheckOpts, ExportOpts, ServeOpts, SnoopServeOpts, SnoopSubcommand,
+    BuildOpts, CheckOpts, ExportOpts, ServeOpts, SnoopServeOpts, SnoopSubcommand, TestOpts,
 };
 use perseus_cli::{
     build, check_env, delete_artifacts, deploy, export, init, new,
     parse::{Opts, Subcommand},
-    serve, serve_exported, tinker,
+    serve, serve_exported, test, tinker,
 };
 use perseus_cli::{
     check, create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
@@ -17,19 +18,20 @@ use perseus_cli::{
 };
 use std::env;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, ExitCode};
 use std::sync::mpsc::channel;
 
 // All this does is run the program and terminate with the acquired exit code
 #[tokio::main]
-async fn main() {
+async fn main() -> ExitCode {
     // In development, we'll test in the `basic` example
     if cfg!(debug_assertions) && env::var("TEST_EXAMPLE").is_ok() {
         let example_to_test = env::var("TEST_EXAMPLE").unwrap();
         env::set_current_dir(example_to_test).unwrap();
     }
     let exit_code = real_main().await;
-    std::process::exit(exit_code)
+    let u8_exit_code: u8 = exit_code.try_into().unwrap_or(1);
+    ExitCode::from(u8_exit_code)
 }
 
 // This manages error handling and returns a definite exit code to terminate
@@ -125,6 +127,11 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             ..
         })
         | Subcommand::Serve(ServeOpts {
+            watch,
+            custom_watch,
+            ..
+        })
+        | Subcommand::Test(TestOpts {
             watch,
             custom_watch,
             ..
@@ -327,20 +334,19 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
                 delete_artifacts(dir.clone(), "mutable")?;
             }
             // This orders reloads internally
-            let (exit_code, _server_path) = serve(dir, serve_opts, &tools, &opts)?;
+            let (exit_code, _server_path) =
+                serve(dir, serve_opts, &tools, &opts, &MultiProgress::new(), false)?;
             exit_code
         }
         Subcommand::Test(ref test_opts) => {
             create_dist(&dir)?;
             let tools = Tools::new(&dir, &opts).await?;
-            // This will be used by the subcrates
-            env::set_var("PERSEUS_TESTING", "true");
             // Delete old build artifacts if `--no-build` wasn't specified
             if !test_opts.no_build {
                 delete_artifacts(dir.clone(), "static")?;
                 delete_artifacts(dir.clone(), "mutable")?;
             }
-            let (exit_code, _server_path) = serve(dir, test_opts, &tools, &opts)?;
+            let exit_code = test(dir, &test_opts, &tools, &opts)?;
             exit_code
         }
         Subcommand::Clean => {

@@ -36,7 +36,8 @@ macro_rules! handle_exit_code {
 fn build_server(
     dir: PathBuf,
     spinners: &MultiProgress,
-    did_build: bool,
+    num_steps: u8,
+    step_offset: u8,
     exec: Arc<Mutex<String>>,
     is_release: bool,
     tools: &Tools,
@@ -49,15 +50,11 @@ fn build_server(
     let Opts {
         cargo_engine_args, ..
     } = global_opts.clone();
-    let num_steps = match did_build {
-        true => 4,
-        false => 2,
-    };
 
     // Server building message
     let sb_msg = format!(
         "{} {} Building server",
-        style(format!("[{}/{}]", num_steps - 1, num_steps))
+        style(format!("[{}/{}]", num_steps - step_offset, num_steps))
             .bold()
             .dim(),
         BUILDING_SERVER
@@ -66,7 +63,7 @@ fn build_server(
     // We'll parallelize the building of the server with any build commands that are
     // currently running We deliberately insert the spinner at the end of the
     // list
-    let sb_spinner = spinners.insert(num_steps - 1, ProgressBar::new_spinner());
+    let sb_spinner = spinners.insert((num_steps - step_offset).into(), ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = dir;
     let sb_thread = spawn_thread(
@@ -133,16 +130,13 @@ fn build_server(
 
 /// Runs the server at the given path, handling any errors therewith. This will
 /// likely be a black hole until the user manually terminates the process.
+///
+/// This function is not used by the testing process.
 fn run_server(
     exec: Arc<Mutex<String>>,
     dir: PathBuf,
-    did_build: bool,
+    num_steps: u8,
 ) -> Result<i32, ExecutionError> {
-    let num_steps = match did_build {
-        true => 4,
-        false => 2,
-    };
-
     // First off, handle any issues with the executable path
     let exec_val = exec.lock().unwrap();
     if exec_val.is_empty() {
@@ -214,15 +208,28 @@ pub fn serve(
     opts: &ServeOpts,
     tools: &Tools,
     global_opts: &Opts,
+    spinners: &MultiProgress,
+    testing: bool,
 ) -> Result<(i32, Option<String>), ExecutionError> {
     // Set the environment variables for the host and port
     // NOTE Another part of this code depends on setting these in this way
     env::set_var("PERSEUS_HOST", &opts.host);
     env::set_var("PERSEUS_PORT", opts.port.to_string());
 
-    let spinners = MultiProgress::new();
     let did_build = !opts.no_build;
     let should_run = !opts.no_run;
+
+    // Weird naming here, but this is right
+    let num_steps = if testing && did_build {
+        4
+    } else if testing && !did_build {
+        3
+    } else if !testing && did_build {
+        4
+    } else {
+        2
+    };
+
     // We need to have a way of knowing what the executable path to the server is
     let exec = Arc::new(Mutex::new(String::new()));
     // We can begin building the server in a thread without having to deal with the
@@ -230,7 +237,8 @@ pub fn serve(
     let sb_thread = build_server(
         dir.clone(),
         &spinners,
-        did_build,
+        num_steps,
+        if testing { 2 } else { 1 },
         Arc::clone(&exec),
         opts.release,
         tools,
@@ -238,8 +246,14 @@ pub fn serve(
     )?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {
-        let (sg_thread, wb_thread) =
-            build_internal(dir.clone(), &spinners, 4, opts.release, tools, global_opts)?;
+        let (sg_thread, wb_thread) = build_internal(
+            dir.clone(),
+            &spinners,
+            num_steps,
+            opts.release,
+            tools,
+            global_opts,
+        )?;
         let sg_res = sg_thread
             .join()
             .map_err(|_| ExecutionError::ThreadWaitFailed)??;
@@ -268,13 +282,17 @@ pub fn serve(
 
     // Now actually run that executable path if we should
     if should_run {
-        let exit_code = run_server(Arc::clone(&exec), dir, did_build)?;
+        let exit_code = run_server(Arc::clone(&exec), dir, num_steps)?;
         Ok((exit_code, None))
     } else {
         // The user doesn't want to run the server, so we'll give them the executable
         // path instead
         let exec_str = (*exec.lock().unwrap()).to_string();
-        println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable from the root of the project.\n{}", &exec_str);
+        // Only tell the user about this if we're not testing (which is a whole separate
+        // workflow)
+        if !testing {
+            println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable from the root of the project.\n{}", &exec_str);
+        }
         Ok((0, Some(exec_str)))
     }
 }

@@ -52,6 +52,8 @@ pub enum ExecutionError {
         #[source]
         source: serde_json::Error,
     },
+    #[error("couldn't get path to server executable (if this persists, try `perseus clean`)")]
+    GetServerExecutableFailedSimple,
     #[error("expected second-last message from Cargo to contain server executable path, none existed (too few messages) (report this as a bug if it persists)")]
     ServerExecutableMsgNotFound,
     #[error("couldn't parse server executable path from Cargo (report this as a bug if it persists): {err}")]
@@ -126,8 +128,6 @@ pub enum DeployError {
         #[source]
         source: std::io::Error,
     },
-    #[error("couldn't get path to server executable (if this persists, try `perseus clean`)")]
-    GetServerExecutableFailed,
     #[error("couldn't copy file from '{from}' to '{to}' for deployment packaging")]
     MoveAssetFailed {
         to: String,

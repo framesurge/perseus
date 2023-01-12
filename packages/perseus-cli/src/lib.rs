@@ -31,6 +31,7 @@ mod reload_server;
 mod serve;
 mod serve_exported;
 mod snoop;
+mod test;
 mod thread;
 mod tinker;
 
@@ -52,6 +53,7 @@ pub use reload_server::{order_reload, run_reload_server};
 pub use serve::serve;
 pub use serve_exported::serve_exported;
 pub use snoop::{snoop_build, snoop_server, snoop_wasm_build};
+pub use test::test;
 pub use tinker::tinker;
 
 /// Creates the `dist/` directory in the project root, which is necessary

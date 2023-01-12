@@ -6,6 +6,7 @@ use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
 use fs_extra::copy_items;
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
+use indicatif::MultiProgress;
 use std::fs;
 use std::path::PathBuf;
 
@@ -59,6 +60,9 @@ fn deploy_full(
         },
         tools,
         global_opts,
+        &MultiProgress::new(),
+        // We're not testing
+        false,
     )?;
     if serve_exit_code != 0 {
         return Ok(serve_exit_code);
@@ -160,7 +164,7 @@ fn deploy_full(
         Ok(0)
     } else {
         // If we don't have the executable, throw an error
-        Err(DeployError::GetServerExecutableFailed.into())
+        Err(ExecutionError::GetServerExecutableFailedSimple.into())
     }
 }
 

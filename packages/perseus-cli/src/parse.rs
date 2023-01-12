@@ -90,8 +90,7 @@ pub enum Subcommand {
     ExportErrorPage(ExportErrorPageOpts),
     Export(ExportOpts),
     Serve(ServeOpts),
-    /// Serves your app as `perseus serve` does, but puts it in testing mode
-    Test(ServeOpts),
+    Test(TestOpts),
     /// Removes build artifacts in the `dist/` directory
     Clean,
     Deploy(DeployOpts),
@@ -153,8 +152,7 @@ pub struct ExportErrorPageOpts {
     #[clap(short, long)]
     pub output: String,
 }
-/// Serves your app (set the `$HOST` and `$PORT` environment variables to change
-/// the location it's served at)
+/// Serves your app
 #[derive(Parser, Clone)]
 pub struct ServeOpts {
     /// Don't run the final binary, but print its location instead as the last
@@ -171,6 +169,33 @@ pub struct ServeOpts {
     /// don't manually invoke it unless you have a good reason!)
     #[clap(long)]
     pub standalone: bool,
+    /// Watch the files in your working directory for changes (excluding
+    /// `target/` and `dist/`)
+    #[clap(short, long)]
+    pub watch: bool,
+    /// Marks a specific file/directory to be watched (directories will be
+    /// recursively watched)
+    #[clap(long)]
+    pub custom_watch: Vec<String>,
+    /// Where to host your exported app
+    #[clap(long, default_value = "127.0.0.1")]
+    pub host: String,
+    /// The port to host your exported app on
+    #[clap(long, default_value = "8080")]
+    pub port: u16,
+}
+/// Serves your app as `perseus serve` does, but puts it in testing mode
+#[derive(Parser, Clone)]
+pub struct TestOpts {
+    /// Only build the testing server, and use the results of a previous
+    /// `perseus build`
+    #[clap(long)]
+    pub no_build: bool,
+    /// Show the browser window when testing (by default, the browser is used in
+    /// 'headless' mode); this can be useful for debugging failing tests in
+    /// some cases
+    #[clap(long)]
+    pub show_browser: bool,
     /// Watch the files in your working directory for changes (excluding
     /// `target/` and `dist/`)
     #[clap(short, long)]
