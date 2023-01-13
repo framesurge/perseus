@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.16](https://github.com/framesurge/perseus/compare/v0.4.0-beta.15...v0.4.0-beta.16) (2023-01-13)
+
+
+### Bug Fixes
+
+* fixed `#[main_export]` ([f4d6821](https://github.com/framesurge/perseus/commit/f4d682140d9f6b920d511c5765a4fb7e36f16029))
+* fixed docs.rs build flags ([41577bb](https://github.com/framesurge/perseus/commit/41577bb70562e03b28abb3073ebd1fc9aa2448a3))
+
 ## [0.4.0-beta.15](https://github.com/framesurge/perseus/compare/v0.4.0-beta.14...v0.4.0-beta.15) (2023-01-13)
 
 
