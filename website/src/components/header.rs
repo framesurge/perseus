@@ -46,7 +46,7 @@ pub fn Header<G: Html>(
             )
         ) {
             div(class = "flex justify-between items-center") {
-                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl text-bold title-font", href = link!("/", cx)) {
+                a(class = "justify-self-start self-center m-3 ml-5 text-md sm:text-2xl text-bold title-font", href = link!(cx, "/")) {
                     (title)
                 }
                 // The button for opening/closing the hamburger menu on mobile
@@ -104,13 +104,13 @@ pub fn Header<G: Html>(
 fn NavLinks<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         li(class = "m-3 p-1 title-font") {
-            a(href = link!("/docs", cx), class = "px-2") { (t!("navlinks.docs", cx)) }
+            a(href = link!(cx, "/docs"), class = "px-2") { (t!(cx, "navlinks.docs")) }
         }
         li(class = "m-3 p-1 title-font") {
-            a(href = link!("/comparisons", cx), class = "px-2") { (t!("navlinks.comparisons", cx)) }
+            a(href = link!(cx, "/comparisons"), class = "px-2") { (t!(cx, "navlinks.comparisons")) }
         }
         li(class = "m-3 p-1 title-font") {
-            a(href = link!("/plugins", cx), class = "px-2") { (t!("navlinks.plugins", cx)) }
+            a(href = link!(cx, "/plugins"), class = "px-2") { (t!(cx, "navlinks.plugins")) }
         }
     }
 }

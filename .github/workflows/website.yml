@@ -15,7 +15,7 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         env:
-          PERSEUS_VERSION: 0.4.0-beta.14
+          PERSEUS_VERSION: 0.4.0-beta.16
         steps:
             # The website builder accesses Git history for old examples, so we need everything
             - uses: actions/checkout@v2
@@ -29,7 +29,7 @@ jobs:
                 path: |
                   ~/.cargo/bin/
                 # The cache should be OS-specific
-                key: ${{ runner.os }}-website-cargo-bins-$PERSEUS_VERSION
+                key: ${{ runner.os }}-website-cargo-bins-${{ PERSEUS_VERSION }}
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'

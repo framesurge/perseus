@@ -68,7 +68,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
     view! { cx,
         Container(
             header = HeaderProps {
-                title: t!("perseus", cx),
+                title: t!(cx, "perseus"),
                 text_color: "text-black dark:text-white".to_string(),
                 menu_color: "bg-black dark:bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
@@ -78,16 +78,16 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
         ) {
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
-                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold mb-5") { (t!("plugins-title", cx)) }
+                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold mb-5") { (t!(cx, "plugins-title")) }
                         br()
-                        p(class = "mx-1 mb-2") { (t!("plugins-desc", cx)) }
+                        p(class = "mx-1 mb-2") { (t!(cx, "plugins-desc")) }
                         div(class = "w-full flex justify-center text-center mb-3") {
                             input(class = "mx-2 max-w-7xl p-3 rounded-md border border-indigo-500 focus:outline-indigo-600 dark:focus:outline-indigo-700 search-bar-bg", on:input = |ev: web_sys::Event| {
                                 // This longwinded code gets the actual value that the user typed in
                                 let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
                                 let new_input = target.value();
                                 filter.set(new_input);
-                            }, placeholder = t!("plugin-search.placeholder", cx))
+                            }, placeholder = t!(cx, "plugin-search.placeholder"))
                         }
                     }
                     div(class = "w-full flex justify-center") {
@@ -110,7 +110,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                                                     View::empty()
                                                 })
                                             }
-                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!("plugin-card-author", { "author" = &plugin.author }, cx)) }
+                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!(cx, "plugin-card-author", { "author" = &plugin.author })) }
                                             p { (plugin.description) }
                                         }
                                     }
@@ -126,7 +126,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
 #[engine_only_fn]
 fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
-        title { (format!("{} | {}", t!("plugins-title", cx), t!("perseus", cx))) }
+        title { (format!("{} | {}", t!(cx, "plugins-title"), t!(cx, "perseus"))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
     }
 }

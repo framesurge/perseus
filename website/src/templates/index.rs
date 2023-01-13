@@ -121,7 +121,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                         }
                                     }
                                 }
-                            ) { (t!("index-example-switcher.excerpts", cx)) }
+                            ) { (t!(cx, "index-example-switcher.excerpts")) }
                             // Shows full text
                             button(
                                 class = format!(
@@ -149,7 +149,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                         }
                                     }
                                 }
-                            ) { (t!("index-example-switcher.full", cx)) }
+                            ) { (t!(cx, "index-example-switcher.full")) }
                         }
                         // We need this div so our styles can apply it to the `.code-toolbar` created by Prism
                         pre(ref = pre, class = "!rounded-2xl !p-8 !text-[0.85rem] !m-0 permadark overflow-y-auto h-full transition-[filter] duration-100") {
@@ -457,7 +457,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     view! { cx,
         Container(
             header = HeaderProps {
-                title: t!("perseus", cx),
+                title: t!(cx, "perseus"),
                 text_color: "text-white".to_string(),
                 menu_color: "bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
@@ -473,12 +473,12 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     custom_supplement = None,
                     text_block = view! { cx,
                         // NOTE These styles are deliberately different from the rest to prevent text overlaps
-                        p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!("index-intro.heading", cx)) }
+                        p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!(cx, "index-intro.heading")) }
                         div(class = "uppercase w-full flex items-center flex-col sm:flex-row justify-center lg:justify-start") {
                             a(
                                 class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 sm:mb-0 hover:shadow-white/50 dark:hover:shadow-black/50 hover:shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-110 ease-in-out",
-                                href = link!("/docs", cx)
-                            ) { (t!("index-intro.get-started-button", cx)) }
+                                href = link!(cx, "/docs")
+                            ) { (t!(cx, "index-intro.get-started-button")) }
                             a(
                                 class = "bg-[#8085ff] dark:bg-[#787CFC] text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold inline-flex items-center hover:shadow-[#8085ff]/50 dark:hover:shadow-[#787CFC]/50 hover:shadow-lg transition-shadow duration-200",
                                 href = "https://github.com/framesurge/perseus",
@@ -488,7 +488,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                                     class = "mr-1",
                                     dangerously_set_inner_html = GITHUB_SVG
                                 )
-                                    span { (format!(" {}", t!("index-intro.github-button", cx))) }
+                                    span { (format!(" {}", t!(cx, "index-intro.github-button"))) }
                             }
                         }
                     },
@@ -505,11 +505,11 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     custom_supplement = None,
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!("index-state-gen.heading", cx))
+                            (t!(cx, "index-state-gen.heading"))
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!("index-state-gen.desc", cx)
+                                dangerously_set_inner_html = &t!(cx, "index-state-gen.desc")
                             ) {}
                         }
                     },
@@ -527,15 +527,15 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             div(class = "tooltip") {
-                                span(id = "i18n-dotted-border") { (t!("index-i18n.heading.start", cx)) }
+                                span(id = "i18n-dotted-border") { (t!(cx, "index-i18n.heading.start")) }
                                 // We have to undo most of the title font stuff from the parent
-                                span(class = "tooltip-text font-sans text-base normal-case tracking-normal") { (t!("index-i18n.heading.tooltip", cx)) }
+                                span(class = "tooltip-text font-sans text-base normal-case tracking-normal") { (t!(cx, "index-i18n.heading.tooltip")) }
                             }
-                            span { (t!("index-i18n.heading.rest", cx)) }
+                            span { (t!(cx, "index-i18n.heading.rest")) }
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!("index-i18n.desc", cx)
+                                dangerously_set_inner_html = &t!(cx, "index-i18n.desc")
                             ) {}
                         }
                     },
@@ -552,10 +552,10 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     custom_supplement = None,
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!("index-opts.heading", cx)) // TODO Best heading?
+                            (t!(cx, "index-opts.heading")) // TODO Best heading?
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
-                            (t!("index-opts.desc", cx))
+                            (t!(cx, "index-opts.desc"))
                         }
                     },
                     code = examples.cli,
@@ -570,19 +570,19 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     order = TileOrder::TextLeft,
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!("index-speed.heading", cx))
+                            (t!(cx, "index-speed.heading"))
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!("index-speed.desc-line-1", cx)
+                                dangerously_set_inner_html = &t!(cx, "index-speed.desc-line-1")
                             ) {}
                             br()
                             span(
-                                dangerously_set_inner_html = &t!("index-speed.desc-line-2", cx)
+                                dangerously_set_inner_html = &t!(cx, "index-speed.desc-line-2")
                             ) {}
                             br()
                             span(
-                                dangerously_set_inner_html = &t!("index-speed.desc-line-3", cx) // TODO Add footnote caveat to this
+                                dangerously_set_inner_html = &t!(cx, "index-speed.desc-line-3") // TODO Add footnote caveat to this
                             ) {}
                         }
                     },
@@ -592,16 +592,16 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                         div(class = "bg-white dark:bg-[#272822] rounded-2xl !p-8 w-full flex flex-col lg:flex-row justify-center lg:justify-evenly") {
                             AnimatedCircularProgressBar(
                                 percent = 100,
-                                label = t!("index-speed.desktop-perf-label", cx)
+                                label = t!(cx, "index-speed.desktop-perf-label")
                             )
                             // TODO Footnote this
                             AnimatedCircularProgressBar(
                                 percent = 97,
-                                label = t!("index-speed.mobile-perf-label", cx)
+                                label = t!(cx, "index-speed.mobile-perf-label")
                             )
                             AnimatedCircularProgressBar(
                                 percent = 100,
-                                label = t!("index-speed.best-practices-label", cx)
+                                label = t!(cx, "index-speed.best-practices-label")
                             )
                         }
                     }),
@@ -615,7 +615,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     order = TileOrder::TextLeft, // TODO Change this?
                     text_block = view! { cx,
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!("index-cta.heading", cx))
+                            (t!(cx, "index-cta.heading"))
                         }
                     },
                     code = examples.get_started,
@@ -628,32 +628,32 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                             ) {
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
-                                    href = link!("/docs", cx)
-                                ) { (t!("index-cta.docs-button", cx)) }
+                                    href = link!(cx, "/docs")
+                                ) { (t!(cx, "index-cta.docs-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://github.com/framesurge/perseus"
-                                ) { (t!("index-cta.gh-button", cx)) }
+                                ) { (t!(cx, "index-cta.gh-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://docs.rs/perseus/latest/perseus"
-                                ) { (t!("index-cta.api-docs-button", cx)) }
+                                ) { (t!(cx, "index-cta.api-docs-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://crates.io/crates/perseus"
-                                ) { (t!("index-cta.crates-io-button", cx)) }
+                                ) { (t!(cx, "index-cta.crates-io-button")) }
                                 // TODO Update this with the Matrix link when it's set up
                                 a(
                                     class = "cursor-not-allowed bg-gray-300 dark:bg-neutral-700 text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
-                                ) { (t!("index-cta.matrix-button", cx)) }
+                                ) { (t!(cx, "index-cta.matrix-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://discord.com/invite/GNqWYWNTdp"
-                                ) { (t!("index-cta.discord-button", cx)) }
+                                ) { (t!(cx, "index-cta.discord-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
-                                    href = link!("/comparisons", cx)
-                                ) { (t!("index-cta.comparisons-button", cx)) }
+                                    href = link!(cx, "/comparisons")
+                                ) { (t!(cx, "index-cta.comparisons-button")) }
                             }
                         }
                     }),
@@ -674,7 +674,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
 #[engine_only_fn]
 pub fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
-        title { (t!("perseus", cx)) }
+        title { (t!(cx, "perseus")) }
         link(rel = "stylesheet", href = ".perseus/static/prism.css")
         // Prefetch the images and fonts so the browser gets on these as quickly as possible
         link(rel = "prefetch", href = ".perseus/static/mesh_open.jpg")

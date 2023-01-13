@@ -56,7 +56,7 @@ fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
     use perseus::t;
 
     view! { cx,
-        title { (format!("{} | {}", props.title, t!("docs-title-base", cx))) }
+        title { (format!("{} | {}", props.title, t!(cx, "docs-title-base"))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/prism.css")

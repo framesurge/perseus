@@ -10,7 +10,7 @@ use sycamore::prelude::*;
 //     view! { cx,
 //         input(
 //             class = "p-2 border rounded-md mb-2 focus:outline-indigo-500
-// search-bar-bg max-w-full",             placeholder = t!("search", cx),
+// search-bar-bg max-w-full",             placeholder = t!(cx, "search"),
 //             bind:value = search,
 //             // When the user presses enter, we should submit their search to
 // Google in a new tab             on:keyup = move |ev: Event| {

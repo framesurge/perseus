@@ -34,9 +34,9 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
             .map(|version| {
                 let version = create_ref(cx, version);
                 view! { cx,
-                        option(value = &version, selected = current_version == version) { (t!("docs-version-switcher.beta", {
+                        option(value = &version, selected = current_version == version) { (t!(cx, "docs-version-switcher.beta", {
                             "version" = version
-                        }, cx)) }
+                        })) }
                 }
             })
             .collect()
@@ -51,9 +51,9 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
             .map(|version| {
                 let version = create_ref(cx, version);
                 view! { cx,
-                        option(value = version, selected = current_version == version) { (t!("docs-version-switcher.outdated", {
+                        option(value = version, selected = current_version == version) { (t!(cx, "docs-version-switcher.outdated", {
                             "version" = version
-                        }, cx)) }
+                        })) }
                 }
             })
             .collect()
@@ -78,13 +78,13 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
             }
         ) {
             option(value = "next", selected = current_version == "next") {
-                (t!("docs-version-switcher.next", cx))
+                (t!(cx, "docs-version-switcher.next"))
             }
             (beta_versions)
             option(value = stable_version, selected = current_version == stable_version) {
-                (t!("docs-version-switcher.stable", {
+                (t!(cx, "docs-version-switcher.stable", {
                     "version" = stable_version
-                }, cx))
+                }))
             }
             (old_versions)
         }
@@ -117,7 +117,7 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
             header = HeaderProps {
                 text_color: "text-black dark:text-white".to_string(),
                 menu_color: "bg-black dark:bg-white".to_string(),
-                title: t!("perseus", cx),
+                title: t!(cx, "perseus"),
                 mobile_nav_extension: view! { cx,
                     hr()
                     div(class = "text-left p-3 overflow-y-scroll h-[60vh]") {

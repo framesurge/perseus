@@ -73,11 +73,11 @@ impl DocsVersionStatus {
                                 dangerously_set_inner_html = ERROR_ICON
                             )
                             p(dangerously_set_inner_html = &t!(
+                                cx,
                                 "docs-status.outdated",
                                 {
                                     "stable" = &stable_version
-                                },
-                                cx
+                                }
                             ))
                         }
                     }
@@ -93,11 +93,11 @@ impl DocsVersionStatus {
                                 dangerously_set_inner_html = WARNING_ICON
                             )
                             p(dangerously_set_inner_html = &t!(
+                                cx,
                                 "docs-status.beta",
                                 {
                                     "stable" = &stable_version
-                                },
-                                cx
+                                }
                             ))
                         }
                     }
@@ -113,11 +113,11 @@ impl DocsVersionStatus {
                                 dangerously_set_inner_html = ERROR_ICON
                             )
                             p(dangerously_set_inner_html = &t!(
+                                cx,
                                 "docs-status.next",
                                 {
                                     "stable" = &stable_version
-                                },
-                                cx
+                                }
                             ))
                         }
                     }

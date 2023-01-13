@@ -12,9 +12,9 @@ pub fn Footer<G: Html>(cx: Scope) -> View<G> {
 
         ) {
             p(class = "mx-5 text-center") {
-                span(dangerously_set_inner_html = &t!("footer.copyright", {
+                span(dangerously_set_inner_html = &t!(cx, "footer.copyright", {
                     "years" = COPYRIGHT_YEARS
-                }, cx))
+                }))
             }
         }
     }

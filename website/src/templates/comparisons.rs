@@ -29,7 +29,7 @@ fn ComparisonRow<'a, G: Html>(cx: Scope<'a>, props: ComparisonRowProps<'a>) -> V
         tr {
             th(class = "text-left p-1 py-2 text-xs xs:text-base") {
                 div(class = "flex items-center") {
-                    (t!(&format!("comparisons-table-headings.{}", name), cx))
+                    (t!(cx, &format!("comparisons-table-headings.{}", name)))
                     span(
                         class = "ml-1",
                         on:click = |_| {
@@ -48,7 +48,7 @@ fn ComparisonRow<'a, G: Html>(cx: Scope<'a>, props: ComparisonRowProps<'a>) -> V
                         }
                     )
                 ) {
-                    (t!(&format!("comparisons-table-details.{}", name), cx))
+                    (t!(cx, &format!("comparisons-table-details.{}", name)))
                 }
             }
             td(class = "p-1 py-2 text-xs xs:text-base") {
@@ -118,10 +118,10 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
         table(class = "w-full overflow-x-scroll table-fixed border-collapse") {
             thead(class = "mt-4 text-white bg-indigo-500 dark:bg-indigo-700 rounded-xl") {
                 th(class = "p-1 py-2 text-xs xs:text-base") {
-                    (t!("comparisons-table-header", cx))
+                    (t!(cx, "comparisons-table-header"))
                 }
                 th(class = "p-1 py-2 text-xs xs:text-base") {
-                    (t!("perseus", cx))
+                    (t!(cx, "perseus"))
                 }
                 th(class = "p-1 py-2 text-xs xs:text-base") {
                     (comparison.get().name)
@@ -195,7 +195,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                 tr {
                     th(class = "text-left p-1 py-2 text-xs xs:text-base") {
                         div(class = "flex items-center") {
-                            (t!("comparisons-table-headings.homepage_lighthouse_desktop", cx))
+                            (t!(cx, "comparisons-table-headings.homepage_lighthouse_desktop"))
                             span(
                                 class = "ml-1",
                                 on:click = |_| {
@@ -214,7 +214,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                                 }
                             )
                         ) {
-                            (t!("comparisons-table-details.homepage_lighthouse_desktop", cx))
+                            (t!(cx, "comparisons-table-details.homepage_lighthouse_desktop"))
                         }
                     }
                     td(class = "p-1 py-2 text-xs xs:text-base") {
@@ -227,7 +227,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                 tr {
                     th(class = "text-left p-1 py-2 text-xs xs:text-base") {
                         div(class = "flex items-center") {
-                            (t!("comparisons-table-headings.homepage_lighthouse_mobile", cx))
+                            (t!(cx, "comparisons-table-headings.homepage_lighthouse_mobile"))
                             span(
                                 class = "ml-1",
                                 on:click = |_| {
@@ -246,7 +246,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                                 }
                             )
                         ) {
-                            (t!("comparisons-table-details.homepage_lighthouse_mobile", cx))
+                            (t!(cx, "comparisons-table-details.homepage_lighthouse_mobile"))
                         }
                     }
                     td(class = "p-1 py-2 text-xs xs:text-base") {
@@ -259,11 +259,11 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
             }
         }
         h3(class = "text-2xl underline") { (t!(
+            cx,
             "comparisons-unknown-heading",
             {
                 "name" = &comparison.get().name
-            },
-            cx
+            }
         )) }
         div(class = "w-full flex justify-center") {
             p(class = "max-w-prose") { (comparison_text.get()) }
@@ -311,7 +311,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
     view! { cx,
         Container(
             header = HeaderProps {
-                title: t!("perseus", cx),
+                title: t!(cx, "perseus"),
                 text_color: "text-black dark:text-white".to_string(),
                 menu_color: "bg-black dark:bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
@@ -322,15 +322,15 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
             div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
                 div {
                     h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold") {
-                        (t!("comparisons-heading", cx))
+                        (t!(cx, "comparisons-heading"))
                     }
                     br()
                         p(class = "text-lg") {
-                            (t!("comparisons-subtitle", cx))
+                            (t!(cx, "comparisons-subtitle"))
                         }
                     p(
                         class = "italic px-1",
-                        dangerously_set_inner_html = &t!("comparisons-extra", cx)
+                        dangerously_set_inner_html = &t!(cx, "comparisons-extra")
                     )
                 }
                 br(class = "mb-2 sm:mb-16 md:mb-24")
@@ -356,9 +356,9 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
                                 }
                             }
                         br(class = "mb-1 sm:mb-8 md:mb-12")
-                            h3(class = "text-xl underline") { (t!("comparisons-sycamore-heading", cx)) }
+                            h3(class = "text-xl underline") { (t!(cx, "comparisons-sycamore-heading")) }
                         div(class = "w-full flex justify-center text-sm") {
-                            p(class = "max-w-prose") { (t!("comparisons-sycamore-text", cx)) }
+                            p(class = "max-w-prose") { (t!(cx, "comparisons-sycamore-text")) }
                         }
                 }
             }
@@ -369,7 +369,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
 #[engine_only_fn]
 pub fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
-        title { (format!("{} | {}", t!("comparisons-title", cx), t!("perseus", cx))) }
+        title { (format!("{} | {}", t!(cx, "comparisons-title"), t!(cx, "perseus"))) }
     }
 }
 

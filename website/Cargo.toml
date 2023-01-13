@@ -12,7 +12,7 @@ readme = "./README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { version = "=0.4.0-beta.14", features = [ "translator-lightweight" ] }
+perseus = { version = "=0.4.0-beta.16", features = [ "translator-lightweight" ] }
 sycamore = "0.8"
 sycamore-macro = "0.8"
 serde = { version = "1", features = [ "derive" ] }
