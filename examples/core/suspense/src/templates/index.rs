@@ -52,7 +52,6 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
         Err(_) => "Error!".to_string(),
     });
     let third_greeting = create_memo(cx, move || match &*state.other_test.third_greeting.get() {
-        // We don't particularly want `Rc<Rc<T>>`, hence this clone (but either will work)
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
     });
