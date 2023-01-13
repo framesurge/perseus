@@ -12,7 +12,7 @@ Note that incremental generation is fully compatible with all other state genera
 
 Here's an example of incremental generation:
 
-```
+```rust
 {{#include ../../../examples/core/state_generation/src/templates/incremental_generation.rs}}
 ```
 

@@ -4,7 +4,7 @@ Request-time state can be thought of as the next level up from [build-time state
 
 Here's an example of request state being used to show a user their own IP address (as their browser reports it, which can be spoofed):
 
-```
+```rust
 {{#include ../../../examples/core/state_generation/src/templates/request_state.rs}}
 ```
 

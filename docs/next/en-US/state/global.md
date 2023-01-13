@@ -2,7 +2,7 @@
 
 Like any state management system worth its salt, Perseus also has a global state system, which is managed analogously to templates, through the [`GlobalStateCreator`](=state/struct.GlobalStateCreator@perseus) API. As with templates, you can generate build-time global state, request-time global state, and you can even amalgamate the two! Here's an example of all three working together:
 
-```
+```rust
 {{#include ../../../examples/core/global_state/src/global_state.rs}}
 ```
 
@@ -14,7 +14,7 @@ Notice also the use of a `get_global_state_creator()` function that returns an i
 
 Since it's not provided as an argument to your views, you can access your global state through the [reactor](:fundamentals/reactor), as in this example:
 
-```
+```rust
 {{#include ../../../examples/core/global_state/src/templates/index.rs}}
 ```
 

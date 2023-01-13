@@ -24,6 +24,6 @@ Using both logic-based revalidation *and* time-based revalidation is perfectly p
 
 An example of using both logic-based and time-based revalidation together is below.
 
-```
+```rust
 {{#include ../../../examples/core/state_generation/src/templates/revalidation.rs}}
 ```

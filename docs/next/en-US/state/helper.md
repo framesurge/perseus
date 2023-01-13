@@ -12,7 +12,7 @@ Importantly, helper state isn't really like any of the other state systems in Pe
 
 Here's an example of using helper/extra state:
 
-```
+```rust
 {{#include ../../../examples/core/helper_build_state/src/templates/index.rs}}
 ```
 

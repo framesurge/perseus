@@ -28,14 +28,14 @@ When the user goes to a page they've already visited in the past, Perseus will t
 
 When you're writing views that don't take state, the function signatures are very simple: just accept a Sycamore scope, and return a `View<G>`. But, when there's state involved, things get *way* more complicated. Most of the time, you'll write something like this:
 
-```
+```rust
 #[auto_scope]
 fn my_view<G: Html>(cx: Scope, state: &MyStateRx) -> View<G>
 ```
 
 This is made possible by the `#[auto_scope]` macro, which rewrites this function signature into something much more complicated with lifetimes everywhere:
 
-```
+```rust
 fn my_view<'page, G: Html>(cx: BoundedScope<'_, 'page>, state: &'page MyStateRx) -> View<G> 
 ```
 

@@ -8,7 +8,7 @@ The fundamental idea of build state is very simple: you define an asynchronous f
 
 Using build state is very simple, here's an example.
 
-```
+```rust
 {{#include ../../../examples/core/state_generation/src/templates/build_state.rs}}
 ```
 
@@ -44,7 +44,7 @@ No, because templates can only render paths within their own path. However, it's
 
 Here's an example of using build paths:
 
-```
+```rust
 {{#include ../../../examples/core/state_generation/src/templates/build_paths.rs}}
 ```
 

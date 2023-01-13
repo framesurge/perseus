@@ -26,7 +26,7 @@ Note that you can use suspended state on nested fields without a problem, but yo
 
 The handler functions provided to the derive helper macro should have a signature like this:
 
-```
+```rust
 fn my_function<'a>(cx: Scope<'a>, suspended_field: &'a MySuspendedFieldTy) -> Result<(), E>
 ```
 
@@ -38,7 +38,7 @@ The `MySuspendedFieldTy` type is, given some type `T` that you set on the origin
 
 With all that over, here's an example. It may seem very intimidating at first, but that's just because there are three suspended state handlers to show you how this works with nested state. It's heavily commented, and it's recommended to read through this carefully to understand how suspended state works. This is probably the most complicated part of Perseus to use, because understanding how the state flows through it is a bit tricky (we like to think of it as being borrowed from the main system by your handler and returned with a different value, through `.set()`), so feel free to [open a GitHub discussion] or [ask on Discord] if you're having trouble understanding or using this (or any other) feature.
 
-```
+```rust
 {{#include ../../../examples/core/suspense/src/templates/index.rs}}
 ```
 
