@@ -91,5 +91,5 @@ hsr = [ "live-reload", "idb-freezing" ]
 rx-collections = []
 
 [package.metadata.docs.rs]
-rustc-args = ["--cfg=engine --cfg=clientdoc"]
-rustdoc-args = ["--cfg=engine --cfg=clientdoc"]
+rustc-args = ["--cfg=engine", "--cfg=clientdoc"]
+rustdoc-args = ["--cfg=engine", "--cfg=clientdoc"]
