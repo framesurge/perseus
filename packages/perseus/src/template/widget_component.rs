@@ -112,7 +112,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
             let mut view = View::empty();
             if delayed {
                 // SAFETY: We asserted that `G == H` above.
-                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&&self) };
+                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
                 // On the engine-side, delayed widgets should just render their
                 // fallback views
                 let fallback_fn = self_copy.fallback.as_ref().unwrap();
