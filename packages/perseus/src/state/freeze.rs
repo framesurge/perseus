@@ -39,6 +39,9 @@ pub struct ThawPrefs {
 /// but if thawing occurs later in an app, it may be desirable to override
 /// active state in favor of frozen state. These preferences allow setting an
 /// inclusion or exclusion list.
+///
+/// In apps using internationalization, locales should not be provided here,
+/// they will be inferred.
 #[derive(Debug, Clone)]
 pub enum PageThawPrefs {
     /// Include the attached pages by their URLs (with no leading `/`). Pages
@@ -57,7 +60,7 @@ pub enum PageThawPrefs {
 impl PageThawPrefs {
     /// Checks whether or not the given URL should prioritize frozen state over
     /// active state.
-    pub(crate) fn should_prefer_frozen_state(&self, url: &str) -> bool {
+    pub(crate) fn should_prefer_frozen_state(&self, url: &PathWithoutLocale) -> bool {
         match &self {
             // If we're only including some pages, this page should be on the include list
             Self::Include(pages) => pages.iter().any(|v| v == url),

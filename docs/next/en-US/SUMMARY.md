@@ -24,7 +24,7 @@
 -   [Error views](/docs/fundamentals/error-views)
 -   [Hydration](/docs/fundamentals/hydration)
 -   [Static content](/docs/fundamentals/static-content)
--   [Setting headers](/docs/fundamentals/headers)
+-   [Heads and headers](/docs/fundamentals/head-headers)
 -   [Styling](/docs/fundamentals/styling)
 -   [Working with JS](/docs/fundamentals/js-interop)
 -   [Servers and exporting](/docs/fundamentals/serving-exporting)

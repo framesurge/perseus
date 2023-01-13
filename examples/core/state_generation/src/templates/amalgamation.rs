@@ -19,7 +19,8 @@ pub fn get_template<G: Html>() -> Template<G> {
         // We'll generate some state at build time and some more at request time
         .build_state_fn(get_build_state)
         .request_state_fn(get_request_state)
-        // But Perseus doesn't know which one to use, so we provide a function to unify them
+        // But Perseus would usually just override the build state with request
+        // state, so we provide a custom function to unify them
         .amalgamate_states_fn(amalgamate_states)
         .view_with_state(amalgamation_page)
         .build()
