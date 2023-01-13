@@ -1,7 +1,7 @@
 use perseus::t;
 use sycamore::prelude::*;
 
-static COPYRIGHT_YEARS: &str = "2021-2022";
+static COPYRIGHT_YEARS: &str = "2021-2023";
 
 /// The footer for the entire app, which can be styled arbitrarily.
 #[component]
