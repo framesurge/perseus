@@ -29,7 +29,7 @@ jobs:
                 path: |
                   ~/.cargo/bin/
                 # The cache should be OS-specific
-                key: ${{ runner.os }}-website-cargo-bins-${{ PERSEUS_VERSION }}
+                key: ${{ runner.os }}-website-cargo-bins-$PERSEUS_VERSION
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
