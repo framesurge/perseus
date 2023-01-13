@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.15](https://github.com/framesurge/perseus/compare/v0.4.0-beta.14...v0.4.0-beta.15) (2023-01-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* removed `FetchError::PreloadNotFound`
+* **i18n:** `cx` now comes first in `t!` and `link!`
+invocations (following Sycamore convention)
+
+### Features
+
+* added simple error views example to basic example ([520eebf](https://github.com/framesurge/perseus/commit/520eebfe13c108f7aa5bf806d170e4ba497a9fda))
+* **cli:** added support for `cargo` colors ([513b1cf](https://github.com/framesurge/perseus/commit/513b1cf94cb7a1a849af088ba9e34f035b6ce474))
+* **cli:** added support for watching `snoop` and `build` commands ([c9808fb](https://github.com/framesurge/perseus/commit/c9808fbe6ccee1412b13509d3de186cd8ceaeb0c))
+* **cli:** made `perseus test` actually run tests ([bc7582a](https://github.com/framesurge/perseus/commit/bc7582a2f63d599df34ff33354b12aa313acf961))
+* **docs:** made `perseus` client-side documentable ([bfe34c5](https://github.com/framesurge/perseus/commit/bfe34c5c79a9530b4797824ce0666eeada7aa468))
+* **i18n:** created `switch_locale` function on reactor ([6bbd3cb](https://github.com/framesurge/perseus/commit/6bbd3cbe61e7377382400532e2317f22ac2139d4))
+* made rx collections support extension ([7185ef6](https://github.com/framesurge/perseus/commit/7185ef6ba60685f26ae1de38a1bc64be52c2a530))
+
+
+### Bug Fixes
+
+* **cli:** fixed serve/test numbering issues ([99e13be](https://github.com/framesurge/perseus/commit/99e13be56b6c630c0813732252b6785b0899c97b))
+* **docs.rs:** made client-side items documentable on docs.rs ([9420cb7](https://github.com/framesurge/perseus/commit/9420cb714765faee66db8c8def6967004fb454cf))
+* **docs:** fixed broken docs links ([ee56bc4](https://github.com/framesurge/perseus/commit/ee56bc47f84a88275939665a1e07dc2ced824f53))
+* **docs:** made documentation work fully for `#[cfg(client)]` items ([f22f05d](https://github.com/framesurge/perseus/commit/f22f05d7ef3fceddf1b884156978d15703a8597c))
+* fixed `.base` example ([cbc74b6](https://github.com/framesurge/perseus/commit/cbc74b617dc1f482a55b44926d30ec3925f06052))
+* **i18n:** fixed `t!` macro with multiple interpolations ([f2aa96e](https://github.com/framesurge/perseus/commit/f2aa96e7b7282a01e7cd35a585068199f9181e82))
+* **website:** fixed scrolling issues ([7c63355](https://github.com/framesurge/perseus/commit/7c633558bd51b03f02846e758ecf2fb18c08210a))
+
+
+### Code Refactorings
+
+* cleaned up `checkpoint()` availability ([72e8af4](https://github.com/framesurge/perseus/commit/72e8af4e1a1d05121fcad2496af6e9fbaaf91eec))
+* simplified preload error handling ([746cdc3](https://github.com/framesurge/perseus/commit/746cdc3b7337ec1d6aac93894c67409174e4ca14))
+
+
+### Documentation Changes
+
+* added missing language declarations ([e08ce5a](https://github.com/framesurge/perseus/commit/e08ce5a819b05ffeab91019b6a73be136a245f32))
+* fixed broken example link ([6fca6a8](https://github.com/framesurge/perseus/commit/6fca6a80fdffa38202b16f5d425425b46217c0c8))
+* fixed missing language declarations ([7b9d2df](https://github.com/framesurge/perseus/commit/7b9d2df857ff5ad80d781dd38c50ebc399fdc52c))
+* removed note on `cargo-clif` issues ([2572357](https://github.com/framesurge/perseus/commit/2572357cff32a4954e9e8439ebc4701646753154))
+* wrote docs on `PerseusApp` ([2b39064](https://github.com/framesurge/perseus/commit/2b390648619b1e75aaca500b68963b73fc072d3f))
+* wrote first app tutorial ([149a521](https://github.com/framesurge/perseus/commit/149a521da58d99132735aa9633268e28f3d73dc0))
+* wrote further fundamental docs ([5bb9bd3](https://github.com/framesurge/perseus/commit/5bb9bd3a191a29d2ead1b0508e7f83a5c753f27d))
+* wrote hydration docs ([a82ee5c](https://github.com/framesurge/perseus/commit/a82ee5cd3beee9c1807b51a0f715714e8dc67ce0))
+* wrote js interop docs ([be9dbc9](https://github.com/framesurge/perseus/commit/be9dbc96b42fe0c0fca5787df364791356ab2922))
+* wrote more docs ([6c5f6a7](https://github.com/framesurge/perseus/commit/6c5f6a770fe1c6fdae1a64f83bad14f18135adb9))
+* wrote new testing docs ([36b3792](https://github.com/framesurge/perseus/commit/36b379200bf26641115ead3c627c8977b8b8dc6d))
+
 ## [0.4.0-beta.14](https://github.com/framesurge/perseus/compare/v0.4.0-beta.13...v0.4.0-beta.14) (2023-01-02)
 
 

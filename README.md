@@ -48,7 +48,7 @@ Check out [the book](https://framesurge.sh/perseus/en-US/docs) to learn how to t
 If you want to start working with Perseus right away, run the following commands and you'll have a basic app ready in no time! (Or, more accurately, after Cargo compiles everything...)
 
 ``` shell
-cargo install perseus-cli --version 0.4.0-beta.14
+cargo install perseus-cli --version 0.4.0-beta.15
 perseus new my-app
 cd my-app/
 perseus serve -w

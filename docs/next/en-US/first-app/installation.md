@@ -5,7 +5,7 @@ Before you get to coding your first Perseus app, you'll need to install the Pers
 To install the Perseus CLI, first make sure you have Rust installed (preferably with [`rustup`]), and then run this command:
 
 ```sh
-cargo install perseus-cli --version 0.4.0-beta.14
+cargo install perseus-cli --version 0.4.0-beta.15
 ```
 
 Once that's done, you can go ahead and create your first app! Although this would usually be done with the `perseus new` command, which spins up a scaffold for you, in this tutorial we'll do things manually so we can go through each line of code step by step. First, create a new Rust project:
