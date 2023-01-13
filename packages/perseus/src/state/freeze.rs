@@ -60,7 +60,7 @@ pub enum PageThawPrefs {
 impl PageThawPrefs {
     /// Checks whether or not the given URL should prioritize frozen state over
     /// active state.
-    pub(crate) fn should_prefer_frozen_state(&self, url: &PathWithoutLocale) -> bool {
+    pub(crate) fn should_prefer_frozen_state(&self, url: &str) -> bool {
         match &self {
             // If we're only including some pages, this page should be on the include list
             Self::Include(pages) => pages.iter().any(|v| v == url),
