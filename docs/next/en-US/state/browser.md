@@ -48,3 +48,9 @@ Note that it's perfectly fine for you to write out the full lifetime bounds if y
 ## Unreactive state
 
 When you're using unreactive state, none of this is necessary, because Perseus just gives you an owned copy of your state to do with as you please, and you don't need `#[auto_scope]` or any special lifetimes. (You can even use a normal `Scope`, which is a white lie to Rust's type system, but it's totally immaterial to the output, so it's a useful elision.)
+
+## Nested state
+
+When you're using the `ReactiveState` derive macro, it's common to want to have some types use nested state, so that you can do something like `state.foo.bar.get()`, rather than `state.foo.get().bar`. This can enable greater flexibility and granularity, and is supported through the `#[rx(nested)]` helper macro, which will assume the type of the field it annotates has had `ReactiveState` derived on it. 
+
+If you want to use some more complex types of nested state, such as nested `Vec`s or `HashMap`s, take a look at [this module](=state/rx_collections), and enable the `rx-collections` feature flag on Perseus.
