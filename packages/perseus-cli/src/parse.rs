@@ -217,9 +217,12 @@ pub struct DeployOpts {
     /// Change the output from `pkg/` to somewhere else
     #[clap(short, long, default_value = "pkg")]
     pub output: String,
-    /// Export you app to purely static files (see `export`)
+    /// Export your app to purely static files (see `export`)
     #[clap(short, long)]
     pub export_static: bool,
+    /// Don't minify JavaScript (this will decrease performance)
+    #[clap(long)]
+    pub no_minify_js: bool,
 }
 /// Runs the `tinker` action of plugins, which lets them modify the Perseus
 /// engine

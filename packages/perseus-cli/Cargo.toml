@@ -43,6 +43,7 @@ flate2 = "1"
 directories = "4"
 cargo_metadata = "0.15"
 cargo-lock = "8"
+minify-js = "0.4"
 
 [dev-dependencies]
 assert_cmd = "2"

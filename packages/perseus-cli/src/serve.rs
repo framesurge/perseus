@@ -208,7 +208,7 @@ pub fn serve(
     tools: &Tools,
     global_opts: &Opts,
     spinners: &MultiProgress,
-    testing: bool,
+    silent_no_run: bool,
 ) -> Result<(i32, Option<String>), ExecutionError> {
     // Set the environment variables for the host and port
     // NOTE Another part of this code depends on setting these in this way
@@ -278,9 +278,9 @@ pub fn serve(
         // The user doesn't want to run the server, so we'll give them the executable
         // path instead
         let exec_str = (*exec.lock().unwrap()).to_string();
-        // Only tell the user about this if we're not testing (which is a whole separate
-        // workflow)
-        if !testing {
+        // Only tell the user about this if they've told us not to run (since deployment
+        // and testing both implicitly do this)
+        if !silent_no_run {
             println!("Not running server because `--no-run` was provided. You can run it manually by running the following executable from the root of the project.\n{}", &exec_str);
         }
         Ok((0, Some(exec_str)))

@@ -7,7 +7,9 @@ use crate::serve;
 use fs_extra::copy_items;
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use indicatif::MultiProgress;
+use minify_js::{minify, TopLevelMode};
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 
 /// Deploys the user's app to the `pkg/` directory (can be changed with
@@ -26,9 +28,9 @@ pub fn deploy(
 ) -> Result<i32, Error> {
     // Fork at whether we're using static exporting or not
     let exit_code = if opts.export_static {
-        deploy_export(dir, opts.output.to_string(), tools, global_opts)?
+        deploy_export(dir, opts.output.to_string(), opts, tools, global_opts)?
     } else {
-        deploy_full(dir, opts.output.to_string(), tools, global_opts)?
+        deploy_full(dir, opts.output.to_string(), opts, tools, global_opts)?
     };
 
     Ok(exit_code)
@@ -40,6 +42,7 @@ pub fn deploy(
 fn deploy_full(
     dir: PathBuf,
     output: String,
+    opts: &DeployOpts,
     tools: &Tools,
     global_opts: &Opts,
 ) -> Result<i32, Error> {
@@ -61,8 +64,8 @@ fn deploy_full(
         tools,
         global_opts,
         &MultiProgress::new(),
-        // We're not testing
-        false,
+        // Don't emit the "not running" message
+        true,
     )?;
     if serve_exit_code != 0 {
         return Ok(serve_exit_code);
@@ -158,6 +161,13 @@ fn deploy_full(
             .into());
         }
 
+        if !opts.no_minify_js {
+            minify_js(
+                &dir.join("dist/pkg/perseus_engine.js"),
+                &output_path.join("dist/pkg/perseus_engine.js"),
+            )?
+        }
+
         println!();
         println!("Deployment complete 🚀! Your app is now available for serving in the standalone folder '{}'! You can run it by executing the `server` binary in that folder.", &output_path.to_str().map(|s| s.to_string()).unwrap());
 
@@ -173,6 +183,7 @@ fn deploy_full(
 fn deploy_export(
     dir: PathBuf,
     output: String,
+    opts: &DeployOpts,
     tools: &Tools,
     global_opts: &Opts,
 ) -> Result<i32, Error> {
@@ -253,8 +264,40 @@ fn deploy_export(
         .into());
     }
 
+    if !opts.no_minify_js {
+        minify_js(
+            &dir.join("dist/exported/.perseus/bundle.js"),
+            &output_path.join(".perseus/bundle.js"),
+        )?
+    }
+
     println!();
     println!("Deployment complete 🚀! Your app is now available for serving in the standalone folder '{}'! You can run it by serving the contents of that folder however you'd like.", &output_path.to_str().map(|s| s.to_string()).unwrap());
 
     Ok(0)
+}
+
+/// Minifies the given JS code.
+fn minify_js(from: &Path, to: &Path) -> Result<(), DeployError> {
+    let js_bundle = fs::read_to_string(from)
+        .map_err(|err| DeployError::ReadUnminifiedJsFailed { source: err })?;
+
+    // TODO Remove this pending wilsonzlin/minify-js#7
+    // `minify-js` has a hard time with non-default exports right now, which is
+    // actually fine, because we don't need `initSync` whatsoever
+    let js_bundle = js_bundle.replace("export { initSync }", "// export { initSync }");
+
+    let mut minified = Vec::new();
+    minify(
+        TopLevelMode::Global,
+        js_bundle.as_bytes().to_vec(),
+        // Guaranteed to be UTF-8 output
+        &mut minified,
+    )
+    .map_err(|err| DeployError::MinifyError { source: err })?;
+    let minified =
+        String::from_utf8(minified).map_err(|err| DeployError::MinifyNotUtf8 { source: err })?;
+    fs::write(to, &minified).map_err(|err| DeployError::WriteMinifiedJsFailed { source: err })?;
+
+    Ok(())
 }
