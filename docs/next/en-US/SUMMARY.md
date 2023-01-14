@@ -51,8 +51,7 @@
 # Capsules
 
 -   [Introduction](/docs/capsules/intro)
--   [Capsules vs. templates](/docs/capsules/capsules-vs-templates)
--   [Delayed widgets](/docs/capsules/delayed)
+-   [Using capsules](/docs/capsules/using)
 
 # Miscellaneous
 

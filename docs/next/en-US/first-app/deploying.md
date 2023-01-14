@@ -32,6 +32,16 @@ When it's done, this command wil produce a `pkg/` folder in the root of your pro
 
 Obviously, you probably want to host your app in production on a different address, like `0.0.0.0` (network-speak for "host this everywhere so everyone who comes to my server can find it"), and perhaps on port `80`. Note that Perseus doesn't handle HTTPS at all, and you'll need to do this with a reverse proxy or the like (which comes built-in to most servers these days). You can set the host and port with the `PERSEUS_HOST` and `PERSEUS_PORT` environment variables.
 
+### Optimizations
+
+When you deploy your Perseus app, there are two separate main binaries that are produced: the Wasm bundle, and the engine binary (the latter won't exist if you use export deployment though). What you want to do is optimize the engine binary for speed, since it's running your server, and the Wasm bundle for *size*: the reason is because Wasm is already extremely fast, and the main impediment to speed in the browser is how long it takes to load the Wasm bundle from the server. *Smaller bundle = faster load.* (But remember that this is only for making your pages interactive, the user will see content straight away!)
+
+Most of these optimizations are all applied automatically in `perseus deploy`, but they can be tweaked if you like by setting some of the flags on the CLI (which you can see with `perseus deploy --help`). These will allow you to apply different optimization settings to suit your needs.
+
+One thing you may want to do is replace Rust's default allocator (thing in charge of your app's memory) with something slower but smaller. There are two options here: [`wee_alloc`] (which has memory leaks, and is now unmaintained), and the newer (but largely untested) [`lol_alloc`]. Whatever you do, make sure you only use these with `#[cfg(client)]` to make sure they don't get used for your server as well! (Since that would *massively* slow down your site.)
+
+For more information on optimizing Wasm bundle sizes, see [here](https://rustwasm.github.io/book/reference/code-size.html#optimizing-builds-for-code-size).
+
 ## Export deployment
 
 However, there's actually a simpler way of deploying this app in particular. Because we aren't using any features that need a server (e.g. we're generating state at build-time, not request-time, so all the server is doing is just passing over files that it generated when we built the app), we can *export* our app. You can try this for development with `perseus export -s` (the `-s` tells Perseus to spin up a file server automatically to serve your app for you). In production, use `perseus deploy -e` to make `pkg/` contain a series of static files. If you have `python` installed on your computer, you can serve this with `python -m http.server -d pkg/`. The nice thing about exported apps is that they can be sent to places like [GitHub Pages], which will host your app for free. In fact, this whole website is exported (because it's all static documentation), and hosted on exactly that service!
