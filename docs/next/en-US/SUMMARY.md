@@ -46,6 +46,7 @@
 -   [Helper state](/docs/state/helper)
 -   [Suspended state](/docs/state/suspense)
 -   [Freezing and thawing](/docs/state/freezing-thawing)
+-   [Manually implementing `ReactiveState`](/docs/state/manual)
 
 # Capsules
 
