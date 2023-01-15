@@ -319,12 +319,25 @@ impl<G: Html> Reactor<G> {
         S: MakeRx + Serialize + DeserializeOwned,
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
+        // It is perfectly safe to get a translator here (because we will already
+        // have handled it)
+        let path_without_locale =
+            PathWithoutLocale(match self.get_translator().get_locale().as_str() {
+                "xx-XX" => url.to_string(),
+                locale => url
+                    .strip_prefix(&format!("{}/", locale))
+                    .unwrap()
+                    .to_string(),
+            });
         // See if we can get both the active and frozen states
         let frozen_app_full = self.frozen_app.borrow();
         if let Some((_, thaw_prefs, _)) = &*frozen_app_full {
             // Check against the thaw preferences if we should prefer frozen state over
-            // active state
-            if thaw_prefs.page.should_prefer_frozen_state(url) {
+            // active state (these are locale-agnostic)
+            if thaw_prefs
+                .page
+                .should_prefer_frozen_state(&path_without_locale)
+            {
                 drop(frozen_app_full);
                 // We'll fall back to active state if no frozen state is available
                 match self.get_frozen_state_and_register::<S>(url, is_widget)? {

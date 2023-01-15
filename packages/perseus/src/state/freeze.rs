@@ -1,5 +1,5 @@
 use super::global_state::FrozenGlobalState;
-use crate::path::PathMaybeWithLocale;
+use crate::path::{PathMaybeWithLocale, PathWithoutLocale};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -60,15 +60,15 @@ pub enum PageThawPrefs {
 impl PageThawPrefs {
     /// Checks whether or not the given URL should prioritize frozen state over
     /// active state.
-    pub(crate) fn should_prefer_frozen_state(&self, url: &str) -> bool {
+    pub(crate) fn should_prefer_frozen_state(&self, url: &PathWithoutLocale) -> bool {
         match &self {
             // If we're only including some pages, this page should be on the include list
-            Self::Include(pages) => pages.iter().any(|v| v == url),
+            Self::Include(pages) => pages.iter().any(|v| v == &**url),
             // If we're including all pages in frozen state prioritization, then of course this
             // should use frozen state
             Self::IncludeAll => true,
             // If we're excluding some pages, this page shouldn't be on the exclude list
-            Self::Exclude(pages) => !pages.iter().any(|v| v == url),
+            Self::Exclude(pages) => !pages.iter().any(|v| v == &**url),
         }
     }
 }
