@@ -1,6 +1,6 @@
 # Core Principles
 
-Now that you've built your first app, it's important to understand some of the building blocks behind Perseus that make the code you write turn into an actual web app!
+Before you dive into Perseus, you might want to get a better idea of the fundamentals on which the framework is built. If you'd prefer to dive straight in though, check out [the tutorial], and then maybe come back here later.
 
 The main key idea that underpins Perseus is about *templates*, and the primary architectural matter to understand is how Perseus apps actually work in terms of their components.
 
@@ -25,7 +25,7 @@ So what about those first two? Well, they're very simple templates that don't ta
 
 This illustrates nicely that the determining factor that differentiates pages from each other is state, and that's what Perseus is built around.
 
-Let's return to our music player app. Are all those songs listed in a database available at build-time? Use the [*build state*](:reference/strategies/build-state) strategy. Are there too many to build all at once? Use [*incremental generation*](:reference/strategies/incremental-generation) to build only the most commonly used songs first, and then build the rest on-demand when they're first accessed, caching to make them fast for subsequent users.
+Let's return to our music player app. Are all those songs listed in a database available at build-time? Use the [*build state*](:state/build) strategy. Are there too many to build all at once? Use [*incremental generation*](:state/incremental) to build only the most commonly used songs first, and then build the rest on-demand when they're first accessed, caching to make them fast for subsequent users.
 
 Once that state is generated, Perseus will go right ahead and proactively prerender your pages to HTML, meaning your users see content the second they load your site. (This is called server-side rendering, except the actual rendering has happened ahead of time, whenever you built your app.)
 
