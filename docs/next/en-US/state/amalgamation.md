@@ -4,7 +4,7 @@ There are quite a few cases when you're using the state generation platform wher
 
 Like [other state generation functions](:state/build), your state amalgamation function can be either fallible (with a [`BlamedError`](=prelude/struct.BlamedError@perseus)) or infallible, and it has access to a [`StateGeneratorInfo`](=prelude/struct.StateGeneratorInfo@perseus) instance. It's also asynchronous, and returns your state. The difference between it and other functions is that it also takes, as arguments, your build-time and request-time states (it does *not* take the HTTP request, so you'll have to extract any data from this that you want and put it into your request-time state). Here's an example of using it (albeit a rather contrived one):
 
-```
+```rust
 {{#include ../../../examples/core/state_generation/src/templates/amalgamation.rs}}
 ```
 

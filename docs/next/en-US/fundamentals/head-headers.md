@@ -12,7 +12,7 @@ Heads work very much like views in Perseus: they're set on a template-by-templat
 
 Here's an example of setting the head without using any state:
 
-```
+```rust
 {{#include ../../../../examples/core/basic/src/templates/about.rs}}
 ```
 
@@ -32,7 +32,7 @@ When you need to set headers, you can do so with a function of the same form as 
 
 Here's a more fully-fledged example that sets the custom `X-Greeting` header with the contents of some generated state:
 
-```
+```rust
 {{#include ../../../examples/core/set_headers/src/templates/index.rs}}
 ```
 
