@@ -29,7 +29,7 @@ Be sure to derive `Clone` on this type.
 
 The [`MakeRx`](=state/trait.MakeRx@perseus) trait is the backbone of the Perseus reactive state platform, but it's actually surprisingly simply to implement! All you need to do is something like this:
 
-```
+```rust
 impl MakeRx for MyState {
     type Rx = MyStateRx;
     fn make_rx(self) -> Self::Rx {
@@ -44,7 +44,7 @@ Usually, the body of that `make_rx()` function will be simply wrapping all the e
 
 The [`MakeUnrx`](=state/trait.MakeUnrx@perseus) trait is slightly more complicated, because it involves converting out of `RcSignal`s, and also the suspense system. Like `MakeRx`, there is an associated type `Unrx`, which should just reference your unreactive state type (which must implement `Serialize + Deserialize + MakeRx`). For nested reactive fields, you can simply call `.make_unrx()` to make them unreactive, whereas non-nested fields will need something like this:
 
-```
+```rust
 (*self.my_field.get_untracked()).clone()
 ```
 
@@ -52,7 +52,7 @@ The trickiest part of this is the `compute_suspense()` function (which must be t
 
 The most complex part of this is the suspense handler, because you want to call the function, but not `.await` on it, meaning the future can be handled by Perseus appropriately. To do this, you'll want to call your handler like this:
 
-```
+```rust
 my_handler(
     cx,
     create_ref(cx, self.my_field.clone())
@@ -65,7 +65,7 @@ Notice how `create_ref()` is used on the field, which produces a reference scope
 
 Once youv've done `MakeUnrx`, you're over the hump, and now you can pretty much just copy this code, substituting in the names of your state types of course:
 
-```
+```rust
 impl Freeze for MyStateRx {
     fn freeze(&self) -> String {
         use perseus::state::MakeUnrx;

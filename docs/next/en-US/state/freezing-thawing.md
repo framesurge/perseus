@@ -22,7 +22,7 @@ You can control many aspects of thawing, including whether frozen state or new s
 
 Here's a more complex example of using state freezing. There are two inputs, one for the global state, and one for the page state, which will be used to reactively set them, and then a button that freezes the whole app (using the `reactor.freeze()` method, which really is all you need to do!). For demonstration purposes, that's then synchronized to an input that takes in state that can be used to thaw the app, which is a slightly more complex (and fallible) process. Note the use of `#[cfg(client)]`, since state freezing/thawing can only take place on the client-side.
 
-```
+```rust
 {{#include ../../../examples/core/freezing_and_thawing/src/templates/index.rs}}
 ```
 
