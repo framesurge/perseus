@@ -182,10 +182,13 @@ test.cmd = [
 test.desc = "runs all tests headlessly (assumes geckodriver running in background)"
 # This sometimes works, and sometimes fails, depending on the mood of Cargo's caching (just re-run it a few times, restart, the usual)
 test.subcommands.core.cmd = [
-    # This will ignore end-to-end tests
-    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all",
+    # This will ignore end-to-end tests, but it will run long-running ones
+    # "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all",
+    # Run the long-running tests separately (because including ignored tests on *everything*)
+    # fails the docblocks
+    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all --tests -- --ignored",
     # We should only test documentation on the client-side
-    "RUSTFLAGS=\"--cfg=client\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
+    # "RUSTFLAGS=\"--cfg=client\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
 ]
 test.subcommands.example-all-integrations.cmd = [
     "EXAMPLE_INTEGRATION=actix-web bonnie dev example %category %example test",
