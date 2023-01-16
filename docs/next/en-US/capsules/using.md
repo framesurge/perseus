@@ -1,6 +1,10 @@
 # Using capsules
 
-Using capsules in your own code involves a few steps. First, you'll want to create a `capsules/` directory in the root of your project (this is just convention), which is just like `templates/`, but (surprise surprise) for capsules. You'll also probably want to bring [`lazy_static`](https://docs.rs/lazy_static/latest/lazy_static) into your project as a dependency so you can use the *referential defin pattern* of capsule definition. This means, rather than having something like a `get_capsule()` function that you use to get your capsule, you create a static reference to it that you can use from anywhere in your program. This is because, unlike templates, capsules get used in more than one place than just `PerseusApp`: you'll also need them where you want to interpolate them into templates.
+Using capsules in your own code involves a few steps. First, you'll want to create a `capsules/` directory in the root of your project (this is just convention), which is just like `templates/`, but (surprise surprise) for capsules. You'll also probably want to bring [`lazy_static`](https://docs.rs/lazy_static/latest/lazy_static) into your project as a dependency so you can use the *referential defin pattern* of capsule definition. This means, rather than having something like a `get_capsule()` function that you use to get your capsule, you create a static reference to it that you can use from anywhere in your program. This is because, unlike templates, capsules get used in more than one place than just `PerseusApp`: you'll also need them where you want to interpolate them into templates. Note that doing this means you should add your capsules to your `PerseusApp` like so:
+
+```rust
+.capsule_ref(&*crate::capsules::my::capsule::CAPSULE)
+```
 
 ## `Capsule` vs. `Template`
 
