@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.17](https://github.com/framesurge/perseus/compare/v0.4.0-beta.16...v0.4.0-beta.17) (2023-01-18)
+
+
+### Features
+
+* **cli:** added automatic js minification on deployment ([d516f0a](https://github.com/framesurge/perseus/commit/d516f0a97107e8ea0ef1ffee3e617eea7f2404dd))
+* implemented `PartialEq + Eq` on all rx collections ([56ee370](https://github.com/framesurge/perseus/commit/56ee370aafeccd35227019cbe6b377dbdf76f274))
+
+
+### Bug Fixes
+
+* **capsules:** fixed capsules with exporting ([b6e0916](https://github.com/framesurge/perseus/commit/b6e091674c440338193050b18d99fef93812c253))
+* **capsules:** fixed further issues with capsule exporting ([e9c5f4d](https://github.com/framesurge/perseus/commit/e9c5f4d92655655a0efec04c397282f0fd860154))
+* **capsules:** fixed initial widget caching with i18n ([e3b49e1](https://github.com/framesurge/perseus/commit/e3b49e1ecc4dd7b9780a8e321ca1c44e2303ab9b))
+* fixed bad delaayed widgets transmute ([0701ff8](https://github.com/framesurge/perseus/commit/0701ff820d3d9d8961ce25c2c4a023e613f21def))
+* **hsr:** fixed hsr ([a897b4e](https://github.com/framesurge/perseus/commit/a897b4eda9b545a01d8ca2b78080fbdc40b655ab))
+* made `ThawPrefs` locale-agnostic ([108b754](https://github.com/framesurge/perseus/commit/108b754f32e0b00fa373b37fa1d4f07cec6f2515))
+* removed premature freezing API change ([2a9bfde](https://github.com/framesurge/perseus/commit/2a9bfde7b12db058ed20f8efa42d8291f22fe7c3))
+
+
+### Documentation Changes
+
+* added clear example of `.capsule_ref()` ([f23fcfa](https://github.com/framesurge/perseus/commit/f23fcfa48ccf6e59a221ac45d20e069598d80cc1))
+* added notes on nested state and rx collections ([a4c1dfb](https://github.com/framesurge/perseus/commit/a4c1dfbd6489e58285b12d7ddb8c80c024fbd7e5))
+* added some missing lang declarations ([c3f2a02](https://github.com/framesurge/perseus/commit/c3f2a02712b90769969cab14de2e428a6ce3d117))
+* edited core principles and introductory docs ([7dd032f](https://github.com/framesurge/perseus/commit/7dd032f28625b0d9f242dae17ec216df4ad6d8fb))
+* edited migration guide ([96d895d](https://github.com/framesurge/perseus/commit/96d895d93e7bb9b5ba93daa0c66bd4a984282661))
+* fixed missing codeblock lang declarations ([962a9fb](https://github.com/framesurge/perseus/commit/962a9fbd3467af55b3ba2c8acaa12cb0530a1229))
+* removed old docs and refactored substantially ([0c8a9be](https://github.com/framesurge/perseus/commit/0c8a9bef05bb70ef375f47b80b3261fb60b6156f))
+* tempered a line in the migration docs ([ea3d76c](https://github.com/framesurge/perseus/commit/ea3d76c20f31eaa2af5201af9e0060ac334d49d7))
+* updated faqs ([0b5fecb](https://github.com/framesurge/perseus/commit/0b5fecbdcc407a66511cb62d024cab1a5c83aa41))
+* wrote further docs ([9b7fd5d](https://github.com/framesurge/perseus/commit/9b7fd5dd5f25e122cdb2f4db937502241058d4ca))
+* wrote introductory capsules docs ([0b48598](https://github.com/framesurge/perseus/commit/0b48598d06e0e16252f55f75df7447b5ff848c0b))
+* wrote new docs on manually implementing state types ([e430cf6](https://github.com/framesurge/perseus/commit/e430cf694e8b5158ff4d9a88c654368b9e393fc3))
+
 ## [0.4.0-beta.16](https://github.com/framesurge/perseus/compare/v0.4.0-beta.15...v0.4.0-beta.16) (2023-01-13)
 
 
