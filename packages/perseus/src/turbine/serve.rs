@@ -172,6 +172,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .read(&format!("static/{}.widgets.json", &path_encoded))
                     .await?
             };
+            // From the build process, these are infallible
             let widget_states = match serde_json::from_str::<
                 HashMap<PathMaybeWithLocale, (String, Value)>,
             >(&widget_states)

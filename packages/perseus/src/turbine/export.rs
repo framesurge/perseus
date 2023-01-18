@@ -133,6 +133,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .into())
             }
         };
+
+        // If it's a capsule, abort now
+        if template.is_capsule {
+            return Ok(());
+        }
+
         // Create a locale detection file for it if we're using i18n
         // These just send the app shell, which will perform a redirect as necessary
         // Notably, these also include fallback redirectors if either Wasm or JS is
@@ -279,11 +285,16 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .immutable_store
             .read(&format!("static/{}.widgets.json", full_path_encoded))
             .await?;
+        // These are *not* fallible!
         let widget_states = match serde_json::from_str::<
-            HashMap<PathMaybeWithLocale, Result<Value, ServerErrorData>>,
+            HashMap<PathMaybeWithLocale, (String, Value)>,
         >(&widget_states)
         {
-            Ok(widget_states) => widget_states,
+            // Same processing as the server does
+            Ok(widget_states) => widget_states
+                .into_iter()
+                .map(|(k, (_, v))| (k, Ok(v)))
+                .collect::<_>(),
             Err(err) => return Err(ServerError::InvalidPageState { source: err }),
         };
         let head = self
