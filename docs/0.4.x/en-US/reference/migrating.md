@@ -26,7 +26,7 @@ Perseus v0.4.x added a significant number of breaking changes, as almost the ent
 20. Update your code for any smaller breaking changes that might affect you, as per the [changelog](https://github.com/framesurge/perseus/blob/main/CHANGELOG.md).
 21. Run `cargo update` and then `perseus build` to get everything up to date and ensure that your app works! (This might take a while the first time.)
 
-We realize that this is a mammoth number of breaking changes, and there will be several more if you're a plugin developer. However, Perseus v0.4.0 brings extraordinary levels of performance and ergonomics to Perseus, removing old quirks and streamlining the internals massively. With the introduction of the new capsules system, Perseus is by far the most powerful frontend framework in the world. If you're having any trouble with updating, please do not hesitate to let us know on [Discord](https://discord.com/invite/GNqWYWNTdp), and we'll happily help you out as soon as we can!
+We realize that this is a mammoth number of breaking changes, and there will be several more if you're a plugin developer. However, Perseus v0.4.0 brings extraordinary levels of performance and ergonomics to Perseus, removing old quirks and streamlining the internals massively. With the introduction of the new capsules system, Perseus is on par with the most powerful frontend frameworks in the world. If you're having any trouble with updating, please do not hesitate to let us know on [Discord](https://discord.com/invite/GNqWYWNTdp), and we'll happily help you out as soon as we can!
 
 ## If You've Ejected
 
