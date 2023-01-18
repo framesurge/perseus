@@ -381,6 +381,8 @@ impl Reactor<BrowserNodeType> {
                             let popup_error_disposer_2 = popup_error_disposer.clone();
 
                             if self.is_first.get() {
+                                // HSR will take care of this if it's enabled
+                                #[cfg(not(all(debug_assertions, feature = "hsr")))]
                                 self.is_first.set(false);
                             } else {
                                 spawn_local_scoped(cx, async move {
