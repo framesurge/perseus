@@ -134,16 +134,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             }
         };
 
-        // If it's a capsule, abort now
-        if template.is_capsule {
-            return Ok(());
-        }
-
         // Create a locale detection file for it if we're using i18n
         // These just send the app shell, which will perform a redirect as necessary
         // Notably, these also include fallback redirectors if either Wasm or JS is
         // disabled (or both)
-        if self.locales.using_i18n {
+        if self.locales.using_i18n && !template.is_capsule {
             self.immutable_store
                 .write(
                     &format!("exported/{}.html", &initial_load_path),
@@ -167,7 +162,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 let global_state = self.global_states_by_locale.get(locale).unwrap();
 
                 let page_data = self
-                    .get_static_page_data(&format!("{}-{}", locale, &path_encoded), has_state)
+                    .get_static_page_data(
+                        &format!("{}-{}", locale, &path_encoded),
+                        has_state,
+                        template.is_capsule,
+                    )
                     .await?;
 
                 // Don't create initial load pages for widgets
@@ -215,6 +214,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .get_static_page_data(
                     &format!("{}-{}", self.locales.default, &path_encoded),
                     has_state,
+                    template.is_capsule,
                 )
                 .await?;
 
@@ -270,21 +270,32 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         Ok(())
     }
+    /// This will work for capsules by just returning empty values
+    /// for the parts of `PageData` that they can't fulfill. Importantly,
+    /// capsules will be immediately converted into `PageDataPartial`s by
+    /// the caller (since initial load pages don't need to be constructed).
     async fn get_static_page_data(
         &self,
         full_path_encoded: &str,
         has_state: bool,
+        is_capsule: bool,
     ) -> Result<PageData, ServerError> {
         // Get the partial HTML content and a state to go with it (if applicable)
-        let content = self
-            .immutable_store
-            .read(&format!("static/{}.html", full_path_encoded))
-            .await?;
+        let content = if !is_capsule {
+            self.immutable_store
+                .read(&format!("static/{}.html", full_path_encoded))
+                .await?
+        } else {
+            String::new()
+        };
         // This maps all the dependencies for any page that has a prerendered fragment
-        let widget_states = self
-            .immutable_store
-            .read(&format!("static/{}.widgets.json", full_path_encoded))
-            .await?;
+        let widget_states = if !is_capsule {
+            self.immutable_store
+                .read(&format!("static/{}.widgets.json", full_path_encoded))
+                .await?
+        } else {
+            "{}".to_string()
+        };
         // These are *not* fallible!
         let widget_states = match serde_json::from_str::<
             HashMap<PathMaybeWithLocale, (String, Value)>,
@@ -297,11 +308,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .collect::<_>(),
             Err(err) => return Err(ServerError::InvalidPageState { source: err }),
         };
-        let head = self
-            .immutable_store
-            .read(&format!("static/{}.head.html", full_path_encoded))
-            .await?;
-        let state = match has_state {
+        let head = if !is_capsule {
+            self.immutable_store
+                .read(&format!("static/{}.head.html", full_path_encoded))
+                .await?
+        } else {
+            String::new()
+        };
+        let mut state = match has_state {
             true => serde_json::from_str(
                 &self
                     .immutable_store
@@ -311,6 +325,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .map_err(|err| ServerError::InvalidPageState { source: err })?,
             false => TemplateState::empty().state,
         };
+        // Widget states are always parsed as fallible on the browser-side
+        // because initially loaded widgets actually can be. This is a server-side
+        // workaround that we have to replicate here.
+        if is_capsule {
+            state = serde_json::to_value(Ok::<_, ()>(state)).unwrap();
+        }
         // Create an instance of `PageData`
         Ok(PageData {
             content,
