@@ -9,7 +9,7 @@ Perseus v0.4.x added a significant number of breaking changes, as almost the ent
 3. Delete the old `.perseus/` directory (this is no longer needed).
 4. Rename your `lib.rs` file to `main.rs`.
 5. Update each error page instantiation function to provide, as another argument, a function that returns a Sycamore `View<G>` for the document metadata of that error page (e.g. title).
-6. Change the `#[perseus::main]` attribute on the function in `main.rs` to be `#[perseus::main(perseus_warp::dflt_server)]` (replace `perseus_warp` with whatever server integration you decide to use).
+6. Change the `#[perseus::main]` attribute on the function in `main.rs` to be `#[perseus::main(perseus_axum::dflt_server)]` (replace `perseus_axum` with whatever server integration you decide to use).
 7. Update your view code for Sycamore's new version (mostly including adding a `cx` parameter as the first argument of every function that returns a `View<G>`).
 8. Add `.build()` to the bottom of all `Template::new` calls, and change those to `Template::build`.
 9. Remove `#[perseus::template_rx]` and `#[perseus::template]` entirely. Templates that take state should use `#[auto_scope]` now.

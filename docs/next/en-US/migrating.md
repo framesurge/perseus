@@ -8,7 +8,7 @@ Perseus v0.4.x added a significant number of breaking changes, as almost the ent
 2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.4.0-beta.16`.
 3. Delete the old `.perseus/` directory (this is no longer needed).
 4. Rename your `lib.rs` file to `main.rs` and delete `.perseus/` (it's been removed entirely!).
-5. Change the `#[perseus::main]` attribute on the function in `main.rs` to be `#[perseus::main(perseus_warp::dflt_server)]` (replace `perseus_warp` with whatever server integration you decide to use).
+5. Change the `#[perseus::main]` attribute on the function in `main.rs` to be `#[perseus::main(perseus_axum::dflt_server)]` (replace `perseus_axum` with whatever server integration you decide to use).
 6. Update your view code for Sycamore's new version (mostly including adding a `cx` parameter as the first argument of every function that returns a `View<G>`).
 7. Add `.build()` to the bottom of all `Template::new` calls, and change those to `Template::build`.
 8. Remove `#[perseus::template_rx]` and `#[perseus::template]` entirely. Templates that take reactive state should use `#[auto_scope]` now.

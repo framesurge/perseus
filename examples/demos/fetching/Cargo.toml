@@ -15,8 +15,8 @@ serde_json = "1"
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 ## **WARNING!** Before running this example outside the Perseus repo, replace the below line with
 ## the one commented out below it (changing the path dependency to the version you want to use)
-perseus-warp = { package = "perseus-integration", path = "../../../packages/perseus-integration", default-features = false }
-# perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
+perseus-axum = { package = "perseus-integration", path = "../../../packages/perseus-integration", default-features = false }
+# perseus-axum = { path = "../../../packages/perseus-axum", features = [ "dflt-server" ] }
 reqwest = "0.11"
 
 [target.'cfg(client)'.dependencies]
