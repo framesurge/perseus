@@ -57,7 +57,7 @@ pub(crate) enum RenderMode<G: Html> {
         ///
         /// Importantly, widget states are *not* fallible at build-time!
         /// Any errors will be propagated to terminate the build.
-        widget_states: Rc<RefCell<HashMap<String, (String, Value)>>>,
+        widget_states: Rc<RefCell<HashMap<PathMaybeWithLocale, (String, Value)>>>,
         /// A list of widget paths that are either nonexistent, or able to be
         /// incrementally generated. The build process should parse these and
         /// try to build them all (failing entirely on any that actually don't

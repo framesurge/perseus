@@ -315,17 +315,19 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                             }
                         };
 
+                        let localized_path = PathMaybeWithLocale::new(&path, &locale);
+
                         // Add this to the list of widget states so they can be written for later
                         // use
                         widget_states.borrow_mut().insert(
-                            path.to_string(),
+                            localized_path.clone(),
                             (capsule_name.to_string(), state.state.clone()),
                         );
 
                         // SAFETY: We asserted above that `G == H`.
                         let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
                         match self_copy.render_widget_for_template_server(
-                            PathMaybeWithLocale::new(&path, &locale),
+                            localized_path,
                             state,
                             props,
                             cx,
