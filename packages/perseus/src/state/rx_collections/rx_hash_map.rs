@@ -12,7 +12,7 @@ use sycamore::reactive::{create_rc_signal, RcSignal};
 /// and it wraps them in `RcSignal`s to make them reactive. If you want to store
 /// nested reactive types inside the map (e.g. `String`s), you should
 /// use [`super::RxHashMapNested`].
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RxHashMap<K, V>(HashMap<K, V>)
 where
     K: Clone + Eq + Hash,
@@ -20,7 +20,7 @@ where
     // including the actual bounds here
     V: Clone + 'static;
 /// The reactive version of [`RxHashMap`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RxHashMapRx<K, V>(RcSignal<HashMap<K, RcSignal<V>>>)
 where
     K: Clone + Serialize + DeserializeOwned + Eq + Hash,
