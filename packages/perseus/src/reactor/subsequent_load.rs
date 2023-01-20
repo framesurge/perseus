@@ -151,19 +151,20 @@ impl<G: Html> Reactor<G> {
                     .await?;
 
                 let template_name = entity.get_path();
+                // Now return the view that should be rendered
+                let (view, disposer) = entity.render_for_template_client(
+                    full_path.clone(),
+                    TemplateState::from_value(page_data.state),
+                    cx,
+                )?;
+
                 // Pre-emptively update the router state
                 checkpoint("page_interactive");
                 // Update the router state
                 self.router_state.set_load_state(RouterLoadState::Loaded {
                     template_name,
-                    path: full_path.clone(),
+                    path: full_path,
                 });
-                // Now return the view that should be rendered
-                let (view, disposer) = entity.render_for_template_client(
-                    full_path,
-                    TemplateState::from_value(page_data.state),
-                    cx,
-                )?;
 
                 Ok((view, disposer))
             }

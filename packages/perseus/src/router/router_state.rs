@@ -100,6 +100,12 @@ impl RouterState {
 /// The current load state of the router. You can use this to be warned of when
 /// a new page is about to be loaded (and display a loading bar or the like,
 /// perhaps).
+///
+/// In the event of an error, the router state will be left untouched (allowing
+/// it to be inspected in error views with reactor access to determine what the
+/// last page was, and therefore where the error likely occurred; usually, the
+/// last page will be in a `Loading` state). Popup errors will not cause any
+/// change to this state.
 #[derive(Clone, Debug)]
 pub enum RouterLoadState {
     /// The page has been loaded.
@@ -108,12 +114,6 @@ pub enum RouterLoadState {
         template_name: String,
         /// The full path to the new page being loaded (including the locale, if
         /// we're using i18n).
-        path: PathMaybeWithLocale,
-    },
-    /// An error page has been loaded. Note that this will not account for any
-    /// popup errors.
-    ErrorLoaded {
-        /// The path of this error.
         path: PathMaybeWithLocale,
     },
     /// A new page is being loaded, and will soon replace whatever is currently

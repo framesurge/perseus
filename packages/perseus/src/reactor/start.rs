@@ -237,6 +237,7 @@ impl Reactor<BrowserNodeType> {
                     page_disposer.update(disposer);
                 }
 
+                // Note that the router state has already been correctly set to `Loaded`
                 (view, false)
             }
             // On a redirect, return a view that just redirects straight away (of course,

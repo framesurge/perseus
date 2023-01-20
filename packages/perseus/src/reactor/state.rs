@@ -30,10 +30,9 @@ impl<G: Html> Freeze for Reactor<G> {
                 // It would be impressive to manage this timing, but it's fine to go to the route we
                 // were in the middle of loading when we thaw
                 RouterLoadState::Loading { path, .. } => Some(path.clone()),
-                // If we encounter this during re-hydration, we won't try to set the URL in the
-                // browser
-                RouterLoadState::ErrorLoaded { .. } => None,
                 RouterLoadState::Server => None,
+                // Error states are no longer propagated to the router, so we will attempt
+                // to pick up the last successful load implicitly
             },
             state_store: self.state_store.freeze_to_hash_map(),
         };
@@ -86,9 +85,9 @@ impl<G: Html> Reactor<G> {
         if let Some(frozen_route) = route {
             let curr_route = match &*self.router_state.get_load_state_rc().get_untracked() {
                 // If we've loaded a page, or we're about to, only change the route if necessary
-                RouterLoadState::Loaded { path, .. }
-                | RouterLoadState::Loading { path, .. }
-                | RouterLoadState::ErrorLoaded { path } => path.clone(),
+                RouterLoadState::Loaded { path, .. } | RouterLoadState::Loading { path, .. } => {
+                    path.clone()
+                }
                 // Since this function is only defined on the browser-side, this should
                 // be completely impossible (note that the user can't change the router
                 // state manually)
