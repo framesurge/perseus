@@ -67,8 +67,10 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     // reactive `struct`s
     let mut intermediate_fields = quote!();
     let mut intermediate_field_makers = quote!();
+    let mut new_intermediate_field_makers = quote!();
     let mut unrx_field_makers = quote!();
     let mut suspense_commands = quote!();
+    let mut old_types = quote!();
     for field in fields.iter() {
         let old_ty = field.ty.to_token_stream();
         let field_ident = field.ident.as_ref().unwrap(); // It's a `struct`, so this is defined
@@ -77,7 +79,11 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
         for attr in field.attrs.iter() {
             field_attrs.extend(attr.to_token_stream());
         }
-
+        // Old for ::new implementation of intermediate type
+        old_types.extend(quote!
+        {
+            #field_ident: #old_ty,
+        });
         // Nested fields are left as-is, non-nested ones are wrapped in `RcSignal`s
         if field.nested {
             // Nested types should implement the necessary linking traits
@@ -86,6 +92,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 #field_vis #field_ident: <#old_ty as ::perseus::state::MakeRx>::Rx,
             });
             intermediate_field_makers.extend(quote! { #field_ident: self.#field_ident.make_rx(), });
+            new_intermediate_field_makers.extend(quote! { #field_ident: #field_ident.make_rx(), });
             unrx_field_makers
                 .extend(quote! { #field_ident: self.#field_ident.clone().make_unrx(), });
 
@@ -117,6 +124,9 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             });
             intermediate_field_makers.extend(
                 quote! { #field_ident: ::sycamore::prelude::create_rc_signal(self.#field_ident), },
+            );
+            new_intermediate_field_makers.extend(
+                quote! { #field_ident: ::sycamore::prelude::create_rc_signal(#field_ident), },
             );
             // All fields must be `Clone`
             unrx_field_makers
@@ -175,6 +185,18 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
         #[derive(Clone)]
         #vis struct #intermediate_ident {
             #intermediate_fields
+        }
+
+        impl #intermediate_ident
+        {
+            fn new(#old_types) -> #intermediate_ident
+            {
+                use ::perseus::state::MakeRx;
+                #intermediate_ident
+                {
+                    #new_intermediate_field_makers
+                }       
+            }
         }
 
         impl ::perseus::state::MakeRx for #ident {
