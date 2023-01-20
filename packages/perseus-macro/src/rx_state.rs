@@ -199,6 +199,24 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             }
         }
 
+        impl From<#intermediate_ident> for #ident
+        {
+            fn from(value: #intermediate_ident) -> #ident
+            {
+                use ::perseus::state::MakeUnrx;
+                value.make_unrx()
+            }
+        }
+
+        impl From<#ident> for #intermediate_ident
+        {
+            fn from(value: #ident) -> #intermediate_ident
+            {
+                use ::perseus::state::MakeRx;
+                value.make_rx()
+            }
+        }
+
         impl ::perseus::state::MakeRx for #ident {
             type Rx = #intermediate_ident;
             fn make_rx(self) -> Self::Rx {
