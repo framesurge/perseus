@@ -10,7 +10,7 @@ use sycamore::reactive::{create_rc_signal, RcSignal};
 /// derived with the `ReactiveState` macro). If you want to store simple types
 /// inside the vector, without nested reactivity (e.g. `String`s), you should
 /// use [`super::RxVec`].
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RxVecNested<T>(Vec<T>)
 where
     // We get the `Deserialize` derive macro working by tricking Serde by not
@@ -18,7 +18,7 @@ where
     T: MakeRx + 'static,
     T::Rx: MakeUnrx<Unrx = T> + Freeze + Clone;
 /// The reactive version of [`RxVecNested`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RxVecNestedRx<T>(RcSignal<Vec<T::Rx>>)
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,

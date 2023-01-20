@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 
 // Initialize our app with the `perseus_warp` package's default server (fully
 // customizable)
-#[perseus::main(perseus_warp::dflt_server)]
+#[perseus::main(perseus_axum::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         // Create a new template at `index`, which maps to our landing page

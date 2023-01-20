@@ -12,7 +12,7 @@ use sycamore::reactive::{create_rc_signal, RcSignal};
 /// (usually derived with the `ReactiveState` macro). If you want to store
 /// simple types inside the vector, without nested reactivity (e.g. `String`s),
 /// you should use [`super::RxHashMap`].
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RxHashMapNested<K, V>(HashMap<K, V>)
 where
     K: Clone + Eq + Hash,
@@ -21,7 +21,7 @@ where
     V: MakeRx + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone;
 /// The reactive version of [`RxHashMapNested`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RxHashMapNestedRx<K, V>(RcSignal<HashMap<K, V::Rx>>)
 where
     K: Clone + Serialize + DeserializeOwned + Eq + Hash,

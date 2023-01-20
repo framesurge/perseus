@@ -137,7 +137,7 @@ serde_json = "1"
 # Engine-only dependencies go here
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
-perseus-warp = { version = "=%perseus_version", features = [ "dflt-server" ] }
+perseus-axum = { version = "=%perseus_version", features = [ "dflt-server" ] }
 
 # Browser-only dependencies go here
 [target.'cfg(client)'.dependencies]"#;
@@ -146,7 +146,7 @@ static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 
 use perseus::prelude::*;
 
-#[perseus::main(perseus_warp::dflt_server)]
+#[perseus::main(perseus_axum::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(crate::templates::index::get_template())

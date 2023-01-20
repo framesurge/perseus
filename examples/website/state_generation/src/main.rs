@@ -4,7 +4,7 @@ use std::io;
 use std::time::Duration;
 use sycamore::prelude::*;
 
-#[perseus::main(perseus_warp::dflt_server)]
+#[perseus::main(perseus_axum::dflt_server)]
 pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new().template(
         Template::build("post")

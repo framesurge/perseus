@@ -15,7 +15,7 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         env:
-          PERSEUS_VERSION: 0.4.0-beta.16
+          PERSEUS_VERSION: 0.4.0-beta.17
         steps:
             # The website builder accesses Git history for old examples, so we need everything
             - uses: actions/checkout@v2

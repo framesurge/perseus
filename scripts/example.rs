@@ -20,7 +20,7 @@ fn main() {
     // These paths are for the CLI, which is inside `packages/perseus-cli`
     let cli_path = format!("../../examples/{}/{}", &category, &example);
     // We use `perseus-warp` because that's aliased to `perseus-integration` in all example crates for readability of code examples
-    let cargo_args = format!("--features \"perseus-warp/{}\"", integration);
+    let cargo_args = format!("--features \"perseus-axum/{}\"", integration);
     if !integration_locked {
         args.push(format!("--cargo-engine-args='{}'", &cargo_args));
     }

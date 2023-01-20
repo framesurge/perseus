@@ -10,14 +10,14 @@ use sycamore::reactive::{create_rc_signal, RcSignal};
 /// vector, and it wraps them in `RcSignal`s to make them reactive. If you want
 /// to store nested reactive types inside the vector (e.g. `String`s), you
 /// should use [`super::RxVecNested`].
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RxVec<T>(Vec<T>)
 where
     // We get the `Deserialize` derive macro working by tricking Serde by not
     // including the actual bounds here
     T: Clone + 'static;
 /// The reactive version of [`RxVec`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RxVecRx<T>(RcSignal<Vec<RcSignal<T>>>)
 where
     T: Clone + Serialize + DeserializeOwned + 'static;

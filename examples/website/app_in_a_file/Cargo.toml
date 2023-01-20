@@ -13,6 +13,6 @@ serde_json = "1"
 
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
-perseus-warp = { path = "../../../packages/perseus-warp", features = [ "dflt-server" ] }
+perseus-axum = { path = "../../../packages/perseus-axum", features = [ "dflt-server" ] }
 
 [target.'cfg(client)'.dependencies]

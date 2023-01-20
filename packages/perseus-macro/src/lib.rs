@@ -93,7 +93,7 @@ pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
 ///
 /// This should take an argument for the function that will produce your server.
 /// In most apps using this macro (which is designed for simple use-cases), this
-/// will just be something like `perseus_warp::dflt_server` (with `perseus-warp`
+/// will just be something like `perseus_axum::dflt_server` (with `perseus-warp`
 /// as a dependency with the `dflt-server` feature enabled).
 ///
 /// Note that the `dflt-engine` and `client-helpers` features must be enabled on
