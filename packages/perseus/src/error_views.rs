@@ -145,25 +145,224 @@ impl<G: Html> ErrorViews<G> {
     pub fn unlocalized_development_default() -> Self {
         // Because this is an unlocalized, extremely simple default, we don't care about
         // capabilities or positioning
-        Self::new(|cx, err, _, _| {
+        Self::new(|cx, err, _, pos| {
             match err {
                 // Special case for 404 due to its frequency
-                ClientError::ServerError { status, .. } if status == 404 => (
+                ClientError::ServerError { status, .. } if status != 404 => (
                     view! { cx,
                         title { "Page not found" }
                     },
                     view! { cx,
-                        p { "Page not found." }
+                        div(
+                            style = r#"
+display: flex;
+justify-content: center;
+align-items: center;
+height: 95vh;
+width: 100%;
+"#
+                        ) {
+                            main(
+                                style = r#"
+display: flex;
+flex-direction: column;
+border: 1px solid black;
+border-radius: 0.5rem;
+max-width: 36rem;
+margin: 1rem;
+"#
+                            ) {
+                                h3(
+                                    style = r#"
+font-size: 1.5rem;
+line-height: 2rem;
+font-weight: 700;
+width: 100%;
+padding-bottom: 1rem;
+border-bottom: 1px solid black;
+margin-top: 1rem;
+margin-bottom: 1rem;
+"#
+                                ) {
+                                    span(style = "padding-left: 1rem;") { "Page not found!" }
+                                }
+                                div(
+                                    style = r#"
+padding: 1rem;
+padding-top: 0;
+margin-top: 1rem;
+margin-bottom: 1rem;
+"#
+                                ) {
+                                    span {
+                                        "Uh-oh, that page doesn't seem to exist! Perhaps you forgot to add it to your "
+                                        code { "PerseusApp" }
+                                        "?"
+                                    }
+                                }
+                            }
+                        }
+
+                    },
+                ),
+                ClientError::Panic(panic_msg) => (
+                    // Panics are popups
+                    View::empty(),
+                    view! { cx,
+                            div(
+                                style = r#"
+position: absolute;
+bottom: 0;
+right: 0;
+background-color: #f87171;
+color: white;
+margin: 1rem;
+border-radius: 0.5rem;
+max-width: 30rem;
+"#
+                            ) {
+                                h2(
+                                    style = r#"
+font-size: 1.5rem;
+line-height: 2rem;
+font-weight: 700;
+width: 100%;
+padding-bottom: 1rem;
+border-bottom: 1px solid white;
+margin-top: 1rem;
+margin-bottom: 1rem;
+"#
+                                ) {
+                                    span(style = "padding-left: 1rem;") { "Critical error!" }
+                                }
+                                div(
+                                    style = r#"
+padding: 1rem;
+padding-top: 0;
+margin-top: 1rem;
+"#
+                                ) {
+                                    p { "Your app has panicked! You can see the panic message below." }
+                                    pre(
+                                        style = r#"
+background-color: #f59e0b;
+padding: 1rem;
+border-radius: 0.5rem;
+white-space: pre-wrap;
+word-wrap: break-word;
+"#
+                                    ) {
+                                        (panic_msg)
+                                    }
+                                    // This can happen with HSR, and it's a good idea to help the user out a bit
+                                    // TODO Should there be more hints here?
+                                    (if panic_msg.contains("cannot modify the panic hook from a panicking thread") {
+                                        view! { cx,
+                                            p {
+                                                i { "It looks like the error is about the panicking hook itself, which means the original panic has been overidden, possibly by hot state reloading in development. Reloading the page might show you the original panic message." }
+                                            }
+                                        }
+                                    } else {
+                                        View::empty()
+                                    })
+                                }
+                            }
                     },
                 ),
                 err => {
                     let err_msg = fmt_err(&err);
+
+                    // This will be placed in either a popup or across the page
+                    let inner_view = view! { cx,
+                        div(
+                            style = r#"
+background-color: #f87171;
+color: white;
+margin: 1rem;
+border-radius: 0.5rem;
+max-width: 30rem;
+"#
+                        ) {
+                            h2(
+                                style = r#"
+font-size: 1.5rem;
+line-height: 2rem;
+font-weight: 700;
+width: 100%;
+padding-bottom: 1rem;
+border-bottom: 1px solid white;
+margin-top: 1rem;
+margin-bottom: 1rem;
+"#
+                            ) {
+                                span(style = "padding-left: 1rem;") { "Error!" }
+                            }
+                            div(
+                                style = r#"
+padding: 1rem;
+padding-top: 0;
+margin-top: 1rem;
+"#
+                            ) {
+                                p { "Your app encountered an error, you can see the details below." }
+                                pre(
+                                    style = r#"
+background-color: #f59e0b;
+padding: 1rem;
+border-radius: 0.5rem;
+white-space: pre-wrap;
+word-break: break-word;
+"#
+                                ) {
+                                    (err_msg)
+                                }
+                            }
+                        }
+                    };
+
                     (
                         view! { cx,
                                 title { "Error" }
                         },
-                        view! { cx,
-                                (format!("An error occurred: {}", err_msg))
+                        match pos {
+                            ErrorPosition::Page => view! { cx,
+                                div(
+                                    style = r#"
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+height: 95vh;
+width: 100%;
+"#
+                                ) {
+                                    (inner_view)
+                                }
+                            },
+                            ErrorPosition::Popup => view! { cx,
+                                div(
+                                    style = r#"
+position: absolute;
+bottom: 0;
+right: 0;
+display: flex;
+justify-content: center;
+align-items: center;
+"#
+                                ) {
+                                    (inner_view)
+                                }
+                            },
+                            ErrorPosition::Widget => view! { cx,
+                                div(
+                                    style = r#"
+display: flex;
+flex-direction: column;
+"#
+                                ) {
+                                    (inner_view)
+                                }
+                            },
                         },
                     )
                 }
@@ -289,11 +488,11 @@ impl<G: Html> ErrorViews<G> {
     ///
     /// This assumes the reactor has already been fully set up with a translator
     /// on the given context, and hence this will always use
-    /// `ErrorContext::Full` (since widgets shoudl not be rendered if a
+    /// `ErrorContext::Full` (since widgets should not be rendered if a
     /// translator cannot be found, and certainly not if a reactor could not
     /// be instantiated).
     pub(crate) fn handle_widget(&self, err: ClientError, cx: Scope) -> View<G> {
-        let (_head, body) = (self.handler)(cx, err, ErrorContext::Full, ErrorPosition::Page);
+        let (_head, body) = (self.handler)(cx, err, ErrorContext::Full, ErrorPosition::Widget);
         body
     }
 }
