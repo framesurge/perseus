@@ -141,7 +141,8 @@ perseus-axum = { version = "=%perseus_version", features = [ "dflt-server" ] }
 
 # Browser-only dependencies go here
 [target.'cfg(client)'.dependencies]"#;
-static DFLT_INIT_GITIGNORE: &str = r#"dist/"#;
+static DFLT_INIT_GITIGNORE: &str = r#"dist/
+target/"#;
 static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 
 use perseus::prelude::*;
