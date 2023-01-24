@@ -6,10 +6,10 @@ use assert_fs::{
 use predicates::prelude::*;
 use std::process::Command;
 
-/// Makes sure that `perseus build` with tools installed in the local directory works
-/// fully, which tests the tool installation process and use (their paths are adjustable,
-/// and it's not really feasible to test the system-wide installation locally, but that's
-/// implicit on CI).
+/// Makes sure that `perseus build` with tools installed in the local directory
+/// works fully, which tests the tool installation process and use (their paths
+/// are adjustable, and it's not really feasible to test the system-wide
+/// installation locally, but that's implicit on CI).
 #[test]
 #[ignore]
 fn local_tool_installation_works() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,10 +26,23 @@ fn local_tool_installation_works() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("perseus")?;
     cmd.env("TEST_EXAMPLE", dir.path())
         .arg("build")
-        .arg("--no-system-tools-cache");
+        .arg("--no-system-tools-cache")
+        // We manually specify the versions to test that functionality (latest is implicitly
+        // tested by everything else), and to have reliable file paths to assert on
+        .arg("--wasm-bindgen-version")
+        .arg("0.2.83")
+        .arg("--wasm-opt-version")
+        .arg("version_110");
     cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Installing external tools...✅"));
+        // We can't assert on the spinners, because they've cleared from the console
+        // once the program terminates
+        .success();
+
+    // Assert on the tools in `dist/tools/`
+    dir.child("dist/tools/wasm-bindgen-0.2.83/wasm-bindgen")
+        .assert(predicate::path::exists());
+    dir.child("dist/tools/wasm-opt-version_110/bin/wasm-opt")
+        .assert(predicate::path::exists());
 
     Ok(())
 }
