@@ -98,7 +98,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
     // Warn the user if they're using the CLI single-threaded mode
     if opts.sequential {
-        println!("Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.");
+        println!("Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by removing the `--sequential` flag. If you've deliberately enabled single-threaded mode, you can safely ignore this.");
     }
 
     // Check the user's environment to make sure they have prerequisites
