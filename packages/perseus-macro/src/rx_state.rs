@@ -80,8 +80,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             field_attrs.extend(attr.to_token_stream());
         }
         // Old for ::new implementation of intermediate type
-        old_types.extend(quote!
-        {
+        old_types.extend(quote! {
             #field_ident: #old_ty,
         });
         // Nested fields are left as-is, non-nested ones are wrapped in `RcSignal`s
@@ -195,7 +194,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 #intermediate_ident
                 {
                     #new_intermediate_field_makers
-                }       
+                }
             }
         }
 
