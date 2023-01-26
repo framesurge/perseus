@@ -42,4 +42,6 @@ fn main() {
         .spawn()
         .expect("couldn't run example (command execution failed)");
     let _ = child.wait().expect("couldn't wait on example executor process");
+
+    // TODO Pass through exit codes here
 }

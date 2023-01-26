@@ -139,11 +139,6 @@ pub fn test(
         // reflected in the tests
         let _ = server.kill();
 
-        // If the server is still running, that's fine, because it will be terminated
-        // with the main thread (or the thread group, in the case of watching)
-        //
-        // TODO Figure out a way of getting a green tick on that step
-
         // We've handled errors in the component threads, so the exit code is now zero
         Ok(0)
     } else {

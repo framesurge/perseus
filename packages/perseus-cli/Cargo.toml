@@ -49,6 +49,7 @@ minify-js = "0.4"
 assert_cmd = "2"
 assert_fs = "1"
 predicates = "2"
+ureq = "2"
 
 [lib]
 name = "perseus_cli"
