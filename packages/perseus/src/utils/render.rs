@@ -14,7 +14,6 @@ use sycamore::{prelude::Scope, view::View};
 ///
 /// **Warning:** if hydration is being used, it is expected that
 /// the given view was created inside a `with_hydration_context()` closure.
-// TODO Make sure hydration will work when it's targeted at a blank canvas...
 // XXX This is *highly* dependent on internal Sycamore implementation
 // details! (TODO PR for `hydrate_to_with_scope` etc.)
 #[cfg(any(client, doc))]
@@ -25,6 +24,8 @@ pub(crate) fn render_or_hydrate(
     parent: web_sys::Element,
     force_render: bool,
 ) {
+    use sycamore::utils::hydrate::{with_hydration_context, with_no_hydration_context};
+
     #[cfg(feature = "hydrate")]
     {
         use sycamore::web::HydrateNode;
@@ -50,7 +51,11 @@ pub(crate) fn render_or_hydrate(
         insert(
             cx,
             &HydrateNode::from_web_sys(parent.into()),
-            view, // We assume this was created in `with_hydration_context(..)`
+            if force_render {
+                with_no_hydration_context(|| view)
+            } else {
+                with_hydration_context(|| view)
+            },
             if force_render {
                 None
             } else {

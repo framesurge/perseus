@@ -111,16 +111,9 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
             }
         };
 
-        // If we're using hydration, everything has to be done inside a hydration
-        // context (because of all the custom view handling)
-        #[cfg(feature = "hydrate")]
-        {
-            running = with_hydration_context(|| core());
-        }
-        #[cfg(not(feature = "hydrate"))]
-        {
-            running = core();
-        }
+        // NOTE: To anyone who ever thinks it might be a good idea to put this whole
+        // thing in a `with_hydration_cx()`, it's not, it's really not.
+        core();
     });
 
     dispatch_loaded(running, false);

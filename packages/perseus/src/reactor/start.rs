@@ -416,9 +416,6 @@ impl Reactor<BrowserNodeType> {
                         // This template is reactive, and will be updated as necessary
                         view! { cx,
                             (*self.current_view.get())
-                            // BUG: Without this, any page that renders only one top-level node will lead to a hydration
-                            // error. Pending input from Sycamore...
-                            div {}
                         }
                     }
                 )
