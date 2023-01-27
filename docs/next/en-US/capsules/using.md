@@ -52,7 +52,7 @@ if you want to see a more advanced example of a capsule that uses incremental ge
 
 As explained earlier, Perseus automatically collates all widgets into one HTMl page before serving an *initial load*, for speed, but sometimes this is undesirable. Sometimes, no matter what, you want one section of your page to be loaded after the rest of the page is ready, usually to improve page load times by delaying the load of a heavy section. This can be done trivially by replacing `.widget()` with `.delayed_widget()`. Yep, that's all.
 
-*Note: currently, delayed widgets don't work with hydration, which a bug we're working on. For now, you'll need to disable the `hydrate` feature flag if you want to use them.*
+Deciding whether you want to use a delayed widget rather than a normal one should be a decision carefully made with reference to real user data! In some circumstances, they're a great idea that will improve performance, but, at other times, they can *worsen* performance!
 
 ## Rescheduling
 

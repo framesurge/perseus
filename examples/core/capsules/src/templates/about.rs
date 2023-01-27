@@ -5,8 +5,11 @@ use sycamore::prelude::*;
 
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
-        // This will display the user's IP address
-        (IP.widget(cx, "", ()))
+        // This will display the user's IP address using a delayed widget,
+        // meaning it will take a moment to load, even on initial loads. This can
+        // be useful for reducing the amount of content that needs to be served
+        // to users initially (sort of like the Perseus version of HTML streaming).
+        (IP.delayed_widget(cx, "", ()))
         (LINKS.widget(cx, "", ()))
     }
 }
