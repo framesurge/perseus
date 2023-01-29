@@ -52,6 +52,7 @@
 
 -   [Introduction](/docs/capsules/intro)
 -   [Using capsules](/docs/capsules/using)
+-   [Capsules vs. components](/docs/capsules-vs-components)
 
 # Miscellaneous
 
