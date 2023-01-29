@@ -79,7 +79,7 @@ impl Parse for TemplateFn {
                 // a capsule
                 // Any other kind of template doesn't need this macro
                 if args.len() != 2 && args.len() != 3 {
-                    return Err(syn::Error::new_spanned(&sig.inputs, "`#[template]` is only useful if you're using reactive state (which requires two arguments)"));
+                    return Err(syn::Error::new_spanned(&sig.inputs, "`#[auto_scope]` is only useful if you're using reactive state (which requires two arguments)"));
                 }
 
                 Ok(Self {
