@@ -158,6 +158,7 @@ spellcheck.desc = "checks docs and code for possible spelling errors (requires `
 
 test.cmd = [
     "bonnie test core",
+    "bonnie test cli",
     # Run tests for each example
     "bonnie test example-all-integrations core basic",
     "bonnie test example-all-integrations core custom_server",
@@ -183,13 +184,15 @@ test.desc = "runs all tests headlessly (assumes geckodriver running in backgroun
 # This sometimes works, and sometimes fails, depending on the mood of Cargo's caching (just re-run it a few times, restart, the usual)
 test.subcommands.core.cmd = [
     # This will ignore end-to-end tests, but it will run long-running ones
-    # "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all",
-    # Run the long-running tests separately (because including ignored tests on *everything*)
-    # fails the docblocks
-    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all --tests -- --ignored",
+    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all",
     # We should only test documentation on the client-side
-    # "RUSTFLAGS=\"--cfg=client\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
+    "RUSTFLAGS=\"--cfg=client\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
 ]
+test.subcommands.core.desc = "runs the core tests (these should be fairly quick)"
+test.subcommands.cli.cmd = [
+    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all --tests -- --ignored"
+]
+test.subcommands.cli.desc = "runs the cli tests (all are long-running, this will take a while)"
 test.subcommands.example-all-integrations.cmd = [
     "EXAMPLE_INTEGRATION=actix-web bonnie dev example %category %example test",
     "EXAMPLE_INTEGRATION=warp bonnie dev example %category %example test",
