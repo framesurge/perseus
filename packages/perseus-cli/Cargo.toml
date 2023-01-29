@@ -17,6 +17,13 @@ include = [
     "README.proj.md"
 ]
 
+autotests = false
+
+# Needed because we have shared utilities
+[[test]]
+name = "integration"
+path = "tests/lib.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
