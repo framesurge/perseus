@@ -148,7 +148,7 @@ impl<G: Html> ErrorViews<G> {
         Self::new(|cx, err, _, pos| {
             match err {
                 // Special case for 404 due to its frequency
-                ClientError::ServerError { status, .. } if status != 404 => (
+                ClientError::ServerError { status, .. } if status == 404 => (
                     view! { cx,
                         title { "Page not found" }
                     },
