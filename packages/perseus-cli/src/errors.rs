@@ -192,8 +192,19 @@ pub enum WatchError {
         #[source]
         source: std::io::Error,
     },
+    #[error("the file/folder '{filename}' could not be resolved to an absolute path (does the file/folder exist?)")]
+    WatchFileNotResolved {
+        filename: String,
+        source: std::io::Error,
+    },
     #[error("couldn't watch file at '{filename}', try re-running the command")]
     WatchFileFailed {
+        filename: String,
+        #[source]
+        source: notify::Error,
+    },
+    #[error("couldn't unwatch file at '{filename}', try re-running the command")]
+    UnwatchFileFailed {
         filename: String,
         #[source]
         source: notify::Error,
@@ -212,6 +223,11 @@ pub enum WatchError {
     GetSelfPathFailed {
         #[source]
         source: std::io::Error,
+    },
+    #[error("couldn't read an entry in the targeted custom directory for watching, do you have the necessary permissions?")]
+    ReadCustomDirEntryFailed {
+        #[source]
+        source: walkdir::Error,
     },
 }
 
