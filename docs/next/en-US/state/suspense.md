@@ -2,7 +2,7 @@
 
 The vast majority of state generation is handled on the engine-side in Perseus apps, but there's a way to do this kind of thing on the client-side as well, called *suspended state*. This is basically where you tell Perseus to generate a default for one or more of the fields of your state type, but to modify this reactively with an asynchronous function once the page is ready on the client-side. This could be used to, say, render content that is client-specific, but that would be too onerous to render on the engine-side. Generally, unless you're accessing browser-specific parameters, there should be no difference between the capabilities of suspended state and [request-time state](:state/request), except that the former can be faster if it takes a while to fetch the state in question (because the page is still rendered, just not all of it).
 
-If you want to render entire sections of content in a delayed fashion, check out [delayed widgets], which are a superior solution to that particular problem.
+If you want to render entire sections of content in a delayed fashion, check out [delayed widgets](:capsules/using), which are a superior solution to that particular problem.
 
 ## How is this different from Sycamore's `Suspense`?
 
@@ -36,7 +36,7 @@ The `MySuspendedFieldTy` type is, given some type `T` that you set on the origin
 
 ## Example
 
-With all that over, here's an example. It may seem very intimidating at first, but that's just because there are three suspended state handlers to show you how this works with nested state. It's heavily commented, and it's recommended to read through this carefully to understand how suspended state works. This is probably the most complicated part of Perseus to use, because understanding how the state flows through it is a bit tricky (we like to think of it as being borrowed from the main system by your handler and returned with a different value, through `.set()`), so feel free to [open a GitHub discussion] or [ask on Discord] if you're having trouble understanding or using this (or any other) feature.
+With all that over, here's an example. It may seem very intimidating at first, but that's just because there are three suspended state handlers to show you how this works with nested state. It's heavily commented, and it's recommended to read through this carefully to understand how suspended state works. This is probably the most complicated part of Perseus to use, because understanding how the state flows through it is a bit tricky (we like to think of it as being borrowed from the main system by your handler and returned with a different value, through `.set()`), so feel free to [open a GitHub discussion](https://github.com/framesurge/perseus/discussions/new/choose) or [ask on Discord](https://discord.com/invite/GNqWYWNTdp) if you're having trouble understanding or using this (or any other) feature.
 
 ```rust
 {{#include ../../../examples/core/suspense/src/templates/index.rs}}

@@ -44,9 +44,9 @@ That second argument to the capsule's `.widget()` function is by far the most im
 
 In the above example, we used the empty string to denote the index page, because the capsules we're using only render one widget each.
 
-if you want to see a more advanced example of a capsule that uses incremental generation to build widgets, check out [this code].
+if you want to see a more advanced example of a capsule that uses incremental generation to build widgets, check out [this code](https://github.com/framesurge/perseus/blob/main/examples/core/capsules/src/capsules/number.rs).
 
-*Note: while it might seem extremely weird, there is nothing to stop you from reactively changing the widgets you render on the client-side, as in [this example].*
+*Note: while it might seem extremely weird, there is nothing to stop you from reactively changing the widgets you render on the client-side, as in [this example](https://github.com/framesurge/perseus/blob/main/examples/core/capsules/src/templates/calc.rs).*
 
 ## Delayed widgets
 
@@ -62,4 +62,4 @@ One notable instance where this isn't necessary is in incremental generation. Fo
 
 ## Support
 
-The Perseus capsules system is not only very new, it is a completely novel architecture, so there are bound to be bugs and idiosyncracies that can be improved. If you're having problems, even if you don't think they're a bug, please let us know through [a GitHub discussion], or [on Discord] --- every little bit of feedback helps us improve Perseus and make it easier for you to develop lightning-fast apps! If you do reckon you've found a bug, or if you'd like to request a new feature, please open an issue [on GitHub] and let us know!
+The Perseus capsules system is not only very new, it is a completely novel architecture, so there are bound to be bugs and idiosyncracies that can be improved. If you're having problems, even if you don't think they're a bug, please let us know through [a GitHub discussion](https://github.com/framesurge/perseus/discussions/new/choose), or [on Discord](https://discord.com/invite/GNqWYWNTdp) --- every little bit of feedback helps us improve Perseus and make it easier for you to develop lightning-fast apps! If you do reckon you've found a bug, or if you'd like to request a new feature, please open an issue [on GitHub](https://github.com/framesurge/perseus/issues/new/choose) and let us know!

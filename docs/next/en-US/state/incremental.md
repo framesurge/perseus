@@ -18,7 +18,7 @@ Here's an example of incremental generation:
 
 Note the use of build paths (you still have to generate *some* pages, otherwise incremental generation will be completely ignored and you'll just get an index page), and the conditional in `get_build_state` that checks for the illegal path `tests`, returning a `BlamedError` with blame `ErrorBlame::Client(Some(404))`, where `404` is the HTTP status code for a page not being found! Here, we're accompanying that with a `std::io::Error`, but you could use any error type you like.
 
-Note that incrementally generated pages will be placed in the mutable store, which you shoudl keep in mind when deploying to read-only environments, such as serverless functions (see [here] for details).
+Note that incrementally generated pages will be placed in the *mutable store*, which you should keep in mind when deploying to read-only environments, such as serverless functions (work to support serverless functions with Perseus for more advanced apps is ongoing: they will *work*, but caching will not be ideal at all).
 
 <details>
 

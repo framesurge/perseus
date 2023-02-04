@@ -2,7 +2,7 @@
 
 One of things Perseus is big on is *page-based programming*, where each separate view in your app is a completely separate page, since this lets you manage their states all independently. However, one of the thing that needs to happen for you to be able to work like this is *routing*: you need to be able to go from one page to another.
 
-Under the hood, Perseus uses a slightly modified version of [Sycamore's router], which means you can use typical Sycamore conventions for both imperative and declarative routing.
+Under the hood, Perseus uses a slightly modified version of [Sycamore's router](https://sycamore-rs.netlify.app/docs/advanced/routing), which means you can use typical Sycamore conventions for both imperative and declarative routing.
 
 ## Declarative routing
 

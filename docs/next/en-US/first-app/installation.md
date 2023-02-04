@@ -2,7 +2,7 @@
 
 Before you get to coding your first Perseus app, you'll need to install the Perseus command-line interface (CLI) first, which you'll use to manage your app. The reason for this is that Perseus is a *framework*, not a library: you don't import Perseus into your code and use it, Perseus imports your code into itself. In fact, in the old days, you used to write a library that another crate would literally import!
 
-To install the Perseus CLI, first make sure you have Rust installed (preferably with [`rustup`]), and then run this command:
+To install the Perseus CLI, first make sure you have Rust installed (preferably with [`rustup`](https://rustup.rs)), and then run this command:
 
 ```sh
 cargo install perseus-cli --version 0.4.0-beta.17

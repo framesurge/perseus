@@ -26,11 +26,11 @@ This server responds to each request by passing it through special pathways that
 
 Since Perseus tries to be as open as possible, it allows you to provide a custom function to `#[perseus::main(..)]` that will run your server. Usually, you'll just use the default server provided by one of the integrations, but you can also customize this however you like..
 
-Server integrations are special crates, like `perseus-axum`, that provide the boilerplate to host Perseus through a particular server framework. Currently, Perseus has server integrations for [Actix Web], [Warp], and [Axum]. All of these have a `dflt-server` feature flag, which you can enable to gain access to the `perseus-<integration-name>::dflt_server` function, which will spin up a server that just hosts Perseus.
+Server integrations are special crates, like `perseus-axum`, that provide the boilerplate to host Perseus through a particular server framework. Currently, Perseus has server integrations for [Actix Web](https://github.com/actix/actix-web), [Warp](https://github.com/seanmonstar/warp) (although Warp itself appears to be unmaintained), and [Axum](https://github.com/tokio-rs/axum). All of these have a `dflt-server` feature flag, which you can enable to gain access to the `perseus-<integration-name>::dflt_server` function, which will spin up a server that just hosts Perseus.
 
-However, most apps also have several API routes associated with them, especially if you're working with a database. Since you can provide a custom function to host Perseus, you can also add arbitrary API routes. You can take a look at the [custom server example] for further details on this, or take a look at the source code for the server integration you're using.
+However, most apps also have several API routes associated with them, especially if you're working with a database. Since you can provide a custom function to host Perseus, you can also add arbitrary API routes. You can take a look at the [custom server example](https://github.com/framesurge/perseus/tree/main/examples/core/custom_server) for further details on this, or take a look at the source code for the server integration you're using.
 
-*Note: due to [this bug], Warpthe Warp integration must currently be used with the [`warp-fix-171`] crate, rather than the `warp` crate itself.*
+*Note: due to [this bug](https://github.com/seanmonstar/warp/issues/171), the Warp integration must currently be used with the [`warp-fix-171`](https://crates.io/crates/warp-fix-171) crate, rather than the `warp` crate itself. As Warp itself appears to no longer be maintained, this situation is unlikely to change any time soon.*
 
 #### Writing a server integration
 

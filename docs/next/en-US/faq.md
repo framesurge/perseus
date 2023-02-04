@@ -31,7 +31,7 @@ That will archive the `git/` and `registry/` folders in `~/.cargo/`, which shoul
 
 ## Hydration doesn't work with X
 
-Perseus v0.4.x uses Sycamore v0.8.x, which may still have a few very minor hydration bugs (though literally dozens have been fixed since v0.7.x), so there are a few things that won't work with it yet. In fact, as a general rule, if you're getting weird layout bugs that make absolutely no logical sense, try disabling hydration, it will often fix things at the moment. This shouldn't have any major impact on user experience or performance that's appreciable, though it *may* lower your app's Lighthouse scores. Please be sure to report your problem to [Sycamore] (or Perseus if you're not usre whose fault it is, and we'll probably figure it out eventually!).
+Perseus v0.4.x uses Sycamore v0.8.x, which may still have a few very minor hydration bugs (though literally dozens have been fixed since v0.7.x), so there are a few things that won't work with it yet. In fact, as a general rule, if you're getting weird layout bugs that make absolutely no logical sense, try disabling hydration, it will often fix things at the moment. This shouldn't have any major impact on user experience or performance that's appreciable, though it *may* lower your app's Lighthouse scores. Please be sure to report your problem to [Sycamore](https://github.com/sycamore-rs/sycamore) (or Perseus if you're not sure whose fault it is, and we'll probably figure it out eventually!).
 
 ## I'm getting really weird errors with a page's `<head>`...
 

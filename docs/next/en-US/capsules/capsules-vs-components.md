@@ -1,6 +1,6 @@
 # Capsules vs. components
 
-With all this capsules stuff, you might be wondering whether you should be using capsules for everything: here's the short answer, **don't**. This page will go through the differences between normal [Sycamore components], which don't integrate with the Perseus state platform, and full-blown capsules.
+With all this capsules stuff, you might be wondering whether you should be using capsules for everything: here's the short answer, **don't**. This page will go through the differences between normal [Sycamore components](https://sycamore-rs.netlify.app/docs/basics/components), which don't integrate with the Perseus state platform, and full-blown capsules.
 
 ## View generation
 
