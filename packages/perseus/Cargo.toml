@@ -39,7 +39,7 @@ minify-html-onepass = "0.10.1"
 
 # These dependencies will also be available in documentation
 [target.'cfg(any(client, clientdoc))'.dependencies]
-rexie = { version = "0.2", optional = true }
+rexie = { version = "0.4", optional = true, default-features = false }
 js-sys = { version = "0.3", optional = true }
 # Note that this is not needed in production, but that can't be specified, so it will just be compiled away to nothing
 console_error_panic_hook = { version = "0.1.6", optional = true }
