@@ -60,15 +60,3 @@ It is entirely permissible, and indeed encouraged, for apps that have more advan
 Common uses of custom checkpoints are particularly when combined with the [suspended state](:state/suspense) system, if some of your pages fetch state on the client-side, and you want to test for that all working correctly.
 
 If a checkpoint is not emitted, tests waiting for it will fail with a timeout error.
-
-## Hanging servers
-
-Note that *some* critical errors during testing will lead to process termination in such a way that Perseus sometimes won't catch the child process failure correctly, which may lead to a server being left open on your computer. These are easy to terminate manually though: on Linux you might do this:
-
-```
-netstat -lnp | grep 8080
-```
-
-You would replace `8080` with whatever port you're running the tests on, and then this should list a PID that you can kill with `kill <pid-here>`.
-
-Please note that this is considered a bug, but it's a known one, and it will be addressed soon!
