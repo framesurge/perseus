@@ -33,6 +33,8 @@ pub fn init(dir: PathBuf, opts: &InitOpts) -> Result<i32, InitError> {
     // `src/templates/`)
     fs::create_dir_all(dir.join("src/templates"))
         .map_err(|err| InitError::CreateDirStructureFailed { source: err })?;
+    fs::create_dir_all(dir.join(".cargo"))
+        .map_err(|err| InitError::CreateDirStructureFailed { source: err })?;
     // Now create each file
     create_file_if_not_present(&dir.join("Cargo.toml"), DFLT_INIT_CARGO_TOML, &opts.name)?;
     create_file_if_not_present(&dir.join(".gitignore"), DFLT_INIT_GITIGNORE, &opts.name)?;
@@ -45,6 +47,12 @@ pub fn init(dir: PathBuf, opts: &InitOpts) -> Result<i32, InitError> {
     create_file_if_not_present(
         &dir.join("src/templates/index.rs"),
         DFLT_INIT_INDEX_RS,
+        &opts.name,
+    )?;
+    create_file_if_not_present(
+        &dir.join(".cargo/config.toml"),
+        DFLT_INIT_CONFIG_TOML,
+        // Not used in this one
         &opts.name,
     )?;
 
@@ -180,3 +188,11 @@ fn head(cx: Scope) -> View<SsrNode> {
 pub fn get_template<G: Html>() -> Template<G> {
     Template::build("index").view(index_page).head(head).build()
 }"#;
+static DFLT_INIT_CONFIG_TOML: &str = r#"[build]
+# You can change these from `engine` to `client` if you want your IDE to give hints about your
+# client-side code, rather than your engine-side code. Code that runs on both sides will be
+# linted no matter what, and these settings only affect your IDE. The `perseus` CLI will ignore
+# them.
+rustflags = [ "--cfg", "engine" ]
+rustdocflags = [ "--cfg", "engine" ]
+"#;
