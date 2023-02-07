@@ -57,8 +57,6 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
 ) -> Router {
-    dbg!("Server started!");
-
     let router = Router::new()
         // --- File handlers ---
         .route(
