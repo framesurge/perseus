@@ -46,6 +46,7 @@ jobs:
               if: steps.cache.outputs.cache-hit != 'true'
               run: cargo install bonnie rust-script
 
+            - run: rustup install wasm32-unknown-unknown
             - name: Run traditional tests
               run: bonnie test core
     # We now have a separate job for each example's E2E testing because they all take a while, we may as well run them in parallel
