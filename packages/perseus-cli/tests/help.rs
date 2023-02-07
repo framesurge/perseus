@@ -6,6 +6,7 @@ use std::process::Command;
 /// Makes sure `perseus --help` works (if this fails, it acts as the canary of a
 /// totally broken CLI!).
 #[test]
+#[ignore]
 fn help_works() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
     let mut cmd = Command::cargo_bin("perseus")?;

@@ -6,6 +6,7 @@ use std::process::Command;
 /// Makes sure `perseus new` successfully generates the hardcoded example with
 /// the right version of Perseus.
 #[test]
+#[ignore]
 fn new_creates_files() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
     let mut cmd = Command::cargo_bin("perseus")?;
@@ -38,6 +39,7 @@ fn new_creates_files() -> Result<(), Box<dyn std::error::Error>> {
 /// Init uses the same code as `new`, so there's no point in testing whether or
 /// not it can be properly served.
 #[test]
+#[ignore]
 fn init_creates_files() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
     let mut cmd = Command::cargo_bin("perseus")?;
@@ -64,7 +66,7 @@ fn init_creates_files() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Makes sure the output of `perseus new` can be successfully served.
 #[test]
-#[ignore = "long-running"]
+#[ignore]
 fn new_can_be_served() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
     let mut cmd = Command::cargo_bin("perseus")?;

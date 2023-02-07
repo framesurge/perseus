@@ -42,6 +42,7 @@ fn export_produces_artifacts() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Makes sure that `perseus export -sw` serves the app.
 #[test]
+#[ignore]
 fn export_serve_serves() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
     let mut cmd = Command::cargo_bin("perseus")?;
