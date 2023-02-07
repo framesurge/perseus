@@ -86,6 +86,7 @@ fn cargo_check(
     let Opts {
         cargo_engine_args,
         cargo_browser_args,
+        verbose,
         ..
     } = global_opts.clone();
 
@@ -125,7 +126,8 @@ fn cargo_check(
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
                     ("RUSTFLAGS", "--cfg=engine"),
                     ("CARGO_TERM_COLOR", "always")
-                ]
+                ],
+                verbose,
             )?);
 
             Ok(0)
@@ -146,7 +148,8 @@ fn cargo_check(
                     ("CARGO_TARGET_DIR", "dist/target_wasm"),
                     ("RUSTFLAGS", "--cfg=client"),
                     ("CARGO_TERM_COLOR", "always")
-                ]
+                ],
+                verbose,
             )?);
 
             Ok(0)
@@ -166,7 +169,9 @@ fn run_static_generation(
     global_opts: &Opts,
 ) -> Result<i32, ExecutionError> {
     let Opts {
-        cargo_engine_args, ..
+        cargo_engine_args,
+        verbose,
+        ..
     } = global_opts.clone();
 
     let msg = format!(
@@ -189,7 +194,8 @@ fn run_static_generation(
             ("CARGO_TARGET_DIR", "dist/target_engine"),
             ("RUSTFLAGS", "--cfg=engine"),
             ("CARGO_TERM_COLOR", "always")
-        ]
+        ],
+        verbose,
     )?);
 
     Ok(0)

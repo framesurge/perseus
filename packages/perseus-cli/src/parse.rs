@@ -82,6 +82,12 @@ pub struct Opts {
     /// should set this for CI)
     #[clap(long, global = true)]
     pub no_system_tools_cache: bool,
+    /// Shows the logs from building and serving your app no matter what (the
+    /// default is to only show them on a compilation/build failure); this
+    /// is intended mainly for end-to-end debugging, although the `snoop`
+    /// commands are more useful for targeted debugging
+    #[clap(long, global = true)]
+    pub verbose: bool,
 }
 
 #[derive(Parser, Clone)]

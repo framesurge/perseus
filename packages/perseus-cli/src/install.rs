@@ -116,6 +116,9 @@ impl Tools {
                     ("RUSTFLAGS", "--cfg=engine"),
                     ("CARGO_TERM_COLOR", "always"),
                 ],
+                // Sure, the user *might* want logs on this process (but this will only be run the
+                // first time)
+                global_opts.verbose,
             )
             .map_err(|err| InstallError::LockfileGenerationFailed { source: err })?;
             if exit_code != 0 {

@@ -31,6 +31,7 @@ pub fn export_error_page(
             ("CARGO_TERM_COLOR", "always"),
         ],
         || {},
+        global_opts.verbose,
     )?;
 
     if prompt {

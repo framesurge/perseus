@@ -83,7 +83,10 @@ fn build_server(
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
                     ("RUSTFLAGS", "--cfg=engine"),
                     ("CARGO_TERM_COLOR", "always")
-                ]
+                ],
+                // These are JSON logs, never print them (they're duplicated by the build logs
+                // anyway, we're compiling the same thing)
+                false,
             )?);
 
             let msgs: Vec<&str> = stdout.trim().split('\n').collect();
@@ -135,6 +138,7 @@ fn run_server(
     exec: Arc<Mutex<String>>,
     dir: PathBuf,
     num_steps: u8,
+    verbose: bool,
 ) -> Result<i32, ExecutionError> {
     // First off, handle any issues with the executable path
     let exec_val = exec.lock().unwrap();
@@ -153,8 +157,16 @@ fn run_server(
         // This needs to be provided in development, but not in production
         .env("PERSEUS_ENGINE_OPERATION", "serve")
         // We should be able to access outputs in case there's an error
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stdout(if verbose {
+            Stdio::inherit()
+        } else {
+            Stdio::piped()
+        })
+        .stderr(if verbose {
+            Stdio::inherit()
+        } else {
+            Stdio::piped()
+        })
         .spawn()
         .map_err(|err| ExecutionError::CmdExecFailed {
             cmd: server_exec_path,
@@ -272,7 +284,7 @@ pub fn serve(
 
     // Now actually run that executable path if we should
     if should_run {
-        let exit_code = run_server(Arc::clone(&exec), dir, num_steps)?;
+        let exit_code = run_server(Arc::clone(&exec), dir, num_steps, global_opts.verbose)?;
         Ok((exit_code, None))
     } else {
         // The user doesn't want to run the server, so we'll give them the executable

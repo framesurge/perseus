@@ -34,6 +34,7 @@ pub fn test(
     let Opts {
         cargo_engine_path,
         cargo_engine_args,
+        verbose,
         ..
     } = global_opts.clone();
 
@@ -119,7 +120,8 @@ pub fn test(
                             ("CARGO_TERM_COLOR", "always"),
                             ("PERSEUS_RUN_WASM_TESTS", "true"),
                         ]
-                    }
+                    },
+                    verbose,
                 )?);
 
                 Ok(0)

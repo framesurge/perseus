@@ -12,11 +12,16 @@ pub static FAILURE: Emoji<'_, '_> = Emoji("❌", "failed!");
 /// Runs the given command conveniently, returning the exit code. Notably, this
 /// parses the given command by separating it on spaces. Returns the command's
 /// output and the exit code.
+///
+/// If `full_logging` is set to `true`, this will share stdio with the parent
+/// process, meaning the user will see all their app's logs, no matter what. If
+/// not, logs will only be printed on a failure.
 pub fn run_cmd(
     cmd: String,
     dir: &Path,
     envs: Vec<(&str, &str)>,
     pre_dump: impl Fn(),
+    full_logging: bool,
 ) -> Result<(String, String, i32), ExecutionError> {
     // We run the command in a shell so that NPM/Yarn binaries can be recognized
     // (see #5)
@@ -49,8 +54,13 @@ pub fn run_cmd(
     // Print `stderr` and `stdout` only if there's something therein and the exit
     // code is non-zero If we only print `stderr`, we can miss some things (see
     // #74)
-    if !output.stderr.is_empty() && exit_code != 0 {
-        pre_dump();
+    //
+    // Or, if we're being verbose, log everything anyway
+    if full_logging || (!output.stderr.is_empty() && exit_code != 0) {
+        if !output.stderr.is_empty() && exit_code != 0 {
+            pre_dump()
+        };
+
         std::io::stderr().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
     }
@@ -89,15 +99,22 @@ pub fn run_stage(
     spinner: &ProgressBar,
     message: &str,
     envs: Vec<(&str, &str)>,
+    full_logging: bool,
 ) -> Result<(String, String, i32), ExecutionError> {
     let mut last_output = (String::new(), String::new());
     // Run the commands
     for cmd in cmds {
         // We make sure all commands run in the target directory ('.perseus/' itself)
-        let (stdout, stderr, exit_code) = run_cmd(cmd.to_string(), target, envs.to_vec(), || {
-            // This stage has failed
-            fail_spinner(spinner, message);
-        })?;
+        let (stdout, stderr, exit_code) = run_cmd(
+            cmd.to_string(),
+            target,
+            envs.to_vec(),
+            || {
+                // This stage has failed
+                fail_spinner(spinner, message);
+            },
+            full_logging,
+        )?;
         last_output = (stdout, stderr);
         // If we have a non-zero exit code, we should NOT continue (stderr has been
         // written to the console already)

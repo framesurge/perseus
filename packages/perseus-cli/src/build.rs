@@ -49,6 +49,7 @@ pub fn build_internal(
         cargo_browser_args,
         wasm_bindgen_args,
         wasm_opt_args,
+        verbose,
         ..
     } = global_opts.clone();
     wasm_release_rustflags.push_str(" --cfg=client");
@@ -94,7 +95,8 @@ pub fn build_internal(
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
                     ("RUSTFLAGS", "--cfg=engine"),
                     ("CARGO_TERM_COLOR", "always")
-                ]
+                ],
+                verbose,
             )?);
 
             Ok(0)
@@ -146,7 +148,8 @@ pub fn build_internal(
                         ("RUSTFLAGS", "--cfg=client"),
                         ("CARGO_TERM_COLOR", "always"),
                     ]
-                }
+                },
+                verbose,
             )?);
 
             Ok(0)

@@ -38,7 +38,9 @@ pub fn tinker_internal(
 > {
     let tools = tools.clone();
     let Opts {
-        cargo_engine_args, ..
+        cargo_engine_args,
+        verbose,
+        ..
     } = global_opts.clone();
 
     // Tinkering message
@@ -65,7 +67,8 @@ pub fn tinker_internal(
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
                     ("RUSTFLAGS", "--cfg=engine"),
                     ("CARGO_TERM_COLOR", "always")
-                ]
+                ],
+                verbose,
             )?);
 
             Ok(0)

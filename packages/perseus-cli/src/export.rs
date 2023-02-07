@@ -159,6 +159,7 @@ pub fn export_internal(
         cargo_engine_args,
         wasm_bindgen_args,
         wasm_opt_args,
+        verbose,
         mut wasm_release_rustflags,
         ..
     } = global_opts.clone();
@@ -205,7 +206,8 @@ pub fn export_internal(
                     ("CARGO_TARGET_DIR", "dist/target_engine"),
                     ("RUSTFLAGS", "--cfg=engine"),
                     ("CARGO_TERM_COLOR", "always")
-                ]
+                ],
+                verbose,
             )?);
 
             Ok(0)
@@ -257,7 +259,8 @@ pub fn export_internal(
                         ("RUSTFLAGS", "--cfg=client"),
                         ("CARGO_TERM_COLOR", "always"),
                     ]
-                }
+                },
+                verbose,
             )?);
 
             Ok(0)
