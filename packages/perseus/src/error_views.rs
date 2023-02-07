@@ -211,7 +211,7 @@ margin-bottom: 1rem;
                     view! { cx,
                             div(
                                 style = r#"
-position: absolute;
+position: fixed;
 bottom: 0;
 right: 0;
 background-color: #f87171;
@@ -247,6 +247,7 @@ margin-top: 1rem;
                                         style = r#"
 background-color: #f59e0b;
 padding: 1rem;
+margin-top: 1rem;
 border-radius: 0.5rem;
 white-space: pre-wrap;
 word-wrap: break-word;
@@ -309,6 +310,7 @@ margin-top: 1rem;
                                     style = r#"
 background-color: #f59e0b;
 padding: 1rem;
+margin-top: 1rem;
 border-radius: 0.5rem;
 white-space: pre-wrap;
 word-break: break-word;
@@ -342,7 +344,7 @@ width: 100%;
                             ErrorPosition::Popup => view! { cx,
                                 div(
                                     style = r#"
-position: absolute;
+position: fixed;
 bottom: 0;
 right: 0;
 display: flex;
