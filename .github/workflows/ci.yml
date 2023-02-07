@@ -46,9 +46,29 @@ jobs:
               if: steps.cache.outputs.cache-hit != 'true'
               run: cargo install bonnie rust-script
 
-            - run: rustup install wasm32-unknown-unknown
             - name: Run traditional tests
               run: bonnie test core
+    cli-test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+
+            # Cache Cargo binaries
+            - uses: actions/cache@v3
+              id: cache
+              with:
+                path: |
+                  ~/.cargo/bin/
+                # The cache should be OS-specific
+                key: ${{ runner.os }}-cargo-bins
+            # Only install the binaries if the cache doesn't have them
+            - name: Install Dependencies
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: cargo install bonnie rust-script
+
+            - run: rustup target add wasm32-unknown-unknown
+            - name: Run CLI tests
+              run: bonnie test cli
     # We now have a separate job for each example's E2E testing because they all take a while, we may as well run them in parallel
     # The job for each E2E test is exactly the same except for a minor difference, so we'll use a matrix based on listing the subdirectories
     e2e-example-test:
