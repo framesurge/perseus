@@ -151,6 +151,15 @@ fn deploy_full(
             }
             .into());
         }
+        let from = dir.join("dist/mutable");
+        if let Err(err) = copy_dir(&from, output_path.join("dist"), &CopyOptions::new()) {
+            return Err(DeployError::MoveDirFailed {
+                to: output,
+                from: from.to_str().map(|s| s.to_string()).unwrap(),
+                source: err,
+            }
+            .into());
+        }
         let from = dir.join("dist/render_conf.json");
         if let Err(err) = fs::copy(&from, output_path.join("dist/render_conf.json")) {
             return Err(DeployError::MoveAssetFailed {
