@@ -20,10 +20,10 @@ The other thing to keep in mind with error views in Perseus is that they won't a
 
 <summary>What does uninteractive actually mean?</summary>
 
-Great question! You can learn more about this in [the section on hydration], but it basically means that the user can see the content, because it was *prerendered* on the server-side, but they can't interact with it: e.g. if they press a button, it won't do anything. Clicking links will still work, but they'll be handled by the browser, not by Perseus.
+Great question! You can learn more about this in [the section on hydration](:fundamentals/hydration), but it basically means that the user can see the content, because it was *prerendered* on the server-side, but they can't interact with it: e.g. if they press a button, it won't do anything. Clicking links will still work, but they'll be handled by the browser, not by Perseus.
 
 </details>
 
-Finally, we handle different types of `ClientError::ServerError`s differently by their [HTTP status code], which is the language HTTP (the protocol used for communicating between clients and servers) uses to describe errors. Anything starting with a 4 is a client error, and anything starting with a 5 is a server error (1 is informational, 2 is ok, and 3 indicates a redirect; you won't need to handle those). We also separately handle 404, just because it's so common.
+Finally, we handle different types of `ClientError::ServerError`s differently by their [HTTP status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status), which is the language HTTP (the protocol used for communicating between clients and servers) uses to describe errors. Anything starting with a 4 is a client error, and anything starting with a 5 is a server error (1 is informational, 2 is ok, and 3 indicates a redirect; you won't need to handle those). We also separately handle 404, just because it's so common.
 
 With error handling done, it's about time to run this app!

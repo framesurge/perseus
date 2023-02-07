@@ -32,7 +32,7 @@ Okay, if you're used to using vanilla JavaScript, you might be recalling how you
 
 In this case, the event handler is absolutely encoded in the static HTML, but this doesn't play well with Wasm at all just yet. One day, hopefully, we'll be able to encode event handlers properly in static HTML, but this may actually be slower than the approach we're about to describe.
 
-You might also be familiar with a framework like [Qwik], which uses something called *resumability*, which translates to basically bringing framework complexities back to the basics of string Javascript inside HTML. Unfortunately, this isn't yet possible with Wasm. Perseus does the next-best thing.
+You might also be familiar with a framework like [Qwik](https://qwik.builder.io), which uses something called *resumability*, which translates to basically bringing framework complexities back to the basics of string Javascript inside HTML. Unfortunately, this isn't yet possible with Wasm. Perseus does the next-best thing.
 
 </details>
 

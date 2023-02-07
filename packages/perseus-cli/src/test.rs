@@ -131,18 +131,14 @@ pub fn test(
         let test_res = test_thread
             .join()
             .map_err(|_| ExecutionError::ThreadWaitFailed)??;
-        if test_res != 0 {
-            return Ok(test_res);
-        }
 
         // If the server has already terminated, it had an error, and that would be
         // reflected in the tests
         let _ = server.kill();
 
-        // If the server is still running, that's fine, because it will be terminated
-        // with the main thread (or the thread group, in the case of watching)
-        //
-        // TODO Figure out a way of getting a green tick on that step
+        if test_res != 0 {
+            return Ok(test_res);
+        }
 
         // We've handled errors in the component threads, so the exit code is now zero
         Ok(0)

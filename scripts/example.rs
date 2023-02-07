@@ -2,9 +2,9 @@
 // This is broken out from Bonnie so we can check if the example is using `perseus-integration`, and therefore if it should be run with
 // a specific integration flag (setting this on one that doesn't use it would lead to an error)
 
-use std::process::Command;
+use std::process::{Command, ExitCode};
 
-fn main() {
+fn main() -> ExitCode {
     let mut args: Vec<String> = std::env::args().collect();
     // This is brittle, but it's only ever called from Bonnie
     // The remaining args are sent to the CLI
@@ -34,12 +34,19 @@ fn main() {
     #[cfg(windows)]
     let shell_param = "-command";
 
-    let mut child = Command::new(shell_exec)
+    let child = Command::new(shell_exec)
         // We don't provide any quoted arguments to the CLI ever, so this is fine
         .args([shell_param, &format!("cargo run -- {}", args.join(" "))])
         .current_dir("packages/perseus-cli") // We run on the bleeding-edge version of the CLI, from which we know the example from `TEST_EXAMPLE` above
         .env("TEST_EXAMPLE", &cli_path)
         .spawn()
         .expect("couldn't run example (command execution failed)");
-    let _ = child.wait().expect("couldn't wait on example executor process");
+    let output = child.wait_with_output().expect("couldn't wait on example executor process");
+
+    // Pass through exit codes here (otherwise CI will think everything passes)
+    if output.status.success() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }

@@ -23,6 +23,8 @@ impl<G: Html> Reactor<G> {
     /// Gets the initial view to hydrate, which will be the same as what the
     /// engine-side rendered and provided. This will automatically extract
     /// the current path from the browser.
+    ///
+    /// This will set the router state to `Loaded` if it succeeds.
     pub(crate) fn get_initial_view<'a>(
         &self,
         cx: Scope<'a>,
@@ -128,7 +130,14 @@ impl<G: Html> Reactor<G> {
 
                 // Render the actual template to the root (done imperatively due to child
                 // scopes)
-                let (view, disposer) = entity.render_for_template_client(full_path, state, cx)?;
+                let (view, disposer) =
+                    entity.render_for_template_client(full_path.clone(), state, cx)?;
+
+                // Update the router state
+                self.router_state.set_load_state(RouterLoadState::Loaded {
+                    template_name: entity.get_path(),
+                    path: full_path,
+                });
 
                 Ok(InitialView::View(view, disposer))
             }

@@ -17,6 +17,13 @@ include = [
     "README.proj.md"
 ]
 
+autotests = false
+
+# Needed because we have shared utilities
+[[test]]
+name = "integration"
+path = "tests/lib.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -44,11 +51,13 @@ directories = "4"
 cargo_metadata = "0.15"
 cargo-lock = "8"
 minify-js = "0.4"
+walkdir = "2"
 
 [dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
 predicates = "2"
+ureq = "2"
 
 [lib]
 name = "perseus_cli"

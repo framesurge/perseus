@@ -15,4 +15,16 @@ Importantly, any time you don't need to be actually seeing the views your app is
 
 Then, when you need to see what your app looks like in a browser, for example when you're styling it, or testing a particular feature, you can use `perseus serve -w`. If you're updating static content (like a `.css` file), rebuilds will be pretty much instant, but updating the Rust code of your app will be a fair bit slower. This is unfortunately a downside of working with Rust web development, but, in return, you get an *extremely* performant site that eliminates whole classes of bugs that run rampant in JS code.
 
+Importantly **if you're doing any kind of logging, you'll need `perseus snoop`**! This series of commands (i.e. `perseus snoop build`, `perseus snoop wasm-build`, and `perseus snoop serve`) will run each of the stages of your app manually, returning all output, whereas the default commands will only show logs if there's an error (meaning those `dbg!` calls will vanish into the ether).
+
 *Note: there is currently ongoing development on the Sycamore side for a system to remove the need for recompilation when you change things in the `view! { .. }` macro, which will dramatically improve performance.*
+
+## Custom watches
+
+Sometimes you'll want `perseus` to watch more than just your source code. For example, when we're writing some new docs for this website, we want the `docs` folder to be watched, so we run something like this
+
+```
+perseus serve -w --custom-watch ../docs
+```
+
+This system works pretty much exactly how you'd expect it to: paths are relative to the current directory, and recursion works as you'd expect. If you want to *exclude* some paths (e.g. if you have another build tool running to generate a stylesheet automatically), you can use `--custom-watch !my-path`, which will work with nesting. Exclusions will override inclusions in this system.

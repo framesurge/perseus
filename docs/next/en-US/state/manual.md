@@ -17,7 +17,7 @@ One thing worth noting is that the reactive type isn't actually called `MyStateR
 
 ## How to do that yourself
 
-Your best resource for understanding how the macro works is the code itself, which is fairly self-explanatory if you look mostly at the `quote!` sections (which output the actual code the macro creates). Even if you have no experience with macro development, this code should at least be somewhat helpful to you: you can find it [here].
+Your best resource for understanding how the macro works is the code itself, which is fairly self-explanatory if you look mostly at the `quote!` sections (which output the actual code the macro creates). Even if you have no experience with macro development, this code should at least be somewhat helpful to you: you can find it [here](https://github.com/framesurge/perseus/blob/main/packages/perseus-macro/src/rx_state.rs).
 
 ### 1. Creating a reactive type
 

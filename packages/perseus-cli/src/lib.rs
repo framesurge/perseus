@@ -121,3 +121,12 @@ pub fn get_user_crate_name(dir: &Path) -> Result<String, ExecutionError> {
         .name;
     Ok(name)
 }
+
+/// The paths of files/folders that are excluded from the watcher system by
+/// default. These can be overriden using the custom watcher system.
+///
+/// *Note: following v0.4.0-beta.18, these will only affect the top-level paths
+/// with these names, rather than any paths with these names. Further exclusions
+/// should be manually specified.*
+pub static WATCH_EXCLUSIONS: &[&str] =
+    &["dist", "target", "target_engine", "target_browser", ".git"];

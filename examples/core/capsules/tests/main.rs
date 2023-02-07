@@ -37,6 +37,8 @@ async fn about(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     wait_for_checkpoint!("page_interactive", 0, c);
 
     async fn test(c: &mut Client) -> Result<(), CmdError> {
+        // Needed for the delayed widget
+        std::thread::sleep(std::time::Duration::from_secs(1));
         let ip = c.find(Locator::Id("ip")).await?.text().await?;
         // Headless browsers...
         assert_eq!(ip, "\"hidden from view!\"");

@@ -1,6 +1,6 @@
 # Quickstart
 
-To get started with Perseus, you should first make sure you have the Rust language installed, and it's recommended that you do this through [`rustup`], which will let you manage the different parts of Rust very easily.
+To get started with Perseus, you should first make sure you have the Rust language installed, and it's recommended that you do this through [`rustup`](https://rustup.rs), which will let you manage the different parts of Rust very easily.
 
 Once you have Rust installed, you can run the following command to install Perseus:
 

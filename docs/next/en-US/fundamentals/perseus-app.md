@@ -6,7 +6,7 @@ If you're looking for documentation about the Perseus entrypoint system, see [he
 
 ## Template/capsule definition patterns
 
-When you define your templates and capsules, there are two ways to do this. The first is the one you'll see most frequently with templates, which involves creating a `get_template()` function or similar that just returns the template you want, which you can then call in the `.template()` method on your `PerseusApp`. However, this doesn't apply so well to capsules, which, unlike templates, you need access to in your own code as well. In those cases, it's best to use static references, usually created with a macro like [`lazy_static!`]. However, because these will be `&'static Capsule`s, not `Capsule`s proper, you'll need to use the `.capsule_ref()` method for these, like so:
+When you define your templates and capsules, there are two ways to do this. The first is the one you'll see most frequently with templates, which involves creating a `get_template()` function or similar that just returns the template you want, which you can then call in the `.template()` method on your `PerseusApp`. However, this doesn't apply so well to capsules, which, unlike templates, you need access to in your own code as well. In those cases, it's best to use static references, usually created with a macro like [`lazy_static!`](https://docs.rs/lazy_static). However, because these will be `&'static Capsule`s, not `Capsule`s proper, you'll need to use the `.capsule_ref()` method for these, like so:
 
 ```rust
 .capsule_ref(&*crate::capsules::my_capsule::MY_CAPSULE)

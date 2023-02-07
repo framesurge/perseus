@@ -71,8 +71,8 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             "/.perseus/bundle.wasm.js",
             get_service(ServeFile::new(opts.wasm_js_bundle.clone())).handle_error(handle_fs_error),
         )
-        .route(
-            "/.perseus/snippets/*path",
+        .nest_service(
+            "/.perseus/snippets",
             get_service(ServeDir::new(opts.snippets)).handle_error(handle_fs_error),
         );
     // --- Translation and subsequent load handlers ---
@@ -146,6 +146,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
 
 // TODO Review if there's anything more to do here
 async fn handle_fs_error(_err: std::io::Error) -> impl IntoResponse {
+    dbg!("Error!");
     (StatusCode::INTERNAL_SERVER_ERROR, "Couldn't serve file.")
 }
 

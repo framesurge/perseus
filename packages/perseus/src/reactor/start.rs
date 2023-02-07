@@ -237,6 +237,7 @@ impl Reactor<BrowserNodeType> {
                     page_disposer.update(disposer);
                 }
 
+                // Note that the router state has already been correctly set to `Loaded`
                 (view, false)
             }
             // On a redirect, return a view that just redirects straight away (of course,
@@ -415,9 +416,6 @@ impl Reactor<BrowserNodeType> {
                         // This template is reactive, and will be updated as necessary
                         view! { cx,
                             (*self.current_view.get())
-                            // BUG: Without this, any page that renders only one top-level node will lead to a hydration
-                            // error. Pending input from Sycamore...
-                            div {}
                         }
                     }
                 )

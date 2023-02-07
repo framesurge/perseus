@@ -14,12 +14,13 @@ use perseus_cli::{
 };
 use perseus_cli::{
     check, create_dist, delete_dist, errors::*, export_error_page, order_reload, run_reload_server,
-    snoop_build, snoop_server, snoop_wasm_build, Tools,
+    snoop_build, snoop_server, snoop_wasm_build, Tools, WATCH_EXCLUSIONS,
 };
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::sync::mpsc::channel;
+use walkdir::WalkDir;
 
 // All this does is run the program and terminate with the acquired exit code
 #[tokio::main]
@@ -98,7 +99,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
 
     // Warn the user if they're using the CLI single-threaded mode
     if opts.sequential {
-        println!("Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by unsetting the 'PERSEUS_CLI_SEQUENTIAL' environment variable. If you've deliberately enabled single-threaded mode, you can safely ignore this.");
+        println!("Note: the Perseus CLI is running in single-threaded mode, which is less performant on most modern systems. You can switch to multi-threaded mode by removing the `--sequential` flag. If you've deliberately enabled single-threaded mode, you can safely ignore this.");
     }
 
     // Check the user's environment to make sure they have prerequisites
@@ -154,6 +155,33 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
             custom_watch,
             ..
         }) if *watch && watch_allowed => {
+            // Parse the custom watching information into includes and excludes (these are
+            // all canonicalized to allow easier comparison)
+            let mut watch_includes: Vec<PathBuf> = Vec::new();
+            let mut watch_excludes: Vec<PathBuf> = Vec::new();
+            for custom in custom_watch {
+                if custom.starts_with('!') {
+                    let custom = custom.strip_prefix('!').unwrap();
+                    let path = Path::new(custom);
+                    let full_path =
+                        path.canonicalize()
+                            .map_err(|err| WatchError::WatchFileNotResolved {
+                                filename: custom.to_string(),
+                                source: err,
+                            })?;
+                    watch_excludes.push(full_path);
+                } else {
+                    let path = Path::new(custom);
+                    let full_path =
+                        path.canonicalize()
+                            .map_err(|err| WatchError::WatchFileNotResolved {
+                                filename: custom.to_string(),
+                                source: err,
+                            })?;
+                    watch_includes.push(full_path);
+                }
+            }
+
             let (tx_term, rx) = channel();
             let tx_fs = tx_term.clone();
             // Set the handler for termination events (more than just SIGINT) on all
@@ -201,37 +229,125 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                 tx_fs.send(Event::Reload).unwrap();
             })
             .map_err(|err| WatchError::WatcherSetupFailed { source: err })?;
-            // Watch the current directory
+
+            // Resolve all the exclusions to a list of files
+            let mut file_watch_excludes = Vec::new();
+            for entry in watch_excludes.iter() {
+                // To allow exclusions to work sanely, we have to manually resolve the file tree
+                if entry.is_dir() {
+                    // The `notify` crate internally follows symlinks, so we do here too
+                    for entry in WalkDir::new(&entry).follow_links(true) {
+                        let entry = entry
+                            .map_err(|err| WatchError::ReadCustomDirEntryFailed { source: err })?;
+                        let entry = entry.path();
+
+                        file_watch_excludes.push(entry.to_path_buf());
+                    }
+                } else {
+                    file_watch_excludes.push(entry.to_path_buf());
+                }
+            }
+
+            // Watch the current directory, accounting for exclusions at the top-level
+            // simply to avoid even starting to watch `target` etc., although
+            // user exclusions are generally handled separately (and have to be,
+            // since otherwise we would be trying to later remove watches that were never
+            // added)
             for entry in std::fs::read_dir(".")
                 .map_err(|err| WatchError::ReadCurrentDirFailed { source: err })?
             {
-                // We want to exclude `target/` and `dist`, otherwise we should watch everything
                 let entry = entry.map_err(|err| WatchError::ReadDirEntryFailed { source: err })?;
-                let name = entry.file_name();
-                if name != "target"
-                    && name != "dist"
-                    && name != ".git"
-                    && name != "target_engine"
-                    && name != "target_wasm"
-                {
-                    watcher
-                        .watch(&entry.path(), RecursiveMode::Recursive)
-                        .map_err(|err| WatchError::WatchFileFailed {
-                            filename: entry.path().to_str().unwrap().to_string(),
-                            source: err,
+                let entry_name = entry.file_name().to_string_lossy().to_string();
+
+                // The base watch exclusions operate at the very top level
+                if WATCH_EXCLUSIONS.contains(&entry_name.as_str()) {
+                    continue;
+                }
+
+                let entry = entry.path().canonicalize().map_err(|err| {
+                    WatchError::WatchFileNotResolved {
+                        filename: entry.path().to_string_lossy().to_string(),
+                        source: err,
+                    }
+                })?;
+                // To allow exclusions to work sanely, we have to manually resolve the file tree
+                if entry.is_dir() {
+                    // The `notify` crate internally follows symlinks, so we do here too
+                    for entry in WalkDir::new(&entry).follow_links(true) {
+                        let entry = entry
+                            .map_err(|err| WatchError::ReadCustomDirEntryFailed { source: err })?;
+                        if entry.path().is_dir() {
+                            continue;
+                        }
+                        let entry = entry.path().canonicalize().map_err(|err| {
+                            WatchError::WatchFileNotResolved {
+                                filename: entry.path().to_string_lossy().to_string(),
+                                source: err,
+                            }
                         })?;
+
+                        if !file_watch_excludes.contains(&entry) {
+                            watcher
+                                // The recursivity flag here will be irrelevant in all cases
+                                .watch(&entry, RecursiveMode::Recursive)
+                                .map_err(|err| WatchError::WatchFileFailed {
+                                    filename: entry.to_string_lossy().to_string(),
+                                    source: err,
+                                })?;
+                        }
+                    }
+                } else {
+                    if !file_watch_excludes.contains(&entry) {
+                        watcher
+                            // The recursivity flag here will be irrelevant in all cases
+                            .watch(&entry, RecursiveMode::Recursive)
+                            .map_err(|err| WatchError::WatchFileFailed {
+                                filename: entry.to_string_lossy().to_string(),
+                                source: err,
+                            })?;
+                    }
                 }
             }
-            // Watch any other files/directories the user has nominated
-            for entry in custom_watch.iter() {
-                watcher
-                    // If it's a directory, we'll watch it recursively
-                    // If it's a file, the second parameter here is usefully ignored
-                    .watch(Path::new(entry), RecursiveMode::Recursive)
-                    .map_err(|err| WatchError::WatchFileFailed {
-                        filename: entry.to_string(),
-                        source: err,
-                    })?;
+            // Watch any other files/directories the user has nominated (pre-canonicalized
+            // at the top-level)
+            for entry in watch_includes.iter() {
+                // To allow exclusions to work sanely, we have to manually resolve the file tree
+                if entry.is_dir() {
+                    // The `notify` crate internally follows symlinks, so we do here too
+                    for entry in WalkDir::new(&entry).follow_links(true) {
+                        let entry = entry
+                            .map_err(|err| WatchError::ReadCustomDirEntryFailed { source: err })?;
+                        if entry.path().is_dir() {
+                            continue;
+                        }
+                        let entry = entry.path().canonicalize().map_err(|err| {
+                            WatchError::WatchFileNotResolved {
+                                filename: entry.path().to_string_lossy().to_string(),
+                                source: err,
+                            }
+                        })?;
+
+                        if !file_watch_excludes.contains(&entry) {
+                            watcher
+                                // The recursivity flag here will be irrelevant in all cases
+                                .watch(&entry, RecursiveMode::Recursive)
+                                .map_err(|err| WatchError::WatchFileFailed {
+                                    filename: entry.to_string_lossy().to_string(),
+                                    source: err,
+                                })?;
+                        }
+                    }
+                } else {
+                    if !file_watch_excludes.contains(&entry) {
+                        watcher
+                            // The recursivity flag here will be irrelevant in all cases
+                            .watch(&entry, RecursiveMode::Recursive)
+                            .map_err(|err| WatchError::WatchFileFailed {
+                                filename: entry.to_string_lossy().to_string(),
+                                source: err,
+                            })?;
+                    }
+                }
             }
 
             // This will store the handle to the child process

@@ -4,7 +4,7 @@ As with any software, it's a good idea to test your apps to make sure they work 
 
 ## Writing tests
 
-Actually writing end-to-end (E2E for short) tests is quite simple, and Perseus provides an opinionated macro `#[perseus::test]` to simplify the process further. This macro uses [`fantoccini`], a library thhat lets you control browsers programmatically. For the vast majority of use-cases, this is absolutely fine, and you'll very rarely need to break out of this macro.
+Actually writing end-to-end (E2E for short) tests is quite simple, and Perseus provides an opinionated macro `#[perseus::test]` to simplify the process further. This macro uses [`fantoccini`](https://github.com/jonhoo/fantoccini), a library thhat lets you control browsers programmatically. For the vast majority of use-cases, this is absolutely fine, and you'll very rarely need to break out of this macro.
 
 Here's an example of some E2E tests, actually taken from the internal Perseus testing!
 
@@ -16,7 +16,7 @@ Here's an example of some E2E tests, actually taken from the internal Perseus te
 
 Note that E2E tests are typically placed in a separate directory `tests/` at the root of your project. These will be picked up by `cargo test`, but they will appear to immediately pass when run like this, because the `#[perseus::test]` macro checks for a few environment variables (since running E2E tests requires a whole heap of extra infrastructure). If you're not using this macro, be sure to immediately pass your test if the `PERSEUS_RUN_WASM_TESTS` environment variable is not set.
 
-For more information on what kinds of things you can with E2E tests, check out [`fantoccini`'s API documentation].
+For more information on what kinds of things you can with E2E tests, check out [`fantoccini`'s API documentation](https://docs.rs/fantoccini).
 
 ## `perseus test`
 
@@ -57,6 +57,6 @@ This list may grow in future, but any checkpoint removals or changes of meaning 
 
 It is entirely permissible, and indeed encouraged, for apps that have more advanced render flows to define and emit their own checkpoints, which should be prefixed with `custom`, and must not contain hyphens (or a panic will occur). This can be done with the [`checkpoint`](=prelude/fn.checkpoint@perseus) function. Note that checkpoints will only be emitted during `perseus test`, and will otherwise be ignored.
 
-Common uses of custom checkpoints are particularly when combined with the [suspended state] system, if some of your pages fetch state on the client-side, and you want to test for that all working correctly.
+Common uses of custom checkpoints are particularly when combined with the [suspended state](:state/suspense) system, if some of your pages fetch state on the client-side, and you want to test for that all working correctly.
 
 If a checkpoint is not emitted, tests waiting for it will fail with a timeout error.

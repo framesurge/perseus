@@ -32,8 +32,12 @@ async fn build_paths(c: &mut Client) -> Result<(), fantoccini::error::CmdError> 
     test_build_path("/blah/test/blah", c).await?;
     // Test an unbuilt URL
     c.goto("http://localhost:8080/build_paths/tests").await?;
-    // There should be an error page
-    let text = c.find(Locator::Css("p")).await?.text().await?;
+    // There should be an error page (default error views are a little complex)
+    let text = c
+        .find(Locator::Css("#root > div > main > h3 > span"))
+        .await?
+        .text()
+        .await?;
     assert!(text.contains("not found"));
 
     Ok(())
@@ -75,7 +79,11 @@ async fn incremental_generation(c: &mut Client) -> Result<(), fantoccini::error:
     // users are likely to find themselves with almost undiagnosable errors.
     wait_for_checkpoint!("not_found", 0, c);
     // There should be an error page
-    let text = c.find(Locator::Css("p")).await?.text().await?;
+    let text = c
+        .find(Locator::Css("#root > div > main > h3 > span"))
+        .await?
+        .text()
+        .await?;
     assert!(text.contains("not found"));
 
     Ok(())

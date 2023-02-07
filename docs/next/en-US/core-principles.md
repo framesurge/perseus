@@ -1,6 +1,6 @@
 # Core Principles
 
-Before you dive into Perseus, you might want to get a better idea of the fundamentals on which the framework is built. If you'd prefer to dive straight in though, check out [the tutorial], and then maybe come back here later.
+Before you dive into Perseus, you might want to get a better idea of the fundamentals on which the framework is built. If you'd prefer to dive straight in though, check out [the tutorial](:first-app/intro), and then maybe come back here later.
 
 The main key idea that underpins Perseus is about *templates*, and the primary architectural matter to understand is how Perseus apps actually work in terms of their components.
 
