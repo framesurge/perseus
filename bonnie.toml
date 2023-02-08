@@ -190,7 +190,8 @@ test.subcommands.core.cmd = [
 ]
 test.subcommands.core.desc = "runs the core tests (these should be fairly quick)"
 test.subcommands.cli.cmd = [
-    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all --tests -- --ignored"
+    # We have to run these one at a time, otherwise Rust literally gets overwhelmed and fails
+    "RUSTFLAGS=\"--cfg=engine\" cargo test --all --tests --no-fail-fast -- --ignored --test-threads 1"
 ]
 test.subcommands.cli.desc = "runs the cli tests (all are long-running, this will take a while)"
 test.subcommands.example-all-integrations.cmd = [
