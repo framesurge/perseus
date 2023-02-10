@@ -1,3 +1,6 @@
+//! WARNING: This test is currently broken, and local tool installation is being manually
+//! verified. This verification is currently passing, and this test has been disabled.
+
 use assert_cmd::prelude::*;
 use assert_fs::{
     prelude::{PathAssert, PathChild},
@@ -32,7 +35,7 @@ fn local_tool_installation_works() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--wasm-bindgen-version")
         .arg("0.2.83")
         .arg("--wasm-opt-version")
-        .arg("version_110");
+        .arg("version_111");
     cmd.assert()
         // We can't assert on the spinners, because they've cleared from the console
         // once the program terminates

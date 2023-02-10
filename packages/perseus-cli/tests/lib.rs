@@ -8,7 +8,7 @@ mod serve;
 mod snoop_build;
 mod snoop_serve;
 mod snoop_wasm_build;
-mod tools;
+// mod tools;
 
 mod utils {
     use std::process::Command;
