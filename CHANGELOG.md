@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.18](https://github.com/framesurge/perseus/compare/v0.4.0-beta.17...v0.4.0-beta.18) (2023-02-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* removed `RouterLoadState::ErrorLoaded` entirely (you
+should now rely solely on error views, which will be able to poll the
+last router state, which probably contributed to/caused the error)
+
+### Features
+
+* added automatic conversion methods for reactive types ([#252](https://github.com/framesurge/perseus/issues/252)) ([bb36a4c](https://github.com/framesurge/perseus/commit/bb36a4ccb1defaf9ff0ab69d6191917a5443fab0))
+* **cli:** added `--verbose` for easier logging ([10cd48b](https://github.com/framesurge/perseus/commit/10cd48b19efbf2887399787877c239c19f2fa93e))
+* **cli:** added `.cargo/config.toml` to default `init`/`new` templates ([a8afc7d](https://github.com/framesurge/perseus/commit/a8afc7d95ad1759055513ff828e3513947efc357))
+* **cli:** added support for eatch exclusions with `--custom-watch !my-path` ([6f57d4a](https://github.com/framesurge/perseus/commit/6f57d4a9f94d51ecb44f44b50424605f83f4f1a1))
+* greatly improved default error views ([2199da6](https://github.com/framesurge/perseus/commit/2199da6df89536dc72de94983060aca848903b7b))
+
+
+### Bug Fixes
+
+* added `target/` to generated `.gitignore` ([#254](https://github.com/framesurge/perseus/issues/254)) ([9b7b99d](https://github.com/framesurge/perseus/commit/9b7b99dea45f653a17f2c69057904125648a7d81))
+* **cli:** fixed deployment with revalidation ([#256](https://github.com/framesurge/perseus/issues/256)) ([89e864a](https://github.com/framesurge/perseus/commit/89e864a0ebcebb5dc6792f95d5aa066eea3944d0))
+* **error_views:** fixed positioning of default error views ([efcfec5](https://github.com/framesurge/perseus/commit/efcfec5129aafee994f32395679bdb1273b08453))
+* fixed bad inequality in default error views ([b485a30](https://github.com/framesurge/perseus/commit/b485a300a1e4a31391d5030e6510bcd248881720))
+* fixed cause of perseus hydration bugs ([6d38da6](https://github.com/framesurge/perseus/commit/6d38da68d3c226da932fa98922da38765dbb7c4f))
+* fixed hanging servers on test errors ([2ad8bea](https://github.com/framesurge/perseus/commit/2ad8bea273fc5a8846f4ec788afcda01573e24be))
+* fixed outdated macro reference in compile error ([c5dc4a6](https://github.com/framesurge/perseus/commit/c5dc4a68cd8b8e69627ac693cc98ec15616330bf))
+* fixed panic handler issues ([07ab6c6](https://github.com/framesurge/perseus/commit/07ab6c6ef6897a7d3c7fb984b6415c45917e2f69))
+* **perseus-axum:** fixed snippet hosting ([5f54722](https://github.com/framesurge/perseus/commit/5f54722403823e972f143d6bdbe27b94d7cd40f6))
+* re-enabled minification ([9512df0](https://github.com/framesurge/perseus/commit/9512df0a94b2244c4893c90859ce6d72cd5e971f))
+* removed debug message ([803123b](https://github.com/framesurge/perseus/commit/803123b68fc310b3fd7367e9af52678a3007088f))
+
+
+### Code Refactorings
+
+* simplified error router states ([6252f6a](https://github.com/framesurge/perseus/commit/6252f6a4804c784e2020f31ccb32728af9275852))
+* split testing scripts into `core` and `cli` ([0a2d2df](https://github.com/framesurge/perseus/commit/0a2d2dfacd2409d4c030a882011844533483699b))
+* **tests:** unified testing infrastructure for `perseus-cli` ([5b18efd](https://github.com/framesurge/perseus/commit/5b18efd3e2c83f521f1a5c745848d3daec8387ca))
+
+
+### Documentation Changes
+
+* added all missing links to the docs ([c3c575b](https://github.com/framesurge/perseus/commit/c3c575b9a7cb6e2582b7581f12e13ded23526f42))
+* added docs on watch exclusions ([8f9936a](https://github.com/framesurge/perseus/commit/8f9936ae268eed3918f5c15c8c261da2231f56ab))
+* added note on `snoop` to dev cycle docs ([fa62ebe](https://github.com/framesurge/perseus/commit/fa62ebefecdf92c64c863c0a391803305c1037cb))
+* added note on hanging servers from testing ([ade5137](https://github.com/framesurge/perseus/commit/ade5137d3eeb7a213524b16ec8176c181a256058))
+* covered `Cargo.toml` in more depth ([adc3c34](https://github.com/framesurge/perseus/commit/adc3c34f88c676672865d5ed3b2e92e59128191e))
+* fixed broken link ([2d28862](https://github.com/framesurge/perseus/commit/2d288622ff7e3476820a2dc06f16beb543f82505))
+* removed outdated warnings about styling quirks ([a8704a2](https://github.com/framesurge/perseus/commit/a8704a277946d49d25f855eb84fa7a722722b850))
+* wrote docs on capsules v components ([fb8563a](https://github.com/framesurge/perseus/commit/fb8563a8d4a4ee411bac6a5367c52a9dc5dcddb3))
+
 ## [0.4.0-beta.17](https://github.com/framesurge/perseus/compare/v0.4.0-beta.16...v0.4.0-beta.17) (2023-01-18)
 
 
