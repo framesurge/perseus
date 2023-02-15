@@ -186,18 +186,6 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             #intermediate_fields
         }
 
-        impl #intermediate_ident
-        {
-            fn new(#old_types) -> #intermediate_ident
-            {
-                use ::perseus::state::MakeRx;
-                #intermediate_ident
-                {
-                    #new_intermediate_field_makers
-                }
-            }
-        }
-
         impl From<#intermediate_ident> for #ident
         {
             fn from(value: #intermediate_ident) -> #ident
