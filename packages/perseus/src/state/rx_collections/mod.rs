@@ -82,6 +82,43 @@
 //! without this attribute, the `ReactiveState` derive macro will just wrap
 //! the whole field in an `RcSignal` and call it a day, rather than using the
 //! fine-grained reactivity enabled by these types.
+//!
+//! **Also note:** when iterating over any of these collections to create
+//! `View` fragments, you will need to use `create_ref()` to prevent lifetime
+//! errors in some more complex cases, like so:
+//!
+//! ```no_run
+//! # use serde::{Serialize, Deserialize};
+//! # use perseus::state::rx_collections::RxVec;
+//! # use sycamore::prelude::*;
+//! # use perseus::prelude::*;
+//! # #[derive(Serialize, Deserialize, Clone, ReactiveState)]
+//! # #[rx(alias = "StateRx")]
+//! # struct State {
+//! #     #[rx(nested)]
+//! #     list: RxVec<String>,
+//! # }
+//! #
+//! # #[auto_scope]
+//! # fn view<G: Html>(cx: Scope, state: &StateRx) -> View<G> {
+//! // Note the use of `create_ref()` here
+//! let list = create_ref(state.list.get());
+//! let view = View::new_fragment(
+//!     list.iter()
+//!     .map(|elem| {
+//!         // ...
+//!         # view! {
+//!             (elem)
+//!         }
+//!     })
+//!     .collect()
+//! );
+//!
+//! view! { cx,
+//!     (view)
+//! }
+//! # }
+//! ```
 
 mod rx_hash_map;
 mod rx_hash_map_nested;
