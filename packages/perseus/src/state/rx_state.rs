@@ -12,6 +12,32 @@ pub trait MakeRx {
     /// unreactive, meaning greater inference and fewer arguments that the
     /// user needs to provide to macros.
     type Rx: MakeUnrx;
+    /// This should be set to `true` to have this type be ignored by the hot
+    /// state reloading system, which can be useful when working with state
+    /// that you will regularly update in development.
+    ///
+    /// For example, take a documentation website that converts Markdown to HTML
+    /// in its state generation process, storing that in reactive state. If you,
+    /// in development, then wanted to change some of the documentation and see
+    /// the result immediately, HSR would override the new state with the
+    /// old, preserving your 'position' in the development cycle. Only a
+    /// manual reload of the page would prevent this from continuing
+    /// forever. Setting this associated constant to `true` will tell the
+    /// HSR system to ignore this type from HSR thawing, meaning
+    /// the new state will always be used. Note that, depending on the structure
+    /// of your application, this can sometimes cause state inconsistencies
+    /// (e.g. if one state object expects another one to be in a certain
+    /// state, but then one of them is ignored by HSR and resets).
+    ///
+    /// This is a development-only setting, and does not exist in production. If
+    /// the `hsr` feature flag is disabled, this will have no effect.
+    ///
+    /// Typically, you would set this using the `#[rx(hsr_ignore)]` derive
+    /// helper macro with `#[derive(ReactiveState, ..)]`. Note that you only
+    /// need to set this to `true` for the top-level state type for a page,
+    /// not for any nested components.
+    #[cfg(debug_assertions)]
+    const HSR_IGNORE: bool = false;
     /// Transforms an instance of the `struct` into its reactive version.
     fn make_rx(self) -> Self::Rx;
 }
@@ -88,9 +114,12 @@ impl std::fmt::Debug for (dyn AnyFreeze + 'static) {
 }
 
 /// A marker trait for types that you want to be able to use with the Perseus
-/// state platform, without using `#[make_rx]`. If you want to use unreactive
-/// state, implement this, and you'll automatically be able to use your
-/// unreactive type without problems!
+/// state platform, without using `#[derive(ReactiveState, ..)]`. If you want to
+/// use unreactive state, implement this, and you'll automatically be able to
+/// use your unreactive type without problems!
+///
+/// Since unreactive state will never be changed on the client-side, it is
+/// automatically ignored y the hot state reloading system, if it is enabled.
 pub trait UnreactiveState {}
 
 /// A wrapper for storing unreactive state in Perseus, and allowing it to
@@ -113,6 +142,10 @@ pub struct UnreactiveStateWrapper<
 // `UnreactiveStateWrapper` as the reactive type
 impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> MakeRx for T {
     type Rx = UnreactiveStateWrapper<T>;
+    // Unreactive state will never change on the client-side, and should therefore
+    // by default be ignored by HSR
+    #[cfg(debug_assertions)]
+    const HSR_IGNORE: bool = true;
     fn make_rx(self) -> Self::Rx {
         UnreactiveStateWrapper(self)
     }

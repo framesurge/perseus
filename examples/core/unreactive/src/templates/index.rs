@@ -2,11 +2,9 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-// Without `#[make_rx(...)]`, we have to manually derive `Serialize` and
-// `Deserialize`
-// We derive `UnreactiveState` too, which actually creates a pseudo-reactive
+// We derive `UnreactiveState`, which actually creates a pseudo-reactive
 // wrapper for this unreactive type, allowing it to work with Perseus;
-// rather strict state platform (this is just a marker trait though)
+// rather strict state platform (this is just a marker trait though).
 #[derive(Serialize, Deserialize, Clone, UnreactiveState)]
 struct IndexPageState {
     pub greeting: String,
@@ -42,6 +40,9 @@ fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
 #[engine_only_fn]
 async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
     IndexPageState {
+        // Unreactive state is automatically excluded from HSR, so changing
+        // this will update it in your browser in development, without state
+        // restoration getting in your way
         greeting: "Hello World!".to_string(),
     }
 }

@@ -155,6 +155,10 @@ impl<G: Html> Reactor<G> {
     /// the thaw preferences have already been accounted for.
     ///
     /// This assumes that the app actually supports global state.
+    ///
+    /// In HSR, this will thaw leniently, and, if the type is explicitly being
+    /// ignored from HSR, this will return `Ok(None)` (e.g. for unreactive state
+    /// types).
     #[cfg(any(client, doc))]
     fn get_frozen_global_state_and_register<S>(&self) -> Result<Option<S::Rx>, ClientError>
     where
@@ -168,6 +172,12 @@ impl<G: Html> Reactor<G> {
                 !is_hsr,
                 "attempted to invoke hsr-style thaw in non-hsr environment"
             );
+
+            // If this is an HSR thaw, and this type is to be ignored from HSR, then ignore
+            // it
+            if *is_hsr && S::HSR_IGNORE {
+                return Ok(None);
+            }
 
             match &frozen_app.global_state {
                 FrozenGlobalState::Some(state_str) => {

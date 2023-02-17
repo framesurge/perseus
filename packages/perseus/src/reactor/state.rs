@@ -383,6 +383,10 @@ impl<G: Html> Reactor<G> {
     /// Attempts to extract the frozen state for the given page from any
     /// currently registered frozen app, registering what it finds. This
     /// assumes that the thaw preferences have already been accounted for.
+    ///
+    /// In HSR, this will thaw leniently, and, if the type is explicitly being
+    /// ignored from HSR, this will return `Ok(None)` (e.g. for unreactive state
+    /// types).
     #[cfg(any(client, doc))]
     fn get_frozen_state_and_register<S>(
         &self,
@@ -400,6 +404,13 @@ impl<G: Html> Reactor<G> {
                 !is_hsr,
                 "attempted to invoke hsr-style thaw in non-hsr environment"
             );
+
+            // If this is an HSR thaw, and this type is to be ignored from HSR, then ignore
+            // it
+            if *is_hsr && S::HSR_IGNORE {
+                return Ok(None);
+            }
+
             // Get the serialized and unreactive frozen state from the store
             match frozen_app.state_store.get(&url) {
                 Some(state_str) => {

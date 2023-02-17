@@ -11,6 +11,9 @@ pub struct ReactiveStateDeriveInput {
     /// `struct` for ease of reference.
     #[darling(default)]
     alias: Option<Ident>,
+    /// If specified, the type should be ignored by HSR.
+    #[darling(default)]
+    hsr_ignore: bool,
 
     ident: Ident,
     vis: Visibility,
@@ -155,6 +158,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
         vis,
         attrs: attrs_vec,
         alias,
+        hsr_ignore,
         ..
     } = input;
     let mut attrs = quote!();
@@ -206,6 +210,8 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
 
         impl ::perseus::state::MakeRx for #ident {
             type Rx = #intermediate_ident;
+            #[cfg(debug_assertions)]
+            const HSR_IGNORE: bool = #hsr_ignore;
             fn make_rx(self) -> Self::Rx {
                 use ::perseus::state::MakeRx;
                 Self::Rx {

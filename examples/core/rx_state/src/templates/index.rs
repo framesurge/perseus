@@ -18,6 +18,11 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
     // go to another page, and then come back, *two* elements will have been
     // added in total. The state is preserved across routes! To avoid this, use
     // unreactive state.
+    //
+    // ADVANCED: Note also that, even if we ignored this page's state type from HSR,
+    // this would still be performed for HSR, because the state restoration
+    // process will double-execute this logic. That's why things like this
+    // should generally be done with suspended state.
     state
         .test
         .modify()
