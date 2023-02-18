@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.19](https://github.com/framesurge/perseus/compare/v0.4.0-beta.18...v0.4.0-beta.19) (2023-02-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* implicit `new` method removed from intermediate
+reactive types
+
+### Features
+
+* added hsr ignoring feature applied by default to unreactive state ([6768f4e](https://github.com/framesurge/perseus/commit/6768f4e05dbd0147205d78cb469a988c6d1e545b))
+
+
+### Bug Fixes
+
+* fixed two broken tests ([ed5b5ad](https://github.com/framesurge/perseus/commit/ed5b5adc3d6770861cc16e7ad0cf31f68e09dfab))
+
+
+### revert
+
+* removed `new` implementation on reactive types ([60a60f0](https://github.com/framesurge/perseus/commit/60a60f09b49c849bcf4ea50ab6e38679dd1c3efe))
+
+
+### Documentation Changes
+
+* added docs on rx_collection iteration ([d297af1](https://github.com/framesurge/perseus/commit/d297af1ba885376eb93ff4cb2259246a0819da10))
+
 ## [0.4.0-beta.18](https://github.com/framesurge/perseus/compare/v0.4.0-beta.17...v0.4.0-beta.18) (2023-02-10)
 
 
