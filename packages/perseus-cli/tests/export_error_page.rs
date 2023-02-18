@@ -35,7 +35,7 @@ fn export_error_page_produces_page() -> Result<(), Box<dyn std::error::Error>> {
 
     dir.child("404.html")
         // Going off the default development error pages
-        .assert(predicate::str::contains("Page not found."));
+        .assert(predicate::str::contains("Page not found!"));
 
     Ok(())
 }

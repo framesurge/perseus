@@ -85,7 +85,7 @@
 //!
 //! **Also note:** when iterating over any of these collections to create
 //! `View` fragments, you will need to use `create_ref()` to prevent lifetime
-//! errors in some more complex cases, like so:
+//! errors, like so:
 //!
 //! ```no_run
 //! # use serde::{Serialize, Deserialize};
@@ -102,13 +102,13 @@
 //! # #[auto_scope]
 //! # fn view<G: Html>(cx: Scope, state: &StateRx) -> View<G> {
 //! // Note the use of `create_ref()` here
-//! let list = create_ref(state.list.get());
+//! let list = create_ref(cx, state.list.get());
 //! let view = View::new_fragment(
 //!     list.iter()
 //!     .map(|elem| {
 //!         // ...
-//!         # view! {
-//!             (elem)
+//!         # view! { cx,
+//!             (elem.get())
 //!         }
 //!     })
 //!     .collect()
