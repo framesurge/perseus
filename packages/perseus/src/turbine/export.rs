@@ -1,6 +1,5 @@
 use super::Turbine;
 use crate::{
-    error_views::ServerErrorData,
     errors::*,
     i18n::TranslationsManager,
     internal::{PageData, PageDataPartial},
