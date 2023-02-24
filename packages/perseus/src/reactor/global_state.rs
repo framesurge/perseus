@@ -175,6 +175,7 @@ impl<G: Html> Reactor<G> {
 
             // If this is an HSR thaw, and this type is to be ignored from HSR, then ignore
             // it
+            #[cfg(debug_assertions)]
             if *is_hsr && S::HSR_IGNORE {
                 return Ok(None);
             }
