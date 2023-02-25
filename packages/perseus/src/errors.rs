@@ -63,6 +63,12 @@ pub enum EngineError {
         source: std::io::Error,
         dest: String,
     },
+    #[error("couldn't create the parent directories needed for the nested static alias '{alias}'")]
+    NestedStaticAliasDirCreationFailed {
+        #[source]
+        source: std::io::Error,
+        alias: String,
+    },
 }
 
 /// Errors that can occur in the browser.

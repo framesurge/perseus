@@ -6,7 +6,9 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // Check the static alias
     c.goto("http://localhost:8080/test.txt").await?;
     let url = c.current_url().await?;
-    assert!(url.as_ref().starts_with("http://localhost:8080/test"));
+    assert!(url
+        .as_ref()
+        .starts_with("http://localhost:8080/static/test"));
     // The browser will show this in the window as a `<pre>`
     let text = c.find(Locator::Css("pre")).await?.text().await?;
     assert_eq!(text, "This is a test file!");

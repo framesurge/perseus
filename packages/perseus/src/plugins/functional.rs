@@ -175,10 +175,11 @@ pub struct FunctionalPluginExportActions {
     pub after_failed_export: FunctionalPluginAction<Arc<Error>, ()>,
     /// Runs if copying the static directory failed.
     pub after_failed_static_copy: FunctionalPluginAction<Arc<Error>, ()>,
-    /// Runs if copying a static alias that was a directory failed. The argument
-    /// to this is a tuple of the from and to locations of the copy, along with
-    /// the error.
+    /// Runs if copying a static alias that was a directory failed.
     pub after_failed_static_alias_dir_copy: FunctionalPluginAction<Arc<Error>, ()>,
+    /// Runs if creating the directory structure for a nested static alias
+    /// failed in exporting.
+    pub after_failed_nested_static_alias_dir_creation: FunctionalPluginAction<Arc<Error>, ()>,
     /// Runs if copying a static alias that was a file failed. The argument to
     /// this is a tuple of the from and to locations of the copy, along with the
     /// error.

@@ -353,13 +353,36 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Remember: `alias` has a leading `/`!
         for (alias, path) in &self.static_aliases {
             let from = PathBuf::from(path);
-            let to = format!("{}{}", dest, alias);
+            let to_str = format!("{}{}", dest, alias);
+            let to = PathBuf::from(&to_str);
+            // If the alias is nested, we might need to create directories
+            if to_str.contains('/') {
+                // This is guaranteed to be `Some()`, since there is at least the `dist/`
+                // directory
+                let parent = to.parent().unwrap();
+                if !parent.exists() {
+                    if let Err(err) = fs::create_dir(parent) {
+                        let err = EngineError::NestedStaticAliasDirCreationFailed {
+                            source: err,
+                            alias: alias.to_string(),
+                        };
+                        let err: Arc<Error> = Arc::new(err.into());
+                        self.plugins
+                            .functional_actions
+                            .export_actions
+                            .after_failed_nested_static_alias_dir_creation
+                            .run(err.clone(), self.plugins.get_plugin_data())
+                            .map_err(|err| Arc::new(err.into()))?;
+                        return Err(err);
+                    }
+                }
+            }
 
             if from.is_dir() {
                 if let Err(err) = copy_dir(&from, &to, &CopyOptions::new()) {
                     let err = EngineError::CopyStaticAliasDirErr {
                         source: err,
-                        to,
+                        to: to_str,
                         from: path.to_string(),
                     };
                     let err: Arc<Error> = Arc::new(err.into());
@@ -374,7 +397,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             } else if let Err(err) = fs::copy(&from, &to) {
                 let err = EngineError::CopyStaticAliasFileError {
                     source: err,
-                    to,
+                    to: to_str,
                     from: path.to_string(),
                 };
                 let err: Arc<Error> = Arc::new(err.into());
