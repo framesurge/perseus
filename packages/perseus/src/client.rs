@@ -2,8 +2,6 @@ use crate::reactor::Reactor;
 use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
 use crate::{plugins::PluginAction, template::BrowserNodeType, utils::checkpoint};
 use sycamore::prelude::create_scope;
-#[cfg(feature = "hydrate")]
-use sycamore::utils::hydrate::with_hydration_context;
 use wasm_bindgen::JsValue;
 use web_sys::{CustomEvent, CustomEventInit};
 
@@ -113,7 +111,7 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 
         // NOTE: To anyone who ever thinks it might be a good idea to put this whole
         // thing in a `with_hydration_cx()`, it's not, it's really not.
-        core();
+        running = core();
     });
 
     dispatch_loaded(running, false);
