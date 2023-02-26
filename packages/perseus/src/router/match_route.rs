@@ -47,9 +47,14 @@ fn get_template_for_path<'a, G: Html>(
             }
         }
     }
-    // If we still have nothing, then the page doesn't exist
+    // If we still have nothing, then the page doesn't exist, *unless* there's
+    // incremental generation on the index template, in which case it does
+    // (this doesn't break priorities because, above, we go for the most specific,
+    // and this is the least, meaning there is nothing more specific)
     if let Some(entity_name) = entity_name {
         (entities.get(&entity_name), was_incremental_match)
+    } else if render_cfg.contains_key("/*") {
+        (entities.get(""), true)
     } else {
         (None, was_incremental_match)
     }
