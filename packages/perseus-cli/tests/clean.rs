@@ -6,19 +6,15 @@ use assert_fs::{
 use predicates::prelude::*;
 use std::process::Command;
 
+use crate::utils::init_test;
+
 /// Makes sure that `perseus clean` removes the `dist/` directory entirely after
 /// a build.
 #[test]
 #[ignore]
 fn clean_removes_dist() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()) // In dev, the CLI can be made to run anywhere!
-        .arg("init")
-        .arg("my-app");
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Your new app has been created!"));
+    init_test(&dir)?;
 
     // Build the app and make sure `clean` removes the `dist/` directory
     let mut cmd = Command::cargo_bin("perseus")?;

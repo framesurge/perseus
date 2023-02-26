@@ -6,6 +6,8 @@ use assert_fs::{
 use predicates::prelude::*;
 use std::process::Command;
 
+use crate::utils::init_test;
+
 /// Makes sure that `perseus snoop build` produces the correct artifacts.
 ///
 /// This test is tightly coupled to the form of the static artifacts, and can
@@ -14,13 +16,7 @@ use std::process::Command;
 #[ignore]
 fn snoop_build_produces_artifacts() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()) // In dev, the CLI can be made to run anywhere!
-        .arg("init")
-        .arg("my-app");
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Your new app has been created!"));
+    init_test(&dir)?;
 
     // Build the app
     let mut cmd = Command::cargo_bin("perseus")?;
@@ -62,13 +58,7 @@ fn snoop_build_produces_artifacts() -> Result<(), Box<dyn std::error::Error>> {
 #[ignore]
 fn snoop_build_prints_dbg() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()) // In dev, the CLI can be made to run anywhere!
-        .arg("init")
-        .arg("my-app");
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Your new app has been created!"));
+    init_test(&dir)?;
 
     let index_template = dir.child("src/templates/index.rs");
     let contents = std::fs::read_to_string(&index_template).unwrap();

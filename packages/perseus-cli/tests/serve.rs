@@ -1,4 +1,4 @@
-use crate::utils::test_serve;
+use crate::utils::{init_test, test_serve};
 use assert_cmd::prelude::*;
 use assert_fs::{
     prelude::{PathAssert, PathChild},
@@ -15,13 +15,7 @@ use std::process::Command;
 #[ignore]
 fn serve_produces_artifacts_and_serves() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()) // In dev, the CLI can be made to run anywhere!
-        .arg("init")
-        .arg("my-app");
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Your new app has been created!"));
+    init_test(&dir)?;
 
     // Serve the app without running it
     let mut cmd = Command::cargo_bin("perseus")?;

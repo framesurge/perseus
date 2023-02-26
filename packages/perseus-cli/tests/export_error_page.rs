@@ -6,18 +6,14 @@ use assert_fs::{
 use predicates::prelude::*;
 use std::process::Command;
 
+use crate::utils::init_test;
+
 /// Makes sure that `perseus export-error-page` produces the correct error page.
 #[test]
 #[ignore]
 fn export_error_page_produces_page() -> Result<(), Box<dyn std::error::Error>> {
     let dir = TempDir::new()?;
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()) // In dev, the CLI can be made to run anywhere!
-        .arg("init")
-        .arg("my-app");
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Your new app has been created!"));
+    init_test(&dir)?;
 
     // Build the app
     let mut cmd = Command::cargo_bin("perseus")?;
