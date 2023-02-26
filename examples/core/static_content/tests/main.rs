@@ -4,7 +4,7 @@ use fantoccini::{Client, Locator};
 #[perseus::test]
 async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // Check the static alias
-    c.goto("http://localhost:8080/test.txt").await?;
+    c.goto("http://localhost:8080/static/test.txt").await?;
     let url = c.current_url().await?;
     assert!(url
         .as_ref()
