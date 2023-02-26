@@ -5,7 +5,7 @@ Perseus v0.4.x added a significant number of breaking changes, as almost the ent
 **Warning:** Perseus v0.4.x is now in its final beta period, meaning new features are probably not going to be added until v0.4.0 goes stable. However, due to the full rewrite, we want to make sure there are no outstanding bugs before pushing the full stable release. Please report even the smallest bugs you encounter to us on GitHub, and we can make Perseus v0.4.0 the best it can be.
 
 1. Restructure your `Cargo.toml` to reflect the new dependency-splitting format (which splits engine-side dependencies from those only needed in the browser). See [here](https://github.com/framesurge/perseus/tree/main/examples/core/basic/Cargo.toml) for an example. Note that this will involve adding a server integration for use, like `perseus-warp` (on which you'll probably want to enable the `dflt-server` feature).
-2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.4.0-beta.19`.
+2. Upgrade the Perseus CLI with `cargo install perseus-cli --version 0.4.0-beta.20`.
 3. Delete the old `.perseus/` directory (this is no longer needed).
 4. Rename your `lib.rs` file to `main.rs` and delete `.perseus/` (it's been removed entirely!).
 5. Change the `#[perseus::main]` attribute on the function in `main.rs` to be `#[perseus::main(perseus_axum::dflt_server)]` (replace `perseus_axum` with whatever server integration you decide to use).

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.20](https://github.com/framesurge/perseus/compare/v0.4.0-beta.19...v0.4.0-beta.20) (2023-02-26)
+
+
+### Bug Fixes
+
+* **cli:** fixed cli tests to test bleeding-edge core ([27442d5](https://github.com/framesurge/perseus/commit/27442d50db95b2919297631d775ebcb86a34b90f)), closes [#259](https://github.com/framesurge/perseus/issues/259)
+* fixed crash handling system ([b085888](https://github.com/framesurge/perseus/commit/b085888bc504bfb228d35a5db8f28f870e41f29f))
+* fixed hsr ignore deployment issues ([#260](https://github.com/framesurge/perseus/issues/260)) ([e9c6239](https://github.com/framesurge/perseus/commit/e9c62391761583a63d779d6fc9087cf4b8b85eba))
+* fixed nested static aliases in exporting ([c15624e](https://github.com/framesurge/perseus/commit/c15624e1d4a8bdfc957409adc2c8fb4eee8249e8)), closes [#258](https://github.com/framesurge/perseus/issues/258)
+* fixed static content tests ([88cad92](https://github.com/framesurge/perseus/commit/88cad92229c58eed1a3d31e572e0fc962f7f50f0))
+* removed unused import ([febdbaf](https://github.com/framesurge/perseus/commit/febdbaf9080eba7e504461dfff00e73d3313f24e))
+
 ## [0.4.0-beta.19](https://github.com/framesurge/perseus/compare/v0.4.0-beta.18...v0.4.0-beta.19) (2023-02-18)
 
 
