@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 fn about_page<G: Html>(cx: Scope) -> View<G> {
     view! { cx,
         p { (t!(cx, "about")) }
-        button(on:click = move |_| {
+        button(id = "switch-button", on:click = move |_| {
             #[cfg(client)]
             Reactor::<G>::from_cx(cx).switch_locale("fr-FR");
         }) { "Switch to French" }

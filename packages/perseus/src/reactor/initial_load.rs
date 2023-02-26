@@ -62,7 +62,7 @@ impl<G: Html> Reactor<G> {
         let slim_verdict = verdict.clone();
         match &verdict.into_full(&self.entities) {
             // WARNING: This will be triggered on *all* incremental paths, even if
-            // the serber returns a 404!
+            // the server returns a 404!
             FullRouteVerdict::Found(FullRouteInfo {
                 path,
                 entity,

@@ -42,6 +42,18 @@ pub(crate) struct HtmlShell {
     /// Code to be inserted into the shell after the Perseus contents of the
     /// page. This is designed to be modified by plugins.
     pub after_content: Vec<String>,
+    /// The locale to be used for this page, which will be set in the `lang`
+    /// attribute on `<html>`.
+    ///
+    /// **IMPORTANT:** This *does* use `xx-XX` for denoting the locale of an
+    /// app not using i18n, but, if this value is set, no interpolation will
+    /// be performed. For apps that do use i18n, manually setting the `lang`
+    /// attribute in teh index view may lead to unpredictable errors (as
+    /// interpolation will nonetheless be performed, leading to conflicts).
+    ///
+    /// Note that `xx-XX` will be automatically set for locale redirection
+    /// pages, preventing interpolation.
+    pub locale: String,
     /// The ID of the element into which we'll interpolate content.
     root_id: String,
     /// The path prefix to use.
@@ -178,6 +190,8 @@ impl HtmlShell {
             content: "".into(),
             root_id: root_id.into(),
             path_prefix: path_prefix.into(),
+            // Assume until we know otherwise
+            locale: "xx-XX".to_string(),
         }
     }
 
@@ -187,12 +201,17 @@ impl HtmlShell {
     /// translator can be derived on the client-side. These are provided in
     /// a window variable to avoid page interactivity requiring a network
     /// request to get them.
+    ///
+    /// This needs to know what the locale is so it can set the HTML `lang`
+    /// attribute for improved SEO.
     pub(crate) fn page_data(
         mut self,
         page_data: &PageData,
         global_state: &TemplateState,
+        locale: &str,
         translations: &str,
     ) -> Self {
+        self.locale = locale.to_string();
         // Interpolate a global variable of the state so the app shell doesn't have to
         // make any more trips The app shell will unset this after usage so it
         // doesn't contaminate later non-initial loads Error pages (above) will
@@ -249,6 +268,7 @@ impl HtmlShell {
     /// Further, this will preload the Wasm binary, making redirection snappier
     /// (but initial load slower), a tradeoff that generally improves UX.
     pub(crate) fn locale_redirection_fallback(mut self, redirect_url: &str) -> Self {
+        self.locale = "xx-XX".to_string();
         // This will be used if JavaScript is completely disabled (it's then the site's
         // responsibility to show a further message)
         let dumb_redirect = format!(
@@ -316,8 +336,13 @@ impl HtmlShell {
         error_page_data: &ServerErrorData,
         error_html: &str,
         error_head: &str,
+        locale: Option<String>, // For internal convenience
         translations_str: Option<&str>,
     ) -> Self {
+        if let Some(locale) = locale {
+            self.locale = locale.to_string();
+        }
+
         let error = serde_json::to_string(error_page_data).unwrap();
         let state_var = format!(
             "window.__PERSEUS_INITIAL_STATE = `error-{}`;",
@@ -394,12 +419,19 @@ impl fmt::Display for HtmlShell {
             .replace(&html_to_replace_double, &html_replacement)
             .replace(&html_to_replace_single, &html_replacement);
 
+        // Finally, set the `lang` tag if we should
+        let final_shell = if self.locale != "xx-XX" {
+            new_shell.replace("<html", &format!(r#"<html lang="{}""#, self.locale))
+        } else {
+            new_shell
+        };
+
         // And minify everything
         // Because this is run on live requests, we have to be fault-tolerant (if we
         // can't minify, we'll fall back to unminified)
-        let minified = match minify(&new_shell, true) {
+        let minified = match minify(&final_shell, true) {
             Ok(minified) => minified,
-            Err(_) => new_shell,
+            Err(_) => final_shell,
         };
 
         f.write_str(&minified)

@@ -30,10 +30,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // Translator and translations string
         i18n_data: Option<(&Translator, &str)>,
     ) -> String {
-        let (translator, translations_str) = if let Some((t, s)) = i18n_data {
-            (Some(t), Some(s))
+        let (translator, translations_str, locale) = if let Some((t, s)) = i18n_data {
+            (Some(t), Some(s), Some(t.get_locale()))
         } else {
-            (None, None)
+            (None, None, None)
         };
 
         let (head, body) = self.error_views.render_to_string(data.clone(), translator);
@@ -43,7 +43,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .unwrap()
             .clone()
             // This will inject the translations string if it's available
-            .error_page(&data, &body, &head, translations_str)
+            .error_page(&data, &body, &head, locale, translations_str)
             .to_string()
     }
 }

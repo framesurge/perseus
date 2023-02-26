@@ -106,6 +106,9 @@ impl ClientTranslationsManager {
                 }
             };
             self.cache_translator(translator);
+            // Only set `lang` if everything else worked (otherwise we'd end up with state
+            // inconsistencies)
+            Self::set_html_lang(locale);
         }
 
         Ok(())
@@ -114,6 +117,9 @@ impl ClientTranslationsManager {
     /// internally cached `Translator` if possible, and will otherwise fetch
     /// the translations from the server. This manages mutability for caching
     /// internally.
+    ///
+    /// This will imperatively update the `lang` attribute on the root `<html>`
+    /// element.
     ///
     /// # Panics
     ///
@@ -132,7 +138,10 @@ impl ClientTranslationsManager {
             match translations_str {
                 Some(translations_str) => {
                     // All good, turn the translations into a translator
-                    self.set_translator_for_translations_str(locale, &translations_str)?
+                    self.set_translator_for_translations_str(locale, &translations_str)?;
+                    // Only set `lang` if everything else worked (otherwise we'd end up with state
+                    // inconsistencies)
+                    Self::set_html_lang(locale);
                 }
                 // If we get a 404 for a supported locale, that's an exception
                 None => {
@@ -145,5 +154,18 @@ impl ClientTranslationsManager {
         }
 
         Ok(())
+    }
+
+    /// Sets the `lang` attribute on the root `<html>` tag to stay up-to-date
+    /// with the internal state of this system.
+    fn set_html_lang(locale: &str) {
+        let document = web_sys::window().unwrap().document().unwrap();
+        // If the `<html>` tag does not exist, and Perseus is running, this would
+        // be...interesting...
+        let html = document.document_element().unwrap();
+
+        // This is a non-critical operation, so errors are not propagated here
+        // TODO In future, this should integrate with the `PlatformError` system
+        let _ = html.set_attribute("lang", locale);
     }
 }

@@ -223,7 +223,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // We can use those to get a translator efficiently
                 let translator = match self
                     .translations_manager
-                    .get_translator_for_translations_str(locale, translations_str.clone())
+                    .get_translator_for_translations_str(locale.clone(), translations_str.clone())
                     .await
                 {
                     Ok(translator) => translator,
@@ -257,7 +257,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .as_ref()
                     .unwrap()
                     .clone()
-                    .page_data(&page_data, &global_state, &translations_str)
+                    .page_data(&page_data, &global_state, &locale, &translations_str)
                     .to_string();
                 // NOTE: Yes, the user can fully override the content type...I have yet to find
                 // a good use for this given the need to generate a `View`

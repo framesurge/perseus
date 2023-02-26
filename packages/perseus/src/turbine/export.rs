@@ -180,7 +180,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     // not using i18n
                     let full_html = html_shell
                         .clone()
-                        .page_data(&page_data, global_state, &translations)
+                        .page_data(&page_data, global_state, locale, &translations)
                         .to_string();
                     self.immutable_store
                         .write(
@@ -224,7 +224,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // not using i18n
                 let full_html = html_shell
                     .clone()
-                    .page_data(&page_data, global_state, "")
+                    .page_data(&page_data, global_state, "xx-XX", "")
                     .to_string();
                 // We don't add an extension because this will be queried directly by the
                 // browser

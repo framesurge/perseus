@@ -10,6 +10,9 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // languages is very hard, we do unit testing on the locale detection system
     // instead
     assert!(url.as_ref().starts_with("http://localhost:8080/en-US"));
+    // Make sure the HTML `lang` attribute has been correctly set
+    let lang = c.find(Locator::Css("html")).await?.attr("lang").await?;
+    assert_eq!(lang, Some("en-US".to_string()));
     // This tests translations, variable interpolation, and multiple aspects of
     // Sycamore all at once
     let text = c.find(Locator::Css("p")).await?.text().await?;
@@ -18,10 +21,22 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.find(Locator::Css("a")).await?.click().await?;
     // This tests i18n linking (locale should be auto-detected)
     let url = c.current_url().await?;
-    wait_for_checkpoint!("page_interactive", 0, c);
+    wait_for_checkpoint!("page_interactive", 1, c);
     assert!(url
         .as_ref()
         .starts_with("http://localhost:8080/en-US/about"));
+
+    // Switch the locale
+    c.find(Locator::Id("switch-button")).await?.click().await?;
+    let url = c.current_url().await?;
+    wait_for_checkpoint!("page_interactive", 2, c);
+    assert!(url
+        .as_ref()
+        .starts_with("http://localhost:8080/fr-FR/about"));
+
+    // Make sure the HTML `lang` attribute has been correctly set
+    let lang = c.find(Locator::Css("html")).await?.attr("lang").await?;
+    assert_eq!(lang, Some("fr-FR".to_string()));
 
     Ok(())
 }
