@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.21](https://github.com/framesurge/perseus/compare/v0.4.0-beta.20...v0.4.0-beta.21) (2023-03-01)
+
+
+### Features
+
+* **i18n:** added support for auto-setting the `lang` attribute ([1e3206c](https://github.com/framesurge/perseus/commit/1e3206c761a95c321d201d57514b84f4a1a0d250)), closes [#261](https://github.com/framesurge/perseus/issues/261)
+
+
+### Bug Fixes
+
+* fixed incremental generation on index template ([b3b3b82](https://github.com/framesurge/perseus/commit/b3b3b82338132805c73dea02399ab5edaaf0d8a4)), closes [#262](https://github.com/framesurge/perseus/issues/262)
+
 ## [0.4.0-beta.20](https://github.com/framesurge/perseus/compare/v0.4.0-beta.19...v0.4.0-beta.20) (2023-02-26)
 
 

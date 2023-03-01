@@ -5,7 +5,7 @@ To get started with Perseus, you should first make sure you have the Rust langua
 Once you have Rust installed, you can run the following command to install Perseus:
 
 ```sh
-cargo install perseus-cli --version 0.4.0-beta.20
+cargo install perseus-cli --version 0.4.0-beta.21
 ```
 
 (While v0.4.x is still in beta, that `--version` flag is needed to make sure you get the latest beta version.)
