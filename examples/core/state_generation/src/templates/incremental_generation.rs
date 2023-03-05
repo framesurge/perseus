@@ -48,7 +48,7 @@ pub fn get_template<G: Html>() -> Template<G> {
 #[engine_only_fn]
 async fn get_build_state(
     StateGeneratorInfo { path, .. }: StateGeneratorInfo<()>,
-) -> Result<PageState, BlamedError<std::io::Error>> {
+) -> Result<PageState, BlamedError<anyhow::Error>> {
     // This path is illegal, and can't be rendered
     // Because we're using incremental generation, we could get literally anything
     // as the `path`
@@ -56,14 +56,13 @@ async fn get_build_state(
         // This tells Perseus to return an error that's the client's fault, with the
         // HTTP status code 404 (not found) and the message 'illegal page'. Note that
         // this is a `BlamedError<std::io::Error>`, but we could use any error type that
-        // implements `std::error::Error` (note that this does make `anyhow` a
-        // bit tricky, if you use it).
+        // implements `std::error::Error` or can be converted into a boxed `std::error::Error`.
         return Err(BlamedError {
             // If we used `None` instead, it would default to 400 for the client and 500 for the
             // server
             blame: ErrorBlame::Client(Some(404)),
             // This is just an example, and you could put any error type here, usually your own
-            error: std::io::Error::new(std::io::ErrorKind::NotFound, "illegal page"),
+            error: anyhow::anyhow!("illegal page"),
         });
     }
     let title = path.clone();
