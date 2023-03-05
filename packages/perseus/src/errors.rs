@@ -504,7 +504,9 @@ impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync> 
 // We should be able to convert any error into this easily (e.g. with `?`) with
 // the default being to blame the server
 #[cfg(engine)]
-impl<E: std::error::Error + Send + Sync + 'static> From<E> for BlamedError<E> {
+impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync> From<E>
+    for BlamedError<E>
+{
     fn from(error: E) -> Self {
         Self {
             error,
