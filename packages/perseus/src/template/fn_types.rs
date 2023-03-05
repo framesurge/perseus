@@ -172,8 +172,10 @@ impl<S: Serialize + DeserializeOwned + MakeRx> From<S> for BlamedGeneratorResult
         Self::Ok(val)
     }
 }
-impl<S: Serialize + DeserializeOwned + MakeRx, E: std::error::Error + Send + Sync + 'static>
-    From<Result<S, BlamedError<E>>> for BlamedGeneratorResult<S>
+impl<
+        S: Serialize + DeserializeOwned + MakeRx,
+        E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync,
+    > From<Result<S, BlamedError<E>>> for BlamedGeneratorResult<S>
 {
     fn from(val: Result<S, BlamedError<E>>) -> Self {
         match val {
@@ -188,8 +190,8 @@ impl From<bool> for BlamedGeneratorResult<bool> {
         Self::Ok(val)
     }
 }
-impl<E: std::error::Error + Send + Sync + 'static> From<Result<bool, BlamedError<E>>>
-    for BlamedGeneratorResult<bool>
+impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync>
+    From<Result<bool, BlamedError<E>>> for BlamedGeneratorResult<bool>
 {
     fn from(val: Result<bool, BlamedError<E>>) -> Self {
         match val {

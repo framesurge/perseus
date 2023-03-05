@@ -491,12 +491,12 @@ pub struct BlamedError<E: Send + Sync> {
     pub blame: ErrorBlame,
 }
 #[cfg(engine)]
-impl<E: std::error::Error + Send + Sync + 'static> BlamedError<E> {
+impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync> BlamedError<E> {
     /// Converts this blamed error into an internal boxed version that is
     /// generic over the error type.
     pub(crate) fn into_boxed(self) -> GenericBlamedError {
         BlamedError {
-            error: Box::new(self.error),
+            error: self.error.into(),
             blame: self.blame,
         }
     }
