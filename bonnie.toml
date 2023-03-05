@@ -139,12 +139,12 @@ site.subcommands.run.cmd = [
 site.subcommands.run.desc = "runs the website without watching for changes"
 
 check.cmd = [
-    "RUSTFLAGS=\"--cfg=engine\" cargo check --all",
-    "RUSTFLAGS=\"--cfg=engine\" cargo fmt --all -- --check",
-    "RUSTFLAGS=\"--cfg=engine\" cargo clippy --all",
-    "RUSTFLAGS=\"--cfg=client\" cargo check --all",
-    "RUSTFLAGS=\"--cfg=client\" cargo fmt --all -- --check",
-    "RUSTFLAGS=\"--cfg=client\" cargo clippy --all",
+    "RUSTFLAGS=\"--cfg=engine\" CARGO_TARGET_DIR=\"target_engine\" cargo check --all",
+    "RUSTFLAGS=\"--cfg=engine\" CARGO_TARGET_DIR=\"target_engine\" cargo fmt --all -- --check",
+    "RUSTFLAGS=\"--cfg=engine\" CARGO_TARGET_DIR=\"target_engine\" cargo clippy --all",
+    "RUSTFLAGS=\"--cfg=client\" CARGO_TARGET_DIR=\"target_wasm\" cargo check --all",
+    "RUSTFLAGS=\"--cfg=client\" CARGO_TARGET_DIR=\"target_wasm\" cargo fmt --all -- --check",
+    "RUSTFLAGS=\"--cfg=client\" CARGO_TARGET_DIR=\"target_wasm\" cargo clippy --all",
 ]
 check.desc = "checks code for formatting errors and the like"
 
@@ -184,14 +184,14 @@ test.desc = "runs all tests headlessly (assumes geckodriver running in backgroun
 # This sometimes works, and sometimes fails, depending on the mood of Cargo's caching (just re-run it a few times, restart, the usual)
 test.subcommands.core.cmd = [
     # This will ignore end-to-end tests, but it will run long-running ones
-    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all",
+    "RUSTFLAGS=\"--cfg=engine --cfg=clientdoc\" CARGO_TARGET_DIR=\"target_engine_clientdoc\" RUSTDOCFLAGS=\"--cfg=engine --cfg=clientdoc\" cargo test --all",
     # We should only test documentation on the client-side
-    "RUSTFLAGS=\"--cfg=client\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
+    "RUSTFLAGS=\"--cfg=client\" CARGO_TARGET_DIR=\"target_wasm\" RUSTDOCFLAGS=\"--cfg=client\" cargo test --doc"
 ]
 test.subcommands.core.desc = "runs the core tests (these should be fairly quick)"
 test.subcommands.cli.cmd = [
     # We have to run these one at a time, otherwise Rust literally gets overwhelmed and fails
-    "RUSTFLAGS=\"--cfg=engine\" cargo test --all --tests --no-fail-fast -- --ignored --test-threads 1"
+    "RUSTFLAGS=\"--cfg=engine\" CARGO_TARGET_DIR=\"target_engine\" cargo test --all --tests --no-fail-fast -- --ignored --test-threads 1"
 ]
 test.subcommands.cli.desc = "runs the cli tests (all are long-running, this will take a while)"
 test.subcommands.example-all-integrations.cmd = [
