@@ -1,4 +1,7 @@
 /target
+/target_engine
+/target_engine_clientdoc
+/target_wasm
 Cargo.lock
 pkg/
 .tribble/
