@@ -50,7 +50,8 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
             .sized_body(self.0.body.len(), Cursor::new(self.0.body));
 
         for h in self.0.headers.iter() {
-            // Headers that contain non-visible ascii characters are chopped off here in order to make the conversion
+            // Headers that contain non-visible ascii characters are chopped off here in
+            // order to make the conversion
             if let Ok(value) = h.1.to_str() {
                 resp_build.raw_header(h.0.to_string(), value.to_string());
             }
@@ -62,17 +63,17 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
 
 // ----- Simple routes -----
 
-#[get("/.perseus/bundle.js")]
+#[get("/bundle.js")]
 async fn get_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
     NamedFile::open(opts.js_bundle.clone()).await
 }
 
-#[get("/.perseus/bundle.wasm")]
+#[get("/bundle.wasm")]
 async fn get_wasm_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
     NamedFile::open(opts.wasm_bundle.clone()).await
 }
 
-#[get("/.perseus/bundle.wasm.js")]
+#[get("/bundle.wasm.js")]
 async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
     NamedFile::open(opts.wasm_js_bundle.clone()).await
 }
@@ -84,7 +85,7 @@ where
     M: MutableStore + 'static,
     T: TranslationsManager + 'static,
 {
-    match req.routed_segment(0) {
+    match req.routed_segment(1) {
         Some(locale) => Outcome::from(req, ApiResponse(turbine.get_translations(locale).await)),
         _ => Outcome::Failure(Status::BadRequest),
     }
@@ -125,7 +126,7 @@ where
     M: MutableStore + 'static,
     T: TranslationsManager + 'static,
 {
-    let locale_opt = req.routed_segment(0);
+    let locale_opt = req.routed_segment(1);
     let entity_name_opt = req
         .query_value::<&str>("entity_name")
         .and_then(|res| res.ok());
@@ -142,7 +143,7 @@ where
     let locale = locale_opt.unwrap().to_string();
     let was_incremental_match = was_incremental_match_opt.unwrap();
 
-    let raw_path = req.routed_segments(1..).collect::<Vec<&str>>().join("/");
+    let raw_path = req.routed_segments(2..).collect::<Vec<&str>>().join("/");
 
     let mut http_req = rocket::http::hyper::Request::builder();
     http_req = http_req.method("GET");
@@ -221,7 +222,8 @@ async fn perseus_static_alias<'r>(req: &'r Request<'_>, static_alias: &String) -
 // ----- Integration code -----
 
 /// Configures an Rocket Web app for Perseus.
-/// This returns a rocket at the build stage that can be built upon further with more routes, fairings etc...
+/// This returns a rocket at the build stage that can be built upon further with
+/// more routes, fairings etc...
 pub async fn perseus_base_app<M, T>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
@@ -234,18 +236,18 @@ where
 
     let get_locale = Route::new(
         Method::Get,
-        "/.perseus/translations/<path..>",
+        "/translations/<path..>",
         RocketHandlerWithTurbine {
             turbine: arc_turbine.clone(),
             perseus_route: PerseusRouteKind::Locale,
         },
     );
 
-    // Since this route matches everything, its rank has been set to 0,
-    // That means that it will be used after routes that have a rank inferior to 0 forward
-    // see https://rocket.rs/v0.5-rc/guide/requests/#default-ranking
+    // Since this route matches everything, its rank has been set to 100,
+    // That means that it will be used after routes that have a rank inferior to 100
+    // forward, see https://rocket.rs/v0.5-rc/guide/requests/#default-ranking
     let get_initial_load_handler = Route::ranked(
-        0,
+        100,
         Method::Get,
         "/<path..>",
         RocketHandlerWithTurbine {
@@ -256,27 +258,21 @@ where
 
     let get_subsequent_load_handler = Route::new(
         Method::Get,
-        "/.perseus/page/<path..>",
+        "/page/<path..>",
         RocketHandlerWithTurbine {
             turbine: arc_turbine.clone(),
             perseus_route: PerseusRouteKind::SubsequentLoadHandler,
         },
     );
 
+    let mut perseus_routes: Vec<Route> =
+        routes![get_js_bundle, get_wasm_js_bundle, get_wasm_bundle];
+    perseus_routes.append(&mut vec![get_locale, get_subsequent_load_handler]);
+
     let mut app = rocket::build()
         .manage(opts.clone())
-        .mount(
-            "/",
-            routes![get_js_bundle, get_wasm_bundle, get_wasm_js_bundle],
-        )
-        .mount(
-            "/",
-            vec![
-                get_locale,
-                get_subsequent_load_handler,
-                get_initial_load_handler,
-            ],
-        );
+        .mount("/.perseus/", perseus_routes)
+        .mount("/", vec![get_initial_load_handler]);
 
     if Path::new(&opts.snippets).exists() {
         app = app.mount("/.perseus/snippets", FileServer::from(opts.snippets))
@@ -307,8 +303,8 @@ where
 
 // ----- Default server -----
 
-/// Creates and starts the default Perseus server with Rocket. This should be run
-/// in a `main` function annotated with `#[tokio::main]` (which requires the
+/// Creates and starts the default Perseus server with Rocket. This should be
+/// run in a `main` function annotated with `#[tokio::main]` (which requires the
 /// `macros` and `rt-multi-thread` features on the `tokio` dependency).
 #[cfg(feature = "dflt-server")]
 pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
