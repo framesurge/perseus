@@ -134,14 +134,11 @@ where
         .query_value::<bool>("was_incremental_match")
         .and_then(|res| res.ok());
 
-    if entity_name_opt.is_none() || locale_opt.is_none() || was_incremental_match_opt.is_none() {
-        return Outcome::Failure(Status::BadRequest);
-    }
-
-    // All unwraps are guarded by the condition above
-    let entity_name = entity_name_opt.unwrap().to_string();
-    let locale = locale_opt.unwrap().to_string();
-    let was_incremental_match = was_incremental_match_opt.unwrap();
+    let (locale, entity_name, was_incremental_match) =
+        match (locale_opt, entity_name_opt, was_incremental_match_opt) {
+            (Some(l), Some(e), Some(w)) => (l.to_string(), e.to_string(), w),
+            _ => return Outcome::Failure(Status::BadRequest),
+        };
 
     let raw_path = req.routed_segments(2..).collect::<Vec<&str>>().join("/");
 
