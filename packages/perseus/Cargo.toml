@@ -35,7 +35,8 @@ fs_extra = "1"
 http = "0.2"
 urlencoding = "2.1"
 chrono = "0.4"
-minify-html-onepass = "0.10.1"
+# Be very careful about changing this! Patches may be required in Perseus.
+minify-html-onepass = "=0.10.1"
 
 # These dependencies will also be available in documentation
 [target.'cfg(any(client, clientdoc))'.dependencies]
