@@ -10,6 +10,18 @@ All that said, both Perseus and Sycamore are still in v0.x.x, meaning neither pr
 
 If you'd like to use Perseus in full mission-critical production though, we would recommend waiting until v1.0.0 comes out, which will denote production-safety and stability. This will be pending the release of that version for Sycamore, as well as broader stability in Perseus (there is no timeline for this at present, though we would be looking at v1.0.0 hopefully in early-to-mid 2024).
 
+## I'm getting errors about `mio` and `tokio` feature flags on Wasm...
+
+Chances are, you're trying to use Perseus in a Cargo workspace, which you can certainly do, but you'll need to add this line in the `[workspace]` table of your *root* `Cargo.toml`:
+
+```toml
+resolver = "2"
+```
+
+This is because Perseus uses `tokio` on the engine-side, which has all sorts of asynchronous magic that can't be compiled into the browser. The problem is that we also use a few things that depend on very small parts of `tokio` in the browser, but Cargo will go "oh, you're using these features on the engine, so I'll put them everywhere to save space", which doesn't work nicely with the fact that Perseus compiles for the browser as well! The above configuration will tell Cargo to use its more advanced feature resolve, which will one day be the default in Rust.
+
+If you're not trying to use Perseus in a workspace, and the output of `perseus --version` is *identical* to the version of `perseus` in your `Cargo.toml` (they don't have to be *identical*, but it's a good idea if you're getting errors), and you're not doing anything really weird (like trying to build a Wasm-native compiler...), then you should try the steps below for when you're getting strange errors with Cargo, which involves deleting your Cargo registry (equivalent to telling Cargo to completely start over on your system), which sometimes fixes things. If you're still having problems, please let us know, and we'll see what we can do to help you out!
+
 ## I'm getting JSON error messages...
 
 If an error occurs during `perseus serve`, it's very possible that you'll get error messages in JSON, which are utterly unreadable. This is because of the way the server is run, the Perseus CLI needs a JSON output so that it can figure out where the server binary is. You can access the human-readable logs by 'snooping' on the output though, which you can do by running `perseus snoop serve` (but make sure you've run `perseus build` first).
