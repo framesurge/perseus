@@ -307,12 +307,15 @@ where
 pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
-    (_host, port): (String, u16),
+    (host, port): (String, u16),
 ) {
+    let addr = host.parse().expect("Invalid address provided to bind to.");
+
     let mut app = perseus_base_app(turbine, opts).await;
 
     let mut config = rocket::Config::default();
     config.port = port;
+    config.address = addr;
     app = app.configure(config);
 
     match app.launch().await {
