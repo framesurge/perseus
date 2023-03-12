@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-beta.22](https://github.com/framesurge/perseus/compare/v0.4.0-beta.21...v0.4.0-beta.22) (2023-03-12)
+
+
+### Features
+
+* support `anyhow::Error` in state generation functions ([#264](https://github.com/framesurge/perseus/issues/264)) ([53ad2ad](https://github.com/framesurge/perseus/commit/53ad2ad3a30ffe83645386a8802358ffe9322913))
+
+
+### Bug Fixes
+
+* updated `cargo_toml` to v0.15 ([68ef993](https://github.com/framesurge/perseus/commit/68ef9935bae8bdc3c01d83b236ca2838dfe5b1c1))
+
+
+### Documentation Changes
+
+* added docs on using perseus in a workspace ([b0653dc](https://github.com/framesurge/perseus/commit/b0653dccad8b7e0a12b0501f16b2c0065226f263))
+
 ## [0.4.0-beta.21](https://github.com/framesurge/perseus/compare/v0.4.0-beta.20...v0.4.0-beta.21) (2023-03-01)
 
 
