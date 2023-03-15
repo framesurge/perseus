@@ -22,7 +22,7 @@ pub struct AppState {
 // Global state will be generated for each locale in your app (but we don't
 // worry about that in this example)
 #[engine_only_fn]
-async fn get_build_state(_locale: String) -> AppState {
+async fn get_build_state() -> AppState {
     AppState {
         test: "Hello from the build process!".to_string(),
     }
@@ -34,7 +34,7 @@ async fn get_build_state(_locale: String) -> AppState {
 // prevent your app from accessing global state during the build process, so be
 // certain that's what you want if you go down that path.
 #[engine_only_fn]
-async fn get_request_state(_locale: String, _req: Request) -> AppState {
+async fn get_request_state(_req: Request) -> AppState {
     AppState {
         test: "Hello from the server!".to_string(),
     }
@@ -43,7 +43,6 @@ async fn get_request_state(_locale: String, _req: Request) -> AppState {
 // You can even combine build state with request state, just like in a template!
 #[engine_only_fn]
 async fn amalgamate_states(
-    _locale: String,
     build_state: AppState,
     request_state: AppState,
 ) -> AppState {

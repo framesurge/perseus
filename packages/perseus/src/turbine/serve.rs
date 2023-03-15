@@ -112,7 +112,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let locale = translator.get_locale();
         // Get the latest global state, which we'll share around
         let global_state = self
-            .get_full_global_state_for_locale(&locale, clone_req(&req))
+            .get_full_global_state(clone_req(&req))
             .await?;
         // Begin by generating the state for this page
         let page_state = self
@@ -433,7 +433,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let global_state = match global_state {
             Some(global_state) => global_state,
             None => {
-                self.get_full_global_state_for_locale(&locale, clone_req(&req))
+                self.get_full_global_state(clone_req(&req))
                     .await?
             }
         };
@@ -754,25 +754,23 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         Ok(should_revalidate)
     }
     /// Gets the full global state from the state generated at build-time and
-    /// the generator itself. This assumes that the provided locale is
-    /// supported.
+    /// the generator itself.
     ///
     /// This should only be called once per API call.
-    async fn get_full_global_state_for_locale(
+    async fn get_full_global_state(
         &self,
-        locale: &str,
         req: Request,
     ) -> Result<TemplateState, ServerError> {
         let gsc = &self.global_state_creator;
         // We know the locale is supported
-        let built_state = self.global_states_by_locale.get(locale).unwrap();
+        let built_state = &self.global_state;
 
         let global_state = if gsc.uses_request_state() {
-            let req_state = gsc.get_request_state(locale.to_string(), req).await?;
+            let req_state = gsc.get_request_state(req).await?;
             // If we have a non-empty build-time state, we'll need to amalgamate
             if !built_state.is_empty() {
                 if gsc.can_amalgamate_states() {
-                    gsc.amalgamate_states(locale.to_string(), built_state.clone(), req_state)
+                    gsc.amalgamate_states(built_state.clone(), req_state)
                         .await?
                 } else {
                     // No amalgamation capability, request time state takes priority

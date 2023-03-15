@@ -157,9 +157,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         if self.locales.using_i18n {
             // Loop through all the app's locales
             for locale in self.locales.get_all() {
-                // This map was constructed from the locales, so each one must be in here
-                let global_state = self.global_states_by_locale.get(locale).unwrap();
-
                 let page_data = self
                     .get_static_page_data(
                         &format!("{}-{}", locale, &path_encoded),
@@ -180,7 +177,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     // not using i18n
                     let full_html = html_shell
                         .clone()
-                        .page_data(&page_data, global_state, locale, &translations)
+                        .page_data(&page_data, &self.global_state, locale, &translations)
                         .to_string();
                     self.immutable_store
                         .write(
@@ -205,10 +202,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .await?;
             }
         } else {
-            // For apps without i18n, the global state will still be built for the dummy
-            // locale
-            let global_state = self.global_states_by_locale.get("xx-XX").unwrap();
-
             let page_data = self
                 .get_static_page_data(
                     &format!("{}-{}", self.locales.default, &path_encoded),
@@ -224,7 +217,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // not using i18n
                 let full_html = html_shell
                     .clone()
-                    .page_data(&page_data, global_state, "xx-XX", "")
+                    .page_data(&page_data, &self.global_state, "xx-XX", "")
                     .to_string();
                 // We don't add an extension because this will be queried directly by the
                 // browser

@@ -25,21 +25,18 @@ use std::rc::Rc;
 #[cfg(engine)]
 make_async_trait!(
     GlobalStateBuildFnType,
-    Result<TemplateState, ServerError>,
-    locale: String
+    Result<TemplateState, ServerError>
 );
 #[cfg(engine)]
 make_async_trait!(
     GlobalStateRequestFnType,
     Result<TemplateState, ServerError>,
-    locale: String,
     req: Request
 );
 #[cfg(engine)]
 make_async_trait!(
     GlobalStateAmalgamationFnType,
     Result<TemplateState, ServerError>,
-    locale: String,
     build_state: TemplateState,
     request_state: TemplateState
 );
@@ -47,21 +44,18 @@ make_async_trait!(
 #[cfg(engine)]
 make_async_trait!(
     GlobalStateBuildUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< GeneratorResult<S> > >,
-    V,
-    locale: String
+    V
 );
 #[cfg(engine)]
 make_async_trait!(
     GlobalStateRequestUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
     V,
-    locale: String,
     req: Request
 );
 #[cfg(engine)]
 make_async_trait!(
     GlobalStateAmalgamationUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< BlamedGeneratorResult<S> > >,
     V,
-    locale: String,
     build_state: S,
     request_state: S
 );
@@ -119,11 +113,11 @@ impl GlobalStateCreator {
         S: Serialize + DeserializeOwned + MakeRx,
         V: Into<GeneratorResult<S>>,
     {
-        self.build = Some(Box::new(move |locale| {
+        self.build = Some(Box::new(move || {
             let val = val.clone();
             async move {
                 let user_state = val
-                    .call(locale)
+                    .call()
                     .await
                     .into()
                     .into_server_result("global_build_state", "GLOBAL_STATE".to_string())?;
@@ -149,11 +143,11 @@ impl GlobalStateCreator {
         S: Serialize + DeserializeOwned + MakeRx,
         V: Into<BlamedGeneratorResult<S>>,
     {
-        self.request = Some(Box::new(move |locale, req| {
+        self.request = Some(Box::new(move |req| {
             let val = val.clone();
             async move {
                 let user_state = val
-                    .call(locale, req)
+                    .call(req)
                     .await
                     .into()
                     .into_server_result("global_request_state", "GLOBAL_STATE".to_string())?;
@@ -180,7 +174,7 @@ impl GlobalStateCreator {
         V: Into<BlamedGeneratorResult<S>>,
     {
         self.amalgamation = Some(Box::new(
-            move |locale, build_state: TemplateState, request_state: TemplateState| {
+            move |build_state: TemplateState, request_state: TemplateState| {
                 let val = val.clone();
                 async move {
                     // Amalgamation logic will only be called if both states are indeed defined
@@ -201,7 +195,7 @@ impl GlobalStateCreator {
                         ),
                     };
                     let user_state = val
-                        .call(locale, user_build_state, user_request_state)
+                        .call(user_build_state, user_request_state)
                         .await
                         .into()
                         .into_server_result(
@@ -223,9 +217,9 @@ impl GlobalStateCreator {
 
     /// Gets the global state at build-time.
     #[cfg(engine)]
-    pub async fn get_build_state(&self, locale: String) -> Result<TemplateState, ServerError> {
+    pub async fn get_build_state(&self) -> Result<TemplateState, ServerError> {
         if let Some(get_build_state) = &self.build {
-            get_build_state.call(locale).await
+            get_build_state.call().await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),
@@ -238,11 +232,10 @@ impl GlobalStateCreator {
     #[cfg(engine)]
     pub async fn get_request_state(
         &self,
-        locale: String,
         req: Request,
     ) -> Result<TemplateState, ServerError> {
         if let Some(get_request_state) = &self.request {
-            get_request_state.call(locale, req).await
+            get_request_state.call(req).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),
@@ -256,13 +249,12 @@ impl GlobalStateCreator {
     #[cfg(engine)]
     pub async fn amalgamate_states(
         &self,
-        locale: String,
         build_state: TemplateState,
         request_state: TemplateState,
     ) -> Result<TemplateState, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamation {
             amalgamate_states
-                .call(locale, build_state, request_state)
+                .call(build_state, request_state)
                 .await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
