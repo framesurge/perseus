@@ -56,7 +56,8 @@ async fn get_build_state(
         // This tells Perseus to return an error that's the client's fault, with the
         // HTTP status code 404 (not found) and the message 'illegal page'. Note that
         // this is a `BlamedError<std::io::Error>`, but we could use any error type that
-        // implements `std::error::Error` or can be converted into a boxed `std::error::Error`.
+        // implements `std::error::Error` or can be converted into a boxed
+        // `std::error::Error`.
         return Err(BlamedError {
             // If we used `None` instead, it would default to 400 for the client and 500 for the
             // server

@@ -162,6 +162,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
                     return Err(ClientInvariantError::RenderCfg.into())
                 }
             };
+        // NOTE: This will be transmitted on all pages, including local redirection ones
         let global_state_ty = match WindowVariable::<Value>::new_obj("__PERSEUS_GLOBAL_STATE") {
             WindowVariable::Some(val) => {
                 let state = TemplateState::from_value(val);

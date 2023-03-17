@@ -132,10 +132,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         self.render_cfg = render_cfg;
 
         // Get the global state
-        let global_state = self
-            .immutable_store
-            .read("static/global_state.json")
-            .await;
+        let global_state = self.immutable_store.read("static/global_state.json").await;
         self.global_state = match global_state {
             Ok(state) => TemplateState::from_str(&state)
                 .map_err(|err| ServerError::InvalidPageState { source: err })?,

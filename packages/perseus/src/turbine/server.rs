@@ -287,6 +287,15 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 response
             }
             FullRouteVerdict::LocaleDetection(redirect_path) => {
+                // Locale redirection pages still need to have the global state (unlocalized,
+                // see #267), but we obviously won't be able to output a nice
+                // internationalized error if this goes wrong here
+                let global_state = match self.get_full_global_state(req).await {
+                    Ok(state) => state,
+                    Err(err) => {
+                        return self.html_err(err_to_status_code(&err), fmt_err(&err), None)
+                    }
+                };
                 // TODO Parse the `Accept-Language` header and return a proper redirect
                 // Construct a locale redirection fallback
                 let html = self
@@ -305,6 +314,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                             // This is a `PathWithoutLocale`
                             redirect_path.0,
                         ),
+                        &global_state,
                     )
                     .to_string();
                 // TODO Headers? They weren't here in the old code...

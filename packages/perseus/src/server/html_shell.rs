@@ -267,8 +267,18 @@ impl HtmlShell {
     ///
     /// Further, this will preload the Wasm binary, making redirection snappier
     /// (but initial load slower), a tradeoff that generally improves UX.
-    pub(crate) fn locale_redirection_fallback(mut self, redirect_url: &str) -> Self {
+    pub(crate) fn locale_redirection_fallback(
+        mut self,
+        redirect_url: &str,
+        global_state: &TemplateState,
+    ) -> Self {
         self.locale = "xx-XX".to_string();
+
+        // We still have to inject the global state, which is unlocalized (see #267)
+        let global_state = escape_page_data(&global_state.state.to_string());
+        let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
+        self.scripts_before_boundary.push(global_state);
+
         // This will be used if JavaScript is completely disabled (it's then the site's
         // responsibility to show a further message)
         let dumb_redirect = format!(

@@ -119,14 +119,11 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         Ok(())
     }
-    /// Builds the global state, returning the state generated. This will also write the global
-    /// state to the immutable store (there is no such thing as revalidation
-    /// for global state, and it is *extremely* unlikely that there ever will
-    /// be).
-    async fn build_global_state(
-        &self,
-        exporting: bool,
-    ) -> Result<TemplateState, ServerError> {
+    /// Builds the global state, returning the state generated. This will also
+    /// write the global state to the immutable store (there is no such
+    /// thing as revalidation for global state, and it is *extremely*
+    /// unlikely that there ever will be).
+    async fn build_global_state(&self, exporting: bool) -> Result<TemplateState, ServerError> {
         let gsc = &self.global_state_creator;
 
         if exporting && (gsc.uses_request_state() || gsc.can_amalgamate_states()) {

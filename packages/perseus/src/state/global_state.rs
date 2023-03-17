@@ -230,10 +230,7 @@ impl GlobalStateCreator {
     }
     /// Gets the global state at request-time.
     #[cfg(engine)]
-    pub async fn get_request_state(
-        &self,
-        req: Request,
-    ) -> Result<TemplateState, ServerError> {
+    pub async fn get_request_state(&self, req: Request) -> Result<TemplateState, ServerError> {
         if let Some(get_request_state) = &self.request {
             get_request_state.call(req).await
         } else {
@@ -253,9 +250,7 @@ impl GlobalStateCreator {
         request_state: TemplateState,
     ) -> Result<TemplateState, ServerError> {
         if let Some(amalgamate_states) = &self.amalgamation {
-            amalgamate_states
-                .call(build_state, request_state)
-                .await
+            amalgamate_states.call(build_state, request_state).await
         } else {
             Err(BuildError::TemplateFeatureNotEnabled {
                 template_name: "GLOBAL_STATE".to_string(),

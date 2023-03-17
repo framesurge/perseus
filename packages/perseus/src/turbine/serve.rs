@@ -111,9 +111,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     ) -> Result<(PageData, TemplateState), ServerError> {
         let locale = translator.get_locale();
         // Get the latest global state, which we'll share around
-        let global_state = self
-            .get_full_global_state(clone_req(&req))
-            .await?;
+        let global_state = self.get_full_global_state(clone_req(&req)).await?;
         // Begin by generating the state for this page
         let page_state = self
             .get_state_for_path_internal(
@@ -432,10 +430,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // This could be very different from the build-time global state
         let global_state = match global_state {
             Some(global_state) => global_state,
-            None => {
-                self.get_full_global_state(clone_req(&req))
-                    .await?
-            }
+            None => self.get_full_global_state(clone_req(&req)).await?,
         };
 
         let entity = match entity {
@@ -757,7 +752,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// the generator itself.
     ///
     /// This should only be called once per API call.
-    async fn get_full_global_state(
+    pub(crate) async fn get_full_global_state(
         &self,
         req: Request,
     ) -> Result<TemplateState, ServerError> {

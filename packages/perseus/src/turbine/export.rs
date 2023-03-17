@@ -143,10 +143,10 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     &format!("exported/{}.html", &initial_load_path),
                     &html_shell
                         .clone()
-                        .locale_redirection_fallback(&format!(
-                            "{}/{}/{}",
-                            path_prefix, self.locales.default, &path
-                        ))
+                        .locale_redirection_fallback(
+                            &format!("{}/{}/{}", path_prefix, self.locales.default, &path),
+                            &self.global_state,
+                        )
                         .to_string(),
                 )
                 .await?;
