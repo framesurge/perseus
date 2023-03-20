@@ -11,7 +11,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-use std::{io::Cursor, path::Path, sync::Arc};
+use std::{io::Cursor, path::Path};
 
 use perseus::{
     i18n::TranslationsManager,
@@ -80,7 +80,7 @@ async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<Name
 
 // ----- Turbine dependant route handlers -----
 
-async fn perseus_locale<'r, M, T>(req: &'r Request<'_>, turbine: Arc<&Turbine<M, T>>) -> Outcome<'r>
+async fn perseus_locale<'r, M, T>(req: &'r Request<'_>, turbine: &Turbine<M, T>) -> Outcome<'r>
 where
     M: MutableStore + 'static,
     T: TranslationsManager + 'static,
@@ -93,7 +93,7 @@ where
 
 async fn perseus_initial_load_handler<'r, M, T>(
     req: &'r Request<'_>,
-    turbine: Arc<&Turbine<M, T>>,
+    turbine: &Turbine<M, T>,
 ) -> Outcome<'r>
 where
     M: MutableStore + 'static,
@@ -120,7 +120,7 @@ where
 
 async fn perseus_subsequent_load_handler<'r, M, T>(
     req: &'r Request<'_>,
-    turbine: Arc<&Turbine<M, T>>,
+    turbine: &Turbine<M, T>,
 ) -> Outcome<'r>
 where
     M: MutableStore + 'static,
@@ -183,7 +183,7 @@ where
     M: MutableStore + 'static,
     T: TranslationsManager + 'static,
 {
-    turbine: Arc<&'a Turbine<M, T>>,
+    turbine: &'a Turbine<M, T>,
     perseus_route: PerseusRouteKind<'a>,
 }
 
@@ -229,13 +229,11 @@ where
     M: MutableStore + 'static,
     T: TranslationsManager + 'static,
 {
-    let arc_turbine = Arc::new(turbine);
-
     let get_locale = Route::new(
         Method::Get,
         "/translations/<path..>",
         RocketHandlerWithTurbine {
-            turbine: arc_turbine.clone(),
+            turbine: &turbine,
             perseus_route: PerseusRouteKind::Locale,
         },
     );
@@ -248,7 +246,7 @@ where
         Method::Get,
         "/<path..>",
         RocketHandlerWithTurbine {
-            turbine: arc_turbine.clone(),
+            turbine: &turbine,
             perseus_route: PerseusRouteKind::IntialLoadHandler,
         },
     );
@@ -257,7 +255,7 @@ where
         Method::Get,
         "/page/<path..>",
         RocketHandlerWithTurbine {
-            turbine: arc_turbine.clone(),
+            turbine: &turbine,
             perseus_route: PerseusRouteKind::SubsequentLoadHandler,
         },
     );
@@ -286,7 +284,7 @@ where
             Method::Get,
             url,
             RocketHandlerWithTurbine {
-                turbine: arc_turbine.clone(),
+                turbine: &turbine,
                 perseus_route: PerseusRouteKind::StaticAlias(static_path),
             },
         );
