@@ -65,17 +65,17 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
 
 #[get("/bundle.js")]
 async fn get_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
-    NamedFile::open(opts.js_bundle.clone()).await
+    NamedFile::open(&opts.js_bundle).await
 }
 
 #[get("/bundle.wasm")]
 async fn get_wasm_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
-    NamedFile::open(opts.wasm_bundle.clone()).await
+    NamedFile::open(&opts.wasm_bundle).await
 }
 
 #[get("/bundle.wasm.js")]
 async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
-    NamedFile::open(opts.wasm_js_bundle.clone()).await
+    NamedFile::open(&opts.wasm_js_bundle).await
 }
 
 // ----- Turbine dependant route handlers -----
@@ -195,15 +195,15 @@ where
 {
     async fn handle<'r>(&self, req: &'r Request<'_>, _data: Data<'r>) -> Outcome<'r> {
         match self.perseus_route {
-            PerseusRouteKind::Locale => perseus_locale(req, self.turbine.clone()).await,
+            PerseusRouteKind::Locale => perseus_locale(req, self.turbine).await,
             PerseusRouteKind::StaticAlias(static_alias) => {
                 perseus_static_alias(req, static_alias).await
             }
             PerseusRouteKind::IntialLoadHandler => {
-                perseus_initial_load_handler(req, self.turbine.clone()).await
+                perseus_initial_load_handler(req, self.turbine).await
             }
             PerseusRouteKind::SubsequentLoadHandler => {
-                perseus_subsequent_load_handler(req, self.turbine.clone()).await
+                perseus_subsequent_load_handler(req, self.turbine).await
             }
         }
     }
