@@ -107,8 +107,8 @@ impl From<BuildPaths> for GeneratorResult<BuildPaths> {
         Self::Ok(val)
     }
 }
-impl<E: std::error::Error + Send + Sync + 'static> From<Result<BuildPaths, E>>
-    for GeneratorResult<BuildPaths>
+impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync>
+    From<Result<BuildPaths, E>> for GeneratorResult<BuildPaths>
 {
     fn from(val: Result<BuildPaths, E>) -> Self {
         match val {
@@ -123,8 +123,10 @@ impl<S: Serialize + DeserializeOwned + MakeRx> From<S> for GeneratorResult<S> {
         Self::Ok(val)
     }
 }
-impl<S: Serialize + DeserializeOwned + MakeRx, E: std::error::Error + Send + Sync + 'static>
-    From<Result<S, E>> for GeneratorResult<S>
+impl<
+        S: Serialize + DeserializeOwned + MakeRx,
+        E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync,
+    > From<Result<S, E>> for GeneratorResult<S>
 {
     fn from(val: Result<S, E>) -> Self {
         match val {
@@ -139,8 +141,8 @@ impl From<View<SsrNode>> for GeneratorResult<View<SsrNode>> {
         Self::Ok(val)
     }
 }
-impl<E: std::error::Error + Send + Sync + 'static> From<Result<View<SsrNode>, E>>
-    for GeneratorResult<View<SsrNode>>
+impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync>
+    From<Result<View<SsrNode>, E>> for GeneratorResult<View<SsrNode>>
 {
     fn from(val: Result<View<SsrNode>, E>) -> Self {
         match val {
@@ -155,8 +157,8 @@ impl From<HeaderMap> for GeneratorResult<HeaderMap> {
         Self::Ok(val)
     }
 }
-impl<E: std::error::Error + Send + Sync + 'static> From<Result<HeaderMap, E>>
-    for GeneratorResult<HeaderMap>
+impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync>
+    From<Result<HeaderMap, E>> for GeneratorResult<HeaderMap>
 {
     fn from(val: Result<HeaderMap, E>) -> Self {
         match val {
