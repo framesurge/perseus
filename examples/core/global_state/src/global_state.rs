@@ -42,10 +42,7 @@ async fn get_request_state(_req: Request) -> AppState {
 
 // You can even combine build state with request state, just like in a template!
 #[engine_only_fn]
-async fn amalgamate_states(
-    build_state: AppState,
-    request_state: AppState,
-) -> AppState {
+async fn amalgamate_states(build_state: AppState, request_state: AppState) -> AppState {
     AppState {
         test: format!(
             "Message from the builder: '{}' Message from the server: '{}'",

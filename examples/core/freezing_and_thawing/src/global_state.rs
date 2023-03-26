@@ -12,7 +12,7 @@ pub struct AppState {
 }
 
 #[engine_only_fn]
-async fn get_build_state(_locale: String) -> AppState {
+async fn get_build_state() -> AppState {
     AppState {
         test: "Hello World!".to_string(),
     }
