@@ -6,7 +6,7 @@ pub fn get_global_state_creator() -> GlobalStateCreator {
 }
 
 #[engine_only_fn]
-async fn get_build_state(_locale: String) -> AppState {
+async fn get_build_state() -> AppState {
     AppState {
         // We explicitly tell the first page that no login state has been checked yet
         auth: AuthData {
