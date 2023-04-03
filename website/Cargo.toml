@@ -20,12 +20,12 @@ serde_json = "1"
 lazy_static = "1"
 # To avoid insane target-gating on event handlers, we put this everywhere for convenience
 web-sys = { version = "0.3", features = [ "Event", "EventTarget", "Element", "Window", "Document", "DomRect", "HtmlCollection", "IntersectionObserver", "IntersectionObserverInit", "IntersectionObserverEntry", "KeyboardEvent" ] }
-wasm-bindgen = "0.2.82"
+wasm-bindgen = "0.2.84"
 
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }
 walkdir = "2"
-pulldown-cmark = "0.8"
+pulldown-cmark = "0.9"
 regex = "1"
 anyhow = "1"
 thiserror = "1" # Needed to make Anyhow compatible with Perseus

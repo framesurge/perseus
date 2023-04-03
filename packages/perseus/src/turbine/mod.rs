@@ -65,10 +65,9 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// Since the paths are not actually valid paths, we leave them typed as
     /// `String`s, but these keys are in effect `PathWithoutLocale` instances.
     render_cfg: HashMap<String, String>,
-    /// A map of locale to global state. This is kept cached throughout the
-    /// build process, since every template we build will require it to be
-    /// provided through context.
-    global_states_by_locale: HashMap<String, TemplateState>,
+    /// The app's global state, kept cached throughout the build process because
+    /// every template we build will need access to it through context.
+    global_state: TemplateState,
     /// The HTML shell that can be used for constructing the full pages this app
     /// returns.
     html_shell: Option<HtmlShell>,
@@ -113,7 +112,8 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
 
             // If we're going from a `PerseusApp`, these will be filled in later
             render_cfg: HashMap::new(),
-            global_states_by_locale: HashMap::new(),
+            // This will be immediately overriden
+            global_state: TemplateState::empty(),
             html_shell: None,
         })
     }
@@ -131,25 +131,14 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .map_err(|err| ServerError::BuildError(BuildError::RenderCfgInvalid { source: err }))?;
         self.render_cfg = render_cfg;
 
-        // Get all the global states
-        let mut global_states_by_locale = HashMap::new();
-        for locale in self.locales.get_all() {
-            // IMPORTANT: A global state that doesn't generate at build-time won't have a
-            // corresponding file!
-            let res = self
-                .immutable_store
-                .read(&format!("static/global_state_{}.json", &locale))
-                .await;
-            let global_state = match res {
-                Ok(state) => TemplateState::from_str(&state)
-                    .map_err(|err| ServerError::InvalidPageState { source: err })?,
-                Err(StoreError::NotFound { .. }) => TemplateState::empty(),
-                Err(err) => return Err(err.into()),
-            };
-
-            global_states_by_locale.insert(locale.to_string(), global_state);
-        }
-        self.global_states_by_locale = global_states_by_locale;
+        // Get the global state
+        let global_state = self.immutable_store.read("static/global_state.json").await;
+        self.global_state = match global_state {
+            Ok(state) => TemplateState::from_str(&state)
+                .map_err(|err| ServerError::InvalidPageState { source: err })?,
+            Err(StoreError::NotFound { .. }) => TemplateState::empty(),
+            Err(err) => return Err(err.into()),
+        };
 
         let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
             self.index_view_str.to_string(),

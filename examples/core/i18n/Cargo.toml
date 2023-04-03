@@ -15,7 +15,7 @@ fluent-bundle = "0.15"
 urlencoding = "2.1"
 
 [dev-dependencies]
-fantoccini = "0.17"
+fantoccini = "0.19"
 
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = [ "macros", "rt", "rt-multi-thread" ] }

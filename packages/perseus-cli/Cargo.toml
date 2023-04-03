@@ -27,36 +27,36 @@ path = "tests/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-include_dir = "0.6"
+include_dir = "0.7"
 thiserror = "1"
 fmterr = "0.1"
 cargo_toml = "0.15"
 indicatif = "=0.17.0-beta.1" # Not stable, but otherwise error handling is just about impossible
-console = "0.14"
+console = "0.15"
 serde = "1"
 serde_json = "1"
-clap = { version = "3.2", features = [ "color", "derive", "unstable-v4" ] }
+clap = { version = "4.2", features = [ "color", "derive" ] }
 fs_extra = "1"
 tokio = { version = "1", features = [ "macros", "rt-multi-thread", "sync" ] }
 warp = "0.3"
-command-group = "1"
-ctrlc = { version = "3.0", features = ["termination"] }
+command-group = "2"
+ctrlc = { version = "3.2", features = ["termination"] }
 notify = "=5.0.0-pre.13"
 futures = "0.3"
 tokio-stream = "0.1"
 reqwest = { version = "0.11", features = [ "json", "stream" ] }
 tar = "0.4"
 flate2 = "1"
-directories = "4"
+directories = "5"
 cargo_metadata = "0.15"
 cargo-lock = "8"
-minify-js = "0.4"
+minify-js = "=0.4.3" # Be careful changing this, and test extensively!
 walkdir = "2"
 
 [dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
-predicates = "2"
+predicates = "3"
 ureq = "2"
 
 [lib]
