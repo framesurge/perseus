@@ -19,13 +19,19 @@ pub async fn dflt_server<
 >(
     turbine: &'static perseus::turbine::Turbine<M, T>,
     opts: perseus::server::ServerOptions,
-    (_host, port): (String, u16),
+    (host, port): (String, u16),
 ) {
     use perseus_rocket::perseus_base_app;
     use rocket::routes;
+
+    let addr = host.parse().expect("Invalid address provided to bind to.");
+
+    let mut config = rocket::Config::default();
+
     let mut app = perseus_base_app(turbine, opts).await;
     app = app.mount("/api", routes![api::hello]);
-    let mut config = rocket::Config::default();
+
+    config.address = addr;
     config.port = port;
     app = app.configure(config);
 
