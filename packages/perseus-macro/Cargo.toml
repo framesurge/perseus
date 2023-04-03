@@ -17,9 +17,9 @@ proc-macro = true
 
 [dependencies]
 quote = "1"
-syn = "1"
+syn = "1" # Needs to remain on v1 until `darling` updates
 proc-macro2 = "1"
-darling = "0.13"
+darling = "0.14"
 
 [dev-dependencies]
 trybuild = { version = "1.0", features = ["diff"] }

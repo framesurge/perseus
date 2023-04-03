@@ -36,14 +36,14 @@ http = "0.2"
 urlencoding = "2.1"
 chrono = "0.4"
 # Be very careful about changing this! Patches may be required in Perseus.
-minify-html-onepass = "=0.10.1"
+minify-html-onepass = "=0.10.8"
 
 # These dependencies will also be available in documentation
 [target.'cfg(any(client, clientdoc))'.dependencies]
 rexie = { version = "0.4", optional = true, default-features = false }
 js-sys = { version = "0.3", optional = true }
 # Note that this is not needed in production, but that can't be specified, so it will just be compiled away to nothing
-console_error_panic_hook = { version = "0.1.6", optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
 # TODO review feature flags here
 web-sys = { version = "0.3", features = [ "Headers", "Navigator", "NodeList", "Request", "RequestInit", "RequestMode", "Response", "ReadableStream", "Window", "CustomEvent", "CustomEventInit" ] }
 wasm-bindgen = "0.2"
