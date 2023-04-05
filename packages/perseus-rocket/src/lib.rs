@@ -3,7 +3,7 @@
 /*!
 ## Packages
 
-This is the API documentation for the `perseus-warp` package, which allows Perseus apps to run on Warp. Note that Perseus mostly uses [the book](https://framesurge.sh/perseus/en-US) for
+This is the API documentation for the `perseus-rocket` package, which allows Perseus apps to run on Rocket. Note that Perseus mostly uses [the book](https://framesurge.sh/perseus/en-US) for
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/framesurge/perseus/tree/main/examples).
 */
 
