@@ -9,6 +9,7 @@ edition = "2021"
 perseus-actix-web = { path = "../perseus-actix-web", features = [ "dflt-server" ], optional = true }
 perseus-warp = { path = "../perseus-warp", features = [ "dflt-server" ], optional = true }
 perseus-axum = { path = "../perseus-axum", features = [ "dflt-server" ], optional = true }
+perseus-rocket = { path = "../perseus-rocket", features = [ "dflt-server" ], optional = true }
 
 [features]
 default = [ "warp" ]
@@ -16,3 +17,4 @@ default = [ "warp" ]
 actix-web = [ "perseus-actix-web" ]
 warp = [ "perseus-warp" ]
 axum = [ "perseus-axum" ]
+rocket = [ "perseus-rocket" ]

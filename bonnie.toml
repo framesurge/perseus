@@ -197,7 +197,8 @@ test.subcommands.cli.desc = "runs the cli tests (all are long-running, this will
 test.subcommands.example-all-integrations.cmd = [
     "EXAMPLE_INTEGRATION=actix-web bonnie dev example %category %example test",
     "EXAMPLE_INTEGRATION=warp bonnie dev example %category %example test",
-    "EXAMPLE_INTEGRATION=axum bonnie dev example %category %example test"
+    "EXAMPLE_INTEGRATION=axum bonnie dev example %category %example test",
+    "EXAMPLE_INTEGRATION=rocket bonnie dev example %category %example test"
 ]
 test.subcommands.example-all-integrations.args = [ "category", "example" ]
 test.subcommands.example-all-integrations.desc = "tests a single example with all integrations (assumes geckodriver running in background)"
