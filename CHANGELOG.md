@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/framesurge/perseus/compare/v0.4.0-rc.1...v0.4.0) (2023-04-09)
+
+
+### Bug Fixes
+
+* fixed semantically invalid html in website and added faq about it ([e69431e](https://github.com/framesurge/perseus/commit/e69431ef921735c771f50f5c5f8e193b8eef7149))
+
+
+### Documentation Changes
+
+* updated docs to v0.4.0 ([5512a30](https://github.com/framesurge/perseus/commit/5512a30eabb875eb5a4d5d11c8bbf3e6747f6b75))
+
 ## [0.4.0-rc.1](https://github.com/framesurge/perseus/compare/v0.4.0-beta.22...v0.4.0-rc.1) (2023-04-09)
 
 

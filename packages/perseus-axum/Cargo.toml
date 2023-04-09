@@ -1,6 +1,6 @@
 [package]
 name = "perseus-axum"
-version = "0.4.0-rc.1"
+version = "0.4.0"
 edition = "2021"
 description = "An integration that makes the Perseus frontend framework easy to use with Axum."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.4.0-rc.1" }
+perseus = { path = "../perseus", version = "0.4.0" }
 axum = "0.6"
 # Axum requires v0.3 of this
 tower-http = { version = "0.3", features = [ "fs" ] }
