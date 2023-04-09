@@ -2,7 +2,7 @@
 
 When you're developing a Perseus app, you'll generally have two "modes": coding, and fine-tuning. In the *coding* stage, you're building features of your app, which will typically involve quite a lot of working on business logic, etc. If you're familiar with Rust programming, this is the stage when you'd be using `cargo check` instead of `cargo run`. Conveniently, Perseus provides `perseus check -w` for this, which will not only `cargo check` your app's engine-side, but also the browser-side, because each one is built for a different target. This command is *much* faster than `perseus serve`, because it just checks your code, rather than actually compiling it. If you want to test your build logic as well, you can run `perseus check -gw`, which will also test this (but that will take a bit longer).
 
-When you're using an IDE, like VS Code, you'll usually want proper syntax highlighting, and you may find that Perseus causea  few problems. This is because Perseus distinguishes between the engine and the browser by using a custom feature, so you'll need to create a `.cargo/config.toml` file in the root of your project with the following contents:
+When you're using an IDE, like VS Code, you'll usually want proper syntax highlighting, and you may find that Perseus can cause a few problems. This is because Perseus distinguishes between the engine and the browser by using a custom feature, so you'll need to create a `.cargo/config.toml` file in the root of your project with the following contents:
 
 ```toml
 [build]
