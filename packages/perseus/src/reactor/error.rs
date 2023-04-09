@@ -119,6 +119,7 @@ impl Reactor<BrowserNodeType> {
     /// Under absolutely no circumstances should this function **ever** be
     /// called outside a Perseus panic handler set in the entrypoint! It is
     /// exposed for custom entrypoints only.
+    #[allow(clippy::type_complexity)]
     pub fn handle_panic(
         panic_info: &PanicInfo,
         handler: Arc<

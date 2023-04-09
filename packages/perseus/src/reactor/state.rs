@@ -413,7 +413,7 @@ impl<G: Html> Reactor<G> {
             }
 
             // Get the serialized and unreactive frozen state from the store
-            match frozen_app.state_store.get(&url) {
+            match frozen_app.state_store.get(url) {
                 Some(state_str) => {
                     // Deserialize into the unreactive version
                     let unrx = match serde_json::from_str::<S>(state_str) {

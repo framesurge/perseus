@@ -128,10 +128,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         // On the browser-side, delayed and non-delayed are the same (it just matters as
         // to what's been preloaded)
         #[cfg(any(client, doc))]
-        return {
-            let view = self.browser_widget(cx, path, props);
-            view
-        };
+        return { self.browser_widget(cx, path, props) };
     }
 
     /// The internal browser-side logic for widgets, both delayed and not.

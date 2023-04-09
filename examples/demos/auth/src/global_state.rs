@@ -75,7 +75,7 @@ impl AuthDataRx {
         let auth_token = storage.get("username").unwrap(); // This is a `Result<Option<T>, E>`
 
         if let Some(username) = auth_token {
-            self.username.set(username.to_string());
+            self.username.set(username);
             self.state.set(LoginState::Yes);
         } else {
             self.username.set(String::new());

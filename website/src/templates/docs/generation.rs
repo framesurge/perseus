@@ -206,7 +206,7 @@ pub async fn get_build_state(
     // Compat from earlier Perseus versions
     // TODO Remove
     let path = format!("docs/{}", path);
-    let path = path.strip_suffix("/").unwrap_or(&path).to_string();
+    let path = path.strip_suffix('/').unwrap_or(&path).to_string();
 
     let path_vec: Vec<&str> = path.split('/').collect();
     // TODO Use build helper state for all this
@@ -302,7 +302,7 @@ pub async fn get_build_state(
                 };
                 // Now replace the whole directive (trimmed though to preserve any whitespace)
                 // with the file's contents
-                contents_with_incls = contents_with_incls.replace(&line, &incl_contents);
+                contents_with_incls = contents_with_incls.replace(line, &incl_contents);
             } else if line.starts_with("{{#lines_include ") && line.ends_with("}}") {
                 // Strip the directive to get the path of the file we're including
                 let mut incl_path_with_lines_suffix = line
@@ -380,7 +380,7 @@ pub async fn get_build_state(
                 };
                 // Now replace the whole directive (trimmed though to preserve any whitespace)
                 // with the file's contents
-                contents_with_incls = contents_with_incls.replace(&line, &incl_contents_lines);
+                contents_with_incls = contents_with_incls.replace(line, &incl_contents_lines);
             }
         }
         contents_with_incls
@@ -442,7 +442,7 @@ pub async fn get_build_state(
 
     // Get the sidebar from `SUMMARY.md`
     let sidebar_fs_path = format!("../docs/{}/{}/SUMMARY.md", &version, &locale);
-    let sidebar_contents = fs::read_to_string(&sidebar_fs_path)?;
+    let sidebar_contents = fs::read_to_string(sidebar_fs_path)?;
     // Replace all links in that file with localized equivalents with versions as
     // well (with the base path added) That means unversioned paths will
     // redirect to the appropriate stable version

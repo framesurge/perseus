@@ -50,6 +50,7 @@ pub struct ErrorViews<G: Html> {
     /// place where it can be safely extracted. The replacement function
     /// will panic if called, so this should **never** be manually executed.
     #[cfg(any(client, doc))]
+    #[allow(clippy::type_complexity)]
     panic_handler: Arc<
         dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
@@ -408,6 +409,7 @@ impl<G: Html> ErrorViews<G> {
     /// Extracts the panic handler from within the error views. This should
     /// generally only be called by `PerseusApp`'s error views instantiation
     /// system.
+    #[allow(clippy::type_complexity)]
     pub(crate) fn take_panic_handler(
         &mut self,
     ) -> Arc<

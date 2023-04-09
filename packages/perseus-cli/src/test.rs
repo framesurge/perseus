@@ -145,6 +145,6 @@ pub fn test(
         // We've handled errors in the component threads, so the exit code is now zero
         Ok(0)
     } else {
-        Err(ExecutionError::GetServerExecutableFailedSimple.into())
+        Err(ExecutionError::GetServerExecutableFailedSimple)
     }
 }

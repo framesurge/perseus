@@ -148,21 +148,18 @@ impl Reactor<BrowserNodeType> {
             // a `Closure::wrap()` one bit
             let (live_reload_tx, live_reload_rx) = futures::channel::oneshot::channel();
             sycamore_futures::spawn_local_scoped(cx, async move {
-                match live_reload_rx.await {
-                    // This will trigger only once, and then can't be used again
-                    // That shouldn't be a problem, because we'll reload immediately
-                    Ok(_) => {
-                        #[cfg(feature = "hsr")]
-                        {
-                            let frozen_state = self.freeze();
-                            Self::hsr_freeze(frozen_state).await;
-                        }
-                        crate::state::force_reload();
-                        // We shouldn't ever get here unless there was an error,
-                        // the entire page will be fully
-                        // reloaded
+                // This will trigger only once, and then can't be used again
+                // That shouldn't be a problem, because we'll reload immediately
+                if live_reload_rx.await.is_ok() {
+                    #[cfg(feature = "hsr")]
+                    {
+                        let frozen_state = self.freeze();
+                        Self::hsr_freeze(frozen_state).await;
                     }
-                    _ => (),
+                    crate::state::force_reload();
+                    // We shouldn't ever get here unless there was an error,
+                    // the entire page will be fully
+                    // reloaded
                 }
             });
 

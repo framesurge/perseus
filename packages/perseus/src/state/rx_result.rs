@@ -77,7 +77,7 @@ where
     // very much not okay! (We would have multiple handlers operating on the
     // same fields, which is not a pattern I want to encourage.)
     #[cfg(any(client, doc))]
-    fn compute_suspense<'a>(&self, _cx: Scope<'a>) {}
+    fn compute_suspense(&self, _cx: Scope<'_>) {}
 }
 impl<T, E> Freeze for RxResultRx<T, E>
 where

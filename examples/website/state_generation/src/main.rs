@@ -86,9 +86,11 @@ async fn get_build_paths() -> BuildPaths {
 #[derive(thiserror::Error, Debug)]
 #[error(transparent)]
 struct MyError(io::Error);
+#[cfg(engine)]
 fn get_post_for_path(_path: String) -> Result<Post, io::Error> {
     unimplemented!()
 }
+#[cfg(engine)]
 fn parse_markdown(_content: String) -> String {
     unimplemented!()
 }

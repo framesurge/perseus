@@ -42,7 +42,7 @@ impl<G: Html> Reactor<G> {
         } else {
             &path
         };
-        let path = js_sys::decode_uri_component(&path)
+        let path = js_sys::decode_uri_component(path)
             .map_err(|_| ClientPlatformError::InitialPath)?
             .as_string()
             .ok_or(ClientPlatformError::InitialPath)?;
@@ -71,7 +71,7 @@ impl<G: Html> Reactor<G> {
                 // whether it's an incremental match or not
                 was_incremental_match: _,
             }) => {
-                let full_path = PathMaybeWithLocale::new(&path, &locale);
+                let full_path = PathMaybeWithLocale::new(path, locale);
                 // Update the router state as we try to load (since this is the initial
                 // view, this will be the first change since the server)
                 self.router_state.set_load_state(RouterLoadState::Loading {
@@ -98,7 +98,7 @@ impl<G: Html> Reactor<G> {
                 // accessed later through the`t!` macro etc.). This locale is guaranteed to
                 // be supported, because it came from a `match_route`.
                 self.translations_manager
-                    .set_translator_for_translations_str(&locale, &translations_str)?;
+                    .set_translator_for_translations_str(locale, &translations_str)?;
 
                 #[cfg(feature = "cache-initial-load")]
                 {

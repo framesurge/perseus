@@ -350,7 +350,7 @@ impl HtmlShell {
         translations_str: Option<&str>,
     ) -> Self {
         if let Some(locale) = locale {
-            self.locale = locale.to_string();
+            self.locale = locale;
         }
 
         let error = serde_json::to_string(error_page_data).unwrap();

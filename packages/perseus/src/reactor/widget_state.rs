@@ -33,6 +33,8 @@ impl<G: Html> Reactor<G> {
     /// `.get_unreactive_widget_view()` for widgets that use unreactive
     /// state.
     // HRTB explanation: 'a = 'app, but the compiler hates that.
+    #[allow(clippy::type_complexity)]
+    #[allow(clippy::too_many_arguments)] // Internal function
     pub(crate) fn get_widget_view<'a, S, F, P: Clone + 'static>(
         &'a self,
         app_cx: Scope<'a>,
@@ -157,6 +159,8 @@ impl<G: Html> Reactor<G> {
     ///
     /// This is intended for use with widgets that use unreactive state. See
     /// `.get_widget_view()` for widgets that use reactive state.
+    #[allow(clippy::type_complexity)]
+    #[allow(clippy::too_many_arguments)] // Internal function
     pub(crate) fn get_unreactive_widget_view<'a, F, S, P: Clone + 'static>(
         &'a self,
         app_cx: Scope<'a>,

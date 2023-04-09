@@ -236,7 +236,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                 // To allow exclusions to work sanely, we have to manually resolve the file tree
                 if entry.is_dir() {
                     // The `notify` crate internally follows symlinks, so we do here too
-                    for entry in WalkDir::new(&entry).follow_links(true) {
+                    for entry in WalkDir::new(entry).follow_links(true) {
                         let entry = entry
                             .map_err(|err| WatchError::ReadCustomDirEntryFailed { source: err })?;
                         let entry = entry.path();
@@ -296,16 +296,14 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                                 })?;
                         }
                     }
-                } else {
-                    if !file_watch_excludes.contains(&entry) {
-                        watcher
-                            // The recursivity flag here will be irrelevant in all cases
-                            .watch(&entry, RecursiveMode::Recursive)
-                            .map_err(|err| WatchError::WatchFileFailed {
-                                filename: entry.to_string_lossy().to_string(),
-                                source: err,
-                            })?;
-                    }
+                } else if !file_watch_excludes.contains(&entry) {
+                    watcher
+                        // The recursivity flag here will be irrelevant in all cases
+                        .watch(&entry, RecursiveMode::Recursive)
+                        .map_err(|err| WatchError::WatchFileFailed {
+                            filename: entry.to_string_lossy().to_string(),
+                            source: err,
+                        })?;
                 }
             }
             // Watch any other files/directories the user has nominated (pre-canonicalized
@@ -314,7 +312,7 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                 // To allow exclusions to work sanely, we have to manually resolve the file tree
                 if entry.is_dir() {
                     // The `notify` crate internally follows symlinks, so we do here too
-                    for entry in WalkDir::new(&entry).follow_links(true) {
+                    for entry in WalkDir::new(entry).follow_links(true) {
                         let entry = entry
                             .map_err(|err| WatchError::ReadCustomDirEntryFailed { source: err })?;
                         if entry.path().is_dir() {
@@ -337,16 +335,14 @@ async fn core(dir: PathBuf) -> Result<i32, Error> {
                                 })?;
                         }
                     }
-                } else {
-                    if !file_watch_excludes.contains(&entry) {
-                        watcher
-                            // The recursivity flag here will be irrelevant in all cases
-                            .watch(&entry, RecursiveMode::Recursive)
-                            .map_err(|err| WatchError::WatchFileFailed {
-                                filename: entry.to_string_lossy().to_string(),
-                                source: err,
-                            })?;
-                    }
+                } else if !file_watch_excludes.contains(entry) {
+                    watcher
+                        // The recursivity flag here will be irrelevant in all cases
+                        .watch(entry, RecursiveMode::Recursive)
+                        .map_err(|err| WatchError::WatchFileFailed {
+                            filename: entry.to_string_lossy().to_string(),
+                            source: err,
+                        })?;
                 }
             }
 
@@ -462,8 +458,7 @@ async fn core_watch(dir: PathBuf, opts: Opts) -> Result<i32, Error> {
                 delete_artifacts(dir.clone(), "static")?;
                 delete_artifacts(dir.clone(), "mutable")?;
             }
-            let exit_code = test(dir, &test_opts, &tools, &opts)?;
-            exit_code
+            test(dir, test_opts, &tools, &opts)?
         }
         Subcommand::Clean => {
             delete_dist(dir)?;

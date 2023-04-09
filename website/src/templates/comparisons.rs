@@ -404,7 +404,7 @@ async fn get_build_state(
         if path.is_file() {
             // There shouldn't be any non-Unicode comparison files
             let path_str = path.to_str().unwrap();
-            let contents = fs::read_to_string(&path).map_err(Error::from)?;
+            let contents = fs::read_to_string(path).map_err(Error::from)?;
             // If the file is `perseus.json`, we'll add this to a special variable,
             // otherwise it gets added to the generic map
             if path_str.ends_with("perseus.json") {

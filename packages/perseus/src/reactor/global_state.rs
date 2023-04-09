@@ -183,7 +183,7 @@ impl<G: Html> Reactor<G> {
             match &frozen_app.global_state {
                 FrozenGlobalState::Some(state_str) => {
                     // Deserialize into the unreactive version
-                    let unrx = match serde_json::from_str::<S>(&state_str) {
+                    let unrx = match serde_json::from_str::<S>(state_str) {
                         Ok(unrx) => unrx,
                         // A corrupted frozen state should explicitly bubble up to be an error,
                         // *unless* this is HSR, in which case the data model has just been changed,

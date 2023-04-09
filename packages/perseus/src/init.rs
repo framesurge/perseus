@@ -161,6 +161,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     pub(crate) static_dir: String,
     /// A handler for panics on the browser-side.
     #[cfg(any(client, doc))]
+    #[allow(clippy::type_complexity)] // TODO Really?
     pub(crate) panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
     /// A duplicate of the app's error handling function intended for panic
     /// handling. This must be extracted as an owned value and provided in a
@@ -168,6 +169,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     ///
     /// This is in an `Arc` because panic hooks are `Fn`s, not `FnOnce`s.
     #[cfg(any(client, doc))]
+    #[allow(clippy::type_complexity)]
     pub(crate) panic_handler_view: Arc<
         dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
             + Send
@@ -1040,6 +1042,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     /// If this is called more than once, the view panic handler will panic when
     /// called.
     #[cfg(any(client, doc))]
+    #[allow(clippy::type_complexity)]
     pub fn take_panic_handlers(
         &mut self,
     ) -> (

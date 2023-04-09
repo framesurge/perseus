@@ -82,7 +82,7 @@ pub trait MakeUnrx {
     /// body of this function empty unless you're using the suspended state
     /// system.
     #[cfg(any(client, doc))]
-    fn compute_suspense<'a>(&self, cx: Scope<'a>);
+    fn compute_suspense(&self, cx: Scope<'_>);
 }
 
 /// A trait for reactive `struct`s that can be made unreactive and serialized to

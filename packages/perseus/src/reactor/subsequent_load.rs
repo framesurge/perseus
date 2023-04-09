@@ -46,7 +46,7 @@ impl<G: Html> Reactor<G> {
                 locale,
                 was_incremental_match,
             }) => {
-                let full_path = PathMaybeWithLocale::new(&path, &locale);
+                let full_path = PathMaybeWithLocale::new(path, locale);
                 // Update the router state
                 self.router_state.set_load_state(RouterLoadState::Loading {
                     template_name: entity.get_path(),
@@ -79,7 +79,7 @@ impl<G: Html> Reactor<G> {
                             Some(page_data_str) => {
                                 // All good, deserialize the page data
                                 let page_data =
-                                    serde_json::from_str::<PageDataPartial>(&page_data_str);
+                                    serde_json::from_str::<PageDataPartial>(page_data_str);
                                 match page_data {
                                     Ok(page_data) => {
                                         // Add the head to the PSS for future use (we make
@@ -147,7 +147,7 @@ impl<G: Html> Reactor<G> {
                 // that means we'll probably get a popup, which is much better UX than an error
                 // page on `/fr-FR/foo` in Spanish.
                 self.translations_manager
-                    .set_translator_for_locale(&locale)
+                    .set_translator_for_locale(locale)
                     .await?;
 
                 let template_name = entity.get_path();

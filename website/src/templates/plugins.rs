@@ -152,7 +152,7 @@ async fn get_build_state(
         // Ignore any empty directories or the like
         if path.is_file() {
             // Get the JSON contents and parse them as plugin details
-            let contents = fs::read_to_string(&path).map_err(Error::from)?;
+            let contents = fs::read_to_string(path).map_err(Error::from)?;
             let details = serde_json::from_str::<PluginDetails>(&contents).map_err(Error::from)?;
 
             plugins.push(details);

@@ -112,7 +112,7 @@ fn compare_locale<S: Into<String> + std::fmt::Display>(cmp: &str, locales: &[S])
             // Any exact match voids anything after it (it'll be further down the list or
             // only a partial match from here on)
             break;
-        } else if cmp_parts.get(0) == parts.get(0) {
+        } else if cmp_parts.first() == parts.first() {
             // If we've already had a partial match higher up the chain, this is void
             // But we shouldn't break in case there's an exact match coming up
             if !matches!(outcome, LocaleMatch::Language(_)) {

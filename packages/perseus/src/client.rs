@@ -89,7 +89,9 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     let mut running = true;
     // === IF THIS DISPOSER IS CALLED, PERSEUS WILL TERMINATE! ===
     let app_disposer = create_scope(|cx| {
-        let core = move || {
+        // NOTE: To anyone who ever thinks it might be a good idea to put this whole
+        // thing in a `with_hydration_cx()`, it's not, it's really not.
+        running = {
             // Create the reactor
             match Reactor::try_from(app) {
                 Ok(reactor) => {
@@ -108,10 +110,6 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
                 }
             }
         };
-
-        // NOTE: To anyone who ever thinks it might be a good idea to put this whole
-        // thing in a `with_hydration_cx()`, it's not, it's really not.
-        running = core();
     });
 
     dispatch_loaded(running, false);

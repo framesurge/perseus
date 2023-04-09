@@ -57,7 +57,8 @@ impl<T: 'static> Deref for Forever<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         match &self {
-            Self::Owned(val) => &val,
+            // Bear in mind that this is implicitly a reference because we're working with `&self`
+            Self::Owned(val) => val,
             Self::StaticRef(val) => val,
         }
     }

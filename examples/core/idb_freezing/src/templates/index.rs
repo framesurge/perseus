@@ -34,7 +34,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPropsRx) ->
             // The IndexedDB API is asynchronous, so we'll spawn a future
             #[cfg(client)] // The freezing types are only available in the browser
             spawn_local_scoped(cx, async {
-                use perseus::state::{IdbFrozenStateStore, Freeze, PageThawPrefs, ThawPrefs};
+                use perseus::state::{IdbFrozenStateStore, Freeze};
                 // We do this here (rather than when we get the reactor) so that it's updated whenever we press the button
                 let frozen_state = reactor.freeze();
                 let idb_store = match IdbFrozenStateStore::new().await {
@@ -56,7 +56,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPropsRx) ->
             // The IndexedDB API is asynchronous, so we'll spawn a future
             #[cfg(client)] // The freezing types are only available in the browser
             spawn_local_scoped(cx, async move {
-                use perseus::state::{IdbFrozenStateStore, Freeze, PageThawPrefs, ThawPrefs};
+                use perseus::state::{IdbFrozenStateStore, PageThawPrefs, ThawPrefs};
                 let idb_store = match IdbFrozenStateStore::new().await {
                     Ok(idb_store) => idb_store,
                     Err(_) => {

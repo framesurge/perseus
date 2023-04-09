@@ -239,7 +239,7 @@ pub fn serve(
     // rest of the build stage yet
     let sb_thread = build_server(
         dir.clone(),
-        &spinners,
+        spinners,
         num_steps,
         Arc::clone(&exec),
         opts.release,
@@ -250,7 +250,7 @@ pub fn serve(
     if did_build {
         let (sg_thread, wb_thread) = build_internal(
             dir.clone(),
-            &spinners,
+            spinners,
             num_steps,
             opts.release,
             tools,

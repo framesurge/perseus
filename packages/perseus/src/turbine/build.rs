@@ -57,8 +57,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     }
 
     pub(super) async fn build_internal(&mut self, exporting: bool) -> Result<(), ServerError> {
-        let locales = self.locales.get_all();
-
         // Build the global state (also adds it to the immutable store)
         self.global_state = self.build_global_state(exporting).await?;
 
@@ -275,6 +273,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// This function is `super`-public because it's used to generate
     /// incremental pages. Because of this, it also takes in the most
     /// up-to-date global state.
+    #[allow(clippy::too_many_arguments)] // Internal function
     pub(super) async fn build_path_or_widget_for_locale(
         &self,
         path: PurePath,
@@ -428,6 +427,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// render configuration passed through arguments, because it's designed to
     /// be part of the larger asynchronous build process, therefore modifying
     /// the root-level render config is not safe until the end.
+    #[allow(clippy::too_many_arguments)] // Internal function
     fn build_render<'a>(
         &'a self,
         entity: &'a Entity<SsrNode>,
@@ -599,12 +599,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                                         Ok(render_cfg_ext)
                                     }
                                     FullRouteVerdict::LocaleDetection(_) => {
-                                        return Err(ServerError::ResolveDepLocaleRedirection {
+                                        Err(ServerError::ResolveDepLocaleRedirection {
                                             locale: locale.to_string(),
                                             widget: path.to_string(),
                                         })
                                     }
-                                    FullRouteVerdict::NotFound { .. } => return Err(ServerError::ResolveDepNotFound { widget: path.to_string(), locale: locale.to_string() }),
+                                    FullRouteVerdict::NotFound { .. } => Err(ServerError::ResolveDepNotFound { widget: path.to_string(), locale: locale.to_string() }),
                                 }
                             });
                         }
