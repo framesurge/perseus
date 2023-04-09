@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-rc.1](https://github.com/framesurge/perseus/compare/v0.4.0-beta.22...v0.4.0-rc.1) (2023-04-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* removed localized global state (global state functions
+should no longer take a locale)
+
+* fix: transmitted global state in locale redirection pages
+
+### Features
+
+* added rocket integration ([#266](https://github.com/framesurge/perseus/issues/266)) ([25bd115](https://github.com/framesurge/perseus/commit/25bd115d690d6dd8421a44b80837af0d7e92c993))
+* added support for broader error types across state generation ([9aa079b](https://github.com/framesurge/perseus/commit/9aa079b1f74627c4f76927c9d3d25f11316a941e)), closes [#264](https://github.com/framesurge/perseus/issues/264)
+* remove localized global state ([#268](https://github.com/framesurge/perseus/issues/268)) ([2017f69](https://github.com/framesurge/perseus/commit/2017f69a978fc0d3946d38e8c27ec7b0e0e03453)), closes [#267](https://github.com/framesurge/perseus/issues/267)
+
+
+### Bug Fixes
+
+* cleaned up rocket integration ([5c8e50d](https://github.com/framesurge/perseus/commit/5c8e50d17467b63d61ccf7d9138e523b9c4a271b))
+* **cli:** fixed help tests ([0800311](https://github.com/framesurge/perseus/commit/0800311f5b00defd1963eb81425442304c46763d))
+* fixed bad version in rocket integration ([6bd2ca0](https://github.com/framesurge/perseus/commit/6bd2ca0a05fe3444a2b79c59a953cda97ffdd8b1))
+
 ## [0.4.0-beta.22](https://github.com/framesurge/perseus/compare/v0.4.0-beta.21...v0.4.0-beta.22) (2023-03-12)
 
 
