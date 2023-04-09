@@ -243,6 +243,8 @@ publish.cmd = [
     "cd ../perseus-warp",
     "RUSTFLAGS=\"--cfg=engine\" cargo publish %%",
     "cd ../perseus-axum",
+    "RUSTFLAGS=\"--cfg=engine\" cargo publish %%",
+    "cd ../perseus-rocket",
     "RUSTFLAGS=\"--cfg=engine\" cargo publish %%"
 ]
 publish.desc = "publishes all packages to crates.io (needs branch 'stable', Linux only)"
