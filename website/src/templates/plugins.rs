@@ -104,7 +104,7 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                                                 (plugin.name)
                                                 (if plugin.trusted {
                                                     view! { cx,
-                                                        div(class = "ml-1 self-center", dangerously_set_inner_html = TRUSTED_SVG)
+                                                        span(class = "ml-1 self-center", dangerously_set_inner_html = TRUSTED_SVG) {}
                                                     }
                                                 } else {
                                                     View::empty()

@@ -525,7 +525,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     order = TileOrder::TextLeft,
                     custom_supplement = None,
                     text_block = view! { cx,
-                        p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
+                        div(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             div(class = "tooltip") {
                                 span(id = "i18n-dotted-border") { (t!(cx, "index-i18n.heading.start")) }
                                 // We have to undo most of the title font stuff from the parent
