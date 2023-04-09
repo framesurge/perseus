@@ -15,13 +15,13 @@
         "docs_rs": "0.3.3"
     },
     "0.3.4": {
-        "state": "stable",
+        "state": "outdated",
         "git": "v0.3.6",
         "docs_rs": "0.3"
     },
     "0.4.x": {
-        "state": "beta",
+        "state": "stable",
         "git": "HEAD",
-        "docs_rs": "0.4.0-beta"
+        "docs_rs": "0.4"
     }
 }
