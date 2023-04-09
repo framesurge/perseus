@@ -233,7 +233,7 @@ where
         Method::Get,
         "/translations/<path..>",
         RocketHandlerWithTurbine {
-            turbine: &turbine,
+            turbine,
             perseus_route: PerseusRouteKind::Locale,
         },
     );
@@ -246,7 +246,7 @@ where
         Method::Get,
         "/<path..>",
         RocketHandlerWithTurbine {
-            turbine: &turbine,
+            turbine,
             perseus_route: PerseusRouteKind::IntialLoadHandler,
         },
     );
@@ -255,7 +255,7 @@ where
         Method::Get,
         "/page/<path..>",
         RocketHandlerWithTurbine {
-            turbine: &turbine,
+            turbine,
             perseus_route: PerseusRouteKind::SubsequentLoadHandler,
         },
     );
@@ -284,7 +284,7 @@ where
             Method::Get,
             url,
             RocketHandlerWithTurbine {
-                turbine: &turbine,
+                turbine,
                 perseus_route: PerseusRouteKind::StaticAlias(static_path),
             },
         );
@@ -311,13 +311,14 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
 
     let mut app = perseus_base_app(turbine, opts).await;
 
-    let mut config = rocket::Config::default();
-    config.port = port;
-    config.address = addr;
+    let config = rocket::Config {
+        port,
+        address: addr,
+        ..Default::default()
+    };
     app = app.configure(config);
 
-    match app.launch().await {
-        Err(e) => println!("Error lauching rocket app: {}", e),
-        _ => (),
+    if let Err(err) = app.launch().await {
+        eprintln!("Error lauching Rocket app: {}.", err);
     }
 }

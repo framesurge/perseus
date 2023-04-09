@@ -26,18 +26,18 @@ pub async fn dflt_server<
 
     let addr = host.parse().expect("Invalid address provided to bind to.");
 
-    let mut config = rocket::Config::default();
-
     let mut app = perseus_base_app(turbine, opts).await;
     app = app.mount("/api", routes![api::hello]);
 
-    config.address = addr;
-    config.port = port;
+    let config = rocket::Config {
+        port,
+        address: addr,
+        ..Default::default()
+    };
     app = app.configure(config);
 
-    match app.launch().await {
-        Err(e) => println!("Error lauching rocket app: {}", e),
-        _ => (),
+    if let Err(err) = app.launch().await {
+        eprintln!("Error lauching Rocket app: {}.", err);
     }
 }
 
