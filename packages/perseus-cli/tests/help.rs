@@ -14,7 +14,7 @@ fn help_works() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--help");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("perseus [OPTIONS] <SUBCOMMAND>"));
+        .stdout(predicate::str::contains("The command-line interface for Perseus, a super-fast WebAssembly frontend development framework!"));
 
     Ok(())
 }

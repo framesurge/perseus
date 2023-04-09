@@ -219,8 +219,8 @@ async fn perseus_static_alias<'r>(req: &'r Request<'_>, static_alias: &String) -
 // ----- Integration code -----
 
 /// Configures an Rocket Web app for Perseus.
-/// This returns a rocket app at the build stage that can be built upon further with
-/// more routes, fairings etc...
+/// This returns a rocket app at the build stage that can be built upon further
+/// with more routes, fairings etc...
 pub async fn perseus_base_app<M, T>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
