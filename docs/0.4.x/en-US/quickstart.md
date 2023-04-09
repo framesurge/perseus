@@ -5,10 +5,8 @@ To get started with Perseus, you should first make sure you have the Rust langua
 Once you have Rust installed, you can run the following command to install Perseus:
 
 ```sh
-cargo install perseus-cli --version 0.4.0
+cargo install perseus-cli
 ```
-
-(While v0.4.x is still in beta, that `--version` flag is needed to make sure you get the latest beta version.)
 
 Now, pop over to some directory where you keep your projects, and run `perseus new my-app`. That will create a new directory called `my-app/`, which you can easily `cd` into, and, once you're there, you can run this command to start your app:
 

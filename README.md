@@ -48,15 +48,13 @@ Check out [the book](https://framesurge.sh/perseus/en-US/docs) to learn how to t
 If you want to start working with Perseus right away, run the following commands and you'll have a basic app ready in no time! (Or, more accurately, after Cargo compiles everything...)
 
 ``` shell
-cargo install perseus-cli --version 0.4.0
+cargo install perseus-cli
 perseus new my-app
 cd my-app/
 perseus serve -w
 ```
 
 Then, hop over to <http://localhost:8080> and see a placeholder app, in all its glory! If you change some code, that'll automatically update, reloading the browser all by itself. (This rebuilding might take a while though, see [here](https://framesurge.sh/perseus/en-US/docs/next/reference/compilation-times) for how to speed things up.)
-
-Note that these instructions use the latest beta version of Perseus, which is cutting-edge, and still hs a few bugs to be ironed out. We recommend using v0.3.x if you want a more stable experience with better documentation, as the v0.4.0x documentation is still under heavy construction.
 
 ## Aim
 
