@@ -577,7 +577,7 @@ impl PssEntry {
     /// set it to never having had state (and there will be nothing in the
     /// frozen state for it), which is fine; but, if they *removed* state
     /// from an entity that previously had it, this will return an error to the
-    /// HSR thaw attempt (whcih will try to add the old state back). In that
+    /// HSR thaw attempt (which will try to add the old state back). In that
     /// case, the error should be discarded by the caller, who should accept
     /// the changed data model.
     pub fn set_state(&mut self, state: Box<dyn AnyFreeze>) -> Result<(), ClientError> {

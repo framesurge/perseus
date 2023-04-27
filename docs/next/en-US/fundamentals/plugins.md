@@ -4,7 +4,7 @@ One of the most powerful features of Perseus is its extensibility, which comes i
 
 However, 99.99% of the time, you won't need to do any of this, because your needs will be met far more effectively by either a [custom server](:fundamentals/serving-exporting), or a plugin.
 
-Plugins in Perseus are library crates, usually published on crates.io, that can be used as dependencies in your app that have access to various *plugin opportunities*, whcih are basically points in your app where Perseus allows third-party code to do certain things.
+Plugins in Perseus are library crates, usually published on crates.io, that can be used as dependencies in your app that have access to various *plugin opportunities*, which are basically points in your app where Perseus allows third-party code to do certain things.
 
 Plugins fall into two types: *functional* and *control*. Functional plugins are very simple: they're given some data at a certain time, they do some stuff, and then they return some data. For a single plugin opportunity, there can be as many functional plugins registered as you like. For example, a plugin can define extra static aliases, and, of course, the results of many plugins doing this can all be collated together. Control plugins work differently: for a single control plugin opportunity, only one plugins can act, for example redefining the index view (since you can't necessarily combine two completely different index views from two completely different plugins).
 
