@@ -51,7 +51,7 @@ Also notice that we define this `PerseusApp` in a function called `main`, but yo
 
 </details>
 
-Now install the Perseus CLI with `cargo install perseus-cli` (you'll need `wasm-pack` to let Perseus build your app, use `cargo install wasm-pack` to install it) to make your life way easier, and deploy your app to <http://localhost:8080> by running `perseus serve` inside the root of your project! This will take a while the first time, because it's got to fetch all your dependencies and build your app.
+Now install the Perseus CLI with `cargo install perseus-cli --locked` (you'll need `wasm-pack` to let Perseus build your app, use `cargo install wasm-pack` to install it) to make your life way easier, and deploy your app to <http://localhost:8080> by running `perseus serve` inside the root of your project! This will take a while the first time, because it's got to fetch all your dependencies and build your app.
 
 <details>
 <summary>Why do I need a CLI?</summary>
