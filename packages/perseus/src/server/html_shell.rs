@@ -127,7 +127,10 @@ impl HtmlShell {
         //
         // Note: because we're using binary bundles, we don't need to import
         // a `main` function or the like, `init()` just works
-        #[cfg(not(feature = "wasm2js"))]
+        #[cfg(all(feature = "wasm2js", feature = "wasm-standard"))]
+        compile_error!("feature \"wasm2js\" and feature \"wasm-standard\" cannot be enabled at the same time");
+        
+        #[cfg(feature = "wasm-standard")]
         let load_wasm_bundle = format!(
             r#"
         import init from "{path_prefix}/.perseus/bundle.js";

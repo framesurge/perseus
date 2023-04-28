@@ -52,7 +52,7 @@ wasm-bindgen-futures = "0.4"
 [features]
 # Live reloading will only take effect in development, and won't impact production
 # BUG This adds 1.9kB to the production bundle (that's without size optimizations though)
-default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine", "minify", "minify-css", "cache-initial-load" ]
+default = [ "live-reload", "hsr", "client-helpers", "macros", "dflt-engine", "minify", "minify-css", "cache-initial-load", "wasm-standard" ]
 translator-fluent = ["fluent-bundle", "unic-langid", "intl-memoizer"]
 translator-lightweight = []
 # Suspends all `click` events at the document root until Perseus is fully loaded, then passing them through.
@@ -80,6 +80,8 @@ hydrate = []
 preload-wasm-on-redirect = []
 # This exposes an API for saving frozen state to IndexedDB simply, with options for making your storage persistent so the browser won't delete it
 idb-freezing = [ "rexie", "web-sys/StorageManager" ]
+# Switches to expecting the server to provide a Wasm bundle
+wasm-standard = []
 # Switches to expecting the server to provide a JS bundle that's been created from Wasm
 # Note that this is highly experimental, and currently blocked by [rustwasm/wasm-bindgen#2735](https://github.com/rustwasm/wasm-bindgen/issues/2735)
 # This is *deliberately* undocumented in `lib.rs`!
