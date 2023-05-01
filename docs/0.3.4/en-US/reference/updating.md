@@ -7,7 +7,7 @@ Perseus v0.3.4 added a *huge* number of new features to do with the new [reactiv
 3. Run `perseus clean` to remove the old `.perseus/` directory.
 4. Update your code for the new [reactive state platform](:reference/state/rx) if you want to!
 
-Perseus v0.3.5 also changed several idioms, particularly deprecating `define_app!` in favor of the more versatile `PerseusApp`. This change isn't compulsory, and no warning will appear yet, but it's recommended that you upgrade soon. You can see examples of the new idioms [here](https://github.com/arctic-hen7/perseus/tree/main/examples).
+Perseus v0.3.5 also changed several idioms, particularly deprecating `define_app!` in favor of the more versatile `PerseusApp`. This change isn't compulsory, and no warning will appear yet, but it's recommended that you upgrade soon. You can see examples of the new idioms [here](https://github.com/framesurge/perseus/tree/main/examples).
 
 ## If You've Ejected
 

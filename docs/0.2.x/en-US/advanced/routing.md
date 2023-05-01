@@ -6,7 +6,7 @@ Perseus' routing system is quite unique in that it's almost entirely _inferred_,
 
 Perseus has a very specific algorithm that it uses to determine which template to use for a given route, which is greatly dependent on `.perseus/dist/render_conf.json`. This is executed on the client-side for _subsequent loads_ and on the server-side for _initial loads_.
 
-Here's an example render configuration (for the [showcase example](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase)), which maps path to template root path.
+Here's an example render configuration (for the [showcase example](https://github.com/framesurge/perseus/blob/main/examples/showcase)), which maps path to template root path.
 
 ```json
 {
@@ -24,7 +24,7 @@ Here's an example render configuration (for the [showcase example](https://githu
 }
 ```
 
-Here are the algorithm's steps (see [`router.rs`](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/router.rs)):
+Here are the algorithm's steps (see [`router.rs`](https://github.com/framesurge/perseus/blob/main/packages/perseus/src/router.rs)):
 
 1. If the path is empty, set it to `index` (which is used for the landing page).
 2. Try to directly get the template name by trying the path as a key. This would work for anything not using incremental generation (in the above example, anything other than `post/*`).

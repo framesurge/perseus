@@ -6,7 +6,7 @@ To use this system, you'll need to enable the `idb-freezing` feature flag, and t
 
 # Example
 
-The following code is taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/idb_freezing/src/idb.rs).
+The following code is taken from [here](https://github.com/framesurge/perseus/tree/main/examples/idb_freezing/src/idb.rs).
 
 ```rust
 {{#include ../../../../examples/core/idb_freezing/src/templates/index.rs}}

@@ -2,7 +2,7 @@
 
 Occasionally, the Perseus testing harness may be a little too brittle for your needs, particularly if you'd like to pass custom arguments to the WebDriver (e.g. to spoof media streams). In these cases, you'll want to break out of it entirely and work with Fantoccini manually.
 
-You should do this by wrapping your normal test function in another function and annotating that with `[tokio::test]`, which will mark it as a normal asynchronous test. Then, you can mimic the behavior of the Perseus test harness almost exactly with the following code (adapted from the macro [here](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus-macro/src/test.rs)):
+You should do this by wrapping your normal test function in another function and annotating that with `[tokio::test]`, which will mark it as a normal asynchronous test. Then, you can mimic the behavior of the Perseus test harness almost exactly with the following code (adapted from the macro [here](https://github.com/framesurge/perseus/blob/main/packages/perseus-macro/src/test.rs)):
 
 ```rust
 // Only run the test if the environment variable is specified (avoids having to do exclusions for workspace `cargo test`)

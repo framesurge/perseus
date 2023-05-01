@@ -10,8 +10,8 @@ The `define_app!` macro accepts a property called `translations_manager` if you 
 
 ## Using a Custom Directory
 
-If you just want to change the directory in which translations are stored, you can still use `FsTranslationsmanager`, just initialize it with a different directory, and make sure to set up caching properly. See [here](https://github.com/arctic-hen7/perseus/blob/f7f7892fbf124a7d887b1f22a1641c79773d6246/packages/perseus/src/macros.rs#L35-L50) for how this is done internally.
+If you just want to change the directory in which translations are stored, you can still use `FsTranslationsmanager`, just initialize it with a different directory, and make sure to set up caching properly. See [here](https://github.com/framesurge/perseus/blob/f7f7892fbf124a7d887b1f22a1641c79773d6246/packages/perseus/src/macros.rs#L35-L50) for how this is done internally.
 
 ## Building a Custom Translations Manager
 
-This is more complex, and you'll need to consult [this file](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/translations_manager.rs) (note: the client translations manager is very different) in the Perseus source code for guidance. If you're stuck, don't hesitate to ask a question under [discussions](https://github.com/arctic-hen7/perseus/discussions/new) on GitHub!
+This is more complex, and you'll need to consult [this file](https://github.com/framesurge/perseus/blob/main/packages/perseus/src/translations_manager.rs) (note: the client translations manager is very different) in the Perseus source code for guidance. If you're stuck, don't hesitate to ask a question under [discussions](https://github.com/framesurge/perseus/discussions/new) on GitHub!

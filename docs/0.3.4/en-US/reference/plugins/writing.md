@@ -15,7 +15,7 @@ To define a plugin, you'll call `perseus::plugins::Plugin::new()`, which takes f
 -   A [control actions](:reference/plugins/control) registrar, which is given some control actions and then extends them
 -   The environment for the plugin to run in (see below)
 
-Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:reference/plugins/tinker)-time (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/plugins/src/plugin.rs)):
+Here's an example of a very simple plugin that adds a static alias for the project's `Cargo.toml`, creates an about page, and prints the working directory at [tinker](:reference/plugins/tinker)-time (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/plugins/src/plugin.rs)):
 
 ```rust
 {{#include ../../../../examples/core/plugins/src/plugin.rs}}
@@ -31,7 +31,7 @@ The rest of the code is the functional actions registrar, which just registers t
 
 Quite often, plugins should accept user configuration, and this is supported through the second runner parameter, which will be given any data that the user defined for your plugin. You can define the type of this with the second type parameter to `Plugin`.
 
-However, because Perseus is juggling all the data for all the plugins the user has installed, across all their different runners, it can't store the type of the data that the user gives (but don't worry, whatever they provide will be type-checked). This means that your runner ends up being given what Rust considers to be _something_. Basically, **we know that it's your plugin data, but Rust doesn't**. Specifically, you'll be given `&dyn Any`, which means you'll need to _downcast_ this to a concrete type (the type of your plugin data). As in the above example, we can do this with `plugin_data.downcast_ref::<YourPluginDataTypeHere>()`, which will return an `Option<T>`. **This will always be `Some`**, which is why it's perfectly safe to label the `None` branch as `unreachable!()`. If this ever does result in `None`, then either you've tried to downcast to something that's not your plugin's data type, or there's a critical bug in Perseus' plugins system, which you should [report to us](https://github.com/arctic-hen7/perseus/issues/new/choose).
+However, because Perseus is juggling all the data for all the plugins the user has installed, across all their different runners, it can't store the type of the data that the user gives (but don't worry, whatever they provide will be type-checked). This means that your runner ends up being given what Rust considers to be _something_. Basically, **we know that it's your plugin data, but Rust doesn't**. Specifically, you'll be given `&dyn Any`, which means you'll need to _downcast_ this to a concrete type (the type of your plugin data). As in the above example, we can do this with `plugin_data.downcast_ref::<YourPluginDataTypeHere>()`, which will return an `Option<T>`. **This will always be `Some`**, which is why it's perfectly safe to label the `None` branch as `unreachable!()`. If this ever does result in `None`, then either you've tried to downcast to something that's not your plugin's data type, or there's a critical bug in Perseus' plugins system, which you should [report to us](https://github.com/framesurge/perseus/issues/new/choose).
 
 ## Caveats
 

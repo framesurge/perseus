@@ -10,4 +10,4 @@ It may seem like this problem could simply be solved with a `Translator` trait, 
 
 ## How Do I Make One?
 
-If you want to make your own alternative translation engine, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) about it, explaining the system you want to support. Provided the system is compatible with Perseus' i18n design (which it certainly should be if we've done our job correctly!), we'll be happy to help you get it into Perseus!
+If you want to make your own alternative translation engine, please [open an issue](https://github.com/framesurge/perseus/issues/new/choose) about it, explaining the system you want to support. Provided the system is compatible with Perseus' i18n design (which it certainly should be if we've done our job correctly!), we'll be happy to help you get it into Perseus!

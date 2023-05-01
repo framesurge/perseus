@@ -10,7 +10,7 @@ _Note: Perseus currently still requires a server if you want to export to purely
 
 ### Without _Build Paths_ or _Incremental Generation_
 
-On its own, this strategy will simply generate properties for your template to turn it into a page, which would be perfect for something like a list of blog posts (just fetch the list from the filesystem, a database, etc.). Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/index.rs) for a simple greeting:
+On its own, this strategy will simply generate properties for your template to turn it into a page, which would be perfect for something like a list of blog posts (just fetch the list from the filesystem, a database, etc.). Here's an example from [here](https://github.com/framesurge/perseus/blob/main/examples/showcase/src/templates/index.rs) for a simple greeting:
 
 ```rust
 {{#include ../../../../examples/showcase/src/templates/index.rs}}
@@ -20,7 +20,7 @@ Note that Perseus passes around properties to pages as `String`s, so the functio
 
 ### With _Build Paths_ or _Incremental Generation_
 
-You may have noticed in the above example that the build state function takes a `path` parameter. This becomes useful once you bring the _build paths_ or _incremental generation_ strategies into play, which allow you to render many paths for a single template. In the following example (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/post.rs)), all three strategies are used together to pre-render some blog posts at build-time, and allow the rest to be requested and rendered if they exist (here, any post will exist except one called `tests`):
+You may have noticed in the above example that the build state function takes a `path` parameter. This becomes useful once you bring the _build paths_ or _incremental generation_ strategies into play, which allow you to render many paths for a single template. In the following example (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/showcase/src/templates/post.rs)), all three strategies are used together to pre-render some blog posts at build-time, and allow the rest to be requested and rendered if they exist (here, any post will exist except one called `tests`):
 
 ```rust
 {{#include ../../../../examples/showcase/src/templates/post.rs}}

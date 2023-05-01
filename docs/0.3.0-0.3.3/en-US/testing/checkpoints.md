@@ -6,7 +6,7 @@ This, and many similar problems, are easily solvable using one of Perseus' most 
 
 Note that checkpoints will never be reached if your app is not run with `perseus test`. If you use `--no-run` and then execute the server binary manually, be sure to provide the `PERSEUS_TESTING=true` environment variable.
 
-You can wait for a Perseus checkpoint to be reached like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/tests/basic/tests/main.rs)):
+You can wait for a Perseus checkpoint to be reached like so (taken from [here](https://github.com/framesurge/perseus/blob/main/tests/basic/tests/main.rs)):
 
 ```rust
 {{#include ../../../../tests/basic/tests/main.rs}}

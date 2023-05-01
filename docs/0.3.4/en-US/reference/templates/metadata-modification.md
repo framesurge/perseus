@@ -6,7 +6,7 @@ However, Perseus overcomes this easily by allowing you to specify `.head()` on a
 
 The only particular thing to note here is that, because this is rendered to a `String`, this **can't be reactive**. Variable interpolation is fine, but after it's been rendered once, the `<head>` **will not change**. If you need to update it later, you should do that with [`web_sys`](https://docs.rs/web-sys), which lets you directly access any DOM element with similar syntax to JavaScript (in fact, it's your one-stop shop for all things interfacing with the browser, as well as it's companion [`js-sys`](https://docs.rs/js-sys)).
 
-Here's an example of modifying a page's metadata (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/basic/src/templates/index.rs)):
+Here's an example of modifying a page's metadata (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/basic/src/templates/index.rs)):
 
 ```rust
 {{#lines_include ../../../../examples/core/basic/src/templates/index.rs:24:29}}

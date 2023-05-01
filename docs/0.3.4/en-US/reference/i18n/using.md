@@ -8,7 +8,7 @@ perseus = { version = "<version of Perseus that you're using>", features = [ "tr
 
 If you don't do this, your app won't build.
 
-All translations in Perseus are done with an instance of `Translator`, which is provided through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/v0.6/advanced/contexts). Here's an example taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/i18n/src/templates/index.rs):
+All translations in Perseus are done with an instance of `Translator`, which is provided through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/v0.6/advanced/contexts). Here's an example taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/i18n/src/templates/index.rs):
 
 ```rust
 {{#include ../../../../examples/core/i18n/src/templates/index.rs}}

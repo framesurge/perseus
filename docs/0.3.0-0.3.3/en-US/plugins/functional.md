@@ -4,9 +4,9 @@ The first type of action that a Perseus plugin can take is a functional action, 
 
 ## List of Functional Actions
 
-Here's a list of all the functional actions currently supported by Perseus, which will likely grow over time. You can see these in [this file](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/plugins/functional.rs) in the Perseus repository.
+Here's a list of all the functional actions currently supported by Perseus, which will likely grow over time. You can see these in [this file](https://github.com/framesurge/perseus/blob/main/packages/perseus/src/plugins/functional.rs) in the Perseus repository.
 
-If you'd like to request that a new action, functional or control, be added, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose).
+If you'd like to request that a new action, functional or control, be added, please [open an issue](https://github.com/framesurge/perseus/issues/new/choose).
 
 - `tinker` -- see [this section](:plugins/tinker)
 - `settings_actions` -- actions that can alter the settings provided by the user with [`define_app!`](:define-app)
