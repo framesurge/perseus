@@ -55,6 +55,7 @@ impl<G: Html> Reactor<G> {
                 held_state
             } else {
                 let global_state_ty = self.global_state.0.borrow();
+                dbg!(&global_state_ty);
                 // We'll get the server-given global state
                 if let GlobalStateType::Server(server_state) = &*global_state_ty {
                     // Fall back to the state we were given, first
@@ -65,10 +66,15 @@ impl<G: Html> Reactor<G> {
                         .into_concrete()
                         .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
                     let rx = unrx.make_rx();
-                    // Set that as the new active global state
-                    drop(global_state_ty);
-                    let mut active_global_state = self.global_state.0.borrow_mut();
-                    *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
+                    // On the engine-side, do not set this as the active state, because that
+                    // would compromise any capsules trying to access this (see #280)
+                    #[cfg(client)]
+                    {
+                        // Set that as the new active global state
+                        drop(global_state_ty);
+                        let mut active_global_state = self.global_state.0.borrow_mut();
+                        *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
+                    }
 
                     rx
                 } else {
