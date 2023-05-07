@@ -260,12 +260,13 @@ impl Tool {
             ToolType::WasmBindgen if cfg!(target_os = "linux") && cfg!(target_arch = "x86_64") => {
                 Some("wasm-bindgen-%version-x86_64-unknown-linux-musl")
             }
-            // MacOS (incl. Apple Silicon)
-            ToolType::WasmBindgen
-                if cfg!(target_os = "macos")
-                    && (cfg!(target_arch = "x86_64") || cfg!(target_arch = "aarch64")) =>
-            {
+            // MacOS (Intel)
+            ToolType::WasmBindgen if cfg!(target_os = "macos") && cfg!(target_arch = "x86_64") => {
                 Some("wasm-bindgen-%version-x86_64-apple-darwin")
+            }
+            // MacOS (Apple Silicon)
+            ToolType::WasmBindgen if cfg!(target_os = "macos") && cfg!(target_arch = "aarch64") => {
+                Some("wasm-bindgen-%version-a   arch64-apple-darwin")
             }
             // Windows
             ToolType::WasmBindgen
