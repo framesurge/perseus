@@ -138,7 +138,7 @@ This will take quite a while the first time, because Perseus is literally creati
 
 When all 5 steps have been completed, your app will be available in the browser! Go to <http://localhost:8080> and you should see `Welcome to the app!` on your screen! If so, then congratulations, you've just created your first ever Perseus app! (And don't worry, running it will be much faster next time.)
 
-You can see all the code put together [here](https://github.com/arctic-hen7/perseus-starter-app).
+You can see all the code put together [here](https://github.com/framesurge/perseus-starter-app).
 
 ## Further Reading
 

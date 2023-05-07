@@ -98,7 +98,7 @@ If all that was way too long, here's a quick summary of what Perseus does and wh
 -   Doing web development without reactivity is really annoying, so [Sycamore](https://sycamore-rs.netlify.app) is great
 -   Perseus lets you render your app on the server, making the client's experience _really_ fast, and adds a ton of features to make that possible, convenient, and productive (even for really complicated apps)
 
-[repo]: https://github.com/arctic-hen7/perseus
+[repo]: https://github.com/framesurge/perseus
 [crate]: https://crates.io/crates/perseus
 [docs]: https://docs.rs/perseus
 [contrib]: ./CONTRIBUTING.md

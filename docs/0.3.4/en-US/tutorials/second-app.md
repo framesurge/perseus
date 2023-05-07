@@ -2,7 +2,7 @@
 
 This section will cover building a more realistic app than the _Hello World!_ section, with proper structuring and multiple templates.
 
-If learning by reading isn't really your thing, or you'd like a reference, you can see all the code in [this repository](https://github.com/arctic-hen7/perseus/tree/main/examples/core/basic)!
+If learning by reading isn't really your thing, or you'd like a reference, you can see all the code in [this repository](https://github.com/framesurge/perseus/tree/main/examples/core/basic)!
 
 ## Setup
 

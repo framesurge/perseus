@@ -2,7 +2,7 @@
 
 There's one [functional action](:plugins/functional) that's quite special in Perseus: the `tinker` action. This action doesn't run as part of any of the usual processes, and it actually has its own command in the CLI: `perseus tinker`. That's because this action allows plugins to modify the code of the Perseus engine. For example, applying [size optimizations](:deploying/size) is a common requirement in Perseus apps, which means modifying `.perseus/Cargo.toml`. This is the perfect job for a plugin, but if it were done by any other action, you'd be modifying the `Cargo.toml` *after* the code had been compiled, which means the modifications would have no effect until the next run.
 
-The `tinker` action solves this problem by creating its own process that's specifically designed for engine modification and tweaking. Until [#59](https://github.com/arctic-hen7/perseus/issues/59) is resolved, this is how you'd make major modifications to the `.perseus/` engine efficiently.
+The `tinker` action solves this problem by creating its own process that's specifically designed for engine modification and tweaking. Until [#59](https://github.com/framesurge/perseus/issues/59) is resolved, this is how you'd make major modifications to the `.perseus/` engine efficiently.
 
 ## `perseus tinker`
 

@@ -6,7 +6,7 @@ Perseus has a CLI (command line interface) designed to make your life significan
 
 You can install the Perseus CLI by running `cargo install perseus-cli`, it should then be available as `perseus` on your system!
 
-We currently don't provide independent executables installable without `cargo` because you'll need `cargo` and Rust generally to be able to write a Perseus app, and Perseus depends on the `cargo` commands being available, so there's really no point. That said, if you have a use-case for this, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose)!
+We currently don't provide independent executables installable without `cargo` because you'll need `cargo` and Rust generally to be able to write a Perseus app, and Perseus depends on the `cargo` commands being available, so there's really no point. That said, if you have a use-case for this, please [open an issue](https://github.com/framesurge/perseus/issues/new/choose)!
 
 ## Setup
 

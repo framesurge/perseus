@@ -2,7 +2,7 @@
 
 After you've written a plugin, you can either use it locally, or you can publish it to the world on <https://crates.io>, Rust's package registry. That will mean anyone in the world can use it in their own code, and you'll be contributing to the Perseus community! It's usual to name plugins beginning with `perseus-` (e.g. `perseus-size-opt`), but this isn't required.
 
-Perseus also maintains a registry of all plugins that have been published, but we rely on users to let us know about their plugins. You can do this by [opening an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) on the Perseus repository, and we'll be happy to include your project!
+Perseus also maintains a registry of all plugins that have been published, but we rely on users to let us know about their plugins. You can do this by [opening an issue](https://github.com/framesurge/perseus/issues/new/choose) on the Perseus repository, and we'll be happy to include your project!
 
 ## Trusted Plugins
 

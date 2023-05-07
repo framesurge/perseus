@@ -4,7 +4,7 @@ In the introduction to this section, we mentioned that all these rendering strat
 
 ## Usage
 
-Here's an example from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/state_generation/src/templates/amalgamation.rs):
+Here's an example from [here](https://github.com/framesurge/perseus/blob/main/examples/core/state_generation/src/templates/amalgamation.rs):
 
 ```rust
 {{#include ../../../../examples/core/state_generation/src/templates/amalgamation.rs}}

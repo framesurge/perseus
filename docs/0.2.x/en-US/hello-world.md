@@ -80,7 +80,7 @@ The first time you run this command, it can take quite a while to get everything
 
 Once that's done, hop over to <http://localhost:8080> in any modern browser (not Internet Explorer...), and you should see _Hello World!_ printed on the screen! If you try going to <http://localhost:8080/about> or any other page, you should see a message that tells you the page wasn't found.
 
-Congratulations! You've just created your first ever Perseus app! You can see the source code for this section [here](https://github.com/arctic-hen7/perseus/tree/main/examples/tiny).
+Congratulations! You've just created your first ever Perseus app! You can see the source code for this section [here](https://github.com/framesurge/perseus/tree/main/examples/tiny).
 
 ## Moving Forward
 

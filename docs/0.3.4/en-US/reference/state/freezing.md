@@ -6,7 +6,7 @@ Specifically, Perseus achieves this by serializing the global state and the page
 
 ## Example
 
-You can easily imperatively instruct your app to freeze itself like so (see [here](https://github.com/arctic-hen7/perseus/tree/main/examples/core/freezing_and_thawing/src/templates/index.rs)):
+You can easily imperatively instruct your app to freeze itself like so (see [here](https://github.com/framesurge/perseus/tree/main/examples/core/freezing_and_thawing/src/templates/index.rs)):
 
 ```rust
 {{#include ../../../../examples/core/freezing_and_thawing/src/templates/index.rs}}

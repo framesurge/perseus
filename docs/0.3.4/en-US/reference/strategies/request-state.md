@@ -6,7 +6,7 @@ If you can avoid this strategy, do, because it will bring your app's TTFB (time 
 
 ## Usage
 
-Here's an example taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/state_generation/src/templates/request_state.rs) of using this strategy to tell the user their own IP address (albeit not hugely reliably as this header can be trivially spoofed, but this is for demonstration purposes):
+Here's an example taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/state_generation/src/templates/request_state.rs) of using this strategy to tell the user their own IP address (albeit not hugely reliably as this header can be trivially spoofed, but this is for demonstration purposes):
 
 ```rust
 {{#include ../../../../examples/core/state_generation/src/templates/request_state.rs}}

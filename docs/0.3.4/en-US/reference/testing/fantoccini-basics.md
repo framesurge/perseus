@@ -2,7 +2,7 @@
 
 Now that you know a bit more about how Perseus tests work, it's time to go through how to write them!
 
-Remember, you're controlling an actual browser, so you basically have everything available to you that a user can do (mostly). You can even take screenshots! All this is achieved with [Fantoccini](https://github.com/jonhoo/fantoccini), which you can learn more about [here](https://docs.rs/fantoccini). For now though, here's a quick tutorial on the basics, using [this](https://github.com/arctic-hen7/perseus/blob/main/examples/core/basic/tests/main.rs) example:
+Remember, you're controlling an actual browser, so you basically have everything available to you that a user can do (mostly). You can even take screenshots! All this is achieved with [Fantoccini](https://github.com/jonhoo/fantoccini), which you can learn more about [here](https://docs.rs/fantoccini). For now though, here's a quick tutorial on the basics, using [this](https://github.com/framesurge/perseus/blob/main/examples/core/basic/tests/main.rs) example:
 
 ```rust
 {{#include ../../../../examples/core/basic/tests/main.rs}}

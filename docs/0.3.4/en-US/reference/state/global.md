@@ -15,7 +15,7 @@ The role of dark mode comes in in styling that toggle switch mostly, and wheneve
 
 ## Example
 
-All the following examples are taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/global_state).
+All the following examples are taken from [here](https://github.com/framesurge/perseus/blob/main/examples/global_state).
 
 To being with, you'll need to set up a `GlobalStateCreator`, which will look something like this (it's supposed to be fairly similar to the process of generating state for a `Template`, but it currently only supports build-time state generation):
 

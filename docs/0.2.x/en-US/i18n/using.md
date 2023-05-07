@@ -2,7 +2,7 @@
 
 Perseus tries to make it as easy as possible to use translations in your app by exposing the low-level Fluent primitives necessary to work with very complex translations, as well as a `t!` macro that does the basics.
 
-All translations in Perseus are done with an instance of `Translator`, which is provided through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/v0.6/advanced/contexts). Here's an example taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/i18n/src/templates/index.rs):
+All translations in Perseus are done with an instance of `Translator`, which is provided through Sycamore's [context system](https://sycamore-rs.netlify.app/docs/v0.6/advanced/contexts). Here's an example taken from [here](https://github.com/framesurge/perseus/blob/main/examples/i18n/src/templates/index.rs):
 
 ```rust
 {{#include ../../../../examples/i18n/src/templates/index.rs}}

@@ -4,7 +4,7 @@ This document is a list of common pitfalls and known bugs in Perseus, and will b
 
 ## `perseus serve` fails with no error message on Arch Linux
 
-If you're running Arch Linux or a derivative (e.g. Manjaro), you're very likely to encounter a bug in which `perseus serve` stops with no error messages whatsoever, and your app doesn't build properly. This is tracked by [issue #78](https://github.com/arctic-hen7/perseus/issues/78), and is due to an issue in OpenSSL that causes a segmentation fault in `wasm-pack` (see [this issue](https://github.com/rustwasm/wasm-pack/issues/1079)). Right now, the only solution to this is to downgrade `wasm-pack` by running `cargo install wasm-pack --version "0.9.1"`, which seems to fix the problem.
+If you're running Arch Linux or a derivative (e.g. Manjaro), you're very likely to encounter a bug in which `perseus serve` stops with no error messages whatsoever, and your app doesn't build properly. This is tracked by [issue #78](https://github.com/framesurge/perseus/issues/78), and is due to an issue in OpenSSL that causes a segmentation fault in `wasm-pack` (see [this issue](https://github.com/rustwasm/wasm-pack/issues/1079)). Right now, the only solution to this is to downgrade `wasm-pack` by running `cargo install wasm-pack --version "0.9.1"`, which seems to fix the problem.
 
 ## I'm getting JSON error messages...
 
@@ -12,7 +12,7 @@ If an error occurs during `perseus serve`, it's very possible that you'll get er
 
 ## Perseus doesn't work on an M1 Mac
 
-Pending [this PR](https://github.com/rustwasm/wasm-pack/pull/1088), `wasm-pack` doesn't support the M1 Mac, which means Perseus fails. However, you can easily fix this by using the fix explained [here](https://github.com/arctic-hen7/perseus/issues/89), which entails adding the following to `.perseus/Cargo.toml` (you don't need it in your app's, just in `.perseus/`):
+Pending [this PR](https://github.com/rustwasm/wasm-pack/pull/1088), `wasm-pack` doesn't support the M1 Mac, which means Perseus fails. However, you can easily fix this by using the fix explained [here](https://github.com/framesurge/perseus/issues/89), which entails adding the following to `.perseus/Cargo.toml` (you don't need it in your app's, just in `.perseus/`):
 
 ```toml
 [package.metadata.wasm-pack.profile.release]
