@@ -30,7 +30,7 @@
     "index-cta.matrix-button": "Matrix",
     "index-cta.discord-button": "Discord",
     "index-cta.comparisons-button": "Comparisons",
-    "footer.copyright": "© <a href=\"https://github.com/arctic-hen7\" class=\"underline\">arctic-hen7</a> { $years }, see license <a href=\"https://github.com/arctic-hen7/perseus/blob/main/LICENSE\" class=\"underline\">here</a>.",
+    "footer.copyright": "© <a href=\"https://github.com/arctic-hen7\" class=\"underline\">arctic-hen7</a> { $years }, see license <a href=\"https://github.com/framesurge/perseus/blob/main/LICENSE\" class=\"underline\">here</a>.",
     "comparisons-title": "Comparisons to Other Frameworks",
     "comparisons-heading": "Comparisons",
     "comparisons-subtitle": "See how Perseus compares to other web development frameworks.",
