@@ -55,7 +55,6 @@ impl<G: Html> Reactor<G> {
                 held_state
             } else {
                 let global_state_ty = self.global_state.0.borrow();
-                dbg!(&global_state_ty);
                 // We'll get the server-given global state
                 if let GlobalStateType::Server(server_state) = &*global_state_ty {
                     // Fall back to the state we were given, first
