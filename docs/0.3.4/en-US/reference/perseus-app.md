@@ -11,13 +11,13 @@ Currently, `#[perseus::main]` just wraps your function in another one with the n
 
 </details>
 
-The smallest this can reasonably get is a fully self-contained app (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny/src/lib.rs)):
+The smallest this can reasonably get is a fully self-contained app (taken from [here](https://github.com/framesurge/perseus/tree/main/examples/comprehensive/tiny/src/lib.rs)):
 
 ```rust
 {{#include ../../../examples/comprehensive/tiny/src/lib.rs}}
 ```
 
-In a more complex app though, this macro still remains very manageable (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/core/state_generation/src/lib.rs)):
+In a more complex app though, this macro still remains very manageable (taken from [here](https://github.com/framesurge/perseus/tree/main/examples/core/state_generation/src/lib.rs)):
 
 ```rust
 {{#include ../../../examples/core/state_generation/src/lib.rs}}

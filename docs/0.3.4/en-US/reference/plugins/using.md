@@ -1,6 +1,6 @@
 # Using Plugins
 
-The plugins system is designed to be as easy as possible to use, and you can import plugins into your app like so (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/plugins/src/lib.rs)):
+The plugins system is designed to be as easy as possible to use, and you can import plugins into your app like so (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/plugins/src/lib.rs)):
 
 ```rust
 {{#include ../../../../examples/core/plugins/src/lib.rs}}

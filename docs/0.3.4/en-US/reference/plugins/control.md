@@ -6,9 +6,9 @@ Control actions can be considered more powerful than functional actions because 
 
 ## List of Control Actions
 
-Here's a list of all the control actions currently supported by Perseus, which will likely grow over time. You can see these in [this file](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/plugins/control.rs) in the Perseus repository.
+Here's a list of all the control actions currently supported by Perseus, which will likely grow over time. You can see these in [this file](https://github.com/framesurge/perseus/blob/main/packages/perseus/src/plugins/control.rs) in the Perseus repository.
 
-If you'd like to request that a new action, functional or control, be added, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose).
+If you'd like to request that a new action, functional or control, be added, please [open an issue](https://github.com/framesurge/perseus/issues/new/choose).
 
 _Note: there are currently very few control actions, and this list will be expanded over time._
 

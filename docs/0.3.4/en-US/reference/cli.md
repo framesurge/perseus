@@ -28,7 +28,7 @@ Builds your app for production and places it in `pkg/`. You can then upload that
 
 ### `clean`
 
-This command is the solution to just about any problem in your app that doesn't make sense, it deletes the `.perseus/` directory entirely, which should remove any corruptions! If this doesn't work, then the problem is in your code (unless you just updated to a new version and now something doesn't work, then it's probably on us, please [open an issue](https://github.com/arctic-hen7/perseus)!).
+This command is the solution to just about any problem in your app that doesn't make sense, it deletes the `.perseus/` directory entirely, which should remove any corruptions! If this doesn't work, then the problem is in your code (unless you just updated to a new version and now something doesn't work, then it's probably on us, please [open an issue](https://github.com/framesurge/perseus)!).
 
 Note that this command will force Perseus to rebuild `.perseus/` the next time you run `perseus build` or `perseus serve`, which can be annoying in terms of build times. It's almost always sufficient to run this command with the `--dist` flag, which will only delete some content in `.perseus/dist/` that's likely to be problematic.
 
@@ -42,7 +42,7 @@ The Perseus CLI supports watching your local directory for changes when running 
 
 Notably, the CLI spawns another version of itself as a process group (or `JobObject` on Windows) using the [`command-group`](https://github.com/watchexec/command-group) crate, which allows terminations signals to go to all builder child processes. However, this means that the CLI needs to manually handle termination signals to it to terminate the processes in thr group. This means that, if the CLI terminates improperly (e.g. if you `kill` it), you will very likely end up with build jobs running in the background. Those shouldn't be too problematic, and you probably won't even notice them, but a server process could also be orphaned, which would leave a port occupied. If this happens, use `ps aux | grep perseus` to find the process ID, and then `kill` it by that (e.g. `kill 60850`) on Linux. If possible though, avoiding force-terminating the Perseus CLI.
 
-Right now, the CLI's watching systems will ignore `.perseus/`, `target/`, and `.git/`. If you have any other directories that you'd like to ignore, you should use an alternative watching system, like [`entr`](https://github.com/eradman/entr). However, we're willing to add support for this if it's a widely-requested feature, so please feel free to [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) if this affects you!
+Right now, the CLI's watching systems will ignore `.perseus/`, `target/`, and `.git/`. If you have any other directories that you'd like to ignore, you should use an alternative watching system, like [`entr`](https://github.com/eradman/entr). However, we're willing to add support for this if it's a widely-requested feature, so please feel free to [open an issue](https://github.com/framesurge/perseus/issues/new/choose) if this affects you!
 
 Here's an example of watching files with `entr` on Linux:
 

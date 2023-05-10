@@ -8,7 +8,7 @@ Note that, like _build state_, this strategy may be invoked at build-time or whi
 
 ## Usage
 
-Here's the same example as given in the previous section (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/showcase/src/templates/post.rs)), which uses _build paths_ together with _build state_ and _incremental generation_:
+Here's the same example as given in the previous section (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/showcase/src/templates/post.rs)), which uses _build paths_ together with _build state_ and _incremental generation_:
 
 ```rust
 {{#include ../../../../examples/showcase/src/templates/post.rs}}

@@ -14,4 +14,4 @@ If you just want to change the directory in which translations are stored, you c
 
 ## Building a Custom Translations Manager
 
-This is more complex, and you'll need to consult [this file](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/i18n/translations_manager.rs) (note: the client translations manager is very different) in the Perseus source code for guidance. If you're stuck, don't hesitate to ask a question under [discussions](https://github.com/arctic-hen7/perseus/discussions/new) on GitHub!
+This is more complex, and you'll need to consult [this file](https://github.com/framesurge/perseus/blob/main/packages/perseus/src/i18n/translations_manager.rs) (note: the client translations manager is very different) in the Perseus source code for guidance. If you're stuck, don't hesitate to ask a question under [discussions](https://github.com/framesurge/perseus/discussions/new) on GitHub!

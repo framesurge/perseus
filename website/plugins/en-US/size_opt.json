@@ -2,6 +2,6 @@
     "name": "Size Optimizations Plugin",
     "description": "Applies size optimizations automatically to make your app smaller and faster in production.",
     "author": "arctic-hen7",
-    "url": "https://github.com/arctic-hen7/perseus-size-opt",
+    "url": "https://github.com/framesurge/perseus-size-opt",
     "trusted": true
 }

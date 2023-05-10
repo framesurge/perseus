@@ -1,6 +1,6 @@
 # Ejecting
 
-The Perseus CLI is fantastic at enabling rapid and efficient development, but sometimes it can be overly restrictive. If there's a use-case that the CLI doesn't seem to support, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) on GitHub, and we'll look into supporting it out-of-the-box.
+The Perseus CLI is fantastic at enabling rapid and efficient development, but sometimes it can be overly restrictive. If there's a use-case that the CLI doesn't seem to support, please [open an issue](https://github.com/framesurge/perseus/issues/new/choose) on GitHub, and we'll look into supporting it out-of-the-box.
 
 However, there are some things that are too advanced for the CLI to support, and, in those cases, you'll need to eject. Don't worry, you'll still be able to use the CLI itself for running your app, but you'll be given access to the engine that underlies it, and you'll be able to tweak basically anything you want.
 

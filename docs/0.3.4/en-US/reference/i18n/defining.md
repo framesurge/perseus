@@ -1,6 +1,6 @@
 # Defining Translations
 
-The first part of setting up i18n in Perseus is to state that your app uses it, which is done in `PerseusApp` like so (taken from [the i18n example](https://github.com/arctic-hen7/perseus/tree/main/examples/core/i18n)):
+The first part of setting up i18n in Perseus is to state that your app uses it, which is done in `PerseusApp` like so (taken from [the i18n example](https://github.com/framesurge/perseus/tree/main/examples/core/i18n)):
 
 ```rust
 {{#include ../../../../examples/core/i18n/src/lib.rs}}
@@ -18,7 +18,7 @@ Of course, it's hardly optimal to direct users to a pre-translated page if they 
 
 After you've added those definitions to `PerseusApp`, if you try to run your app, you'll find that ever page throws an error because it can't find any of the translations files. These must be defined under `translations/` (which should be NEXT to `/src`, not in it!), though this can be customized (explained later). They must also adhere to the naming format `xx-XX.ftl` (e.g. `en-US.ftl`). `.ftl` is the file extension that [Fluent](https://projectfluent.org) files use, which is the default translations system of Perseus. If you'd like to use a different system, this will be explained later.
 
-Here's an example of a translations file (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/i18n/translations/en-US.ftl)):
+Here's an example of a translations file (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/i18n/translations/en-US.ftl)):
 
 ```fluent
 {{#include ../../../../examples/core/i18n/translations/en-US.ftl}}

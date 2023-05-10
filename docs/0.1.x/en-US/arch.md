@@ -1,6 +1,6 @@
 # Architecture
 
-Perseus is a complex system, and this page will aim to explain the basics in a beginner-friendly way. If you've already used similar frameworks from the JS world like NextJS, then some of this may be familiar to you. If you're having trouble following along, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose) and ask us to clarify some sections, because this page in particular should be accessible to everyone. If you'd like more specific help, [ask on Gitter]()!
+Perseus is a complex system, and this page will aim to explain the basics in a beginner-friendly way. If you've already used similar frameworks from the JS world like NextJS, then some of this may be familiar to you. If you're having trouble following along, please [open an issue](https://github.com/framesurge/perseus/issues/new/choose) and ask us to clarify some sections, because this page in particular should be accessible to everyone. If you'd like more specific help, [ask on Gitter]()!
 
 ## Templates and Pages
 

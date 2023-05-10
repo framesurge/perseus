@@ -16,11 +16,11 @@ The `blog` template will be rendered to `/blog`, and will only use the _build st
 
 The `post` template is more complex, and it will generate _many_ pages, one for each blog post. This would probably use the _build paths_ strategy, which lets you fetch a list of blog posts from the CMS at build-time and invoke _build state_ for each of them, which would then get their content, metadata, etc. Thus, the `post` template generates many pages.
 
-Hopefully that explains the difference between a template and a post. This is a somewhat unintuitive part of Perseus, but it should be clear in the documentation what the difference is. Note however that old versions of the examples in the repository used these terms interchangeably, when they used to be the same. If you see any remaining ambiguity in the docs, please [open an issue](https://github.com/arctic-hen7/perseus/issues/new/choose)!
+Hopefully that explains the difference between a template and a post. This is a somewhat unintuitive part of Perseus, but it should be clear in the documentation what the difference is. Note however that old versions of the examples in the repository used these terms interchangeably, when they used to be the same. If you see any remaining ambiguity in the docs, please [open an issue](https://github.com/framesurge/perseus/issues/new/choose)!
 
 ## Defining a Template
 
-You can define a template like so (taken from [the basic example](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/src/templates/about.rs)'s about page):
+You can define a template like so (taken from [the basic example](https://github.com/framesurge/perseus/blob/main/examples/basic/src/templates/about.rs)'s about page):
 
 ```rust
 {{#include ../../../../examples/basic/src/templates/about.rs}}
@@ -44,10 +44,10 @@ One niche case is defining a route like this: `/<locale>/about`. In this case, t
 
 ### Different Templates in the Same Domain
 
-It's perfectly possible in Perseus to define one template for `/post` (and its children) and a different one for `/post/new`. In fact, this is exactly what [the showcase example](https://github.com/arctic-hen7/perseus/tree/main/examples/showcase) does, and you can check it out for inspiration. This is based on a simple idea: **more specific templates win** the routing contest.
+It's perfectly possible in Perseus to define one template for `/post` (and its children) and a different one for `/post/new`. In fact, this is exactly what [the showcase example](https://github.com/framesurge/perseus/tree/main/examples/showcase) does, and you can check it out for inspiration. This is based on a simple idea: **more specific templates win** the routing contest.
 
 There is one use-case though that requires a bit more fiddling: having a different template for the root path. A very common use-case for this would be having one template for `/posts`'s children (one URl for each blog post) and a different template for `/posts` itself that lists all available posts. Currently, the only way to do this is to define a property on the `posts` template that will be `true` if you're rendering for that root, and then to conditionally render the list of posts. Otherwise, you would render the given post content. This does require a lot of `Option<T>`s, but they could be safely unwrapped (data passing in Perseus is logical and safe).
 
 ## Checking Render Context
 
-> This feature is currently in development, the tracking issue is available [here](https://github.com/arctic-hen7/perseus/issues/26).
+> This feature is currently in development, the tracking issue is available [here](https://github.com/framesurge/perseus/issues/26).

@@ -6,7 +6,7 @@ To avoid this, many modern frameworks support a loading bar at the top of the pa
 
 ## Usage
 
-This example (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/router_state/src/templates/index.rs)) shows using router state to create a simple indicator of the router's current state, though this could easily be extended into a progress bar, loading indicator, or the like.
+This example (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/router_state/src/templates/index.rs)) shows using router state to create a simple indicator of the router's current state, though this could easily be extended into a progress bar, loading indicator, or the like.
 
 ```rust
 {{#include ../../../../examples/core/router_state/src/templates/index.rs}}

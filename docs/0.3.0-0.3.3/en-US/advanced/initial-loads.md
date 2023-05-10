@@ -20,4 +20,4 @@ The process of initial loads is slightly complex, and occurs like so (this examp
 
 Note: if this app had used i18n, the server would've returned the app shell with no content, and the app shell, when invoked, would've immediately redirected the user to their preferred locale (or the closest equivalent).
 
-The two files integral to this process are [`initial_load.rs`](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus-actix-web/src/initial_load.rs) and [`shell.rs`](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/shell.rs).
+The two files integral to this process are [`initial_load.rs`](https://github.com/framesurge/perseus/blob/main/packages/perseus-actix-web/src/initial_load.rs) and [`shell.rs`](https://github.com/framesurge/perseus/blob/main/packages/perseus/src/shell.rs).

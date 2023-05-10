@@ -17,4 +17,4 @@ if the user follows a link inside a Perseus app to another page within that same
 13. App shell initializes translator if the app is using i18n.
 14. App shell hydrates content at `__perseus_content_rx`, page is now interactive.
 
-The two files integral to this process are [`page_data.rs`](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus-actix-web/src/page_data.rs) and [`shell.rs`](https://github.com/arctic-hen7/perseus/blob/main/packages/perseus/src/shell.rs).
+The two files integral to this process are [`page_data.rs`](https://github.com/framesurge/perseus/blob/main/packages/perseus-actix-web/src/page_data.rs) and [`shell.rs`](https://github.com/framesurge/perseus/blob/main/packages/perseus/src/shell.rs).

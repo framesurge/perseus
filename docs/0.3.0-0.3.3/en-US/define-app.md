@@ -2,13 +2,13 @@
 
 The core of Perseus is how it interacts with the CLI, which acts as the engine that runs your code. The bridge between these two systems is the `define_app!` macro, which accepts a number of options that define your app.
 
-The smallest this can reasonably get is a fully self-contained app (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/tiny/src/lib.rs)):
+The smallest this can reasonably get is a fully self-contained app (taken from [here](https://github.com/framesurge/perseus/tree/main/examples/tiny/src/lib.rs)):
 
 ```rust
 {{#include ../../../examples/tiny/src/lib.rs}}
 ```
 
-In a more complex app though, this macro still remains very manageable (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/showcase/src/lib.rs)):
+In a more complex app though, this macro still remains very manageable (taken from [here](https://github.com/framesurge/perseus/tree/main/examples/showcase/src/lib.rs)):
 
 ```rust
 {{#include ../../../examples/showcase/src/lib.rs}}
@@ -36,7 +36,7 @@ Here's a list of everything you can provide to the macro and what each one does 
 
 There's only one other file that the `define_app!` macro expects to exist: `index.html`. Note that any content in the `<head>` of this will be on every page, above anything inserted by the template.
 
-Here's an example of this file (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/basic/index.html)):
+Here's an example of this file (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/basic/index.html)):
 
 ```html
 {{#include ../../../examples/basic/index.html}}

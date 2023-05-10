@@ -2,13 +2,13 @@
 
 Perseus used to be configured through a macro rather than through `PerseusApp`: `define_app!`. For now, this is still supported, but it will be removed in the next major release. If you're still using `define_app!`, you should switch to `PerseusApp` when possible. Note also that `define_app!` is now simply a wrapper for `PerseusApp`.
 
-The smallest this can reasonably get is a fully self-contained app (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/comprehensive/tiny/src/lib.rs)):
+The smallest this can reasonably get is a fully self-contained app (taken from [here](https://github.com/framesurge/perseus/tree/main/examples/comprehensive/tiny/src/lib.rs)):
 
 ```rust
 {{#include ../../../examples/comprehensive/tiny/src/lib.rs}}
 ```
 
-In a more complex app though, this macro still remains very manageable (taken from [here](https://github.com/arctic-hen7/perseus/tree/main/examples/core/state_generation/src/lib.rs)):
+In a more complex app though, this macro still remains very manageable (taken from [here](https://github.com/framesurge/perseus/tree/main/examples/core/state_generation/src/lib.rs)):
 
 ```rust
 {{#include ../../../examples/core/state_generation/src/lib.rs}}
@@ -36,7 +36,7 @@ Here's a list of everything you can provide to the macro and what each one does 
 
 There's only one other file that the `define_app!` macro expects to exist: `index.html`. Note that any content in the `<head>` of this will be on every page, above anything inserted by the template.
 
-Here's an example of this file (taken from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/basic/index.html)):
+Here's an example of this file (taken from [here](https://github.com/framesurge/perseus/blob/main/examples/core/basic/index.html)):
 
 ```html
 {{#include ../../../examples/core/basic/index.html}}

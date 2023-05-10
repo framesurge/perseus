@@ -16,7 +16,7 @@ You can also provide `--no-build` to this command to make it skip building your 
 
 ### `clean`
 
-This command is the solution to just about any problem in your app that doesn't make sense, it deletes the `.perseus/` directory entirely, which should remove any corruptions! If this doesn't work, then the problem is in your code (unless you just updated to a new version and now something doesn't work, then it's probably on us, please [open an issue](https://github.com/arctic-hen7/perseus)!).
+This command is the solution to just about any problem in your app that doesn't make sense, it deletes the `.perseus/` directory entirely, which should remove any corruptions! If this doesn't work, then the problem is in your code (unless you just updated to a new version and now something doesn't work, then it's probably on us, please [open an issue](https://github.com/framesurge/perseus)!).
 
 Note that this command will force Perseus to rebuild `.perseus/` the next time you run `perseus build` or `perseus serve`, which can be annoying in terms of build times. It's almost always sufficient to run this command with the `--dist` flag, which will only delete some content in `.perseus/dist/` that's likely to be problematic.
 

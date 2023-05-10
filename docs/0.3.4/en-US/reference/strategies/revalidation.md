@@ -6,7 +6,7 @@ There are two types of revalidation: time-based and logic-based. The former lets
 
 ## Time-Based Revalidation Usage
 
-Here's an example of time-based revalidation from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/state_generation/src/templates/revalidation_and_incremental_generation.rs) (note that this uses _incremental generation_ as well):
+Here's an example of time-based revalidation from [here](https://github.com/framesurge/perseus/blob/main/examples/core/state_generation/src/templates/revalidation_and_incremental_generation.rs) (note that this uses _incremental generation_ as well):
 
 ```rust
 {{#include ../../../../examples/core/state_generation/src/templates/revalidation_and_incremental_generation.rs}}
@@ -28,7 +28,7 @@ Perseus uses a very simple syntax inspired by [this JavaScript project](https://
 
 ## Logic-Based Revalidation Usage
 
-Here's an example of logic-based revalidation from [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/state_generation/src/templates/revalidation.rs) (actually, this example uses both types of revalidation):
+Here's an example of logic-based revalidation from [here](https://github.com/framesurge/perseus/blob/main/examples/core/state_generation/src/templates/revalidation.rs) (actually, this example uses both types of revalidation):
 
 ```rust
 {{#include ../../../../examples/core/state_generation/src/templates/revalidation.rs}}

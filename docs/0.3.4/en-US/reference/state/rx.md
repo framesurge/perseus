@@ -16,7 +16,7 @@ You may be wondering what the benefits of having a reactive state are. Well, the
 
 ## Example
 
-This can all be a bit hard to imagine, so here's how it looks in practice with a simple state involving a `username` that the user can type in, and then it'll be displayed back to them. You can see the source [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/rx_state/src/templates/index.rs).
+This can all be a bit hard to imagine, so here's how it looks in practice with a simple state involving a `username` that the user can type in, and then it'll be displayed back to them. You can see the source [here](https://github.com/framesurge/perseus/blob/main/examples/core/rx_state/src/templates/index.rs).
 
 ```rust
 {{#include ../../../../examples/core/rx_state/src/templates/index.rs}}
@@ -28,7 +28,7 @@ The only particularly unergonomic thing here is that we have to `.clone()` the `
 
 Because every template that uses this pattern will have its state added to a special *page state store*, you can actually access the state of another page quite easily. However, you must be careful doing this, because the other page's state will only be available if it's been loaded by the user. On the server, every page is loaded in its own little silo to prevent corruption, so no other page will ever have been 'loaded'. As for in the browser, you might design an app in which it's only possible to get to a certain page by going through another, but you still can't assume that that page has been loaded, because [state freezing](:reference/state/freezing) can let a user pick up from any page in your app, and such special rendering flows will be shattered.
 
-All that said, you can access another page's state like so (see [here](https://github.com/arctic-hen7/perseus/blob/main/examples/core/rx_state/src/templates/about.rs)):
+All that said, you can access another page's state like so (see [here](https://github.com/framesurge/perseus/blob/main/examples/core/rx_state/src/templates/about.rs)):
 
 ```rust
 {{#include ../../../../examples/core/rx_state/src/templates/about.rs}}
