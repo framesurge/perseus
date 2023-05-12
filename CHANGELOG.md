@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/framesurge/perseus/compare/v0.4.0...v0.4.1) (2023-05-12)
+
+
+### Bug Fixes
+
+* **cli:** fixed aarch64 downloads on m2 macs ([#286](https://github.com/framesurge/perseus/issues/286)) ([cbc6faf](https://github.com/framesurge/perseus/commit/cbc6fafad9b8ee3d5437b23e07a192eb7f1bb6f5))
+* prevented global state caching on engine-side ([23e6deb](https://github.com/framesurge/perseus/commit/23e6deb813c33089d884f9746205a2824bdd522f)), closes [#280](https://github.com/framesurge/perseus/issues/280)
+* removed `dbg!` statement ([9f885a9](https://github.com/framesurge/perseus/commit/9f885a9331a9f197eb342bb57875fd30a43a23c3))
+
+
+### Documentation Changes
+
+* added `--locked` flag for v0.3.x installation ([#274](https://github.com/framesurge/perseus/issues/274)) ([2708508](https://github.com/framesurge/perseus/commit/27085082a39e902a57f5747d2c4b084edf1da3bc))
+* fixed several typos ([#272](https://github.com/framesurge/perseus/issues/272)) ([2fb434b](https://github.com/framesurge/perseus/commit/2fb434bb52eb422bde8db5ffa649d4ad94a8432e))
+* fixed typo ([#271](https://github.com/framesurge/perseus/issues/271)) ([4993025](https://github.com/framesurge/perseus/commit/49930255c8551e7340623cbaca9931cbd0d2f79b))
+* updated all references to v0.4 being in beta ([6763c0c](https://github.com/framesurge/perseus/commit/6763c0c347e0379552fc698a0ed84d48d04ab93d))
+
 ## [0.4.0](https://github.com/framesurge/perseus/compare/v0.4.0-rc.1...v0.4.0) (2023-04-09)
 
 
