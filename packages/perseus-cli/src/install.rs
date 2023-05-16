@@ -266,7 +266,7 @@ impl Tool {
             }
             // MacOS (Apple Silicon)
             ToolType::WasmBindgen if cfg!(target_os = "macos") && cfg!(target_arch = "aarch64") => {
-                Some("wasm-bindgen-%version-a   arch64-apple-darwin")
+                Some("wasm-bindgen-%version-aarch64-apple-darwin")
             }
             // Windows
             ToolType::WasmBindgen
