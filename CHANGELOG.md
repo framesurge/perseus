@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.2](https://github.com/framesurge/perseus/compare/v0.4.1...v0.4.2) (2023-05-17)
+
+
+### Bug Fixes
+
+* critical typo in cli arch scanning ([#291](https://github.com/framesurge/perseus/issues/291)) ([dfe92ba](https://github.com/framesurge/perseus/commit/dfe92ba4fefa80788866b2a9e4633403db553154))
+
+
+### Documentation Changes
+
+* add missing links to Cranelift ([#273](https://github.com/framesurge/perseus/issues/273)) ([df922df](https://github.com/framesurge/perseus/commit/df922df1f6001a8a5e5012c234a9ed52ad2ea334))
+
 ### [0.4.1](https://github.com/framesurge/perseus/compare/v0.4.0...v0.4.1) (2023-05-12)
 
 

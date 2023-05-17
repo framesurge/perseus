@@ -1,6 +1,6 @@
 [package]
 name = "perseus-rocket"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 description = "An integration that makes the Perseus framework easy to use with Rocket."
 authors = ["Miroito <alban.vachette@gmail.com", "arctic_hen7 <arctic_hen7@pm.me>"]
@@ -12,7 +12,7 @@ keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
 categories = ["wasm", "web-programming::http-server", "development-tools", "asynchronous", "gui"]
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.4.1"}
+perseus = { path = "../perseus", version = "0.4.2"}
 rocket = "0.5.0-rc.2"
 
 [features]
