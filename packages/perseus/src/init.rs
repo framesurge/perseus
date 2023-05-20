@@ -1,7 +1,5 @@
 #[cfg(engine)]
 use crate::server::HtmlShell;
-#[cfg(engine)]
-use crate::utils::get_path_prefix_server;
 use crate::{
     error_views::ErrorViews,
     i18n::{Locales, TranslationsManager},
@@ -824,10 +822,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
         root: &str,
         render_cfg: &HashMap<String, String>,
         plugins: &Plugins,
+        path_prefix_server: &str,
     ) -> Result<HtmlShell, PluginError> {
         // Construct an HTML shell
-        let mut html_shell =
-            HtmlShell::new(index_view_str, root, render_cfg, &get_path_prefix_server());
+        let mut html_shell = HtmlShell::new(index_view_str, root, render_cfg, path_prefix_server);
 
         // Apply the myriad plugin actions to the HTML shell (replacing the whole thing
         // first if need be)

@@ -111,6 +111,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             &self.root_id,
             &self.render_cfg,
             &self.plugins,
+            self.get_path_prefix_server().as_ref(),
         )
         .await?;
         self.html_shell = Some(html_shell);

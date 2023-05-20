@@ -68,6 +68,8 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// The app's global state, kept cached throughout the build process because
     /// every template we build will need access to it through context.
     global_state: TemplateState,
+    /// Custom URL path prefix for perseus.
+    pub path_prefix_server: Option<String>,
     /// The HTML shell that can be used for constructing the full pages this app
     /// returns.
     html_shell: Option<HtmlShell>,
@@ -114,6 +116,7 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M,
             render_cfg: HashMap::new(),
             // This will be immediately overriden
             global_state: TemplateState::empty(),
+            path_prefix_server: None,
             html_shell: None,
         })
     }
@@ -145,10 +148,29 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             &self.root_id,
             &self.render_cfg,
             &self.plugins,
+            self.get_path_prefix_server().as_ref(),
         )
         .await?;
         self.html_shell = Some(html_shell);
 
         Ok(())
+    }
+
+    /// Gets the path prefix to apply on the server. If `path_prefix_server` is not set
+    /// on `Turbine`, `PERSEUS_BASE_PATH` environment variable is used to resolve,
+    /// which avoids hardcoding something as changeable as this into the final binary.
+    /// Hence however, that variable must be the same as what's set in `<base>`
+    /// (done automatically).
+    /// Trailing forward slashes will be trimmed automatically.
+    #[cfg(engine)]
+    pub fn get_path_prefix_server(&self) -> String {
+        self.path_prefix_server.clone().unwrap_or_else(|| {
+            use std::env;
+            let base_path = env::var("PERSEUS_BASE_PATH").unwrap_or_else(|_| "".to_string());
+            base_path
+                .strip_suffix('/')
+                .unwrap_or(&base_path)
+                .to_string()
+        })
     }
 }
