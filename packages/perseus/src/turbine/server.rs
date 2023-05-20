@@ -8,7 +8,6 @@ use crate::{
     server::get_path_slice,
     state::TemplateState,
     stores::MutableStore,
-    utils::get_path_prefix_server,
     Request,
 };
 use fmterr::fmt_err;
@@ -309,7 +308,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         // bundle will do.
                         &format!(
                             "{}/{}/{}",
-                            get_path_prefix_server(),
+                            self.get_path_prefix_server(),
                             &self.locales.default,
                             // This is a `PathWithoutLocale`
                             redirect_path.0,

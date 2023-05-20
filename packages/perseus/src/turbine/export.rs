@@ -7,7 +7,6 @@ use crate::{
     plugins::PluginAction,
     state::TemplateState,
     stores::MutableStore,
-    utils::get_path_prefix_server,
 };
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use futures::future::{try_join, try_join_all};
@@ -105,7 +104,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // We assume we've already built the app, which would have populated this
         let html_shell = self.html_shell.as_ref().unwrap();
 
-        let path_prefix = get_path_prefix_server();
+        let path_prefix = self.get_path_prefix_server();
         // We need the encoded path to reference flattened build artifacts
         // But we don't create a flattened system with exporting, everything is properly
         // created in a directory structure
