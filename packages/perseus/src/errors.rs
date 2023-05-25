@@ -263,7 +263,7 @@ pub enum ServerError {
     },
     // We should only get a failure to minify if the user has given invalid HTML, or if Sycamore
     // stuffed up somewhere
-    #[error("failed to minify html (you can disable the `minify` flag to avoid this; this is very likely a Sycamore bug, unless you've provided invalid custom HTML)")]
+    #[error("failed to minify html (this is usually caused by semantically invalid html, see https://framesurge.sh/perseus/en-US/docs/0.4.x/faq for details of this problem and how to fix it)")]
     MinifyError {
         #[source]
         source: std::io::Error,
