@@ -91,6 +91,37 @@ where
     }
 }
 
+async fn perseus_localized_initial_consts<'r, M, T>(
+    req: &'r Request<'_>,
+    turbine: &Turbine<M, T>,
+) -> Outcome<'r>
+where
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
+{
+    match req.routed_segment(1) {
+        Some(locale) => {
+            let locale = match locale.strip_suffix(".js") {
+                Some(locale) => locale,
+                None => return Outcome::Failure(Status::BadRequest),
+            };
+            Outcome::from(req, ApiResponse(turbine.get_initial_consts(locale).await))
+        }
+        _ => Outcome::Failure(Status::BadRequest),
+    }
+}
+
+async fn perseus_unlocalized_initial_consts<'r, M, T>(
+    req: &'r Request<'_>,
+    turbine: &Turbine<M, T>,
+) -> Outcome<'r>
+where
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
+{
+    Outcome::from(req, ApiResponse(turbine.get_initial_consts("").await))
+}
+
 async fn perseus_initial_load_handler<'r, M, T>(
     req: &'r Request<'_>,
     turbine: &Turbine<M, T>,
@@ -172,6 +203,8 @@ where
 #[derive(Clone)]
 enum PerseusRouteKind<'a> {
     Locale,
+    LocalizedInitialConsts,
+    UnlocalizedInitialConsts,
     StaticAlias(&'a String),
     IntialLoadHandler,
     SubsequentLoadHandler,
@@ -196,6 +229,12 @@ where
     async fn handle<'r>(&self, req: &'r Request<'_>, _data: Data<'r>) -> Outcome<'r> {
         match self.perseus_route {
             PerseusRouteKind::Locale => perseus_locale(req, self.turbine).await,
+            PerseusRouteKind::LocalizedInitialConsts => {
+                perseus_localized_initial_consts(req, self.turbine).await
+            }
+            PerseusRouteKind::UnlocalizedInitialConsts => {
+                perseus_unlocalized_initial_consts(req, self.turbine).await
+            }
             PerseusRouteKind::StaticAlias(static_alias) => {
                 perseus_static_alias(req, static_alias).await
             }
@@ -237,6 +276,22 @@ where
             perseus_route: PerseusRouteKind::Locale,
         },
     );
+    let get_localized_initial_consts = Route::new(
+        Method::Get,
+        "/initial_consts/<path>", // Rocket doesn't seem to let us add `.js` here
+        RocketHandlerWithTurbine {
+            turbine,
+            perseus_route: PerseusRouteKind::LocalizedInitialConsts,
+        },
+    );
+    let get_unlocalized_initial_consts = Route::new(
+        Method::Get,
+        "/initial_consts.js",
+        RocketHandlerWithTurbine {
+            turbine,
+            perseus_route: PerseusRouteKind::UnlocalizedInitialConsts,
+        },
+    );
 
     // Since this route matches everything, its rank has been set to 100,
     // That means that it will be used after routes that have a rank inferior to 100
@@ -262,7 +317,12 @@ where
 
     let mut perseus_routes: Vec<Route> =
         routes![get_js_bundle, get_wasm_js_bundle, get_wasm_bundle];
-    perseus_routes.append(&mut vec![get_locale, get_subsequent_load_handler]);
+    perseus_routes.append(&mut vec![
+        get_locale,
+        get_subsequent_load_handler,
+        get_unlocalized_initial_consts,
+        get_localized_initial_consts,
+    ]);
 
     let mut app = rocket::build()
         .manage(opts.clone())
