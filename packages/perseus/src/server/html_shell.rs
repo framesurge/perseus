@@ -2,7 +2,6 @@ use crate::error_views::ServerErrorData;
 use crate::page_data::PageData;
 use crate::state::TemplateState;
 use crate::utils::minify;
-use std::collections::HashMap;
 use std::{env, fmt};
 
 /// Escapes special characters in page data that might interfere with JavaScript
@@ -63,23 +62,9 @@ pub(crate) struct HtmlShell {
 impl HtmlShell {
     /// Initializes the HTML shell by interpolating necessary scripts into it
     /// and adding the render configuration.
-    pub(crate) fn new(
-        shell: String,
-        root_id: &str,
-        render_cfg: &HashMap<String, String>,
-        path_prefix: &str,
-    ) -> Self {
+    pub(crate) fn new(shell: String, root_id: &str, path_prefix: &str) -> Self {
         let mut head_before_boundary = Vec::new();
         let mut scripts_before_boundary = Vec::new();
-
-        // Define the render config as a global variable
-        let render_cfg = format!(
-            "window.__PERSEUS_RENDER_CFG = `{render_cfg}`;",
-            // It's safe to assume that something we just deserialized will serialize again in this
-            // case
-            render_cfg = serde_json::to_string(render_cfg).unwrap()
-        );
-        scripts_before_boundary.push(render_cfg);
 
         // Inject a global variable to identify whether we are testing (picked up by app
         // shell to trigger helper DOM events)
@@ -96,6 +81,10 @@ impl HtmlShell {
         // better experience).
         //
         // This feature is heavily opinionated, and should not be enabled by default.
+        //
+        // This is injected directly, rather than through a separate JS file, in
+        // order to ensure it captures *all* user interactions from the moment the
+        // user can see the page. In this case, we actually want to block.
         #[cfg(feature = "suspended-interaction")]
         let suspend_script = r#"
         window.__PERSEUS_SUSPENDED = true;
@@ -127,12 +116,27 @@ impl HtmlShell {
         //
         // Note: because we're using binary bundles, we don't need to import
         // a `main` function or the like, `init()` just works
+        //
+        // Using a `Promise` to wait for the render config to resolve means we
+        // avoid blocking the main thread, so failures will just leave the page
+        // uninteractive, rather than unresponsive.
         #[cfg(not(feature = "wasm2js"))]
         let load_wasm_bundle = format!(
             r#"
         import init from "{path_prefix}/.perseus/bundle.js";
         async function main() {{
-            await init("{path_prefix}/.perseus/bundle.wasm");
+            new Promise((resolve) => {{
+                const checker = () => {{
+                    if (window.__PERSEUS_RENDER_CFG !== undefined) {{
+                        resolve();
+                    }} else {{
+                        setTimeout(checker, 10);
+                    }}
+                }};
+                checker();
+            }}).then(async () => {{
+                await init("{path_prefix}/.perseus/bundle.wasm");
+            }});
         }}
         main();
 
@@ -145,7 +149,18 @@ impl HtmlShell {
             r#"
         import init from "{path_prefix}/.perseus/bundle.js";
         async function main() {{
-            await init("{path_prefix}/.perseus/bundle.wasm.js");
+            new Promise((resolve) => {{
+                const checker = () => {{
+                    if (window.__PERSEUS_RENDER_CFG !== undefined) {{
+                        resolve();
+                    }} else {{
+                        setTimeout(checker, 10);
+                    }}
+                }};
+                checker();
+            }}).then(async () => {{
+                await init("{path_prefix}/.perseus/bundle.wasm");
+            }});
         }}
         main();
 
@@ -209,7 +224,6 @@ impl HtmlShell {
         page_data: &PageData,
         global_state: &TemplateState,
         locale: &str,
-        translations: &str,
     ) -> Self {
         self.locale = locale.to_string();
         // Interpolate a global variable of the state so the app shell doesn't have to
@@ -221,7 +235,6 @@ impl HtmlShell {
         let initial_widget_states =
             escape_page_data(&serde_json::to_string(&page_data.widget_states).unwrap());
         let global_state = escape_page_data(&global_state.state.to_string());
-        let translations = escape_page_data(translations);
 
         // We put this at the very end of the head (after the delimiter comment) because
         // it doesn't matter if it's expunged on subsequent loads
@@ -237,13 +250,18 @@ impl HtmlShell {
         // and not need this after the initial load)
         let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
         self.scripts_before_boundary.push(global_state);
-        // We can put the translations after the boundary, because we'll only need them
-        // on the first page, and then they'll be automatically cached
+
+        // Now import the constants we'll need for the initial load of this locale
+        // (i.e. render config and translations)
         //
-        // Note that we don't need to interpolate the locale, since that's trivially
-        // known from the URL
-        let translations = format!("window.__PERSEUS_TRANSLATIONS = `{}`;", translations);
-        self.scripts_after_boundary.push(translations);
+        // We can put all this after the boundary, because everything will be
+        // automatically cached for later use
+        let consts_import = format!(
+            "<script src=\".perseus/initial_consts/{}.js\"></script>",
+            locale
+        );
+        self.head_after_boundary.push(consts_import);
+
         // Interpolate the document `<head>` (this should of course be removed between
         // page loads)
         self.head_after_boundary.push((&page_data.head).into());
@@ -278,6 +296,10 @@ impl HtmlShell {
         let global_state = escape_page_data(&global_state.state.to_string());
         let global_state = format!("window.__PERSEUS_GLOBAL_STATE = `{}`;", global_state);
         self.scripts_before_boundary.push(global_state);
+
+        // We also still have to inject an unlocalized render config
+        self.head_after_boundary
+            .push("<script src=\".perseus/initial_consts.js\"></script>".to_string());
 
         // This will be used if JavaScript is completely disabled (it's then the site's
         // responsibility to show a further message)
@@ -347,10 +369,18 @@ impl HtmlShell {
         error_html: &str,
         error_head: &str,
         locale: Option<String>, // For internal convenience
-        translations_str: Option<&str>,
     ) -> Self {
+        // If we have a locale, we'll use the localized JS constants
         if let Some(locale) = locale {
+            let consts_import = format!(
+                "<script src=\".perseus/initial_consts/{}.js\"></script>",
+                &locale
+            );
+            self.head_after_boundary.push(consts_import);
             self.locale = locale;
+        } else {
+            self.head_after_boundary
+                .push("<script src=\".perseus/initial_consts.js\"></script>".to_string());
         }
 
         let error = serde_json::to_string(error_page_data).unwrap();
@@ -359,11 +389,6 @@ impl HtmlShell {
             escape_page_data(&error),
         );
         self.scripts_after_boundary.push(state_var);
-
-        if let Some(translations) = translations_str {
-            let translations = format!("window.__PERSEUS_TRANSLATIONS = `{}`;", translations);
-            self.scripts_after_boundary.push(translations);
-        }
 
         self.head_after_boundary.push(error_head.to_string());
         self.content = error_html.into();

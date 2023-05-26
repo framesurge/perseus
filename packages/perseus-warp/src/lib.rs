@@ -106,6 +106,14 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         warp::path!(".perseus" / "translations" / String).then(move |locale: String| async move {
             ApiResponse(turbine.get_translations(&locale).await)
         });
+    let localized_initial_consts = warp::path!(".perseus" / "initial_consts" / String).then(
+        move |locale: String| async move {
+            let locale = locale.strip_suffix(".js").unwrap_or(&locale);
+            ApiResponse(turbine.get_initial_consts(&locale).await)
+        },
+    );
+    let unlocalized_initial_consts = warp::path!(".perseus" / "initial_consts.js")
+        .then(move || async move { ApiResponse(turbine.get_initial_consts("").await) });
     let page_data = warp::path!(".perseus" / "page" / String / ..)
         .and(warp::path::tail())
         .and(warp::query::<SubsequentLoadQueryParams>())
@@ -172,6 +180,8 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
         .or(static_dir)
         .or(static_aliases)
         .or(translations)
+        .or(localized_initial_consts)
+        .or(unlocalized_initial_consts)
         .or(page_data)
         .or(initial_loads)
 }

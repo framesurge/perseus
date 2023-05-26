@@ -822,12 +822,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     pub(crate) async fn get_html_shell(
         index_view_str: String,
         root: &str,
-        render_cfg: &HashMap<String, String>,
         plugins: &Plugins,
     ) -> Result<HtmlShell, PluginError> {
         // Construct an HTML shell
-        let mut html_shell =
-            HtmlShell::new(index_view_str, root, render_cfg, &get_path_prefix_server());
+        let mut html_shell = HtmlShell::new(index_view_str, root, &get_path_prefix_server());
 
         // Apply the myriad plugin actions to the HTML shell (replacing the whole thing
         // first if need be)

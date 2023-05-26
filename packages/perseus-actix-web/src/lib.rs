@@ -95,6 +95,19 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
                 }),
             )
             .route(
+                "/.perseus/initial_consts/{locale}.js",
+                web::get().to(move |http_req: HttpRequest| async move {
+                    let locale = http_req.match_info().query("locale");
+                    ApiResponse(turbine.get_initial_consts(locale).await)
+                })
+            )
+            .route(
+                "/.perseus/initial_consts.js",
+                web::get().to(move || async move {
+                    ApiResponse(turbine.get_initial_consts("").await)
+                })
+            )
+            .route(
                 // We capture the `.json` ending in the handler
                 "/.perseus/page/{locale}/{filename:.*}",
                 web::get().to(move |http_req: HttpRequest, web::Query(query_params): web::Query<SubsequentLoadQueryParams>| async move {
