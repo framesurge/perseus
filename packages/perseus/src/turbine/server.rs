@@ -247,7 +247,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         return self.html_err(
                             err_to_status_code(&err),
                             fmt_err(&err),
-                            Some((&translator, &translations_str)),
+                            Some(&translator),
                         )
                     }
                 };
@@ -257,7 +257,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     .as_ref()
                     .unwrap()
                     .clone()
-                    .page_data(&page_data, &global_state, &locale, &translations_str)
+                    .page_data(&page_data, &global_state, &locale)
                     .to_string();
                 // NOTE: Yes, the user can fully override the content type...I have yet to find
                 // a good use for this given the need to generate a `View`
@@ -276,7 +276,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                         return self.html_err(
                             err_to_status_code(&err),
                             fmt_err(&err),
-                            Some((&translator, &translations_str)),
+                            Some(&translator),
                         )
                     }
                 };
@@ -348,13 +348,18 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                     Err(err) => return self.html_err(500, fmt_err(&err), None),
                 };
 
-                self.html_err(
-                    404,
-                    "page not found".to_string(),
-                    Some((&translator, &translations_str)),
-                )
+                self.html_err(404, "page not found".to_string(), Some(&translator))
             }
         }
+    }
+    /// Provides the JS file of initial constants.
+    pub async fn get_initial_consts(&self, locale: &str) -> ApiResponse {
+        let js_file = match self.initial_consts_js(locale).await {
+            Ok(js) => js,
+            Err(err) => return ApiResponse::err(StatusCode::INTERNAL_SERVER_ERROR, &fmt_err(&err)),
+        };
+
+        ApiResponse::ok(&js_file).content_type("text/javascript")
     }
 
     // TODO If we ever support error headers, this would be the place to do it; PRs
@@ -365,12 +370,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     ///
     /// # Panics
     /// This will panic implicitly if the given status code is invalid.
-    fn html_err(
-        &self,
-        status: u16,
-        msg: String,
-        i18n_data: Option<(&Translator, &str)>,
-    ) -> ApiResponse {
+    fn html_err(&self, status: u16, msg: String, i18n_data: Option<&Translator>) -> ApiResponse {
         let err_data = ServerErrorData { status, msg };
         let html = self.build_error_page(err_data, i18n_data);
         // This can construct a 404 if needed

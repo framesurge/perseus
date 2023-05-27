@@ -43,7 +43,12 @@ make_async_trait!(
 
 #[cfg(engine)]
 make_async_trait!(
-    GlobalStateBuildUserFnType< S: Serialize + DeserializeOwned + MakeRx, V: Into< GeneratorResult<S> > >,
+    GlobalStateBuildUserFnType<
+        S: Serialize + DeserializeOwned + MakeRx,
+        V: Into<
+        GeneratorResult<S>
+        >,
+    >,
     V
 );
 #[cfg(engine)]
