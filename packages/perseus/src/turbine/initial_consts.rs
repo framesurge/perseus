@@ -36,7 +36,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 .await;
             let translations = match translations {
                 Ok(translations) => translations,
-                Err(err) => todo!(),
+                Err(err) => return Err(err.into()),
             };
             // This is safe to unwrap, we know it will serialize
             let render_cfg = serde_json::to_string(&self.render_cfg).unwrap();
