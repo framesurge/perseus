@@ -88,8 +88,12 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             get(move || async move { ApiResponse(turbine.get_initial_consts("").await) }),
         )
         .route(
-            "/.perseus/initial_consts/:locale.js",
+            "/.perseus/initial_consts/:locale",
             get(move |Path(locale): Path<String>| async move {
+                let locale = match locale.strip_suffix(".js") {
+                    Some(locale) => locale,
+                    None => return ApiResponse(PerseusApiResponse::err(StatusCode::BAD_REQUEST, "invalid locale (needs `.js` extension)")),
+                };
                 ApiResponse(turbine.get_initial_consts(&locale).await)
             }),
         )
