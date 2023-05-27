@@ -6,6 +6,8 @@
 [![Top Language](https://img.shields.io/github/languages/top/framesurge/perseus?style=for-the-badge)]()
 [![Discord Chat](https://img.shields.io/discord/820400041332179004?label=Discord&style=for-the-badge)](https://discord.gg/PgwPn7dKEk)
 
+> **WARNING:** This branch is highly experimental, and it's advised that Rust programmers work with the `main` branch or published v0.4.x versions of Perseus at the moment!
+
 Perseus is a blazingly fast frontend web development framework built in Rust with support for generating page state at build-time, request-time, incrementally, or whatever you'd like! It supports reactivity using [Sycamore](https://github.com/sycamore-rs/sycamore), and builds on it to provide a fully-fledged framework for developing modern apps.
 
 -   📕 Supports static generation (serving only static resources)
