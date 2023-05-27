@@ -109,7 +109,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
             self.index_view_str.to_string(),
             &self.root_id,
-            &self.render_cfg,
             &self.plugins,
         )
         .await?;

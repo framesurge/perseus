@@ -10,6 +10,7 @@ mod build;
 mod build_error_page;
 mod export;
 mod export_error_page;
+mod initial_consts;
 mod serve;
 /// This has the actual API endpoints.
 mod server;
@@ -143,7 +144,6 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
             self.index_view_str.to_string(),
             &self.root_id,
-            &self.render_cfg,
             &self.plugins,
         )
         .await?;

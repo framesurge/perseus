@@ -27,13 +27,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     pub(crate) fn build_error_page(
         &self,
         data: ServerErrorData,
-        // Translator and translations string
-        i18n_data: Option<(&Translator, &str)>,
+        translator: Option<&Translator>,
     ) -> String {
-        let (translator, translations_str, locale) = if let Some((t, s)) = i18n_data {
-            (Some(t), Some(s), Some(t.get_locale()))
+        let (translator, locale) = if let Some(translator) = translator {
+            (Some(translator), Some(translator.get_locale()))
         } else {
-            (None, None, None)
+            (None, None)
         };
 
         let (head, body) = self.error_views.render_to_string(data.clone(), translator);
@@ -43,7 +42,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             .unwrap()
             .clone()
             // This will inject the translations string if it's available
-            .error_page(&data, &body, &head, locale, translations_str)
+            .error_page(&data, &body, &head, locale)
             .to_string()
     }
 }

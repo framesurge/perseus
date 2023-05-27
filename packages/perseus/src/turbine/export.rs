@@ -10,7 +10,7 @@ use crate::{
     utils::get_path_prefix_server,
 };
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
-use futures::future::{try_join, try_join_all};
+use futures::future::{try_join3, try_join_all};
 use serde_json::Value;
 use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
 
@@ -92,11 +92,41 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 translations_futs.push(self.create_translation_file(locale));
             }
         }
+        // Regardless of whether or not we're using i18n, produce an initial constant
+        // file for everything. We'll start with the unlocalized one that only has
+        // the render config
+        let mut initial_const_futs = vec![self.create_initial_const_file("")];
+        for locale in self.locales.get_all() {
+            initial_const_futs.push(self.create_initial_const_file(locale));
+        }
 
         // Do *everything* in parallel
-        try_join(try_join_all(export_futs), try_join_all(translations_futs)).await?;
+        try_join3(
+            try_join_all(export_futs),
+            try_join_all(translations_futs),
+            try_join_all(initial_const_futs),
+        )
+        .await?;
 
         // Copying in bundles from the filesystem is done externally to this function
+
+        Ok(())
+    }
+    /// Creates a JS file to hold the render configuration and the translations,
+    /// to avoid putting too much stuff in the initial HTML file (this
+    /// enables generally faster page loads, especially for large sites).
+    async fn create_initial_const_file(&self, locale: &str) -> Result<(), ServerError> {
+        let js_file = self.initial_consts_js(locale).await?;
+        self.immutable_store
+            .write(
+                &if locale.is_empty() {
+                    "exported/.perseus/initial_consts.js".to_string()
+                } else {
+                    format!("exported/.perseus/initial_consts/{}.js", &locale)
+                },
+                &js_file,
+            )
+            .await?;
 
         Ok(())
     }
@@ -167,17 +197,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
                 // Don't create initial load pages for widgets
                 if !template.is_capsule {
-                    // Get the translations string for this locale
-                    let translations = self
-                        .translations_manager
-                        .get_translations_str_for_locale(locale.to_string())
-                        .await?;
                     // Create a full HTML file from those that can be served for initial loads
                     // The build process writes these with a dummy default locale even though we're
                     // not using i18n
                     let full_html = html_shell
                         .clone()
-                        .page_data(&page_data, &self.global_state, locale, &translations)
+                        .page_data(&page_data, &self.global_state, locale)
                         .to_string();
                     self.immutable_store
                         .write(
@@ -217,7 +242,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 // not using i18n
                 let full_html = html_shell
                     .clone()
-                    .page_data(&page_data, &self.global_state, "xx-XX", "")
+                    .page_data(&page_data, &self.global_state, "xx-XX")
                     .to_string();
                 // We don't add an extension because this will be queried directly by the
                 // browser
