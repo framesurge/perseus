@@ -1,6 +1,6 @@
 # Hydration
 
-One of the most important parts of Perseus is its prerendering system, which allows it to turn Rust code that renders HTML into actual HTML ahead of time, making sure that your users see content immediately. However, there's an art to going from prerendered content to a functional webpage, adn that art is *hydration*.
+One of the most important parts of Perseus is its prerendering system, which allows it to turn Rust code that renders HTML into actual HTML ahead of time, making sure that your users see content immediately. However, there's an art to going from prerendered content to a functional webpage, and that art is *hydration*.
 
 Internally, Perseus does *a heck of a lot* in the prerendering process, but it eventually comes down to Sycamore's `render_to_string()` function (or, rather, an internal re-implementation of it with some tweaks), which inserts some little numbers throughout your HTML called *hydration IDs*. These allow Sycamore to then *hydrate* your page after an *initial load*.
 
