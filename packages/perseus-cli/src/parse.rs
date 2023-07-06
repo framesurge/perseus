@@ -88,6 +88,10 @@ pub struct Opts {
     /// commands are more useful for targeted debugging
     #[clap(long, global = true)]
     pub verbose: bool,
+
+    /// Deactivate the brotli compression of the engine files
+    #[clap(long, default_value = "false", global = true)]
+    pub disable_engine_compression: bool,
 }
 
 #[derive(Parser, Clone)]

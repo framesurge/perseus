@@ -11,8 +11,9 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-use std::{io::Cursor, path::Path};
+mod pre_compressed_named_file;
 
+use std::{io::Cursor, path::Path};
 use perseus::{
     i18n::TranslationsManager,
     path::PathMaybeWithLocale,
@@ -23,13 +24,14 @@ use perseus::{
 use rocket::{
     fs::{FileServer, NamedFile},
     get,
-    http::{Method, Status},
+    http::{ContentType, Method, Status},
     response::Responder,
     route::{Handler, Outcome},
     routes,
     tokio::fs::File,
     Build, Data, Request, Response, Rocket, Route, State,
 };
+use crate::pre_compressed_named_file::PreCompressedBrNamedFile;
 
 // ----- Newtype wrapper for response implementation -----
 
@@ -64,18 +66,18 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
 // ----- Simple routes -----
 
 #[get("/bundle.js")]
-async fn get_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
-    NamedFile::open(&opts.js_bundle).await
+async fn get_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<PreCompressedBrNamedFile> {
+    PreCompressedBrNamedFile::open(&opts.js_bundle)
 }
 
 #[get("/bundle.wasm")]
-async fn get_wasm_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
-    NamedFile::open(&opts.wasm_bundle).await
+async fn get_wasm_bundle(opts: &State<ServerOptions>) -> std::io::Result<PreCompressedBrNamedFile> {
+    PreCompressedBrNamedFile::open(&opts.wasm_bundle)
 }
 
 #[get("/bundle.wasm.js")]
-async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
-    NamedFile::open(&opts.wasm_js_bundle).await
+async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<PreCompressedBrNamedFile> {
+    PreCompressedBrNamedFile::open(&opts.wasm_js_bundle)
 }
 
 // ----- Turbine dependant route handlers -----
@@ -376,7 +378,34 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
         address: addr,
         ..Default::default()
     };
+
     app = app.configure(config);
+
+    if let Err(err) = app.launch().await {
+        eprintln!("Error lauching Rocket app: {}.", err);
+    }
+}
+
+/// Creates and starts the default Perseus server with compression using Rocket. This should be
+/// run in a `main` function annotated with `#[tokio::main]` (which requires the
+/// `macros` and `rt-multi-thread` features on the `tokio` dependency).
+#[cfg(feature = "dflt-server-with-compression")]
+pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+    turbine: &'static Turbine<M, T>,
+    opts: ServerOptions,
+    (host, port): (String, u16),
+) {
+    let addr = host.parse().expect("Invalid address provided to bind to.");
+
+    let mut app = perseus_base_app(turbine, opts).await;
+
+    let config = rocket::Config {
+        port,
+        address: addr,
+        ..Default::default()
+    };
+
+    app = app.configure(config).attach(rocket_async_compression_lib::Compression::fairing());
 
     if let Err(err) = app.launch().await {
         eprintln!("Error lauching Rocket app: {}.", err);

@@ -52,6 +52,7 @@ cargo_metadata = "0.15"
 cargo-lock = "8"
 minify-js = "=0.4.3" # Be careful changing this, and test extensively!
 walkdir = "2"
+brotlic = "0.8"
 
 [dev-dependencies]
 assert_cmd = "2"

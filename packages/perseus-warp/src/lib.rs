@@ -93,12 +93,43 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
     let js_bundle = warp::path!(".perseus" / "bundle.js")
         .and(warp::path::end())
         .and(warp::fs::file(opts.js_bundle.clone()));
+    let js_bundle_compressed = warp::path!(".perseus" / "bundle.js")
+        .and(warp::path::end())
+        .and(warp::fs::file(format!("{}.br", opts.js_bundle.clone())))
+        .map(|reply| {
+            warp::reply::with_header(reply, "Content-Type", "application/javascript; charset=utf-8")
+        })
+        .map(|reply| {
+            warp::reply::with_header(reply, "Content-Encoding", "br")
+        });
+
+    let wasm_bundle_compressed = warp::path!(".perseus" / "bundle.wasm")
+        .and(warp::path::end())
+        .and(warp::fs::file(format!("{}.br", opts.wasm_bundle.clone())))
+        .map(|reply| {
+            warp::reply::with_header(reply, "Content-Type", "application/wasm")
+        })
+        .map(|reply| {
+            warp::reply::with_header(reply, "Content-Encoding", "br")
+        });
     let wasm_bundle = warp::path!(".perseus" / "bundle.wasm")
         .and(warp::path::end())
         .and(warp::fs::file(opts.wasm_bundle.clone()));
+
     let wasm_js_bundle = warp::path!(".perseus" / "bundle.wasm.js")
         .and(warp::path::end())
         .and(warp::fs::file(opts.wasm_js_bundle.clone()));
+    let wasm_js_bundle_compressed = warp::path!(".perseus" / "bundle.wasm.js")
+        .and(warp::path::end())
+        .and(warp::fs::file(format!("{}.br", opts.wasm_js_bundle.clone())))
+        .map(|reply| {
+            warp::reply::with_header(reply, "Content-Type", "application/javascript; charset=utf-8")
+        })
+        .map(|reply| {
+            warp::reply::with_header(reply, "Content-Encoding", "br")
+        });
+
+
     let snippets = warp::path!(".perseus" / "snippets" / ..).and(warp::fs::dir(opts.snippets));
 
     // --- Translation and subsequent load handlers ---
@@ -173,17 +204,20 @@ pub async fn perseus_routes<M: MutableStore + 'static, T: TranslationsManager + 
 
     // Now put all those routes together in the final thing (the user will add this
     // to an existing Warp server)
-    js_bundle
-        .or(wasm_bundle)
-        .or(wasm_js_bundle)
-        .or(snippets)
-        .or(static_dir)
-        .or(static_aliases)
-        .or(translations)
-        .or(localized_initial_consts)
-        .or(unlocalized_initial_consts)
-        .or(page_data)
-        .or(initial_loads)
+        js_bundle_compressed
+            .or(js_bundle)
+            .or(wasm_bundle_compressed)
+            .or(wasm_bundle)
+            .or(wasm_js_bundle_compressed)
+            .or(wasm_js_bundle)
+            .or(snippets)
+            .or(static_dir)
+            .or(static_aliases)
+            .or(translations)
+            .or(localized_initial_consts)
+            .or(unlocalized_initial_consts)
+            .or(page_data)
+            .or(initial_loads)
 }
 
 // ----- Default server -----
@@ -204,4 +238,22 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
         .expect("Invalid address provided to bind to.");
     let routes = perseus_routes(turbine, opts).await;
     warp::serve(routes).run(addr).await;
+}
+
+/// Creates and starts the Warp Perseus server with compression enable. This should be run
+/// in a `main` function annotated with `#[tokio::main]` (which requires the
+/// `macros` and `rt-multi-thread` features on the `tokio` dependency).
+#[cfg(feature = "dflt-server-with-compression")]
+pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+    turbine: &'static Turbine<M, T>,
+    opts: ServerOptions,
+    (host, port): (String, u16),
+) {
+    use std::net::SocketAddr;
+
+    let addr: SocketAddr = format!("{}:{}", host, port)
+        .parse()
+        .expect("Invalid address provided to bind to.");
+    let routes = perseus_routes(turbine, opts).await;
+    warp::serve(routes.with(warp::compression::gzip())).run(addr).await;
 }
