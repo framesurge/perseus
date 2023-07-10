@@ -1,0 +1,22 @@
+node_modules/
+package-lock.json
+
+# dist/      # When you do deloy , put the dist folder in .gitignore dist/
+target/
+Cargo.lock
+
+# static/tailwind.css
+tailwindcss-windows-x64.exe
+
+
+
+#########
+# When you do deloy , put the dist folder in .gitignore dist/
+dist/exported/
+dist/mutable/
+dist/pkg/
+dist/static/
+dist/target_engine/
+dist/target_wasm/
+dist/render_conf.json
+####### Please delete this part when you deloy it.

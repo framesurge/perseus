@@ -1,0 +1,7 @@
+[build]
+# You can change these from `engine` to `client` if you want your IDE to give hints about your
+# client-side code, rather than your engine-side code. Code that runs on both sides will be
+# linted no matter what, and these settings only affect your IDE. The `perseus` CLI will ignore
+# them.
+rustflags = [ "--cfg", "engine" ]
+rustdocflags = [ "--cfg", "engine" ]
