@@ -642,9 +642,9 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://crates.io/crates/perseus"
                                 ) { (t!(cx, "index-cta.crates-io-button")) }
-                                // TODO Update this with the Matrix link when it's set up
                                 a(
-                                    class = "cursor-not-allowed bg-gray-300 dark:bg-neutral-700 text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
+                                    class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
+                                    href = "https://matrix.to/#/#sycamore-rs-perseus:matrix.org"
                                 ) { (t!(cx, "index-cta.matrix-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
