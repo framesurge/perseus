@@ -68,4 +68,5 @@ name = "perseus"
 path = "src/bin/main.rs"
 
 [features]
-vendored-openssl = ['openssl/vendored']
+# `reqwest` uses the system-native transport layer by default, this is necessary in some environments
+vendored-openssl = [ "openssl/vendored" ]
