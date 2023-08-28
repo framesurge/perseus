@@ -54,7 +54,7 @@ cd my-app/
 perseus serve -w
 ```
 
-Then, hop over to <http://localhost:8080> and see a placeholder app, in all its glory! If you change some code, that'll automatically update, reloading the browser all by itself. (This rebuilding might take a while though, see [here](https://framesurge.sh/perseus/en-US/docs/next/reference/compilation-times) for how to speed things up.)
+Then, hop over to <http://localhost:8080> and see a placeholder app, in all its glory! If you change some code, that'll automatically update, reloading the browser all by itself. (This rebuilding might take a while though, see [here](https://framesurge.sh/perseus/en-US/docs/next/fundamentals/compilation-times/) for how to speed things up.)
 
 ## Aim
 

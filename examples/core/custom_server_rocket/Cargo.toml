@@ -1,5 +1,5 @@
 [package]
-name = "custom_server_rocket"
+name = "perseus-example-custom-server-rocket"
 version = "0.4.2"
 edition = "2021"
 

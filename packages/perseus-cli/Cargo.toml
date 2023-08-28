@@ -52,6 +52,7 @@ cargo_metadata = "0.15"
 cargo-lock = "8"
 minify-js = "=0.4.3" # Be careful changing this, and test extensively!
 walkdir = "2"
+openssl = { version = "0.10.52", optional = true}
 
 [dev-dependencies]
 assert_cmd = "2"
@@ -65,3 +66,6 @@ name = "perseus_cli"
 [[bin]]
 name = "perseus"
 path = "src/bin/main.rs"
+
+[features]
+vendored-openssl = ['openssl/vendored']
