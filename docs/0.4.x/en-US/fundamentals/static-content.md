@@ -2,7 +2,7 @@
 
 As nice as it is to write everything in Rust, you will, in web development, undoubtedly have to have some static content eventually. This is usually in the form of stylesheets, or images, or even binaries that your users can download, but there will be something. This is where Perseus' static content system comes into play. The simplest way to use this is through a `static/` directory in the root of your project, which Perseus will serve at `/.perseus/static`. For example, if you create `static/index.css`, that will be available in a `<link rel="stylesheet" />` tag at `href=".perseus/static/index.css"`. *Notice the lack of a leading forward slash!* This is because it's unnecessary: Perseus implants a `<base />` tag that makes it so, and this makes your app flexible to being served at relative paths (like `framesurge.sh/perseus`).
 
-Here is a code example of how you'll likely link a css file:
+Here's an example of how you might link a CSS file (in `static/index.css` in your project):
 
 ```rust
 #[engine_only_fn]
