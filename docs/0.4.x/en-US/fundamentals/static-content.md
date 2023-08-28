@@ -8,7 +8,7 @@ Here's an example of how you might link a CSS file (in `static/index.css` in you
 #[engine_only_fn]
 fn head(cx: Scope) -> View<SsrNode> {
     view! { cx,
-        title { "App title" }
+        title { "Page Title" }
         link(rel="stylesheet", href=".perseus/static/index.css") {}
     }
 }
