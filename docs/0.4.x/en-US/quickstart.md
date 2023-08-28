@@ -1,25 +1,31 @@
 # Quickstart
 
-To get started with Perseus, you should first make sure you have the Rust language installed, and it's recommended that you do this through [`rustup`](https://rustup.rs), which will let you manage the different parts of Rust very easily.
+To quickly start using Perseus, follow these steps:
 
-Once you have Rust installed, you can run the following command to install Perseus:
+1. Install Rust: Make sure you have the Rust language installed. We recommend using [`rustup`](https://rustup.rs) to easily manage the different components of the language.
 
-```sh
-cargo install perseus-cli
-```
+2. Install Perseus: Run the following command to install the Perseus command-line interface:
+   ```sh
+   cargo install perseus-cli
+   ```
 
-Now, pop over to some directory where you keep your projects, and run `perseus new my-app`. That will create a new directory called `my-app/`, which you can easily `cd` into, and, once you're there, you can run this command to start your app:
+3. Create a new app: Navigate to your desired projects directory and run `perseus new my-app` to create a new app. This will create a new directory named `my-app/`, which you can switch to by running `cd my-app`.
 
-```sh
-perseus serve -w
-```
+4. Start the app: Run the following command to start your app:
+   ```sh
+   perseus serve -w
+   ```
 
-The `serve` command tells Perseus to spin up a proper server for your app, rather than just exporting it to a series of static files (doing this lets you use some of the more advanced features of Perseus, if you want), and `-w` tells it to watch the files in the current directory for changes, so that your app will automatically be rebuilt if you change any code. After this command is done, go and take a look at <http://localhost:8080>, and you should see a welcome screen!
+   The `serve` command sets up a server for your app, enabling you to use some more advanced features of Perseus (in comparison to a simpler *static export*). The `-w` flag watches for changes in the current directory, automatically rebuilding your app and reloading your browser when you modify any code. Once the command is executed, visit <http://localhost:8080>, and you should see a welcome screen!
 
-This command has a few stages. First, there's *Generating your app...*, which will compile your app's *engine-side* (often called the *server-side*, but Perseus has exporting, tinkering, and a million other things that happen there, so we just call the not-browser the *engine* for simplicity) and build all your app's pages. Then, there's *Building your app to Wasm...*, which compiles your app's *browser-side* into WebAssembly, allowing it to be run in the browser. Finally, there's *Building server...*, which just compiles and prepares the server that Perseus will use to run your code. If it's the first time you're running Perseus, there'll also be a stage for *installing external tools...*, in which Perseus downloads some external dependencies, like `wasm-opt`, which helps to supercharge your Wasm in production. Here, Perseus will also use `rustup` to install the `wasm32-unknown-unknown` target, which is Rust's way of saying 'the browser'. If you're not using `rustup`, you'll need to install this target manually.
+   The `perseus serve` command involves several stages:
+   - **Generating your app**: Compiles the engine-side (server-side) of your app and builds all the app's pages.
+   - **Building your app to Wasm**: Compiles the browser-side of your app into WebAssembly (Wasm) for running in the browser.
+   - **Building server**: Prepares the server used by Perseus to run your code.
+   - **Installing external tools**: (for first-time Perseus users): Downloads external dependencies, such as `wasm-opt`, to enhance Wasm performance in production. Additionally, `rustup` installs the `wasm32-unknown-unknown` target, which represents the browser in Rust. If you're not using `rustup`, you may need to manually install this target.
 
-*In fact, all these stages run in parallel, which is why Perseus builds take up a fair bit of memory. If you're running on an older device, you might want to add the `--sequential` flag to the above command, which will run these steps one-by-one. This can also be useful if you're running multiple Perseus builds at once.*
+   **Note**: These stages run in parallel, requiring a reasonable amount of memory. If you're using an older device or running multiple Perseus builds simultaneously, consider using the `--sequential` flag with the `perseus serve` command to execute the stages sequentially.
 
-Now, if you change some code in, say, `my-app/src/templates/index.rs` (where, by convention, you store the code for your app's landing page), you should see the build process automatically restart, and, once it's done, your browser will automatically reload with your changes! 
+   Now, if you change some code in, say, `my-app/src/templates/index.rs` (where, by convention, you store the code for your app's landing page), you should see the build process automatically restart, and, once it's done, your browser will automatically reload with your changes!
 
-Unfortunately, one downside of compiled languages like Rust is that building them takes a while, so don't expect Perseus builds to be as snappy as JS builds. However, this usually isn't actually too much of a problem, and the builds will only get faster in future, as the Rust compiler improves, as Sycamore improves, and as Perseus improves! For tips on reducing compilation time, take a look at [this page](:fundamentals/compilation-times).
+   It's important to note that building compiled languages like Rust takes a bit longer than building an interpreted language like JavaScript, however build speeds will only get quicker in future, with improvements to Perseus, Sycamore, and Rust itself! For tips on reducing compilation time, see [this page](https://framesurge.sh/perseus/en-US/docs/0.4.x/fundamentals/compilation-times/).
