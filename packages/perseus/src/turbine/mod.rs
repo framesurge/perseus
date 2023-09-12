@@ -68,7 +68,7 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// The app's global state, kept cached throughout the build process because
     /// every template we build will need access to it through context.
     global_state: TemplateState,
-    /// Custom URL path prefix for perseus.
+    /// The prefix to place in front of the URL the website will be deployed to.
     pub path_prefix_server: Option<String>,
     /// The HTML shell that can be used for constructing the full pages this app
     /// returns.
