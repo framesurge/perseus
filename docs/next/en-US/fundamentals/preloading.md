@@ -16,4 +16,4 @@ Here's an example of using preloading:
 
 When that `.preload()` call is hit, Perseus will continue going with execution, meaning the main thread isn't blocked, while simultaneously loading the preloading route (the `about` page) in the background. This means that, when the user clicks on the link to the about page, they'll see it immediately (and we mean literally instantaneously).
 
-As the comments in the above example mention, however, you can't preload across locales, that would lead to errors. The reason is because Perseus can only manage one set of translations in memory at once, deliberately so (since translations can be *extremely* heavy).
+As the comments in the above example mention, however, you can't preload across locales, that would lead to errors. This is because Perseus can only manage one set of translations in memory at once, deliberately so (since translations can be *extremely* heavy).

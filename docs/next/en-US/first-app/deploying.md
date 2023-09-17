@@ -34,7 +34,7 @@ Obviously, you probably want to host your app in production on a different addre
 
 ### Optimizations
 
-When you deploy your Perseus app, there are two separate main binaries that are produced: the Wasm bundle, and the engine binary (the latter won't exist if you use export deployment though). What you want to do is optimize the engine binary for speed, since it's running your server, and the Wasm bundle for *size*: the reason is because Wasm is already extremely fast, and the main impediment to speed in the browser is how long it takes to load the Wasm bundle from the server. *Smaller bundle = faster load.* (But remember that this is only for making your pages interactive, the user will see content straight away!)
+When you deploy your Perseus app, there are two separate main binaries that are produced: the Wasm bundle, and the engine binary (the latter won't exist if you use export deployment though). What you want to do is optimize the engine binary for speed, since it's running your server, and the Wasm bundle for *size*: the reason is that Wasm is already extremely fast, and the main impediment to speed in the browser is how long it takes to load the Wasm bundle from the server. *Smaller bundle = faster load.* (But remember that this is only for making your pages interactive, the user will see content straight away!)
 
 Most of these optimizations are all applied automatically in `perseus deploy`, but they can be tweaked if you like by setting some of the flags on the CLI (which you can see with `perseus deploy --help`). These will allow you to apply different optimization settings to suit your needs.
 

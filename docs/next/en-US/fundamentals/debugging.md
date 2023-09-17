@@ -6,7 +6,7 @@ In the vast majority of cases, if `perseus check -gw` passes, then any other Per
 
 ## Client-side debugging
 
-Unfortunately, debugging Wasm isn't the best experience yet, as debuggers really aren't too well equipped for this just yet. Usually, the best policy here is to use some good old `println!` logging, but you might quickly discover that `println!()`, `dbg!()`, etc. don't actually work at all in the browser. One day, this will hopefully change, but, for now, you can use [`web_log!()`](=macro.web_log@perseus), which behaves exactly like `println!()` to print to the browser console. Note that Perseus enforces that all the types it exposes implement `Debug`, so you shouldn't have any problems when debugging things coming from Perseus.
+Unfortunately, debugging Wasm isn't the best experience yet, as debuggers really aren't too well-equipped for this just yet. Usually, the best policy here is to use some good old `println!` logging, but you might quickly discover that `println!()`, `dbg!()`, etc. don't actually work at all in the browser. One day, this will hopefully change, but, for now, you can use [`web_log!()`](=macro.web_log@perseus), which behaves exactly like `println!()` to print to the browser console. Note that Perseus enforces that all the types it exposes implement `Debug`, so you shouldn't have any problems when debugging things coming from Perseus.
 
 Using this macro on the engine-side will lead to it just calling `println!()`, but you could also use `dbg!()` in such cases, as it's often more convenient.
 

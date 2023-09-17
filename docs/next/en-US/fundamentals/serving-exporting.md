@@ -58,4 +58,4 @@ perseus export-error-page --code 404 --output pkg/404.html
 
 Here, we export the 404 page to `pkg/404.html`, where it will be picked up and served in the event of a 404 error by most file hosts. However, since we don't know the user's locale in advance, we can't localize this page appropriately, or even send the right translations. For apps not using i18n, this won't be a problem, but i18n-ed apps should prefer serving over exporting where possible.
 
-Note that adding `-s` to a `perseus export` command in development will automatically export your 404 page, but the deployment system will not do this, so you may wish to make this a separate stage in your deployment process, depending on whether or not your file host supports this pattern.
+Note that adding `-s` to a `perseus export` command in development will automatically export your 404 page, but the deployment system will not do this, so you may wish to make this a separate stage in your deployment process, depending on whether your file host supports this pattern.
