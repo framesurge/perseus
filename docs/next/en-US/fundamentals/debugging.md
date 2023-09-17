@@ -12,7 +12,7 @@ Using this macro on the engine-side will lead to it just calling `println!()`, b
 
 ## Engine-side logging
 
-However, if you try to, say, call `dbg!()` in your build-time logic, you might discover that you get absolutely zilch output in the console unless the whole process fails. This is because Perseus takes the conservative route, and only prints the output of its undelrying calls to `cargo` if the build process fails. This can make subtle logic errors very difficult to debug, so Perseus provides the `snoop` commands to help you. There are three:
+However, if you try to, say, call `dbg!()` in your build-time logic, you might discover that you get absolutely zilch output in the console unless the whole process fails. This is because Perseus takes the conservative route, and only prints the output of its underlying calls to `cargo` if the build process fails. This can make subtle logic errors very difficult to debug, so Perseus provides the `snoop` commands to help you. There are three:
 
 - `perseus snoop build` will run the build process directly, with no frills, allowing you to see all the output of your own code (Perseus performs no logging)
 - `perseus snoop wasm-build` will run the Wasm build process, which is just compiling your code to Wasm (you probably won't use this unless you're having Wasm-specific compiler errors)

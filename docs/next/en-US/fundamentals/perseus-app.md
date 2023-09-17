@@ -1,6 +1,6 @@
 # `PerseusApp`
 
-When you're developing with Perseus, you'll need to tell it about your templates so it can prerender them and udnerstand that they...well, exist. The way you do this is through [`PerseusApp`](=prelude/struct.PerseusAppBase@perseus), which is the central interface between the Perseus internals and your own code. Most of the time, you'll use this `struct` for defining your templates, capsules, and error views, but there are several other things it's capable of, which we'll go through here.
+When you're developing with Perseus, you'll need to tell it about your templates so it can prerender them and understand that they...well, exist. The way you do this is through [`PerseusApp`](=prelude/struct.PerseusAppBase@perseus), which is the central interface between the Perseus internals and your own code. Most of the time, you'll use this `struct` for defining your templates, capsules, and error views, but there are several other things it's capable of, which we'll go through here.
 
 If you're looking for documentation about the Perseus entrypoint system, see [here](:first-app/defining).
 

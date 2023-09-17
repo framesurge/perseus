@@ -1,6 +1,6 @@
 # Preloading
 
-One superpower of Perseus is its caching system, which takes any pages the user has already been to, figures out the minimium amount of information necessary to restore them without any network requests, and stores that, ensuring that pressing the back button leads to an instant response. Sometimes, however, you want this to work in the other direction too: if you are fairly confident of which page a user will go to next, you can *preload* it to make sure they get the content immediately.
+One superpower of Perseus is its caching system, which takes any pages the user has already been to, figures out the minimum amount of information necessary to restore them without any network requests, and stores that, ensuring that pressing the back button leads to an instant response. Sometimes, however, you want this to work in the other direction too: if you are fairly confident of which page a user will go to next, you can *preload* it to make sure they get the content immediately.
 
 Now, usually you would do preloading through the browser, which will fetch resources intelligently to minimize load times, but, again, Perseus knows better than the browser in a lot of cases. To render a new page, all it needs is the page's state and its document metadata, which actually come from a special internal link (behind `/.perseus/page`). Preloading this through the browser is finicky, and it doesn't allow Perseus to do some pre-parsing to keep things speedy, so Perseus provides its own imperative preloading interface.
 

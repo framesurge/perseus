@@ -4,7 +4,7 @@ As with any software, it's a good idea to test your apps to make sure they work 
 
 ## Writing tests
 
-Actually writing end-to-end (E2E for short) tests is quite simple, and Perseus provides an opinionated macro `#[perseus::test]` to simplify the process further. This macro uses [`fantoccini`](https://github.com/jonhoo/fantoccini), a library thhat lets you control browsers programmatically. For the vast majority of use-cases, this is absolutely fine, and you'll very rarely need to break out of this macro.
+Actually writing end-to-end (E2E for short) tests is quite simple, and Perseus provides an opinionated macro `#[perseus::test]` to simplify the process further. This macro uses [`fantoccini`](https://github.com/jonhoo/fantoccini), a library that lets you control browsers programmatically. For the vast majority of use-cases, this is absolutely fine, and you'll very rarely need to break out of this macro.
 
 Here's an example of some E2E tests, actually taken from the internal Perseus testing!
 
@@ -32,7 +32,7 @@ As with other Perseus commands, `perseus test` will give some nice green ticks i
 
 The only other thing you need to do while running `perseus test` is run a compliant WebDriver in the background, which Perseus will communicate with to interface with the browser. By default, the `#[perseus::test]` macro assumes the WebDriver is running on port 4444, but this can be changed by specifying a custom URL to that same macro.
 
-*Note: in future, Perseus may suppport automatically installing and executing WebDrivers, but this is currently not implemented.*
+*Note: in future, Perseus may support automatically installing and executing WebDrivers, but this is currently not implemented.*
 
 For example, if you want to test your app in Firefox, then you would first install `geckodriver` from [here](https://github.com/mozilla/geckodriver/releases) (or it may come bundled with a `firefox` package, depending on your OS), and then run `geckodriver` in one terminal while you run `perseus test` in another. The WebDriver will remain running after `perseus test` finishes, allowing you to run further tests against it if you like. On CI, you'll usually have a step that runs `geckodriver &` to run the process and move it to the background.
 
