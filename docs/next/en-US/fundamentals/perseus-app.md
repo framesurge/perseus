@@ -21,7 +21,7 @@ Very often, there are a few things you want to apply throughout your app, like u
 Here's an example of an app definition using an index view:
 
 ```rust
-#{#include ../../../examples/core/index_view/src/main.rs}
+{{#include ../../../examples/core/index_view/src/main.rs}}
 ```
 
 Note the use of the `PerseusRoot` component, which is provided to denote the entrypoint for Perseus. Unfortunately, due to limitations in the internal rendering infrastructure, you have to use this component, as opposed to manually defining the `<div id="root"></div>` that Perseus automatically interpolates into.
