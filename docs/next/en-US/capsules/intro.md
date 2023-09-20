@@ -4,7 +4,7 @@ Capsules are one of the most powerful features of Perseus, and, if you learn to 
 
 Remember how **template + page = state**? Well, similarly **capsule + state = widget**. *Widgets* are very similar to other pages, except they don't have `<head>`s, and they don't take up the whole page. Rather, they're embedded by other pages as, well, widgets. As widgets are to pages, capsules are to templates: a single capsule can generate many widgets, and has full access to the Perseus state platform.
 
-Capsules are useful as they can be cached very aggressively: when Perseus loads a new page, it won't re-request capsules it already has, meaning apps that make heavy use of capsules can cut the amount of data transmitted over the network substantially! 
+Capsules are useful because they can be cached very aggressively: when Perseus loads a new page, it won't re-request capsules it already has, meaning apps that make heavy use of capsules can cut the amount of data transmitted over the network substantially! 
 
 ## Capsules vs. templates
 
