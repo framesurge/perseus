@@ -14,7 +14,7 @@ A lot of websites these days are based on *full-page layouts*, which are when th
 {{#include ../../../examples/demos/full_page_layout/static/style.css}}
 ```
 
-The comments in this file should make it fairly self-explanatory, but what it does is creates a sticky header that maintains its spot when the user scrolls, while the footer will always be at the bottom of the page (but is not sticky when the content overflows the page). You can combine this with a layout component like this to get an easy way of creating full-page layouts for your sites:
+The comments in this file should make it fairly self-explanatory, but what it does is create a sticky header that maintains its spot when the user scrolls, while the footer will always be at the bottom of the page (but is not sticky when the content overflows the page). You can combine this with a layout component like this to get an easy way of creating full-page layouts for your sites:
 
 ```rust
 {{#include ../../../examples/demos/full_page_layout/src/components/layout.rs}}

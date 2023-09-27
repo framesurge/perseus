@@ -12,7 +12,7 @@ When we talk about state in Perseus, this is what we mean, but it's important to
 
 ## How is state created?
 
-State is created in Perseus through methods of *state generation*, which usually occur at the template-level (though there is also [global state](:stat/global)) through functions you provide. These functions are all `async`, allowing you to do complex work without blocking other state generations, and can be fallible, allowing you to return errors which Persues will gracefully handle and convert into [error views](:fundamentals/error-views). When we talk about state generation, we're talking about the engine-side creation of state through a number of methods (these used to be called *rendering strategies*).
+State is created in Perseus through methods of *state generation*, which usually occur at the template-level (though there is also [global state](:stat/global)) through functions you provide. These functions are all `async`, allowing you to do complex work without blocking other state generations, and can be fallible, allowing you to return errors which Perseus will gracefully handle and convert into [error views](:fundamentals/error-views). When we talk about state generation, we're talking about the engine-side creation of state through a number of methods (these used to be called *rendering strategies*).
 
 ## When is state generated?
 
@@ -26,13 +26,13 @@ Finally, suspended state is the use of client-side functions to fetch state. Usu
 
 ## How does state relate to templates?
 
-As mentioned before, inserting state into a template produces a page. Importantly, a single template can have many pages, and therefore many states. This is controlled through the *build paths* system, which allows you to generate a simple list of all the pages that should be created within a template. If build paths are not manually specified, Perseus will default to having the template produce just one page at it's own path (e.g. the `about` template produces a page at `/about`).
+As mentioned before, inserting state into a template produces a page. Importantly, a single template can have many pages, and therefore many states. This is controlled through the *build paths* system, which allows you to generate a simple list of all the pages that should be created within a template. If build paths are not manually specified, Perseus will default to having the template produce just one page at its own path (e.g. the `about` template produces a page at `/about`).
 
 Note that incremental generation allows this to go further by allowing you to generate arbitrarily more pages at request-time and cache them for future use.
 
 ## How is state used on the client-side?
 
-First, the state for the current page is requested and used to hydrate the page (on initial loads, the state comes bundled with the rest of the HTML, speeding things up), and then Perseus makes the state *reactive*. This allows you to update it on the client-side and have your views respond to it. This encourages what is known as the *model-view-controller* pattern in a somewhat novel way: you define all your template's state, and then user interaction modifies it, and this changes the views they see. For example, if one of the parts of a page's state is the contents of a form input, that state coudl be made to update every time the user changes that input. Further, Perseus will store this state internally, allowing it to be easily restored. This all leads on to *state freezing*, a much more advanced and novel concept unique to Perseus that allows state to be restored from a string.
+First, the state for the current page is requested and used to hydrate the page (on initial loads, the state comes bundled with the rest of the HTML, speeding things up), and then Perseus makes the state *reactive*. This allows you to update it on the client-side and have your views respond to it. This encourages what is known as the *model-view-controller* pattern in a somewhat novel way: you define all your template's state, and then user interaction modifies it, and this changes the views they see. For example, if one of the parts of a page's state is the contents of a form input, that state could be made to update every time the user changes that input. Further, Perseus will store this state internally, allowing it to be easily restored. This all leads on to *state freezing*, a much more advanced and novel concept unique to Perseus that allows state to be restored from a string.
 
 ## What if I don't want state?
 

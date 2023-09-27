@@ -8,7 +8,7 @@ Using capsules in your own code involves a few steps. First, you'll want to crea
 
 ## `Capsule` vs. `Template`
 
-When you're creating a capsule, there's a new type to get familiar with, called [`Capsule`](=prelude/struct.Capsule@perseus), which works similarly to the templates you're used to, but it's also slightly different. Basically, you want to start with a `Template`, define all your state generation stuff on there (but not your views), then pass that to `Capsule::build()` *without* alling `.build()` on it, and then specify your capsule-specific properties on `Capsule`. It's best to give an example:
+When you're creating a capsule, there's a new type to get familiar with, called [`Capsule`](=prelude/struct.Capsule@perseus), which works similarly to the templates you're used to, but it's also slightly different. Basically, you want to start with a `Template`, define all your state generation stuff on there (but not your views), then pass that to `Capsule::build()` *without* calling `.build()` on it, and then specify your capsule-specific properties on `Capsule`. It's best to give an example:
 
 ```rust
 {{#include ../../../examples/core/capsules/src/capsules/greeting.rs}}
