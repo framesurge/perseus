@@ -89,7 +89,7 @@ pub struct Opts {
     #[clap(long, global = true)]
     pub verbose: bool,
 
-    /// Deactivate the brotli compression of the engine files
+    /// Disable Brotli compression of JS and Wasm bundles (may degrade performance)
     #[clap(long, default_value = "false", global = true)]
     pub disable_engine_compression: bool,
 }
