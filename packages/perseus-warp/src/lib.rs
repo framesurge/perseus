@@ -244,7 +244,7 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
 /// in a `main` function annotated with `#[tokio::main]` (which requires the
 /// `macros` and `rt-multi-thread` features on the `tokio` dependency).
 #[cfg(feature = "dflt-server-with-compression")]
-pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+pub async fn dflt_server_with_compression<M: MutableStore + 'static, T: TranslationsManager + 'static>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
     (host, port): (String, u16),
