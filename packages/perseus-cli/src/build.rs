@@ -157,7 +157,7 @@ pub fn build_internal(
                 verbose,
             )?);
 
-            // If the compression is enable (enabled by default), we brotli compress each file in the `dist/pkg` directory
+            // If compression is enabled (which it is by default), we compress each file with Brotli in `dist/pkg`
             // Make this a step in the build process with a dedicated spinner ? How to make it work in the cmds arrays ?
             if !disable_engine_compression {
                 WalkDir::new("dist/pkg")
