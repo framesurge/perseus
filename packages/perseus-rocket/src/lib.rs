@@ -11,8 +11,6 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-mod pre_compressed_named_file;
-
 use std::{io::Cursor, path::Path};
 use perseus::{
     i18n::TranslationsManager,
@@ -24,14 +22,13 @@ use perseus::{
 use rocket::{
     fs::{FileServer, NamedFile},
     get,
-    http::{ContentType, Method, Status},
+    http::{Method, Status},
     response::Responder,
     route::{Handler, Outcome},
     routes,
     tokio::fs::File,
     Build, Data, Request, Response, Rocket, Route, State,
 };
-use crate::pre_compressed_named_file::PreCompressedBrNamedFile;
 
 // ----- Newtype wrapper for response implementation -----
 
@@ -66,18 +63,27 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
 // ----- Simple routes -----
 
 #[get("/bundle.js")]
-async fn get_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<PreCompressedBrNamedFile> {
-    PreCompressedBrNamedFile::open(&opts.js_bundle)
+async fn get_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
+    get_pre_compressed(&opts.js_bundle).await
 }
 
 #[get("/bundle.wasm")]
-async fn get_wasm_bundle(opts: &State<ServerOptions>) -> std::io::Result<PreCompressedBrNamedFile> {
-    PreCompressedBrNamedFile::open(&opts.wasm_bundle)
+async fn get_wasm_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
+    get_pre_compressed(&opts.wasm_bundle).await
 }
 
 #[get("/bundle.wasm.js")]
-async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<PreCompressedBrNamedFile> {
-    PreCompressedBrNamedFile::open(&opts.wasm_js_bundle)
+async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<NamedFile> {
+    get_pre_compressed(&opts.wasm_js_bundle).await
+}
+
+async fn get_pre_compressed(file_name: &str) -> std::io::Result<NamedFile> {
+    match NamedFile::open(&format!("{}.br", file_name)).await{
+        Ok(file) => Ok(file),
+        Err(_) => {
+            NamedFile::open(file_name).await
+        }
+    }
 }
 
 // ----- Turbine dependant route handlers -----

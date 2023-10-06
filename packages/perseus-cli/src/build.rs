@@ -1,5 +1,3 @@
-use std::fs::File;
-use std::io::{BufReader, Read, Write};
 use crate::cmd::{cfg_spinner, run_stage};
 use crate::install::Tools;
 use crate::parse::{BuildOpts, Opts};
@@ -8,8 +6,7 @@ use crate::{errors::*, get_user_crate_name};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
 use std::path::PathBuf;
-use brotlic::CompressorWriter;
-use walkdir::WalkDir;
+
 
 // Emoji for stages
 static GENERATING: Emoji<'_, '_> = Emoji("🔨", "");
@@ -57,7 +54,6 @@ pub fn build_internal(
         ..
     } = global_opts.clone();
     wasm_release_rustflags.push_str(" --cfg=client");
-    let disable_engine_compression = global_opts.disable_engine_compression;
 
     let crate_name = get_user_crate_name(&dir)?;
     // Static generation message
@@ -156,28 +152,6 @@ pub fn build_internal(
                 },
                 verbose,
             )?);
-
-            // If compression is enabled (which it is by default), we compress each file with Brotli in `dist/pkg`
-            if !disable_engine_compression {
-                WalkDir::new("dist/pkg")
-                    .into_iter()
-                    .filter_map(|e| e.ok())
-                    .filter(|e| e.file_type().is_file())
-                    .filter(|f| f.path().extension().map_or(true, |extension| extension != "br"))
-                    .for_each(|f| {
-                        let input_path = f.path();
-                        let output_path = format!("{}.br",input_path.to_str().unwrap());
-
-                        let input_file = File::open(&input_path).unwrap();
-                        let output_file = File::create(&output_path).unwrap();
-
-                        let mut output_compressed = CompressorWriter::new(output_file);
-                        let mut buffer = Vec::new();
-                        let mut reader = BufReader::new(input_file);
-                        reader.read_to_end(&mut buffer).unwrap();
-                        output_compressed.write_all(&buffer).unwrap();
-                    });
-            }
 
             Ok(0)
         },

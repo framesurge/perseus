@@ -17,7 +17,6 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, get_service},
     Router,
-    handler::Handler,
 };
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 use perseus::{
