@@ -176,7 +176,7 @@ async fn wasm_js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<Custo
 fn search_for_pre_compressed_version(path: &str, application_type: String) -> std::io::Result<CustomizeResponder<NamedFile>> {
     let pre_compressed_path = format!("{}.br", path);
     match NamedFile::open(pre_compressed_path) {
-        Ok(file) => Ok( file.customize()
+        Ok(file) => Ok(file.customize()
             .insert_header((
                 "Content-Encoding".to_string(),
                 "br".to_string(),
