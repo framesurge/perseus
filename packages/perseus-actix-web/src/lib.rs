@@ -187,7 +187,7 @@ fn search_for_pre_compressed_version(path: &str, application_type: String) -> st
             ))),
         Err(_) => {
             match NamedFile::open(path) {
-                Ok(file) => Ok( file.customize()
+                Ok(file) => Ok(file.customize()
                     .insert_header((
                         "Content-Type".to_string(),
                         application_type,
