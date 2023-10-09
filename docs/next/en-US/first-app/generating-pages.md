@@ -16,7 +16,7 @@ struct PostState {
 }
 ```
 
-When you plug *state* into a matching *template*, you can create a *page*. **Template + state = page**, in other words. Perseus has some convenient ways to do this: you'll usually declare an `async` function that produces a `Vec` of all the paths you want to generate (e.g. for a blog it might enumerate all the `.md` files in a directory), and then another function that goes through each of those paths one-by-one and generates their state (e.g. fora blog it might read the contents of each file). Once you've generated the state, Perseus does the boring work of fitting it all together, and it prerenders your pages to HTML at build-time so they can be served to clients as quickly as possible.
+When you plug *state* into a matching *template*, you can create a *page*. **Template + state = page**, in other words. Perseus has some convenient ways to do this: you'll usually declare an `async` function that produces a `Vec` of all the paths you want to generate (e.g. for a blog it might enumerate all the `.md` files in a directory), and then another function that goes through each of those paths one-by-one and generates their state (e.g. for a blog it might read the contents of each file). Once you've generated the state, Perseus does the boring work of fitting it all together, and it prerenders your pages to HTML at build-time so they can be served to clients as quickly as possible.
 
 ## A simple greeting
 
