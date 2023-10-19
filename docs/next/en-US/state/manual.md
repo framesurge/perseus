@@ -63,7 +63,7 @@ Notice how `create_ref()` is used on the field, which produces a reference scope
 
 ### 4. Implementing `Freeze`
 
-Once youv've done `MakeUnrx`, you're over the hump, and now you can pretty much just copy this code, substituting in the names of your state types of course:
+Once you've done `MakeUnrx`, you're over the hump, and now you can pretty much just copy this code, substituting in the names of your state types of course:
 
 ```rust
 impl Freeze for MyStateRx {
@@ -75,7 +75,7 @@ impl Freeze for MyStateRx {
 }
 ```
 
-That `.unwrap()` is nearly always absolutely safe, provided any maps in your state have simple stringifable keys, as opposed to, say, tuples, which can't be keys in the JSON specification. If you are using a pattern like that, this would always panic, and that would unfortunately not be compatible with the Perseus state platform.
+That `.unwrap()` is nearly always absolutely safe, provided any maps in your state have simple stringifiable keys, as opposed to, say, tuples, which can't be keys in the JSON specification. If you are using a pattern like that, this would always panic, and that would unfortunately not be compatible with the Perseus state platform.
 
 ## Unreactive state
 

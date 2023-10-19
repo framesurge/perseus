@@ -1,5 +1,6 @@
 > cargo install perseus-cli
 > perseus new my-project
+> cd my-project
 > perseus serve -w
 
 # Ready to deploy?

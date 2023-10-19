@@ -38,6 +38,6 @@ Here's a more fully-fledged example that sets the custom `X-Greeting` header wit
 
 Note the use of `.set_headers_with_state()` on `Template`, but this could also be `.set_headers()` if you didn't need access to your state type.
 
-What is by far most important about this function is its return type, which comes from the [`http`](https://docs.rs/http/latest/http) crate, conveniently re-exported from Perseus on the engine-side. You'll need a return a [`HeaderMap`](=http/header/struct.HeaderMap@perseus), specifically, into which you can insert individiual headers, similarly to a `HashMap`.
+What is by far most important about this function is its return type, which comes from the [`http`](https://docs.rs/http/latest/http) crate, conveniently re-exported from Perseus on the engine-side. You'll need a return a [`HeaderMap`](=http/header/struct.HeaderMap@perseus), specifically, into which you can insert individual headers, similarly to a `HashMap`.
 
 Just like the head function, this can also return an error if you'd like it to, or it can be infallible, as it is here.

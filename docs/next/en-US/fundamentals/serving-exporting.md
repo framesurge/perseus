@@ -18,7 +18,7 @@ Next, Perseus will compile itself and your app to Wasm. Once this is done, there
 
 ## 4a. Serving
 
-From here, if you've chosen to serve your app, Perseus will take the engine it used to build your app and repurpose that for serving your app (one binary does both, reducing compilation times substantially). This will spin up a server according to your `#[perseus::main(..)]` settings, and that will run until your terminate it, serving your app where you've specified.
+From here, if you've chosen to serve your app, Perseus will take the engine it used to build your app and repurpose that for serving your app (one binary does both, reducing compilation times substantially). This will spin up a server according to your `#[perseus::main(..)]` settings, and that will run until you terminate it, serving your app where you've specified.
 
 This server responds to each request by passing it through special pathways that are capable of calling request-time logic, state amalgamation, revalidation, and all manner of other things. This part of Perseus involves *just-in-time nested capsule resolution*, which is by far the most complex part of Perseus. All this has to be done upon receiving a user's request, so this binary is deliberately optimized for speed (meaning it can easily blow out to very large sizes) in release mode.
 
@@ -34,7 +34,7 @@ However, most apps also have several API routes associated with them, especially
 
 #### Writing a server integration
 
-If you're unhappy with the defaults a particualr server integration provides, you are *strongly* encouraged to modify it yourself, which isn't a difficult process at all. Deliberately, Perseus abstracts nearly all serving functionality into the core, behind a type called `Turbine`, a static reference to which is provided to server integrations. This means all you're doing in a server integration is spinning up the right routes. In fact, all server integrations follow a pre-defined pattern of exactly what they have to do, making it much easier to write and modify them for your needs. If you really want, you can even fly solo without a server integration, and implement everything yourself (although this is not recommended unless you have very specific requirements).
+If you're unhappy with the defaults a particular server integration provides, you are *strongly* encouraged to modify it yourself, which isn't a difficult process at all. Deliberately, Perseus abstracts nearly all serving functionality into the core, behind a type called `Turbine`, a static reference to which is provided to server integrations. This means all you're doing in a server integration is spinning up the right routes. In fact, all server integrations follow a pre-defined pattern of exactly what they have to do, making it much easier to write and modify them for your needs. If you really want, you can even fly solo without a server integration, and implement everything yourself (although this is not recommended unless you have very specific requirements).
 
 Currently, Perseus has no support for arbitrary middleware, and modifying the server integration is the only way to do this. Bear in mind, however, that the Axum integration is only one file with 173 lines of code and comments in it --- these integrations are designed to be tweaked!
 
@@ -46,7 +46,7 @@ The output of exporting is a folder (`dist/exported`) that contains everything n
 
 When you run `perseus deploy -e`, Perseus will build your Wasm in release mode and move everything into a `pkg/` folder that's fully optimized for production.
 
-*Note: `perseus export -s` exists to spin up a miniature file server to avooid your needing to bring your own in development.*
+*Note: `perseus export -s` exists to spin up a miniature file server to avoid your needing to bring your own in development.*
 
 ### Error pages in exported apps
 
@@ -56,6 +56,6 @@ One thing exported apps often struggle with is proper error handling. Once the W
 perseus export-error-page --code 404 --output pkg/404.html
 ```
 
-Here, we export the 404 page to `pkg/404.html`, where is will be picked up and served in the event of a 404 error by most file hosts. However, since we don't know the user's locale in advance, we can't localize this page appropriately, or even send the right translations. For apps not using i18n, this won't be a problem, but i18n-ed apps should prefer serving over exporting where possible.
+Here, we export the 404 page to `pkg/404.html`, where it will be picked up and served in the event of a 404 error by most file hosts. However, since we don't know the user's locale in advance, we can't localize this page appropriately, or even send the right translations. For apps not using i18n, this won't be a problem, but i18n-ed apps should prefer serving over exporting where possible.
 
-Note that adding `-s` to a `perseus export` command in development will automatically export your 404 page, but the deployment system will not do this, so you may wish to make this a separate stage in your deployment process, depending on whether or not your file host supports this pattern.
+Note that adding `-s` to a `perseus export` command in development will automatically export your 404 page, but the deployment system will not do this, so you may wish to make this a separate stage in your deployment process, depending on whether your file host supports this pattern.
