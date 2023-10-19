@@ -63,19 +63,23 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         // --- File handlers ---
         .route(
             "/.perseus/bundle.js",
-            get_service(ServeFile::new(opts.js_bundle.clone()).precompressed_br()).handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.js_bundle.clone()).precompressed_br())
+                .handle_error(handle_fs_error),
         )
         .route(
             "/.perseus/bundle.wasm",
-            get_service(ServeFile::new(opts.wasm_bundle.clone()).precompressed_br()).handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.wasm_bundle.clone()).precompressed_br())
+                .handle_error(handle_fs_error),
         )
         .route(
             "/.perseus/bundle.wasm.js",
-            get_service(ServeFile::new(opts.wasm_js_bundle.clone()).precompressed_br()).handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.wasm_js_bundle.clone()).precompressed_br())
+                .handle_error(handle_fs_error),
         )
         .nest_service(
             "/.perseus/snippets",
-            get_service(ServeDir::new(opts.snippets).precompressed_br()).handle_error(handle_fs_error),
+            get_service(ServeDir::new(opts.snippets).precompressed_br())
+                .handle_error(handle_fs_error),
         );
 
     // --- Translation and subsequent load handlers ---
@@ -110,9 +114,9 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             get(
                 move |Path(path_parts): Path<Vec<String>>,
                       Query(SubsequentLoadQueryParams {
-                                entity_name,
-                                was_incremental_match,
-                            }): Query<SubsequentLoadQueryParams>,
+                          entity_name,
+                          was_incremental_match,
+                      }): Query<SubsequentLoadQueryParams>,
                       http_req: Request<Body>| async move {
                     // Separate the locale from the rest of the page name
                     let locale = &path_parts[0];
@@ -174,7 +178,6 @@ async fn handle_fs_error(_err: std::io::Error) -> impl IntoResponse {
     (StatusCode::INTERNAL_SERVER_ERROR, "Couldn't serve file.")
 }
 
-
 // ----- Default server -----
 
 /// Creates and starts the default Perseus server with Axum. This should be run
@@ -204,7 +207,10 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
 /// in a `main` function annotated with `#[tokio::main]` (which requires the
 /// `macros` and `rt-multi-thread` features on the `tokio` dependency).
 #[cfg(feature = "dflt-server-with-compression")]
-pub async fn dflt_server_with_compression<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+pub async fn dflt_server_with_compression<
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
+>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
     (host, port): (String, u16),
@@ -215,9 +221,9 @@ pub async fn dflt_server_with_compression<M: MutableStore + 'static, T: Translat
         .parse()
         .expect("Invalid address provided to bind to.");
 
-    let app = get_router(turbine, opts).await.layer(
-            tower_http::compression::CompressionLayer::new()
-        );
+    let app = get_router(turbine, opts)
+        .await
+        .layer(tower_http::compression::CompressionLayer::new());
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

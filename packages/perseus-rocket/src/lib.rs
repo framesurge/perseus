@@ -11,7 +11,6 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-use std::{io::Cursor, path::Path};
 use perseus::{
     i18n::TranslationsManager,
     path::PathMaybeWithLocale,
@@ -29,6 +28,7 @@ use rocket::{
     tokio::fs::File,
     Build, Data, Request, Response, Rocket, Route, State,
 };
+use std::{io::Cursor, path::Path};
 
 // ----- Newtype wrapper for response implementation -----
 
@@ -78,11 +78,9 @@ async fn get_wasm_js_bundle(opts: &State<ServerOptions>) -> std::io::Result<Name
 }
 
 async fn get_pre_compressed(file_name: &str) -> std::io::Result<NamedFile> {
-    match NamedFile::open(&format!("{}.br", file_name)).await{
+    match NamedFile::open(&format!("{}.br", file_name)).await {
         Ok(file) => Ok(file),
-        Err(_) => {
-            NamedFile::open(file_name).await
-        }
+        Err(_) => NamedFile::open(file_name).await,
     }
 }
 
@@ -396,7 +394,10 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
 /// run in a `main` function annotated with `#[tokio::main]` (which requires the
 /// `macros` and `rt-multi-thread` features on the `tokio` dependency).
 #[cfg(feature = "dflt-server-with-compression")]
-pub async fn dflt_server_with_compression<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+pub async fn dflt_server_with_compression<
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
+>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
     (host, port): (String, u16),
@@ -411,7 +412,9 @@ pub async fn dflt_server_with_compression<M: MutableStore + 'static, T: Translat
         ..Default::default()
     };
 
-    app = app.configure(config).attach(rocket_async_compression_lib::Compression::fairing());
+    app = app
+        .configure(config)
+        .attach(rocket_async_compression_lib::Compression::fairing());
 
     if let Err(err) = app.launch().await {
         eprintln!("Error lauching Rocket app: {}.", err);

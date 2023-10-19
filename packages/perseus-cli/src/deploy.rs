@@ -4,16 +4,16 @@ use crate::install::Tools;
 use crate::parse::Opts;
 use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
+use brotlic::CompressorWriter;
 use fs_extra::copy_items;
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use indicatif::MultiProgress;
 use minify_js::{minify, TopLevelMode};
 use std::fs;
-use std::path::Path;
-use std::path::PathBuf;
-use brotlic::CompressorWriter;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
+use std::path::Path;
+use std::path::PathBuf;
 
 /// Deploys the user's app to the `pkg/` directory (can be changed with
 /// `-o/--output`). This will build everything for release and then put it all

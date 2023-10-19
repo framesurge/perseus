@@ -45,9 +45,7 @@ make_async_trait!(
 make_async_trait!(
     GlobalStateBuildUserFnType<
         S: Serialize + DeserializeOwned + MakeRx,
-        V: Into<
-        GeneratorResult<S>
-        >,
+        V: Into<GeneratorResult<S>>,
     >,
     V
 );

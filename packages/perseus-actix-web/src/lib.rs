@@ -11,6 +11,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_debug_implementations)]
 
 use actix_files::{Files, NamedFile};
+use actix_web::CustomizeResponder;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 use perseus::{
@@ -22,7 +23,6 @@ use perseus::{
     turbine::{SubsequentLoadQueryParams, Turbine},
     Request,
 };
-use actix_web::CustomizeResponder;
 
 // ----- Request conversion implementation -----
 
@@ -161,40 +161,46 @@ pub async fn configurer<M: MutableStore + 'static, T: TranslationsManager + 'sta
 }
 
 // File handlers (these have to be broken out for Actix)
-async fn js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<CustomizeResponder<NamedFile>> {
-    search_for_pre_compressed_version(&opts.js_bundle, "application/javascript; charset=utf-8".to_string())
+async fn js_bundle(
+    opts: web::Data<ServerOptions>,
+) -> std::io::Result<CustomizeResponder<NamedFile>> {
+    search_for_pre_compressed_version(
+        &opts.js_bundle,
+        "application/javascript; charset=utf-8".to_string(),
+    )
 }
 
-async fn wasm_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<CustomizeResponder<NamedFile>> {
+async fn wasm_bundle(
+    opts: web::Data<ServerOptions>,
+) -> std::io::Result<CustomizeResponder<NamedFile>> {
     search_for_pre_compressed_version(&opts.wasm_bundle, "application/wasm".to_string())
 }
 
-async fn wasm_js_bundle(opts: web::Data<ServerOptions>) -> std::io::Result<CustomizeResponder<NamedFile>> {
-    search_for_pre_compressed_version(&opts.wasm_js_bundle, "application/javascript; charset=utf-8".to_string())
+async fn wasm_js_bundle(
+    opts: web::Data<ServerOptions>,
+) -> std::io::Result<CustomizeResponder<NamedFile>> {
+    search_for_pre_compressed_version(
+        &opts.wasm_js_bundle,
+        "application/javascript; charset=utf-8".to_string(),
+    )
 }
 
-fn search_for_pre_compressed_version(path: &str, application_type: String) -> std::io::Result<CustomizeResponder<NamedFile>> {
+fn search_for_pre_compressed_version(
+    path: &str,
+    application_type: String,
+) -> std::io::Result<CustomizeResponder<NamedFile>> {
     let pre_compressed_path = format!("{}.br", path);
     match NamedFile::open(pre_compressed_path) {
-        Ok(file) => Ok(file.customize()
-            .insert_header((
-                "Content-Encoding".to_string(),
-                "br".to_string(),
-            ))
-            .insert_header((
-                "Content-Type".to_string(),
-                application_type,
-            ))),
-        Err(_) => {
-            match NamedFile::open(path) {
-                Ok(file) => Ok(file.customize()
-                    .insert_header((
-                        "Content-Type".to_string(),
-                        application_type,
-                    ))),
-                Err(e) => Err(e)
-            }
-        }
+        Ok(file) => Ok(file
+            .customize()
+            .insert_header(("Content-Encoding".to_string(), "br".to_string()))
+            .insert_header(("Content-Type".to_string(), application_type))),
+        Err(_) => match NamedFile::open(path) {
+            Ok(file) => Ok(file
+                .customize()
+                .insert_header(("Content-Type".to_string(), application_type))),
+            Err(e) => Err(e),
+        },
     }
 }
 
@@ -244,13 +250,15 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
         .expect("Server failed.") // TODO Improve error message here
 }
 
-
 /// Creates and starts the default Perseus server with GZIP compression enabled using Actix Web. This should
 /// be run in a `main()` function annotated with `#[tokio::main]` (which
 /// requires the `macros` and `rt-multi-thread` features on the `tokio`
 /// dependency).
 #[cfg(feature = "dflt-server-with-compression")]
-pub async fn dflt_server_with_compression<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+pub async fn dflt_server_with_compression<
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
+>(
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
     (host, port): (String, u16),
@@ -258,21 +266,16 @@ pub async fn dflt_server_with_compression<M: MutableStore + 'static, T: Translat
     use actix_web::{App, HttpServer};
     use futures::executor::block_on;
     // TODO Fix issues here
-    HttpServer::new(move ||
+    HttpServer::new(move || {
         App::new()
             .wrap(actix_web::middleware::Compress::default())
-            .configure(
-                block_on(
-                    configurer(
-                        turbine,
-                        opts.clone(),
-                    )
-                )
-            )
+            .configure(block_on(configurer(turbine, opts.clone())))
+    })
+    .bind((host, port))
+    .expect(
+        "Couldn't bind to given address. Maybe something is already running on the selected port?",
     )
-        .bind((host, port))
-        .expect("Couldn't bind to given address. Maybe something is already running on the selected port?")
-        .run()
-        .await
-        .expect("Server failed.") // TODO Improve error message here
+    .run()
+    .await
+    .expect("Server failed.") // TODO Improve error message here
 }
