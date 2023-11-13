@@ -129,4 +129,4 @@ pub fn get_user_crate_name(dir: &Path) -> Result<String, ExecutionError> {
 /// with these names, rather than any paths with these names. Further exclusions
 /// should be manually specified.*
 pub static WATCH_EXCLUSIONS: &[&str] =
-    &["dist", "target", "target_engine", "target_browser", ".git"];
+    &["dist", "target", "target_engine", "target_browser", ".git", "node_modules"];
