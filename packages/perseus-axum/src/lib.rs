@@ -203,9 +203,10 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
         .unwrap();
 }
 
-/// Creates and starts the default Perseus server with compression using Axum. This should be run
-/// in a `main` function annotated with `#[tokio::main]` (which requires the
-/// `macros` and `rt-multi-thread` features on the `tokio` dependency).
+/// Creates and starts the default Perseus server with compression using Axum.
+/// This should be run in a `main` function annotated with `#[tokio::main]`
+/// (which requires the `macros` and `rt-multi-thread` features on the `tokio`
+/// dependency).
 #[cfg(feature = "dflt-server-with-compression")]
 pub async fn dflt_server_with_compression<
     M: MutableStore + 'static,

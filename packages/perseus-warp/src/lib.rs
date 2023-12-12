@@ -242,9 +242,10 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
     warp::serve(routes).run(addr).await;
 }
 
-/// Creates and starts the Warp Perseus server with compression enable. This should be run
-/// in a `main` function annotated with `#[tokio::main]` (which requires the
-/// `macros` and `rt-multi-thread` features on the `tokio` dependency).
+/// Creates and starts the Warp Perseus server with compression enable. This
+/// should be run in a `main` function annotated with `#[tokio::main]` (which
+/// requires the `macros` and `rt-multi-thread` features on the `tokio`
+/// dependency).
 #[cfg(feature = "dflt-server-with-compression")]
 pub async fn dflt_server_with_compression<
     M: MutableStore + 'static,

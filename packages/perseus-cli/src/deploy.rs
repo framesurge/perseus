@@ -146,7 +146,8 @@ fn deploy_full(
             .into());
         }
 
-        // If compression is enabled (which it is by default), we compress each file with Brotli in `dist/pkg`
+        // If compression is enabled (which it is by default), we compress each file
+        // with Brotli in `dist/pkg`
         if !global_opts.disable_bundle_compression {
             let target_path = "dist/pkg";
             let files_name = ["perseus_engine.js", "perseus_engine_bg.wasm"];
