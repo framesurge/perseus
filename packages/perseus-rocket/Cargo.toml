@@ -14,10 +14,12 @@ categories = ["wasm", "web-programming::http-server", "development-tools", "asyn
 [dependencies]
 perseus = { path = "../perseus", version = "0.4.2"}
 rocket = "0.5.0-rc.2"
+rocket_async_compression = { version = "0.5.0", optional = true}
 
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
 dflt-server = []
+dflt-server-with-compression = [ "rocket_async_compression" ]
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg=engine"]

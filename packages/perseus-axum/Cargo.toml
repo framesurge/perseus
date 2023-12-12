@@ -22,6 +22,7 @@ tower-http = { version = "0.3", features = [ "fs" ] }
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
 dflt-server = []
+dflt-server-with-compression = [ "tower-http/compression-gzip" ]
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg=engine"]

@@ -4,11 +4,14 @@ use crate::install::Tools;
 use crate::parse::Opts;
 use crate::parse::{DeployOpts, ExportOpts, ServeOpts};
 use crate::serve;
+use brotlic::CompressorWriter;
 use fs_extra::copy_items;
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use indicatif::MultiProgress;
 use minify_js::{minify, TopLevelMode};
 use std::fs;
+use std::fs::File;
+use std::io::{BufReader, Read, Write};
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -142,6 +145,27 @@ fn deploy_full(
             }
             .into());
         }
+
+        // If compression is enabled (which it is by default), we compress each file with Brotli in `dist/pkg`
+        if !global_opts.disable_bundle_compression {
+            let target_path = "dist/pkg";
+            let files_name = ["perseus_engine.js", "perseus_engine_bg.wasm"];
+
+            for file_name in files_name {
+                let file_path = format!("{}/{}", target_path, file_name);
+                let output_path = format!("{}.br", &file_path);
+
+                let input_file = File::open(&file_path).unwrap();
+                let output_file = File::create(&output_path).unwrap();
+
+                let mut output_compressed = CompressorWriter::new(output_file);
+                let mut buffer = Vec::new();
+                let mut reader = BufReader::new(input_file);
+                reader.read_to_end(&mut buffer).unwrap();
+                output_compressed.write_all(&buffer).unwrap();
+            }
+        }
+
         let from = dir.join("dist/pkg"); // Note: this handles snippets and the like
         if let Err(err) = copy_dir(&from, output_path.join("dist"), &CopyOptions::new()) {
             return Err(DeployError::MoveDirFailed {

@@ -4,7 +4,7 @@
 
 This is the API documentation for the `perseus-axum` package, which allows Perseus apps to run on Axum. Note that Perseus mostly uses [the book](https://framesurge.sh/perseus/en-US) for
 documentation, and this should mostly be used as a secondary reference source. You can also find full usage examples [here](https://github.com/framesurge/perseus/tree/main/examples).
-*/
+ */
 
 #![cfg(engine)] // This crate needs to be run with the Perseus CLI
 #![deny(missing_docs)]
@@ -37,11 +37,13 @@ use tower_http::services::{ServeDir, ServeFile};
 
 #[derive(Debug)]
 struct ApiResponse(PerseusApiResponse);
+
 impl From<PerseusApiResponse> for ApiResponse {
     fn from(val: PerseusApiResponse) -> Self {
         Self(val)
     }
 }
+
 impl IntoResponse for ApiResponse {
     fn into_response(self) -> Response {
         // Very convenient!
@@ -61,20 +63,25 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
         // --- File handlers ---
         .route(
             "/.perseus/bundle.js",
-            get_service(ServeFile::new(opts.js_bundle.clone())).handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.js_bundle.clone()).precompressed_br())
+                .handle_error(handle_fs_error),
         )
         .route(
             "/.perseus/bundle.wasm",
-            get_service(ServeFile::new(opts.wasm_bundle.clone())).handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.wasm_bundle.clone()).precompressed_br())
+                .handle_error(handle_fs_error),
         )
         .route(
             "/.perseus/bundle.wasm.js",
-            get_service(ServeFile::new(opts.wasm_js_bundle.clone())).handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.wasm_js_bundle.clone()).precompressed_br())
+                .handle_error(handle_fs_error),
         )
         .nest_service(
             "/.perseus/snippets",
-            get_service(ServeDir::new(opts.snippets)).handle_error(handle_fs_error),
+            get_service(ServeDir::new(opts.snippets).precompressed_br())
+                .handle_error(handle_fs_error),
         );
+
     // --- Translation and subsequent load handlers ---
     let mut router = router
         .route(
@@ -135,6 +142,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
                 },
             ),
         );
+
     // --- Static directory and alias handlers ---
     if turbine.static_dir.exists() {
         router = router.nest_service(
@@ -148,6 +156,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             get_service(ServeFile::new(static_path)).handle_error(handle_fs_error),
         );
     }
+
     // --- Initial load handler ---
     router.fallback_service(get(move |http_req: Request<Body>| async move {
         // Since this is a fallback handler, we have to do everything from the request
@@ -185,7 +194,37 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
     let addr: SocketAddr = format!("{}:{}", host, port)
         .parse()
         .expect("Invalid address provided to bind to.");
+
     let app = get_router(turbine, opts).await;
+
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}
+
+/// Creates and starts the default Perseus server with compression using Axum. This should be run
+/// in a `main` function annotated with `#[tokio::main]` (which requires the
+/// `macros` and `rt-multi-thread` features on the `tokio` dependency).
+#[cfg(feature = "dflt-server-with-compression")]
+pub async fn dflt_server_with_compression<
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
+>(
+    turbine: &'static Turbine<M, T>,
+    opts: ServerOptions,
+    (host, port): (String, u16),
+) {
+    use std::net::SocketAddr;
+
+    let addr: SocketAddr = format!("{}:{}", host, port)
+        .parse()
+        .expect("Invalid address provided to bind to.");
+
+    let app = get_router(turbine, opts)
+        .await
+        .layer(tower_http::compression::CompressionLayer::new());
+
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await

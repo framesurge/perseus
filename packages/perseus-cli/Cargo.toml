@@ -53,6 +53,7 @@ cargo-lock = "8"
 minify-js = "=0.4.3" # Be careful changing this, and test extensively!
 walkdir = "2"
 openssl = { version = "0.10.52", optional = true}
+brotlic = "0.8"
 
 [dev-dependencies]
 assert_cmd = "2"
