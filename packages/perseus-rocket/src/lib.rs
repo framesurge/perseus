@@ -93,7 +93,7 @@ where
 {
     match req.routed_segment(1) {
         Some(locale) => Outcome::from(req, ApiResponse(turbine.get_translations(locale).await)),
-        _ => Outcome::Failure(Status::BadRequest),
+        _ => Outcome::Error(Status::BadRequest),
     }
 }
 
@@ -109,11 +109,11 @@ where
         Some(locale) => {
             let locale = match locale.strip_suffix(".js") {
                 Some(locale) => locale,
-                None => return Outcome::Failure(Status::BadRequest),
+                None => return Outcome::Error(Status::BadRequest),
             };
             Outcome::from(req, ApiResponse(turbine.get_initial_consts(locale).await))
         }
-        _ => Outcome::Failure(Status::BadRequest),
+        _ => Outcome::Error(Status::BadRequest),
     }
 }
 
@@ -151,7 +151,7 @@ where
             req,
             ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(path), r).await),
         ),
-        _ => Outcome::Failure(Status::BadRequest),
+        _ => Outcome::Error(Status::BadRequest),
     }
 }
 
@@ -174,7 +174,7 @@ where
     let (locale, entity_name, was_incremental_match) =
         match (locale_opt, entity_name_opt, was_incremental_match_opt) {
             (Some(l), Some(e), Some(w)) => (l.to_string(), e.to_string(), w),
-            _ => return Outcome::Failure(Status::BadRequest),
+            _ => return Outcome::Error(Status::BadRequest),
         };
 
     let raw_path = req.routed_segments(2..).collect::<Vec<&str>>().join("/");
@@ -200,7 +200,7 @@ where
                     .await,
             ),
         ),
-        _ => Outcome::Failure(Status::BadRequest),
+        _ => Outcome::Error(Status::BadRequest),
     }
 }
 
@@ -257,7 +257,7 @@ where
 async fn perseus_static_alias<'r>(req: &'r Request<'_>, static_alias: &String) -> Outcome<'r> {
     match File::open(static_alias).await {
         Ok(file) => Outcome::from(req, file),
-        _ => Outcome::Failure(Status::NotFound),
+        _ => Outcome::Error(Status::NotFound),
     }
 }
 
@@ -390,9 +390,10 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
     }
 }
 
-/// Creates and starts the default Perseus server with compression using Rocket. This should be
-/// run in a `main` function annotated with `#[tokio::main]` (which requires the
-/// `macros` and `rt-multi-thread` features on the `tokio` dependency).
+/// Creates and starts the default Perseus server with compression using Rocket.
+/// This should be run in a `main` function annotated with `#[tokio::main]`
+/// (which requires the `macros` and `rt-multi-thread` features on the `tokio`
+/// dependency).
 #[cfg(feature = "dflt-server-with-compression")]
 pub async fn dflt_server_with_compression<
     M: MutableStore + 'static,
