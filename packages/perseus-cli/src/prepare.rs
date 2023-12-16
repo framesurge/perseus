@@ -22,6 +22,22 @@ pub fn check_env(global_opts: &Opts) -> Result<(), Error> {
     #[cfg(windows)]
     let shell_param = "-command";
 
+    // Check for the shell before anything else (#314)
+    let shell_res = Command::new(shell_exec)
+        .arg("--version")
+        .output()
+        .map_err(|err| Error::ShellNotPresent { source: err })?;
+    let exit_code = match shell_res.status.code() {
+        Some(exit_code) => exit_code,
+        None if shell_res.status.success() => 0,
+        None => 1,
+    };
+    if exit_code != 0 {
+        return Err(Error::ShellNotPresent {
+            source: std::io::Error::new(std::io::ErrorKind::NotFound, "non-zero exit code"),
+        });
+    }
+
     // Check for `cargo`
     let cargo_cmd = global_opts.cargo_engine_path.to_string() + " --version";
     let cargo_res = Command::new(shell_exec)

@@ -5,6 +5,11 @@ use thiserror::Error;
 /// All errors that can be returned by the CLI.
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("couldn't find your system shell (sh on unix and powershell on windows), which is required to run the perseus cli")]
+    ShellNotPresent {
+        #[source]
+        source: std::io::Error,
+    },
     #[error("couldn't find `cargo`, which is a dependency of this cli (set 'PERSEUS_CARGO_PATH' to another location if you've installed it elsewhere)")]
     CargoNotPresent {
         #[source]
