@@ -42,6 +42,7 @@ make_async_trait!(
 );
 
 #[cfg(engine)]
+#[rustfmt::skip]
 make_async_trait!(
     GlobalStateBuildUserFnType<
         S: Serialize + DeserializeOwned + MakeRx,
