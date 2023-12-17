@@ -23,20 +23,15 @@ pub fn run_cmd(
     pre_dump: impl Fn(),
     full_logging: bool,
 ) -> Result<(String, String, i32), ExecutionError> {
-    // We run the command in a shell so that NPM/Yarn binaries can be recognized
-    // (see #5)
-    #[cfg(unix)]
-    let shell_exec = "sh";
-    #[cfg(windows)]
-    let shell_exec = "powershell";
-    #[cfg(unix)]
-    let shell_param = "-c";
-    #[cfg(windows)]
-    let shell_param = "-command";
+    let cmd_parts = shell_words::split(&cmd).map_err(|err| ExecutionError::CmdParseFailed {
+        cmd: cmd.clone(),
+        source: err,
+    })?;
+    let cmd_exec = &cmd_parts[0];
 
     // This will NOT pipe output/errors to the console
-    let output = Command::new(shell_exec)
-        .args([shell_param, &cmd])
+    let output = Command::new(cmd_exec)
+        .args(&cmd_parts[1..])
         .envs(envs)
         .current_dir(dir)
         // A pipe is set for stdio

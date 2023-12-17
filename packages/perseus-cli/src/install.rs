@@ -530,19 +530,8 @@ impl Tool {
     /// error, and hence it should only be called after all other options
     /// have been exhausted.
     fn get_path_to_preinstalled(&self) -> Result<String, InstallError> {
-        #[cfg(unix)]
-        let shell_exec = "sh";
-        #[cfg(windows)]
-        let shell_exec = "powershell";
-        #[cfg(unix)]
-        let shell_param = "-c";
-        #[cfg(windows)]
-        let shell_param = "-command";
-
-        let check_cmd = format!("{} --version", self.name); // Not exactly bulletproof, but it works!
-        let res = Command::new(shell_exec)
-            .args([shell_param, &check_cmd])
-            .output();
+        // Not exactly bulletproof, but it works!
+        let res = Command::new(&self.name).arg("--version").output();
         if let Err(err) = res {
             // Unlike `wasm-pack`, we don't try to install with `cargo install`, because
             // that's a little pointless to me (the user will still have to get

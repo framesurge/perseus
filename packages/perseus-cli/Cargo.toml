@@ -27,6 +27,7 @@ path = "tests/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+shell-words = "1"
 include_dir = "0.7"
 thiserror = "1"
 fmterr = "0.1"

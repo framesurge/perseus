@@ -44,6 +44,13 @@ pub enum Error {
 /// `build`/`serve` (export errors are separate).
 #[derive(Error, Debug)]
 pub enum ExecutionError {
+    #[error("failed to parse command for execution")]
+    CmdParseFailed {
+        cmd: String,
+        // Right now, this can only be an unmatched quote error
+        #[source]
+        source: shell_words::ParseError,
+    },
     #[error("couldn't execute command '{cmd}' (this doesn't mean it threw an error, it means it couldn't be run at all)")]
     CmdExecFailed {
         cmd: String,
