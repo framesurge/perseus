@@ -23,7 +23,7 @@ That third template can take in some state, and produce a different page for eve
 
 So what about those first two? Well, they're very simple templates that don't take any state at all --- they can only produce one page. To take our crude mathematical definition, `T() = P` for these, and, since `T` takes no arguments, it can only produce the same page every time.
 
-This nicely illustrates that the determining factor that differentiates pages from each other is state, and that's what Perseus is built around.
+This illustrates nicely that the determining factor that differentiates pages from each other is state, and that's what Perseus is built around.
 
 Let's return to our music player app. Are all those songs listed in a database available at build-time? Use the [*build state*](:state/build) strategy. Are there too many to build all at once? Use [*incremental generation*](:state/incremental) to build only the most commonly used songs first, and then build the rest on-demand when they're first accessed, caching to make them fast for subsequent users.
 
