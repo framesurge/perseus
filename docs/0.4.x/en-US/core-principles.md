@@ -61,7 +61,7 @@ What's nice about this architecture is that you can do it yourself without the m
 
 The key thing here is that you can easily use this more advanced structure to gain greater control over your app without sacrificing any performance. From here, you can also gain greater control over any part of your app's build process, which makes Perseus practically infinitely customizable to do exactly what you want!
 
-The upshot of all this is that Perseus is actually creating two separate entry points, one for the engine-side and another for the browser-side. Crucially, both use the same `PerseusApp`, which is a universal way of defining your app's components, like templates. (You don't need to know this, but it actually does slightly different things on the browser and on the engine-sides itself to optimize your app.)
+The upshot of all this is that Perseus is actually creating two separate entrypoints, one for the engine-side and another for the browser-side. Crucially, both use the same `PerseusApp`, which is a universal way of defining your app's components, like templates. (You don't need to know this, but it actually does slightly different things on the browser and engine-sides itself to optimize your app.)
 
 Why do you need to know all this? Because it makes it much easier to understand how to expand your app's capabilities, and it demystifies those macros a bit. Also, it shows that you can actually avoid them entirely if you want to! (Sycamore also has a [builder API](https://sycamore-rs.netlify.app/docs/basics/view#builder-syntax) that you can use to avoid their `view! { .. }` macro too, if you really want.)
 
