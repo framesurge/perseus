@@ -23,6 +23,14 @@ pub fn run_cmd(
     pre_dump: impl Fn(),
     full_logging: bool,
 ) -> Result<(String, String, i32), ExecutionError> {
+    // XXX: Branch-specific, do not merge into `main`!
+    let mut dbg_log = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("perseus_debug.log")
+        .expect("failed to open debug log");
+    writeln!(dbg_log, "About to run: '{}'", &cmd).expect("failed to write to debug log");
+
     let cmd_parts = shell_words::split(&cmd).map_err(|err| ExecutionError::CmdParseFailed {
         cmd: cmd.clone(),
         source: err,
