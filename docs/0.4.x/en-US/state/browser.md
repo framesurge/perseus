@@ -20,7 +20,7 @@ The `MakeRx` implementation just creates a wrapper that isn't really reactive, a
 
 Once Perseus has made your state reactive, it will store it in the *state store*, which is pretty much a giant repository of all the states your app has. As a user visits a new page, its state will be added to this cache, allowing that page to be re-rendered later without any network requests. This can be thought of as the caching equivalent of SPA routing (if you're familiar with that), and it allows Perseus to ensure a seamless experience for your users. The number of pages that can be in the state store at any one time is 25 by default (but this may change in a future release), and you can change it manually with the `.pss_max_size()` method on your `PerseusApp`.
 
-Because Perseus makes your state reactive, *and then* stores it in the state store (abbreviated PSS for Perseus state store, since the alternative is quite unsavoury), any updates your pages make to their state will be reflected in this cache, meaning that, when users come back to, say, a pahge whose state included some form inputs, those inputs will be as they left them, without needing to rely on the browser to provide this. We strongly believe this behavior should be the default for the web, and it's built into Perseus. (If you'd like to avoid it though, you can always use unreactive state, or use `Signal`s manually that aren't checked into Perseus.)
+Because Perseus makes your state reactive, *and then* stores it in the state store (abbreviated PSS for Perseus state store, since the alternative is quite unsavoury), any updates your pages make to their state will be reflected in this cache, meaning that, when users come back to, say, a page whose state included some form inputs, those inputs will be as they left them, without needing to rely on the browser to provide this. We strongly believe this behavior should be the default for the web, and it's built into Perseus. (If you'd like to avoid it though, you can always use unreactive state, or use `Signal`s manually that aren't checked into Perseus.)
 
 When the user goes to a page they've already visited in the past, Perseus will try to find the cached state in the PSS, and it will use that if it can. Otherwise, it will request the state only (no HTML) from the server, and then cache it.
 
@@ -36,7 +36,7 @@ fn my_view<G: Html>(cx: Scope, state: &MyStateRx) -> View<G>
 This is made possible by the `#[auto_scope]` macro, which rewrites this function signature into something much more complicated with lifetimes everywhere:
 
 ```rust
-fn my_view<'page, G: Html>(cx: BoundedScope<'_, 'page>, state: &'page MyStateRx) -> View<G> 
+fn my_view<'page, G: Html>(cx: BoundedScope<'_, 'page>, state: &'page MyStateRx) -> View<G>
 ```
 
 So let's break this down. We've gone from `Scope` to `BoundedScope`, which is an important difference. Basically, a `BoundedScope` is the fundamental primitive in Sycamore: it takes the lifetime of some root-level scope, and then the lifetime of itself. The reason for this is that, in Sycamore, you can have *child scopes*: so, in Perseus, the first lifetime is `'app`, and the second is `'page`, where the app will outlive the page. `Scope` is actually just an alias for a special type of `BoundedScope` where the lifetimes are the same, but it's much easier to write, so `#[auto_scope]` lets you do that. Notice that the `'app` lifetime can be elided, and Rust will figure this out itself.
@@ -53,7 +53,7 @@ Note that it's often a good idea to use unreactive state, even if you think you 
 
 ## Nested state
 
-When you're using the `ReactiveState` derive macro, it's common to want to have some types use nested state, so that you can do something like `state.foo.bar.get()`, rather than `state.foo.get().bar`. This can enable greater flexibility and granularity, and is supported through the `#[rx(nested)]` helper macro, which will assume the type of the field it annotates has had `ReactiveState` derived on it. 
+When you're using the `ReactiveState` derive macro, it's common to want to have some types use nested state, so that you can do something like `state.foo.bar.get()`, rather than `state.foo.get().bar`. This can enable greater flexibility and granularity, and is supported through the `#[rx(nested)]` helper macro, which will assume the type of the field it annotates has had `ReactiveState` derived on it.
 
 If you want to use some more complex types of nested state, such as nested `Vec`s or `HashMap`s, take a look at [this module](=state/rx_collections@perseus), and enable the `rx-collections` feature flag on Perseus.
 
