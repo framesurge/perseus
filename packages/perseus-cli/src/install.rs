@@ -486,7 +486,7 @@ impl Tool {
                 tool: self.name.to_string(),
             })?;
         let latest_version =
-            json.get("name")
+            json.get("tag_name")
                 .ok_or_else(|| InstallError::ParseToolVersionFailed {
                     tool: self.name.to_string(),
                 })?;
