@@ -32,7 +32,7 @@ include_dir = "0.7"
 thiserror = "1"
 fmterr = "0.1"
 cargo_toml = "0.15"
-indicatif = "=0.17.0-beta.1" # Not stable, but otherwise error handling is just about impossible
+indicatif = "0.17"
 console = "0.15"
 serde = "1"
 serde_json = "1"
@@ -42,7 +42,7 @@ tokio = { version = "1", features = [ "macros", "rt-multi-thread", "sync" ] }
 warp = "0.3"
 command-group = "2"
 ctrlc = { version = "3.2", features = ["termination"] }
-notify = "=5.0.0-pre.13"
+notify = "6"
 futures = "0.3"
 tokio-stream = "0.1"
 reqwest = { version = "0.11", features = [ "json", "stream" ] }

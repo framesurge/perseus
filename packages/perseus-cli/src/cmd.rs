@@ -4,6 +4,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::time::Duration;
 
 // Some useful emojis
 pub static SUCCESS: Emoji<'_, '_> = Emoji("✅", "success!");
@@ -72,7 +73,7 @@ pub fn cfg_spinner(spinner: ProgressBar, message: &str) -> ProgressBar {
     spinner.set_style(ProgressStyle::default_spinner().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ "));
     spinner.set_message(format!("{}...", &message));
     // Tick the spinner every 50 milliseconds
-    spinner.enable_steady_tick(50);
+    spinner.enable_steady_tick(Duration::from_millis(50));
 
     spinner
 }
