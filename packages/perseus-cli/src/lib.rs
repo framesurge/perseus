@@ -128,5 +128,11 @@ pub fn get_user_crate_name(dir: &Path) -> Result<String, ExecutionError> {
 /// *Note: following v0.4.0-beta.18, these will only affect the top-level paths
 /// with these names, rather than any paths with these names. Further exclusions
 /// should be manually specified.*
-pub static WATCH_EXCLUSIONS: &[&str] =
-    &["dist", "target", "target_engine", "target_browser", ".git", "node_modules"];
+pub static WATCH_EXCLUSIONS: &[&str] = &[
+    "dist",
+    "target",
+    "target_engine",
+    "target_browser",
+    ".git",
+    "node_modules",
+];
