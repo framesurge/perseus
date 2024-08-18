@@ -22,6 +22,7 @@ This will create a new directory called `my-app/` that's equipped for a binary p
 ```toml
 [build]
 rustflags = [ "--cfg", "engine" ]
+rustdocflags = [ "--cfg", "engine" ]
 ```
 
 This will make sure your IDE builds your app correctly. Without this, you'll have red squiggly lines all over the place, because Perseus needs to be explicitly told if it's working on the engine-side (e.g. a server) or the browser-side, which are very different environments! Also, setting things up explicitly like this lets you change `engine` to `client` in that file when you want your IDE to help you out with working on browser-only code. 
