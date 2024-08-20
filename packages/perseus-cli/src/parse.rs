@@ -1,7 +1,9 @@
 #![allow(missing_docs)] // Prevents double-documenting some things
 
-use crate::PERSEUS_VERSION;
 use clap::Parser;
+
+/// The current version of the CLI, extracted from the crate version.
+pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // The documentation for the `Opts` struct will appear in the help page, hence
 // the lack of punctuation and the lowercasing in places

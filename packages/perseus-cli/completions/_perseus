@@ -1,0 +1,878 @@
+#compdef perseus
+
+autoload -U is-at-least
+
+_perseus() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_perseus_commands" \
+"*::: :->perseus-cli" \
+&& ret=0
+    case $state in
+    (perseus-cli)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:perseus-command-$line[1]:"
+        case $line[1] in
+            (build)
+_arguments "${_arguments_options[@]}" : \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--release[Build for production]' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(export-error-page)
+_arguments "${_arguments_options[@]}" : \
+'-c+[]:CODE: ' \
+'--code=[]:CODE: ' \
+'-o+[]:OUTPUT: ' \
+'--output=[]:OUTPUT: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(export)
+_arguments "${_arguments_options[@]}" : \
+'--host=[Where to host your exported app]:HOST: ' \
+'--port=[The port to host your exported app on]:PORT: ' \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--release[Export for production]' \
+'-s[Serve the generated static files locally]' \
+'--serve[Serve the generated static files locally]' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(serve)
+_arguments "${_arguments_options[@]}" : \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--host=[Where to host your exported app]:HOST: ' \
+'--port=[The port to host your exported app on]:PORT: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--no-run[Don'\''t run the final binary, but print its location instead as the last line of output]' \
+'--no-build[Only build the server, and use the results of a previous \`perseus build\`]' \
+'--release[Build and serve for production]' \
+'--standalone[Make the final binary standalone (this is used in \`perseus deploy\` only, don'\''t manually invoke it unless you have a good reason!)]' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(test)
+_arguments "${_arguments_options[@]}" : \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--host=[Where to host your exported app]:HOST: ' \
+'--port=[The port to host your exported app on]:PORT: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--no-build[Only build the testing server, and use the results of a previous \`perseus build\`]' \
+'--show-browser[Show the browser window when testing (by default, the browser is used in '\''headless'\'' mode); this can be useful for debugging failing tests in some cases]' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(clean)
+_arguments "${_arguments_options[@]}" : \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(deploy)
+_arguments "${_arguments_options[@]}" : \
+'-o+[Change the output from \`pkg/\` to somewhere else]:OUTPUT: ' \
+'--output=[Change the output from \`pkg/\` to somewhere else]:OUTPUT: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'-e[Export your app to purely static files (see \`export\`)]' \
+'--export-static[Export your app to purely static files (see \`export\`)]' \
+'--no-minify-js[Don'\''t minify JavaScript (this will decrease performance)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(tinker)
+_arguments "${_arguments_options[@]}" : \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--no-clean[Don'\''t remove and recreate the \`dist/\` directory]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(snoop)
+_arguments "${_arguments_options[@]}" : \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_perseus__snoop_commands" \
+"*::: :->snoop" \
+&& ret=0
+
+    case $state in
+    (snoop)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:perseus-snoop-command-$line[1]:"
+        case $line[1] in
+            (build)
+_arguments "${_arguments_options[@]}" : \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(wasm-build)
+_arguments "${_arguments_options[@]}" : \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(serve)
+_arguments "${_arguments_options[@]}" : \
+'--host=[Where to host your exported app]:HOST: ' \
+'--port=[The port to host your exported app on]:PORT: ' \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_perseus__snoop__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:perseus-snoop-help-command-$line[1]:"
+        case $line[1] in
+            (build)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(wasm-build)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(serve)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(new)
+_arguments "${_arguments_options[@]}" : \
+'-t+[An optional custom URL to a Git repository to be used as a custom template (note that custom templates will not respect your project'\''s name). This can be followed with \`@branch\` to fetch from \`branch\` rather than the default]:TEMPLATE: ' \
+'--template=[An optional custom URL to a Git repository to be used as a custom template (note that custom templates will not respect your project'\''s name). This can be followed with \`@branch\` to fetch from \`branch\` rather than the default]:TEMPLATE: ' \
+'--dir=[The path to a custom directory to create (if this is not provided, the project name will be used by default)]:DIR: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- The name of the new project, which will also be used for the directory:' \
+&& ret=0
+;;
+(init)
+_arguments "${_arguments_options[@]}" : \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- The name of the new project:' \
+&& ret=0
+;;
+(check)
+_arguments "${_arguments_options[@]}" : \
+'*--custom-watch=[Marks a specific file/directory to be watched (directories will be recursively watched)]:CUSTOM_WATCH: ' \
+'--cargo-engine-path=[The path to \`cargo\` when used for engine builds]:CARGO_ENGINE_PATH: ' \
+'--cargo-browser-path=[The path to \`cargo\` when used for browser builds]:CARGO_BROWSER_PATH: ' \
+'--wasm-bindgen-path=[A path to \`wasm-bindgen\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_BINDGEN_PATH: ' \
+'--wasm-opt-path=[A path to \`wasm-opt\`, if you want to use a local installation (note that the CLI will install it locally for you by default)]:WASM_OPT_PATH: ' \
+'--rustup-path=[The path to \`rustup\`]:RUSTUP_PATH: ' \
+'--wasm-release-rustflags=[The value of \`RUSTFLAGS\` when building for Wasm in release mode (this will not impact internal target-gating)]:WASM_RELEASE_RUSTFLAGS: ' \
+'--cargo-engine-args=[Any arguments to \`cargo\` when building for the engine-side]:CARGO_ENGINE_ARGS: ' \
+'--cargo-browser-args=[Any arguments to \`cargo\` when building for the browser-side]:CARGO_BROWSER_ARGS: ' \
+'--wasm-bindgen-args=[Any arguments to \`wasm-bindgen\`]:WASM_BINDGEN_ARGS: ' \
+'--wasm-opt-args=[Any arguments to \`wasm-opt\` (only run in release builds)]:WASM_OPT_ARGS: ' \
+'--git-path=[The path to \`git\` (for downloading custom templates for \`perseus new\`)]:GIT_PATH: ' \
+'--reload-server-host=[The host for the reload server (you should almost never change this)]:RELOAD_SERVER_HOST: ' \
+'--reload-server-port=[The port for the reload server (you should almost never change this)]:RELOAD_SERVER_PORT: ' \
+'--wasm-bindgen-version=[A custom version of \`wasm-bindgen\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_BINDGEN_VERSION: ' \
+'--wasm-opt-version=[A custom version of \`wasm-opt\` to use (defaults to the latest installed version, and after that the latest available from GitHub; update to latest can be forced with \`latest\`)]:WASM_OPT_VERSION: ' \
+'-w[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'--watch[Watch the files in your working directory for changes (excluding \`target/\` and \`dist/\`)]' \
+'-g[Make sure the app'\''s page generation works properly (this will take much longer, but almost guarantees that your app will actually build); use this to catch errors in build state and the like]' \
+'--generate[Make sure the app'\''s page generation works properly (this will take much longer, but almost guarantees that your app will actually build); use this to catch errors in build state and the like]' \
+'--sequential[If this is set, commands will be run sequentially rather than in parallel (slows down operations, but reduces memory usage)]' \
+'--no-browser-reload[Disable automatic browser reloading]' \
+'--no-system-tools-cache[Disables the system-wide tools cache in \`~/.cargo/perseus_tools/\` (you should set this for CI)]' \
+'--verbose[Shows the logs from building and serving your app no matter what (the default is to only show them on a compilation/build failure); this is intended mainly for end-to-end debugging, although the \`snoop\` commands are more useful for targeted debugging]' \
+'--disable-bundle-compression[Disable Brotli compression of JS and Wasm bundles (may degrade performance)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_perseus__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:perseus-help-command-$line[1]:"
+        case $line[1] in
+            (build)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(export-error-page)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(export)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(serve)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(test)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(clean)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(deploy)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(tinker)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(snoop)
+_arguments "${_arguments_options[@]}" : \
+":: :_perseus__help__snoop_commands" \
+"*::: :->snoop" \
+&& ret=0
+
+    case $state in
+    (snoop)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:perseus-help-snoop-command-$line[1]:"
+        case $line[1] in
+            (build)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(wasm-build)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(serve)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(new)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(init)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(check)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_perseus_commands] )) ||
+_perseus_commands() {
+    local commands; commands=(
+'build:Builds your app' \
+'export-error-page:Exports an error page for the given HTTP status code' \
+'export:Exports your app to purely static files' \
+'serve:Serves your app' \
+'test:Serves your app as \`perseus serve\` does, but puts it in testing mode' \
+'clean:Removes build artifacts in the \`dist/\` directory' \
+'deploy:Packages your app for deployment' \
+'tinker:Runs the \`tinker\` action of plugins, which lets them modify the Perseus engine' \
+'snoop:Runs one of the underlying commands that builds your app, allowing you to see more detailed logs' \
+'new:Creates a new Perseus project in a directory of the given name, which will be created in the current path' \
+'init:Initializes a new Perseus project in the current directory' \
+'check:Checks if your app builds properly for both the engine-side and the browser-side' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'perseus commands' commands "$@"
+}
+(( $+functions[_perseus__build_commands] )) ||
+_perseus__build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus build commands' commands "$@"
+}
+(( $+functions[_perseus__check_commands] )) ||
+_perseus__check_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus check commands' commands "$@"
+}
+(( $+functions[_perseus__clean_commands] )) ||
+_perseus__clean_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus clean commands' commands "$@"
+}
+(( $+functions[_perseus__deploy_commands] )) ||
+_perseus__deploy_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus deploy commands' commands "$@"
+}
+(( $+functions[_perseus__export_commands] )) ||
+_perseus__export_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus export commands' commands "$@"
+}
+(( $+functions[_perseus__export-error-page_commands] )) ||
+_perseus__export-error-page_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus export-error-page commands' commands "$@"
+}
+(( $+functions[_perseus__help_commands] )) ||
+_perseus__help_commands() {
+    local commands; commands=(
+'build:Builds your app' \
+'export-error-page:Exports an error page for the given HTTP status code' \
+'export:Exports your app to purely static files' \
+'serve:Serves your app' \
+'test:Serves your app as \`perseus serve\` does, but puts it in testing mode' \
+'clean:Removes build artifacts in the \`dist/\` directory' \
+'deploy:Packages your app for deployment' \
+'tinker:Runs the \`tinker\` action of plugins, which lets them modify the Perseus engine' \
+'snoop:Runs one of the underlying commands that builds your app, allowing you to see more detailed logs' \
+'new:Creates a new Perseus project in a directory of the given name, which will be created in the current path' \
+'init:Initializes a new Perseus project in the current directory' \
+'check:Checks if your app builds properly for both the engine-side and the browser-side' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'perseus help commands' commands "$@"
+}
+(( $+functions[_perseus__help__build_commands] )) ||
+_perseus__help__build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help build commands' commands "$@"
+}
+(( $+functions[_perseus__help__check_commands] )) ||
+_perseus__help__check_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help check commands' commands "$@"
+}
+(( $+functions[_perseus__help__clean_commands] )) ||
+_perseus__help__clean_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help clean commands' commands "$@"
+}
+(( $+functions[_perseus__help__deploy_commands] )) ||
+_perseus__help__deploy_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help deploy commands' commands "$@"
+}
+(( $+functions[_perseus__help__export_commands] )) ||
+_perseus__help__export_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help export commands' commands "$@"
+}
+(( $+functions[_perseus__help__export-error-page_commands] )) ||
+_perseus__help__export-error-page_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help export-error-page commands' commands "$@"
+}
+(( $+functions[_perseus__help__help_commands] )) ||
+_perseus__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help help commands' commands "$@"
+}
+(( $+functions[_perseus__help__init_commands] )) ||
+_perseus__help__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help init commands' commands "$@"
+}
+(( $+functions[_perseus__help__new_commands] )) ||
+_perseus__help__new_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help new commands' commands "$@"
+}
+(( $+functions[_perseus__help__serve_commands] )) ||
+_perseus__help__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help serve commands' commands "$@"
+}
+(( $+functions[_perseus__help__snoop_commands] )) ||
+_perseus__help__snoop_commands() {
+    local commands; commands=(
+'build:Snoops on the static generation process (this will let you see \`dbg!\` calls and the like)' \
+'wasm-build:Snoops on the Wasm building process (mostly for debugging errors)' \
+'serve:Snoops on the server process (run \`perseus build\` before this)' \
+    )
+    _describe -t commands 'perseus help snoop commands' commands "$@"
+}
+(( $+functions[_perseus__help__snoop__build_commands] )) ||
+_perseus__help__snoop__build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help snoop build commands' commands "$@"
+}
+(( $+functions[_perseus__help__snoop__serve_commands] )) ||
+_perseus__help__snoop__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help snoop serve commands' commands "$@"
+}
+(( $+functions[_perseus__help__snoop__wasm-build_commands] )) ||
+_perseus__help__snoop__wasm-build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help snoop wasm-build commands' commands "$@"
+}
+(( $+functions[_perseus__help__test_commands] )) ||
+_perseus__help__test_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help test commands' commands "$@"
+}
+(( $+functions[_perseus__help__tinker_commands] )) ||
+_perseus__help__tinker_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus help tinker commands' commands "$@"
+}
+(( $+functions[_perseus__init_commands] )) ||
+_perseus__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus init commands' commands "$@"
+}
+(( $+functions[_perseus__new_commands] )) ||
+_perseus__new_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus new commands' commands "$@"
+}
+(( $+functions[_perseus__serve_commands] )) ||
+_perseus__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus serve commands' commands "$@"
+}
+(( $+functions[_perseus__snoop_commands] )) ||
+_perseus__snoop_commands() {
+    local commands; commands=(
+'build:Snoops on the static generation process (this will let you see \`dbg!\` calls and the like)' \
+'wasm-build:Snoops on the Wasm building process (mostly for debugging errors)' \
+'serve:Snoops on the server process (run \`perseus build\` before this)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'perseus snoop commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__build_commands] )) ||
+_perseus__snoop__build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus snoop build commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__help_commands] )) ||
+_perseus__snoop__help_commands() {
+    local commands; commands=(
+'build:Snoops on the static generation process (this will let you see \`dbg!\` calls and the like)' \
+'wasm-build:Snoops on the Wasm building process (mostly for debugging errors)' \
+'serve:Snoops on the server process (run \`perseus build\` before this)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'perseus snoop help commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__help__build_commands] )) ||
+_perseus__snoop__help__build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus snoop help build commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__help__help_commands] )) ||
+_perseus__snoop__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus snoop help help commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__help__serve_commands] )) ||
+_perseus__snoop__help__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus snoop help serve commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__help__wasm-build_commands] )) ||
+_perseus__snoop__help__wasm-build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus snoop help wasm-build commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__serve_commands] )) ||
+_perseus__snoop__serve_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus snoop serve commands' commands "$@"
+}
+(( $+functions[_perseus__snoop__wasm-build_commands] )) ||
+_perseus__snoop__wasm-build_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus snoop wasm-build commands' commands "$@"
+}
+(( $+functions[_perseus__test_commands] )) ||
+_perseus__test_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus test commands' commands "$@"
+}
+(( $+functions[_perseus__tinker_commands] )) ||
+_perseus__tinker_commands() {
+    local commands; commands=()
+    _describe -t commands 'perseus tinker commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_perseus" ]; then
+    _perseus "$@"
+else
+    compdef _perseus perseus
+fi
