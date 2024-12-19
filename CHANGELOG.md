@@ -2,6 +2,54 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.3](/home/arctic-hen7/me/.main-mirror.git/compare/v0.4.2...v0.4.3) (2024-07-19)
+
+
+### Features
+
+* add support for brotli compression ([#300](null/home/arctic-hen7/me/.main-mirror.git/issues/300)) ([8016599](/home/arctic-hen7/me/.main-mirror.git/commit/80165996da0b6a26fe3f15399d0bfcb5847a6467))
+* **cli:** added openssl/vendored feature ([#287](null/home/arctic-hen7/me/.main-mirror.git/issues/287)) ([663389b](/home/arctic-hen7/me/.main-mirror.git/commit/663389b6376286ca30e394c85c414986e62e4535))
+* **cli:** added pre-flight shell check ([76a38f3](/home/arctic-hen7/me/.main-mirror.git/commit/76a38f346483de8c34c876e9ddc04ebcf21c3450)), closes [#314](/home/arctic-hen7/me/.main-mirror.git/issues/314)
+* **perseus-cli:** add 'node_modules' to watch exclusions ([#313](null/home/arctic-hen7/me/.main-mirror.git/issues/313)) ([3f04e40](/home/arctic-hen7/me/.main-mirror.git/commit/3f04e4060f9a99fe69a1370128c8f3509924ceea))
+
+
+### Bug Fixes
+
+* added format ignore to problematic macro ([276a0c1](/home/arctic-hen7/me/.main-mirror.git/commit/276a0c1f6afb45f3bbec0030e443f2d27149c23b))
+* **cli:** used `tag_name` rather than `name` to get tool versions ([fa45801](/home/arctic-hen7/me/.main-mirror.git/commit/fa458017eb258726d835ef00837381dd92112168)), closes [#329](/home/arctic-hen7/me/.main-mirror.git/issues/329)
+* fixed bad error condition ([9018463](/home/arctic-hen7/me/.main-mirror.git/commit/9018463c428bf7814a886d384c6857ee015fc36b))
+* fixed overzealous formatting ([926022f](/home/arctic-hen7/me/.main-mirror.git/commit/926022f198679cfb12fabd60981461f7f0dc16b7))
+* fixed readme link ([#298](null/home/arctic-hen7/me/.main-mirror.git/issues/298)) ([ed1048b](/home/arctic-hen7/me/.main-mirror.git/commit/ed1048b35814666aebe436965a162f0328866abb))
+* improved error message for minification errors ([43887b3](/home/arctic-hen7/me/.main-mirror.git/commit/43887b3102742b42f1d36cac40743db1a14235e1))
+* updated `rocket` to stable ([0150962](/home/arctic-hen7/me/.main-mirror.git/commit/01509626ec3f81ee53313474f6ff0425a4cb033b))
+
+
+### Performance Improvements
+
+* switched to JS for defining internal constants ([#293](null/home/arctic-hen7/me/.main-mirror.git/issues/293)) ([b765e88](/home/arctic-hen7/me/.main-mirror.git/commit/b765e88c34a6854087054e3b839768180f104c19))
+
+
+### Code Refactorings
+
+* **cli:** removed shell dependency ([0b98318](/home/arctic-hen7/me/.main-mirror.git/commit/0b983188a57f18a6cf5577669e4f7eb595e35eeb))
+
+
+### Documentation Changes
+
+* added `cd` step to website start example ([#302](null/home/arctic-hen7/me/.main-mirror.git/issues/302)) ([800003c](/home/arctic-hen7/me/.main-mirror.git/commit/800003c495a5438109fb3427de2ea3c1baeb6595))
+* added embedded example for linking css file ([#299](null/home/arctic-hen7/me/.main-mirror.git/issues/299)) ([1d5f859](/home/arctic-hen7/me/.main-mirror.git/commit/1d5f85936a47a3ac1d2156c9351230ad41c69ed6))
+* clarify intl feature flags ([#323](null/home/arctic-hen7/me/.main-mirror.git/issues/323)) ([47e99bd](/home/arctic-hen7/me/.main-mirror.git/commit/47e99bd9ef4e541130ffd9a41a4b9152056ac280))
+* fixed broken link and typo ([#297](null/home/arctic-hen7/me/.main-mirror.git/issues/297)) ([1de991d](/home/arctic-hen7/me/.main-mirror.git/commit/1de991df00faffeebc8be0072cfe613e88d129d8))
+* fixed dead link ([51c8ee6](/home/arctic-hen7/me/.main-mirror.git/commit/51c8ee67401a1a6409825aa27774ed44d7bb4da4))
+* fixed mistakes in capsules intro ([#289](null/home/arctic-hen7/me/.main-mirror.git/issues/289)) ([2409edd](/home/arctic-hen7/me/.main-mirror.git/commit/2409edd32e32be2e79261812dc75ad48de123295))
+* fixed typo ([#296](null/home/arctic-hen7/me/.main-mirror.git/issues/296)) ([b1da160](/home/arctic-hen7/me/.main-mirror.git/commit/b1da160dfd5a2616bb70b7112fcc48556889a6ad))
+* fixed typo ([#310](null/home/arctic-hen7/me/.main-mirror.git/issues/310)) ([94cc497](/home/arctic-hen7/me/.main-mirror.git/commit/94cc4970bc135c36fb03cee613dc6bfa8ee07d8a))
+* fixed typo ([#311](null/home/arctic-hen7/me/.main-mirror.git/issues/311)) ([2d2aa14](/home/arctic-hen7/me/.main-mirror.git/commit/2d2aa14c10db06c192bd85b43887db02c3087b0c))
+* fixed typo ([#327](null/home/arctic-hen7/me/.main-mirror.git/issues/327)) ([cf5ad2a](/home/arctic-hen7/me/.main-mirror.git/commit/cf5ad2aaa0682dadbfea8b3c1f339ff08cdf0b26))
+* fixed typos and broken example inclusions ([#308](null/home/arctic-hen7/me/.main-mirror.git/issues/308)) ([9b8fcb5](/home/arctic-hen7/me/.main-mirror.git/commit/9b8fcb59773638caa2b5f21385cb94e0d8fd75ca))
+* fixed typos in core-principles.md ([#316](null/home/arctic-hen7/me/.main-mirror.git/issues/316)) ([eeccf81](/home/arctic-hen7/me/.main-mirror.git/commit/eeccf817b58339fa58e368b1a1e2498dbbf21663))
+* improve quickstart guide ([#294](null/home/arctic-hen7/me/.main-mirror.git/issues/294)) ([ba1608a](/home/arctic-hen7/me/.main-mirror.git/commit/ba1608a2a7d1d617efa31f877a1c96b2116c898f))
+
 ### [0.4.2](https://github.com/framesurge/perseus/compare/v0.4.1...v0.4.2) (2023-05-17)
 
 
