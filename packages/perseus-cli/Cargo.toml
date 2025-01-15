@@ -56,6 +56,11 @@ walkdir = "2"
 openssl = { version = "0.10.52", optional = true}
 brotlic = "0.8"
 
+[build-dependencies]
+clap = { version = "4.2", features = ["color", "derive"], optional = true }
+clap_complete = { version = "4.5.7", optional = true }
+clap_complete_nushell = { version = "4.5.2", optional = true }
+
 [dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
@@ -70,5 +75,7 @@ name = "perseus"
 path = "src/bin/main.rs"
 
 [features]
+default = ["completions"]
+completions = ["clap", "clap_complete", "clap_complete_nushell"]
 # `reqwest` uses the system-native transport layer by default, this is necessary in some environments
 vendored-openssl = [ "openssl/vendored" ]
