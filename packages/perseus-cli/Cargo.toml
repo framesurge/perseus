@@ -52,7 +52,7 @@ flate2 = "1"
 directories = "5"
 cargo_metadata = "0.20"
 cargo-lock = "10"
-minify-js = "=0.4.3"                                                        # Be careful changing this, and test extensively!
+minify-js = "=0.6.0"                                                        # Be careful changing this, and test extensively!
 walkdir = "2"
 openssl = { version = "0.10.52", optional = true }
 brotlic = "0.8"
