@@ -165,11 +165,13 @@ pub enum DeployError {
         #[source]
         source: std::io::Error,
     },
+
     #[error("failed to minify javascript bundle (this is probably an upstream bug, re-try with `--no-minify-js`)")]
     MinifyError {
         #[source]
-        source: minify_js::MinifyError,
+        source: minify_js::Error,
     },
+
     #[error("minified js was not utf-8 (this is a bug, re-try with `--no-minify-js` for now)")]
     MinifyNotUtf8 {
         #[source]
