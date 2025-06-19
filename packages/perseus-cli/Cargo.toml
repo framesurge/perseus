@@ -30,9 +30,9 @@ path = "tests/lib.rs"
 [dependencies]
 shell-words = "1"
 include_dir = "0.7"
-thiserror = "2"
+thiserror = "1"
 fmterr = "0.1"
-cargo_toml = "0.22"
+cargo_toml = "0.15"
 indicatif = "0.17"
 console = "0.15"
 serde = "1"
@@ -41,18 +41,18 @@ clap = { version = "4.2", features = ["color", "derive"] }
 fs_extra = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
 warp = "0.3"
-command-group = "5"
+command-group = "2"
 ctrlc = { version = "3.2", features = ["termination"] }
-notify = "8"
+notify = "6"
 futures = "0.3"
 tokio-stream = "0.1"
-reqwest = { version = "0.12", features = ["json", "stream"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
 tar = "0.4"
 flate2 = "1"
-directories = "6"
-cargo_metadata = "0.20"
+directories = "5"
+cargo_metadata = "0.15"
 cargo-lock = "10"
-minify-js = "=0.6.0"                                                        # Be careful changing this, and test extensively!
+minify-js = "=0.4.3"                                                        # Be careful changing this, and test extensively!
 walkdir = "2"
 openssl = { version = "0.10.52", optional = true }
 brotlic = "0.8"
@@ -61,7 +61,7 @@ brotlic = "0.8"
 assert_cmd = "2"
 assert_fs = "1"
 predicates = "3"
-ureq = "3"
+ureq = "2"
 
 [lib]
 name = "perseus_cli"
