@@ -5,7 +5,7 @@
 Cargo.lock
 pkg/
 .tribble/
-
+.idea/
 target_engine/
 target_wasm/
 dist/
