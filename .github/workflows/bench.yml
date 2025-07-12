@@ -45,50 +45,58 @@ jobs:
             - uses: actions/checkout@v2
 
             # Cache Cargo binaries
-            - uses: actions/cache@v3
+            - uses: actions/cache@v4
               id: cache
               with:
-                path: |
-                  ~/.cargo/bin/
-                # The cache should be OS-specific
-                key: ${{ runner.os }}-cargo-bins
+                  path: |
+                      ~/.cargo/bin/
+                  # The cache should be OS-specific
+                  key: ${{ runner.os }}-cargo-bins
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
               run: cargo install bonnie rust-script
 
             # Also cache all the other Cargo files, since plenty of CI runs won't involve different dependencies
-            - uses: actions/cache@v3
+            - uses: actions/cache@v4
               with:
-                path: |
-                  ~/.cargo/registry/index/
-                  ~/.cargo/registry/cache/
-                  ~/.cargo/git/db/
-                  target/
-                key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+                  path: |
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
             - name: Run benchmark for ${{ matrix.name }} in category ${{ matrix.type }}
-              run: bonnie bench size ${{ matrix.type }} ${{ matrix.name }} --json | tee output.txt
+              run: bonnie bench size ${{ matrix.type }} ${{ matrix.name }} --json > output.txt
+
+            # Add this step to see what's actually in the file before the action runs
+            - name: "Debug: Display benchmark output file"
+              run: |
+                  echo "--- Contents of output.txt ---"
+                  cat output.txt
+                  echo "------------------------------"
+
             # Download previous benchmark result from cache (if exists)
             - name: Download previous benchmark data
-              uses: actions/cache@v3
+              uses: actions/cache@v4
               with:
-                path: ./cache
-                key: ${{ runner.os }}-benchmark
+                  path: ./cache
+                  key: ${{ runner.os }}-benchmark
 
             - name: Store benchmark result
               uses: benchmark-action/github-action-benchmark@v1
               with:
-                    # What benchmark tool the output.txt came from
-                    tool: "customSmallerIsBetter"
-                    # Where the output from the benchmark tool is stored
-                    output-file-path: output.txt
-                    # Where the previous data file is stored
-                    external-data-json-path: ./cache/benchmark-data.json
-                    # Workflow will fail when an alert happens
-                    fail-on-alert: true
-                    # GitHub API token to make a commit comment
-                    github-token: ${{ secrets.GITHUB_TOKEN }}
-                    alert-threshold: "110%"
-                    comment-on-alert: true
-                    alert-comment-cc-users: '@arctic-hen7' # We need this kind of quoting, `@` is special in YAML
+                  # What benchmark tool the output.txt came from
+                  tool: "customSmallerIsBetter"
+                  # Where the output from the benchmark tool is stored
+                  output-file-path: output.txt
+                  # Where the previous data file is stored
+                  external-data-json-path: ./cache/benchmark-data.json
+                  # Workflow will fail when an alert happens
+                  fail-on-alert: true
+                  # GitHub API token to make a commit comment
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  alert-threshold: "110%"
+                  comment-on-alert: true
+                  alert-comment-cc-users: "@arctic-hen7" # We need this kind of quoting, `@` is special in YAML
