@@ -169,7 +169,8 @@ pub enum DeployError {
     #[error("failed to minify javascript bundle (this is probably an upstream bug, re-try with `--no-minify-js`)")]
     MinifyError {
         #[source]
-        source: minify_js::Error,
+        source: Box<dyn std::error::Error + Send + Sync>,
+        // source: minify_js::Error,
     },
 
     #[error("minified js was not utf-8 (this is a bug, re-try with `--no-minify-js` for now)")]
