@@ -328,7 +328,11 @@ fn minify_js(from: &Path, to: &Path) -> Result<(), DeployError> {
         // Guaranteed to be UTF-8 output
         &mut minified,
     )
-    .map_err(|err| DeployError::MinifyError { source: err })?;
+    // This is the updated line
+    .map_err(|err| DeployError::MinifyError {
+        source: Box::new(std::io::Error::other(err.to_string())),
+    })?;
+
     let minified =
         String::from_utf8(minified).map_err(|err| DeployError::MinifyNotUtf8 { source: err })?;
     fs::write(to, minified).map_err(|err| DeployError::WriteMinifiedJsFailed { source: err })?;

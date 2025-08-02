@@ -16,10 +16,10 @@ jobs:
             - uses: actions/cache@v3
               id: cache
               with:
-                path: |
-                  ~/.cargo/bin/
-                # The cache should be OS-specific
-                key: ${{ runner.os }}-cargo-bins
+                  path: |
+                      ~/.cargo/bin/
+                  # The cache should be OS-specific
+                  key: ${{ runner.os }}-cargo-bins
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
@@ -37,10 +37,10 @@ jobs:
             - uses: actions/cache@v3
               id: cache
               with:
-                path: |
-                  ~/.cargo/bin/
-                # The cache should be OS-specific
-                key: ${{ runner.os }}-cargo-bins
+                  path: |
+                      ~/.cargo/bin/
+                  # The cache should be OS-specific
+                  key: ${{ runner.os }}-cargo-bins
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
@@ -57,10 +57,10 @@ jobs:
             - uses: actions/cache@v3
               id: cache
               with:
-                path: |
-                  ~/.cargo/bin/
-                # The cache should be OS-specific
-                key: ${{ runner.os }}-cargo-bins
+                  path: |
+                      ~/.cargo/bin/
+                  # The cache should be OS-specific
+                  key: ${{ runner.os }}-cargo-bins
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
@@ -126,10 +126,10 @@ jobs:
             - uses: actions/cache@v3
               id: cache
               with:
-                path: |
-                  ~/.cargo/bin/
-                # The cache should be OS-specific
-                key: ${{ runner.os }}-cargo-bins
+                  path: |
+                      ~/.cargo/bin/
+                  # The cache should be OS-specific
+                  key: ${{ runner.os }}-cargo-bins
             # Only install the binaries if the cache doesn't have them
             - name: Install Dependencies
               if: steps.cache.outputs.cache-hit != 'true'
@@ -138,12 +138,12 @@ jobs:
             # Also cache all the other Cargo files, since plenty of CI runs won't involve different dependencies
             - uses: actions/cache@v3
               with:
-                path: |
-                  ~/.cargo/registry/index/
-                  ~/.cargo/registry/cache/
-                  ~/.cargo/git/db/
-                  target/
-                key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+                  path: |
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
             # # Also cache the apt packages we need for testing
             # - uses: awalsh128/cache-apt-pkgs-action@latest
