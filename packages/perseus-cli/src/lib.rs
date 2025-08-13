@@ -39,8 +39,6 @@ use errors::*;
 use std::path::PathBuf;
 use std::{fs, path::Path};
 
-/// The current version of the CLI, extracted from the crate version.
-pub const PERSEUS_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use build::build;
 pub use check::check;
 pub use deploy::deploy;
