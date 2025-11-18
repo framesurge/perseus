@@ -17,7 +17,7 @@ use sycamore::web::Html;
 /// ISR, and we can infer about them based on template root path domains. If
 /// that domain system is violated, this routing algorithm will not behave as
 /// expected whatsoever (as far as routing goes, it's undefined behavior)!
-fn get_template_for_path<'a, G: Html>(
+fn get_template_for_path(
     path: &str,
     render_cfg: &HashMap<String, String>,
     entities: &'a EntityMap<G>,
@@ -65,7 +65,7 @@ fn get_template_for_path<'a, G: Html>(
 /// i18n is being used. The path this takes should be raw, it may or may not
 /// have a locale, but should be split into segments by `/`, with empty ones
 /// having been removed.
-pub(crate) fn match_route<G: Html>(
+pub(crate) fn match_route(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
     entities: &EntityMap<G>,

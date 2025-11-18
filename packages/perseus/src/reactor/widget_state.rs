@@ -22,7 +22,7 @@ use sycamore::prelude::create_signal;
 #[cfg(any(client, doc))]
 use sycamore_futures::spawn_local_scoped;
 
-impl<G: Html> Reactor<G> {
+impl Reactor<G> {
     /// Gets the view and disposer for the given widget path. This will perform
     /// asynchronous fetching as needed to fetch state from the server, and
     /// will also handle engine-side state pass-through. This function will
@@ -37,20 +37,19 @@ impl<G: Html> Reactor<G> {
     #[allow(clippy::too_many_arguments)] // Internal function
     pub(crate) fn get_widget_view<'a, S, F, P: Clone + 'static>(
         &'a self,
-        app_cx: Scope<'a>,
-        path: PathMaybeWithLocale,
+        app_cx,  path: PathMaybeWithLocale,
         #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
         #[cfg(any(client, doc))] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
         #[cfg(any(client, doc))] preload_info: PreloadInfo,
         view_fn: F,
-        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
-    ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
+        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(Scope, P) -> View + Send + Sync>,
+    ) -> Result<(View, ScopeDisposer<'a>), ClientError>
     where
         // Note: these bounds replicate those for `.view_with_state()`, except the app lifetime is
         // known
-        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child S::Rx, P) -> View<G>
+        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child S::Rx, P) -> View
             + Send
             + Sync
             + 'static,
@@ -163,18 +162,17 @@ impl<G: Html> Reactor<G> {
     #[allow(clippy::too_many_arguments)] // Internal function
     pub(crate) fn get_unreactive_widget_view<'a, F, S, P: Clone + 'static>(
         &'a self,
-        app_cx: Scope<'a>,
-        path: PathMaybeWithLocale,
+        app_        path: PathMaybeWithLocale,
         #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
         #[cfg(any(client, doc))] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
         #[cfg(any(client, doc))] preload_info: PreloadInfo,
         view_fn: F,
-        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>,
-    ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
+        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(Scope, P) -> View + Send + Sync>,
+    ) -> Result<(View, ScopeDisposer<'a>), ClientError>
     where
-        F: Fn(Scope, S, P) -> View<G> + Send + Sync + 'static,
+        F: Fn(Scope, S, P) -> View + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {

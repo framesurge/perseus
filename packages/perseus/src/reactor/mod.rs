@@ -26,10 +26,7 @@ use crate::{
     i18n::Translator,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
 };
-use sycamore::{
-    prelude::{provide_context, use_context, Scope},
-    web::Html,
-};
+use sycamore::prelude::{provide_context, use_context};
 
 // --- Engine-side imports ---
 
@@ -57,10 +54,9 @@ use std::{
     rc::Rc,
 };
 #[cfg(any(client, doc))]
-use sycamore::{
-    reactive::{create_rc_signal, RcSignal},
-    view::View,
-};
+use sycamore::prelude::View;
+#[cfg(any(client, doc))]
+use sycamore::reactive::create_signal;
 
 /// The core of Perseus' browser-side systems. This forms a central point for
 /// all the Perseus state and rendering logic to operate from. In your own code,
@@ -68,7 +64,7 @@ use sycamore::{
 ///
 /// Note that this is also used on the engine-side for rendering.
 #[derive(Debug)]
-pub struct Reactor<G: Html> {
+pub struct Reactor {
     /// The state store, which is used to hold all reactive states, along with
     /// preloads.
     pub(crate) state_store: PageStateStore,
@@ -115,17 +111,17 @@ pub struct Reactor<G: Html> {
     /// contain the contents of the current page, but it may also contain a
     /// page-wide error. This will be wrapped in a router.
     #[cfg(any(client, doc))]
-    current_view: RcSignal<View<BrowserNodeType>>,
+    current_view: Signal<View<BrowserNodeType>>,
     /// A reactive container for any popup errors.
     #[cfg(any(client, doc))]
-    popup_error_view: RcSignal<View<BrowserNodeType>>,
+    popup_error_view: Signal<View<BrowserNodeType>>,
     /// The app's root div ID.
     #[cfg(any(client, doc))]
     root: String,
 
     // --- Engine-side only ---
     #[cfg(engine)]
-    pub(crate) render_mode: RenderMode<G>,
+    pub(crate) render_mode: RenderMode,
     /// The currently active translator. On the browser-side, this is handled by
     /// the more fully-fledged `ClientTranslationsManager` type.
     ///
@@ -138,12 +134,10 @@ pub struct Reactor<G: Html> {
 // This uses window variables set by the HTML shell, so it should never be used
 // on the engine-side
 #[cfg(any(client, doc))]
-impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G, M, T>>
-    for Reactor<G>
-{
+impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<M, T>> for Reactor {
     type Error = ClientError;
 
-    fn try_from(app: PerseusAppBase<G, M, T>) -> Result<Self, Self::Error> {
+    fn try_from(app: PerseusAppBase<M, T>) -> Result<Self, Self::Error> {
         let locales = app.get_locales()?;
         let root = app.get_root()?;
         let plugins = &app.plugins;
@@ -188,8 +182,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             // This will be filled out by a `.thaw()` call or HSR
             frozen_app: Rc::new(RefCell::new(None)),
             is_first: Cell::new(true),
-            current_view: create_rc_signal(View::empty()),
-            popup_error_view: create_rc_signal(View::empty()),
+            current_view: create_signal(View::empty()),
+            popup_error_view: create_signal(View::empty()),
             entities: app.entities,
             locales,
             render_cfg,
@@ -204,20 +198,20 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
     }
 }
 
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Adds `self` to the given Sycamore scope as context.
     ///
     /// # Panics
     /// This will panic if any other reactor is found in the context.
-    pub(crate) fn add_self_to_cx(self, cx: Scope) {
-        provide_context(cx, self);
+    pub(crate) fn add_self_to_cx(self) {
+        provide_context(self);
     }
     /// Gets a [`Reactor`] out of the given Sycamore scope's context.
     ///
     /// You should never need to worry about this function panicking, since
     /// your code will only ever run if a reactor is present.
-    pub fn from_cx(cx: Scope) -> &Self {
-        use_context::<Self>(cx)
+    pub fn from_cx() -> Self {
+        use_context::<Self>()
     }
     /// Gets the currently active translator.
     ///
@@ -278,11 +272,11 @@ impl<G: Html> Reactor<G> {
 }
 
 #[cfg(engine)]
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Initializes a new [`Reactor`] on the engine-side.
     pub(crate) fn engine(
         global_state: TemplateState,
-        mode: RenderMode<G>,
+        mode: RenderMode,
         translator: Option<&Translator>,
     ) -> Self {
         Self {

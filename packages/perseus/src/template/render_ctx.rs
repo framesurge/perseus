@@ -181,7 +181,7 @@ impl RenderCtx {
     /// have been added to context already (or Sycamore will cause a panic).
     /// Once this is done, the render context can be modified safely with
     /// interior mutability.
-    pub(crate) fn set_ctx(self, cx: Scope) -> &Self {
+    pub(crate) fn set_ctx(self) -> &Self {
         provide_context(cx, self)
     }
     /// Preloads the given URL from the server and caches it, preventing
@@ -198,7 +198,7 @@ impl RenderCtx {
     // Conveniently, we can use the lifetime mechanics of knowing that the render context
     // is registered on the given scope to ensure that the future works out
     #[cfg(any(client, doc))]
-    pub fn preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &PathMaybeWithLocale) {
+    pub fn preload<'a, 'b: 'a>(&'b self, url: &PathMaybeWithLocale) {
         use fmterr::fmt_err;
 
         crate::spawn_local_scoped(cx, async move {
@@ -225,7 +225,7 @@ impl RenderCtx {
     // Conveniently, we can use the lifetime mechanics of knowing that the render context
     // is registered on the given scope to ensure that the future works out
     #[cfg(any(client, doc))]
-    pub fn route_preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &PathMaybeWithLocale) {
+    pub fn route_preload<'a, 'b: 'a>(&'b self, url: &PathMaybeWithLocale) {
         use fmterr::fmt_err;
 
         crate::spawn_local_scoped(cx, async move {
@@ -641,8 +641,7 @@ impl RenderCtx {
     // complicates everything substantially.
     pub fn get_global_state<'a, R>(
         &self,
-        cx: Scope<'a>,
-    ) -> <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>
+            ) -> <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>
     where
         R: RxRef,
         // We need this so that the compiler understands that the reactive version of the
@@ -661,8 +660,7 @@ impl RenderCtx {
     /// invalid.
     pub fn try_get_global_state<'a, R>(
         &self,
-        cx: Scope<'a>,
-    ) -> Result<
+            ) -> Result<
         Option<
             // Note: I am sorry.
             <<<<R as RxRef>::RxNonRef as MakeUnrx>::Unrx as MakeRx>::Rx as MakeRxRef>::RxRef<'a>,

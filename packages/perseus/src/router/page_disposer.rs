@@ -15,7 +15,7 @@ pub(crate) struct PageDisposer<'app> {
     /// There is no way to get this underlying scope disposer, it can only be
     /// set. Hence, we prevent there ever being multiple references to the
     /// underlying `Signal`.
-    disposer: RcSignal<Option<ScopeDisposer<'app>>>,
+    disposer: Signal<Option<ScopeDisposer<'app>>>,
 }
 impl<'app> PageDisposer<'app> {
     /// Updates the undelrying data structure to hold the given disposer, taking

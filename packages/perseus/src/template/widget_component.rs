@@ -23,8 +23,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// be normalized).
     pub fn widget<H: Html>(
         &self,
-        cx: Scope,
-        // This is a `PurePath`, meaning it *does not* have a locale or the capsule name!
+                // This is a `PurePath`, meaning it *does not* have a locale or the capsule name!
         path: &str,
         props: P,
     ) -> View<H> {
@@ -59,7 +58,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// server-side processing (although fetching on the browser-side will
     /// almost always be quite a bit slower). Again, you should
     /// base your choices with delaying on empirical data!
-    pub fn delayed_widget<H: Html>(&self, cx: Scope, path: &str, props: P) -> View<H> {
+    pub fn delayed_widget<H: Html>(&self, path: &str, props: P) -> View<H> {
         self.__widget(cx, path, props, true)
     }
 
@@ -85,12 +84,12 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// browser.
     ///
     /// The `transmute_copy` performed is considered cheap because it either
-    /// copies `&self`, or `&Arc<ErrorView<G>>`, both of which use
+    /// copies `&self`, or `&Arc<ErrorView>`, both of which use
     /// indirection internally, meaning only pointers are every copied. This
     /// stands in contrast with the approach of copying entire `View`s,
     /// which leads to worse performance as the compexity of the views grows.
     #[allow(unused_variables)]
-    fn __widget<H: Html>(&self, cx: Scope, path: &str, props: P, delayed: bool) -> View<H> {
+    fn __widget<H: Html>(&self, path: &str, props: P, delayed: bool) -> View<H> {
         assert_eq!(
             TypeId::of::<H>(),
             TypeId::of::<G>(),
@@ -135,7 +134,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ///
     /// See `.__widget()` for explanation of transmutation.
     #[cfg(any(client, doc))]
-    fn browser_widget<H: Html>(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<H> {
+    fn browser_widget<H: Html>(&self, path: PathWithoutLocale, props: P) -> View<H> {
         use crate::{
             errors::ClientInvariantError,
             path::PathMaybeWithLocale,
@@ -228,7 +227,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ///
     /// See `.widget()` for explanation of transmutation.
     #[cfg(engine)]
-    fn engine_widget<H: Html>(&self, cx: Scope, path: PathWithoutLocale, props: P) -> View<H> {
+    fn engine_widget<H: Html>(&self, path: PathWithoutLocale, props: P) -> View<H> {
         use std::sync::Arc;
 
         use crate::error_views::ErrorViews;

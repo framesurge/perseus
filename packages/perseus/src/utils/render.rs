@@ -19,8 +19,7 @@ use sycamore::{prelude::Scope, view::View};
 #[cfg(any(client, doc))]
 #[allow(unused_variables)]
 pub(crate) fn render_or_hydrate(
-    cx: Scope,
-    view: View<crate::template::BrowserNodeType>,
+        view: View<crate::template::BrowserNodeType>,
     parent: web_sys::Element,
     force_render: bool,
 ) {

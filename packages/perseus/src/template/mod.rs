@@ -34,7 +34,7 @@ pub(crate) type TemplateFn<G> = Box<
             PreloadInfo,
             TemplateState,
             PathMaybeWithLocale,
-        ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
+        ) -> Result<(View, ScopeDisposer<'a>), ClientError>
         + Send
         + Sync,
 >;

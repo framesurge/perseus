@@ -24,7 +24,7 @@ use sycamore::web::Html;
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View};
 
-impl<G: Html> TemplateInner<G> {
+impl TemplateInner<G> {
     /// Executes the user-given function that renders the template on the
     /// client-side ONLY. This takes in an existing global state.
     ///
@@ -35,8 +35,7 @@ impl<G: Html> TemplateInner<G> {
         &self,
         path: PathMaybeWithLocale,
         state: TemplateState,
-        cx: Scope<'a>,
-    ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError> {
+            ) -> Result<(View, ScopeDisposer<'a>), ClientError> {
         assert!(
             !self.is_capsule,
             "tried to render capsule with template logic"
@@ -63,9 +62,8 @@ impl<G: Html> TemplateInner<G> {
         state: TemplateState,
         global_state: TemplateState,
         mode: RenderMode<SsrNode>,
-        cx: Scope,
-        translator: &Translator,
-    ) -> Result<View<G>, ClientError> {
+                translator: &Translator,
+    ) -> Result<View, ClientError> {
         assert!(
             !self.is_capsule,
             "tried to render capsule with template logic"

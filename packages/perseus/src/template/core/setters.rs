@@ -16,7 +16,7 @@ use serde::{de::DeserializeOwned, Serialize};
 #[cfg(engine)]
 use sycamore::{prelude::Scope, view::View, web::SsrNode};
 
-impl<G: Html> TemplateInner<G> {
+impl TemplateInner<G> {
     // The server-only ones have a different version for Wasm that takes in an empty
     // function (this means we don't have to bring in function types, and therefore
     // we can avoid bringing in the whole `http` module --- a very significant

@@ -171,7 +171,7 @@ pub struct PerseusAppBase<G: Html, M: MutableStore, T: TranslationsManager> {
     #[cfg(any(client, doc))]
     #[allow(clippy::type_complexity)]
     pub(crate) panic_handler_view: Arc<
-        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
             + Send
             + Sync,
     >,
@@ -1046,7 +1046,7 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
     ) -> (
         Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
         Arc<
-            dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+            dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
                 + Send
                 + Sync,
         >,
@@ -1067,8 +1067,8 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> PerseusAppBase<G, M, T> {
 /// manually.
 #[component]
 #[allow(non_snake_case)]
-pub fn PerseusRoot<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+pub fn PerseusRoot(cx: Scope) -> View {
+    view! {
         // Since we render the index view with no hydration IDs, this conforms
         // to the expectations of the HTML shell
         div(id = "root")

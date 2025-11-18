@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
 #[cfg(any(client, doc))]
 use sycamore::prelude::Scope;
-use sycamore::prelude::{create_rc_signal, RcSignal};
+use sycamore::prelude::{create_signal};
 
 /// A wrapper for fallible reactive state.
 ///
@@ -44,8 +44,8 @@ where
 
     fn make_rx(self) -> Self::Rx {
         match self.0 {
-            Ok(state) => RxResultRx(create_rc_signal(Ok(state.make_rx()))),
-            Err(err) => RxResultRx(create_rc_signal(Err(err))),
+            Ok(state) => RxResultRx(create_signal(Ok(state.make_rx()))),
+            Err(err) => RxResultRx(create_signal(Err(err))),
         }
     }
 }
@@ -53,7 +53,7 @@ where
 /// The intermediate reactive type for [`RxResult`]. You shouldn't need to
 /// interface with this manually.
 #[derive(Clone, Debug)]
-pub struct RxResultRx<T, E>(RcSignal<Result<T::Rx, E>>)
+pub struct RxResultRx<T, E>(Signal<Result<T::Rx, E>>)
 where
     T: MakeRx + Serialize + DeserializeOwned + 'static,
     <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
@@ -100,7 +100,7 @@ where
     <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
-    type Target = RcSignal<Result<T::Rx, E>>;
+    type Target = Signal<Result<T::Rx, E>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

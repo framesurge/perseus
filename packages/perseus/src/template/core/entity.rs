@@ -19,9 +19,9 @@ use super::TemplateInner;
 /// however, as capsules are used by calling a component method on them, meaning
 /// the widget rendering process always has access to the capsule itself.
 #[derive(Debug)]
-pub struct Entity<G: Html>(TemplateInner<G>);
+pub struct Entity(TemplateInner<G>);
 
-impl<G: Html> From<TemplateInner<G>> for Entity<G> {
+impl From<TemplateInner<G>> for Entity<G> {
     fn from(val: TemplateInner<G>) -> Self {
         Self(val)
     }
@@ -29,7 +29,7 @@ impl<G: Html> From<TemplateInner<G>> for Entity<G> {
 
 // Immutable methods should be able to be called such that this can be treated
 // as a template/capsule
-impl<G: Html> std::ops::Deref for Entity<G> {
+impl std::ops::Deref for Entity<G> {
     type Target = TemplateInner<G>;
 
     fn deref(&self) -> &Self::Target {

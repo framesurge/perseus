@@ -24,7 +24,7 @@ pub(crate) type CapsuleFn<G, P> = Box<
             P,
             PathMaybeWithLocale, // Widget path
             PathMaybeWithLocale, // Caller path
-        ) -> Result<(View<G>, ScopeDisposer<'a>), ClientError>
+        ) -> Result<(View, ScopeDisposer<'a>), ClientError>
         + Send
         + Sync,
 >;
@@ -51,7 +51,7 @@ pub struct Capsule<G: Html, P: Clone + 'static> {
     ///
     /// This will not be defined for templates, only for capsules.
     #[allow(clippy::type_complexity)]
-    pub(crate) fallback: Option<Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>>,
+    pub(crate) fallback: Option<Arc<dyn Fn(Scope, P) -> View + Send + Sync>>,
 }
 impl<G: Html, P: Clone + 'static> std::fmt::Debug for Capsule<G, P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -80,7 +80,7 @@ pub struct CapsuleInner<G: Html, P: Clone + 'static> {
     ///
     /// This will not be defined for templates, only for capsules.
     #[allow(clippy::type_complexity)]
-    pub(crate) fallback: Option<Arc<dyn Fn(Scope, P) -> View<G> + Send + Sync>>,
+    pub(crate) fallback: Option<Arc<dyn Fn(Scope, P) -> View + Send + Sync>>,
 }
 impl<G: Html, P: Clone + 'static> std::fmt::Debug for CapsuleInner<G, P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -151,9 +151,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         path: PathMaybeWithLocale,
         caller_path: PathMaybeWithLocale,
         props: P,
-        cx: Scope,
-        preload_info: PreloadInfo,
-    ) -> Result<View<G>, ClientError> {
+                preload_info: PreloadInfo,
+    ) -> Result<View, ClientError> {
         // The template state is ignored by widgets, they fetch it themselves
         // asynchronously
         let (view, _disposer) = (self.capsule_view)(
@@ -176,8 +175,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         path: PathMaybeWithLocale,
         state: TemplateState,
         props: P,
-        cx: Scope,
-    ) -> Result<View<G>, ClientError> {
+            ) -> Result<View, ClientError> {
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway;
@@ -208,7 +206,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     ///
     /// **Warning:** if you do not set a fallback view for a capsule, your app
     /// will not compile!
-    pub fn fallback(mut self, view: impl Fn(Scope, P) -> View<G> + Send + Sync + 'static) -> Self {
+    pub fn fallback(mut self, view: impl Fn(Scope, P) -> View + Send + Sync + 'static) -> Self {
         {
             self.fallback = Some(Arc::new(view));
         }
@@ -222,7 +220,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     /// this).
     pub fn empty_fallback(mut self) -> Self {
         {
-            self.fallback = Some(Arc::new(|cx, _| sycamore::view! { cx, }));
+            self.fallback = Some(Arc::new(|cx, _| sycamore::view! { }));
         }
         self
     }
@@ -255,7 +253,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     pub fn view_with_state<I, F>(mut self, val: F) -> Self
     where
         // The state is made reactive on the child
-        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child I, P) -> View<G>
+        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child I, P) -> View
             + Clone
             + Send
             + Sync
@@ -295,7 +293,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     /// state.
     pub fn view_with_unreactive_state<F, S>(mut self, val: F) -> Self
     where
-        F: Fn(Scope, S, P) -> View<G> + Clone + Send + Sync + 'static,
+        F: Fn(Scope, S, P) -> View + Clone + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
@@ -332,7 +330,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     /// that do take state should use `.view_with_state()` instead.
     pub fn view<F>(mut self, val: F) -> Self
     where
-        F: Fn(Scope, P) -> View<G> + Send + Sync + 'static,
+        F: Fn(Scope, P) -> View + Send + Sync + 'static,
     {
         self.template_inner.view =
             Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));

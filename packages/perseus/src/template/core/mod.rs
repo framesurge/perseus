@@ -29,18 +29,18 @@ use sycamore::{prelude::create_scope, view::View, web::Html};
 ///
 /// You can read more about the templates system [here](https://framesurge.sh/perseus/en-US/docs/next/core-principles).
 #[derive(Debug)]
-pub struct Template<G: Html> {
+pub struct Template {
     /// The inner entity.
     pub(crate) inner: Entity<G>,
 }
-impl<G: Html> Deref for Template<G> {
+impl Deref for Template<G> {
     type Target = TemplateInner<G>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
-impl<G: Html> Template<G> {
+impl Template<G> {
     /// Creates a new [`TemplateInner`] (a builder for [`Template`]s). By
     /// default, this has absolutely no associated data, and, if rendered,
     /// it would result in a blank screen. You can call methods like
@@ -57,7 +57,7 @@ impl<G: Html> Template<G> {
 /// cloning and passing the template around arbitrarily. As that dereferences
 /// to this, you will be able to use any of the methods on this `struct` on
 /// [`Template`].
-pub struct TemplateInner<G: Html> {
+pub struct TemplateInner {
     /// The path to the root of the template. Any build paths will be inserted
     /// under this.
     path: String,
@@ -150,7 +150,7 @@ pub struct TemplateInner<G: Html> {
     /// returned from the build process.
     pub(crate) can_be_rescheduled: bool,
 }
-impl<G: Html> std::fmt::Debug for TemplateInner<G> {
+impl std::fmt::Debug for TemplateInner<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Template")
             .field("path", &self.path)
@@ -158,7 +158,7 @@ impl<G: Html> std::fmt::Debug for TemplateInner<G> {
             .finish()
     }
 }
-impl<G: Html> TemplateInner<G> {
+impl TemplateInner<G> {
     /// An internal creator for new inner templates. This is wrapped by
     /// `Template::build` and `Capsule::build`.
     fn new(path: impl Into<String> + std::fmt::Display) -> Self {

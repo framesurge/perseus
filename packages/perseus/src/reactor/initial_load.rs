@@ -10,25 +10,18 @@ use crate::{
     utils::{checkpoint, get_path_prefix_client},
 };
 use serde_json::Value;
-use sycamore::{
-    prelude::{Scope, ScopeDisposer},
-    view::View,
-    web::Html,
-};
+use sycamore::view::View;
 use web_sys::Element;
 
 use super::{Reactor, WindowVariable};
 
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Gets the initial view to hydrate, which will be the same as what the
     /// engine-side rendered and provided. This will automatically extract
     /// the current path from the browser.
     ///
     /// This will set the router state to `Loaded` if it succeeds.
-    pub(crate) fn get_initial_view<'a>(
-        &self,
-        cx: Scope<'a>,
-    ) -> Result<InitialView<'a, G>, ClientError> {
+    pub(crate) fn get_initial_view<'a>(&self) -> Result<InitialView<'a>, ClientError> {
         // Get the current path, removing any base paths to avoid relative path locale
         // redirection loops (in previous versions of Perseus, we used Sycamore to
         // get the path, and it strips this out automatically)
@@ -128,10 +121,8 @@ impl<G: Html> Reactor<G> {
                     self.state_store.add_initial_widget(widget_path, state_res);
                 }
 
-                // Render the actual template to the root (done imperatively due to child
-                // scopes)
-                let (view, disposer) =
-                    entity.render_for_template_client(full_path.clone(), state, cx)?;
+                // Render the actual template to the root
+                let view = entity.render_for_template_client(full_path.clone(), state)?;
 
                 // Update the router state
                 self.router_state.set_load_state(RouterLoadState::Loaded {
@@ -139,7 +130,7 @@ impl<G: Html> Reactor<G> {
                     path: full_path,
                 });
 
-                Ok(InitialView::View(view, disposer))
+                Ok(InitialView::View(view))
             }
             // If the user is using i18n, then they'll want to detect the locale on any paths
             // missing a locale. Those all go to the same system that redirects to the
@@ -296,9 +287,9 @@ impl<G: Html> Reactor<G> {
 
 /// A representation of the possible outcomes of getting the view for the
 /// initial load.
-pub(crate) enum InitialView<'app, G: Html> {
-    /// The provided view and scope disposer are ready to render the page.
-    View(View<G>, ScopeDisposer<'app>),
+pub(crate) enum InitialView {
+    /// The provided view is ready to render the page.
+    View(View),
     /// We need to redirect somewhere else, and the *full URL* to redirect to is
     /// attached.
     ///

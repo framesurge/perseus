@@ -7,7 +7,6 @@ use crate::{
 };
 use serde_json::Value;
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
-use sycamore::web::Html;
 
 /// The status of a build-time render.
 #[derive(Debug)]
@@ -33,7 +32,7 @@ impl Default for RenderStatus {
 /// they should render.
 #[cfg(engine)]
 #[derive(Clone, Debug)]
-pub(crate) enum RenderMode<G: Html> {
+pub(crate) enum RenderMode {
     /// We're rendering at build-time. Any non-delayed widgets should render if
     /// they are not going to alter the render properties of their caller.
     /// Otherwise, they should silently fail the render and set the attached
@@ -85,7 +84,7 @@ pub(crate) enum RenderMode<G: Html> {
         #[allow(clippy::type_complexity)]
         widget_states: Rc<HashMap<PathMaybeWithLocale, Result<TemplateState, ServerErrorData>>>,
         /// The app's error views.
-        error_views: Arc<ErrorViews<G>>,
+        error_views: Arc<ErrorViews>,
         /// A list of the paths to widgets that haven't yet been resolved in any
         /// way. These will be deduplicated and then resolved in
         /// parallel, along with having their states built.

@@ -100,21 +100,21 @@
 //! # }
 //! #
 //! # #[auto_scope]
-//! # fn view<G: Html>(cx: Scope, state: &StateRx) -> View<G> {
+//! # fn view(state: &StateRx) -> View {
 //! // Note the use of `create_ref()` here
 //! let list = create_ref(cx, state.list.get());
 //! let view = View::new_fragment(
 //!     list.iter()
 //!     .map(|elem| {
 //!         // ...
-//!         # view! { cx,
+//!         # view! {
 //!             (elem.get())
 //!         }
 //!     })
 //!     .collect()
 //! );
 //!
-//! view! { cx,
+//! view! {
 //!     (view)
 //! }
 //! # }

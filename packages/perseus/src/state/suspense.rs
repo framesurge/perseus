@@ -21,7 +21,7 @@ use sycamore_futures::spawn_local_scoped;
 /// The handler this takes is a future, so the asynchronous function handler
 /// itself should be called without `.await` before being provided to this
 /// function.
-pub fn compute_nested_suspense<'a, T, E, F>(cx: Scope<'a>, state: RxResultRx<T, E>, handler: F)
+pub fn compute_nested_suspense<'a, T, E, F>(state: RxResultRx<T, E>, handler: F)
 where
     F: Future<Output = Result<(), E>> + 'a,
     T: MakeRx + Serialize + DeserializeOwned + Clone + 'static, /* Note this `Clone` bound!
@@ -55,7 +55,7 @@ where
 /// The handler this takes is a future, so the asynchronous function handler
 /// itself should be called without `.await` before being provided to this
 /// function.
-pub fn compute_suspense<'a, T, E, F>(cx: Scope<'a>, state: RcSignal<Result<T, E>>, handler: F)
+pub fn compute_suspense<'a, T, E, F>(state: Signal<Result<T, E>>, handler: F)
 where
     F: Future<Output = Result<(), E>> + 'a,
     T: Serialize + DeserializeOwned + Clone + 'static, /* Note this `Clone` bound! (Otherwise

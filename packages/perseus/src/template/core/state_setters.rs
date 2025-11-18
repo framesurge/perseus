@@ -16,7 +16,7 @@ use sycamore::prelude::{create_child_scope, create_ref};
 use sycamore::web::SsrNode;
 use sycamore::{prelude::Scope, view::View, web::Html};
 
-impl<G: Html> TemplateInner<G> {
+impl TemplateInner<G> {
     // The view functions below are shadowed for widgets, and therefore these
     // definitions only apply to templates, not capsules!
 
@@ -30,7 +30,7 @@ impl<G: Html> TemplateInner<G> {
     pub fn view_with_state<I, F>(mut self, val: F) -> Self
     where
         // The state is made reactive on the child
-        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child I) -> View<G>
+        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child I) -> View
             + Send
             + Sync
             + 'static,
@@ -65,7 +65,7 @@ impl<G: Html> TemplateInner<G> {
     /// unreactive state.
     pub fn view_with_unreactive_state<F, S>(mut self, val: F) -> Self
     where
-        F: Fn(Scope, S) -> View<G> + Send + Sync + 'static,
+        F: Fn(Scope, S) -> View + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
@@ -92,7 +92,7 @@ impl<G: Html> TemplateInner<G> {
     /// `.template_with_state()` instead.
     pub fn view<F>(mut self, val: F) -> Self
     where
-        F: Fn(Scope) -> View<G> + Send + Sync + 'static,
+        F: Fn(Scope) -> View + Send + Sync + 'static,
     {
         self.view = Box::new(move |app_cx, _preload_info, _template_state, path| {
             let reactor = Reactor::<G>::from_cx(app_cx);

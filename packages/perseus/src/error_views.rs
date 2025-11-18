@@ -20,13 +20,13 @@ use sycamore::{
 /// forms, all of which must be handled. This system provides a way to do this
 /// automatically, maximizing your app's error tolerance, including against
 /// panics.
-pub struct ErrorViews<G: Html> {
+pub struct ErrorViews {
     /// The central function that parses the error provided and returns a tuple
     /// of views to deal with it: the first view is the document metadata,
     /// and the second the body of the error.
     #[allow(clippy::type_complexity)]
     handler: Box<
-        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
             + Send
             + Sync,
     >,
@@ -52,17 +52,17 @@ pub struct ErrorViews<G: Html> {
     #[cfg(any(client, doc))]
     #[allow(clippy::type_complexity)]
     panic_handler: Arc<
-        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
             + Send
             + Sync,
     >,
 }
-impl<G: Html> std::fmt::Debug for ErrorViews<G> {
+impl std::fmt::Debug for ErrorViews<G> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ErrorViews").finish_non_exhaustive()
     }
 }
-impl<G: Html> ErrorViews<G> {
+impl ErrorViews<G> {
     /// Creates an error handling system for your app with the given handler
     /// function. This will be provided a [`ClientError`] to match against,
     /// along with an [`ErrorContext`], which tells you what you have available
@@ -75,7 +75,7 @@ impl<G: Html> ErrorViews<G> {
     /// `ErrorPosition::Widget`, the head view will be ignored,
     /// and would usually be returned as `View::empty()`.
     pub fn new(
-        handler: impl Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        handler: impl Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
             + Send
             + Sync
             + Clone
@@ -150,10 +150,10 @@ impl<G: Html> ErrorViews<G> {
             match err {
                 // Special case for 404 due to its frequency
                 ClientError::ServerError { status, .. } if status == 404 => (
-                    view! { cx,
+                    view! {
                         title { "Page not found" }
                     },
-                    view! { cx,
+                    view! {
                         div(
                             style = r#"
 display: flex;
@@ -209,7 +209,7 @@ margin-bottom: 1rem;
                 ClientError::Panic(panic_msg) => (
                     // Panics are popups
                     View::empty(),
-                    view! { cx,
+                    view! {
                             div(
                                 style = r#"
 position: fixed;
@@ -259,7 +259,7 @@ word-wrap: break-word;
                                     // This can happen with HSR, and it's a good idea to help the user out a bit
                                     // TODO Should there be more hints here?
                                     (if panic_msg.contains("cannot modify the panic hook from a panicking thread") {
-                                        view! { cx,
+                                        view! {
                                             p {
                                                 i { "It looks like the error is about the panicking hook itself, which means the original panic has been overidden, possibly by hot state reloading in development. Reloading the page might show you the original panic message." }
                                             }
@@ -275,7 +275,7 @@ word-wrap: break-word;
                     let err_msg = fmt_err(&err);
 
                     // This will be placed in either a popup or across the page
-                    let inner_view = view! { cx,
+                    let inner_view = view! {
                         div(
                             style = r#"
 background-color: #f87171;
@@ -324,11 +324,11 @@ word-break: break-word;
                     };
 
                     (
-                        view! { cx,
+                        view! {
                                 title { "Error" }
                         },
                         match pos {
-                            ErrorPosition::Page => view! { cx,
+                            ErrorPosition::Page => view! {
                                 div(
                                     style = r#"
 display: flex;
@@ -342,7 +342,7 @@ width: 100%;
                                     (inner_view)
                                 }
                             },
-                            ErrorPosition::Popup => view! { cx,
+                            ErrorPosition::Popup => view! {
                                 div(
                                     style = r#"
 position: fixed;
@@ -356,7 +356,7 @@ align-items: center;
                                     (inner_view)
                                 }
                             },
-                            ErrorPosition::Widget => view! { cx,
+                            ErrorPosition::Widget => view! {
                                 div(
                                     style = r#"
 display: flex;
@@ -374,16 +374,15 @@ flex-direction: column;
     }
 }
 #[cfg(any(client, doc))]
-impl<G: Html> ErrorViews<G> {
+impl ErrorViews<G> {
     /// Invokes the user's handling function, producing head/body views for the
     /// given error. From the given scope, this will determine the
     /// conditions under which the error can be rendered.
     pub(crate) fn handle<'a>(
         &self,
-        cx: Scope<'a>,
-        err: ClientError,
+                err: ClientError,
         pos: ErrorPosition,
-    ) -> (String, View<G>, ScopeDisposer<'a>) {
+    ) -> (String, View, ScopeDisposer<'a>) {
         let reactor = try_use_context::<Reactor<G>>(cx);
         // From the given scope, we can perfectly determine the capabilities this error
         // view will have
@@ -413,7 +412,7 @@ impl<G: Html> ErrorViews<G> {
     pub(crate) fn take_panic_handler(
         &mut self,
     ) -> Arc<
-        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View<G>)
+        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
             + Send
             + Sync,
     > {
@@ -483,7 +482,7 @@ impl ErrorViews<SsrNode> {
         (head_str, body_str)
     }
 }
-impl<G: Html> ErrorViews<G> {
+impl ErrorViews<G> {
     /// Renders an error view for the given widget, using the given scope. This
     /// will *not* create a new child scope, it will simply use the one it is
     /// given.
@@ -495,7 +494,7 @@ impl<G: Html> ErrorViews<G> {
     /// `ErrorContext::Full` (since widgets should not be rendered if a
     /// translator cannot be found, and certainly not if a reactor could not
     /// be instantiated).
-    pub(crate) fn handle_widget(&self, err: ClientError, cx: Scope) -> View<G> {
+    pub(crate) fn handle_widget(&self, err: ClientError) -> View {
         let (_head, body) = (self.handler)(cx, err, ErrorContext::Full, ErrorPosition::Widget);
         body
     }
@@ -603,7 +602,7 @@ pub struct ServerErrorData {
 
 // --- Default error views (development only) ---
 #[cfg(debug_assertions)] // This will fail production compilation neatly
-impl<G: Html> Default for ErrorViews<G> {
+impl Default for ErrorViews<G> {
     fn default() -> Self {
         Self::unlocalized_development_default()
     }

@@ -6,7 +6,7 @@ use sycamore::web::Html;
 /// client-side translations manager, allows the initialization of the app shell
 /// and the rendering of a page.
 #[derive(Clone, Debug)]
-pub struct FullRouteInfo<'a, G: Html> {
+pub struct FullRouteInfo {
     /// The actual path of the route. This does *not* include the locale!
     pub path: PathWithoutLocale,
     /// The template that will be used. The app shell will derive props and a
@@ -23,7 +23,7 @@ pub struct FullRouteInfo<'a, G: Html> {
 
 /// The possible outcomes of matching a route in an app.
 #[derive(Clone, Debug)]
-pub enum FullRouteVerdict<'a, G: Html> {
+pub enum FullRouteVerdict {
     /// The given route was found, and route information is attached.
     Found(FullRouteInfo<'a, G>),
     /// The given route was not found, and a `404 Not Found` page should be
@@ -71,7 +71,7 @@ impl RouteInfo {
     /// This will panic if the entity name held by `Self` is not in the given
     /// map, which is only a concern if you `Self` didn't come from
     /// `match_route`.
-    pub(crate) fn into_full<G: Html>(self, entities: &EntityMap<G>) -> FullRouteInfo<G> {
+    pub(crate) fn into_full(self, entities: &EntityMap<G>) -> FullRouteInfo<G> {
         let entity = entities.get(&self.entity_name).expect("conversion to full route info failed, given entities did not contain given entity name");
         FullRouteInfo {
             path: self.path,
@@ -114,7 +114,7 @@ impl RouteVerdict {
     /// This will panic if the entity name held by `Self` is not in the given
     /// map, which is only a concern if you `Self` didn't come from
     /// `match_route` (this only applies when `Self` is `Self::Found(..)`).
-    pub(crate) fn into_full<G: Html>(self, entities: &EntityMap<G>) -> FullRouteVerdict<G> {
+    pub(crate) fn into_full(self, entities: &EntityMap<G>) -> FullRouteVerdict<G> {
         match self {
             Self::Found(info) => FullRouteVerdict::Found(info.into_full(entities)),
             Self::NotFound { locale } => FullRouteVerdict::NotFound { locale },

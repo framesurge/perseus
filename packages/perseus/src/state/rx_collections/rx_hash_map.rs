@@ -5,7 +5,7 @@ use std::hash::Hash;
 use std::ops::Deref;
 #[cfg(any(client, doc))]
 use sycamore::prelude::Scope;
-use sycamore::reactive::{create_rc_signal, RcSignal};
+use sycamore::reactive::{create_signal};
 
 /// A reactive version of [`Vec`] that uses nested reactivity on its elements.
 /// This requires nothing by `Clone + 'static` of the elements inside the map,
@@ -21,7 +21,7 @@ where
     V: Clone + 'static;
 /// The reactive version of [`RxHashMap`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RxHashMapRx<K, V>(RcSignal<HashMap<K, RcSignal<V>>>)
+pub struct RxHashMapRx<K, V>(Signal<HashMap<K, Signal<V>>>)
 where
     K: Clone + Serialize + DeserializeOwned + Eq + Hash,
     V: Clone + Serialize + DeserializeOwned + 'static;
@@ -35,10 +35,10 @@ where
     type Rx = RxHashMapRx<K, V>;
 
     fn make_rx(self) -> Self::Rx {
-        RxHashMapRx(create_rc_signal(
+        RxHashMapRx(create_signal(
             self.0
                 .into_iter()
-                .map(|(k, v)| (k, create_rc_signal(v)))
+                .map(|(k, v)| (k, create_signal(v)))
                 .collect(),
         ))
     }
@@ -79,7 +79,7 @@ where
     K: Clone + Serialize + DeserializeOwned + Eq + Hash,
     V: Clone + Serialize + DeserializeOwned + 'static,
 {
-    type Target = RcSignal<HashMap<K, RcSignal<V>>>;
+    type Target = Signal<HashMap<K, Signal<V>>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

@@ -32,8 +32,7 @@ impl Reactor<BrowserNodeType> {
     #[must_use]
     pub(crate) fn report_err<'a>(
         &self,
-        cx: Scope<'a>,
-        err: ClientError,
+                err: ClientError,
     ) -> (ScopeDisposer<'a>, bool) {
         // Determine where this should be placed
         let pos = match self.is_first.get() {
@@ -80,8 +79,7 @@ impl Reactor<BrowserNodeType> {
     /// `#[perseus::browser_main]` to build their own custom browser-side
     /// entrypoint (do not do this unless you really need to).
     pub fn handle_critical_error(
-        cx: Scope,
-        err: ClientError,
+                err: ClientError,
         error_views: &ErrorViews<BrowserNodeType>,
     ) {
         // We do NOT want this called if there is a reactor (but, if it is, we have no
@@ -94,7 +92,7 @@ impl Reactor<BrowserNodeType> {
         let (_, err_view, disposer) = error_views.handle(cx, err, ErrorPosition::Popup);
         render_or_hydrate(
             cx,
-            view! { cx,
+            view! {
                 // This is not reactive, as there's no point in making it so
                 (err_view)
             },
@@ -148,7 +146,7 @@ impl Reactor<BrowserNodeType> {
             );
             render_or_hydrate(
                 cx,
-                view! { cx,
+                view! {
                     // This is not reactive, as there's no point in making it so
                     (body)
                 },
