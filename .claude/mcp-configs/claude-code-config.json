@@ -1,0 +1,225 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ],
+      "description": "Intelligent file system operations for migration analysis and batch modifications",
+      "capabilities": {
+        "read": true,
+        "write": true,
+        "search": true,
+        "patterns": true
+      },
+      "useCases": [
+        "Scan Rust files for Sycamore patterns",
+        "Batch file modifications with safety checks",
+        "Directory structure analysis",
+        "Find and replace across codebase"
+      ]
+    },
+    
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git"
+      ],
+      "description": "Git operations for migration checkpointing and version control",
+      "capabilities": {
+        "commit": true,
+        "branch": true,
+        "diff": true,
+        "log": true
+      },
+      "useCases": [
+        "Create migration checkpoints after each phase",
+        "Automatic commit with structured messages",
+        "Branch management for phased migration",
+        "Diff analysis to verify changes"
+      ]
+    },
+    
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<your-token-here>"
+      },
+      "description": "GitHub integration for documentation access and issue tracking",
+      "capabilities": {
+        "issues": true,
+        "pull_requests": true,
+        "repository": true,
+        "search": true
+      },
+      "useCases": [
+        "Quick access to Sycamore documentation",
+        "Search for migration examples in Perseus issues",
+        "Track migration progress with GitHub Projects",
+        "Reference related PRs and issues"
+      ]
+    },
+    
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "<your-brave-api-key>"
+      },
+      "description": "Automated web search for error solutions and best practices",
+      "capabilities": {
+        "search": true,
+        "quick_lookup": true
+      },
+      "useCases": [
+        "Find solutions to compilation errors",
+        "Research Sycamore 0.9 migration patterns",
+        "Discover Perseus community discussions",
+        "Look up Rust idiom best practices"
+      ]
+    },
+    
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "description": "Complex problem decomposition for migration strategy",
+      "capabilities": {
+        "planning": true,
+        "analysis": true,
+        "decision_trees": true
+      },
+      "useCases": [
+        "Develop module-specific migration strategies",
+        "Analyze lifetime parameter preservation needs",
+        "Plan refactoring impact across dependencies",
+        "Break down complex generic type transformations"
+      ]
+    }
+  },
+  
+  "migrationWorkflow": {
+    "description": "Perseus Sycamore 0.8 → 0.9 Migration Configuration",
+    "version": "1.0.0",
+    
+    "serverUsageByPhase": {
+      "phase1_analysis": {
+        "primary": ["filesystem", "sequential-thinking"],
+        "secondary": ["git", "brave-search"],
+        "description": "Use filesystem for scanning patterns, sequential-thinking for strategy planning"
+      },
+      
+      "phase2_dependencies": {
+        "primary": ["filesystem", "git"],
+        "secondary": ["brave-search"],
+        "description": "Update Cargo.toml files and create git checkpoint"
+      },
+      
+      "phase3_migration": {
+        "primary": ["filesystem", "git", "sequential-thinking"],
+        "secondary": ["brave-search", "github"],
+        "description": "Iterative code transformation with frequent commits and problem-solving"
+      },
+      
+      "phase4_validation": {
+        "primary": ["filesystem", "git"],
+        "secondary": ["github", "brave-search"],
+        "description": "Testing, documentation, and final verification"
+      }
+    },
+    
+    "automationHooks": {
+      "pre_migration": [
+        "scripts/analyze-codebase.sh",
+        "scripts/create-checkpoint.sh baseline"
+      ],
+      
+      "per_package": [
+        "scripts/create-checkpoint.sh before-{package}",
+        "scripts/migrate-package.sh {package}",
+        "cargo check -p {package}",
+        "scripts/create-checkpoint.sh after-{package}"
+      ],
+      
+      "post_migration": [
+        "scripts/run-tests.sh",
+        "scripts/validate-migration.sh",
+        "scripts/create-checkpoint.sh migration-complete"
+      ]
+    }
+  },
+  
+  "environmentSetup": {
+    "required": {
+      "rust": "1.70+",
+      "cargo": "latest",
+      "git": "2.0+",
+      "ripgrep": "13.0+",
+      "fd": "recommended",
+      "perl": "for regex replacements"
+    },
+    
+    "optional": {
+      "tokei": "for code metrics",
+      "cargo-tree": "for dependency analysis",
+      "cargo-expand": "for macro debugging"
+    }
+  },
+  
+  "safetyFeatures": {
+    "automaticBackups": {
+      "enabled": true,
+      "suffix": ".pre-migration",
+      "location": "same directory as source"
+    },
+    
+    "gitCheckpoints": {
+      "enabled": true,
+      "frequency": "after each package",
+      "message_template": "[Migration] {phase}: {package} - {description}"
+    },
+    
+    "compilationGates": {
+      "enabled": true,
+      "description": "Must compile before moving to next module"
+    },
+    
+    "rollbackProcedure": {
+      "method": "git reset",
+      "fallback": "restore from .pre-migration backups"
+    }
+  },
+  
+  "communicationPatterns": {
+    "gitCommitFormat": {
+      "template": "[Migration] {category}: {description}\n\n- {detail1}\n- {detail2}\n\nPhase: {phase}\nPackage: {package}",
+      "categories": [
+        "Scope",
+        "Generics",
+        "Signals",
+        "View",
+        "Builder",
+        "Tests",
+        "Deps"
+      ]
+    },
+    
+    "progressReporting": {
+      "format": "markdown",
+      "location": "migration-reports/",
+      "frequency": "daily"
+    }
+  }
+}
