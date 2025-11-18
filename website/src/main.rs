@@ -9,7 +9,7 @@ mod templates;
 use perseus::prelude::*;
 
 #[perseus::main_export]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         .template(templates::index::get_template())
         .template(templates::comparisons::get_template())
@@ -18,7 +18,7 @@ pub fn main<G: Html>() -> PerseusApp<G> {
         .error_views(error_views::get_error_views())
         .locales_and_translations_manager("en-US", &[])
         .index_view(|cx| {
-            sycamore::view! { cx,
+            sycamore::view! {
                 html(class = "light") {
                     head {
                         meta(charset = "UTF-8")

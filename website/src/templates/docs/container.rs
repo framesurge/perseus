@@ -15,10 +15,10 @@ struct DocsVersionSwitcherProps {
     current_version: String,
 }
 #[component]
-fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> View<G> {
+fn DocsVersionSwitcher(props: DocsVersionSwitcherProps) -> View {
     // We'll fill this in from the reactive scope
     // Astonishingly, this actually works...
-    let locale = create_signal(cx, String::new());
+    let locale = create_signal(String::new());
 
     let current_version = create_ref(cx, props.current_version.to_string());
     let stable_version = create_ref(cx, get_stable_version(&props.manifest).0);
@@ -32,7 +32,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
             .into_iter()
             .map(|version| {
                 let version = create_ref(cx, version);
-                view! { cx,
+                view! {
                         option(value = &version, selected = current_version == version) { (t!(cx, "docs-version-switcher.beta", {
                             "version" = version
                         })) }
@@ -49,7 +49,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
             .into_iter()
             .map(|version| {
                 let version = create_ref(cx, version);
-                view! { cx,
+                view! {
                         option(value = version, selected = current_version == version) { (t!(cx, "docs-version-switcher.outdated", {
                             "version" = version
                         })) }
@@ -58,7 +58,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
             .collect()
     });
 
-    view! { cx,
+    view! {
         ({
             locale.set(use_context::<Reactor<G>>(cx).get_translator().get_locale());
             View::empty()
@@ -92,7 +92,7 @@ fn DocsVersionSwitcher<G: Html>(cx: Scope, props: DocsVersionSwitcherProps) -> V
 
 #[derive(Clone)]
 pub struct DocsContainerProps<G: GenericNode> {
-    pub children: View<G>,
+    pub children: View,
     pub docs_links: String,
     pub status: DocsVersionStatus,
     pub manifest: DocsManifest,
@@ -100,7 +100,7 @@ pub struct DocsContainerProps<G: GenericNode> {
 }
 
 #[component]
-pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G> {
+pub fn DocsContainer(props: DocsContainerProps<G>) -> View {
     let docs_links = props.docs_links.clone();
     let docs_links_clone = docs_links.clone();
     let status = props.status.clone();
@@ -111,13 +111,13 @@ pub fn DocsContainer<G: Html>(cx: Scope, props: DocsContainerProps<G>) -> View<G
     let dvsp_clone = docs_version_switcher_props.clone();
     let stable_version = create_ref(cx, get_stable_version(&props.manifest).0);
 
-    view! { cx,
+    view! {
         Container(
             header = HeaderProps {
                 text_color: "text-black dark:text-white".to_string(),
                 menu_color: "bg-black dark:bg-white".to_string(),
                 title: t!(cx, "perseus"),
-                mobile_nav_extension: view! { cx,
+                mobile_nav_extension: view! {
                     hr()
                     div(class = "text-left p-3 overflow-y-scroll h-[60vh]") {
                         div(class = "flex w-full justify-center text-center") {

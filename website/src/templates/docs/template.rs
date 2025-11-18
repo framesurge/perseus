@@ -18,7 +18,7 @@ pub struct DocsPageProps {
     pub current_version: String,
 }
 
-pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
+pub fn docs_page(props: DocsPageProps) -> View {
     // These come pre-translated for the current locale
     // Note that all the docs files have a title emblazoned at the top already, so
     // we only need the title in the `<head>`
@@ -30,10 +30,10 @@ pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
         current_version,
         ..
     } = props;
-    view! { cx,
+    view! {
         DocsContainer(DocsContainerProps {
             docs_links: sidebar_content,
-            children: view! { cx,
+            children: view! {
                 // Because this is in a grid, we have to make sure it doesn't overflow by specifying this minimum width
                 div(class = "markdown min-w-0 pb-10", dangerously_set_inner_html = &content)
             },
@@ -52,10 +52,10 @@ pub fn docs_page<G: Html>(cx: Scope, props: DocsPageProps) -> View<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
+fn head(props: DocsPageProps) -> View<SsrNode> {
     use perseus::t;
 
-    view! { cx,
+    view! {
         title { (format!("{} | {}", props.title, t!(cx, "docs-title-base"))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
@@ -63,7 +63,7 @@ fn head(cx: Scope, props: DocsPageProps) -> View<SsrNode> {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template<G> {
     Template::build("docs")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)

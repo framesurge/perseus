@@ -8,14 +8,14 @@ use sycamore::prelude::*;
 use web_sys::{Element, IntersectionObserver, IntersectionObserverEntry, IntersectionObserverInit};
 
 #[derive(Prop)]
-struct IndexTileProps<G: Html> {
+struct IndexTileProps {
     /// The HTML ID of this tile.
     id: String,
     /// Any additional styling classes (used for the background). These will be
     /// applied to the outer tile wrapper `<div>`.
     classes: String,
     /// The contents of the block containing text.
-    text_block: View<G>,
+    text_block: View,
     /// The contents of the tile's code example.
     code: Example,
     /// The language of the code example, for syntax highlighting.
@@ -24,9 +24,9 @@ struct IndexTileProps<G: Html> {
     order: TileOrder,
     /// A custom replacement for the supplement that would usually store code.
     /// This can be used to show an image or the like instead.
-    custom_supplement: Option<View<G>>,
+    custom_supplement: Option<View>,
     /// Any extra elements to be placed below the text and supplement blocks.
-    extra: Option<View<G>>,
+    extra: Option<View>,
     /// The type of navigation buttons between sections that this section should
     /// have.
     #[allow(dead_code)] // Pending further work
@@ -49,8 +49,8 @@ enum NavButtons {
 /// component for background images as `::before`s, for enabling filter
 /// application for dark mode.
 #[component]
-fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
-    let order = create_ref(cx, props.order);
+fn IndexTile(props: IndexTileProps) -> View {
+    let order = create_ref(props.order);
 
     // This would usually store the code example, but that can be overridden
     let supplement_view = if let Some(supplement) = props.custom_supplement {
@@ -59,7 +59,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
         // If we have excerpts, we'll display those preferentially, and let the user
         // switch to the full version with a button
         match props.code {
-            Example::Simple(example) => view! { cx,
+            Example::Simple(example) => view! {
                 pre(class = "!rounded-2xl !p-8 !text-sm permadark max-h-[80vh]") {
                     code(class = format!("language-{}", props.code_lang)) {
                         (example)
@@ -69,14 +69,14 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
             Example::WithExcerpts { full, excerpts } => {
                 // We use a separate signal for the button states so they don't lag with the
                 // blur transition
-                let show_full_button = create_signal(cx, false);
-                let show_full_rc = create_rc_signal(false);
-                let show_full = create_ref(cx, show_full_rc.clone());
+                let show_full_button = create_signal(false);
+                let show_full_rc = create_signal(false);
+                let show_full = create_ref(show_full_rc.clone());
                 #[allow(unused_variables)] // Wasm-only
                 let show_full_1 = show_full_rc.clone();
                 #[allow(unused_variables)] // Wasm-only
                 let show_full_2 = show_full_rc;
-                let example = create_memo(cx, move || {
+                let example = create_memo(move || {
                     if *show_full.get() {
                         full.to_string()
                     } else {
@@ -87,7 +87,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                 let pre_noderef = pre.clone();
                 let pre_noderef_2 = pre.clone();
 
-                view! { cx,
+                view! {
                     div(
                         class = "bg-[#313346] rounded-2xl h-[80vh] flex flex-col overflow-hidden"
                     ) {
@@ -121,7 +121,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                         }
                                     }
                                 }
-                            ) { (t!(cx, "index-example-switcher.excerpts")) }
+                            ) { (t!( "index-example-switcher.excerpts")) }
                             // Shows full text
                             button(
                                 class = format!(
@@ -149,7 +149,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
                                         }
                                     }
                                 }
-                            ) { (t!(cx, "index-example-switcher.full")) }
+                            ) { (t!( "index-example-switcher.full")) }
                         }
                         // We need this div so our styles can apply it to the `.code-toolbar` created by Prism
                         pre(ref = pre, class = "!rounded-2xl !p-8 !text-[0.85rem] !m-0 permadark overflow-y-auto h-full transition-[filter] duration-100") {
@@ -170,7 +170,7 @@ fn IndexTile<G: Html>(cx: Scope, props: IndexTileProps<G>) -> View<G> {
 
     // Each of these tiles will be one screen high on desktop, and two on mobile
     // (the second for the code example)
-    view! { cx,
+    view! {
         div(
             class = format!(
                 "tile-outer relative {}",
@@ -260,10 +260,7 @@ struct AnimatedCircularProgressBarProps {
 /// A circular progress bar that will animate from 0 to the given value
 /// automatically when it comes into the user's view.
 #[component]
-fn AnimatedCircularProgressBar<G: Html>(
-    cx: Scope,
-    props: AnimatedCircularProgressBarProps,
-) -> View<G> {
+fn AnimatedCircularProgressBar(props: AnimatedCircularProgressBarProps) -> View {
     const STROKE: f32 = 8.0;
     const RADIUS: f32 = 60.0;
 
@@ -281,7 +278,7 @@ fn AnimatedCircularProgressBar<G: Html>(
     // We only do this after the component has been mounted (`NodeRef` usage)
     // BUG This doesn't work in Chrome...
     #[cfg(client)]
-    on_mount(cx, || {
+    on_mount(|| {
         use wasm_bindgen::prelude::Closure;
         use wasm_bindgen::JsCast;
 
@@ -332,7 +329,7 @@ fn AnimatedCircularProgressBar<G: Html>(
         intersection_observer.observe(&svg_elem_clone);
     });
 
-    view! { cx,
+    view! {
         div(
             class = "flex flex-col justify-center text-center max-w-min self-center",
             // We need to be able to track whether or not this is in the viewport
@@ -379,10 +376,10 @@ fn AnimatedCircularProgressBar<G: Html>(
     }
 }
 
-fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
+fn index_page(examples: CodeExamples) -> View {
     // // Fix these on mobile
     // let nav_buttons = match props.nav_buttons {
-    //     NavButtons::Both(prev_id, next_id) => view! { cx,
+    //     NavButtons::Both(prev_id, next_id) => view! {
     //         button(
     //             // This is absolutely positioned relative to the greater tile
     //             // It then has a fixed width, which we can use to center it
@@ -416,7 +413,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     //             ) {}
     //         }
     //     },
-    //     NavButtons::Top(prev_id) => view! { cx,
+    //     NavButtons::Top(prev_id) => view! {
     //         button(
     //             // This is absolutely positioned relative to the greater tile
     //             // It then has a fixed width, which we can use to center it
@@ -434,7 +431,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     //             ) {}
     //         }
     //     },
-    //     NavButtons::Bottom(next_id) => view! { cx,
+    //     NavButtons::Bottom(next_id) => view! {
     //         button(
     //             // This is absolutely positioned relative to the greater tile
     //             // It then has a fixed width, which we can use to center it
@@ -454,10 +451,10 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
     //     }
     // };
 
-    view! { cx,
+    view! {
         Container(
             header = HeaderProps {
-                title: t!(cx, "perseus"),
+                title: t!( "perseus"),
                 text_color: "text-white".to_string(),
                 menu_color: "bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
@@ -471,14 +468,14 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     classes = "tile-start".to_string(),
                     order = TileOrder::TextLeft,
                     custom_supplement = None,
-                    text_block = view! { cx,
+                    text_block = view! {
                         // NOTE These styles are deliberately different from the rest to prevent text overlaps
-                        p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!(cx, "index-intro.heading")) }
+                        p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!( "index-intro.heading")) }
                         div(class = "uppercase w-full flex items-center flex-col sm:flex-row justify-center lg:justify-start") {
                             a(
                                 class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 sm:mb-0 hover:shadow-white/50 dark:hover:shadow-black/50 hover:shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-110 ease-in-out",
-                                href = link!(cx, "/docs")
-                            ) { (t!(cx, "index-intro.get-started-button")) }
+                                href = link!( "/docs")
+                            ) { (t!( "index-intro.get-started-button")) }
                             a(
                                 class = "bg-[#8085ff] dark:bg-[#787CFC] text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold inline-flex items-center hover:shadow-[#8085ff]/50 dark:hover:shadow-[#787CFC]/50 hover:shadow-lg transition-shadow duration-200",
                                 href = "https://github.com/framesurge/perseus",
@@ -488,7 +485,7 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                                     class = "mr-1",
                                     dangerously_set_inner_html = GITHUB_SVG
                                 )
-                                    span { (format!(" {}", t!(cx, "index-intro.github-button"))) }
+                                    span { (format!(" {}", t!( "index-intro.github-button"))) }
                             }
                         }
                     },
@@ -503,13 +500,13 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     classes = "tile-state-generation".to_string(),
                     order = TileOrder::TextRight,
                     custom_supplement = None,
-                    text_block = view! { cx,
+                    text_block = view! {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!(cx, "index-state-gen.heading"))
+                            (t!( "index-state-gen.heading"))
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!(cx, "index-state-gen.desc")
+                                dangerously_set_inner_html = &t!( "index-state-gen.desc")
                             ) {}
                         }
                     },
@@ -524,18 +521,18 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     classes = "tile-i18n".to_string(),
                     order = TileOrder::TextLeft,
                     custom_supplement = None,
-                    text_block = view! { cx,
+                    text_block = view! {
                         div(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             div(class = "tooltip") {
-                                span(id = "i18n-dotted-border") { (t!(cx, "index-i18n.heading.start")) }
+                                span(id = "i18n-dotted-border") { (t!( "index-i18n.heading.start")) }
                                 // We have to undo most of the title font stuff from the parent
-                                span(class = "tooltip-text font-sans text-base normal-case tracking-normal") { (t!(cx, "index-i18n.heading.tooltip")) }
+                                span(class = "tooltip-text font-sans text-base normal-case tracking-normal") { (t!( "index-i18n.heading.tooltip")) }
                             }
-                            span { (t!(cx, "index-i18n.heading.rest")) }
+                            span { (t!( "index-i18n.heading.rest")) }
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!(cx, "index-i18n.desc")
+                                dangerously_set_inner_html = &t!( "index-i18n.desc")
                             ) {}
                         }
                     },
@@ -550,12 +547,12 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     classes = "tile-options".to_string(),
                     order = TileOrder::TextRight,
                     custom_supplement = None,
-                    text_block = view! { cx,
+                    text_block = view! {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!(cx, "index-opts.heading")) // TODO Best heading?
+                            (t!( "index-opts.heading")) // TODO Best heading?
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
-                            (t!(cx, "index-opts.desc"))
+                            (t!( "index-opts.desc"))
                         }
                     },
                     code = examples.cli,
@@ -568,40 +565,40 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     id = "speed".to_string(),
                     classes = "tile-speed".to_string(),
                     order = TileOrder::TextLeft,
-                    text_block = view! { cx,
+                    text_block = view! {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!(cx, "index-speed.heading"))
+                            (t!( "index-speed.heading"))
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!(cx, "index-speed.desc-line-1")
+                                dangerously_set_inner_html = &t!( "index-speed.desc-line-1")
                             ) {}
                             br()
                             span(
-                                dangerously_set_inner_html = &t!(cx, "index-speed.desc-line-2")
+                                dangerously_set_inner_html = &t!( "index-speed.desc-line-2")
                             ) {}
                             br()
                             span(
-                                dangerously_set_inner_html = &t!(cx, "index-speed.desc-line-3") // TODO Add footnote caveat to this
+                                dangerously_set_inner_html = &t!( "index-speed.desc-line-3") // TODO Add footnote caveat to this
                             ) {}
                         }
                     },
                     code = Example::Simple(String::new()),
                     code_lang = String::new(),
-                    custom_supplement = Some(view! { cx,
+                    custom_supplement = Some(view! {
                         div(class = "bg-white dark:bg-[#272822] rounded-2xl !p-8 w-full flex flex-col lg:flex-row justify-center lg:justify-evenly") {
                             AnimatedCircularProgressBar(
                                 percent = 100,
-                                label = t!(cx, "index-speed.desktop-perf-label")
+                                label = t!( "index-speed.desktop-perf-label")
                             )
                             // TODO Footnote this
                             AnimatedCircularProgressBar(
                                 percent = 97,
-                                label = t!(cx, "index-speed.mobile-perf-label")
+                                label = t!( "index-speed.mobile-perf-label")
                             )
                             AnimatedCircularProgressBar(
                                 percent = 100,
-                                label = t!(cx, "index-speed.best-practices-label")
+                                label = t!( "index-speed.best-practices-label")
                             )
                         }
                     }),
@@ -613,47 +610,47 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
                     id = "cta".to_string(),
                     classes = "tile-end".to_string(),
                     order = TileOrder::TextLeft, // TODO Change this?
-                    text_block = view! { cx,
+                    text_block = view! {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
-                            (t!(cx, "index-cta.heading"))
+                            (t!( "index-cta.heading"))
                         }
                     },
                     code = examples.get_started,
                     code_lang = "sh".to_string(),
                     custom_supplement = None,
-                    extra = Some(view! { cx,
+                    extra = Some(view! {
                         div(class = "flex justify-center") {
                             ul(
                                 class = "text-center max-w-4xl"
                             ) {
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
-                                    href = link!(cx, "/docs")
-                                ) { (t!(cx, "index-cta.docs-button")) }
+                                    href = link!( "/docs")
+                                ) { (t!( "index-cta.docs-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://github.com/framesurge/perseus"
-                                ) { (t!(cx, "index-cta.gh-button")) }
+                                ) { (t!( "index-cta.gh-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://docs.rs/perseus/latest/perseus"
-                                ) { (t!(cx, "index-cta.api-docs-button")) }
+                                ) { (t!( "index-cta.api-docs-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://crates.io/crates/perseus"
-                                ) { (t!(cx, "index-cta.crates-io-button")) }
+                                ) { (t!( "index-cta.crates-io-button")) }
                                 // TODO Update this with the Matrix link when it's set up
                                 a(
                                     class = "cursor-not-allowed bg-gray-300 dark:bg-neutral-700 text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block",
-                                ) { (t!(cx, "index-cta.matrix-button")) }
+                                ) { (t!( "index-cta.matrix-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
                                     href = "https://discord.com/invite/GNqWYWNTdp"
-                                ) { (t!(cx, "index-cta.discord-button")) }
+                                ) { (t!( "index-cta.discord-button")) }
                                 a(
                                     class = "bg-white dark:bg-black text-black dark:text-white sm:text-lg p-4 px-6 sm:px-8 mx-2 rounded-lg font-semibold uppercase mb-3 min-w-[10em] text-center inline-block hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors duration-200",
-                                    href = link!(cx, "/comparisons")
-                                ) { (t!(cx, "index-cta.comparisons-button")) }
+                                    href = link!( "/comparisons")
+                                ) { (t!( "index-cta.comparisons-button")) }
                             }
                         }
                     }),
@@ -672,9 +669,9 @@ fn index_page<G: Html>(cx: Scope, examples: CodeExamples) -> View<G> {
 }
 
 #[engine_only_fn]
-pub fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
-        title { (t!(cx, "perseus")) }
+pub fn head() -> View {
+    view! {
+        title { (t!( "perseus")) }
         link(rel = "stylesheet", href = ".perseus/static/prism.css")
         // Prefetch the images and fonts so the browser gets on these as quickly as possible
         link(rel = "prefetch", href = ".perseus/static/mesh_open.jpg")
@@ -683,7 +680,7 @@ pub fn head(cx: Scope) -> View<SsrNode> {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index")
         .view_with_unreactive_state(index_page)
         .head(head)

@@ -59,12 +59,12 @@ pub enum DocsVersionStatus {
 }
 impl DocsVersionStatus {
     /// Renders the docs status to a Sycamore template for display.
-    pub fn render<G: GenericNode>(&self, cx: Scope, stable_version: String) -> View<G> {
+    pub fn render<G: GenericNode>(&self, stable_version: String) -> View {
         match &self {
             // No message should be displayed if it's the correct version
             Self::Stable => View::empty(),
             Self::Outdated => {
-                view! { cx,
+                view! {
                     div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -84,7 +84,7 @@ impl DocsVersionStatus {
                 }
             }
             Self::Beta => {
-                view! { cx,
+                view! {
                     div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -104,7 +104,7 @@ impl DocsVersionStatus {
                 }
             }
             Self::Next => {
-                view! { cx,
+                view! {
                     div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(

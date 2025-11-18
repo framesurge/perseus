@@ -45,13 +45,13 @@ struct PluginDetails {
     url: String,
 }
 
-fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
-    let plugins = create_signal(cx, props.plugins);
+fn plugins_page(props: PluginsPageProps) -> View {
+    let plugins = create_signal(props.plugins);
     // This will store the plugins relevant to the user's search (all of them by
     // This stores the search that the user provides
-    let filter = create_signal(cx, String::new());
+    let filter = create_signal(String::new());
     // A derived state that will filter the plugins that the user searches for
-    let filtered_plugins = create_memo(cx, || {
+    let filtered_plugins = create_memo(|| {
         plugins
             .get()
             .iter()
@@ -65,10 +65,10 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
             .collect::<Vec<PluginDetails>>()
     });
 
-    view! { cx,
+    view! {
         Container(
             header = HeaderProps {
-                title: t!(cx, "perseus"),
+                title: t!( "perseus"),
                 text_color: "text-black dark:text-white".to_string(),
                 menu_color: "bg-black dark:bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
@@ -78,23 +78,23 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
         ) {
                 div(class = "mt-14 xs:mt-16 sm:mt-20 lg:mt-25 dark:text-white") {
                     div(class = "w-full flex flex-col justify-center text-center") {
-                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold mb-5") { (t!(cx, "plugins-title")) }
+                        h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold mb-5") { (t!( "plugins-title")) }
                         br()
-                        p(class = "mx-1 mb-2") { (t!(cx, "plugins-desc")) }
+                        p(class = "mx-1 mb-2") { (t!( "plugins-desc")) }
                         div(class = "w-full flex justify-center text-center mb-3") {
                             input(class = "mx-2 max-w-7xl p-3 rounded-md border border-indigo-500 focus:outline-indigo-600 dark:focus:outline-indigo-700 search-bar-bg", on:input = |ev: web_sys::Event| {
                                 // This longwinded code gets the actual value that the user typed in
                                 let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
                                 let new_input = target.value();
                                 filter.set(new_input);
-                            }, placeholder = t!(cx, "plugin-search.placeholder"))
+                            }, placeholder = t!( "plugin-search.placeholder"))
                         }
                     }
                     div(class = "w-full flex justify-center") {
                         ul(class = "text-center w-full max-w-7xl mx-2 mb-16") {
                             Indexed(
-                                iterable = filtered_plugins,
-                                view = |cx, plugin| view! { cx,
+                                list= filtered_plugins,
+                                view = | plugin| view! {
                                     li(class = "inline-block align-top m-2") {
                                         a(
                                             class = "block text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm dark:text-white",
@@ -103,14 +103,14 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
                                             p(class = "text-xl xs:text-2xl inline-flex") {
                                                 (plugin.name)
                                                 (if plugin.trusted {
-                                                    view! { cx,
+                                                    view! {
                                                         span(class = "ml-1 self-center", dangerously_set_inner_html = TRUSTED_SVG) {}
                                                     }
                                                 } else {
                                                     View::empty()
                                                 })
                                             }
-                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!(cx, "plugin-card-author", { "author" = &plugin.author })) }
+                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!( "plugin-card-author", { "author" = &plugin.author })) }
                                             p { (plugin.description) }
                                         }
                                     }
@@ -124,14 +124,14 @@ fn plugins_page<G: Html>(cx: Scope, props: PluginsPageProps) -> View<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
-        title { (format!("{} | {}", t!(cx, "plugins-title"), t!(cx, "perseus"))) }
+fn head() -> View {
+    view! {
+        title { (format!("{} | {}", t!( "plugins-title"), t!( "perseus"))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("plugins")
         .view_with_unreactive_state(plugins_page)
         .head(head)

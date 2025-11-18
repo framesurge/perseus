@@ -21,15 +21,15 @@ struct ComparisonRowProps<'a> {
     name: String,
 }
 #[component]
-fn ComparisonRow<'a, G: Html>(cx: Scope<'a>, props: ComparisonRowProps<'a>) -> View<G> {
-    let show_details = create_signal(cx, false);
-    let name = create_ref(cx, props.name);
+fn ComparisonRow(props: ComparisonRowProps<'a>) -> View {
+    let show_details = create_signal(false);
+    let name = create_ref(props.name);
 
-    view! { cx,
+    view! {
         tr {
             th(class = "text-left p-1 py-2 text-xs xs:text-base") {
                 div(class = "flex items-center") {
-                    (t!(cx, &format!("comparisons-table-headings.{}", name)))
+                    (t!( &format!("comparisons-table-headings.{}", name)))
                     span(
                         class = "ml-1",
                         on:click = |_| {
@@ -48,7 +48,7 @@ fn ComparisonRow<'a, G: Html>(cx: Scope<'a>, props: ComparisonRowProps<'a>) -> V
                         }
                     )
                 ) {
-                    (t!(cx, &format!("comparisons-table-details.{}", name)))
+                    (t!( &format!("comparisons-table-details.{}", name)))
                 }
             }
             td(class = "p-1 py-2 text-xs xs:text-base") {
@@ -68,7 +68,7 @@ struct ComparisonTableProps<'a> {
     perseus_comparison: Comparison,
 }
 #[component]
-fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) -> View<G> {
+fn ComparisonTable(props: ComparisonTableProps<'a>) -> View {
     let comparison = props.comparison;
     let Comparison {
         name: _perseus_name, // We'll use the translation ID
@@ -89,39 +89,39 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
         text: _, // The Perseus comparison has no text
     } = props.perseus_comparison;
 
-    let show_details_homepage_lighthouse_desktop = create_signal(cx, false);
-    let show_details_homepage_lighthouse_mobile = create_signal(cx, false);
+    let show_details_homepage_lighthouse_desktop = create_signal(false);
+    let show_details_homepage_lighthouse_mobile = create_signal(false);
 
     // We now need to deconstruct the comparison with memos (actual pain)
     // Otherwise, the props passed through to the row component aren't considered
     // reactive
-    let comparison_language = create_memo(cx, || comparison.get().language.to_string());
-    let comparison_supports_ssg = create_memo(cx, || comparison.get().supports_ssg.render());
-    let comparison_supports_ssr = create_memo(cx, || comparison.get().supports_ssr.render());
+    let comparison_language = create_memo(|| comparison.get().language.to_string());
+    let comparison_supports_ssg = create_memo(|| comparison.get().supports_ssg.render());
+    let comparison_supports_ssr = create_memo(|| comparison.get().supports_ssr.render());
     let comparison_supports_ssr_ssg_same_page =
-        create_memo(cx, || comparison.get().supports_ssr_ssg_same_page.render());
-    let comparison_supports_i18n = create_memo(cx, || comparison.get().supports_i18n.render());
+        create_memo(|| comparison.get().supports_ssr_ssg_same_page.render());
+    let comparison_supports_i18n = create_memo(|| comparison.get().supports_i18n.render());
     let comparison_supports_incremental =
-        create_memo(cx, || comparison.get().supports_incremental.render());
+        create_memo(|| comparison.get().supports_incremental.render());
     let comparison_supports_revalidation =
-        create_memo(cx, || comparison.get().supports_revalidation.render());
-    let comparison_inbuilt_cli = create_memo(cx, || comparison.get().inbuilt_cli.render());
-    let comparison_inbuilt_routing = create_memo(cx, || comparison.get().inbuilt_routing.render());
-    let comparison_supports_shell = create_memo(cx, || comparison.get().supports_shell.render());
+        create_memo(|| comparison.get().supports_revalidation.render());
+    let comparison_inbuilt_cli = create_memo(|| comparison.get().inbuilt_cli.render());
+    let comparison_inbuilt_routing = create_memo(|| comparison.get().inbuilt_routing.render());
+    let comparison_supports_shell = create_memo(|| comparison.get().supports_shell.render());
     let comparison_supports_deployment =
-        create_memo(cx, || comparison.get().supports_deployment.render());
+        create_memo(|| comparison.get().supports_deployment.render());
     let comparison_supports_exporting =
-        create_memo(cx, || comparison.get().supports_exporting.render());
-    let comparison_text = create_memo(cx, || comparison.get().text.to_string());
+        create_memo(|| comparison.get().supports_exporting.render());
+    let comparison_text = create_memo(|| comparison.get().text.to_string());
 
-    view! { cx,
+    view! {
         table(class = "w-full overflow-x-scroll table-fixed border-collapse") {
             thead(class = "mt-4 text-white bg-indigo-500 dark:bg-indigo-700 rounded-xl") {
                 th(class = "p-1 py-2 text-xs xs:text-base") {
-                    (t!(cx, "comparisons-table-header"))
+                    (t!( "comparisons-table-header"))
                 }
                 th(class = "p-1 py-2 text-xs xs:text-base") {
-                    (t!(cx, "perseus"))
+                    (t!( "perseus"))
                 }
                 th(class = "p-1 py-2 text-xs xs:text-base") {
                     (comparison.get().name)
@@ -195,7 +195,7 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                 tr {
                     th(class = "text-left p-1 py-2 text-xs xs:text-base") {
                         div(class = "flex items-center") {
-                            (t!(cx, "comparisons-table-headings.homepage_lighthouse_desktop"))
+                            (t!( "comparisons-table-headings.homepage_lighthouse_desktop"))
                             span(
                                 class = "ml-1",
                                 on:click = |_| {
@@ -214,20 +214,20 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                                 }
                             )
                         ) {
-                            (t!(cx, "comparisons-table-details.homepage_lighthouse_desktop"))
+                            (t!( "comparisons-table-details.homepage_lighthouse_desktop"))
                         }
                     }
                     td(class = "p-1 py-2 text-xs xs:text-base") {
-                        (render_lighthouse_score(cx, perseus_homepage_lighthouse_desktop))
+                        (render_lighthouse_score( perseus_homepage_lighthouse_desktop))
                     }
                     td(class = "p-1 py-2 text-xs xs:text-base") {
-                        (render_lighthouse_score(cx, comparison.get().homepage_lighthouse_desktop))
+                        (render_lighthouse_score( comparison.get().homepage_lighthouse_desktop))
                     }
                 }
                 tr {
                     th(class = "text-left p-1 py-2 text-xs xs:text-base") {
                         div(class = "flex items-center") {
-                            (t!(cx, "comparisons-table-headings.homepage_lighthouse_mobile"))
+                            (t!( "comparisons-table-headings.homepage_lighthouse_mobile"))
                             span(
                                 class = "ml-1",
                                 on:click = |_| {
@@ -246,20 +246,20 @@ fn ComparisonTable<'a, G: Html>(cx: Scope<'a>, props: ComparisonTableProps<'a>) 
                                 }
                             )
                         ) {
-                            (t!(cx, "comparisons-table-details.homepage_lighthouse_mobile"))
+                            (t!( "comparisons-table-details.homepage_lighthouse_mobile"))
                         }
                     }
                     td(class = "p-1 py-2 text-xs xs:text-base") {
-                        (render_lighthouse_score(cx, perseus_homepage_lighthouse_mobile))
+                        (render_lighthouse_score( perseus_homepage_lighthouse_mobile))
                     }
                     td(class = "p-1 py-2 text-xs xs:text-base") {
-                        (render_lighthouse_score(cx, comparison.get().homepage_lighthouse_mobile))
+                        (render_lighthouse_score( comparison.get().homepage_lighthouse_mobile))
                     }
                 }
             }
         }
         h3(class = "text-2xl underline") { (t!(
-            cx,
+
             "comparisons-unknown-heading",
             {
                 "name" = &comparison.get().name
@@ -278,13 +278,13 @@ pub struct ComparisonsPageProps {
     pub perseus_comparison: Comparison,
 }
 
-pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View<G> {
+pub fn comparisons_page(props: ComparisonsPageProps) -> View {
     let comparisons = props.comparisons.clone();
     let perseus_comparison = props.perseus_comparison;
     let mut comparison_names: Vec<String> = comparisons.keys().cloned().collect();
     comparison_names.sort();
     // The current comparison should be the first element in the list alphabetically
-    let curr_comparison_name = create_signal(cx, comparison_names[0].clone());
+    let curr_comparison_name = create_signal(comparison_names[0].clone());
 
     let select_options = View::new_fragment(
         comparison_names
@@ -292,7 +292,7 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
             .map(|name| {
                 let name = name.clone();
                 let name_2 = name.clone();
-                view! { cx,
+                view! {
                     option(value = name) {
                         (name_2)
                     }
@@ -301,17 +301,17 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
             .collect(),
     );
 
-    let curr_comparison = create_memo(cx, move || {
+    let curr_comparison = create_memo(move || {
         comparisons
             .get(&*curr_comparison_name.get())
             .unwrap()
             .clone()
     });
 
-    view! { cx,
+    view! {
         Container(
             header = HeaderProps {
-                title: t!(cx, "perseus"),
+                title: t!( "perseus"),
                 text_color: "text-black dark:text-white".to_string(),
                 menu_color: "bg-black dark:bg-white".to_string(),
                 mobile_nav_extension: View::empty(),
@@ -322,15 +322,15 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
             div(class = "flex flex-col justify-center text-center dark:text-white mt-14 xs:mt-16 sm:mt-20 lg:mt-25") {
                 div {
                     h1(class = "text-5xl xs:text-7xl sm:text-8xl font-bold") {
-                        (t!(cx, "comparisons-heading"))
+                        (t!( "comparisons-heading"))
                     }
                     br()
                         p(class = "text-lg") {
-                            (t!(cx, "comparisons-subtitle"))
+                            (t!( "comparisons-subtitle"))
                         }
                     p(
                         class = "italic px-1",
-                        dangerously_set_inner_html = &t!(cx, "comparisons-extra")
+                        dangerously_set_inner_html = &t!( "comparisons-extra")
                     )
                 }
                 br(class = "mb-2 sm:mb-16 md:mb-24")
@@ -356,9 +356,9 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
                                 }
                             }
                         br(class = "mb-1 sm:mb-8 md:mb-12")
-                            h3(class = "text-xl underline") { (t!(cx, "comparisons-sycamore-heading")) }
+                            h3(class = "text-xl underline") { (t!( "comparisons-sycamore-heading")) }
                         div(class = "w-full flex justify-center text-sm") {
-                            p(class = "max-w-prose") { (t!(cx, "comparisons-sycamore-text")) }
+                            p(class = "max-w-prose") { (t!( "comparisons-sycamore-text")) }
                         }
                 }
             }
@@ -367,13 +367,13 @@ pub fn comparisons_page<G: Html>(cx: Scope, props: ComparisonsPageProps) -> View
 }
 
 #[engine_only_fn]
-pub fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
-        title { (format!("{} | {}", t!(cx, "comparisons-title"), t!(cx, "perseus"))) }
+pub fn head() -> View {
+    view! {
+        title { (format!("{} | {}", t!( "comparisons-title"), t!( "perseus"))) }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template<G> {
     Template::build("comparisons")
         .view_with_unreactive_state(comparisons_page)
         .head(head)

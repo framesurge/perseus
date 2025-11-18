@@ -4,10 +4,10 @@ use sycamore::prelude::*;
 // use web_sys::{Event, KeyboardEvent};
 
 // #[component]
-// pub fn SearchBar<G: Html>(cx: Scope) -> View<G> {
-//     let search = create_signal(cx, String::new());
+// pub fn SearchBar(cx: Scope) -> View {
+//     let search = create_signal(String::new());
 
-//     view! { cx,
+//     view! {
 //         input(
 //             class = "p-2 border rounded-md mb-2 focus:outline-indigo-500
 // search-bar-bg max-w-full",             placeholder = t!(cx, "search"),
@@ -28,7 +28,7 @@ use sycamore::prelude::*;
 // }
 
 #[component]
-pub fn SearchBar<G: Html>(_cx: Scope) -> View<G> {
+pub fn SearchBar(_cx: Scope) -> View {
     View::empty()
 }
 

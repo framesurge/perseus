@@ -74,27 +74,27 @@ impl FeatureSupport {
 
 /// Renders a Lighthouse score to have a text color. If it's 100, then we use
 /// the appropriate emoji.
-pub fn render_lighthouse_score<G: Html>(cx: Scope, score: u8) -> View<G> {
+pub fn render_lighthouse_score(score: u8) -> View {
     if score == 100 {
-        view! { cx,
+        view! {
             span(class = "emoji-green") {
                 "💯"
             }
         }
     } else if score >= 90 {
-        view! { cx,
+        view! {
             span(class = "text-emerald-600") {
                 (score)
             }
         }
     } else if score >= 50 {
-        view! { cx,
+        view! {
             span(class = "text-amber-500") {
                 (score)
             }
         }
     } else {
-        view! { cx,
+        view! {
             span(class = "text-red-500") {
                 (score)
             }
