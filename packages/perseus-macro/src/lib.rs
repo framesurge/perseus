@@ -33,14 +33,14 @@ use crate::rx_state::ReactiveStateDeriveInput;
 /// mandated anymore! It just exists to turn function signatures like this
 ///
 /// ```text
-/// fn my_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a MyStateRx) -> View<G>
+/// fn my_page(cx: BoundedScope<'_, 'a>, state: &'a MyStateRx) -> View
 /// ```
 ///
 /// into this
 ///
 /// ```text
 /// #[auto_scope]
-/// fn my_page<G: Html>(cx: Scope, state: &MyStateRx) -> View<G>
+/// fn my_page(state: &MyStateRx) -> View
 /// ```
 ///
 /// In other words, all this does is rewrites some lifetimes for you so Perseus

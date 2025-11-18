@@ -122,13 +122,13 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
         } else {
             intermediate_fields.extend(quote! {
                 #field_attrs
-                #field_vis #field_ident: ::sycamore::prelude::RcSignal<#old_ty>,
+                #field_vis #field_ident: ::sycamore::prelude::Signal<#old_ty>,
             });
             intermediate_field_makers.extend(
-                quote! { #field_ident: ::sycamore::prelude::create_rc_signal(self.#field_ident), },
+                quote! { #field_ident: ::sycamore::prelude::create_signal(self.#field_ident), },
             );
             new_intermediate_field_makers.extend(
-                quote! { #field_ident: ::sycamore::prelude::create_rc_signal(#field_ident), },
+                quote! { #field_ident: ::sycamore::prelude::create_signal(#field_ident), },
             );
             // All fields must be `Clone`
             unrx_field_makers

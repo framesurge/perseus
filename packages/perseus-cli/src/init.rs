@@ -156,7 +156,7 @@ static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 use perseus::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp<G> {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
 }"#;
@@ -164,8 +164,8 @@ static DFLT_INIT_MOD_RS: &str = r#"pub mod index;"#;
 static DFLT_INIT_INDEX_RS: &str = r#"use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn index_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn index_page(cx: Scope) -> View {
+    view! {
         // Don't worry, there are much better ways of styling in Perseus!
         div(style = "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 95vh;") {
             h1 { "Welcome to Perseus!" }
@@ -180,12 +180,12 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
 
 #[engine_only_fn]
 fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+    view! {
         title { "Welcome to Perseus!" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template<G> {
     Template::build("index").view(index_page).head(head).build()
 }"#;
 static DFLT_INIT_CONFIG_TOML: &str = r#"[build]
