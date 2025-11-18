@@ -15,8 +15,8 @@ lazy_static! {
 
 // Note the use of props as `()`, indicating that this capsule doesn't take any
 // properties
-fn time_capsule<G: Html>(cx: Scope, state: Number, _props: ()) -> View<G> {
-    view! { cx,
+fn time_capsule(state: Number, _props: ()) -> View {
+    view! {
         span {
             (state.number)
 
@@ -24,7 +24,7 @@ fn time_capsule<G: Html>(cx: Scope, state: Number, _props: ()) -> View<G> {
             // a particular incremental path that has incremental dependencies
             // itself. Perseus resolves this without problems.
             (if state.number == 5 {
-                view! { cx, (NUMBER.widget(cx, "/6", ())) }
+                view! { (NUMBER.widget("/6", ())) }
             } else {
                 View::empty()
             })
@@ -37,7 +37,7 @@ struct Number {
     number: u16,
 }
 
-pub fn get_capsule<G: Html>() -> Capsule<G, ()> {
+pub fn get_capsule() -> Capsule<()> {
     Capsule::build(
         Template::build("number")
             .build_paths_fn(get_build_paths)

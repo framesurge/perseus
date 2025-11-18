@@ -2,12 +2,12 @@ use perseus::prelude::*;
 use sycamore::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         .template(
             Template::build("index")
-                .view(|cx| {
-                    view! { cx,
+                .view(|| {
+                    view! {
                         p { "Hello World!" }
                     }
                 })

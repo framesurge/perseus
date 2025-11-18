@@ -3,15 +3,15 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-fn about_page<G: Html>(cx: Scope) -> View<G> {
+fn about_page() -> View {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
-    let frozen_app = create_signal(cx, String::new());
-    let render_ctx = Reactor::<G>::from_cx(cx);
+    let frozen_app = create_signal(String::new());
+    let render_ctx = Reactor::from_cx();
 
-    let global_state = render_ctx.get_global_state::<AppStateRx>(cx);
+    let global_state = render_ctx.get_global_state::<AppStateRx>();
 
-    view! { cx,
+    view! {
         p(id = "global_state") { (global_state.test.get()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
@@ -30,6 +30,6 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("about").view(about_page).build()
 }

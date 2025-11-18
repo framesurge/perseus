@@ -1,14 +1,14 @@
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn about_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn about_page() -> View {
+    view! {
         p { "Try going back to the index page, and the state should still be the same!" }
 
         a(id = "index-link", href = "") { "Index" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("about").view(about_page).build()
 }

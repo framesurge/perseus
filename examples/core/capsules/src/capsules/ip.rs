@@ -9,8 +9,8 @@ lazy_static! {
 
 // Note the use of props as `()`, indicating that this capsule doesn't take any
 // properties
-fn ip_capsule<G: Html>(cx: Scope, state: IpState, _props: ()) -> View<G> {
-    view! { cx,
+fn ip_capsule(state: IpState, _props: ()) -> View {
+    view! {
         p(id = "ip") { (state.ip) }
     }
 }
@@ -21,7 +21,7 @@ struct IpState {
     ip: String,
 }
 
-pub fn get_capsule<G: Html>() -> Capsule<G, ()> {
+pub fn get_capsule() -> Capsule<()> {
     Capsule::build(Template::build("ip").request_state_fn(get_request_state))
         .empty_fallback()
         // Very importantly, we declare our views on the capsule, **not** the template!

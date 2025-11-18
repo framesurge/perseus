@@ -10,8 +10,8 @@ lazy_static! {
     pub static ref LINKS: Capsule<PerseusNodeType, ()> = get_capsule();
 }
 
-fn links_capsule<G: Html>(cx: Scope, _: ()) -> View<G> {
-    view! { cx,
+fn links_capsule(_: ()) -> View {
+    view! {
         div(id = "links", style = "margin-top: 1rem;") {
             a(id = "index-link", href = "") { "Index" }
             br {}
@@ -26,7 +26,7 @@ fn links_capsule<G: Html>(cx: Scope, _: ()) -> View<G> {
     }
 }
 
-pub fn get_capsule<G: Html>() -> Capsule<G, ()> {
+pub fn get_capsule() -> Capsule<()> {
     Capsule::build(Template::build("links"))
         .empty_fallback()
         .view(links_capsule)

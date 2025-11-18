@@ -3,7 +3,7 @@ mod templates;
 use perseus::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
         .template(crate::templates::about::get_template())

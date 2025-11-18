@@ -3,16 +3,16 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-fn about_page<G: Html>(cx: Scope) -> View<G> {
+fn about_page() -> View {
     // This is not part of our data model
-    let freeze_status = create_signal(cx, String::new());
+    let freeze_status = create_signal(String::new());
     // It's faster to get this only once and rely on reactivity
     // But it's unused when this runs on the server-side because of the target-gate
     // below
-    let reactor = Reactor::<G>::from_cx(cx);
-    let global_state = reactor.get_global_state::<AppStateRx>(cx);
+    let reactor = Reactor::from_cx();
+    let global_state = reactor.get_global_state::<AppStateRx>();
 
-    view! { cx,
+    view! {
         p(id = "global_state") { (global_state.test.get()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
@@ -23,7 +23,7 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
         button(id = "freeze_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
             #[cfg(client)]
-            spawn_local_scoped(cx, async move {
+            spawn_local_scoped(async move {
                 use perseus::state::{IdbFrozenStateStore, Freeze};
                 // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
                 let frozen_state = reactor.freeze();
@@ -44,6 +44,6 @@ fn about_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("about").view(about_page).build()
 }

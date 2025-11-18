@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 
 // Like templates, error views are generic over `G`, so that they can be
 // rendered ahead of time on the engine-side when an error occurs
-pub fn get_error_views<G: Html>() -> ErrorViews<G> {
+pub fn get_error_views() -> ErrorViews {
     // Creating a set of error views is a matter of creating a single handler
     // function that can respond to any error. This handler takes a Sycamore scope,
     // the actual error (`perseus::errors::ClientError`), some information about
@@ -41,7 +41,7 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
     // load extra material like new stylesheets on an error, as it might be a
     // network error), and the second one for the body (to be displayed in
     // `err_pos`).
-    ErrorViews::new(|cx, err, _err_info, _err_pos| {
+    ErrorViews::new(|err, _err_info, _err_pos| {
         match err {
             // Errors from the server, like 404s; these are best displayed over the whole
             // page
@@ -52,28 +52,28 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
             } => match status {
                 // This one is usually handled separately
                 404 => (
-                    view! { cx,
+                    view! {
                         title { "Page not found" }
                     },
-                    view! { cx,
+                    view! {
                         p { "Sorry, that page doesn't seem to exist." }
                     }
                 ),
                 // If the status is 4xx, it's a client-side problem (which is weird, and might indicate tampering)
                 _ if (400..500).contains(&status) => (
-                    view! { cx,
+                    view! {
                         title { "Error" }
                     },
-                    view! { cx,
+                    view! {
                         p { "There was something wrong with the last request, please try reloading the page." }
                     }
                 ),
                 // 5xx is a server error
                 _ => (
-                    view! { cx,
+                    view! {
                         title { "Error" }
                     },
-                    view! { cx,
+                    view! {
                         p { "Sorry, our server experienced an internal error. Please try reloading the page." }
                     }
                 )
@@ -83,19 +83,19 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
             //
             // The argument here is the formatted panic message.
             ClientError::Panic(_) => (
-                view! { cx,
+                view! {
                     title { "Critical error" }
                 },
-                view! { cx,
+                view! {
                     p { "Sorry, but a critical internal error has occurred. This has been automatically reported to our team, who'll get on it as soon as possible. In the mean time, please try reloading the page." }
                 }
             ),
             // Network errors (but these could be caused by unexpected server rejections)
             ClientError::FetchError(_) => (
-                view! { cx,
+                view! {
                     title { "Error" }
                 },
-                view! { cx,
+                view! {
                     p { "A network error occurred, do you have an internet connection? (If you do, try reloading the page.)" }
                 }
             ),
@@ -117,10 +117,10 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
             // caught at the time of the function's execution, but sometimes
             // you'll just want to leave them to a popup error)
             ClientError::PreloadError(_) => (
-                view! { cx,
+                view! {
                     title { "Error" }
                 },
-                view! { cx,
+                view! {
                     p { (format!("An internal error has occurred: '{}'.", err)) }
                 }
             )

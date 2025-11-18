@@ -2,8 +2,8 @@ use crate::components::layout::Layout;
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn long_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn long_page() -> View {
+    view! {
         Layout(title = "Long") {
             // Anything we put in here will be rendered inside the `<main>` block of the layout
             a(href = "") { "Index" }
@@ -16,12 +16,12 @@ fn long_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head() -> View {
+    view! {
         title { "Long Page" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("long").view(long_page).head(head).build()
 }

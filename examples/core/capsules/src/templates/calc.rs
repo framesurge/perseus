@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
 #[auto_scope]
-fn calc_page<G: Html>(cx: Scope, state: &CalcStateRx) -> View<G> {
-    view! { cx,
+fn calc_page(state: &CalcStateRx) -> View {
+    view! {
         // This was *not* built at build-time in `number`, so we're incrementally
         // generating it. Importantly, Perseus can figure out that this should just
         // be added to the build paths list of the `number` widget, so we don't need
@@ -14,7 +14,7 @@ fn calc_page<G: Html>(cx: Scope, state: &CalcStateRx) -> View<G> {
         p(id = "fifty-six") {
             "The number fifty-six: "
             // See `number.rs` for why this yields `56`
-            (NUMBER.widget(cx, "/5", ()))
+            (NUMBER.widget("/5", ()))
             "."
         }
         // Now, let me be clear. Using a widget as an addition function is a woeful abuse
@@ -31,7 +31,7 @@ fn calc_page<G: Html>(cx: Scope, state: &CalcStateRx) -> View<G> {
         p(id = "sum") {
             "The sum of the state numbers: "
             (NUMBER.widget(
-                cx,
+
                 // We're using this widget as a glorified addition function
                 &format!(
                     "/{}/{}",
@@ -63,7 +63,7 @@ struct CalcState {
     user_number: String,
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("calc")
         .view_with_state(calc_page)
         .build_state_fn(get_build_state)

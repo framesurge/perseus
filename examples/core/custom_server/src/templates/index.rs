@@ -1,13 +1,13 @@
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn index_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn index_page() -> View {
+    view! {
         p { "Hello World!" }
         a(href = "about", id = "about-link") { "About!" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_page).build()
 }

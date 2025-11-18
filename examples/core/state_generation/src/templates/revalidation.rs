@@ -8,13 +8,13 @@ struct PageState {
     time: String,
 }
 
-fn revalidation_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
-    view! { cx,
+fn revalidation_page(state: &'a PageStateRx) -> View {
+    view! {
         p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("revalidation")
         .view_with_state(revalidation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)

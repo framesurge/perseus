@@ -15,14 +15,14 @@ struct IndexPageState {
 // Otherwise, you can do everything in this macro that you can do with a
 // reactive template! Caching, preloading, reactive global state, etc. are all
 // supported.
-fn index_page<G: Html>(cx: Scope, state: IndexPageState) -> View<G> {
-    view! { cx,
+fn index_page(state: IndexPageState) -> View {
+    view! {
         p { (state.greeting) }
         a(href = "about") { "About" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index")
         .build_state_fn(get_build_state)
         .view_with_unreactive_state(index_page)
@@ -31,8 +31,8 @@ pub fn get_template<G: Html>() -> Template<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
-    view! { cx,
+fn head(_props: IndexPageState) -> View {
+    view! {
         title { "Index Page" }
     }
 }

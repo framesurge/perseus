@@ -10,8 +10,8 @@ lazy_static! {
 // Note the use of props as `()`, indicating that this capsule doesn't take any
 // properties
 #[auto_scope]
-fn time_capsule<G: Html>(cx: Scope, state: &TimeStateRx, _props: ()) -> View<G> {
-    view! { cx,
+fn time_capsule(state: &TimeStateRx, _props: ()) -> View {
+    view! {
         // We'll put this inside a `p`, so we'll use a `span`
         span(id = "time") { (state.time.get()) }
     }
@@ -23,7 +23,7 @@ struct TimeState {
     time: String,
 }
 
-pub fn get_capsule<G: Html>() -> Capsule<G, ()> {
+pub fn get_capsule() -> Capsule<()> {
     Capsule::build(
         Template::build("time")
             .build_state_fn(get_build_state)

@@ -3,8 +3,8 @@ use sycamore::prelude::*;
 #[cfg(client)]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-fn index_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn index_page() -> View {
+    view! {
         // We'll use JS to change this message manually
         p(id = "message") { "Hello World!" }
         button(id = "change-message", on:click = |_| {
@@ -14,7 +14,7 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_page).build()
 }
 

@@ -12,8 +12,8 @@ lazy_static! {
 }
 
 #[auto_scope]
-fn greeting_capsule<G: Html>(cx: Scope, state: &GreetingStateRx, props: GreetingProps) -> View<G> {
-    view! { cx,
+fn greeting_capsule(state: &GreetingStateRx, props: &GreetingProps) -> View {
+    view! {
         p(id = "greeting", style = format!("color: {};", props.color)) { (state.greeting.get()) }
     }
 }
@@ -30,7 +30,7 @@ pub struct GreetingProps {
     pub color: String,
 }
 
-pub fn get_capsule<G: Html>() -> Capsule<G, GreetingProps> {
+pub fn get_capsule() -> Capsule<GreetingProps> {
     // Template properties, to do with state generation, are set on a template
     // that's passed to the capsule. Note that we don't call `.build()` on the
     // template, because we want a capsule, not a template (we're using the

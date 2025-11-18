@@ -1,7 +1,7 @@
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn index_page<G: Html>(cx: Scope) -> View<G> {
+fn index_page() -> View {
     // We can't preload pages on the engine-side
     #[cfg(client)]
     {
@@ -19,22 +19,22 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
         reactor.preload(cx, "about");
     }
 
-    view! { cx,
-        p { (t!(cx, "index-msg")) }
+    view! {
+        p { (t!("index-msg")) }
 
-        a(id = "about", href = link!(cx, "about")) { (t!(cx, "index-about-link")) }
+        a(id = "about", href = link!("about")) { (t!("index-about-link")) }
         a(id = "fr-about", href = "fr-FR/about") { "About (French)" }
         a(id = "en-about", href = "en-US/about") { "About (English)" }
     }
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head() -> View {
+    view! {
         title { "Index Page" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_page).head(head).build()
 }

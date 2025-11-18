@@ -9,16 +9,16 @@ struct IndexPageState {
 }
 
 #[auto_scope]
-fn index_page<G: Html>(cx: Scope, state: &IndexPageStateRx) -> View<G> {
-    view! { cx,
+fn index_page(state: &IndexPageStateRx) -> View {
+    view! {
         p { (state.greeting.get()) }
         a(href = "about", id = "about-link") { "About!" }
     }
 }
 
 #[engine_only_fn]
-fn head(cx: Scope, _props: IndexPageState) -> View<SsrNode> {
-    view! { cx,
+fn head(_props: IndexPageState) -> View {
+    view! {
         title { "Index Page | Perseus Example – Basic" }
     }
 }
@@ -30,7 +30,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index")
         .build_state_fn(get_build_state)
         .view_with_state(index_page)

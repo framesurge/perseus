@@ -9,14 +9,14 @@ lazy_static! {
 }
 
 // A simple wrapper capsule to show how capsules can use capsules
-fn wrapper_capsule<G: Html>(cx: Scope, props: GreetingProps) -> View<G> {
-    view! { cx,
+fn wrapper_capsule(props: GreetingProps) -> View {
+    view! {
         // Because `props` is an owned variable, it has to be cloned here
-        (GREETING.widget(cx, "", props.clone()))
+        (GREETING.widget( "", props.clone()))
     }
 }
 
-pub fn get_capsule<G: Html>() -> Capsule<G, GreetingProps> {
+pub fn get_capsule() -> Capsule<GreetingProps> {
     Capsule::build(Template::build("wrapper"))
         .empty_fallback()
         .view(wrapper_capsule)

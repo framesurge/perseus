@@ -9,21 +9,21 @@ struct PostPageState {
     content: String,
 }
 
-fn post_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, props: &'a PostPageStateRx) -> View<G> {
-    view! { cx,
+fn post_page(props: &'a PostPageStateRx) -> View {
+    view! {
         h1 {
             (props.title.get())
         }
         p {
             (props.content.get())
         }
-        a(href = link!(cx, "/post")) { "Root post page" }
+        a(href = link!("/post")) { "Root post page" }
         br()
-        a(href = link!(cx, "/post/blah/test/blah")) { "Complex post page" }
+        a(href = link!("/post/blah/test/blah")) { "Complex post page" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("post")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)

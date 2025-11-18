@@ -9,15 +9,15 @@ struct IndexPageState {
     username: String,
 }
 
-fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
+fn index_page(state: &'a IndexPageStateRx) -> View {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
-    let frozen_app = create_signal(cx, String::new());
-    let reactor = Reactor::<G>::from_cx(cx);
+    let frozen_app = create_signal(String::new());
+    let reactor = Reactor::from_cx();
 
-    let global_state = reactor.get_global_state::<AppStateRx>(cx);
+    let global_state = reactor.get_global_state::<AppStateRx>();
 
-    view! { cx,
+    view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
         p(id = "page_state") { (format!("Greetings, {}!", state.username.get())) }
         input(id = "set_page_state", bind:value = state.username, placeholder = "Username")
@@ -48,7 +48,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index")
         .build_state_fn(get_build_state)
         .view_with_state(index_page)

@@ -12,11 +12,8 @@ struct PageState {
     content: String,
 }
 
-fn incremental_generation_page<'a, G: Html>(
-    cx: BoundedScope<'_, 'a>,
-    state: &'a PageStateRx,
-) -> View<G> {
-    view! { cx,
+fn incremental_generation_page(state: &'a PageStateRx) -> View {
+    view! {
         h1 {
             (state.title.get())
         }
@@ -26,7 +23,7 @@ fn incremental_generation_page<'a, G: Html>(
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("incremental_generation")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)

@@ -5,7 +5,7 @@ use sycamore::prelude::*;
 // Initialize our app with the `perseus_warp` package's default server (fully
 // customizable)
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         // Create a new template at `index`, which maps to our landing page
         .template(
@@ -19,8 +19,8 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 
 #[auto_scope]
 // EXCERPT_START
-fn index_page<G: Html>(cx: Scope, state: &IndexStateRx) -> View<G> {
-    view! { cx,
+fn index_page(state: &IndexStateRx) -> View {
+    view! {
         h1 { (format!(
             "Hello, {}!",
             state.name.get()
@@ -49,8 +49,8 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexState {
 }
 // EXCERPT_END
 
-fn about_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn about_page() -> View {
+    view! {
         p { "This is an example webapp created with Perseus!" }
     }
 }

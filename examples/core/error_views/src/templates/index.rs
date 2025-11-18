@@ -1,7 +1,7 @@
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn index_page<G: Html>(cx: Scope) -> View<G> {
+fn index_page() -> View {
     // Deliberate panic to show how panic handling works (in an `on_mount` so we
     // still reach the right checkpoints for testing)
     #[cfg(client)]
@@ -9,18 +9,18 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
         panic!();
     });
 
-    view! { cx,
+    view! {
         p { "Hello World!" }
     }
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head() -> View {
+    view! {
         title { "Index Page" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_page).head(head).build()
 }

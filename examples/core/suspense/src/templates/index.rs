@@ -41,22 +41,22 @@ struct OtherTest {
     third_greeting: Result<String, SerdeInfallible>,
 }
 
-fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
-    let greeting = create_memo(cx, || match &*state.greeting.get() {
+fn index_page(state: &'a IndexPageStateRx) -> View {
+    let greeting = create_memo(|| match &*state.greeting.get() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
     });
-    let second_greeting = create_memo(cx, move || match &*state.test.get() {
+    let second_greeting = create_memo(move || match &*state.test.get() {
         // We don't particularly want `Rc<Rc<T>>`, hence this clone (but either will work)
         Ok(test) => (*test.second_greeting.get()).clone(),
         Err(_) => "Error!".to_string(),
     });
-    let third_greeting = create_memo(cx, move || match &*state.other_test.third_greeting.get() {
+    let third_greeting = create_memo(move || match &*state.other_test.third_greeting.get() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
     });
 
-    view! { cx,
+    view! {
         p(id = "first") { (greeting.get()) }
         p(id = "second") { (second_greeting.get()) }
         p(id = "third") { (third_greeting.get()) }
@@ -76,8 +76,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
 // this example.
 #[browser_only_fn]
 async fn greeting_handler<'a>(
-    _cx: Scope<'a>,
-    greeting: &'a RcSignal<Result<String, SerdeInfallible>>,
+    greeting: &'a Signal<Result<String, SerdeInfallible>>,
 ) -> Result<(), SerdeInfallible> {
     // Here, we're just waiting for a second before continuing, just to show a delay
     // (and so that Perseus isn't too fast for the tests of this example...)
@@ -91,10 +90,7 @@ async fn greeting_handler<'a>(
 // version of `RxResult`. As `IndexPageStateRx` is to `IndexPageState`,
 // `RxResultRef` is to `RxResult`!
 #[browser_only_fn]
-async fn test_handler<'a>(
-    _cx: Scope<'a>,
-    test: &'a RxResultRx<Test, String>,
-) -> Result<(), String> {
+async fn test_handler<'a>(test: &'a RxResultRx<Test, String>) -> Result<(), String> {
     sleep(Duration::from_secs(1)).await;
     // Unfortunately, this verbosity is necessary until `Try` is stabilized so we
     // can have custom implementations of the `?` operator.
@@ -109,8 +105,7 @@ async fn test_handler<'a>(
 
 #[browser_only_fn]
 async fn other_test_handler<'a>(
-    _cx: Scope<'a>,
-    greeting: &'a RcSignal<Result<String, SerdeInfallible>>,
+    greeting: &'a Signal<Result<String, SerdeInfallible>>,
 ) -> Result<(), SerdeInfallible> {
     sleep(Duration::from_secs(1)).await;
     // This is very simple, but we could easily perform network requests etc. here
@@ -133,7 +128,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     // Note that suspense handlers are registered through the state, not here
     Template::build("index")
         .view_with_state(index_page)

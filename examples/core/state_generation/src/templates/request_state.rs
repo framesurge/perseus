@@ -8,8 +8,8 @@ struct PageState {
     ip: String,
 }
 
-fn request_state_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
-    view! { cx,
+fn request_state_page(state: &'a PageStateRx) -> View {
+    view! {
         p {
             (
                 format!("Your IP address is {}.", state.ip.get())
@@ -18,7 +18,7 @@ fn request_state_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStat
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("request_state")
         .request_state_fn(get_request_state)
         .view_with_state(request_state_page)

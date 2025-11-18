@@ -2,8 +2,8 @@ use crate::components::layout::Layout;
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn index_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn index_page() -> View {
+    view! {
         Layout(title = "Index") {
             // Anything we put in here will be rendered inside the `<main>` block of the layout
             p { "Hello World!" }
@@ -14,12 +14,12 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head() -> View {
+    view! {
         title { "Index Page" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_page).head(head).build()
 }

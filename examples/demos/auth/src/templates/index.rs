@@ -3,12 +3,12 @@ use sycamore::prelude::*;
 
 use crate::global_state::*;
 
-fn index_view<G: Html>(cx: Scope) -> View<G> {
-    let AppStateRx { auth } = Reactor::<G>::from_cx(cx).get_global_state::<AppStateRx>(cx);
+fn index_view() -> View {
+    let AppStateRx { auth } = Reactor::from_cx().get_global_state::<AppStateRx>();
     let AuthDataRx { state, username } = auth;
     // This isn't part of our data model because it's only used here to pass to the
     // login function
-    let entered_username = create_signal(cx, String::new());
+    let entered_username = create_signal(String::new());
 
     // We have to trigger this from outside the `create_memo`, and we should only be
     // interacting with storage APIs in the browser (otherwise this would be called
@@ -18,12 +18,12 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
     #[cfg(client)]
     auth.detect_state();
 
-    view! { cx,
+    view! {
         (
             match *state.get() {
                 LoginState::Yes => {
                     let username = username.get();
-                    view! { cx,
+                    view! {
                             h1 { (format!("Welcome back, {}!", &username)) }
                             button(on:click =  |_| {
                                 #[cfg(client)]
@@ -32,7 +32,7 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
                     }
                 }
                 // You could also redirect the user to a dedicated login page
-                LoginState::No => view! { cx,
+                LoginState::No => view! {
                     h1 { "Welcome, stranger!" }
                     input(bind:value = entered_username, placeholder = "Username")
                     button(on:click = |_| {
@@ -49,6 +49,6 @@ fn index_view<G: Html>(cx: Scope) -> View<G> {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_view).build()
 }

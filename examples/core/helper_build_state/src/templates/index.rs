@@ -2,8 +2,8 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
-    view! { cx,
+fn index_page(state: &'a PageStateRx) -> View {
+    view! {
         h1 {
             (state.title.get())
         }
@@ -58,7 +58,7 @@ async fn get_build_paths() -> BuildPaths {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index")
         .view_with_state(index_page)
         .build_state_fn(get_build_state)

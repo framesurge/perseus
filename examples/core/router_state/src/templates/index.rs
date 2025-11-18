@@ -1,16 +1,16 @@
 use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn router_state_page<G: Html>(cx: Scope) -> View<G> {
-    let load_state_str = create_signal(cx, "We're on the server.".to_string());
+fn router_state_page() -> View {
+    let load_state_str = create_signal("We're on the server.".to_string());
 
     #[cfg(client)]
     {
         use perseus::router::RouterLoadState;
-        let load_state = Reactor::<G>::from_cx(cx).router_state.get_load_state(cx);
+        let load_state = Reactor:from_cx().router_state.get_load_state();
         // This uses Sycamore's `create_memo` to create a state that will update
         // whenever the router state changes
-        create_effect(cx, || {
+        create_effect(|| {
             let new_str = match (*load_state.get()).clone() {
                 RouterLoadState::Loaded {
                     template_name,
@@ -32,13 +32,13 @@ fn router_state_page<G: Html>(cx: Scope) -> View<G> {
         });
     }
 
-    view! { cx,
+    view! {
         p { (load_state_str.get()) }
 
         a(href = "about", id = "about-link") { "About!" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(router_state_page).build()
 }
