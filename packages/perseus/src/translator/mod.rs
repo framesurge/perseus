@@ -25,17 +25,25 @@ mod dummy;
 pub use dummy::{DummyTranslator, DUMMY_TRANSLATOR_FILE_EXT};
 
 // And then we export defaults using feature gates
+// Fluent takes priority if both are enabled
 #[cfg(feature = "translator-fluent")]
 pub use FluentTranslator as Translator;
 #[cfg(feature = "translator-fluent")]
 pub use FLUENT_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
-#[cfg(feature = "translator-lightweight")]
+#[cfg(all(
+    feature = "translator-lightweight",
+    not(feature = "translator-fluent")
+))]
 pub use LightweightTranslator as Translator;
-#[cfg(feature = "translator-lightweight")]
+#[cfg(all(
+    feature = "translator-lightweight",
+    not(feature = "translator-fluent")
+))]
 pub use LIGHTWEIGHT_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
 // And then we export the appropriate macro backends, hidden from the docs
+// Fluent takes priority if both are enabled
 #[cfg(feature = "translator-fluent")]
 #[doc(hidden)]
 pub use fluent::link_macro_backend;
@@ -48,16 +56,28 @@ pub use fluent::t_macro_backend_with_args;
 #[cfg(feature = "translator-fluent")]
 pub use fluent::TranslationArgs;
 
-#[cfg(feature = "translator-lightweight")]
+#[cfg(all(
+    feature = "translator-lightweight",
+    not(feature = "translator-fluent")
+))]
 #[doc(hidden)]
 pub use lightweight::link_macro_backend;
-#[cfg(feature = "translator-lightweight")]
+#[cfg(all(
+    feature = "translator-lightweight",
+    not(feature = "translator-fluent")
+))]
 #[doc(hidden)]
 pub use lightweight::t_macro_backend;
-#[cfg(feature = "translator-lightweight")]
+#[cfg(all(
+    feature = "translator-lightweight",
+    not(feature = "translator-fluent")
+))]
 #[doc(hidden)]
 pub use lightweight::t_macro_backend_with_args;
-#[cfg(feature = "translator-lightweight")]
+#[cfg(all(
+    feature = "translator-lightweight",
+    not(feature = "translator-fluent")
+))]
 pub use lightweight::TranslationArgs;
 
 #[cfg(all(
@@ -97,16 +117,15 @@ pub use DummyTranslator as Translator;
 pub use DUMMY_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
 /// Translates the given ID conveniently, taking arguments for interpolation as
-/// required. The final argument to any call of this macro must be a Sycamore
-/// reactive scope provided to the relevant Perseus template.
+/// required. In Sycamore 0.9+, no scope parameter is needed.
 #[macro_export]
 macro_rules! t {
     // When there are no arguments to interpolate
-    ($cx:expr, $id:expr) => {
-        $crate::i18n::t_macro_backend($id, $cx)
+    ($id:expr) => {
+        $crate::i18n::t_macro_backend($id)
     };
     // When there are arguments to interpolate
-    ($cx:expr, $id:expr, {
+    ($id:expr, {
         // NOTE Using a colon here leads to literally impossible to solve cast errors based on compiler misinterpretations
         $($key:literal = $value:expr),+
     }) => {{
@@ -114,15 +133,14 @@ macro_rules! t {
         $(
             args.set($key, $value);
         )+
-        $crate::i18n::t_macro_backend_with_args($id, args, $cx)
+        $crate::i18n::t_macro_backend_with_args($id, args)
     }};
 }
 /// Gets the link to the given resource in internationalized form conveniently.
-/// The final argument to any call of this macro must be a Sycamore reactive
-/// scope provided to the relevant Perseus template.
+/// In Sycamore 0.9+, no scope parameter is needed.
 #[macro_export]
 macro_rules! link {
-    ($cx:expr, $url:expr) => {
-        $crate::i18n::link_macro_backend($url, $cx)
+    ($url:expr) => {
+        $crate::i18n::link_macro_backend($url)
     };
 }
