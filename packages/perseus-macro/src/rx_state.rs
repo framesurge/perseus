@@ -55,8 +55,8 @@ pub struct ReactiveStateField {
 
 /// The underlying implementation of the `ReactiveState` derive macro, which
 /// implements the traits involved in Perseus' reactive state platform, creating
-/// an intermediary reactive struct using `RcSignal`s and a final one using
-/// `&'cx Signal`s, where `cx` is a Sycamore scope lifetime.
+/// an intermediary reactive struct using `Signal`s. In Sycamore 0.9+, signals
+/// are `'static` and `Copy`, so no scope lifetime is needed.
 pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     // Extract the fields of the `struct`
     let fields = match input.data {
@@ -104,19 +104,15 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 suspense_commands.extend(quote! {
                     // The `nested` part makes this expect `RxResult`
                     ::perseus::state::compute_nested_suspense(
-                        cx,
                         self.#field_ident.clone(),
-                        #handler(
-                            cx,
-                            ::sycamore::prelude::create_ref(cx, self.#field_ident.clone()),
-                        ),
+                        #handler(self.#field_ident.clone()),
                     );
                 });
             } else {
                 // If this field is not suspended, it might have suspended children, which we
                 // should be sure to compute
                 suspense_commands.extend(quote! {
-                    self.#field_ident.compute_suspense(cx);
+                    self.#field_ident.compute_suspense();
                 })
             }
         } else {
@@ -132,21 +128,16 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             );
             // All fields must be `Clone`
             unrx_field_makers
-                .extend(quote! { #field_ident: (*self.#field_ident.get_untracked()).clone(), });
+                .extend(quote! { #field_ident: self.#field_ident.with_untracked(|val| val.clone()), });
 
             // Handle suspended fields (we don't care if they're nested, the user can worry
             // about that (probably using `RxResult` or similar))
             if let Some(handler) = &field.suspense {
                 // This line calls a utility function that does ergonomic error handling
                 suspense_commands.extend(quote! {
-                    // The `nested` part makes this expect `RxResult`
                     ::perseus::state::compute_suspense(
-                        cx,
                         self.#field_ident.clone(),
-                        #handler(
-                            cx,
-                            ::sycamore::prelude::create_ref(cx, self.#field_ident.clone()),
-                        ),
+                        #handler(self.#field_ident.clone()),
                     );
                 });
             }
@@ -228,7 +219,7 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
                 }
             }
             #[cfg(client)]
-            fn compute_suspense<'a>(&self, cx: ::sycamore::prelude::Scope<'a>) {
+            fn compute_suspense(&self) {
                 #suspense_commands
             }
         }

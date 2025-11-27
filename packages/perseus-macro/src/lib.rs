@@ -23,42 +23,38 @@ use syn::{parse_macro_input, DeriveInput, ItemFn, Path, Signature};
 
 use crate::rx_state::ReactiveStateDeriveInput;
 
-/// A helper macro for templates that use reactive state. Once, this was needed
-/// on all Perseus templates, however, today, templates that take no state, or
-/// templates that take unreactive state, can be provided as normal functions
-/// to the methods `.view()` and `.view_with_unreactive_state()`
-/// respectively, on Perseus' `Template` type.
+/// A helper macro for templates that use reactive state. This macro is now
+/// largely optional in Sycamore 0.9+, as the reactivity system no longer
+/// requires explicit scope parameters or lifetime annotations.
 ///
-/// In fact, even if you're using fully reactive state, this macro isn't even
-/// mandated anymore! It just exists to turn function signatures like this
+/// Templates that take no state, or templates that take unreactive state, can
+/// be provided as normal functions to the methods `.view()` and
+/// `.view_with_unreactive_state()` respectively, on Perseus' `Template` type.
 ///
-/// ```text
-/// fn my_page(cx: BoundedScope<'_, 'a>, state: &'a MyStateRx) -> View
-/// ```
+/// This macro primarily exists for consistency and validation. It ensures your
+/// template function has the correct signature when using reactive state.
 ///
-/// into this
+/// **Example usage:**
 ///
 /// ```text
 /// #[auto_scope]
-/// fn my_page(state: &MyStateRx) -> View
+/// fn my_page(state: &MyStateRx) -> View {
+///     // Your template code here
+/// }
 /// ```
 ///
-/// In other words, all this does is rewrites some lifetimes for you so Perseus
-/// is a little more convenient to use! It's worth remembering, however, when
-/// you use this macro, that the `Scope` is actually a `BoundedScope<'app,
-/// 'page>`, meaning it is a *child scope* of the whole app. Your state is a
-/// reference with the lifetime `'page`, which links to an owned type that the
-/// app controls. All this lifetime complexity is needed to make sure Rust
-/// understands that all your pages are part of your app, and that, when one of
-/// your users goes to a new page, the previous page will be dropped, along with
-/// all its artifacts (e.g. any `create_effect` calls). It also makes it really
-/// convenient to use your state, because we can prove to Sycamore that it will
-/// live long enough to be interpolated anywhere in your page's `view!`.
+/// **What it does:**
+/// - Validates that the function signature is correct for a reactive template
+/// - Ensures the state parameter is a reference
+/// - Provides clear error messages if the signature is incorrect
 ///
-/// If you dislike macros, or if you want to make the lifetimes of a page very
-/// clear, it's recommended that you don't use this macro, and manually write
-/// the longer function signatures instead. However, if you like the convenience
-/// of it, this macro is here to help!
+/// In Sycamore 0.9.2, the reactivity system is much simpler:
+/// - No scope parameter needed (signals are now `'static` and `Copy`)
+/// - No generic type parameters (View no longer needs `<G: Html>`)
+/// - No explicit lifetime annotations required
+///
+/// If you dislike macros, you can write the function signature directly
+/// without this macro - it's purely a convenience and validation tool.
 ///
 /// *Note: this can also be used for capsules that take reactive state, it's not
 /// just limited to templates.*

@@ -75,11 +75,11 @@ impl Parse for TemplateFn {
                     }
                     args.push(arg.clone())
                 }
-                // We can have 2 arguments only (scope, state), or 3 if it's
-                // a capsule
+                // We can have 1 argument only (state), or 2 if it's a capsule
                 // Any other kind of template doesn't need this macro
-                if args.len() != 2 && args.len() != 3 {
-                    return Err(syn::Error::new_spanned(&sig.inputs, "`#[auto_scope]` is only useful if you're using reactive state (which requires two arguments)"));
+                // Note: In Sycamore 0.9, there's no scope parameter anymore
+                if args.len() != 1 && args.len() != 2 {
+                    return Err(syn::Error::new_spanned(&sig.inputs, "`#[auto_scope]` is only useful if you're using reactive state (which requires one argument for state)"));
                 }
 
                 Ok(Self {
@@ -110,7 +110,8 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         return_type,
     } = input;
 
-    let arg = &fn_args[1];
+    // In Sycamore 0.9, the first argument is the state (no scope anymore)
+    let arg = &fn_args[0];
     let (state_pat, state_arg) = match arg {
         FnArg::Typed(PatType { ty, pat, .. }) => match &**ty {
             Type::Reference(TypeReference { elem, .. }) => (pat, elem),
@@ -118,16 +119,16 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         },
         FnArg::Receiver(_) => unreachable!(),
     };
-    let props_arg = match fn_args.get(2) {
-        Some(arg) => quote!( #arg ),
+    // Capsules have another argument for properties (now at index 1 instead of 2)
+    let props_arg = match fn_args.get(1) {
+        Some(arg) => quote!( , #arg ),
         None => quote!(),
     };
     quote! {
-        // All we do is set up the lifetimes correctly
+        // In Sycamore 0.9.2: no scope parameter, no generic type parameter, no lifetimes
         #(#attrs)*
-        #vis fn #name<'__page, G: ::sycamore::prelude::Html>(
-            cx: ::sycamore::prelude::BoundedScope<'_, '__page>,
-            #state_pat: &'__page #state_arg,
+        #vis fn #name(
+            #state_pat: &#state_arg
             // Capsules have another argument for properties
             #props_arg
         ) -> #return_type {
