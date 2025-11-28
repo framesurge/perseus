@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
 lazy_static! {
-    pub static ref IP: Capsule<PerseusNodeType, ()> = get_capsule();
+    pub static ref IP: Capsule<()> = get_capsule();
 }
 
 // Note the use of props as `()`, indicating that this capsule doesn't take any

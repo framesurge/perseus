@@ -7,7 +7,7 @@ use sycamore::prelude::*;
 // and that would probably make more sense, but this is a capsules example!)
 
 lazy_static! {
-    pub static ref LINKS: Capsule<PerseusNodeType, ()> = get_capsule();
+    pub static ref LINKS: Capsule<()> = get_capsule();
 }
 
 fn links_capsule(_: ()) -> View {

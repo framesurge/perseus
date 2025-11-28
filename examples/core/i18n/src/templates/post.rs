@@ -9,13 +9,13 @@ struct PostPageState {
     content: String,
 }
 
-fn post_page(props: &'a PostPageStateRx) -> View {
+fn post_page(props: PostPageStateRx) -> View {
     view! {
         h1 {
-            (props.title.get())
+            (props.title.get_clone())
         }
         p {
-            (props.content.get())
+            (props.content.get_clone())
         }
         a(href = link!("/post")) { "Root post page" }
         br()

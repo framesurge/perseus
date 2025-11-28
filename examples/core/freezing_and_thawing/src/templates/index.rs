@@ -9,7 +9,7 @@ struct IndexPageState {
     username: String,
 }
 
-fn index_page(state: &'a IndexPageStateRx) -> View {
+fn index_page(state: IndexPageStateRx) -> View {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
     let frozen_app = create_signal(String::new());
@@ -19,9 +19,9 @@ fn index_page(state: &'a IndexPageStateRx) -> View {
 
     view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
-        p(id = "page_state") { (format!("Greetings, {}!", state.username.get())) }
+        p(id = "page_state") { (format!("Greetings, {}!", state.username.get_clone())) }
         input(id = "set_page_state", bind:value = state.username, placeholder = "Username")
-        p(id = "global_state") { (global_state.test.get()) }
+        p(id = "global_state") { (global_state.test.get_clone()) }
         input(id = "set_global_state", bind:value = global_state.test, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
@@ -35,12 +35,12 @@ fn index_page(state: &'a IndexPageStateRx) -> View {
                 frozen_app.set(reactor.freeze());
             }
         }) { "Freeze!" }
-        p(id = "frozen_app") { (frozen_app.get()) }
+        p(id = "frozen_app") { (frozen_app.get_clone()) }
 
         input(id = "thaw_input", bind:value = frozen_app, placeholder = "Frozen state")
         button(id = "thaw_button", on:click = |_| {
             #[cfg(client)]
-            reactor.thaw(&frozen_app.get(), perseus::state::ThawPrefs {
+            reactor.thaw(&frozen_app.get_clone(), perseus::state::ThawPrefs {
                 page: perseus::state::PageThawPrefs::IncludeAll,
                 global_prefer_frozen: true
             }).unwrap();

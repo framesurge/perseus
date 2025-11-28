@@ -9,9 +9,9 @@ struct IndexPageState {
 }
 
 #[auto_scope]
-fn index_page(state: &IndexPageStateRx) -> View {
+fn index_page(state: IndexPageStateRx) -> View {
     view! {
-        p { (state.greeting.get()) }
+        p { (state.greeting.get_clone()) }
         a(href = "about", id = "about-link") { "About!" }
     }
 }

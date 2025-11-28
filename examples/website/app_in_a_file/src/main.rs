@@ -19,11 +19,11 @@ pub fn main() -> PerseusApp {
 
 #[auto_scope]
 // EXCERPT_START
-fn index_page(state: &IndexStateRx) -> View {
+fn index_page(state: IndexStateRx) -> View {
     view! {
         h1 { (format!(
             "Hello, {}!",
-            state.name.get()
+            state.name.get_clone()
         )) }
         input(
             placeholder = "Name",

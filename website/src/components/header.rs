@@ -1,7 +1,7 @@
 use perseus::{link, t};
 use sycamore::prelude::*;
 
-#[derive(Prop)]
+#[derive(Props)]
 pub struct HeaderProps {
     /// The text color used across the whole header.
     pub text_color: String,
@@ -30,11 +30,12 @@ pub fn Header(
     }: HeaderProps,
 ) -> View {
     // Use the given menu opening `Signal` if it was provided, or create a new one
+    // In Sycamore 0.9.2, Signal is Copy, so we can use it directly
     let menu_open = match menu_open {
-        Some(signal) => create_ref(signal),
+        Some(signal) => signal,
         None => create_signal(false),
     };
-    let toggle_menu = |_| menu_open.set(!*menu_open.get());
+    let toggle_menu = move |_| menu_open.set(!menu_open.get());
 
     view! {
         header(
@@ -53,7 +54,7 @@ pub fn Header(
                 div(
                     class = format!(
                         "md:hidden m-3 mr-5 tham tham-e-spin tham-w-6 {}",
-                        if *menu_open.get() {
+                        if menu_open.get() {
                             "tham-active"
                         } else {
                             ""
@@ -83,7 +84,7 @@ pub fn Header(
                 id = "mobile_nav_menu",
                 class = format!(
                     "md:hidden w-full text-center justify-center {}",
-                    if *menu_open.get() {
+                    if menu_open.get() {
                         "flex flex-col"
                     } else {
                         "hidden"

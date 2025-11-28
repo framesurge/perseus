@@ -10,13 +10,12 @@ use crate::{
 #[cfg(engine)]
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::prelude::BoundedScope;
-use sycamore::prelude::{create_child_scope, create_ref};
+use sycamore::reactive::create_child_scope;
 #[cfg(engine)]
 use sycamore::web::SsrNode;
-use sycamore::{prelude::Scope, view::View, web::Html};
+use sycamore::prelude::*;
 
-impl TemplateInner<G> {
+impl TemplateInner {
     // The view functions below are shadowed for widgets, and therefore these
     // definitions only apply to templates, not capsules!
 
@@ -30,31 +29,32 @@ impl TemplateInner<G> {
     pub fn view_with_state<I, F>(mut self, val: F) -> Self
     where
         // The state is made reactive on the child
-        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child I) -> View
-            + Send
-            + Sync
-            + 'static,
+        // In Sycamore 0.9.2, reactive state is usually Copy (contains Copy signals),
+        // but for nested/suspense state it might not be, so we only require Clone
+        F: Fn(I) -> View + Send + Sync + 'static,
         I: MakeUnrx + AnyFreeze + Clone,
         I::Unrx: MakeRx<Rx = I> + Serialize + DeserializeOwned + Send + Sync + Clone + 'static,
     {
         self.view = Box::new(
             #[allow(unused_variables)]
-            move |app_cx, preload_info, template_state, path| {
-                let reactor = Reactor::<G>::from_cx(app_cx);
+            move |preload_info, template_state, path| {
+                let reactor = Reactor::from_cx();
                 // This will handle frozen/active state prioritization, etc.
-                let intermediate_state =
-                    reactor.get_page_state::<I::Unrx>(&path, template_state)?;
+                let intermediate_state = reactor.get_page_state::<I::Unrx>(&path, template_state)?;
                 // Run the user's code in a child scope so any effects they start are killed
                 // when the page ends (otherwise we basically get a series of
                 // continuous pseudo-memory leaks, which can also cause accumulations of
                 // listeners on things like the router state)
-                let mut view = View::empty();
-                let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
+                let mut view = View::new();
+                let disposer = create_child_scope(|| {
                     // Compute suspended states
                     #[cfg(any(client, doc))]
-                    intermediate_state.compute_suspense(child_cx);
+                    intermediate_state.compute_suspense();
 
-                    view = val(child_cx, create_ref(child_cx, intermediate_state));
+                    // In Sycamore 0.9.2, reactive state is usually Copy (contains only Copy signals)
+                    // If it's Copy, we pass by value; if not Copy, we clone it
+                    // The compiler will optimize away the clone for Copy types
+                    view = val(intermediate_state.clone());
                 });
                 Ok((view, disposer))
             },
@@ -65,21 +65,21 @@ impl TemplateInner<G> {
     /// unreactive state.
     pub fn view_with_unreactive_state<F, S>(mut self, val: F) -> Self
     where
-        F: Fn(Scope, S) -> View + Send + Sync + 'static,
+        F: Fn(S) -> View + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
         self.view = Box::new(
             #[allow(unused_variables)]
-            move |app_cx, preload_info, template_state, path| {
-                let reactor = Reactor::<G>::from_cx(app_cx);
+            move |preload_info, template_state, path| {
+                let reactor = Reactor::from_cx();
                 // This will handle frozen/active state prioritization, etc.
                 let intermediate_state = reactor.get_page_state::<S>(&path, template_state)?;
-                let mut view = View::empty();
-                let disposer = create_child_scope(app_cx, |child_cx| {
+                let mut view = View::new();
+                let disposer = create_child_scope(|| {
                     // We go back from the unreactive state type wrapper to the base type (since
                     // it's unreactive)
-                    view = val(child_cx, intermediate_state.make_unrx());
+                    view = val(intermediate_state.make_unrx());
                 });
                 Ok((view, disposer))
             },
@@ -92,19 +92,19 @@ impl TemplateInner<G> {
     /// `.template_with_state()` instead.
     pub fn view<F>(mut self, val: F) -> Self
     where
-        F: Fn(Scope) -> View + Send + Sync + 'static,
+        F: Fn() -> View + Send + Sync + 'static,
     {
-        self.view = Box::new(move |app_cx, _preload_info, _template_state, path| {
-            let reactor = Reactor::<G>::from_cx(app_cx);
+        self.view = Box::new(move |_preload_info, _template_state, path| {
+            let reactor = Reactor::from_cx();
             // Declare that this page/widget will never take any state to enable full
             // caching
             reactor.register_no_state(&path, false);
 
             // Nicely, if this is a widget, this means there need be no network requests
             // at all!
-            let mut view = View::empty();
-            let disposer = ::sycamore::reactive::create_child_scope(app_cx, |child_cx| {
-                view = val(child_cx);
+            let mut view = View::new();
+            let disposer = create_child_scope(|| {
+                view = val();
             });
             Ok((view, disposer))
         });
@@ -120,14 +120,14 @@ impl TemplateInner<G> {
     #[cfg(engine)]
     pub fn head_with_state<S, V>(
         mut self,
-        val: impl Fn(Scope, S) -> V + Send + Sync + 'static,
+        val: impl Fn(S) -> V + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
-        V: Into<GeneratorResult<View<SsrNode>>>,
+        V: Into<GeneratorResult<View>>,
     {
         let template_name = self.get_path();
-        self.head = Some(Box::new(move |cx, template_state| {
+        self.head = Some(Box::new(move |template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
                 return Err(ClientError::InvariantError(ClientInvariantError::NoState).into());
@@ -148,7 +148,7 @@ impl TemplateInner<G> {
                 };
 
             let template_name = template_name.clone();
-            val(cx, state)
+            val(state)
                 .into()
                 .into_server_result("head", template_name)
         }));
@@ -171,14 +171,14 @@ impl TemplateInner<G> {
     #[cfg(engine)]
     pub fn set_headers_with_state<S, V>(
         mut self,
-        val: impl Fn(Scope, S) -> V + Send + Sync + 'static,
+        val: impl Fn(S) -> V + Send + Sync + 'static,
     ) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
         V: Into<GeneratorResult<HeaderMap>>,
     {
         let template_name = self.get_path();
-        self.set_headers = Some(Box::new(move |cx, template_state| {
+        self.set_headers = Some(Box::new(move |template_state| {
             // Make sure now that there is actually state
             if template_state.is_empty() {
                 return Err(ClientError::InvariantError(ClientInvariantError::NoState).into());
@@ -199,7 +199,7 @@ impl TemplateInner<G> {
                 };
 
             let template_name = template_name.clone();
-            val(cx, state)
+            val(state)
                 .into()
                 .into_server_result("set_headers", template_name)
         }));

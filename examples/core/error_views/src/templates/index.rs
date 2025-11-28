@@ -5,7 +5,7 @@ fn index_page() -> View {
     // Deliberate panic to show how panic handling works (in an `on_mount` so we
     // still reach the right checkpoints for testing)
     #[cfg(client)]
-    on_mount(cx, || {
+    on_mount(|| {
         panic!();
     });
 

@@ -5,16 +5,8 @@ use fmterr::fmt_err;
 use serde::{Deserialize, Serialize};
 #[cfg(any(client, doc))]
 use std::sync::Arc;
-#[cfg(engine)]
-use sycamore::prelude::create_scope_immediate;
-#[cfg(any(client, doc))]
-use sycamore::prelude::{create_child_scope, try_use_context, ScopeDisposer};
-use sycamore::{
-    prelude::{view, Scope},
-    utils::hydrate::with_no_hydration_context,
-    view::View,
-    web::{Html, SsrNode},
-};
+use sycamore::prelude::*;
+use sycamore::web::{SsrNode, View};
 
 /// The error handling system of an app. In Perseus, errors come in several
 /// forms, all of which must be handled. This system provides a way to do this
@@ -25,11 +17,7 @@ pub struct ErrorViews {
     /// of views to deal with it: the first view is the document metadata,
     /// and the second the body of the error.
     #[allow(clippy::type_complexity)]
-    handler: Box<
-        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
-            + Send
-            + Sync,
-    >,
+    handler: Box<dyn Fn(ClientError, ErrorContext, ErrorPosition) -> (View, View) + Send + Sync>,
     /// A function for determining if a subsequent load error should occupy the
     /// entire page or not. If this returns `true`, the whole page will be
     /// taken over (e.g. for a 404), but, if it returns `false`, a small
@@ -51,18 +39,15 @@ pub struct ErrorViews {
     /// will panic if called, so this should **never** be manually executed.
     #[cfg(any(client, doc))]
     #[allow(clippy::type_complexity)]
-    panic_handler: Arc<
-        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
-            + Send
-            + Sync,
-    >,
+    panic_handler:
+        Arc<dyn Fn(ClientError, ErrorContext, ErrorPosition) -> (View, View) + Send + Sync>,
 }
-impl std::fmt::Debug for ErrorViews<G> {
+impl std::fmt::Debug for ErrorViews {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ErrorViews").finish_non_exhaustive()
     }
 }
-impl ErrorViews<G> {
+impl ErrorViews {
     /// Creates an error handling system for your app with the given handler
     /// function. This will be provided a [`ClientError`] to match against,
     /// along with an [`ErrorContext`], which tells you what you have available
@@ -73,9 +58,9 @@ impl ErrorViews<G> {
     /// first to be placed in document `<head>`, and the second
     /// for the body. For views with `ErrorPosition::Popup` or
     /// `ErrorPosition::Widget`, the head view will be ignored,
-    /// and would usually be returned as `View::empty()`.
+    /// and would usually be returned as `View::new()`.
     pub fn new(
-        handler: impl Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
+        handler: impl Fn(ClientError, ErrorContext, ErrorPosition) -> (View, View)
             + Send
             + Sync
             + Clone
@@ -146,7 +131,7 @@ impl ErrorViews<G> {
     pub fn unlocalized_development_default() -> Self {
         // Because this is an unlocalized, extremely simple default, we don't care about
         // capabilities or positioning
-        Self::new(|cx, err, _, pos| {
+        Self::new(|err, _, pos| {
             match err {
                 // Special case for 404 due to its frequency
                 ClientError::ServerError { status, .. } if status == 404 => (
@@ -156,44 +141,44 @@ impl ErrorViews<G> {
                     view! {
                         div(
                             style = r#"
-display: flex;
-justify-content: center;
-align-items: center;
-height: 95vh;
-width: 100%;
-"#
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        height: 95vh;
+                                        width: 100%;
+                                    "#
                         ) {
                             main(
                                 style = r#"
-display: flex;
-flex-direction: column;
-border: 1px solid black;
-border-radius: 0.5rem;
-max-width: 36rem;
-margin: 1rem;
-"#
+                                            display: flex;
+                                            flex-direction: column;
+                                            border: 1px solid black;
+                                            border-radius: 0.5rem;
+                                            max-width: 36rem;
+                                            margin: 1rem;
+                                        "#
                             ) {
                                 h3(
                                     style = r#"
-font-size: 1.5rem;
-line-height: 2rem;
-font-weight: 700;
-width: 100%;
-padding-bottom: 1rem;
-border-bottom: 1px solid black;
-margin-top: 1rem;
-margin-bottom: 1rem;
-"#
+                                                font-size: 1.5rem;
+                                                line-height: 2rem;
+                                                font-weight: 700;
+                                                width: 100%;
+                                                padding-bottom: 1rem;
+                                                border-bottom: 1px solid black;
+                                                margin-top: 1rem;
+                                                margin-bottom: 1rem;
+                                            "#
                                 ) {
                                     span(style = "padding-left: 1rem;") { "Page not found!" }
                                 }
                                 div(
                                     style = r#"
-padding: 1rem;
-padding-top: 0;
-margin-top: 1rem;
-margin-bottom: 1rem;
-"#
+                                        padding: 1rem;
+                                        padding-top: 0;
+                                        margin-top: 1rem;
+                                        margin-bottom: 1rem;
+                                    "#
                                 ) {
                                     span {
                                         "Uh-oh, that page doesn't seem to exist! Perhaps you forgot to add it to your "
@@ -206,71 +191,75 @@ margin-bottom: 1rem;
 
                     },
                 ),
-                ClientError::Panic(panic_msg) => (
-                    // Panics are popups
-                    View::empty(),
-                    view! {
-                            div(
-                                style = r#"
-position: fixed;
-bottom: 0;
-right: 0;
-background-color: #f87171;
-color: white;
-margin: 1rem;
-border-radius: 0.5rem;
-max-width: 30rem;
-"#
-                            ) {
-                                h2(
-                                    style = r#"
-font-size: 1.5rem;
-line-height: 2rem;
-font-weight: 700;
-width: 100%;
-padding-bottom: 1rem;
-border-bottom: 1px solid white;
-margin-top: 1rem;
-margin-bottom: 1rem;
-"#
-                                ) {
-                                    span(style = "padding-left: 1rem;") { "Critical error!" }
-                                }
-                                div(
-                                    style = r#"
+                ClientError::Panic(panic_msg) => {
+                    let panic_msg_1 = panic_msg.clone();
+                    let panic_msg_2 = panic_msg.clone();
+                    (
+                        // Panics are popups
+                        View::new(),
+                        view! {
+                                    div(
+                                        style = r#"
+                                            position: fixed;
+                                            bottom: 0;
+                                            right: 0;
+                                            background-color: #f87171;
+                                            color: white;
+                                            margin: 1rem;
+                                            border-radius: 0.5rem;
+                                            max-width: 30rem;
+                                        "#
+                                    ) {
+                                        h2(
+                                            style = r#"
+                                                font-size: 1.5rem;
+                                                line-height: 2rem;
+                                                font-weight: 700;
+                                                width: 100%;
+                                                padding-bottom: 1rem;
+                                                border-bottom: 1px solid white;
+                                                margin-top: 1rem;
+                                                margin-bottom: 1rem;
+                                            "#
+                                        ) {
+                                            span(style = "padding-left: 1rem;") { "Critical error!" }
+                                        }
+                                        div(
+                                            style = r#"
 padding: 1rem;
 padding-top: 0;
 margin-top: 1rem;
 "#
-                                ) {
-                                    p { "Your app has panicked! You can see the panic message below." }
-                                    pre(
-                                        style = r#"
-background-color: #f59e0b;
-padding: 1rem;
-margin-top: 1rem;
-border-radius: 0.5rem;
-white-space: pre-wrap;
-word-wrap: break-word;
-"#
-                                    ) {
-                                        (panic_msg)
-                                    }
-                                    // This can happen with HSR, and it's a good idea to help the user out a bit
-                                    // TODO Should there be more hints here?
-                                    (if panic_msg.contains("cannot modify the panic hook from a panicking thread") {
-                                        view! {
-                                            p {
-                                                i { "It looks like the error is about the panicking hook itself, which means the original panic has been overidden, possibly by hot state reloading in development. Reloading the page might show you the original panic message." }
-                                            }
+                                        ) {
+                                            p { "Your app has panicked! You can see the panic message below." }
+                        pre(
+                                            style = r#"
+                                        background-color: #f59e0b;
+                                        padding: 1rem;
+                                        margin-top: 1rem;
+                                        border-radius: 0.5rem;
+                                        white-space: pre-wrap;
+                                        word-wrap: break-word;
+                                    "#
+                                        ) {
+                                            (panic_msg_1)
                                         }
-                                    } else {
-                                        View::empty()
-                                    })
-                                }
-                            }
-                    },
-                ),
+                                            // This can happen with HSR, and it's a good idea to help the user out a bit
+                                            // TODO Should there be more hints here?
+                                            (if panic_msg_2.contains("cannot modify the panic hook from a panicking thread") {
+                                                view! {
+                                                    p {
+                                                        i { "It looks like the error is about the panicking hook itself, which means the original panic has been overidden, possibly by hot state reloading in development. Reloading the page might show you the original panic message." }
+                                                    }
+                                                }
+                                            } else {
+                                                View::new()
+                                            })
+                                        }
+                                    }
+                            },
+                    )
+                }
                 err => {
                     let err_msg = fmt_err(&err);
 
@@ -374,36 +363,28 @@ flex-direction: column;
     }
 }
 #[cfg(any(client, doc))]
-impl ErrorViews<G> {
+impl ErrorViews {
     /// Invokes the user's handling function, producing head/body views for the
     /// given error. From the given scope, this will determine the
     /// conditions under which the error can be rendered.
-    pub(crate) fn handle<'a>(
-        &self,
-                err: ClientError,
-        pos: ErrorPosition,
-    ) -> (String, View, ScopeDisposer<'a>) {
-        let reactor = try_use_context::<Reactor<G>>(cx);
+    pub(crate) fn handle<'a>(&self, err: ClientError, pos: ErrorPosition) -> (String, View) {
+        // Check if we have a reactor by checking for the boolean flag
+        let reactor_exists = try_use_context::<bool>().unwrap_or(false);
         // From the given scope, we can perfectly determine the capabilities this error
         // view will have
-        let info = match reactor {
-            Some(reactor) => match reactor.try_get_translator() {
-                Some(_) => ErrorContext::Full,
-                None => ErrorContext::WithReactor,
-            },
-            None => ErrorContext::Static,
+        let info = if reactor_exists {
+            // We have a reactor, but we can't access it directly due to Clone requirements
+            // Default to WithReactor since we can't check translator
+            ErrorContext::WithReactor
+        } else {
+            ErrorContext::Static
         };
 
-        let mut body_view = View::empty();
-        let mut head_str = String::new();
-        let disposer = create_child_scope(cx, |child_cx| {
-            let (head_view, body_view_local) = (self.handler)(child_cx, err, info, pos);
-            body_view = body_view_local;
-            // Stringify the head view with no hydration markers
-            head_str = sycamore::render_to_string(|_| with_no_hydration_context(|| head_view));
-        });
+        let (head_view, body_view) = (self.handler)(err, info, pos);
+        // Stringify the head view with no hydration markers
+        let head_str = sycamore::render_to_string(|| head_view);
 
-        (head_str, body_view, disposer)
+        (head_str, body_view)
     }
     /// Extracts the panic handler from within the error views. This should
     /// generally only be called by `PerseusApp`'s error views instantiation
@@ -411,19 +392,12 @@ impl ErrorViews<G> {
     #[allow(clippy::type_complexity)]
     pub(crate) fn take_panic_handler(
         &mut self,
-    ) -> Arc<
-        dyn Fn(Scope, ClientError, ErrorContext, ErrorPosition) -> (View<SsrNode>, View)
-            + Send
-            + Sync,
-    > {
-        std::mem::replace(
-            &mut self.panic_handler,
-            Arc::new(|_, _, _, _| unreachable!()),
-        )
+    ) -> Arc<dyn Fn(ClientError, ErrorContext, ErrorPosition) -> (View, View) + Send + Sync> {
+        std::mem::replace(&mut self.panic_handler, Arc::new(|_, _, _| unreachable!()))
     }
 }
 #[cfg(engine)]
-impl ErrorViews<SsrNode> {
+impl ErrorViews {
     /// Renders an error view on the engine-side. This takes an optional
     /// translator. This will return a tuple of `String`ified views for the
     /// head and body. For widget errors, the former should be discarded.
@@ -450,39 +424,38 @@ impl ErrorViews<SsrNode> {
         translator: Option<&Translator>,
     ) -> (String, String) {
         // We need to create an engine-side reactor
-        let reactor =
-            Reactor::<SsrNode>::engine(TemplateState::empty(), RenderMode::Error, translator);
-        let mut body_str = String::new();
-        let mut head_str = String::new();
-        create_scope_immediate(|cx| {
-            reactor.add_self_to_cx(cx);
-            // Depending on whether or not we had a translator, we can figure out the
-            // capabilities
-            let err_cx = match translator {
-                // On the engine-side, we don't get global state (see docs for
-                // `ErrorContext::FullNoGlobal`)
-                Some(_) => ErrorContext::FullNoGlobal,
-                None => ErrorContext::WithReactor,
-            };
-            // NOTE: No hydration context
-            let (head_view, body_view) = (self.handler)(
-                cx,
-                ClientError::ServerError {
-                    status: err.status,
-                    message: err.msg,
-                },
-                err_cx,
-                ErrorPosition::Page,
-            );
+        let reactor = Reactor::engine(TemplateState::empty(), RenderMode::Error, translator);
 
-            head_str = sycamore::render_to_string(|_| with_no_hydration_context(|| head_view));
-            body_str = sycamore::render_to_string(|_| body_view);
+        // Use create_root to establish a reactive scope
+        let _disposer = sycamore::reactive::create_root(|| {
+            reactor.add_self_to_cx();
         });
+
+        // Depending on whether or not we had a translator, we can figure out the
+        // capabilities
+        let err_cx = match translator {
+            // On the engine-side, we don't get global state (see docs for
+            // `ErrorContext::FullNoGlobal`)
+            Some(_) => ErrorContext::FullNoGlobal,
+            None => ErrorContext::WithReactor,
+        };
+        // NOTE: No hydration context
+        let (head_view, body_view) = (self.handler)(
+            ClientError::ServerError {
+                status: err.status,
+                message: err.msg,
+            },
+            err_cx,
+            ErrorPosition::Page,
+        );
+
+        let head_str = sycamore::render_to_string(|| head_view);
+        let body_str = sycamore::render_to_string(|| body_view);
 
         (head_str, body_str)
     }
 }
-impl ErrorViews<G> {
+impl ErrorViews {
     /// Renders an error view for the given widget, using the given scope. This
     /// will *not* create a new child scope, it will simply use the one it is
     /// given.
@@ -495,7 +468,7 @@ impl ErrorViews<G> {
     /// translator cannot be found, and certainly not if a reactor could not
     /// be instantiated).
     pub(crate) fn handle_widget(&self, err: ClientError) -> View {
-        let (_head, body) = (self.handler)(cx, err, ErrorContext::Full, ErrorPosition::Widget);
+        let (_head, body) = (self.handler)(err, ErrorContext::Full, ErrorPosition::Widget);
         body
     }
 }
@@ -602,7 +575,7 @@ pub struct ServerErrorData {
 
 // --- Default error views (development only) ---
 #[cfg(debug_assertions)] // This will fail production compilation neatly
-impl Default for ErrorViews<G> {
+impl Default for ErrorViews {
     fn default() -> Self {
         Self::unlocalized_development_default()
     }

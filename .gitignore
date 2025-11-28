@@ -9,3 +9,6 @@ pkg/
 target_engine/
 target_wasm/
 dist/
+.claude/
+AGENTS.md
+doc/

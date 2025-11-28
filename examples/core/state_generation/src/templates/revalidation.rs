@@ -8,9 +8,9 @@ struct PageState {
     time: String,
 }
 
-fn revalidation_page(state: &'a PageStateRx) -> View {
+fn revalidation_page(state: PageStateRx) -> View {
     view! {
-        p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }
+        p { (format!("The time when this page was last rendered was '{}'.", state.time.get_clone())) }
     }
 }
 

@@ -4,16 +4,16 @@ use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
 lazy_static! {
-    pub static ref TIME: Capsule<PerseusNodeType, ()> = get_capsule();
+    pub static ref TIME: Capsule<()> = get_capsule();
 }
 
 // Note the use of props as `()`, indicating that this capsule doesn't take any
 // properties
 #[auto_scope]
-fn time_capsule(state: &TimeStateRx, _props: ()) -> View {
+fn time_capsule(state: TimeStateRx, _props: ()) -> View {
     view! {
         // We'll put this inside a `p`, so we'll use a `span`
-        span(id = "time") { (state.time.get()) }
+        span(id = "time") { (state.time.get_clone()) }
     }
 }
 

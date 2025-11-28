@@ -1,6 +1,5 @@
 use perseus::prelude::*;
 use sycamore::prelude::*;
-use sycamore::view::View;
 
 fn about_page() -> View {
     view! {

@@ -1,6 +1,5 @@
 use super::TemplateInner;
 use crate::utils::PerseusDuration;
-use sycamore::web::Html;
 
 // This file is all engine-side functions, and browser-side dummies
 #[cfg(engine)]
@@ -14,9 +13,9 @@ use http::HeaderMap;
 #[cfg(engine)]
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(engine)]
-use sycamore::{prelude::Scope, view::View, web::SsrNode};
+use sycamore::web::View;
 
-impl TemplateInner<G> {
+impl TemplateInner {
     // The server-only ones have a different version for Wasm that takes in an empty
     // function (this means we don't have to bring in function types, and therefore
     // we can avoid bringing in the whole `http` module --- a very significant
@@ -29,14 +28,14 @@ impl TemplateInner<G> {
     /// This is for heads that do not require state. Those that do should use
     /// `.head_with_state()` instead.
     #[cfg(engine)]
-    pub fn head<V: Into<GeneratorResult<View<SsrNode>>>>(
+    pub fn head<V: Into<GeneratorResult<View>>>(
         mut self,
-        val: impl Fn(Scope) -> V + Send + Sync + 'static,
+        val: impl Fn() -> V + Send + Sync + 'static,
     ) -> Self {
         let template_name = self.get_path();
-        self.head = Some(Box::new(move |cx, _template_state| {
+        self.head = Some(Box::new(move |_template_state| {
             let template_name = template_name.clone();
-            val(cx).into().into_server_result("head", template_name)
+            val().into().into_server_result("head", template_name)
         }));
         self
     }
@@ -56,12 +55,12 @@ impl TemplateInner<G> {
     #[cfg(engine)]
     pub fn set_headers<V: Into<GeneratorResult<HeaderMap>>>(
         mut self,
-        val: impl Fn(Scope) -> V + Send + Sync + 'static,
+        val: impl Fn() -> V + Send + Sync + 'static,
     ) -> Self {
         let template_name = self.get_path();
-        self.set_headers = Some(Box::new(move |cx, _template_state| {
+        self.set_headers = Some(Box::new(move |_template_state| {
             let template_name = template_name.clone();
-            val(cx)
+            val()
                 .into()
                 .into_server_result("set_headers", template_name)
         }));

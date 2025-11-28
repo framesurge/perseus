@@ -164,7 +164,7 @@ static DFLT_INIT_MOD_RS: &str = r#"pub mod index;"#;
 static DFLT_INIT_INDEX_RS: &str = r#"use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn index_page(cx: Scope) -> View {
+fn index_page() -> View {
     view! {
         // Don't worry, there are much better ways of styling in Perseus!
         div(style = "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 95vh;") {
@@ -179,7 +179,7 @@ fn index_page(cx: Scope) -> View {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
+fn head() -> View<SsrNode> {
     view! {
         title { "Welcome to Perseus!" }
     }

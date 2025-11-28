@@ -17,25 +17,22 @@ use crate::template::TemplateInner;
 use crate::Request;
 #[cfg(engine)]
 use http::HeaderMap;
-#[cfg(any(client, doc))]
-use sycamore::prelude::ScopeDisposer;
-use sycamore::web::Html;
+use sycamore::prelude::*;
 #[cfg(engine)]
 use sycamore::web::SsrNode;
-use sycamore::{prelude::Scope, view::View};
 
-impl TemplateInner<G> {
+impl TemplateInner {
     /// Executes the user-given function that renders the template on the
     /// client-side ONLY. This takes in an existing global state.
     ///
     /// This should NOT be used to render widgets!
     #[cfg(any(client, doc))]
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn render_for_template_client<'a>(
+    pub(crate) fn render_for_template_client(
         &self,
         path: PathMaybeWithLocale,
         state: TemplateState,
-            ) -> Result<(View, ScopeDisposer<'a>), ClientError> {
+    ) -> Result<(View, sycamore::reactive::NodeHandle), ClientError> {
         assert!(
             !self.is_capsule,
             "tried to render capsule with template logic"
@@ -43,7 +40,6 @@ impl TemplateInner<G> {
 
         // Only widgets use the preload info
         (self.view)(
-            cx,
             PreloadInfo {
                 locale: String::new(),
                 was_incremental_match: false,
@@ -61,8 +57,8 @@ impl TemplateInner<G> {
         path: PathMaybeWithLocale,
         state: TemplateState,
         global_state: TemplateState,
-        mode: RenderMode<SsrNode>,
-                translator: &Translator,
+        mode: RenderMode,
+        translator: &Translator,
     ) -> Result<View, ClientError> {
         assert!(
             !self.is_capsule,
@@ -72,11 +68,13 @@ impl TemplateInner<G> {
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
         // We don't need the value, we just want the context instantiations
-        Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx(cx);
+        let _disposer = sycamore::reactive::create_root(|| {
+            Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx();
+        });
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway
-        let (view, _) = (self.view)(cx, preload_info, state, path)?;
+        let (view, _) = (self.view)(preload_info, state, path)?;
         Ok(view)
     }
     /// Executes the user-given function that renders the document `<head>`,
@@ -90,30 +88,22 @@ impl TemplateInner<G> {
         global_state: TemplateState,
         translator: &Translator,
     ) -> Result<String, ServerError> {
-        use sycamore::{
-            prelude::create_scope_immediate, utils::hydrate::with_no_hydration_context,
-        };
-
-        // This is a bit roundabout for error handling
-        let mut prerender_view = Ok(View::empty());
-        create_scope_immediate(|cx| {
+        // Set up the reactor in a root scope
+        let _disposer = sycamore::reactive::create_root(|| {
             // The context we have here has no context elements set on it, so we set all the
             // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             // We don't need any page state store here
-            Reactor::<G>::engine(global_state, RenderMode::Head, Some(translator))
-                .add_self_to_cx(cx);
-
-            prerender_view = with_no_hydration_context(|| {
-                if let Some(head_fn) = &self.head {
-                    (head_fn)(cx, state)
-                } else {
-                    Ok(View::empty())
-                }
-            });
+            Reactor::engine(global_state, RenderMode::Head, Some(translator)).add_self_to_cx();
         });
-        let prerender_view = prerender_view?;
-        let prerendered = sycamore::render_to_string(|_| prerender_view);
+
+        // Head rendering doesn't need hydration context
+        let prerender_view = if let Some(head_fn) = &self.head {
+            (head_fn)(state)?
+        } else {
+            View::new()
+        };
+        let prerendered = sycamore::render_to_string(|| prerender_view);
 
         Ok(prerendered)
     }
@@ -235,20 +225,16 @@ impl TemplateInner<G> {
         global_state: TemplateState,
         translator: Option<&Translator>,
     ) -> Result<HeaderMap, ServerError> {
-        use sycamore::prelude::create_scope_immediate;
-
-        let mut res = Ok(HeaderMap::new());
-        create_scope_immediate(|cx| {
-            let reactor = Reactor::<G>::engine(global_state, RenderMode::Headers, translator);
-            reactor.add_self_to_cx(cx);
-
-            if let Some(header_fn) = &self.set_headers {
-                res = (header_fn)(cx, state);
-            } else {
-                res = Ok(default_headers());
-            }
+        // Set up the reactor in a root scope
+        let _disposer = sycamore::reactive::create_root(|| {
+            let reactor = Reactor::engine(global_state, RenderMode::Headers, translator);
+            reactor.add_self_to_cx();
         });
 
-        res
+        if let Some(header_fn) = &self.set_headers {
+            (header_fn)(state)
+        } else {
+            Ok(default_headers())
+        }
     }
 }

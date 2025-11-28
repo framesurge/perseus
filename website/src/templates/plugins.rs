@@ -15,7 +15,7 @@ use sycamore::prelude::*;
 #[cfg(engine)]
 use walkdir::WalkDir;
 use wasm_bindgen::JsCast;
-use web_sys::HtmlInputElement;
+// HtmlInputElement is available via web_sys but doesn't need explicit import
 
 #[derive(Serialize, Deserialize, Clone, UnreactiveState)]
 struct PluginsPageProps {
@@ -51,12 +51,12 @@ fn plugins_page(props: PluginsPageProps) -> View {
     // This stores the search that the user provides
     let filter = create_signal(String::new());
     // A derived state that will filter the plugins that the user searches for
-    let filtered_plugins = create_memo(|| {
+    let filtered_plugins = create_memo(move || {
         plugins
-            .get()
+            .get_clone()
             .iter()
             .filter(|plugin| {
-                let filter_text = &*filter.get().to_lowercase();
+                let filter_text = &filter.get_clone().to_lowercase();
                 plugin.name.to_lowercase().contains(filter_text)
                     || plugin.author.to_lowercase().contains(filter_text)
                     || plugin.description.to_lowercase().contains(filter_text)
@@ -71,7 +71,7 @@ fn plugins_page(props: PluginsPageProps) -> View {
                 title: t!( "perseus"),
                 text_color: "text-black dark:text-white".to_string(),
                 menu_color: "bg-black dark:bg-white".to_string(),
-                mobile_nav_extension: View::empty(),
+                mobile_nav_extension: View::default(),
                 menu_open: None,
             },
             footer = true,
@@ -82,36 +82,42 @@ fn plugins_page(props: PluginsPageProps) -> View {
                         br()
                         p(class = "mx-1 mb-2") { (t!( "plugins-desc")) }
                         div(class = "w-full flex justify-center text-center mb-3") {
-                            input(class = "mx-2 max-w-7xl p-3 rounded-md border border-indigo-500 focus:outline-indigo-600 dark:focus:outline-indigo-700 search-bar-bg", on:input = |ev: web_sys::Event| {
-                                // This longwinded code gets the actual value that the user typed in
-                                let target: HtmlInputElement = ev.target().unwrap().unchecked_into();
-                                let new_input = target.value();
-                                filter.set(new_input);
-                            }, placeholder = t!( "plugin-search.placeholder"))
+                            input(
+                                class = "mx-2 max-w-7xl p-3 rounded-md border border-indigo-500 focus:outline-indigo-600 dark:focus:outline-indigo-700 search-bar-bg",
+                                bind:value = filter,
+                                placeholder = t!( "plugin-search.placeholder")
+                            )
                         }
                     }
                     div(class = "w-full flex justify-center") {
                         ul(class = "text-center w-full max-w-7xl mx-2 mb-16") {
                             Indexed(
                                 list= filtered_plugins,
-                                view = | plugin| view! {
-                                    li(class = "inline-block align-top m-2") {
-                                        a(
-                                            class = "block text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm dark:text-white",
-                                            href = &plugin.url // This is an external link to the plugin's homepage
-                                        ) {
-                                            p(class = "text-xl xs:text-2xl inline-flex") {
-                                                (plugin.name)
-                                                (if plugin.trusted {
-                                                    view! {
-                                                        span(class = "ml-1 self-center", dangerously_set_inner_html = TRUSTED_SVG) {}
-                                                    }
-                                                } else {
-                                                    View::empty()
-                                                })
+                                view = | plugin| {
+                                    let url = plugin.url.clone();
+                                    let author = plugin.author.clone();
+                                    let name = plugin.name.clone();
+                                    let description = plugin.description.clone();
+                                    let trusted = plugin.trusted;
+                                    view! {
+                                        li(class = "inline-block align-top m-2") {
+                                            a(
+                                                class = "block text-left cursor-pointer rounded-xl shadow-md hover:shadow-2xl transition-shadow duration-100 p-8 max-w-sm dark:text-white",
+                                                href = url // This is an external link to the plugin's homepage
+                                            ) {
+                                                p(class = "text-xl xs:text-2xl inline-flex") {
+                                                    (name)
+                                                    (if trusted {
+                                                        view! {
+                                                            span(class = "ml-1 self-center", dangerously_set_inner_html = TRUSTED_SVG) {}
+                                                        }
+                                                    } else {
+                                                        View::default()
+                                                    })
+                                                }
+                                                p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!( "plugin-card-author", { "author" = &author })) }
+                                                p { (description) }
                                             }
-                                            p(class = "text-sm text-gray-500 dark:text-gray-300 mb-1") { (t!( "plugin-card-author", { "author" = &plugin.author })) }
-                                            p { (plugin.description) }
                                         }
                                     }
                                 }

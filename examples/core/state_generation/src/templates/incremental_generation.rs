@@ -12,13 +12,13 @@ struct PageState {
     content: String,
 }
 
-fn incremental_generation_page(state: &'a PageStateRx) -> View {
+fn incremental_generation_page(state: PageStateRx) -> View {
     view! {
         h1 {
-            (state.title.get())
+            (state.title.get_clone())
         }
         p {
-            (state.content.get())
+            (state.content.get_clone())
         }
     }
 }

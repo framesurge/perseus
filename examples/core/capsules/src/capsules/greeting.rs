@@ -8,13 +8,13 @@ lazy_static! {
     // This `PerseusNodeType` alias will resolve to `SsrNode`/`DomNode`/`HydrateNode` automatically
     // as needed. This is needed because `lazy_static!` doesn't support generics, like `G: Html`.
     // Perseus can bridge the gap internally with type coercions, so this "just works"!
-    pub static ref GREETING: Capsule<PerseusNodeType, GreetingProps> = get_capsule();
+    pub static ref GREETING: Capsule<GreetingProps> = get_capsule();
 }
 
 #[auto_scope]
-fn greeting_capsule(state: &GreetingStateRx, props: &GreetingProps) -> View {
+fn greeting_capsule(state: GreetingStateRx, props: GreetingProps) -> View {
     view! {
-        p(id = "greeting", style = format!("color: {};", props.color)) { (state.greeting.get()) }
+        p(id = "greeting", style = format!("color: {};", props.color)) { (state.greeting.get_clone()) }
     }
 }
 

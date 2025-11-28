@@ -8,9 +8,9 @@ struct PageState {
     greeting: String,
 }
 
-fn build_state_page(state: &'a PageStateRx) -> View {
+fn build_state_page(state: PageStateRx) -> View {
     view! {
-        p { (state.greeting.get()) }
+        p { (state.greeting.get_clone()) }
     }
 }
 

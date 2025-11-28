@@ -8,11 +8,11 @@ struct PageState {
     ip: String,
 }
 
-fn request_state_page(state: &'a PageStateRx) -> View {
+fn request_state_page(state: PageStateRx) -> View {
     view! {
         p {
             (
-                format!("Your IP address is {}.", state.ip.get())
+                format!("Your IP address is {}.", state.ip.get_clone())
             )
         }
     }

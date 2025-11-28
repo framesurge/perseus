@@ -1,13 +1,11 @@
-use std::any::TypeId;
-
 use crate::path::PathWithoutLocale;
 #[cfg(engine)]
-use sycamore::prelude::create_child_scope;
-use sycamore::{prelude::Scope, view::View, web::Html};
+use sycamore::reactive::create_child_scope;
+use sycamore::web::View;
 
 use super::Capsule;
 
-impl<G: Html, P: Clone + 'static> Capsule<G, P> {
+impl<P: Clone + 'static> Capsule<P> {
     /// Creates a component for a single widget that this capsule can produce,
     /// based on the given path. This is designed to be used inside the
     /// Sycamore `view!` macro.
@@ -21,13 +19,13 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// `/bar` to this function. If you want to render the index widget, just
     /// use `/` or the empty string (leading forward slashes will automatically
     /// be normalized).
-    pub fn widget<H: Html>(
+    pub fn widget(
         &self,
-                // This is a `PurePath`, meaning it *does not* have a locale or the capsule name!
+        // This is a `PurePath`, meaning it *does not* have a locale or the capsule name!
         path: &str,
         props: P,
-    ) -> View<H> {
-        self.__widget(cx, path, props, false)
+    ) -> View {
+        self.__widget(path, props, false)
     }
     /// An alternative to `.widget()` that delays the rendering of the widget
     /// until the rest of the page has loaded.
@@ -58,44 +56,16 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     /// server-side processing (although fetching on the browser-side will
     /// almost always be quite a bit slower). Again, you should
     /// base your choices with delaying on empirical data!
-    pub fn delayed_widget<H: Html>(&self, path: &str, props: P) -> View<H> {
-        self.__widget(cx, path, props, true)
+    pub fn delayed_widget(&self, path: &str, props: P) -> View {
+        self.__widget(path, props, true)
     }
 
     /// The internal widget component logic. Note that this ignores scope
     /// disposers entirely, as all scopes used are children of the given,
     /// which is assumed to be the page-level scope. As such, widgets will
     /// automatically be cleaned up with pages.
-    ///
-    /// # Node Types
-    /// This method is implemented on the `Capsule`, which is already associated
-    /// with a node type, however, in order for this to be usable with lazy
-    /// statics, which cannot have type parameters, one must create a lazy
-    /// static for the engine-side using `SsrNode`, and another for the
-    /// browser-side using `DomNode`/`HydrateNode`
-    /// (through `BrowserNodeType`). However, since Sycamore is unaware of these
-    /// target- gated distinctions, it will cause Rust to believe the types
-    /// may be out of sync. Hence, this function uses a shadow parameter `H`
-    /// with the same bounds as `G`, and confirms that the two are equal,
-    /// then performing a low-cost byte-level copy and transmutation to
-    /// assert the types as equal for the compiler.
-    ///
-    /// As a result, it is impossible to render widgets to a string in the
-    /// browser.
-    ///
-    /// The `transmute_copy` performed is considered cheap because it either
-    /// copies `&self`, or `&Arc<ErrorView>`, both of which use
-    /// indirection internally, meaning only pointers are every copied. This
-    /// stands in contrast with the approach of copying entire `View`s,
-    /// which leads to worse performance as the compexity of the views grows.
     #[allow(unused_variables)]
-    fn __widget<H: Html>(&self, path: &str, props: P, delayed: bool) -> View<H> {
-        assert_eq!(
-            TypeId::of::<H>(),
-            TypeId::of::<G>(),
-            "mismatched render backends"
-        );
-
+    fn __widget(&self, path: &str, props: P, delayed: bool) -> View {
         // Handle leading and trailing slashes
         let path = path.strip_prefix('/').unwrap_or(path);
         let path = path.strip_suffix('/').unwrap_or(path);
@@ -108,33 +78,26 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
 
         #[cfg(engine)]
         return {
-            let mut view = View::empty();
-            if delayed {
-                // SAFETY: We asserted that `G == H` above.
-                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
+            let view = if delayed {
                 // On the engine-side, delayed widgets should just render their
                 // fallback views
-                let fallback_fn = self_copy.fallback.as_ref().unwrap();
-                create_child_scope(cx, |child_cx| {
-                    view = (fallback_fn)(child_cx, props);
-                });
+                let fallback_fn = self.fallback.as_ref().unwrap();
+                (fallback_fn)(props)
             } else {
-                view = self.engine_widget(cx, path, props);
-            }
+                self.engine_widget(path, props)
+            };
 
             view
         };
         // On the browser-side, delayed and non-delayed are the same (it just matters as
         // to what's been preloaded)
         #[cfg(any(client, doc))]
-        return self.browser_widget(cx, path, props);
+        return self.browser_widget(path, props);
     }
 
     /// The internal browser-side logic for widgets, both delayed and not.
-    ///
-    /// See `.__widget()` for explanation of transmutation.
     #[cfg(any(client, doc))]
-    fn browser_widget<H: Html>(&self, path: PathWithoutLocale, props: P) -> View<H> {
+    fn browser_widget(&self, path: PathWithoutLocale, props: P) -> View {
         use crate::{
             errors::ClientInvariantError,
             path::PathMaybeWithLocale,
@@ -142,15 +105,8 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
             router::{match_route, FullRouteInfo, FullRouteVerdict},
             template::PreloadInfo,
         };
-        assert_eq!(
-            TypeId::of::<H>(),
-            TypeId::of::<G>(),
-            "mismatched render backends"
-        );
 
-        let reactor = Reactor::<G>::from_cx(cx);
-        // SAFETY: We asserted that `G == H` above.
-        let reactor: &Reactor<H> = unsafe { std::mem::transmute_copy(&reactor) };
+        let reactor = Reactor::from_cx();
         // This won't panic, because widgets won't be rendered until the initial laod is
         // ready for them
         let locale = reactor.get_translator().get_locale();
@@ -194,20 +150,17 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 // other internals, indicate a Perseus bug: please report this!
                 debug_assert_eq!(entity.get_path(), self.inner.get_path());
 
-                // SAFETY: We asserted that `G == H` above.
-                let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
-                match self_copy.render_widget_for_template_client(
+                match self.render_widget_for_template_client(
                     full_path,
                     caller_path,
                     props,
-                    cx,
                     PreloadInfo {
                         locale,
                         was_incremental_match,
                     },
                 ) {
                     Ok(view) => view,
-                    Err(err) => reactor.error_views.handle_widget(err, cx),
+                    Err(err) => reactor.error_views.handle_widget(err),
                 }
             }
             // Widgets are all resolved on the server-side, meaning they are checked then too (be it
@@ -218,16 +171,13 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     path: (*path).to_string(),
                 }
                 .into(),
-                cx,
             ),
         }
     }
 
     /// The internal engine-side logic for widgets.
-    ///
-    /// See `.widget()` for explanation of transmutation.
     #[cfg(engine)]
-    fn engine_widget<H: Html>(&self, path: PathWithoutLocale, props: P) -> View<H> {
+    fn engine_widget(&self, path: PathWithoutLocale, props: P) -> View {
         use std::sync::Arc;
 
         use crate::error_views::ErrorViews;
@@ -236,16 +186,10 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         use crate::reactor::{Reactor, RenderMode, RenderStatus};
         use crate::state::TemplateState;
         use futures::executor::block_on;
-        use sycamore::prelude::*;
-        assert_eq!(
-            TypeId::of::<H>(),
-            TypeId::of::<G>(),
-            "mismatched render backends"
-        );
 
         // This will always be rendered with access to the Perseus render context, which
         // we will be working with a lot!
-        let reactor = Reactor::<G>::from_cx(cx);
+        let reactor = Reactor::from_cx();
         match &reactor.render_mode {
             RenderMode::Build {
                 render_status,
@@ -257,7 +201,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 // If the render status isn't good, don't even bother proceeding, and fail-fast
                 // instead
                 if !matches!(*render_status.borrow(), RenderStatus::Ok) {
-                    return View::empty();
+                    return View::new();
                 }
 
                 // Check if we're in the render config (which will just contain widgets at this
@@ -269,7 +213,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     // this far, as it wouldn't be in the render config
                     if self.inner.uses_request_state() || self.inner.revalidates() {
                         *render_status.borrow_mut() = RenderStatus::Cancelled;
-                        View::empty()
+                        View::new()
                     } else {
                         // This won't panic, because the reactor has been fully instantiated with a
                         // translator on the engine-side (unless we're in an error
@@ -297,7 +241,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                             Err(StoreError::NotFound { .. }) => "null".to_string(),
                             Err(err) => {
                                 *render_status.borrow_mut() = RenderStatus::Err(err.into());
-                                return View::empty();
+                                return View::new();
                             }
                         };
                         let state = match TemplateState::from_str(&state) {
@@ -307,7 +251,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                                     RenderStatus::Err(ServerError::InvalidPageState {
                                         source: err,
                                     });
-                                return View::empty();
+                                return View::new();
                             }
                         };
 
@@ -320,19 +264,12 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                             (capsule_name.to_string(), state.state.clone()),
                         );
 
-                        // SAFETY: We asserted above that `G == H`.
-                        let self_copy: &Capsule<H, P> = unsafe { std::mem::transmute_copy(&self) };
-                        match self_copy.render_widget_for_template_server(
-                            localized_path,
-                            state,
-                            props,
-                            cx,
-                        ) {
+                        match self.render_widget_for_template_server(localized_path, state, props) {
                             Ok(view) => view,
                             Err(err) => {
                                 *render_status.borrow_mut() =
                                     RenderStatus::Err(ServerError::ClientError(err));
-                                View::empty()
+                                View::new()
                             }
                         }
                     }
@@ -347,7 +284,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     possibly_incremental_paths.borrow_mut().push(path);
                     // We don't change the render status, because that would prevent other widgets
                     // from loading (and there might be multiple incrementals).
-                    View::empty()
+                    View::new()
                 }
             }
             // Note: this will only happen for initial loads.
@@ -356,9 +293,6 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                 error_views,
                 unresolved_widget_accumulator,
             } => {
-                // SAFETY: We asserted above that `G == H`.
-                let error_views: &Arc<ErrorViews<H>> =
-                    unsafe { std::mem::transmute_copy(&error_views) };
                 // This won't panic, because the reactor has been fully instantiated with a
                 // translator on the engine-side (unless we're in an error page,
                 // which is totally invalid)
@@ -370,16 +304,12 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                     Some(res) => match res {
                         // There were no problems with getting the state
                         Ok(state) => {
-                            // SAFETY: We asserted above that `G == H`.
-                            let self_copy: &Capsule<H, P> =
-                                unsafe { std::mem::transmute_copy(&self) };
                             // Use that to render the widget for the server-side (this should *not*
                             // create a new reactor)
-                            match self_copy.render_widget_for_template_server(
+                            match self.render_widget_for_template_server(
                                 full_path,
                                 state.clone(),
                                 props,
-                                cx,
                             ) {
                                 Ok(view) => view,
                                 // We'll render any errors to the whole widget, even if they might
@@ -387,7 +317,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                                 // shouldn't be, since those
                                 // should've been handled when trying to fetch
                                 // the state, as there's no active syste etc. on the engine-side)
-                                Err(err) => error_views.handle_widget(err, cx),
+                                Err(err) => error_views.handle_widget(err),
                             }
                         }
                         // We're to render an error page with the given error data (which will not
@@ -401,14 +331,14 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
                                 message: err_data.msg.to_string(),
                             };
 
-                            error_views.handle_widget(err, cx)
+                            error_views.handle_widget(err)
                         }
                     },
                     None => {
                         // Just add this path to the list of unresolved ones, and it will be
                         // resolved in time for the next pass
                         unresolved_widget_accumulator.borrow_mut().push(path);
-                        View::empty()
+                        View::new()
                     }
                 }
             }

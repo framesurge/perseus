@@ -8,7 +8,6 @@ use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStor
 use fmterr::fmt_err;
 use futures::Future;
 use std::env;
-use sycamore::web::SsrNode;
 
 /// A wrapper around `run_dflt_engine` for apps that only use exporting, and so
 /// don't need to bring in a server integration. This is designed to avoid extra
@@ -18,7 +17,7 @@ pub async fn run_dflt_engine_export_only<M, T, A>(op: EngineOperation, app: A) -
 where
     M: MutableStore + 'static,
     T: TranslationsManager + 'static,
-    A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
+    A: Fn() -> PerseusAppBase<M, T> + 'static + Send + Sync + Clone,
 {
     let serve_fn = |_, _, _| async {
         panic!("`run_dflt_engine_export_only` cannot run a server; you should use `run_dflt_engine` instead and import a server integration (e.g. `perseus-warp`)")
@@ -54,7 +53,7 @@ where
     M: MutableStore + 'static,
     T: TranslationsManager + 'static,
     F: Future<Output = ()>,
-    A: Fn() -> PerseusAppBase<SsrNode, M, T> + 'static + Send + Sync + Clone,
+    A: Fn() -> PerseusAppBase<M, T> + 'static + Send + Sync + Clone,
 {
     // The turbine is the core of Perseus' state generation system
     let mut turbine = match Turbine::try_from(app()) {

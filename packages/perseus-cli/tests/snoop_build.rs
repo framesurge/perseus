@@ -62,10 +62,10 @@ fn snoop_build_prints_dbg() -> Result<(), Box<dyn std::error::Error>> {
 
     let index_template = dir.child("src/templates/index.rs");
     let contents = std::fs::read_to_string(&index_template).unwrap();
-    let contents_with_dbg = contents.replace(
-        r#"fn index_page(cx: Scope) -> View {"#,
-        r#"fn index_page(cx: Scope) -> View {
-dbg!("This is a test.");"#,
+let contents_with_dbg = contents.replace(
+        r#"fn index_page() -> View {"#,
+        r#"fn index_page() -> View {
+    dbg!("This is a test.");"#,
     );
     std::fs::write(index_template, contents_with_dbg).unwrap();
 

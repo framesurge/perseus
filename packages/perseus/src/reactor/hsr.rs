@@ -1,6 +1,5 @@
 use super::Reactor;
 use crate::state::IdbFrozenStateStore;
-use sycamore::web::Html;
 use wasm_bindgen::JsValue;
 
 impl Reactor {

@@ -13,7 +13,7 @@ fn index_page(
     IndexPageStateRx {
         server_ip,
         browser_ip,
-    }: &'a IndexPageStateRx,
+    }: IndexPageStateRx,
 ) -> View {
     // This will only run in the browser
     // `reqwasm` wraps browser-specific APIs, so we don't want it running on the
@@ -45,16 +45,13 @@ fn index_page(
     }
 
     // If the future hasn't finished yet, we'll display a placeholder
-    // We use the wacky `&*` syntax to get the content of the `browser_ip` `Signal`
-    // and then we tell Rust to take a reference to that (we can't move it out
-    // because it might be used later)
-    let browser_ip_display = create_memo(|| match &*browser_ip.get() {
+    let browser_ip_display = create_memo(move || match browser_ip.get_clone().as_ref() {
         Some(ip) => ip.to_string(),
         None => "fetching".to_string(),
     });
 
     view! {
-        p { (format!("IP address of the server was: {}", server_ip.get())) }
+        p { (format!("IP address of the server was: {}", server_ip.get_clone())) }
         p { (format!("The message is: {}", browser_ip_display)) }
     }
 }

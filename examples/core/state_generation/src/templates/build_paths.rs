@@ -9,13 +9,13 @@ struct PageState {
     content: String,
 }
 
-fn build_paths_page(state: &'a PageStateRx) -> View {
+fn build_paths_page(state: PageStateRx) -> View {
     view! {
         h1 {
-            (format!("build_paths/{}", state.title.get()))
+            (format!("build_paths/{}", state.title.get_clone()))
         }
         p {
-            (state.content.get())
+            (state.content.get_clone())
         }
     }
 }

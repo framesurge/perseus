@@ -3,7 +3,6 @@ use crate::i18n::Locales;
 use crate::path::*;
 use crate::template::{Entity, EntityMap, Forever};
 use std::collections::HashMap;
-use sycamore::web::Html;
 
 /// Determines the template to use for the given path by checking against the
 /// render configuration, also returning whether we matched a simple page or an
@@ -17,11 +16,11 @@ use sycamore::web::Html;
 /// ISR, and we can infer about them based on template root path domains. If
 /// that domain system is violated, this routing algorithm will not behave as
 /// expected whatsoever (as far as routing goes, it's undefined behavior)!
-fn get_template_for_path(
-    path: &str,
-    render_cfg: &HashMap<String, String>,
-    entities: &'a EntityMap<G>,
-) -> (Option<&'a Forever<Entity<G>>>, bool) {
+fn get_template_for_path<'a>(
+    path: &'a str,
+    render_cfg: &'a HashMap<String, String>,
+    entities: &'a EntityMap,
+) -> (Option<&'a Forever<Entity>>, bool) {
     let mut was_incremental_match = false;
     // Match the path to one of the entities
     let mut entity_name = None;
@@ -68,7 +67,7 @@ fn get_template_for_path(
 pub(crate) fn match_route(
     path_slice: &[&str],
     render_cfg: &HashMap<String, String>,
-    entities: &EntityMap<G>,
+    entities: &EntityMap,
     locales: &Locales,
 ) -> RouteVerdict {
     let path_vec = path_slice.to_vec();
@@ -91,7 +90,7 @@ pub(crate) fn match_route(
                 Some(entity) => RouteVerdict::Found(RouteInfo {
                     locale: locale.to_string(),
                     // This will be used in asset fetching from the server
-                    path: path_without_locale,
+                    path: path_without_locale.clone(),
                     // The user can get the full entity again if they want to, we just use it to
                     // make sure the path exists
                     entity_name: entity.get_path(),
@@ -125,7 +124,7 @@ pub(crate) fn match_route(
             Some(entity) => RouteVerdict::Found(RouteInfo {
                 locale: locales.default.to_string(),
                 // This will be used in asset fetching from the server
-                path: path_joined,
+                path: path_joined.clone(),
                 // The user can get the full entity again if they want to, we just use it to make
                 // sure the path exists
                 entity_name: entity.get_path(),

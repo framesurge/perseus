@@ -7,7 +7,7 @@ fn index_page() -> View {
     {
         // Get the reactor first, which is the one-stop-shop for everything
         // internal to Perseus in the browser
-        let reactor = Reactor::<G>::from_cx(cx);
+        let reactor = use_context::<Reactor>();
         // This spawns a future in the background, and will panic if the page you give
         // doesn't exist (to handle those errors and manage the future, use
         // `.try_preload` instead).
@@ -16,7 +16,7 @@ fn index_page() -> View {
         // disallowed across locales (i.e. you can only preload things in the
         // current locale). This is to prevent unnecessary translations
         // requests, which can be quite heavy.
-        reactor.preload(cx, "about");
+        reactor.preload("about");
     }
 
     view! {

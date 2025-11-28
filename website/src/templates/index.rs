@@ -7,7 +7,7 @@ use sycamore::prelude::*;
 #[cfg(client)]
 use web_sys::{Element, IntersectionObserver, IntersectionObserverEntry, IntersectionObserverInit};
 
-#[derive(Prop)]
+#[derive(Props)]
 struct IndexTileProps {
     /// The HTML ID of this tile.
     id: String,
@@ -32,7 +32,7 @@ struct IndexTileProps {
     #[allow(dead_code)] // Pending further work
     nav_buttons: NavButtons,
 }
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 enum TileOrder {
     TextLeft,
     TextRight,
@@ -50,7 +50,8 @@ enum NavButtons {
 /// application for dark mode.
 #[component]
 fn IndexTile(props: IndexTileProps) -> View {
-    let order = create_ref(props.order);
+    // In Sycamore 0.9.2, we can use the value directly
+    let order = props.order;
 
     // This would usually store the code example, but that can be overridden
     let supplement_view = if let Some(supplement) = props.custom_supplement {
@@ -70,14 +71,9 @@ fn IndexTile(props: IndexTileProps) -> View {
                 // We use a separate signal for the button states so they don't lag with the
                 // blur transition
                 let show_full_button = create_signal(false);
-                let show_full_rc = create_signal(false);
-                let show_full = create_ref(show_full_rc.clone());
-                #[allow(unused_variables)] // Wasm-only
-                let show_full_1 = show_full_rc.clone();
-                #[allow(unused_variables)] // Wasm-only
-                let show_full_2 = show_full_rc;
+                let show_full = create_signal(false);
                 let example = create_memo(move || {
-                    if *show_full.get() {
+                    if show_full.get() {
                         full.to_string()
                     } else {
                         excerpts.to_string()
@@ -98,24 +94,25 @@ fn IndexTile(props: IndexTileProps) -> View {
                             button(
                                 class = format!(
                                     "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
-                                    if *show_full_button.get() { "bg-indigo-500 dark:bg-indigo-600" } else { "bg-indigo-600 dark:bg-indigo-800" }
+                                    if show_full_button.get() { "bg-indigo-500 dark:bg-indigo-600" } else { "bg-indigo-600 dark:bg-indigo-800" }
                                 ),
                                 on:click = move |_| {
                                    // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
-                                    if *show_full.get_untracked() {
+                                    if show_full.get_untracked() {
                                         show_full_button.set(false);
                                         // Blur the code
-                                        let pre_node = pre_noderef.get::<DomNode>();
-                                        pre_node.add_class("blur");
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            let show_full_1 = show_full_1.clone();
+                                            use wasm_bindgen::JsCast;
+                                            let pre_node = pre_noderef.get().unchecked_into::<web_sys::HtmlElement>();
+                                            pre_node.class_list().add_1("blur").unwrap();
                                             let timer = gloo_timers::callback::Timeout::new(150, move || {
-                                                show_full_1.set(false);
-                                                // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
+                                                show_full.set(false);
+                                                // Changing the text breaks syntax highlighting, so re-highlight it with PrismJS
                                                 // This shouldn't break the app if it fails
                                                 let _ = js_sys::eval("window.Prism.highlightAll()");
-                                                pre_node.remove_class("blur");
+                                                let pre_node = pre_noderef.get().unchecked_into::<web_sys::HtmlElement>();
+                                                pre_node.class_list().remove_1("blur").unwrap();
                                             });
                                             timer.forget();
                                         }
@@ -126,24 +123,25 @@ fn IndexTile(props: IndexTileProps) -> View {
                             button(
                                 class = format!(
                                     "rounded-full p-3 {} min-w-[30%] text-lg transition-colors duration-200 font-semibold",
-                                    if *show_full_button.get() { "bg-indigo-600 dark:bg-indigo-800" } else { "bg-indigo-500 dark:bg-indigo-600" }
+                                    if show_full_button.get() { "bg-indigo-600 dark:bg-indigo-800" } else { "bg-indigo-500 dark:bg-indigo-600" }
                                 ),
                                 on:click = move |_| {
                                     // Only do anything if we aren't already showing the right thing (we care because we re-highlight everything)
-                                    if !*show_full.get_untracked() {
+                                    if !show_full.get_untracked() {
                                         show_full_button.set(true);
                                         // Blur the code
-                                        let pre_node = pre_noderef_2.get::<DomNode>();
-                                        pre_node.add_class("blur");
                                         #[cfg(client)]
                                         {
-                                            let show_full_2 = show_full_2.clone();
+                                            use wasm_bindgen::JsCast;
+                                            let pre_node = pre_noderef_2.get().unchecked_into::<web_sys::HtmlElement>();
+                                            pre_node.class_list().add_1("blur").unwrap();
                                             let timer = gloo_timers::callback::Timeout::new(150, move || {
-                                                show_full_2.set(true);
+                                                show_full.set(true);
                                                 // Changing the text breaks syntax highlighting, so re-initialize it with PrismJS
                                                 // This shouldn't break the app if it fails
                                                 let _ = js_sys::eval("window.Prism.highlightAll()");
-                                                pre_node.remove_class("blur");
+                                                let pre_node = pre_noderef_2.get().unchecked_into::<web_sys::HtmlElement>();
+                                                pre_node.class_list().remove_1("blur").unwrap();
                                             });
                                             timer.forget();
                                         }
@@ -154,7 +152,7 @@ fn IndexTile(props: IndexTileProps) -> View {
                         // We need this div so our styles can apply it to the `.code-toolbar` created by Prism
                         pre(ref = pre, class = "!rounded-2xl !p-8 !text-[0.85rem] !m-0 permadark overflow-y-auto h-full transition-[filter] duration-100") {
                             code(class = format!("language-{}", props.code_lang)) {
-                                (example.get())
+                                (example.get_clone())
                             }
                         }
                     }
@@ -165,7 +163,7 @@ fn IndexTile(props: IndexTileProps) -> View {
     let has_extra = props.extra.is_some();
     let extra_view = match props.extra {
         Some(view) => view,
-        None => View::empty(),
+        None => View::default(),
     };
 
     // Each of these tiles will be one screen high on desktop, and two on mobile
@@ -251,7 +249,7 @@ fn IndexTile(props: IndexTileProps) -> View {
     }
 }
 
-#[derive(Prop)]
+#[derive(Props)]
 struct AnimatedCircularProgressBarProps {
     percent: u32,
     label: String,
@@ -271,7 +269,8 @@ fn AnimatedCircularProgressBar(props: AnimatedCircularProgressBarProps) -> View 
     // animate from nothing to here)
     let offset = circumference - (props.percent as f32 / 100.0) * circumference;
 
-    let elem = create_node_ref(cx);
+    // In Sycamore 0.9.2, create_node_ref doesn't take a scope parameter
+    let elem = create_node_ref();
 
     // Define a callback to be executed on scroll that will check if this element
     // has passed into view If it has, then we'll re-play the animation
@@ -451,13 +450,20 @@ fn index_page(examples: CodeExamples) -> View {
     //     }
     // };
 
+    // Extract t! macro results for dangerously_set_inner_html to avoid closure wrapping
+    let state_gen_desc = t!( "index-state-gen.desc");
+    let i18n_desc = t!( "index-i18n.desc");
+    let speed_desc_1 = t!( "index-speed.desc-line-1");
+    let speed_desc_2 = t!( "index-speed.desc-line-2");
+    let speed_desc_3 = t!( "index-speed.desc-line-3");
+
     view! {
         Container(
             header = HeaderProps {
                 title: t!( "perseus"),
                 text_color: "text-white".to_string(),
                 menu_color: "bg-white".to_string(),
-                mobile_nav_extension: View::empty(),
+                mobile_nav_extension: View::default(),
                 menu_open: None,
             },
             footer = true,
@@ -467,7 +473,7 @@ fn index_page(examples: CodeExamples) -> View {
                     id = "intro".to_string(),
                     classes = "tile-start".to_string(),
                     order = TileOrder::TextLeft,
-                    custom_supplement = None,
+                    custom_supplement = View::new(),
                     text_block = view! {
                         // NOTE These styles are deliberately different from the rest to prevent text overlaps
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl 2xl:text-[4.75rem] p-2 title-font mb-4") { (t!( "index-intro.heading")) }
@@ -491,7 +497,7 @@ fn index_page(examples: CodeExamples) -> View {
                     },
                     code = examples.app_in_a_file,
                     code_lang = "rust".to_string(),
-                    extra = None,
+                    extra = View::new(),
                     nav_buttons = NavButtons::Bottom("state_gen".to_string())
                 )
                 // State generation tile
@@ -499,20 +505,20 @@ fn index_page(examples: CodeExamples) -> View {
                     id = "state_gen".to_string(),
                     classes = "tile-state-generation".to_string(),
                     order = TileOrder::TextRight,
-                    custom_supplement = None,
+                    custom_supplement = View::new(),
                     text_block = view! {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             (t!( "index-state-gen.heading"))
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!( "index-state-gen.desc")
+                                dangerously_set_inner_html = state_gen_desc
                             ) {}
                         }
                     },
                     code = examples.state_generation,
                     code_lang = "rust".to_string(),
-                    extra = None,
+                    extra = View::new(),
                     nav_buttons = NavButtons::Both("intro".to_string(), "i18n".to_string())
                 )
                 // I18n tile
@@ -520,7 +526,7 @@ fn index_page(examples: CodeExamples) -> View {
                     id = "i18n".to_string(),
                     classes = "tile-i18n".to_string(),
                     order = TileOrder::TextLeft,
-                    custom_supplement = None,
+                    custom_supplement = View::new(),
                     text_block = view! {
                         div(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             div(class = "tooltip") {
@@ -532,13 +538,13 @@ fn index_page(examples: CodeExamples) -> View {
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!( "index-i18n.desc")
+                                dangerously_set_inner_html = i18n_desc
                             ) {}
                         }
                     },
                     code = examples.i18n,
                     code_lang = "rust".to_string(),
-                    extra = None,
+                    extra = View::new(),
                     nav_buttons = NavButtons::Both("state_gen".to_string(), "opts".to_string())
                 )
                 // Options tile
@@ -546,7 +552,7 @@ fn index_page(examples: CodeExamples) -> View {
                     id = "opts".to_string(),
                     classes = "tile-options".to_string(),
                     order = TileOrder::TextRight,
-                    custom_supplement = None,
+                    custom_supplement = View::new(),
                     text_block = view! {
                         p(class = "uppercase text-4xl font-semibold sm:font-normal xs:text-5xl sm:text-6xl 2xl:text-[5rem] p-2 title-font mb-4") {
                             (t!( "index-opts.heading")) // TODO Best heading?
@@ -557,7 +563,7 @@ fn index_page(examples: CodeExamples) -> View {
                     },
                     code = examples.cli,
                     code_lang = "sh".to_string(),
-                    extra = None,
+                    extra = View::new(),
                     nav_buttons = NavButtons::Both("i18n".to_string(), "speed".to_string())
                 )
                 // Speed tile (uses an image of the Lighthouse scores instead of a code example)
@@ -571,21 +577,21 @@ fn index_page(examples: CodeExamples) -> View {
                         }
                         p(class = "text-xl md:text-2xl 2xl:text-3xl p-2") {
                             span(
-                                dangerously_set_inner_html = &t!( "index-speed.desc-line-1")
+                                dangerously_set_inner_html = speed_desc_1
                             ) {}
                             br()
                             span(
-                                dangerously_set_inner_html = &t!( "index-speed.desc-line-2")
+                                dangerously_set_inner_html = speed_desc_2
                             ) {}
                             br()
                             span(
-                                dangerously_set_inner_html = &t!( "index-speed.desc-line-3") // TODO Add footnote caveat to this
+                                dangerously_set_inner_html = speed_desc_3 // TODO Add footnote caveat to this
                             ) {}
                         }
                     },
                     code = Example::Simple(String::new()),
                     code_lang = String::new(),
-                    custom_supplement = Some(view! {
+                    custom_supplement = view! {
                         div(class = "bg-white dark:bg-[#272822] rounded-2xl !p-8 w-full flex flex-col lg:flex-row justify-center lg:justify-evenly") {
                             AnimatedCircularProgressBar(
                                 percent = 100,
@@ -601,8 +607,8 @@ fn index_page(examples: CodeExamples) -> View {
                                 label = t!( "index-speed.best-practices-label")
                             )
                         }
-                    }),
-                    extra = None,
+                    },
+                    extra = View::new(),
                     nav_buttons = NavButtons::Both("opts".to_string(), "cta".to_string())
                 )
                 // Final tile (different)
@@ -617,8 +623,8 @@ fn index_page(examples: CodeExamples) -> View {
                     },
                     code = examples.get_started,
                     code_lang = "sh".to_string(),
-                    custom_supplement = None,
-                    extra = Some(view! {
+                    custom_supplement = View::new(),
+                    extra = view! {
                         div(class = "flex justify-center") {
                             ul(
                                 class = "text-center max-w-4xl"
@@ -653,7 +659,7 @@ fn index_page(examples: CodeExamples) -> View {
                                 ) { (t!( "index-cta.comparisons-button")) }
                             }
                         }
-                    }),
+                    },
                     nav_buttons = NavButtons::Top("speed".to_string())
                 )
 

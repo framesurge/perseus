@@ -21,7 +21,7 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
 #[cfg(any(client, doc))]
-use crate::template::{BrowserNodeType, EntityMap};
+use crate::template::EntityMap;
 use crate::{
     i18n::Translator,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
@@ -47,6 +47,7 @@ use crate::{
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(any(client, doc))]
 use serde_json::Value;
+use std::rc::Rc;
 #[cfg(any(client, doc))]
 use std::{
     cell::{Cell, RefCell},
@@ -56,7 +57,7 @@ use std::{
 #[cfg(any(client, doc))]
 use sycamore::prelude::View;
 #[cfg(any(client, doc))]
-use sycamore::reactive::create_signal;
+use sycamore::reactive::{create_signal, Signal};
 
 /// The core of Perseus' browser-side systems. This forms a central point for
 /// all the Perseus state and rendering logic to operate from. In your own code,
@@ -97,7 +98,7 @@ pub struct Reactor {
     pub(crate) render_cfg: HashMap<String, String>,
     /// The app's templates and capsules for use in routing.
     #[cfg(any(client, doc))]
-    pub(crate) entities: EntityMap<G>,
+    pub(crate) entities: EntityMap,
     /// The app's locales.
     #[cfg(any(client, doc))]
     pub(crate) locales: Locales,
@@ -106,15 +107,17 @@ pub struct Reactor {
     translations_manager: ClientTranslationsManager,
     /// The app's error views.
     #[cfg(any(client, doc))]
-    pub(crate) error_views: Rc<ErrorViews<G>>,
+    pub(crate) error_views: Rc<ErrorViews>,
     /// A reactive container for the current page-wide view. This will usually
     /// contain the contents of the current page, but it may also contain a
     /// page-wide error. This will be wrapped in a router.
+    /// We use Rc<View> because View doesn't implement Clone in Sycamore 0.9.
     #[cfg(any(client, doc))]
-    current_view: Signal<View<BrowserNodeType>>,
+    current_view: Signal<Rc<View>>,
     /// A reactive container for any popup errors.
+    /// We use Rc<View> because View doesn't implement Clone in Sycamore 0.9.
     #[cfg(any(client, doc))]
-    popup_error_view: Signal<View<BrowserNodeType>>,
+    popup_error_view: Signal<Rc<View>>,
     /// The app's root div ID.
     #[cfg(any(client, doc))]
     root: String,
@@ -182,8 +185,8 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<M, T>> for 
             // This will be filled out by a `.thaw()` call or HSR
             frozen_app: Rc::new(RefCell::new(None)),
             is_first: Cell::new(true),
-            current_view: create_signal(View::empty()),
-            popup_error_view: create_signal(View::empty()),
+            current_view: create_signal(Rc::new(View::new())),
+            popup_error_view: create_signal(Rc::new(View::new())),
             entities: app.entities,
             locales,
             render_cfg,
@@ -199,19 +202,18 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<M, T>> for 
 }
 
 impl Reactor {
-    /// Adds `self` to the given Sycamore scope as context.
-    ///
-    /// # Panics
-    /// This will panic if any other reactor is found in the context.
+    /// Adds `self` to the current reactive context.
     pub(crate) fn add_self_to_cx(self) {
-        provide_context(self);
+        provide_context(Rc::new(self));
+        // Also provide a boolean flag to indicate reactor exists
+        provide_context(true);
     }
     /// Gets a [`Reactor`] out of the given Sycamore scope's context.
     ///
     /// You should never need to worry about this function panicking, since
     /// your code will only ever run if a reactor is present.
-    pub fn from_cx() -> Self {
-        use_context::<Self>()
+    pub fn from_cx() -> Rc<Self> {
+        use_context::<Rc<Self>>()
     }
     /// Gets the currently active translator.
     ///

@@ -8,23 +8,19 @@ use crate::{
 use super::{Entity, PreloadInfo, TemplateInner};
 use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
-use sycamore::{
-    prelude::{create_child_scope, create_scope, BoundedScope, Scope, ScopeDisposer},
-    view::View,
-    web::Html,
-};
+use sycamore::prelude::*;
+use sycamore::reactive::create_child_scope;
 
 /// The type of functions that are given a state and properties to render a
 /// widget.
-pub(crate) type CapsuleFn<G, P> = Box<
-    dyn for<'a> Fn(
-            Scope<'a>,
+pub(crate) type CapsuleFn<P> = Box<
+    dyn Fn(
             PreloadInfo,
             TemplateState,
             P,
             PathMaybeWithLocale, // Widget path
             PathMaybeWithLocale, // Caller path
-        ) -> Result<(View, ScopeDisposer<'a>), ClientError>
+        ) -> Result<View, ClientError>
         + Send
         + Sync,
 >;
@@ -37,12 +33,12 @@ pub(crate) type CapsuleFn<G, P> = Box<
 ///
 /// Note that capsules store their view functions and fallbacks independently of
 /// their underlying templates, for properties support.
-pub struct Capsule<G: Html, P: Clone + 'static> {
+pub struct Capsule<P: Clone + 'static> {
     /// The underlying entity (in this case, a capsule).
-    pub(crate) inner: Entity<G>,
+    pub(crate) inner: Entity,
     /// The capsule rendering function, which is a template function that also
     /// takes properties.
-    capsule_view: CapsuleFn<G, P>,
+    capsule_view: CapsuleFn<P>,
     /// A function that returns the fallback view to be rendered between when
     /// the page is ready and when the capsule's state has been fetched.
     ///
@@ -51,9 +47,9 @@ pub struct Capsule<G: Html, P: Clone + 'static> {
     ///
     /// This will not be defined for templates, only for capsules.
     #[allow(clippy::type_complexity)]
-    pub(crate) fallback: Option<Arc<dyn Fn(Scope, P) -> View + Send + Sync>>,
+    pub(crate) fallback: Option<Arc<dyn Fn(P) -> View + Send + Sync>>,
 }
-impl<G: Html, P: Clone + 'static> std::fmt::Debug for Capsule<G, P> {
+impl<P: Clone + 'static> std::fmt::Debug for Capsule<P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Capsule").finish()
     }
@@ -69,9 +65,9 @@ impl<G: Html, P: Clone + 'static> std::fmt::Debug for Capsule<G, P> {
 /// user. This means Perseus can treat templates and capsules in the same way
 /// internally, since they both have the same representation. Types like this
 /// are mere convenience wrappers.
-pub struct CapsuleInner<G: Html, P: Clone + 'static> {
-    template_inner: TemplateInner<G>,
-    capsule_view: CapsuleFn<G, P>,
+pub struct CapsuleInner<P: Clone + 'static> {
+    template_inner: TemplateInner,
+    capsule_view: CapsuleFn<P>,
     /// A function that returns the fallback view to be rendered between when
     /// the page is ready and when the capsule's state has been fetched.
     ///
@@ -80,9 +76,9 @@ pub struct CapsuleInner<G: Html, P: Clone + 'static> {
     ///
     /// This will not be defined for templates, only for capsules.
     #[allow(clippy::type_complexity)]
-    pub(crate) fallback: Option<Arc<dyn Fn(Scope, P) -> View + Send + Sync>>,
+    pub(crate) fallback: Option<Arc<dyn Fn(P) -> View + Send + Sync>>,
 }
-impl<G: Html, P: Clone + 'static> std::fmt::Debug for CapsuleInner<G, P> {
+impl<P: Clone + 'static> std::fmt::Debug for CapsuleInner<P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CapsuleInner")
             .field("template_inner", &self.template_inner)
@@ -90,7 +86,7 @@ impl<G: Html, P: Clone + 'static> std::fmt::Debug for CapsuleInner<G, P> {
     }
 }
 
-impl<G: Html, P: Clone + 'static> Capsule<G, P> {
+impl<P: Clone + 'static> Capsule<P> {
     /// Creates a new [`CapsuleInner`] from the given [`TemplateInner`]. In
     /// Perseus, capsules are really just special kinds of pages, so you
     /// create them by first creating the underlying template. To make sure
@@ -110,7 +106,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
     ///
     /// You will need to call `.build()` when you're done with this to get a
     /// full [`Capsule`].
-    pub fn build(mut template_inner: TemplateInner<G>) -> CapsuleInner<G, P> {
+    pub fn build(mut template_inner: TemplateInner) -> CapsuleInner<P> {
         template_inner.is_capsule = true;
         // Produce nice errors to make it clear that heads and headers don't work with
         // capsules
@@ -127,10 +123,13 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         }
         // Wipe the template's view function to make sure the errors aren't obscenely
         // weird
-        template_inner.view = Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {}))));
+        template_inner.view = Box::new(|_, _, _| {
+            let disposer = create_child_scope(|| {});
+            Ok((View::new(), disposer))
+        });
         CapsuleInner {
             template_inner,
-            capsule_view: Box::new(|_, _, _, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
+            capsule_view: Box::new(|_, _, _, _, _| Ok(View::new())),
             // This must be manually specified
             fallback: None,
         }
@@ -151,12 +150,11 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         path: PathMaybeWithLocale,
         caller_path: PathMaybeWithLocale,
         props: P,
-                preload_info: PreloadInfo,
+        preload_info: PreloadInfo,
     ) -> Result<View, ClientError> {
         // The template state is ignored by widgets, they fetch it themselves
         // asynchronously
-        let (view, _disposer) = (self.capsule_view)(
-            cx,
+        let view = (self.capsule_view)(
             preload_info,
             TemplateState::empty(),
             props,
@@ -175,13 +173,12 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         path: PathMaybeWithLocale,
         state: TemplateState,
         props: P,
-            ) -> Result<View, ClientError> {
+    ) -> Result<View, ClientError> {
         // This is used for widget preloading, which doesn't occur on the engine-side
         let preload_info = PreloadInfo {};
         // We don't care about the scope disposer, since this scope is unique anyway;
         // the caller path is also irrelevant except on the browser
-        let (view, _) = (self.capsule_view)(
-            cx,
+        let view = (self.capsule_view)(
             preload_info,
             state,
             props,
@@ -191,7 +188,7 @@ impl<G: Html, P: Clone + 'static> Capsule<G, P> {
         Ok(view)
     }
 }
-impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
+impl<P: Clone + 'static> CapsuleInner<P> {
     /// Declares the fallback view to render for this capsule. When Perseus
     /// renders a page of your app, it fetches the page itself, along with
     /// all the capsules it needs. If the page is ready before all the
@@ -206,7 +203,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     ///
     /// **Warning:** if you do not set a fallback view for a capsule, your app
     /// will not compile!
-    pub fn fallback(mut self, view: impl Fn(Scope, P) -> View + Send + Sync + 'static) -> Self {
+    pub fn fallback(mut self, view: impl Fn(P) -> View + Send + Sync + 'static) -> Self {
         {
             self.fallback = Some(Arc::new(view));
         }
@@ -220,7 +217,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     /// this).
     pub fn empty_fallback(mut self) -> Self {
         {
-            self.fallback = Some(Arc::new(|cx, _| sycamore::view! { }));
+            self.fallback = Some(Arc::new(|_| sycamore::view! {}));
         }
         self
     }
@@ -230,7 +227,7 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     /// freely with minimal costs.
     ///
     /// You should call this just before you return your capsule.
-    pub fn build(self) -> Capsule<G, P> {
+    pub fn build(self) -> Capsule<P> {
         Capsule {
             inner: Entity::from(self.template_inner),
             capsule_view: self.capsule_view,
@@ -253,26 +250,22 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     pub fn view_with_state<I, F>(mut self, val: F) -> Self
     where
         // The state is made reactive on the child
-        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child I, P) -> View
-            + Clone
-            + Send
-            + Sync
-            + 'static,
+        // In Sycamore 0.9.2, reactive state is usually Copy, but may not be for nested/suspense
+        F: Fn(I, P) -> View + Clone + Send + Sync + 'static,
         I: MakeUnrx + AnyFreeze + Clone,
         I::Unrx: MakeRx<Rx = I> + Serialize + DeserializeOwned + Send + Sync + Clone + 'static,
     {
         self.template_inner.view =
-            Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
+            Box::new(|_, _, _| panic!("attempted to call template rendering logic for widget"));
         #[cfg(any(client, doc))]
         let entity_name = self.template_inner.get_path();
         #[cfg(any(client, doc))]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
-            move |app_cx, preload_info, template_state, props, path, caller_path| {
-                let reactor = Reactor::<G>::from_cx(app_cx);
-                reactor.get_widget_view::<I::Unrx, _, P>(
-                    app_cx,
+            move |preload_info, template_state, props, path, caller_path| {
+                let reactor = Reactor::from_cx();
+                let (view, _handle) = reactor.get_widget_view::<I::Unrx, _, P>(
                     path,
                     caller_path,
                     #[cfg(any(client, doc))]
@@ -284,7 +277,8 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                     val.clone(),
                     #[cfg(any(client, doc))]
                     fallback_fn.as_ref().unwrap(),
-                )
+                )?;
+                Ok(view)
             },
         );
         self
@@ -293,22 +287,21 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     /// state.
     pub fn view_with_unreactive_state<F, S>(mut self, val: F) -> Self
     where
-        F: Fn(Scope, S, P) -> View + Clone + Send + Sync + 'static,
+        F: Fn(S, P) -> View + Clone + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
         self.template_inner.view =
-            Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
+            Box::new(|_, _, _| panic!("attempted to call template rendering logic for widget"));
         #[cfg(any(client, doc))]
         let entity_name = self.template_inner.get_path();
         #[cfg(any(client, doc))]
         let fallback_fn = self.fallback.clone(); // `Arc`ed, heaven help us
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
-            move |app_cx, preload_info, template_state, props, path, caller_path| {
-                let reactor = Reactor::<G>::from_cx(app_cx);
-                reactor.get_unreactive_widget_view(
-                    app_cx,
+            move |preload_info, template_state, props, path, caller_path| {
+                let reactor = Reactor::from_cx();
+                let (view, _handle) = reactor.get_unreactive_widget_view(
                     path,
                     caller_path,
                     #[cfg(any(client, doc))]
@@ -320,7 +313,8 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
                     val.clone(),
                     #[cfg(any(client, doc))]
                     fallback_fn.as_ref().unwrap(),
-                )
+                )?;
+                Ok(view)
             },
         );
         self
@@ -330,14 +324,14 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
     /// that do take state should use `.view_with_state()` instead.
     pub fn view<F>(mut self, val: F) -> Self
     where
-        F: Fn(Scope, P) -> View + Send + Sync + 'static,
+        F: Fn(P) -> View + Send + Sync + 'static,
     {
         self.template_inner.view =
-            Box::new(|_, _, _, _| panic!("attempted to call template rendering logic for widget"));
+            Box::new(|_, _, _| panic!("attempted to call template rendering logic for widget"));
         self.capsule_view = Box::new(
             #[allow(unused_variables)]
-            move |app_cx, _preload_info, _template_state, props, path, caller_path| {
-                let reactor = Reactor::<G>::from_cx(app_cx);
+            move |_preload_info, _template_state, props, path, caller_path| {
+                let reactor = Reactor::from_cx();
                 // Declare that this page/widget will never take any state to enable full
                 // caching
                 reactor.register_no_state(&path, true);
@@ -347,11 +341,8 @@ impl<G: Html, P: Clone + 'static> CapsuleInner<G, P> {
 
                 // Nicely, if this is a widget, this means there need be no network requests
                 // at all!
-                let mut view = View::empty();
-                let disposer = create_child_scope(app_cx, |child_cx| {
-                    view = val(child_cx, props);
-                });
-                Ok((view, disposer))
+                let view = val(props);
+                Ok(view)
             },
         );
         self

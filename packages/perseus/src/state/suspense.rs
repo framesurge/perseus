@@ -1,7 +1,7 @@
 use super::{rx_result::RxResultRx, Freeze, MakeRx, MakeUnrx};
 use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::prelude::{RcSignal, Scope};
+use sycamore::reactive::Signal;
 use sycamore_futures::spawn_local_scoped;
 
 /// A utility function for calling suspense handlers and managing their errors.
@@ -21,16 +21,16 @@ use sycamore_futures::spawn_local_scoped;
 /// The handler this takes is a future, so the asynchronous function handler
 /// itself should be called without `.await` before being provided to this
 /// function.
-pub fn compute_nested_suspense<'a, T, E, F>(state: RxResultRx<T, E>, handler: F)
+pub fn compute_nested_suspense<T, E, F>(state: RxResultRx<T, E>, handler: F)
 where
-    F: Future<Output = Result<(), E>> + 'a,
+    F: Future<Output = Result<(), E>> + 'static,
     T: MakeRx + Serialize + DeserializeOwned + Clone + 'static, /* Note this `Clone` bound!
                                                                  * (Otherwise cloning goes to
                                                                  * the undelrying `RcSignal`) */
     <T as MakeRx>::Rx: MakeUnrx<Unrx = T> + Freeze + Clone + 'static,
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
-    spawn_local_scoped(cx, async move {
+    spawn_local_scoped(async move {
         let res = handler.await;
         if let Err(err) = res {
             state.set(Err(err));
@@ -55,16 +55,15 @@ where
 /// The handler this takes is a future, so the asynchronous function handler
 /// itself should be called without `.await` before being provided to this
 /// function.
-pub fn compute_suspense<'a, T, E, F>(state: Signal<Result<T, E>>, handler: F)
+pub fn compute_suspense<T, E, F>(state: Signal<Result<T, E>>, handler: F)
 where
-    F: Future<Output = Result<(), E>> + 'a,
+    F: Future<Output = Result<(), E>> + 'static,
     T: Serialize + DeserializeOwned + Clone + 'static, /* Note this `Clone` bound! (Otherwise
                                                         * cloning goes to the undelrying
                                                         * `RcSignal`) */
     E: Serialize + DeserializeOwned + Clone + 'static,
 {
-    spawn_local_scoped(cx, async move {
-        // let state_ref = create_ref(cx, state.clone());
+    spawn_local_scoped(async move {
         let res = handler.await;
         if let Err(err) = res {
             state.set(Err(err));

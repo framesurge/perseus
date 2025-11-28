@@ -119,18 +119,9 @@ pub type PerseusNodeType = sycamore::web::SsrNode;
 /// You **should not** use this in your return types (e.g.
 /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
 /// This is intended for `lazy_static!`s and the like, for capsules. See
-/// the book and capsule examples for further details.
-#[cfg(all(client, not(feature = "hydrate")))]
-pub type PerseusNodeType = sycamore::web::DomNode;
-/// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
-/// `hydrate` feature flag and compilation target.
-///
-/// You **should not** use this in your return types (e.g.
-/// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
-/// This is intended for `lazy_static!`s and the like, for capsules. See
-/// the book and capsule examples for further details.
-#[cfg(all(client, feature = "hydrate"))]
-pub type PerseusNodeType = sycamore::web::HydrateNode;
+/// book and capsule examples for further details.
+#[cfg(client)]
+pub type PerseusNodeType = sycamore::web::HtmlNode;
 
 /// A series of imports needed by most Perseus apps, in some form. This should
 /// be used in conjunction with the Sycamore prelude.
@@ -144,8 +135,8 @@ pub mod prelude {
     pub use crate::reactor::Reactor;
     pub use crate::state::{BuildPaths, RxResult, RxResultRx, SerdeInfallible, StateGeneratorInfo};
     pub use crate::template::{Capsule, Template};
-    pub use sycamore::web::Html;
     pub use sycamore_router::{navigate, navigate_replace};
+    pub use sycamore::web::{GlobalProps, HtmlGlobalAttributes};
 
     #[cfg(engine)]
     pub use crate::utils::{cache_fallible_res, cache_res};

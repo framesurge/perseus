@@ -20,7 +20,7 @@ impl Reactor {
     /// instead.
     // This function takes the final ref struct as a type parameter! That
     // complicates everything substantially.
-    pub fn get_global_state<'a, I>(&self) -> &'a I
+    pub fn get_global_state<I>(&self) -> I
     where
         I: MakeUnrx + AnyFreeze + Clone,
         I::Unrx: MakeRx<Rx = I>,
@@ -33,7 +33,7 @@ impl Reactor {
     ///
     /// This will return an error if the state from the server was found to be
     /// invalid.
-    pub fn try_get_global_state<'a, I>(&self) -> Result<Option<&'a I>, ClientError>
+    pub fn try_get_global_state<I>(&self) -> Result<Option<I>, ClientError>
     where
         I: MakeUnrx + AnyFreeze + Clone,
         I::Unrx: MakeRx<Rx = I>,
@@ -82,7 +82,7 @@ impl Reactor {
                 }
             };
 
-        Ok(Some(&intermediate_state))
+        Ok(Some(intermediate_state))
     }
 
     /// Determines if the global state should use the state given by the server,

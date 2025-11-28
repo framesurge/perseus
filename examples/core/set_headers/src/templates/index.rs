@@ -8,9 +8,9 @@ struct PageState {
     greeting: String,
 }
 
-fn index_page(state: &'a PageStateRx) -> View {
+fn index_page(state: PageStateRx) -> View {
     view! {
-        p { (state.greeting.get()) }
+        p { (state.greeting.get_clone()) }
     }
 }
 
@@ -46,7 +46,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> PageState {
 // the global state and, potentially, a translator. This can allow you to create
 // localized headers.
 #[engine_only_fn]
-fn set_headers(_state: PageState) -> perseus::http::header::HeaderMap {
+fn set_headers(state: PageState) -> perseus::http::header::HeaderMap {
     // These imports are only available on the server-side, which this function is
     // automatically gated to
     use perseus::http::header::{HeaderMap, HeaderName};

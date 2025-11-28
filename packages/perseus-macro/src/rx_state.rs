@@ -174,6 +174,8 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
     };
 
     // TODO Generics support
+    // In Sycamore 0.9.2, signals are Copy by default, so we don't need to derive Copy
+    // The intermediate struct just contains signals which are already Copy
     quote! {
         #attrs
         #[derive(Clone)]

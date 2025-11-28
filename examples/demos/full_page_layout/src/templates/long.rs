@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 
 fn long_page() -> View {
     view! {
-        Layout(title = "Long") {
+        Layout(title = "Long".to_string()) {
             // Anything we put in here will be rendered inside the `<main>` block of the layout
             a(href = "") { "Index" }
             br {}

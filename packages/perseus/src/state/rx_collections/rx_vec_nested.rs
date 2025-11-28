@@ -1,9 +1,7 @@
 use crate::state::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-#[cfg(any(client, doc))]
-use sycamore::prelude::Scope;
-use sycamore::reactive::{create_signal};
+use sycamore::reactive::{create_signal, Signal};
 
 /// A reactive version of [`Vec`] that uses nested reactivity on its elements.
 /// That means the type inside the vector must implement [`MakeRx`] (usually
@@ -46,17 +44,20 @@ where
     type Unrx = RxVecNested<T>;
 
     fn make_unrx(self) -> Self::Unrx {
-        let vec = (*self.0.get_untracked()).clone();
-        RxVecNested(vec.into_iter().map(|x| x.make_unrx()).collect())
+        self.0.with_untracked(|vec| {
+            RxVecNested(vec.iter().map(|x| x.clone().make_unrx()).collect())
+        })
     }
 
     #[cfg(any(client, doc))]
     fn compute_suspense(&self) {
         // We do *not* want to recompute this every time the user changes the state!
         // (There lie infinite loops.)
-        for elem in self.0.get_untracked().iter() {
-            elem.compute_suspense(cx);
-        }
+        self.0.with_untracked(|vec| {
+            for elem in vec.iter() {
+                elem.compute_suspense();
+            }
+        });
     }
 }
 // --- Dereferencing ---

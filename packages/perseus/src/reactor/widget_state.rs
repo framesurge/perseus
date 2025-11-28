@@ -1,5 +1,6 @@
 #[cfg(any(client, doc))]
 use std::sync::Arc;
+use std::rc::Rc;
 
 use super::Reactor;
 use crate::{
@@ -10,9 +11,8 @@ use crate::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::{
-    prelude::{create_child_scope, create_ref, BoundedScope, Scope, ScopeDisposer},
-    view::View,
-    web::Html,
+    reactive::{create_child_scope, NodeHandle},
+    web::View,
 };
 
 #[cfg(any(client, doc))]
@@ -22,7 +22,7 @@ use sycamore::prelude::create_signal;
 #[cfg(any(client, doc))]
 use sycamore_futures::spawn_local_scoped;
 
-impl Reactor<G> {
+impl Reactor {
     /// Gets the view and disposer for the given widget path. This will perform
     /// asynchronous fetching as needed to fetch state from the server, and
     /// will also handle engine-side state pass-through. This function will
@@ -37,32 +37,29 @@ impl Reactor<G> {
     #[allow(clippy::too_many_arguments)] // Internal function
     pub(crate) fn get_widget_view<'a, S, F, P: Clone + 'static>(
         &'a self,
-        app_cx,  path: PathMaybeWithLocale,
+        path: PathMaybeWithLocale,
         #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
         #[cfg(any(client, doc))] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
         #[cfg(any(client, doc))] preload_info: PreloadInfo,
         view_fn: F,
-        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(Scope, P) -> View + Send + Sync>,
-    ) -> Result<(View, ScopeDisposer<'a>), ClientError>
+        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(P) -> View + Send + Sync>,
+    ) -> Result<(View, NodeHandle), ClientError>
     where
         // Note: these bounds replicate those for `.view_with_state()`, except the app lifetime is
         // known
-        F: for<'app, 'child> Fn(BoundedScope<'app, 'child>, &'child S::Rx, P) -> View
-            + Send
-            + Sync
-            + 'static,
+        // In Sycamore 0.9.2, reactive state is usually Copy, but may not be for nested/suspense
+        F: Fn(S::Rx, P) -> View + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + 'static,
         S::Rx: MakeUnrx<Unrx = S> + AnyFreeze + Clone,
     {
         match self.get_widget_state_no_fetch::<S>(&path, template_state)? {
             Some(intermediate_state) => {
-                let mut view = View::empty();
-                let disposer = create_child_scope(app_cx, |child_cx| {
-                    // We go back from the unreactive state type wrapper to the base type (since
-                    // it's unreactive)
-                    view = view_fn(child_cx, create_ref(child_cx, intermediate_state), props);
+                let mut view = View::new();
+                let disposer = create_child_scope(|| {
+                    // In Sycamore 0.9.2, we pass state by value (or clone if not Copy)
+                    view = view_fn(intermediate_state.clone(), props);
                 });
                 Ok((view, disposer))
             }
@@ -71,18 +68,20 @@ impl Reactor<G> {
             #[cfg(any(client, doc))]
             None => {
                 return {
-                    let view = create_signal(app_cx, View::empty());
+                    let view = create_signal(Rc::new(View::new()));
 
                     let fallback_fn = fallback_fn.clone();
-                    let disposer = create_child_scope(app_cx, |child_cx| {
+                    let disposer = create_child_scope(|| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        view.set((fallback_fn)(child_cx, props.clone()));
-                        // Note: this uses `child_cx`, meaning the fetch will be aborted if the user
+                        view.set(Rc::new((fallback_fn)(props.clone())));
+                        // Note: this uses child scope, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
                         let capsule_name = capsule_name.clone();
-                        spawn_local_scoped(child_cx, async move {
+                        spawn_local_scoped(async move {
+                            // Get reactor from context for async block
+                            let reactor = Reactor::from_cx();
                             // Any errors that occur in here will be converted into proper error
                             // views using the reactor (it's not the
                             // nicest handling pattern, but in a future
@@ -97,7 +96,7 @@ impl Reactor<G> {
                                             .to_string(),
                                     });
                                 // We can simply use the preload system to perform the fetching
-                                match self
+                                match reactor
                                     .state_store
                                     .preload(
                                         &path_without_locale,
@@ -114,34 +113,36 @@ impl Reactor<G> {
                                     // this time! We're in the browser, so we can just use an empty
                                     // template state, rather than
                                     // cloning the one we've been given (which is empty anyway).
-                                    Ok(()) => match self.get_widget_state_no_fetch::<S>(
+                                    Ok(()) => match reactor.get_widget_state_no_fetch::<S>(
                                         &path,
                                         TemplateState::empty(),
                                     ) {
                                         Ok(Some(intermediate_state)) => {
                                             // Declare the relationship between the widget and its
                                             // caller
-                                            self.state_store
+                                            reactor.state_store
                                                 .declare_dependency(&path, &caller_path);
 
-                                            view_fn(
-                                                child_cx,
-                                                create_ref(child_cx, intermediate_state),
-                                                props,
-                                            )
+                                            // In Sycamore 0.9.2, pass state by value (or clone if not Copy)
+                                            view_fn(intermediate_state.clone(), props)
                                         }
                                         Ok(None) => unreachable!(),
-                                        Err(err) => self.error_views.handle_widget(err, child_cx),
+                                        Err(err) => reactor.error_views.handle_widget(err),
                                     },
-                                    Err(err) => self.error_views.handle_widget(err, child_cx),
+                                    Err(err) => reactor.error_views.handle_widget(err),
                                 }
                             };
 
-                            view.set(final_view);
+                            view.set(Rc::new(final_view));
                         });
                     });
 
-                    Ok((sycamore::prelude::view! { app_cx, (*view.get()) }, disposer))
+                    Ok((sycamore::prelude::view! {
+                        (move || {
+                            let view_rc = view.get_clone();
+                            Rc::try_unwrap(view_rc).unwrap_or_else(|_rc| View::new())
+                        })
+                    }, disposer))
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
@@ -162,27 +163,27 @@ impl Reactor<G> {
     #[allow(clippy::too_many_arguments)] // Internal function
     pub(crate) fn get_unreactive_widget_view<'a, F, S, P: Clone + 'static>(
         &'a self,
-        app_        path: PathMaybeWithLocale,
+        path: PathMaybeWithLocale,
         #[allow(unused_variables)] caller_path: PathMaybeWithLocale,
         #[cfg(any(client, doc))] capsule_name: String,
         template_state: TemplateState, // Empty on the browser-side
         props: P,
         #[cfg(any(client, doc))] preload_info: PreloadInfo,
         view_fn: F,
-        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(Scope, P) -> View + Send + Sync>,
-    ) -> Result<(View, ScopeDisposer<'a>), ClientError>
+        #[cfg(any(client, doc))] fallback_fn: &Arc<dyn Fn(P) -> View + Send + Sync>,
+    ) -> Result<(View, NodeHandle), ClientError>
     where
-        F: Fn(Scope, S, P) -> View + Send + Sync + 'static,
+        F: Fn(S, P) -> View + Send + Sync + 'static,
         S: MakeRx + Serialize + DeserializeOwned + UnreactiveState + 'static,
         <S as MakeRx>::Rx: AnyFreeze + Clone + MakeUnrx<Unrx = S>,
     {
         match self.get_widget_state_no_fetch::<S>(&path, template_state)? {
             Some(intermediate_state) => {
-                let mut view = View::empty();
-                let disposer = create_child_scope(app_cx, |child_cx| {
+                let mut view = View::new();
+                let disposer = create_child_scope(|| {
                     // We go back from the unreactive state type wrapper to the base type (since
                     // it's unreactive)
-                    view = view_fn(child_cx, intermediate_state.make_unrx(), props);
+                    view = view_fn(intermediate_state.make_unrx(), props);
                 });
                 Ok((view, disposer))
             }
@@ -191,18 +192,20 @@ impl Reactor<G> {
             #[cfg(any(client, doc))]
             None => {
                 return {
-                    let view = create_signal(app_cx, View::empty());
+                    let view = create_signal(Rc::new(View::new()));
 
                     let fallback_fn = fallback_fn.clone();
-                    let disposer = create_child_scope(app_cx, |child_cx| {
+                    let disposer = create_child_scope(|| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        view.set((fallback_fn)(child_cx, props.clone()));
-                        // Note: this uses `child_cx`, meaning the fetch will be aborted if the user
+                        view.set(Rc::new((fallback_fn)(props.clone())));
+                        // Note: this uses child scope, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
                         let capsule_name = capsule_name.clone();
-                        spawn_local_scoped(child_cx, async move {
+                        spawn_local_scoped(async move {
+                            // Get reactor from context for async block
+                            let reactor = Reactor::from_cx();
                             // Any errors that occur in here will be converted into proper error
                             // views using the reactor (it's not the
                             // nicest handling pattern, but in a future
@@ -217,7 +220,7 @@ impl Reactor<G> {
                                             .to_string(),
                                     });
                                 // We can simply use the preload system to perform the fetching
-                                match self
+                                match reactor
                                     .state_store
                                     .preload(
                                         &path_without_locale,
@@ -234,30 +237,35 @@ impl Reactor<G> {
                                     // this time! We're in the browser, so we can just use an empty
                                     // template state, rather than
                                     // cloning the one we've been given (which is empty anyway).
-                                    Ok(()) => match self.get_widget_state_no_fetch::<S>(
+                                    Ok(()) => match reactor.get_widget_state_no_fetch::<S>(
                                         &path,
                                         TemplateState::empty(),
                                     ) {
                                         Ok(Some(intermediate_state)) => {
                                             // Declare the relationship between the widget and its
                                             // caller
-                                            self.state_store
+                                            reactor.state_store
                                                 .declare_dependency(&path, &caller_path);
 
-                                            view_fn(child_cx, intermediate_state.make_unrx(), props)
+                                            view_fn(intermediate_state.make_unrx(), props)
                                         }
                                         Ok(None) => unreachable!(),
-                                        Err(err) => self.error_views.handle_widget(err, child_cx),
+                                        Err(err) => reactor.error_views.handle_widget(err),
                                     },
-                                    Err(err) => self.error_views.handle_widget(err, child_cx),
+                                    Err(err) => reactor.error_views.handle_widget(err),
                                 }
                             };
 
-                            view.set(final_view);
+                            view.set(Rc::new(final_view));
                         });
                     });
 
-                    Ok((sycamore::prelude::view! { app_cx, (*view.get()) }, disposer))
+                    Ok((sycamore::prelude::view! {
+                        (move || {
+                            let view_rc = view.get_clone();
+                            Rc::try_unwrap(view_rc).unwrap_or_else(|_rc| View::new())
+                        })
+                    }, disposer))
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
@@ -355,3 +363,4 @@ impl Reactor<G> {
         }
     }
 }
+

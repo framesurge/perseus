@@ -19,7 +19,8 @@ use super::fn_types::*;
 use super::TemplateFn;
 #[cfg(engine)]
 use crate::utils::ComputedDuration;
-use sycamore::{prelude::create_scope, view::View, web::Html};
+use sycamore::reactive::{create_child_scope, NodeHandle};
+use sycamore::web::View;
 
 /// A single template in an app. Each template is comprised of a Sycamore view,
 /// a state type, and some functions involved with generating that state. Pages
@@ -31,22 +32,22 @@ use sycamore::{prelude::create_scope, view::View, web::Html};
 #[derive(Debug)]
 pub struct Template {
     /// The inner entity.
-    pub(crate) inner: Entity<G>,
+    pub(crate) inner: Entity,
 }
-impl Deref for Template<G> {
-    type Target = TemplateInner<G>;
+impl Deref for Template {
+    type Target = TemplateInner;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
-impl Template<G> {
+impl Template {
     /// Creates a new [`TemplateInner`] (a builder for [`Template`]s). By
     /// default, this has absolutely no associated data, and, if rendered,
     /// it would result in a blank screen. You can call methods like
     /// `.view()` on this, and you should eventually call `.build()` to turn
     /// it into a full template.
-    pub fn build(path: &str) -> TemplateInner<G> {
+    pub fn build(path: &str) -> TemplateInner {
         TemplateInner::new(path)
     }
 }
@@ -70,7 +71,7 @@ pub struct TemplateInner {
     /// because otherwise efficient typing is almost impossible for templates
     /// without any properties (solutions welcome in PRs!).
     // Public to the crate so capsules can shadow these functions for property support
-    pub(crate) view: TemplateFn<G>,
+    pub(crate) view: TemplateFn,
     /// A function that will be used to populate the document's `<head>` with
     /// metadata such as the title. This will be passed state in
     /// the same way as `template`, but will always be rendered to a string,
@@ -150,7 +151,7 @@ pub struct TemplateInner {
     /// returned from the build process.
     pub(crate) can_be_rescheduled: bool,
 }
-impl std::fmt::Debug for TemplateInner<G> {
+impl std::fmt::Debug for TemplateInner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Template")
             .field("path", &self.path)
@@ -158,14 +159,17 @@ impl std::fmt::Debug for TemplateInner<G> {
             .finish()
     }
 }
-impl TemplateInner<G> {
+impl TemplateInner {
     /// An internal creator for new inner templates. This is wrapped by
     /// `Template::build` and `Capsule::build`.
     fn new(path: impl Into<String> + std::fmt::Display) -> Self {
         Self {
             path: path.to_string(),
-            // Because of the scope disposer return type, this isn't as trivial as an empty function
-            view: Box::new(|_, _, _, _| Ok((View::empty(), create_scope(|_| {})))),
+            // Because of the node handle return type, this isn't as trivial as an empty function
+            view: Box::new(|_, _, _| {
+                let handle = create_child_scope(|| {});
+                Ok((View::new(), handle))
+            }),
             // Unlike `template`, this may not be set at all (especially in very simple apps)
             #[cfg(engine)]
             head: None,
@@ -196,7 +200,7 @@ impl TemplateInner<G> {
     /// freely with minimal costs.
     ///
     /// You should call this just before you return your template.
-    pub fn build(self) -> Template<G> {
+    pub fn build(self) -> Template {
         Template {
             inner: Entity::from(self),
         }
@@ -205,11 +209,11 @@ impl TemplateInner<G> {
 
 // The engine needs to know whether or not to use hydration, this is how we pass
 // those feature settings through
-/// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
+/// An alias for `DomNode`, depending on the feature flags
 /// enabled.
 #[cfg(all(not(feature = "hydrate"), any(client, doc)))]
-pub(crate) type BrowserNodeType = sycamore::prelude::DomNode;
-/// An alias for `DomNode` or `HydrateNode`, depending on the feature flags
+pub(crate) type BrowserNodeType = sycamore::web::HtmlNode;
+/// An alias for `DomNode`, depending on feature flags
 /// enabled.
 #[cfg(all(feature = "hydrate", any(client, doc)))]
-pub(crate) type BrowserNodeType = sycamore::prelude::HydrateNode;
+pub(crate) type BrowserNodeType = sycamore::web::HtmlNode;

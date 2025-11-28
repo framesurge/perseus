@@ -11,7 +11,7 @@ use crate::stores::ImmutableStore;
 use std::cell::RefCell;
 use std::rc::Rc;
 use serde_json::Value;
-use sycamore::prelude::{provide_context, use_context, Scope};
+use sycamore::prelude::{provide_context, use_context};
 use sycamore::web::{Html, SsrNode};
 use sycamore_router::navigate;
 #[cfg(engine)]
@@ -173,8 +173,8 @@ impl RenderCtx {
     // TODO Use a custom, optimized context system instead of Sycamore's? (GIven we
     // only need to store one thing...)
     /// Gets an instance of `RenderCtx` out of Sycamore's context system.
-    pub fn from_ctx(cx: Scope) -> &Self {
-        use_context::<Self>(cx)
+    pub fn from_ctx() -> &Self {
+        use_context::<Self>()
     }
     /// Places this instance of `RenderCtx` into Sycamore's context system,
     /// returning a reference. This assumes no other instances of `RenderCtx`

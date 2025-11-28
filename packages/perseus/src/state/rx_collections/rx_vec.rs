@@ -1,9 +1,7 @@
 use crate::state::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-#[cfg(any(client, doc))]
-use sycamore::prelude::Scope;
-use sycamore::reactive::{create_signal};
+use sycamore::reactive::{create_signal, Signal};
 
 /// A reactive version of [`Vec`] that uses nested reactivity on its elements.
 /// This requires nothing by `Clone + 'static` of the elements inside the
@@ -42,16 +40,17 @@ where
     type Unrx = RxVec<T>;
 
     fn make_unrx(self) -> Self::Unrx {
-        let vec = (*self.0.get_untracked()).clone();
-        RxVec(
-            vec.into_iter()
-                .map(|x| (*x.get_untracked()).clone())
-                .collect(),
-        )
+        self.0.with_untracked(|vec| {
+            RxVec(
+                vec.iter()
+                    .map(|x| x.with_untracked(|v| v.clone()))
+                    .collect(),
+            )
+        })
     }
 
     #[cfg(any(client, doc))]
-    fn compute_suspense(&self, _cx: Scope) {}
+    fn compute_suspense(&self) {}
 }
 // --- Dereferencing ---
 impl<T> Deref for RxVec<T>

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
 #[auto_scope]
-fn calc_page(state: &CalcStateRx) -> View {
+fn calc_page(state: CalcStateRx) -> View {
     view! {
         // This was *not* built at build-time in `number`, so we're incrementally
         // generating it. Importantly, Perseus can figure out that this should just
@@ -38,12 +38,12 @@ fn calc_page(state: &CalcStateRx) -> View {
                     // We need to make them strings first
                     state
                         .numbers
-                        .get()
+                        .get_clone()
                         .iter()
                         .map(|n| n.to_string())
                         .collect::<Vec<_>>()
                         .join("/"),
-                    state.user_number.get()
+                    state.user_number.get_clone()
                 ),
                 ()
             ))
@@ -51,7 +51,7 @@ fn calc_page(state: &CalcStateRx) -> View {
         }
         p { "Type your number below..." }
         input(bind:value = state.user_number) {}
-        (LINKS.widget(cx, "", ()))
+        (LINKS.widget("", ()))
     }
 }
 

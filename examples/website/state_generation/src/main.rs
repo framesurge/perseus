@@ -23,12 +23,13 @@ pub fn main() -> PerseusApp {
 
 #[auto_scope]
 // EXCERPT_START
-fn post_page(state: &PostRx) -> View {
+fn post_page(state: PostRx) -> View {
+    let content = state.content.get_clone();
     view! {
-        h1 { (state.title.get()) }
-        p { (state.author.get()) }
+        h1 { (state.title.get_clone()) }
+        p { (state.author.get_clone()) }
         div(
-            dangerously_set_inner_html = &state.content.get()
+            dangerously_set_inner_html = content
         )
     }
 }

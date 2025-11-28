@@ -8,7 +8,7 @@ use crate::{
 use futures::Future;
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::{prelude::Scope, view::View, web::SsrNode};
+use sycamore::prelude::View;
 
 /// A custom `enum` representation of a `Result`-style type whose error is a
 /// `Box` that can accept any thread-safe error type. This is used internally as
@@ -136,15 +136,15 @@ impl<
     }
 }
 // Head
-impl From<View<SsrNode>> for GeneratorResult<View<SsrNode>> {
-    fn from(val: View<SsrNode>) -> Self {
+impl From<View> for GeneratorResult<View> {
+    fn from(val: View) -> Self {
         Self::Ok(val)
     }
 }
 impl<E: Into<Box<dyn std::error::Error + Send + Sync + 'static>> + Send + Sync>
-    From<Result<View<SsrNode>, E>> for GeneratorResult<View<SsrNode>>
+    From<Result<View, E>> for GeneratorResult<View>
 {
-    fn from(val: Result<View<SsrNode>, E>) -> Self {
+    fn from(val: Result<View, E>) -> Self {
         match val {
             Ok(val) => Self::Ok(val),
             Err(err) => Self::Err(err.into()),
@@ -277,11 +277,10 @@ make_async_trait!(
 /// a template function that will always be server-side rendered in function (it
 /// may be rendered on the client, but it will always be used to create an HTML
 /// string, rather than a reactive template).
-pub(crate) type HeadFn =
-    Box<dyn Fn(Scope, TemplateState) -> Result<View<SsrNode>, ServerError> + Send + Sync>;
+pub(crate) type HeadFn = Box<dyn Fn(TemplateState) -> Result<View, ServerError> + Send + Sync>;
 /// The type of functions that modify HTTP response headers.
 pub(crate) type SetHeadersFn =
-    Box<dyn Fn(Scope, TemplateState) -> Result<HeaderMap, ServerError> + Send + Sync>;
+    Box<dyn Fn(TemplateState) -> Result<HeaderMap, ServerError> + Send + Sync>;
 /// The type of functions that get build paths.
 pub(crate) type GetBuildPathsFn = Box<dyn GetBuildPathsFnType + Send + Sync>;
 /// The type of functions that get build state.

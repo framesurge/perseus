@@ -1,9 +1,7 @@
 use super::{Freeze, MakeRx, MakeUnrx};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::ops::Deref;
-#[cfg(any(client, doc))]
-use sycamore::prelude::Scope;
-use sycamore::prelude::{create_signal};
+use sycamore::reactive::{create_signal, Signal};
 
 /// A wrapper for fallible reactive state.
 ///
@@ -67,17 +65,17 @@ where
     type Unrx = RxResult<T, E>;
 
     fn make_unrx(self) -> Self::Unrx {
-        match &*self.0.get_untracked() {
+        self.0.with_untracked(|result| match result {
             Ok(state) => RxResult(Ok(state.clone().make_unrx())),
             Err(err) => RxResult(Err(err.clone())),
-        }
+        })
     }
     // Having a nested field that is not suspended, that has nested suspended
     // fields, is fine. When that top-level field is *also* suspended, that is
     // very much not okay! (We would have multiple handlers operating on the
     // same fields, which is not a pattern I want to encourage.)
     #[cfg(any(client, doc))]
-    fn compute_suspense(&self, _cx: Scope<'_>) {}
+    fn compute_suspense(&self) {}
 }
 impl<T, E> Freeze for RxResultRx<T, E>
 where

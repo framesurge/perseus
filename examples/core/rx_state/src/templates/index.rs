@@ -13,7 +13,7 @@ struct IndexPageState {
 // This macro will make our state reactive *and* store it in the page state
 // store, which means it'll be the same even if we go to the about page and come
 // back (as long as we're in the same session)
-fn index_page(state: &'a IndexPageStateRx) -> View {
+fn index_page(state: IndexPageStateRx) -> View {
     // IMPORTANT: Remember, Perseus caches all reactive state, so, if you come here,
     // go to another page, and then come back, *two* elements will have been
     // added in total. The state is preserved across routes! To avoid this, use
@@ -23,20 +23,21 @@ fn index_page(state: &'a IndexPageStateRx) -> View {
     // this would still be performed for HSR, because the state restoration
     // process will double-execute this logic. That's why things like this
     // should generally be done with suspended state.
-    state.test.modify().push(create_signal("bar".to_string()));
+    // In Sycamore 0.9.2, use .update() instead of .modify()
+    state.test.update(|vec| vec.push(create_signal("bar".to_string())));
 
     view! {
-        p { (format!("Greetings, {}!", state.username.get())) }
+        p { (format!("Greetings, {}!", state.username.get_clone())) }
         input(bind:value = state.username, placeholder = "Username")
         p { (
             state
                 .test
                 // Get the underlying `Vec`
-                .get()
+                .get_clone()
                 // Now, in that `Vec`, get the third element
                 .get(2)
                 // Because that will be `None` initially, display `None` otherwise
-                .map(|x| x.get())
+                .map(|x| x.get_clone())
                 .unwrap_or("None".to_string().into())
         ) }
 

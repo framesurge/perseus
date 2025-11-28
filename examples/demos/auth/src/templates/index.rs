@@ -20,9 +20,9 @@ fn index_view() -> View {
 
     view! {
         (
-            match *state.get() {
+            match state.get_clone() {
                 LoginState::Yes => {
-                    let username = username.get();
+                    let username = username.get_clone();
                     view! {
                             h1 { (format!("Welcome back, {}!", &username)) }
                             button(on:click =  |_| {
@@ -41,7 +41,7 @@ fn index_view() -> View {
                     }) { "Login" }
                 },
                 // This will appear for a few moments while we figure out if the user is logged in or not
-                LoginState::Server => View::empty(),
+                LoginState::Server => View::new(),
             }
         )
         br()

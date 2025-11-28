@@ -5,16 +5,15 @@ use crate::{
     template::BrowserNodeType,
     utils::{render_or_hydrate, replace_head},
 };
-#[cfg(engine)]
 use std::rc::Rc;
-use std::{panic::PanicInfo, sync::Arc};
+use std::sync::Arc;
 use sycamore::{
-    prelude::{create_scope_immediate, try_use_context, view, Scope, ScopeDisposer},
-    view::View,
-    web::SsrNode,
+    prelude::*,
+    reactive::{create_root, try_use_context, RootHandle},
+    web::View,
 };
 
-impl Reactor<BrowserNodeType> {
+impl Reactor {
     /// This reports an error to the failsafe mechanism, which will handle it
     /// appropriately. This will determine the capabilities the error view
     /// will have access to from the scope provided.
@@ -30,10 +29,7 @@ impl Reactor<BrowserNodeType> {
     ///
     /// This **does not** handle widget errors (unless they're popups).
     #[must_use]
-    pub(crate) fn report_err<'a>(
-        &self,
-                err: ClientError,
-    ) -> (ScopeDisposer<'a>, bool) {
+    pub(crate) fn report_err(&self, err: ClientError) -> (RootHandle, bool) {
         // Determine where this should be placed
         let pos = match self.is_first.get() {
             // On an initial load, we'll use a popup, unless it's a server-given error
@@ -48,17 +44,18 @@ impl Reactor<BrowserNodeType> {
             },
         };
 
-        let (head_str, body_view, disposer) = self.error_views.handle(cx, err, pos);
+        let (head_str, body_view) = self.error_views.handle(err, pos);
+        let disposer = create_root(|| {});
 
         match pos {
             // For page-wide errors, we need to set the head
             ErrorPosition::Page => {
                 replace_head(&head_str);
-                self.current_view.set(body_view);
+                self.current_view.set(Rc::new(body_view));
                 (disposer, true)
             }
             ErrorPosition::Popup => {
-                self.popup_error_view.set(body_view);
+                self.popup_error_view.set(Rc::new(body_view));
                 (disposer, false)
             }
             // We don't handle widget errors in this function
@@ -78,28 +75,29 @@ impl Reactor<BrowserNodeType> {
     /// only for those foregoing `#[perseus::main]` or
     /// `#[perseus::browser_main]` to build their own custom browser-side
     /// entrypoint (do not do this unless you really need to).
-    pub fn handle_critical_error(
-                err: ClientError,
-        error_views: &ErrorViews<BrowserNodeType>,
-    ) {
+    pub fn handle_critical_error(err: ClientError, error_views: &ErrorViews) {
         // We do NOT want this called if there is a reactor (but, if it is, we have no
         // clue about the calling situation, so it's safest to just panic)
-        assert!(try_use_context::<Reactor<BrowserNodeType>>(cx).is_none(), "attempted to handle 'critical' error, but a reactor was found (this is a programming error)");
+        // Use a simple boolean flag context to check if reactor exists
+        let reactor_exists = try_use_context::<bool>().unwrap_or(false);
+        assert!(!reactor_exists, "attempted to handle 'critical' error, but a reactor was found (this is a programming error)");
 
         let popup_error_root = Self::get_popup_err_elem();
         // This will determine the `Static` error context (we guaranteed there's no
         // reactor above). We don't care about the head in a popup.
-        let (_, err_view, disposer) = error_views.handle(cx, err, ErrorPosition::Popup);
-        render_or_hydrate(
-            cx,
-            view! {
-                // This is not reactive, as there's no point in making it so
-                (err_view)
-            },
-            popup_error_root,
-            true, // Browser-side-only error, so force a full render
-        );
-        // SAFETY: We're outside the child scope
+        let (_, err_view) = error_views.handle(err, ErrorPosition::Popup);
+        let disposer = create_root(|| {
+            sycamore::web::render_to(
+                || {
+                    view! {
+                        // This is not reactive, as there's no point in making it so
+                        (err_view)
+                    }
+                },
+                &popup_error_root,
+            );
+        });
+        // SAFETY: We're outside the child scope, so we can safely dispose
         unsafe {
             disposer.dispose();
         }
@@ -119,14 +117,9 @@ impl Reactor<BrowserNodeType> {
     /// exposed for custom entrypoints only.
     #[allow(clippy::type_complexity)]
     pub fn handle_panic(
-        panic_info: &PanicInfo,
+        panic_info: &std::panic::PanicHookInfo,
         handler: Arc<
-            dyn Fn(
-                    Scope,
-                    ClientError,
-                    ErrorContext,
-                    ErrorPosition,
-                ) -> (View<SsrNode>, View<BrowserNodeType>)
+            dyn Fn(ClientError, ErrorContext, ErrorPosition) -> (View, View<BrowserNodeType>)
                 + Send
                 + Sync,
         >,
@@ -137,15 +130,13 @@ impl Reactor<BrowserNodeType> {
         let msg = panic_info.to_string();
         // The whole app is about to implode, we are not keeping this scope
         // around
-        create_scope_immediate(|cx| {
+        create_root(|| {
             let (_head, body) = handler(
-                cx,
                 ClientError::Panic(msg),
                 ErrorContext::Static,
                 ErrorPosition::Popup,
             );
             render_or_hydrate(
-                cx,
                 view! {
                     // This is not reactive, as there's no point in making it so
                     (body)

@@ -13,7 +13,7 @@ fn about_page() -> View {
     let global_state = reactor.get_global_state::<AppStateRx>();
 
     view! {
-        p(id = "global_state") { (global_state.test.get()) }
+        p(id = "global_state") { (global_state.test.get_clone()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
         a(href = "", id = "index-link") { "Index" }
@@ -40,7 +40,7 @@ fn about_page() -> View {
                 };
             })
         }) { "Freeze to IndexedDB" }
-        p { (freeze_status.get()) }
+        p { (freeze_status.get_clone()) }
     }
 }
 

@@ -111,11 +111,12 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     } = input;
 
     // In Sycamore 0.9, the first argument is the state (no scope anymore)
+    // Since signals are Copy and 'static, we accept the state by value or by reference
     let arg = &fn_args[0];
-    let (state_pat, state_arg) = match arg {
+    let (state_pat, state_ty, is_ref) = match arg {
         FnArg::Typed(PatType { ty, pat, .. }) => match &**ty {
-            Type::Reference(TypeReference { elem, .. }) => (pat, elem),
-            _ => return syn::Error::new_spanned(arg, "the state argument must be a reference (e.g. `&MyStateTypeRx`); if you're using unreactive state (i.e. you're deriving `UnreactiveState` instead of `ReactiveState`), you don't need this macro!").to_compile_error()
+            Type::Reference(TypeReference { elem, .. }) => (pat, elem.clone(), true),
+            other_ty => (pat, Box::new(other_ty.clone()), false)
         },
         FnArg::Receiver(_) => unreachable!(),
     };
@@ -124,11 +125,19 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         Some(arg) => quote!( , #arg ),
         None => quote!(),
     };
+    // Generate the state parameter - either by reference or by value
+    let state_param = if is_ref {
+        quote! { #state_pat: &#state_ty }
+    } else {
+        quote! { #state_pat: #state_ty }
+    };
+
     quote! {
-        // In Sycamore 0.9.2: no scope parameter, no generic type parameter, no lifetimes
+        // In Sycamore 0.9.2: no scope parameter, no generic type parameter
+        // Since signals are 'static and Copy, reactive state can be passed by value
         #(#attrs)*
         #vis fn #name(
-            #state_pat: &#state_arg
+            #state_param
             // Capsules have another argument for properties
             #props_arg
         ) -> #return_type {

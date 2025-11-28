@@ -8,9 +8,9 @@ struct PageState {
     message: String,
 }
 
-fn amalgamation_page(state: &'a PageStateRx) -> View {
+fn amalgamation_page(state: PageStateRx) -> View {
     view! {
-        p { (format!("The message is: '{}'", state.message.get())) }
+        p { (format!("The message is: '{}'", state.message.get_clone())) }
     }
 }
 

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::{Reactor, WindowVariable};
 use crate::{
     error_views::ServerErrorData,
     errors::*,
@@ -10,10 +11,8 @@ use crate::{
     utils::{checkpoint, get_path_prefix_client},
 };
 use serde_json::Value;
-use sycamore::view::View;
+use sycamore::prelude::View;
 use web_sys::Element;
-
-use super::{Reactor, WindowVariable};
 
 impl Reactor {
     /// Gets the initial view to hydrate, which will be the same as what the
@@ -21,7 +20,7 @@ impl Reactor {
     /// the current path from the browser.
     ///
     /// This will set the router state to `Loaded` if it succeeds.
-    pub(crate) fn get_initial_view<'a>(&self) -> Result<InitialView<'a>, ClientError> {
+    pub(crate) fn get_initial_view(&self) -> Result<InitialView, ClientError> {
         // Get the current path, removing any base paths to avoid relative path locale
         // redirection loops (in previous versions of Perseus, we used Sycamore to
         // get the path, and it strips this out automatically)
@@ -122,7 +121,7 @@ impl Reactor {
                 }
 
                 // Render the actual template to the root
-                let view = entity.render_for_template_client(full_path.clone(), state)?;
+                let (view, disposer) = entity.render_for_template_client(full_path.clone(), state)?;
 
                 // Update the router state
                 self.router_state.set_load_state(RouterLoadState::Loaded {
@@ -130,7 +129,7 @@ impl Reactor {
                     path: full_path,
                 });
 
-                Ok(InitialView::View(view))
+                Ok(InitialView::View(view, Box::new(move || disposer.dispose())))
             }
             // If the user is using i18n, then they'll want to detect the locale on any paths
             // missing a locale. Those all go to the same system that redirects to the
@@ -288,8 +287,9 @@ impl Reactor {
 /// A representation of the possible outcomes of getting the view for the
 /// initial load.
 pub(crate) enum InitialView {
-    /// The provided view is ready to render the page.
-    View(View),
+    /// The provided view is ready to render the page, along with a disposer
+    /// to clean up the scope when the view is no longer needed.
+    View(View, Box<dyn FnOnce()>),
     /// We need to redirect somewhere else, and the *full URL* to redirect to is
     /// attached.
     ///

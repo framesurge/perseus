@@ -10,7 +10,7 @@ use sycamore::prelude::*;
 // work in capsules (by passing through a non-number).
 
 lazy_static! {
-    pub static ref NUMBER: Capsule<PerseusNodeType, ()> = get_capsule();
+    pub static ref NUMBER: Capsule<()> = get_capsule();
 }
 
 // Note the use of props as `()`, indicating that this capsule doesn't take any
@@ -26,7 +26,7 @@ fn time_capsule(state: Number, _props: ()) -> View {
             (if state.number == 5 {
                 view! { (NUMBER.widget("/6", ())) }
             } else {
-                View::empty()
+                View::new()
             })
         }
     }

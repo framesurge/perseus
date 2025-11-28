@@ -41,25 +41,25 @@ struct OtherTest {
     third_greeting: Result<String, SerdeInfallible>,
 }
 
-fn index_page(state: &'a IndexPageStateRx) -> View {
-    let greeting = create_memo(|| match &*state.greeting.get() {
+fn index_page(state: IndexPageStateRx) -> View {
+    let greeting = create_memo(move || match state.greeting.get_clone() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
     });
-    let second_greeting = create_memo(move || match &*state.test.get() {
+    let second_greeting = create_memo(move || match state.test.get_clone() {
         // We don't particularly want `Rc<Rc<T>>`, hence this clone (but either will work)
-        Ok(test) => (*test.second_greeting.get()).clone(),
+        Ok(test) => test.second_greeting.get_clone(),
         Err(_) => "Error!".to_string(),
     });
-    let third_greeting = create_memo(move || match &*state.other_test.third_greeting.get() {
+    let third_greeting = create_memo(move || match state.other_test.third_greeting.get_clone() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
     });
 
     view! {
-        p(id = "first") { (greeting.get()) }
-        p(id = "second") { (second_greeting.get()) }
-        p(id = "third") { (third_greeting.get()) }
+        p(id = "first") { (greeting.get_clone()) }
+        p(id = "second") { (second_greeting.get_clone()) }
+        p(id = "third") { (third_greeting.get_clone()) }
     }
 }
 

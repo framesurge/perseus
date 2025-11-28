@@ -1,9 +1,8 @@
 use super::TemplateInner;
 #[cfg(engine)]
 use crate::utils::ComputedDuration;
-use sycamore::web::Html;
 
-impl TemplateInner<G> {
+impl TemplateInner {
     /// Gets the path of the template. This is the root path under which any
     /// generated pages will be served. In the simplest case, there will
     /// only be one page rendered, and it will occupy that root position.

@@ -7,7 +7,7 @@ fn clock_page() -> View {
     // Nothing's wrong with preparing a widget in advance, especially if you want to
     // use the same one in a few places (this will avoid unnecessary fetches in
     // some cases, see the book for details)
-    let time = TIME.widget(cx, "", ());
+    let time = TIME.widget("", ());
 
     view! {
         p {

@@ -7,7 +7,7 @@ fn router_state_page() -> View {
     #[cfg(client)]
     {
         use perseus::router::RouterLoadState;
-        let load_state = Reactor:from_cx().router_state.get_load_state();
+        let load_state = Reactor::from_cx().router_state.get_load_state();
         // This uses Sycamore's `create_memo` to create a state that will update
         // whenever the router state changes
         create_effect(|| {
@@ -33,7 +33,7 @@ fn router_state_page() -> View {
     }
 
     view! {
-        p { (load_state_str.get()) }
+        p { (load_state_str.get_clone()) }
 
         a(href = "about", id = "about-link") { "About!" }
     }

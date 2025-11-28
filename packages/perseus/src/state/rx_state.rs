@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::any::Any;
-#[cfg(any(client, doc))]
-use sycamore::prelude::Scope;
 
 /// A trait for `struct`s that can be made reactive. Typically, this will be
 /// derived with the `#[make_rx]` macro, though it can be implemented manually
@@ -68,7 +66,7 @@ pub trait MakeUnrx {
     /// signature:
     ///
     /// ```text
-    /// Fn(Scope<'a>, RxRef<'a>);
+    /// Fn(RxRef<'a>);
     /// ```
     ///
     /// Here, `RxRef` denotes the reference `struct` their template would be
@@ -82,7 +80,7 @@ pub trait MakeUnrx {
     /// body of this function empty unless you're using the suspended state
     /// system.
     #[cfg(any(client, doc))]
-    fn compute_suspense(&self<'_>);
+    fn compute_suspense(&self);
 }
 
 /// A trait for reactive `struct`s that can be made unreactive and serialized to
@@ -160,7 +158,7 @@ impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> MakeUnr
     }
     // Suspense is not allowed on unreactive state
     #[cfg(any(client, doc))]
-    fn compute_suspense(&self, _cx: Scope) {}
+    fn compute_suspense(&self) {}
 }
 // And, since the underlying type can be serialized, implement `Freeze`
 impl<T: Serialize + for<'de> Deserialize<'de> + UnreactiveState + Clone> Freeze

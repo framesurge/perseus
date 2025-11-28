@@ -28,8 +28,8 @@ use sycamore::prelude::*;
 // }
 
 #[component]
-pub fn SearchBar(_cx: Scope) -> View {
-    View::empty()
+pub fn SearchBar() -> View {
+    View::default()
 }
 
 // /// Searches the site using Google as a proxy.

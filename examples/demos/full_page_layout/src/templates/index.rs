@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 
 fn index_page() -> View {
     view! {
-        Layout(title = "Index") {
+        Layout(title = "Index".to_string()) {
             // Anything we put in here will be rendered inside the `<main>` block of the layout
             p { "Hello World!" }
             br {}

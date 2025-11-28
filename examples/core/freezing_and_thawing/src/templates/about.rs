@@ -12,7 +12,7 @@ fn about_page() -> View {
     let global_state = render_ctx.get_global_state::<AppStateRx>();
 
     view! {
-        p(id = "global_state") { (global_state.test.get()) }
+        p(id = "global_state") { (global_state.test.get_clone()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
         a(href = "", id = "index-link") { "Index" }
@@ -26,7 +26,7 @@ fn about_page() -> View {
                 frozen_app.set(render_ctx.freeze());
             }
         }) { "Freeze!" }
-        p(id = "frozen_app") { (frozen_app.get()) }
+        p(id = "frozen_app") { (frozen_app.get_clone()) }
     }
 }
 

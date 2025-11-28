@@ -5,7 +5,7 @@ use sycamore::prelude::*;
 use super::greeting::{GreetingProps, GREETING};
 
 lazy_static! {
-    pub static ref WRAPPER: Capsule<PerseusNodeType, GreetingProps> = get_capsule();
+    pub static ref WRAPPER: Capsule<GreetingProps> = get_capsule();
 }
 
 // A simple wrapper capsule to show how capsules can use capsules

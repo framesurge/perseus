@@ -1,17 +1,17 @@
 use crate::path::PathWithoutLocale;
 use crate::template::{Entity, EntityMap};
-use sycamore::web::Html;
+use sycamore::prelude::*;
 
 /// Information about a route, which, combined with error pages and a
 /// client-side translations manager, allows the initialization of the app shell
 /// and the rendering of a page.
 #[derive(Clone, Debug)]
-pub struct FullRouteInfo {
-    /// The actual path of the route. This does *not* include the locale!
+pub struct FullRouteInfo<'a> {
+    /// The actual path of route. This does *not* include the locale!
     pub path: PathWithoutLocale,
     /// The template that will be used. The app shell will derive props and a
     /// translator to pass to the template function.
-    pub entity: &'a Entity<G>,
+    pub entity: &'a Entity,
     /// Whether or not the matched page was incrementally-generated at runtime
     /// (if it has been yet). If this is `true`, the server will
     /// use a mutable store rather than an immutable one. See the book for more
@@ -23,9 +23,9 @@ pub struct FullRouteInfo {
 
 /// The possible outcomes of matching a route in an app.
 #[derive(Clone, Debug)]
-pub enum FullRouteVerdict {
+pub enum FullRouteVerdict<'a> {
     /// The given route was found, and route information is attached.
-    Found(FullRouteInfo<'a, G>),
+    Found(FullRouteInfo<'a>),
     /// The given route was not found, and a `404 Not Found` page should be
     /// shown. In apps using i18n, an invalid page without a locale will
     /// first be redirected, before being later resolved as 404. Hence,
@@ -71,7 +71,7 @@ impl RouteInfo {
     /// This will panic if the entity name held by `Self` is not in the given
     /// map, which is only a concern if you `Self` didn't come from
     /// `match_route`.
-    pub(crate) fn into_full(self, entities: &EntityMap<G>) -> FullRouteInfo<G> {
+    pub(crate) fn into_full(self, entities: &EntityMap) -> FullRouteInfo {
         let entity = entities.get(&self.entity_name).expect("conversion to full route info failed, given entities did not contain given entity name");
         FullRouteInfo {
             path: self.path,
@@ -114,7 +114,7 @@ impl RouteVerdict {
     /// This will panic if the entity name held by `Self` is not in the given
     /// map, which is only a concern if you `Self` didn't come from
     /// `match_route` (this only applies when `Self` is `Self::Found(..)`).
-    pub(crate) fn into_full(self, entities: &EntityMap<G>) -> FullRouteVerdict<G> {
+    pub(crate) fn into_full(self, entities: &EntityMap) -> FullRouteVerdict {
         match self {
             Self::Found(info) => FullRouteVerdict::Found(info.into_full(entities)),
             Self::NotFound { locale } => FullRouteVerdict::NotFound { locale },

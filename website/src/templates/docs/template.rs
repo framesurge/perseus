@@ -31,16 +31,16 @@ pub fn docs_page(props: DocsPageProps) -> View {
         ..
     } = props;
     view! {
-        DocsContainer(DocsContainerProps {
-            docs_links: sidebar_content,
-            children: view! {
+        DocsContainer(
+            docs_links = sidebar_content,
+            children = view! {
                 // Because this is in a grid, we have to make sure it doesn't overflow by specifying this minimum width
-                div(class = "markdown min-w-0 pb-10", dangerously_set_inner_html = &content)
+                div(class = "markdown min-w-0 pb-10", dangerously_set_inner_html = content)
             },
-            status,
-            manifest,
-            current_version
-        })
+            status = status,
+            manifest = manifest,
+            current_version = current_version,
+        )
         // Because of how Perseus currently shifts everything, we need to re-highlight
         // And if the user starts on a page with nothing, they'll see no highlighting on any other pages, so we rerun every time the URL changes
         // This will be relative to the base URI
@@ -52,18 +52,18 @@ pub fn docs_page(props: DocsPageProps) -> View {
 }
 
 #[engine_only_fn]
-fn head(props: DocsPageProps) -> View<SsrNode> {
+fn head(props: DocsPageProps) -> View {
     use perseus::t;
 
     view! {
-        title { (format!("{} | {}", props.title, t!(cx, "docs-title-base"))) }
+        title { (format!("{} | {}", props.title, t!( "docs-title-base"))) }
         link(rel = "stylesheet", href = ".perseus/static/styles/markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/styles/docs_links_markdown.css")
         link(rel = "stylesheet", href = ".perseus/static/prism.css")
     }
 }
 
-pub fn get_template() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("docs")
         .build_paths_fn(get_build_paths)
         .build_state_fn(get_build_state)

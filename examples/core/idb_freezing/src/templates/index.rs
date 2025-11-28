@@ -9,7 +9,7 @@ struct IndexProps {
     username: String,
 }
 
-fn index_page(state: &'a IndexPropsRx) -> View {
+fn index_page(state: IndexPropsRx) -> View {
     // This is not part of our data model
     let freeze_status = create_signal(String::new());
     let thaw_status = create_signal(String::new());
@@ -21,9 +21,9 @@ fn index_page(state: &'a IndexPropsRx) -> View {
 
     view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
-        p(id = "page_state") { (format!("Greetings, {}!", state.username.get())) }
+        p(id = "page_state") { (format!("Greetings, {}!", state.username.get_clone())) }
         input(id = "set_page_state", bind:value = state.username, placeholder = "Username")
-        p(id = "global_state") { (global_state.test.get()) }
+        p(id = "global_state") { (global_state.test.get_clone()) }
         input(id = "set_global_state", bind:value = global_state.test, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
@@ -50,7 +50,7 @@ fn index_page(state: &'a IndexPropsRx) -> View {
                 };
             })
         }) { "Freeze to IndexedDB" }
-        p { (freeze_status.get()) }
+        p { (freeze_status.get_clone()) }
 
         button(id = "thaw_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
@@ -83,7 +83,7 @@ fn index_page(state: &'a IndexPropsRx) -> View {
                 }
             })
         }) { "Thaw from IndexedDB" }
-        p { (thaw_status.get()) }
+        p { (thaw_status.get_clone()) }
     }
 }
 

@@ -2,7 +2,7 @@ mod components;
 mod templates;
 
 use perseus::prelude::*;
-use sycamore::prelude::view;
+use sycamore::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
 pub fn main() -> PerseusApp {
@@ -10,7 +10,7 @@ pub fn main() -> PerseusApp {
         .template(crate::templates::index::get_template())
         .template(crate::templates::long::get_template())
         .error_views(ErrorViews::unlocalized_development_default())
-        .index_view(|cx| {
+        .index_view(|| {
             view! {
                 html {
                     head {

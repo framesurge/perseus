@@ -7,6 +7,9 @@ mod error_views;
 mod templates;
 
 use perseus::prelude::*;
+use sycamore::prelude::*;
+#[cfg(any(client, doc))]
+use sycamore_web::elements::tags::{HtmlMetaAttributes, HtmlLinkAttributes};
 
 #[perseus::main_export]
 pub fn main() -> PerseusApp {
@@ -17,8 +20,8 @@ pub fn main() -> PerseusApp {
         .template(templates::plugins::get_template())
         .error_views(error_views::get_error_views())
         .locales_and_translations_manager("en-US", &[])
-        .index_view(|cx| {
-            sycamore::view! {
+        .index_view(|| {
+            view! {
                 html(class = "light") {
                     head {
                         meta(charset = "UTF-8")

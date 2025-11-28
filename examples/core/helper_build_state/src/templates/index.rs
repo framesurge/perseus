@@ -2,13 +2,13 @@ use perseus::prelude::*;
 use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-fn index_page(state: &'a PageStateRx) -> View {
+fn index_page(state: PageStateRx) -> View {
     view! {
         h1 {
-            (state.title.get())
+            (state.title.get_clone())
         }
         p {
-            (state.content.get())
+            (state.content.get_clone())
         }
     }
 }

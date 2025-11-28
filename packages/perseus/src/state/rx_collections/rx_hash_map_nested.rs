@@ -3,9 +3,8 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Deref;
-#[cfg(any(client, doc))]
-use sycamore::prelude::Scope;
-use sycamore::reactive::{create_signal};
+
+use sycamore::reactive::{create_signal, Signal};
 
 /// A reactive version of [`HashMap`] that uses nested reactivity on its
 /// elements. That means the type inside the vector must implement [`MakeRx`]
@@ -24,14 +23,14 @@ where
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RxHashMapNestedRx<K, V>(Signal<HashMap<K, V::Rx>>)
 where
-    K: Clone + Serialize + DeserializeOwned + Eq + Hash,
+    K: Clone + Serialize + DeserializeOwned + Eq + Hash + 'static,
     V: MakeRx + Serialize + DeserializeOwned + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone;
 
 // --- Reactivity implementations ---
 impl<K, V> MakeRx for RxHashMapNested<K, V>
 where
-    K: Clone + Serialize + DeserializeOwned + Eq + Hash,
+    K: Clone + Serialize + DeserializeOwned + Eq + Hash + 'static,
     V: MakeRx + Serialize + DeserializeOwned + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone,
 {
@@ -52,17 +51,24 @@ where
     type Unrx = RxHashMapNested<K, V>;
 
     fn make_unrx(self) -> Self::Unrx {
-        let map = (*self.0.get_untracked()).clone();
-        RxHashMapNested(map.into_iter().map(|(k, v)| (k, v.make_unrx())).collect())
+        self.0.with_untracked(|map| {
+            RxHashMapNested(
+                map.iter()
+                    .map(|(k, v)| (k.clone(), v.clone().make_unrx()))
+                    .collect(),
+            )
+        })
     }
 
     #[cfg(any(client, doc))]
     fn compute_suspense(&self) {
         // We do *not* want to recompute this every time the user changes the state!
         // (There lie infinite loops.)
-        for elem in self.0.get_untracked().values() {
-            elem.compute_suspense(cx);
-        }
+        self.0.with_untracked(|map| {
+            for elem in map.values() {
+                elem.compute_suspense();
+            }
+        });
     }
 }
 // --- Dereferencing ---
