@@ -2,6 +2,97 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Breaking Changes
+
+* **migration:** Upgraded from Sycamore 0.8 to Sycamore 0.9.2
+
+This is a major migration that updates Perseus to work with Sycamore 0.9.2. The migration includes significant changes to the reactive system and component API.
+
+#### Core Framework Changes
+
+* **ReactiveState macro:** Removed `Copy` trait derivation from generated intermediate structs
+  - Sycamore 0.9.2 signals are `Copy` by default
+  - Prevents compilation errors when reactive fields contain non-Copy types
+
+* **Signal API updates:**
+  - Removed `create_scope()` and `Scope` parameters from all components
+  - All reactive primitives are now `'static` and `Copy` by default
+  - Changed `.get().clone()` to `.get_clone()` for non-Copy types
+  - Replaced `.modify()` with `.update()` for signal mutations
+  - Signals now auto-convert to views in templates
+
+* **View API changes:**
+  - Removed `<G: Html>` generic parameter from all view functions
+  - `View` type is no longer generic
+  - `View::default()` replaced with `View::new()` in some contexts
+
+* **Component Props:**
+  - `Option<T>` props now expect unwrapped values in component builders
+  - Removed `Clone` trait requirement from `View` types
+  - Props builder pattern requires concrete values, not Options
+
+#### Website Package Changes
+
+* **Event handlers:** Added `move` keyword to closures requiring `'static` lifetime
+* **Context usage:** Wrapped `Reactor` in `Rc<T>` for types not implementing `Clone`
+* **Template values:** Extracted reactive macro calls (like `t!()`) before `view!` macro to prevent temporary borrow errors
+* **NodeRef API:** Type information requires recasting inside closure scopes
+
+#### Migration Guide for Users
+
+If you're upgrading an existing Perseus application to this version, you'll need to make the following changes:
+
+1. **Remove Scope parameters:**
+   ```rust
+   // Before (0.8)
+   #[component]
+   fn MyComponent<G: Html>(cx: Scope, props: MyProps) -> View<G> {
+       let signal = create_signal(cx, value);
+   }
+
+   // After (0.9.2)
+   #[component]
+   fn MyComponent(props: MyProps) -> View {
+       let signal = create_signal(value);
+   }
+   ```
+
+2. **Update signal mutations:**
+   ```rust
+   // Before (0.8)
+   state.vec.modify().push(item);
+
+   // After (0.9.2)
+   state.vec.update(|vec| vec.push(item));
+   ```
+
+3. **Fix event handler lifetimes:**
+   ```rust
+   // Before (0.8)
+   on:click = |_| { /* handler */ }
+
+   // After (0.9.2)
+   on:click = move |_| { /* handler */ }
+   ```
+
+4. **Update Option prop handling:**
+   ```rust
+   // Before (0.8)
+   MyComponent(
+       optional_prop = Some(value),
+   )
+
+   // After (0.9.2)
+   let unwrapped = value.unwrap_or_default();
+   MyComponent(
+       optional_prop = unwrapped,
+   )
+   ```
+
+For detailed migration information, see the [Sycamore migration guide](https://sycamore.dev/book/migration/0-8-to-0-9).
+
 ### [0.4.3](/home/arctic-hen7/me/.main-mirror.git/compare/v0.4.2...v0.4.3) (2024-07-19)
 
 
