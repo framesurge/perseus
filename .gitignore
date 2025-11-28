@@ -13,3 +13,4 @@ dist/
 AGENTS.md
 doc/
 *.sh
+*.backup
