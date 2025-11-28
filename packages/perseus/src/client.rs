@@ -115,8 +115,8 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
 
     // If we failed, terminate
     if !running {
-        // SAFETY We're outside the app's scope.
-        unsafe { root_handle.dispose() }
+        // Clean up the root scope
+        root_handle.dispose();
         // This is one of the best places in Perseus for crash analytics
         plugins
             .functional_actions

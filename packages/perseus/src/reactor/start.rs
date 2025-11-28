@@ -343,8 +343,8 @@ impl Reactor {
                             // Any errors should be gracefully reported, and their disposers
                             // placed into the correct `Signal` for future managament
                             let (root_handle, pagewide) = reactor.report_err(err);
-                            // SAFETY: We're outside the old error/page's scope
-                            let disposer_fn: Box<dyn FnOnce()> = Box::new(move || unsafe { root_handle.dispose() });
+                            // Create disposer for cleanup
+                            let disposer_fn: Box<dyn FnOnce()> = Box::new(move || root_handle.dispose());
                             if pagewide {
                                 unsafe {
                                     page_disposer_2.update(disposer_fn);
@@ -409,8 +409,8 @@ impl Reactor {
                                             // Any errors should be gracefully reported, and their disposers
                                             // placed into the correct `Signal` for future managament
                                             let (root_handle, pagewide) = reactor.report_err(err);
-                                            // SAFETY: We're outside the old error/page's scope
-                                            let disposer_fn: Box<dyn FnOnce()> = Box::new(move || unsafe { root_handle.dispose() });
+                                            // Create disposer for cleanup
+                                            let disposer_fn: Box<dyn FnOnce()> = Box::new(move || root_handle.dispose());
                                             if pagewide {
                                                 unsafe { page_disposer_2.update(disposer_fn); }
                                             } else {
