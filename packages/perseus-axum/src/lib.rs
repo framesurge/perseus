@@ -224,7 +224,5 @@ pub async fn dflt_server_with_compression<
         .await
         .expect("Failed to bind to address");
 
-    axum::serve(listener, app)
-        .await
-        .unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
