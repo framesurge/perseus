@@ -12,3 +12,4 @@ dist/
 .claude/
 AGENTS.md
 doc/
+*.sh
