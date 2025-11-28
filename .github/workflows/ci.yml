@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - main
+            - update-v5.0
     pull_request:
     workflow_dispatch:
 
