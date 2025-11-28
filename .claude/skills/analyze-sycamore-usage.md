@@ -1,9 +1,11 @@
 # Skill: Analyze Sycamore Usage
 
 ## Purpose
-Scan a Rust file and identify all Sycamore 0.8 API usage patterns that need migration to 0.9.
+
+Scan a Rust file and identify all Sycamore 0.8 API usage patterns that need migration to 0.9.2.
 
 ## Inputs
+
 - File path to analyze
 
 ## Process
@@ -49,30 +51,36 @@ rg "\btype\s*=" "$file"
 Generate a structured report:
 
 ```markdown
-## Sycamore 0.8 Usage Analysis: {filename}
+## Sycamore 0.8 → 0.9.2 Migration Analysis: {filename}
 
 ### Scope Parameters Found: {count}
+
 - Line {num}: `{code snippet}`
 - ...
 
 ### Generic Html Constraints: {count}
+
 - Line {num}: `{code snippet}`
 - ...
 
 ### Signal API Calls: {count}
+
 - Line {num}: `{code snippet}`
 - ...
 
 ### View Macro Calls: {count}
+
 - Line {num}: `{code snippet}`
 - ...
 
 ### Risk Assessment
+
 - **Complexity:** Low/Medium/High
 - **Estimated Effort:** {hours} hours
 - **Dependencies:** {files that import this one}
 
 ### Recommended Actions
+
 1. {action item}
 2. {action item}
 ```
@@ -89,6 +97,7 @@ find packages/perseus-core/src -name "*.rs" -exec \
 ```
 
 ## Success Criteria
+
 - All Sycamore 0.8 patterns identified
 - Line numbers provided for each match
 - Complexity assessment generated

@@ -58,7 +58,7 @@ pub async fn serve_exported(
         port = port
     );
 
-    warp::serve(files).run(addr).await;
+    warp::serve(files).bind(addr).await;
     // We will never get here (the above runs forever)
     Ok(0)
 }

@@ -34,17 +34,17 @@ web-sys = { version = "0.3", features = [
     "IntersectionObserverEntry",
     "KeyboardEvent",
 ] }
-wasm-bindgen = "0.2.92"
+wasm-bindgen = "0.2.106"
 
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
 walkdir = "2"
-pulldown-cmark = "0.9"
+pulldown-cmark = "0.13"
 regex = "1"
 anyhow = "1"
-thiserror = "1"                                                           # Needed to make Anyhow compatible with Perseus
+thiserror = "2"                                                           # Needed to make Anyhow compatible with Perseus
 
 [target.'cfg(client)'.dependencies]
 wee_alloc = "0.4"
 js-sys = "0.3"
-gloo-timers = "0.2"
+gloo-timers = "0.3"

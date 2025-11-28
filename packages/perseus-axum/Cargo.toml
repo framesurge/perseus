@@ -9,20 +9,27 @@ repository = "https://github.com/framesurge/perseus"
 homepage = "https://framesurge.sh/perseus"
 readme = "./README.md"
 keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
-categories = ["wasm", "web-programming::http-server", "development-tools", "asynchronous", "gui"]
+categories = [
+    "wasm",
+    "web-programming::http-server",
+    "development-tools",
+    "asynchronous",
+    "gui",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 perseus = { path = "../perseus", version = "0.4.3" }
-axum = "0.6"
+axum = "0.8"
 # Axum requires v0.3 of this
-tower-http = { version = "0.3", features = [ "fs" ] }
+tower-http = { version = "0.6", features = ["fs"] }
+tokio = { version = "1", optional = true }
 
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
-dflt-server = []
-dflt-server-with-compression = [ "tower-http/compression-gzip" ]
+dflt-server = ["tokio"]
+dflt-server-with-compression = ["tower-http/compression-gzip", "tokio"]
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg=engine"]

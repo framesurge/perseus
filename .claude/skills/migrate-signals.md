@@ -1,48 +1,53 @@
 # Skill: Migrate Signals
 
 ## Purpose
+
 Update all Sycamore 0.8 signal API calls to the 0.9 Signal API, including creation, access, and RcSignal replacement.
 
 ## Inputs
+
 - File path containing signal usage
 - Optional: Aggressive mode for bulk replacements
 
 ## Key Changes Overview
 
 ### 1. Signal Creation
+
 ```rust
 // OLD (0.8)
 let signal = create_signal(cx, initial_value);
 let rc_signal = create_rc_signal(initial_value);
 
-// NEW (0.9)
+// NEW (0.9.2)
 let signal = create_signal(initial_value);
 let signal = create_signal(initial_value);  // No more RcSignal
 ```
 
 ### 2. Signal Access
+
 ```rust
 // OLD (0.8) - Copy types
 let value = signal.get();
 
-// OLD (0.8) - Non-Copy types  
+// OLD (0.8) - Non-Copy types
 let value = signal.get().clone();
 let value = (*signal.get()).clone();
 
-// NEW (0.9) - Copy types
+// NEW (0.9.2) - Copy types
 let value = signal.get();
 
-// NEW (0.9) - Non-Copy types
+// NEW (0.9.2) - Non-Copy types
 let value = signal.get_clone();
 ```
 
 ### 3. RcSignal Elimination
+
 ```rust
 // OLD (0.8)
 use sycamore::reactive::RcSignal;
 let signal: RcSignal<String> = create_rc_signal("hello".to_string());
 
-// NEW (0.9)
+// NEW (0.9.2)
 use sycamore::reactive::Signal;
 let signal: Signal<String> = create_signal("hello".to_string());
 ```
@@ -52,11 +57,13 @@ let signal: Signal<String> = create_signal("hello".to_string());
 ### Step 1: Remove `cx` from Signal Creation
 
 **Pattern:**
+
 ```regex
 create_signal\(cx,\s*(.+?)\)
 ```
 
 **Replacement:**
+
 ```rust
 create_signal($1)
 ```
@@ -64,6 +71,7 @@ create_signal($1)
 ### Step 2: Replace RcSignal with Signal
 
 **Imports:**
+
 ```rust
 // Remove
 use sycamore::reactive::RcSignal;
@@ -73,19 +81,25 @@ use sycamore::reactive::Signal;
 ```
 
 **Type Annotations:**
+
 ```regex
 RcSignal<(.+?)>
 ```
+
 Replace with:
+
 ```rust
 Signal<$1>
 ```
 
 **Creation:**
+
 ```regex
 create_rc_signal\((.+?)\)
 ```
+
 Replace with:
+
 ```rust
 create_signal($1)
 ```
@@ -94,6 +108,7 @@ create_signal($1)
 
 **Identify Non-Copy Types:**
 Common non-Copy types in Perseus:
+
 - `String`
 - `Vec<T>`
 - `HashMap<K, V>`
@@ -101,12 +116,14 @@ Common non-Copy types in Perseus:
 - `Box<T>`
 
 **Pattern to Find:**
+
 ```regex
 signal\.get\(\)\.clone\(\)
 \(\*signal\.get\(\)\)\.clone\(\)
 ```
 
 **Replace with:**
+
 ```rust
 signal.get_clone()
 ```
@@ -114,6 +131,7 @@ signal.get_clone()
 ### Step 4: Update Derived Signals
 
 **create_memo:**
+
 ```rust
 // OLD
 let derived = create_memo(cx, || signal.get() * 2);
@@ -123,6 +141,7 @@ let derived = create_memo(|| signal.get() * 2);
 ```
 
 **create_selector:**
+
 ```rust
 // OLD
 let selected = create_selector(cx, || signal.get());
@@ -134,6 +153,7 @@ let selected = create_selector(|| signal.get());
 ### Step 5: Update Effects with Signals
 
 **create_effect:**
+
 ```rust
 // OLD
 create_effect(cx, || {
@@ -151,6 +171,7 @@ create_effect(|| {
 ## Type-Specific Handling
 
 ### String Signals
+
 ```rust
 // OLD
 let name: &'a ReadSignal<String> = create_signal(cx, String::new());
@@ -162,6 +183,7 @@ let value = name.get_clone();
 ```
 
 ### Numeric Signals (Copy Types)
+
 ```rust
 // OLD
 let count = create_signal(cx, 0i32);
@@ -173,6 +195,7 @@ let value = count.get();  // No deref needed
 ```
 
 ### Complex State Signals
+
 ```rust
 // OLD
 let state: RcSignal<AppState> = create_rc_signal(AppState::default());
@@ -186,6 +209,7 @@ let current = state.get_clone();
 ## Perseus-Specific Patterns
 
 ### Template State
+
 ```rust
 // OLD
 fn template<'a, G: Html>(cx: Scope<'a>, state: &'a StateRx) -> View<G> {
@@ -201,6 +225,7 @@ fn template(state: &StateRx) -> View {
 ```
 
 ### Global State
+
 ```rust
 // Perseus global state is typically RcSignal in 0.8
 // OLD
@@ -284,6 +309,7 @@ cargo test -p {package}
 ## Common Pitfalls
 
 ### Pitfall 1: Missing get_clone()
+
 ```rust
 // WRONG - Won't compile for non-Copy types
 let name: String = signal.get();
@@ -293,6 +319,7 @@ let name: String = signal.get_clone();
 ```
 
 ### Pitfall 2: Unnecessary get_clone()
+
 ```rust
 // WRONG - Inefficient for Copy types
 let count: i32 = signal.get_clone();  // i32 is Copy!
@@ -302,6 +329,7 @@ let count: i32 = signal.get();
 ```
 
 ### Pitfall 3: Lifetime Confusion
+
 ```rust
 // WRONG - Signals are 'static now
 let signal: &'a Signal<T> = ...;
@@ -316,21 +344,26 @@ let signal: Signal<T> = ...;  // Just Signal, no reference
 ## Signal Migration: {filename}
 
 ### Statistics
+
 - `create_signal(cx,` calls updated: {count}
 - `RcSignal` → `Signal` conversions: {count}
 - `.get().clone()` → `.get_clone()`: {count}
 - Import statements updated: {count}
 
 ### Conversions
+
 #### Line {num}: {original} → {updated}
+
 ...
 
 ### Validation
+
 - Compilation: ✅/❌
 - Tests: ✅/❌
 - Remaining old patterns: {count}
 
 ### Manual Review Required
+
 - [ ] Verify Copy vs non-Copy type handling
 - [ ] Check complex signal compositions
 - [ ] Validate reactive effect closures
@@ -360,6 +393,7 @@ cp {file}.backup {file}
 ```
 
 ## Success Criteria
+
 - All signal creations use new API (no `cx` parameter)
 - No `RcSignal` usage remains
 - All non-Copy types use `.get_clone()`

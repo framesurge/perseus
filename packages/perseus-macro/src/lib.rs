@@ -70,9 +70,11 @@ pub fn auto_scope(_args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn test(args: TokenStream, input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as test::TestFn);
-    let attr_args = syn::parse_macro_input!(args as syn::AttributeArgs);
+    let attr_args = syn::parse_macro_input!(args with syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated);
+    // Convert Meta to NestedMeta for darling
+    let nested_meta: Vec<_> = attr_args.into_iter().map(|meta| darling::ast::NestedMeta::Meta(meta)).collect();
     // Parse macro arguments with `darling`
-    let args = match test::TestArgs::from_list(&attr_args) {
+    let args = match test::TestArgs::from_list(&nested_meta) {
         Ok(v) => v,
         Err(e) => {
             return TokenStream::from(e.write_errors());

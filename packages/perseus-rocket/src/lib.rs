@@ -12,6 +12,7 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_debug_implementations)]
 
 use perseus::{
+    http,
     i18n::TranslationsManager,
     path::PathMaybeWithLocale,
     server::ServerOptions,
@@ -29,6 +30,49 @@ use rocket::{
     Build, Data, Request, Response, Rocket, Route, State,
 };
 use std::{io::Cursor, path::Path};
+
+// ----- HTTP version conversion helpers -----
+// Rocket uses hyper which uses http 0.2.x while Perseus uses http 1.x
+
+/// Convert rocket's hyper http 0.2.x Request to perseus's http 1.x Request
+fn convert_request(rocket_req: rocket::http::hyper::Request<()>) -> Result<http::Request<()>, String> {
+    let mut builder = http::Request::builder();
+
+    // Convert method
+    let method_str = rocket_req.method().as_str();
+    let perseus_method = match method_str {
+        "GET" => http::Method::GET,
+        "POST" => http::Method::POST,
+        "PUT" => http::Method::PUT,
+        "DELETE" => http::Method::DELETE,
+        "HEAD" => http::Method::HEAD,
+        "OPTIONS" => http::Method::OPTIONS,
+        "CONNECT" => http::Method::CONNECT,
+        "PATCH" => http::Method::PATCH,
+        "TRACE" => http::Method::TRACE,
+        _ => http::Method::GET,
+    };
+
+    // Convert URI
+    let perseus_uri: http::Uri = rocket_req.uri().to_string()
+        .parse()
+        .map_err(|e| format!("Failed to convert URI: {}", e))?;
+
+    // Convert headers
+    for (name, value) in rocket_req.headers() {
+        if let Ok(perseus_name) = http::HeaderName::from_bytes(name.as_str().as_bytes()) {
+            if let Ok(perseus_value) = http::HeaderValue::from_bytes(value.as_bytes()) {
+                builder = builder.header(perseus_name, perseus_value);
+            }
+        }
+    }
+
+    builder
+        .method(perseus_method)
+        .uri(perseus_uri)
+        .body(())
+        .map_err(|e| format!("Failed to build request: {}", e))
+}
 
 // ----- Newtype wrapper for response implementation -----
 
@@ -147,10 +191,13 @@ where
     }
 
     match http_req.body(()) {
-        Ok(r) => Outcome::from(
-            req,
-            ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(path), r).await),
-        ),
+        Ok(rocket_request) => match convert_request(rocket_request) {
+            Ok(perseus_request) => Outcome::from(
+                req,
+                ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(path), perseus_request).await),
+            ),
+            Err(_) => Outcome::Error(Status::BadRequest),
+        },
         _ => Outcome::Error(Status::BadRequest),
     }
 }
@@ -186,20 +233,23 @@ where
     }
 
     match http_req.body(()) {
-        Ok(r) => Outcome::from(
-            req,
-            ApiResponse(
-                turbine
-                    .get_subsequent_load(
-                        perseus::path::PathWithoutLocale(raw_path),
-                        locale,
-                        entity_name,
-                        was_incremental_match,
-                        r,
-                    )
-                    .await,
+        Ok(rocket_request) => match convert_request(rocket_request) {
+            Ok(perseus_request) => Outcome::from(
+                req,
+                ApiResponse(
+                    turbine
+                        .get_subsequent_load(
+                            perseus::path::PathWithoutLocale(raw_path),
+                            locale,
+                            entity_name,
+                            was_incremental_match,
+                            perseus_request,
+                        )
+                        .await,
+                ),
             ),
-        ),
+            Err(_) => Outcome::Error(Status::BadRequest),
+        },
         _ => Outcome::Error(Status::BadRequest),
     }
 }
@@ -415,7 +465,7 @@ pub async fn dflt_server_with_compression<
 
     app = app
         .configure(config)
-        .attach(rocket_async_compression_lib::Compression::fairing());
+        .attach(rocket_async_compression::Compression::fairing());
 
     if let Err(err) = app.launch().await {
         eprintln!("Error lauching Rocket app: {}.", err);

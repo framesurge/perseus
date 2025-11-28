@@ -15,7 +15,7 @@ use actix_web::CustomizeResponder;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use perseus::turbine::ApiResponse as PerseusApiResponse;
 use perseus::{
-    http::StatusCode,
+    http::{self, StatusCode},
     i18n::TranslationsManager,
     path::*,
     server::ServerOptions,
@@ -24,20 +24,72 @@ use perseus::{
     Request,
 };
 
+// ----- HTTP version conversion helpers -----
+// Actix-web uses http 0.2.x while Perseus uses http 1.x, so we need conversion functions
+
+/// Convert actix-web's http 0.2.x Method to perseus's http 1.x Method
+fn convert_method(actix_method: &actix_web::http::Method) -> http::Method {
+    match actix_method.as_str() {
+        "GET" => http::Method::GET,
+        "POST" => http::Method::POST,
+        "PUT" => http::Method::PUT,
+        "DELETE" => http::Method::DELETE,
+        "HEAD" => http::Method::HEAD,
+        "OPTIONS" => http::Method::OPTIONS,
+        "CONNECT" => http::Method::CONNECT,
+        "PATCH" => http::Method::PATCH,
+        "TRACE" => http::Method::TRACE,
+        _ => http::Method::GET, // Fallback
+    }
+}
+
+/// Convert actix-web's http 0.2.x Uri to perseus's http 1.x Uri
+fn convert_uri(actix_uri: &actix_web::http::Uri) -> Result<http::Uri, String> {
+    actix_uri.to_string().parse().map_err(|e| format!("Failed to convert URI: {}", e))
+}
+
+/// Convert actix-web's http 0.2.x Version to perseus's http 1.x Version
+fn convert_version(actix_version: actix_web::http::Version) -> http::Version {
+    match actix_version {
+        actix_web::http::Version::HTTP_09 => http::Version::HTTP_09,
+        actix_web::http::Version::HTTP_10 => http::Version::HTTP_10,
+        actix_web::http::Version::HTTP_11 => http::Version::HTTP_11,
+        actix_web::http::Version::HTTP_2 => http::Version::HTTP_2,
+        actix_web::http::Version::HTTP_3 => http::Version::HTTP_3,
+        _ => http::Version::HTTP_11, // Fallback
+    }
+}
+
+/// Convert perseus's http 1.x StatusCode to actix-web's http 0.2.x StatusCode
+fn convert_status_code(perseus_status: http::StatusCode) -> actix_web::http::StatusCode {
+    actix_web::http::StatusCode::from_u16(perseus_status.as_u16())
+        .unwrap_or(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR)
+}
+
 // ----- Request conversion implementation -----
 
 /// Converts an Actix Web request into an `http::request`.
 pub fn convert_req(raw: &actix_web::HttpRequest) -> Result<Request, String> {
     let mut builder = Request::builder();
 
+    // Convert headers from actix's http 0.2.x to perseus's http 1.x
     for (name, val) in raw.headers() {
-        builder = builder.header(name, val);
+        if let Ok(perseus_name) = http::HeaderName::from_bytes(name.as_str().as_bytes()) {
+            if let Ok(perseus_value) = http::HeaderValue::from_bytes(val.as_bytes()) {
+                builder = builder.header(perseus_name, perseus_value);
+            }
+        }
     }
 
+    // Convert URI, Method, and Version
+    let perseus_uri = convert_uri(raw.uri())?;
+    let perseus_method = convert_method(raw.method());
+    let perseus_version = convert_version(raw.version());
+
     builder
-        .uri(raw.uri())
-        .method(raw.method())
-        .version(raw.version())
+        .uri(perseus_uri)
+        .method(perseus_method)
+        .version(perseus_version)
         // We always use an empty body because, in a Perseus request, only the URI matters
         // Any custom data should therefore be sent in headers (if you're doing that, consider a
         // dedicated API)
@@ -57,11 +109,17 @@ impl From<PerseusApiResponse> for ApiResponse {
 impl Responder for ApiResponse {
     type Body = String;
     fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
-        let mut res = HttpResponse::build(self.0.status);
-        for header in self.0.headers {
-            // The header name is in an `Option`, but we only ever add them with proper
-            // names in `PerseusApiResponse`
-            res.insert_header((header.0.unwrap(), header.1));
+        // Convert perseus's http 1.x StatusCode to actix's http 0.2.x StatusCode
+        let actix_status = convert_status_code(self.0.status);
+        let mut res = HttpResponse::build(actix_status);
+
+        // Convert headers from perseus's http 1.x to actix's http 0.2.x
+        for (name, value) in &self.0.headers {
+            if let Ok(actix_name) = actix_web::http::header::HeaderName::from_bytes(name.as_str().as_bytes()) {
+                if let Ok(actix_value) = actix_web::http::header::HeaderValue::from_bytes(value.as_bytes()) {
+                    res.insert_header((actix_name, actix_value));
+                }
+            }
         }
         // TODO
         res.message_body(self.0.body).unwrap()

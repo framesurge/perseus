@@ -5,7 +5,7 @@ use syn::{Attribute, Ident, Type, Visibility};
 
 /// This is used to parse what the user gives us with `darling`.
 #[derive(Debug, FromDeriveInput)]
-#[darling(attributes(rx))]
+#[darling(attributes(rx), forward_attrs(allow, doc, cfg))]
 pub struct ReactiveStateDeriveInput {
     /// If specified, a type alias will be created for the final reactive
     /// `struct` for ease of reference.
@@ -24,7 +24,7 @@ pub struct ReactiveStateDeriveInput {
 
 /// This is used to parse each individual field in what the user gives us.
 #[derive(Debug, FromField, Clone)]
-#[darling(attributes(rx))]
+#[darling(attributes(rx), forward_attrs(allow, doc, cfg))]
 pub struct ReactiveStateField {
     /// Whether or not we should expect the annotated field to be able to made
     /// reactive itself, enabling nested reactivity.

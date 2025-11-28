@@ -1,9 +1,11 @@
 # Skill: Update Component Signature
 
 ## Purpose
-Migrate Sycamore 0.8 component function signatures to 0.9 format by removing scope parameters, lifetimes, and generic constraints.
+
+Migrate Sycamore 0.8 component function signatures to 0.9.2 format by removing scope parameters, lifetimes, and generic constraints.
 
 ## Inputs
+
 - File path containing component definitions
 - Optional: Specific function name to target
 
@@ -12,6 +14,7 @@ Migrate Sycamore 0.8 component function signatures to 0.9 format by removing sco
 ### Step 1: Identify Components
 
 Look for functions with these characteristics:
+
 - Has `#[component]` attribute
 - Contains `cx: Scope` parameter
 - Has `<G: Html>` generic
@@ -20,6 +23,7 @@ Look for functions with these characteristics:
 ### Step 2: Transform Signature
 
 **Before Pattern:**
+
 ```rust
 #[component]
 fn MyComponent<'a, G: Html>(cx: Scope<'a>, props: MyProps) -> View<G> {
@@ -28,6 +32,7 @@ fn MyComponent<'a, G: Html>(cx: Scope<'a>, props: MyProps) -> View<G> {
 ```
 
 **After Pattern:**
+
 ```rust
 #[component]
 fn MyComponent(props: MyProps) -> View {
@@ -38,6 +43,7 @@ fn MyComponent(props: MyProps) -> View {
 ### Step 3: Update Function Body
 
 Remove `cx` references:
+
 - `view! { cx,` → `view! {`
 - `create_signal(cx,` → `create_signal(`
 - `create_effect(cx,` → `create_effect(`
@@ -60,6 +66,7 @@ fn old_component<'a, G: Html>(cx: Scope<'a>) -> View<G> { ... }
 ```
 
 **Decision Rules:**
+
 1. If lifetime is on `Scope` → REMOVE
 2. If lifetime is on data reference → EVALUATE
 3. If lifetime is on Perseus type → KEEP
@@ -67,6 +74,7 @@ fn old_component<'a, G: Html>(cx: Scope<'a>) -> View<G> { ... }
 ## Safety Checks
 
 Before making changes, verify:
+
 - [ ] Function is a Sycamore component (has `#[component]`)
 - [ ] Not a trait method (trait methods have different rules)
 - [ ] Not using lifetime for non-Sycamore purposes
@@ -81,7 +89,7 @@ Before making changes, verify:
 #[component]
 fn Counter<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     let count = create_signal(cx, 0);
-    
+
     view! { cx,
         button(on:click=|_| count.set(*count.get() + 1)) {
             "Count: " (count.get())
@@ -93,7 +101,7 @@ fn Counter<'a, G: Html>(cx: Scope<'a>) -> View<G> {
 #[component]
 fn Counter() -> View {
     let count = create_signal(0);
-    
+
     view! {
         button(on:click=|_| count.set(*count.get() + 1)) {
             "Count: " (count.get())
@@ -169,6 +177,7 @@ Use these regex patterns carefully:
 ## Validation
 
 After transformation:
+
 ```bash
 # Compile the specific file's module
 cargo check -p {package-name}
@@ -186,18 +195,21 @@ rg "<.*G: Html.*>" {file}
 ### Common Errors After Transformation
 
 **Error:** `cannot find value 'cx' in this scope`
+
 ```rust
 // Still has: some_function(cx, args)
 // Fix: some_function(args)
 ```
 
 **Error:** `expected 0 lifetime parameters`
+
 ```rust
 // Still has: &'a ReadSignal<T>
 // Fix: ReadSignal<T>  (signals are Copy now)
 ```
 
 **Error:** `cannot infer type for type parameter 'G'`
+
 ```rust
 // Still has: View<G> somewhere
 // Fix: View
@@ -213,17 +225,20 @@ Generate a migration report:
 ### Transformations Applied: {count}
 
 #### Function: {function_name}
+
 - **Before:** `{old_signature}`
 - **After:** `{new_signature}`
 - **Status:** ✅ Success / ⚠️ Review Needed / ❌ Error
 - **Notes:** {any special considerations}
 
 ### Validation Results
+
 - Compilation: ✅/❌
 - Tests: ✅/❌
 - Manual Review Needed: Yes/No
 
 ### Next Steps
+
 - [ ] {action item}
 ```
 
@@ -244,6 +259,7 @@ claude-code skill update-component-signature --dry-run src/template.rs
 ## Rollback
 
 If something goes wrong:
+
 ```bash
 # Git restore the file
 git restore {file}
@@ -253,7 +269,8 @@ cp {file}.backup {file}
 ```
 
 ## Success Criteria
-- All component signatures updated to 0.9 format
+
+- All component signatures updated to 0.9.2 format
 - No `cx: Scope` parameters remain
 - No `<G: Html>` generics remain (except in type definitions)
 - Code compiles without errors

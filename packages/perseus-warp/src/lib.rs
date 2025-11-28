@@ -31,6 +31,57 @@ use warp::{
     Filter, Rejection, Reply,
 };
 
+// ----- HTTP version conversion helpers -----
+// Warp uses http 0.2.x while Perseus uses http 1.x, so we need conversion functions
+
+/// Convert warp's http 0.2.x Method to perseus's http 1.x Method
+fn convert_method(warp_method: warp::http::Method) -> http::Method {
+    match warp_method {
+        warp::http::Method::GET => http::Method::GET,
+        warp::http::Method::POST => http::Method::POST,
+        warp::http::Method::PUT => http::Method::PUT,
+        warp::http::Method::DELETE => http::Method::DELETE,
+        warp::http::Method::HEAD => http::Method::HEAD,
+        warp::http::Method::OPTIONS => http::Method::OPTIONS,
+        warp::http::Method::CONNECT => http::Method::CONNECT,
+        warp::http::Method::PATCH => http::Method::PATCH,
+        warp::http::Method::TRACE => http::Method::TRACE,
+        _ => http::Method::GET, // Fallback for unknown methods
+    }
+}
+
+/// Convert warp's http 0.2.x HeaderMap to perseus's http 1.x HeaderMap
+fn convert_headers(warp_headers: warp::http::HeaderMap) -> http::HeaderMap {
+    let mut perseus_headers = http::HeaderMap::new();
+    for (name, value) in warp_headers.iter() {
+        if let Ok(perseus_name) = http::HeaderName::from_bytes(name.as_str().as_bytes()) {
+            if let Ok(perseus_value) = http::HeaderValue::from_bytes(value.as_bytes()) {
+                perseus_headers.insert(perseus_name, perseus_value);
+            }
+        }
+    }
+    perseus_headers
+}
+
+/// Convert perseus's http 1.x StatusCode to warp's http 0.2.x StatusCode
+fn convert_status_code(perseus_status: http::StatusCode) -> warp::http::StatusCode {
+    warp::http::StatusCode::from_u16(perseus_status.as_u16())
+        .unwrap_or(warp::http::StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+/// Convert perseus's http 1.x HeaderMap to warp's http 0.2.x HeaderMap
+fn convert_headers_back(perseus_headers: http::HeaderMap) -> warp::http::HeaderMap {
+    let mut warp_headers = warp::http::HeaderMap::new();
+    for (name, value) in perseus_headers.iter() {
+        if let Ok(warp_name) = warp::http::HeaderName::from_bytes(name.as_str().as_bytes()) {
+            if let Ok(warp_value) = warp::http::HeaderValue::from_bytes(value.as_bytes()) {
+                warp_headers.insert(warp_name, warp_value);
+            }
+        }
+    }
+    warp_headers
+}
+
 // ----- Request conversion implementation -----
 
 /// A Warp filter for extracting an HTTP request directly, which is slightly different to how the Actix Web integration handles this. Modified from [here](https://github.com/seanmonstar/warp/issues/139#issuecomment-853153712).
@@ -50,13 +101,17 @@ pub fn get_http_req() -> impl Filter<Extract = (http::Request<()>,), Error = Rej
                 .build()
                 .unwrap();
 
+            // Convert warp's http 0.2.x types to perseus's http 1.x types
+            let perseus_method = convert_method(method);
+            let perseus_headers = convert_headers(headers);
+
             let mut request = http::Request::builder()
-                .method(method)
+                .method(perseus_method)
                 .uri(uri)
                 .body(()) // We don't do anything with the body in Perseus, so this is irrelevant
                 .unwrap();
 
-            *request.headers_mut() = headers;
+            *request.headers_mut() = perseus_headers;
 
             Ok::<http::Request<()>, Rejection>(request)
         })
@@ -74,8 +129,9 @@ impl From<PerseusApiResponse> for ApiResponse {
 impl Reply for ApiResponse {
     fn into_response(self) -> Response {
         let mut response = Response::new(self.0.body.into());
-        *response.status_mut() = self.0.status;
-        *response.headers_mut() = self.0.headers;
+        // Convert perseus's http 1.x types to warp's http 0.2.x types
+        *response.status_mut() = convert_status_code(self.0.status);
+        *response.headers_mut() = convert_headers_back(self.0.headers);
         response
     }
 }

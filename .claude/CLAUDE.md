@@ -1,10 +1,11 @@
 # Perseus Framework Migration Guide
+
 ## Project Context for Claude Code CLI
 
-**Migration Objective:** Upgrade Perseus web framework from Sycamore 0.8 to Sycamore 0.9
+**Migration Objective:** Upgrade Perseus web framework from Sycamore 0.8 to Sycamore 0.9.2
 
-**Repository:** https://github.com/afidegnum/perseus (fork of framesurge/perseus)  
-**Working Branch:** `update-v0.5`  
+**Repository:** <https://github.com/afidegnum/perseus> (fork of framesurge/perseus)
+**Working Branch:** `update-v0.5`
 **Timeline:** 10-14 day comprehensive migration
 
 ---
@@ -48,13 +49,14 @@ Perseus **heavily depends** on Sycamore for:
 
 ---
 
-## Sycamore 0.8 → 0.9 Breaking Changes
+## Sycamore 0.8 → 0.9.2 Breaking Changes
 
 ### 1. Reactivity v3: Scope Removal
 
 **Most Impactful Change** - Affects ~90% of codebase
 
 **Before (0.8):**
+
 ```rust
 #[component]
 fn MyComponent<'a, G: Html>(cx: Scope<'a>, props: MyProps) -> View<G> {
@@ -68,7 +70,8 @@ fn MyComponent<'a, G: Html>(cx: Scope<'a>, props: MyProps) -> View<G> {
 }
 ```
 
-**After (0.9):**
+**After (0.9.2):**
+
 ```rust
 #[component]
 fn MyComponent(props: MyProps) -> View {
@@ -83,6 +86,7 @@ fn MyComponent(props: MyProps) -> View {
 ```
 
 **Key Changes:**
+
 - Remove `cx: Scope` parameter from ALL functions
 - Remove `<'a>` lifetime from component signatures
 - Remove `cx,` from `view!` macro calls
@@ -92,16 +96,19 @@ fn MyComponent(props: MyProps) -> View {
 ### 2. View v2: Generic Elimination
 
 **Before (0.8):**
+
 ```rust
 fn component<G: Html>(cx: Scope) -> View<G> { ... }
 ```
 
-**After (0.9):**
+**After (0.9.2):**
+
 ```rust
 fn component() -> View { ... }
 ```
 
 **Key Changes:**
+
 - Remove `<G: Html>` generic parameter
 - Remove `<'a, G: Html>` combined patterns
 - Change `View<G>` to just `View`
@@ -110,6 +117,7 @@ fn component() -> View { ... }
 ### 3. Signal API Updates
 
 **Before (0.8):**
+
 ```rust
 let signal = create_signal(cx, value);
 let rc_signal = create_rc_signal(value);  // for 'static signals
@@ -117,7 +125,8 @@ let value = signal.get();  // Copy types
 let value = signal.get().clone();  // Non-Copy types
 ```
 
-**After (0.9):**
+**After (0.9.2):**
+
 ```rust
 let signal = create_signal(value);  // Always 'static now
 // No more RcSignal needed
@@ -126,6 +135,7 @@ let value = signal.get_clone();  // Non-Copy types
 ```
 
 **Key Changes:**
+
 - `RcSignal` removed - use `Signal` everywhere
 - `create_rc_signal` → `create_signal`
 - `.get().clone()` → `.get_clone()` for non-Copy types
@@ -134,15 +144,17 @@ let value = signal.get_clone();  // Non-Copy types
 ### 4. View Macro Syntax Changes
 
 **Indexed/Keyed Lists:**
+
 ```rust
 // Before
 Indexed(iterable=list, view=|item| ...)
 
-// After  
+// After
 Indexed(list=list, view=|item| ...)
 ```
 
 **Rust Keywords:**
+
 ```rust
 // Before
 ref=node_ref, type="button"
@@ -152,6 +164,7 @@ r#ref=node_ref, r#type="button"
 ```
 
 **Signal Interpolation:**
+
 ```rust
 // Before
 view! { cx, div { (signal.get()) } }
@@ -163,6 +176,7 @@ view! { div { (signal) } }  // Signals auto-convert to views
 ### 5. Builder API Changes
 
 **Before (0.8):**
+
 ```rust
 div()
     .c(h1().t("Hello"))
@@ -170,7 +184,8 @@ div()
     .view()
 ```
 
-**After (0.9):**
+**After (0.9.2):**
+
 ```rust
 div()
     .children(h1().children("Hello"))
@@ -179,6 +194,7 @@ div()
 ```
 
 **Key Changes:**
+
 - `.c()` → `.children()`
 - `.t()` → `.children()` for text
 - `.view()` → `.into()`
@@ -194,6 +210,7 @@ div()
 ⚠️ **CRITICAL:** Some lifetimes in Perseus are **Perseus-specific**, not Sycamore-specific.
 
 **Example - DO NOT REMOVE:**
+
 ```rust
 // Perseus state management requires this lifetime
 pub struct StateGeneratorInfo<'a, T> {
@@ -204,6 +221,7 @@ pub struct StateGeneratorInfo<'a, T> {
 ```
 
 **Decision Tree:**
+
 1. Is the lifetime tied to `Scope`? → **REMOVE IT**
 2. Is the lifetime for Perseus data structures? → **KEEP IT**
 3. Is it a function parameter lifetime? → **EVALUATE CAREFULLY**
@@ -213,19 +231,22 @@ pub struct StateGeneratorInfo<'a, T> {
 Perseus uses generics for:
 
 1. **State Type Parameters** - Keep these:
-   ```rust
-   pub struct Template<T> { ... }
-   ```
+
+    ```rust
+    pub struct Template<T> { ... }
+    ```
 
 2. **Error Type Parameters** - Keep these:
-   ```rust
-   pub type Result<T, E = ServerError> = std::result::Result<T, E>;
-   ```
+
+    ```rust
+    pub type Result<T, E = ServerError> = std::result::Result<T, E>;
+    ```
 
 3. **Sycamore View Generics** - Remove these:
-   ```rust
-   // Remove <G: Html> - it's Sycamore-specific
-   ```
+
+    ```rust
+    // Remove <G: Html> - it's Sycamore-specific
+    ```
 
 ### Macro Invocations
 
@@ -243,17 +264,20 @@ Perseus has several procedural macros that may be affected:
 ### High Risk (Complex Integration)
 
 **perseus-core/src/template.rs**
+
 - Heavy Sycamore integration
 - Many component signatures
 - Complex generic constraints
 - **Estimated effort:** 6-8 hours
 
 **perseus-core/src/state.rs**
+
 - Reactive state management
 - Signal handling throughout
 - **Estimated effort:** 4-6 hours
 
 **perseus-router/src/lib.rs**
+
 - Client-side routing with reactivity
 - Component rendering logic
 - **Estimated effort:** 4-6 hours
@@ -261,11 +285,13 @@ Perseus has several procedural macros that may be affected:
 ### Medium Risk (Moderate Changes)
 
 **perseus-macro/src/lib.rs**
+
 - Macro code generation
 - May need output adjustment
 - **Estimated effort:** 3-4 hours
 
 **perseus-engine/**
+
 - Build-time rendering
 - Server-side execution
 - **Estimated effort:** 3-5 hours
@@ -273,11 +299,13 @@ Perseus has several procedural macros that may be affected:
 ### Low Risk (Minimal Changes)
 
 **perseus-cli/**
+
 - CLI tooling
 - Minimal Sycamore usage
 - **Estimated effort:** 1-2 hours
 
 **Server integrations (warp/axum)**
+
 - HTTP server logic
 - Limited view code
 - **Estimated effort:** 2-3 hours each
@@ -287,6 +315,7 @@ Perseus has several procedural macros that may be affected:
 ## Testing Strategy
 
 ### Unit Tests
+
 ```bash
 # Run all workspace tests
 cargo test --workspace --all-features
@@ -296,6 +325,7 @@ cargo test -p perseus-core
 ```
 
 ### Integration Tests
+
 ```bash
 # Build all examples
 cargo build --examples --workspace
@@ -322,11 +352,13 @@ cd examples/basic && perseus serve
 ### Pattern 1: Component Function Signatures
 
 **Search for:**
+
 ```regex
 fn\s+\w+<.*G:\s*Html.*>\s*\(.*cx:\s*Scope
 ```
 
 **Replace with:**
+
 ```rust
 // Remove: <'a, G: Html>, cx: Scope parameters
 // Keep: Other generics, other parameters
@@ -335,11 +367,13 @@ fn\s+\w+<.*G:\s*Html.*>\s*\(.*cx:\s*Scope
 ### Pattern 2: View Macro Calls
 
 **Search for:**
+
 ```regex
 view!\s*{\s*cx,
 ```
 
 **Replace with:**
+
 ```rust
 view! {
 ```
@@ -347,12 +381,14 @@ view! {
 ### Pattern 3: Signal Creation
 
 **Search for:**
+
 ```regex
 create_signal\(cx,\s*(.+)\)
 create_rc_signal\((.+)\)
 ```
 
 **Replace with:**
+
 ```rust
 create_signal($1)
 create_signal($1)
@@ -361,12 +397,14 @@ create_signal($1)
 ### Pattern 4: Reactive Effects
 
 **Search for:**
+
 ```regex
 create_effect\(cx,\s*\|\|
 create_memo\(cx,\s*\|\|
 ```
 
 **Replace with:**
+
 ```rust
 create_effect(||
 create_memo(||
@@ -377,6 +415,7 @@ create_memo(||
 ## Git Workflow Strategy
 
 ### Branch Structure
+
 ```
 main (or update-v0.5)
 ├── migration/phase-1-analysis
@@ -391,6 +430,7 @@ main (or update-v0.5)
 ```
 
 ### Commit Message Convention
+
 ```
 [Migration] Category: Brief description
 
@@ -401,6 +441,7 @@ Refs: #issue-number
 ```
 
 **Categories:**
+
 - `Scope` - Scope parameter removal
 - `Generics` - Generic type parameter updates
 - `Signals` - Signal API changes
@@ -416,26 +457,31 @@ Refs: #issue-number
 This migration uses **Model Context Protocol (MCP)** servers for enhanced automation:
 
 ### 1. Filesystem MCP
+
 - Intelligent file analysis
 - Batch modification capabilities
 - Pattern recognition across files
 
 ### 2. Git MCP
+
 - Automated commit creation
 - Branch management
 - Change tracking
 
 ### 3. GitHub MCP
+
 - Documentation quick access
 - Issue tracking
 - PR management
 
 ### 4. Brave Search MCP
+
 - Automatic solution finding
 - Error message lookup
 - Best practice research
 
 ### 5. Sequential Thinking MCP
+
 - Complex problem decomposition
 - Migration strategy planning
 - Refactoring impact analysis
@@ -523,18 +569,22 @@ cargo update
 ### Common Errors
 
 **Error:** `cannot find value 'cx' in this scope`
+
 - **Cause:** Removed `cx: Scope` but forgot to update usage
 - **Fix:** Remove `cx` from function calls, macro invocations
 
 **Error:** `expected 1 lifetime parameter`
+
 - **Cause:** Removed lifetime but type still expects it
 - **Fix:** Check if lifetime is Perseus-specific, not Sycamore-specific
 
 **Error:** `cannot infer type for type parameter 'G'`
+
 - **Cause:** Removed `<G: Html>` but still using `View<G>`
 - **Fix:** Change `View<G>` to `View`
 
 **Error:** `no method named 'get' found for type 'Signal<String>'`
+
 - **Cause:** Non-Copy type needs `.get_clone()`
 - **Fix:** Change `.get()` to `.get_clone()` for non-Copy types
 
@@ -556,12 +606,13 @@ cargo update
 ## Resources
 
 - [Sycamore Migration Guide](https://sycamore.dev/book/migration/0-8-to-0-9)
-- [Sycamore v0.9 Announcement](https://sycamore.dev/post/announcing-v0-9-0)
+- [Sycamore v0.9.2 API Docs](https://docs.rs/sycamore/0.9.2/sycamore/)
 - [Perseus Documentation](https://framesurge.sh/perseus/en-US)
 - [Perseus Repository](https://github.com/afidegnum/perseus)
 - [Sycamore API Docs](https://docs.rs/sycamore/latest/sycamore/)
 
 ---
 
-**Last Updated:** Migration Workflow Package v1.0  
+**Last Updated:** November 2024 - Updated for Sycamore 0.9.2
 **For:** Claude Code CLI with MCP Integration
+**Version:** Migration Guide v1.1

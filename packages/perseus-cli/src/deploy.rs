@@ -8,7 +8,7 @@ use brotlic::CompressorWriter;
 use fs_extra::copy_items;
 use fs_extra::dir::{copy as copy_dir, CopyOptions};
 use indicatif::MultiProgress;
-use minify_js::{minify, TopLevelMode};
+use minify_js::{minify, Session, TopLevelMode};
 use std::fs;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
@@ -322,9 +322,11 @@ fn minify_js(from: &Path, to: &Path) -> Result<(), DeployError> {
     let js_bundle = js_bundle.replace("export { initSync }", "// export { initSync }");
 
     let mut minified = Vec::new();
+    let session = Session::new();
     minify(
+        &session,
         TopLevelMode::Global,
-        js_bundle.as_bytes().to_vec(),
+        js_bundle.as_bytes(),
         // Guaranteed to be UTF-8 output
         &mut minified,
     )

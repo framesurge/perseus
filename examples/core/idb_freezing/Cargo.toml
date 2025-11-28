@@ -16,7 +16,7 @@ serde_json = "1"
 wasm-bindgen-futures = "0.4"
 
 [dev-dependencies]
-fantoccini = "0.19"
+fantoccini = "0.22"
 
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
