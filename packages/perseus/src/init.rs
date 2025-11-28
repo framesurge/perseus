@@ -25,7 +25,7 @@ use std::pin::Pin;
 #[cfg(any(client, doc))]
 use std::rc::Rc;
 use std::{any::TypeId, sync::Arc};
-use std::{collections::HashMap, panic::PanicInfo};
+use std::{collections::HashMap, panic::PanicHookInfo};
 use sycamore::prelude::{component, view};
 use sycamore::web::{render_to_string, GlobalProps, HtmlGlobalAttributes, View};
 
@@ -157,7 +157,7 @@ pub struct PerseusAppBase<M: MutableStore, T: TranslationsManager> {
     /// A handler for panics on the browser-side.
     #[cfg(any(client, doc))]
     #[allow(clippy::type_complexity)] // TODO Really?
-    pub(crate) panic_handler: Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+    pub(crate) panic_handler: Option<Box<dyn Fn(&PanicHookInfo) + Send + Sync + 'static>>,
     /// A duplicate of the app's error handling function intended for panic
     /// handling. This must be extracted as an owned value and provided in a
     /// thread-safe manner to the panic hook system.
@@ -193,7 +193,7 @@ impl<M: MutableStore, T: TranslationsManager> std::fmt::Debug for PerseusAppBase
                     &self
                         .panic_handler
                         .as_ref()
-                        .map(|_| "dyn Fn(&PanicInfo) + Send + Sync + 'static"),
+                        .map(|_| "dyn Fn(&PanicHookInfo) + Send + Sync + 'static"),
                 )
                 .finish_non_exhaustive();
         }
@@ -747,7 +747,7 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
     /// This has no default value.
     #[allow(unused_variables)]
     #[allow(unused_mut)]
-    pub fn panic_handler(mut self, val: impl Fn(&PanicInfo) + Send + Sync + 'static) -> Self {
+    pub fn panic_handler(mut self, val: impl Fn(&PanicHookInfo) + Send + Sync + 'static) -> Self {
         #[cfg(any(client, doc))]
         {
             self.panic_handler = Some(Box::new(val));
@@ -1019,7 +1019,7 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
     pub fn take_panic_handlers(
         &mut self,
     ) -> (
-        Option<Box<dyn Fn(&PanicInfo) + Send + Sync + 'static>>,
+        Option<Box<dyn Fn(&PanicHookInfo) + Send + Sync + 'static>>,
         Arc<dyn Fn(ClientError, ErrorContext, ErrorPosition) -> (View, View) + Send + Sync>,
     ) {
         let panic_handler_view = std::mem::replace(
