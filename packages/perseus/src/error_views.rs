@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(any(client, doc))]
 use std::sync::Arc;
 use sycamore::prelude::*;
-use sycamore::web::{SsrNode, View};
+use sycamore::web::View;
 
 /// The error handling system of an app. In Perseus, errors come in several
 /// forms, all of which must be handled. This system provides a way to do this
