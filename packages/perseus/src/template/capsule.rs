@@ -124,8 +124,8 @@ impl<P: Clone + 'static> Capsule<P> {
         // Wipe the template's view function to make sure the errors aren't obscenely
         // weird
         template_inner.view = Box::new(|_, _, _| {
-            let disposer = create_child_scope(|| {});
-            Ok((View::new(), disposer))
+            let _disposer = create_root(|| {});
+            Ok((View::new(), _disposer))
         });
         CapsuleInner {
             template_inner,
