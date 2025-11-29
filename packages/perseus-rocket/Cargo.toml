@@ -1,6 +1,6 @@
 [package]
 name = "perseus-rocket"
-version = "0.4.3"
+version = "0.5.0"
 edition = "2021"
 description = "An integration that makes the Perseus framework easy to use with Rocket."
 authors = [
@@ -21,7 +21,7 @@ categories = [
 ]
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.4.3" }
+perseus = { path = "../perseus", version = "0.5.0" }
 rocket = "0.5"
 rocket_async_compression = { version = "0.6", optional = true }
 

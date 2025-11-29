@@ -1,6 +1,6 @@
 [package]
 name = "perseus-warp"
-version = "0.4.3"
+version = "0.5.0"
 edition = "2021"
 description = "An integration that makes the Perseus framework easy to use with Warp."
 authors = ["arctic_hen7 <arctic_hen7@pm.me>"]
@@ -9,18 +9,24 @@ repository = "https://github.com/framesurge/perseus"
 homepage = "https://framesurge.sh/perseus"
 readme = "./README.md"
 keywords = ["wasm", "frontend", "webdev", "ssg", "ssr"]
-categories = ["wasm", "web-programming::http-server", "development-tools", "asynchronous", "gui"]
+categories = [
+    "wasm",
+    "web-programming::http-server",
+    "development-tools",
+    "asynchronous",
+    "gui",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-perseus = { path = "../perseus", version = "0.4.3" }
+perseus = { path = "../perseus", version = "0.5.0" }
 warp = { package = "warp-fix-171", version = "0.3" } # Temporary until Warp #171 is resolved
 
 [features]
 # Enables the default server configuration, which provides a convenience function if you're not adding any extra routes
 dflt-server = []
-dflt-server-with-compression = [ "warp/compression" ]
+dflt-server-with-compression = ["warp/compression"]
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg=engine"]
