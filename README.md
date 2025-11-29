@@ -8,15 +8,15 @@
 
 Perseus is a blazingly fast frontend web development framework built in Rust with support for generating page state at build-time, request-time, incrementally, or whatever you'd like! It supports reactivity using [Sycamore](https://github.com/sycamore-rs/sycamore), and builds on it to provide a fully-fledged framework for developing modern apps.
 
--   📕 Supports static generation (serving only static resources)
--   🗼 Supports server-side rendering (serving dynamic resources)
--   🔧 Supports revalidation after time and/or with custom logic (updating rendered pages)
--   🛠️ Supports incremental regeneration (build on demand)
--   🏭 Open build matrix (use any rendering strategy with anything else)
--   🖥️ CLI harness that lets you build apps with ease and confidence
--   🌐 Full i18n support out-of-the-box with [Fluent](https://projectfluent.org)
--   🏎 Lighthouse scores of 100 on desktop and over 95 on mobile
--   ⚡ Support for *hot state reloading* (reload your entire app's state after you make any code changes in development, Perseus is the only framework in the world that can do this, to our knowledge)
+- 📕 Supports static generation (serving only static resources)
+- 🗼 Supports server-side rendering (serving dynamic resources)
+- 🔧 Supports revalidation after time and/or with custom logic (updating rendered pages)
+- 🛠️ Supports incremental regeneration (build on demand)
+- 🏭 Open build matrix (use any rendering strategy with anything else)
+- 🖥️ CLI harness that lets you build apps with ease and confidence
+- 🌐 Full i18n support out-of-the-box with [Fluent](https://projectfluent.org)
+- 🏎 Lighthouse scores of 100 on desktop and over 95 on mobile
+- ⚡ Support for _hot state reloading_ (reload your entire app's state after you make any code changes in development, Perseus is the only framework in the world that can do this, to our knowledge)
 
 ## What's it like?
 
@@ -31,8 +31,8 @@ pub fn main<G: Html>() -> PerseusApp<G> {
     PerseusApp::new()
         .template(
             Template::build("index")
-                .view(|cx| {
-                    view! { cx,
+                .view(|| {
+                    view! {
                         p { "Hello World!" }
                     }
                 })
@@ -47,7 +47,7 @@ Check out [the book](https://framesurge.sh/perseus/en-US/docs) to learn how to t
 
 If you want to start working with Perseus right away, run the following commands and you'll have a basic app ready in no time! (Or, more accurately, after Cargo compiles everything...)
 
-``` shell
+```shell
 cargo install perseus-cli
 perseus new my-app
 cd my-app/

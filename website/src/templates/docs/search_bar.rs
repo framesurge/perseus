@@ -4,16 +4,12 @@ use sycamore::prelude::*;
 // use web_sys::{Event, KeyboardEvent};
 
 // #[component]
-// pub fn SearchBar(cx: Scope) -> View {
+// pub fn SearchBar() -> View {
 //     let search = create_signal(String::new());
 
 //     view! {
 //         input(
 //             class = "p-2 border rounded-md mb-2 focus:outline-indigo-500
-// search-bar-bg max-w-full",             placeholder = t!(cx, "search"),
-//             bind:value = search,
-//             // When the user presses enter, we should submit their search to
-// Google in a new tab             on:keyup = move |ev: Event| {
 //                 let event: KeyboardEvent = ev.unchecked_into();
 //                 if event.key() == "Enter" {
 //                     let search = search.get();
