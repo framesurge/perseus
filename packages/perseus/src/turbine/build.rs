@@ -18,7 +18,6 @@ use futures::{
     FutureExt,
 };
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
-use sycamore::web::SsrNode;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Builds your whole app for being run on a server. Do not use this

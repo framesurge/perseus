@@ -26,7 +26,7 @@ use crate::{
     i18n::Translator,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
 };
-use sycamore::prelude::{provide_context, try_use_context, use_context};
+use sycamore::prelude::{provide_context, use_context};
 
 // --- Engine-side imports ---
 
@@ -212,7 +212,7 @@ impl Reactor {
     /// You should never need to worry about this function panicking, since
     /// your code will only ever run if a reactor is present.
     pub fn from_cx() -> Rc<Self> {
-        use_context::<Rc<Self>>().expect("reactor context not found (this is a bug in Perseus)")
+        use_context::<Rc<Self>>()
     }
     /// Gets the currently active translator.
     ///
