@@ -15,6 +15,7 @@ mod utils {
     use assert_cmd::prelude::*;
     use assert_fs::{prelude::PathChild, TempDir};
     use predicates::prelude::*;
+    use std::io::Read;
     use std::process::Command;
 
     /// Initializes a Perseus CLI test by creating a new example app and setting
@@ -66,30 +67,23 @@ mod utils {
     pub fn test_serve(cmd: &mut Command, path: &str) -> Result<(), Box<dyn std::error::Error>> {
         use command_group::CommandGroup;
 
-        // We use a group process spawn because the child will spawn the server process,
-        // which can't be cleaned up if SIGKILL is sent
         let mut child = cmd.group_spawn()?;
 
         std::thread::sleep(std::time::Duration::from_millis(5000));
 
-        // Check if the child process has failed (this is the only way to catch
-        // things like binding errors); this will not block trying to wait
         let exit_status = child.try_wait()?;
         if let Some(status) = exit_status {
             panic!("server process returned non-zero exit code '{}'", status);
         }
 
-        // We don't extensively test things here, since that's what Perseus' testing
-        // system is for, and that tests *all* the core examples extensively in a
-        // headless browser, which is more realistic than simple HTTP requests
-        // anyway
         let body = ureq::get(path)
             .call()
             .map_err(|err| {
                 let _ = child.kill();
                 err
             })?
-            .into_string()
+            .body_mut()
+            .read_to_string()
             .map_err(|err| {
                 let _ = child.kill();
                 err
