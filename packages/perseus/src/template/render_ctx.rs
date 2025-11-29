@@ -182,7 +182,7 @@ impl RenderCtx {
     /// Once this is done, the render context can be modified safely with
     /// interior mutability.
     pub(crate) fn set_ctx(self) -> &Self {
-        provide_context(cx, self)
+        provide_context(self)
     }
     /// Preloads the given URL from the server and caches it, preventing
     /// future network requests to fetch that page.
