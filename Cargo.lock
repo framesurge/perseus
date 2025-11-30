@@ -2864,7 +2864,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "perseus"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2897,7 +2897,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-actix-web"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "actix-files",
  "actix-web",
@@ -2907,7 +2907,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-axum"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "axum",
  "perseus",
@@ -2917,7 +2917,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-cli"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -2955,7 +2955,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-auth"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "perseus",
  "perseus-integration",
@@ -2968,7 +2968,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-base"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -2981,7 +2981,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-basic"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -2994,7 +2994,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-capsules"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "lazy_static",
@@ -3008,7 +3008,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-custom-server"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3022,7 +3022,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-custom-server-rocket"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3036,7 +3036,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-fetching"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "perseus",
  "perseus-integration",
@@ -3063,7 +3063,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-full-page-layout"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3089,7 +3089,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-helper-build-state"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3131,7 +3131,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-index-view"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3144,7 +3144,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-js-interop"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3158,7 +3158,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-plugins"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3172,7 +3172,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-preload"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
@@ -3251,7 +3251,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-suspense"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fantoccini",
  "gloo-timers",
@@ -3265,7 +3265,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-example-tiny"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "perseus",
  "perseus-integration",
@@ -3288,7 +3288,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-integration"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "perseus-actix-web",
  "perseus-axum",
@@ -3298,7 +3298,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-macro"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -3311,7 +3311,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-rocket"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "perseus",
  "rocket",
@@ -3320,7 +3320,7 @@ dependencies = [
 
 [[package]]
 name = "perseus-warp"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "perseus",
  "warp-fix-171",
