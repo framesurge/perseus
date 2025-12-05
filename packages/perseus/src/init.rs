@@ -454,7 +454,7 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
     ///
     /// If your templates come from functions like `get_template`, that are
     /// generic over `G: Html`, you can use `.template()`, to avoid having
-    /// to specify `::<G>` manually.
+    /// to specify `::` manually.
     ///
     /// See [`Template`] for further details, and the book for further details
     /// on the differences between the function and reference patterns.
@@ -474,7 +474,7 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
     // ///
     // /// Usually, it's preferred to run `.capsule()` once for each capsule,
     // /// rather than manually constructing this more inconvenient type.
-    // pub fn capsules(mut self, val: Vec<Capsule<G>>) -> Self {
+    // pub fn capsules(mut self, val: Vec<Capsule>) -> Self {
     //     for capsule in val.into_iter() {
     //         self = self.capsule(capsule);
     //     }
@@ -878,18 +878,18 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
         Ok(html_shell)
     }
     // /// Gets the map of entities (i.e. templates and capsules combined).
-    // pub fn get_entities_map(&self) -> EntityMap<G> {
+    // pub fn get_entities_map(&self) -> EntityMap {
     //     // This is cheap to clone
     //     self.entities.clone()
     // }
     // /// Gets the [`ErrorViews`] used in the app. This returns an `Rc`.
     // #[cfg(any(client, doc))]
-    // pub fn get_error_views(&self) -> Rc<ErrorViews<G>> {
+    // pub fn get_error_views(&self) -> Rc<ErrorViews> {
     //     self.error_views.clone()
     // }
     // /// Gets the [`ErrorViews`] used in the app. This returns an `Arc`.
     // #[cfg(engine)]
-    // pub fn get_atomic_error_views(&self) -> Arc<ErrorViews<G>> {
+    // pub fn get_atomic_error_views(&self) -> Arc<ErrorViews> {
     //     self.error_views.clone()
     // }
     // /// Gets the maximum number of pages that can be stored in the page state

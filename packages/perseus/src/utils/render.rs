@@ -15,21 +15,35 @@ pub(crate) fn render_or_hydrate(
     parent: web_sys::Element,
     force_render: bool,
 ) {
-    #[cfg(feature = "hydrate")]
-    {
-        // If we're forcing a proper render, then we'll have to remove existing content
-        if force_render {
-            parent.set_inner_html("");
-            sycamore::web::render_to(|| view, &parent);
-        } else {
-            sycamore::web::hydrate_to(|| view, &parent);
-        }
-    }
-    #[cfg(not(feature = "hydrate"))]
-    {
-        // We have to delete the existing content before we can render the new stuff
+    use sycamore::web::NoHydrate;
+
+    // If we're forcing a render (not hydrating), we need to clear content and use regular rendering
+    // This happens even when the hydrate feature is enabled, because force_render means
+    // this content was not server-rendered and has no hydration markers
+    if force_render {
         parent.set_inner_html("");
-        sycamore::web::render_to(|| view, &parent);
+        // Wrap the view in NoHydrate to disable hydration for this render
+        // This ensures we use regular DOM nodes instead of HydrateNodes
+        sycamore::web::render_in_scope(
+            || view! { NoHydrate { (view) } },
+            &parent
+        );
+    } else {
+        // Normal hydration path when hydrate feature is enabled
+        #[cfg(feature = "hydrate")]
+        {
+            // Use hydrate_in_scope to stay within the current reactive root
+            // This ensures that contexts (like Reactor) from the parent scope remain available
+            sycamore::web::hydrate_in_scope(|| view, &parent);
+        }
+        #[cfg(not(feature = "hydrate"))]
+        {
+            // We have to delete the existing content before we can render the new stuff
+            parent.set_inner_html("");
+            // Use render_in_scope to stay within the current reactive root
+            // This ensures that contexts (like Reactor) from the parent scope remain available
+            sycamore::web::render_in_scope(|| view, &parent);
+        }
     }
 }
 
@@ -38,13 +52,34 @@ pub(crate) fn render_or_hydrate(
 pub(crate) fn ssr_fallible<E>(
     view_fn: impl FnOnce() -> Result<View, E>,
 ) -> Result<String, E> {
-    // Execute the view function and render to string if successful
-    let view_res = view_fn();
-    match view_res {
-        Ok(view) => {
-            let view_str = sycamore::render_to_string(|| view);
-            Ok(view_str)
+    // IMPORTANT: We must call view_fn() INSIDE render_to_string's closure,
+    // not before. This is because render_to_string sets IS_HYDRATING = true
+    // before calling the view function, which causes elements to be created
+    // with hydration keys. If we create the view outside and pass it in,
+    // the elements will already be created without hydration keys.
+
+    // We use RefCell to communicate errors out of the closure
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    let error: Rc<RefCell<Option<E>>> = Rc::new(RefCell::new(None));
+    let error_clone = Rc::clone(&error);
+
+    let view_str = sycamore::render_to_string(|| {
+        match view_fn() {
+            Ok(view) => view,
+            Err(err) => {
+                *error_clone.borrow_mut() = Some(err);
+                // Return an empty view in case of error
+                sycamore::view! {}
+            }
         }
-        Err(err) => Err(err),
+    });
+
+    // Check if an error occurred during view creation
+    if let Some(err) = error.borrow_mut().take() {
+        return Err(err);
     }
+
+    Ok(view_str)
 }

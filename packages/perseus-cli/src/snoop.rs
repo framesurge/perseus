@@ -37,8 +37,8 @@ pub fn snoop_wasm_build(
     println!("[NOTE]: You should expect unused code warnings here! Don't worry about them, they're just a product of the target-gating.");
     let exit_code = run_cmd_directly(
         format!(
-            "{} build --target wasm32-unknown-unknown {}",
-            tools.cargo_browser, global_opts.cargo_browser_args
+            "{} build --package {} --target wasm32-unknown-unknown {}",
+            tools.cargo_browser, crate_name, global_opts.cargo_browser_args
         ),
         &dir,
         vec![

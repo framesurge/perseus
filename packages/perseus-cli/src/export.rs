@@ -218,9 +218,11 @@ pub fn export_internal(
         move || {
             let mut cmds = vec![
             // Build the Wasm artifact first (and we know where it will end up, since we're setting the target directory)
+            // Use --package to only build the user's crate, avoiding workspace members that can't target WASM
             format!(
-                "{} build --target wasm32-unknown-unknown {} {}",
+                "{} build --package {} --target wasm32-unknown-unknown {} {}",
                 tools.cargo_browser,
+                crate_name,
                 if is_release { "--release" } else { "" },
                 cargo_browser_args
             ),

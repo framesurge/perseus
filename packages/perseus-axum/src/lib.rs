@@ -81,7 +81,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     // --- Translation and subsequent load handlers ---
     let mut router = router
         .route(
-            "/.perseus/translations/:locale",
+            "/.perseus/translations/{locale}",
             get(move |Path(locale): Path<String>| async move {
                 ApiResponse(turbine.get_translations(&locale).await)
             }),
@@ -91,7 +91,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             get(move || async move { ApiResponse(turbine.get_initial_consts("").await) }),
         )
         .route(
-            "/.perseus/initial_consts/:locale",
+            "/.perseus/initial_consts/{locale}",
             get(move |Path(locale): Path<String>| async move {
                 let locale = match locale.strip_suffix(".js") {
                     Some(locale) => locale,
@@ -106,7 +106,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             }),
         )
         .route(
-            "/.perseus/page/:locale/*tail",
+            "/.perseus/page/{locale}/{*tail}",
             get(
                 move |Path(path_parts): Path<Vec<String>>,
                       Query(SubsequentLoadQueryParams {

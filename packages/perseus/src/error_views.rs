@@ -129,6 +129,8 @@ impl ErrorViews {
     ///
     /// Note that this is used throughout the Perseus examples for brevity.
     pub fn unlocalized_development_default() -> Self {
+        use sycamore::web::NoHydrate;
+
         // Because this is an unlocalized, extremely simple default, we don't care about
         // capabilities or positioning
         Self::new(|err, _, pos| {
@@ -139,7 +141,8 @@ impl ErrorViews {
                         title { "Page not found" }
                     },
                     view! {
-                        div(
+                        NoHydrate {
+                            div(
                             style = r#"
                                         display: flex;
                                         justify-content: center;
@@ -188,7 +191,7 @@ impl ErrorViews {
                                 }
                             }
                         }
-
+                        }
                     },
                 ),
                 ClientError::Panic(panic_msg) => {
@@ -198,6 +201,7 @@ impl ErrorViews {
                         // Panics are popups
                         View::new(),
                         view! {
+                            NoHydrate {
                                     div(
                                         style = r#"
                                             position: fixed;
@@ -257,6 +261,7 @@ margin-top: 1rem;
                                             })
                                         }
                                     }
+                            }
                             },
                     )
                 }
@@ -265,7 +270,8 @@ margin-top: 1rem;
 
                     // This will be placed in either a popup or across the page
                     let inner_view = view! {
-                        div(
+                        NoHydrate {
+                            div(
                             style = r#"
 background-color: #f87171;
 color: white;
@@ -310,6 +316,7 @@ word-break: break-word;
                                 }
                             }
                         }
+                        }
                     };
 
                     (
@@ -318,7 +325,8 @@ word-break: break-word;
                         },
                         match pos {
                             ErrorPosition::Page => view! {
-                                div(
+                                NoHydrate {
+                                    div(
                                     style = r#"
 display: flex;
 flex-direction: column;
@@ -330,9 +338,11 @@ width: 100%;
                                 ) {
                                     (inner_view)
                                 }
+                                }
                             },
                             ErrorPosition::Popup => view! {
-                                div(
+                                NoHydrate {
+                                    div(
                                     style = r#"
 position: fixed;
 bottom: 0;
@@ -344,8 +354,10 @@ align-items: center;
                                 ) {
                                     (inner_view)
                                 }
+                                }
                             },
                             ErrorPosition::Widget => view! {
+                                NoHydrate {
                                 div(
                                     style = r#"
 display: flex;
@@ -353,6 +365,7 @@ flex-direction: column;
 "#
                                 ) {
                                     (inner_view)
+                                }
                                 }
                             },
                         },
@@ -381,8 +394,26 @@ impl ErrorViews {
         };
 
         let (head_view, body_view) = (self.handler)(err, info, pos);
-        // Stringify the head view with no hydration markers
-        let head_str = sycamore::render_to_string(|| head_view);
+        // On the client, we can't use render_to_string (SSR-only in Sycamore 0.9.2)
+        // Instead, we stringify the head view using the DOM
+        let head_str = {
+            use wasm_bindgen::JsCast;
+            use web_sys::Element;
+
+            // Create a temporary container to render the head view
+            let container = web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .create_element("div")
+                .unwrap();
+
+            // Render the view into the container
+            sycamore::web::render_in_scope(|| head_view, &container);
+
+            // Get the inner HTML
+            container.inner_html()
+        };
 
         (head_str, body_view)
     }

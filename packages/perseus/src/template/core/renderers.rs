@@ -67,15 +67,46 @@ impl TemplateInner {
 
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
-        // We don't need the value, we just want the context instantiations
-        let _disposer = sycamore::reactive::create_root(|| {
-            Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx();
-        });
-        // This is used for widget preloading, which doesn't occur on the engine-side
-        let preload_info = PreloadInfo {};
-        // We don't care about the scope disposer, since this scope is unique anyway
-        let (view, _) = (self.view)(preload_info, state, path)?;
-        Ok(view)
+        use sycamore::reactive::{create_root, create_child_scope};
+
+        // IMPORTANT: When called during SSR (from render_to_string), we must NOT create
+        // a new root because that would isolate us from the HydrationRegistry context.
+        // Instead, we create a child scope which inherits parent contexts.
+        //
+        // We detect SSR context by checking if we're in an existing scope. During SSR,
+        // render_to_string creates a scope, so we'll be in one. When called directly
+        // (e.g., during static generation), we need to create a new root.
+
+        // Check if we can access an existing scope by trying to use create_child_scope
+        // If we're not in a scope, it will panic, so we catch that and create a root
+        let in_existing_scope = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            // This will succeed if we're in a scope, fail otherwise
+            create_child_scope(|| {}).dispose();
+        })).is_ok();
+
+        if in_existing_scope {
+            // We're in an SSR context with existing scope - use child scope to inherit contexts
+            let handle = create_child_scope(|| {});
+            let view = handle.run_in(|| {
+                Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx();
+                let preload_info = PreloadInfo {};
+                let (view, _) = (self.view)(preload_info, state, path)?;
+                Ok::<_, ClientError>(view)
+            })?;
+            handle.dispose();
+            Ok(view)
+        } else {
+            // No existing scope - create a new root (e.g., static generation)
+            let root_handle = create_root(|| {});
+            let view = root_handle.run_in(|| {
+                Reactor::engine(global_state, mode, Some(translator)).add_self_to_cx();
+                let preload_info = PreloadInfo {};
+                let (view, _) = (self.view)(preload_info, state, path)?;
+                Ok::<_, ClientError>(view)
+            })?;
+            std::mem::forget(root_handle);
+            Ok(view)
+        }
     }
     /// Executes the user-given function that renders the document `<head>`,
     /// returning a string to be interpolated manually. Reactivity in this
@@ -88,23 +119,28 @@ impl TemplateInner {
         global_state: TemplateState,
         translator: &Translator,
     ) -> Result<String, ServerError> {
-        // Set up the reactor in a root scope
-        let _disposer = sycamore::reactive::create_root(|| {
+        // Set up the reactor in a root scope and render within it
+        use sycamore::reactive::create_root;
+
+        let root_handle = create_root(|| {});
+        let prerendered = root_handle.run_in(|| {
             // The context we have here has no context elements set on it, so we set all the
             // defaults (job of the router component on the client-side)
             // We don't need the value, we just want the context instantiations
             // We don't need any page state store here
             Reactor::engine(global_state, RenderMode::Head, Some(translator)).add_self_to_cx();
-        });
 
-        // Head rendering doesn't need hydration context
-        let prerender_view = if let Some(head_fn) = &self.head {
-            (head_fn)(state)?
-        } else {
-            View::new()
-        };
-        let prerendered = sycamore::render_to_string(|| prerender_view);
+            // Head rendering doesn't need hydration context
+            let prerender_view = if let Some(head_fn) = &self.head {
+                (head_fn)(state)?
+            } else {
+                View::new()
+            };
+            let prerendered = sycamore::render_to_string(|| prerender_view);
+            Ok::<_, ServerError>(prerendered)
+        })?;
 
+        std::mem::forget(root_handle);
         Ok(prerendered)
     }
     /// Gets the list of templates that should be prerendered for at build-time.
@@ -225,16 +261,22 @@ impl TemplateInner {
         global_state: TemplateState,
         translator: Option<&Translator>,
     ) -> Result<HeaderMap, ServerError> {
-        // Set up the reactor in a root scope
-        let _disposer = sycamore::reactive::create_root(|| {
+        // Set up the reactor in a root scope and call header function within it
+        use sycamore::reactive::create_root;
+
+        let root_handle = create_root(|| {});
+        let headers = root_handle.run_in(|| {
             let reactor = Reactor::engine(global_state, RenderMode::Headers, translator);
             reactor.add_self_to_cx();
-        });
 
-        if let Some(header_fn) = &self.set_headers {
-            (header_fn)(state)
-        } else {
-            Ok(default_headers())
-        }
+            if let Some(header_fn) = &self.set_headers {
+                (header_fn)(state)
+            } else {
+                Ok(default_headers())
+            }
+        })?;
+
+        std::mem::forget(root_handle);
+        Ok(headers)
     }
 }

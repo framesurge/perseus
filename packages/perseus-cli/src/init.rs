@@ -138,7 +138,7 @@ edition = "2021"
 # Dependencies for the engine and the browser go here
 [dependencies]
 perseus = { version = "=%perseus_version", features = [ "hydrate" ] }
-sycamore = "^0.8.1"
+sycamore = "^0.9.2"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 
@@ -156,7 +156,7 @@ static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 use perseus::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
 }"#;
@@ -179,13 +179,13 @@ fn index_page() -> View {
 }
 
 #[engine_only_fn]
-fn head() -> View<SsrNode> {
+fn head() -> View {
     view! {
         title { "Welcome to Perseus!" }
     }
 }
 
-pub fn get_template() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_page).head(head).build()
 }"#;
 static DFLT_INIT_CONFIG_TOML: &str = r#"[build]

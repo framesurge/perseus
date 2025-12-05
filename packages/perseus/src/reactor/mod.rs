@@ -212,7 +212,11 @@ impl Reactor {
     /// You should never need to worry about this function panicking, since
     /// your code will only ever run if a reactor is present.
     pub fn from_cx() -> Rc<Self> {
-        use_context::<Rc<Self>>()
+        use sycamore::prelude::try_use_context;
+
+        try_use_context::<Rc<Self>>().expect(
+            "Reactor::from_cx() called outside of reactive scope or without reactor in context",
+        )
     }
     /// Gets the currently active translator.
     ///

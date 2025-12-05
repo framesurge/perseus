@@ -2985,7 +2985,7 @@ version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
- "perseus-integration",
+ "perseus-axum",
  "serde",
  "serde_json",
  "sycamore",
@@ -3268,7 +3268,7 @@ name = "perseus-example-tiny"
 version = "0.5.0"
 dependencies = [
  "perseus",
- "perseus-integration",
+ "perseus-axum",
  "sycamore",
  "tokio",
 ]

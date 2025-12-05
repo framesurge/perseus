@@ -1,0 +1,9 @@
+# Act configuration for Perseus project
+# Use Rust image that has cargo pre-installed
+-P ubuntu-latest=rust:latest
+
+# Reuse containers to speed up repeated runs
+--reuse
+
+# Use bind mount for performance
+--use-gitignore=false

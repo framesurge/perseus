@@ -1,6 +1,6 @@
 [package]
 name = "perseus-example-base"
-version = "0.4.3"
+version = "0.5.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,7 +12,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [target.'cfg(engine)'.dev-dependencies]
-fantoccini = "0.17"
+fantoccini = "0.22"
 
 [target.'cfg(engine)'.dependencies]
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
