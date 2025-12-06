@@ -2985,7 +2985,7 @@ version = "0.5.0"
 dependencies = [
  "fantoccini",
  "perseus",
- "perseus-integration",
+ "perseus-axum",
  "serde",
  "serde_json",
  "sycamore",
@@ -2999,7 +2999,7 @@ dependencies = [
  "fantoccini",
  "lazy_static",
  "perseus",
- "perseus-integration",
+ "perseus-axum",
  "serde",
  "serde_json",
  "sycamore",
