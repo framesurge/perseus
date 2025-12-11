@@ -20,7 +20,9 @@ perseus-rocket = { path = "../perseus-rocket", features = [
 ], optional = true }
 
 [features]
-default = ["warp"]
+# Don't enable any integration by default to avoid feature conflicts in workspace builds
+# Users should explicitly select one: actix-web, warp, axum, or rocket
+default = []
 
 actix-web = ["perseus-actix-web"]
 warp = ["perseus-warp"]
