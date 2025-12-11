@@ -84,41 +84,8 @@
 //! fine-grained reactivity enabled by these types.
 //!
 //! **Also note:** when iterating over any of these collections to create
-//! `View` fragments, you will need to use `create_ref()` to prevent lifetime
-//! errors, like so:
-//!
-//! ```no_run
-//! # use serde::{Serialize, Deserialize};
-//! # use perseus::state::rx_collections::RxVec;
-//! # use sycamore::prelude::*;
-//! # use perseus::prelude::*;
-//! # #[derive(Serialize, Deserialize, Clone, ReactiveState)]
-//! # #[rx(alias = "StateRx")]
-//! # struct State {
-//! #     #[rx(nested)]
-//! #     list: RxVec<String>,
-//! # }
-//! #
-//! # #[auto_scope]
-//! # fn view(state: &StateRx) -> View {
-//! // Note the use of `create_ref()` here
-//! let list = create_ref(cx, state.list.get());
-//! let view = View::new_fragment(
-//!     list.iter()
-//!     .map(|elem| {
-//!         // ...
-//!         # view! {
-//!             (elem.get())
-//!         }
-//!     })
-//!     .collect()
-//! );
-//!
-//! view! {
-//!     (view)
-//! }
-//! # }
-//! ```
+//! `View` fragments, you will need to manually iterate over the underlying
+//! signal data. See the individual type documentation for examples.
 
 mod rx_hash_map;
 mod rx_hash_map_nested;
