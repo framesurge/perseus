@@ -1,6 +1,9 @@
 #[cfg(any(client, doc))]
 use std::sync::Arc;
+#[cfg(any(client, doc))]
 use std::rc::Rc;
+#[cfg(any(client, doc))]
+use std::cell::RefCell;
 
 use super::Reactor;
 use crate::{
@@ -68,17 +71,22 @@ impl Reactor {
             #[cfg(any(client, doc))]
             None => {
                 return {
-                    let view = create_signal(Rc::new(View::new()));
+                    // Use version counter pattern to avoid Rc::try_unwrap issues
+                    let view_holder = Rc::new(RefCell::new(Option::<View>::None));
+                    let view_version = create_signal(0u64);
 
                     let fallback_fn = fallback_fn.clone();
+                    let view_holder_inner = view_holder.clone();
                     let disposer = create_child_scope(|| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        view.set(Rc::new((fallback_fn)(props.clone())));
+                        *view_holder_inner.borrow_mut() = Some((fallback_fn)(props.clone()));
+                        view_version.set(view_version.get_untracked() + 1);
                         // Note: this uses child scope, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
                         let capsule_name = capsule_name.clone();
+                        let view_holder_async = view_holder_inner.clone();
                         spawn_local_scoped(async move {
                             // Get reactor from context for async block
                             let reactor = Reactor::from_cx();
@@ -133,14 +141,17 @@ impl Reactor {
                                 }
                             };
 
-                            view.set(Rc::new(final_view));
+                            *view_holder_async.borrow_mut() = Some(final_view);
+                            view_version.set(view_version.get_untracked() + 1);
                         });
                     });
 
                     Ok((sycamore::prelude::view! {
                         (move || {
-                            let view_rc = view.get_clone();
-                            Rc::try_unwrap(view_rc).unwrap_or_else(|_rc| View::new())
+                            // Track the version counter - triggers re-runs when view changes
+                            view_version.track();
+                            // Take the view from holder - doesn't trigger reactive updates
+                            view_holder.borrow_mut().take().unwrap_or_else(View::new)
                         })
                     }, disposer))
                 };
@@ -192,17 +203,22 @@ impl Reactor {
             #[cfg(any(client, doc))]
             None => {
                 return {
-                    let view = create_signal(Rc::new(View::new()));
+                    // Use version counter pattern to avoid Rc::try_unwrap issues
+                    let view_holder = Rc::new(RefCell::new(Option::<View>::None));
+                    let view_version = create_signal(0u64);
 
                     let fallback_fn = fallback_fn.clone();
+                    let view_holder_inner = view_holder.clone();
                     let disposer = create_child_scope(|| {
                         // We'll render the fallback view in the meantime (which `PerseusApp`
                         // guarantees to be defined for capsules)
-                        view.set(Rc::new((fallback_fn)(props.clone())));
+                        *view_holder_inner.borrow_mut() = Some((fallback_fn)(props.clone()));
+                        view_version.set(view_version.get_untracked() + 1);
                         // Note: this uses child scope, meaning the fetch will be aborted if the user
                         // goes to another page (when this page is cleaned
                         // up, including all child scopes)
                         let capsule_name = capsule_name.clone();
+                        let view_holder_async = view_holder_inner.clone();
                         spawn_local_scoped(async move {
                             // Get reactor from context for async block
                             let reactor = Reactor::from_cx();
@@ -256,14 +272,17 @@ impl Reactor {
                                 }
                             };
 
-                            view.set(Rc::new(final_view));
+                            *view_holder_async.borrow_mut() = Some(final_view);
+                            view_version.set(view_version.get_untracked() + 1);
                         });
                     });
 
                     Ok((sycamore::prelude::view! {
                         (move || {
-                            let view_rc = view.get_clone();
-                            Rc::try_unwrap(view_rc).unwrap_or_else(|_rc| View::new())
+                            // Track the version counter - triggers re-runs when view changes
+                            view_version.track();
+                            // Take the view from holder - doesn't trigger reactive updates
+                            view_holder.borrow_mut().take().unwrap_or_else(View::new)
                         })
                     }, disposer))
                 };

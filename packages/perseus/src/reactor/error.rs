@@ -5,7 +5,6 @@ use crate::{
     template::BrowserNodeType,
     utils::{render_or_hydrate, replace_head},
 };
-use std::rc::Rc;
 use std::sync::Arc;
 use sycamore::{
     prelude::*,
@@ -51,11 +50,11 @@ impl Reactor {
             // For page-wide errors, we need to set the head
             ErrorPosition::Page => {
                 replace_head(&head_str);
-                self.current_view.set(Rc::new(body_view));
+                self.set_current_view(body_view);
                 (disposer, true)
             }
             ErrorPosition::Popup => {
-                self.popup_error_view.set(Rc::new(body_view));
+                self.set_popup_error_view(body_view);
                 (disposer, false)
             }
             // We don't handle widget errors in this function

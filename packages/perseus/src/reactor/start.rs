@@ -91,13 +91,14 @@ impl Reactor {
         let mut on_first_page = true;
         let load_state = self.router_state.get_load_state_rc();
         create_effect(move || {
-            load_state.with(|state| {
+            let announcement_opt = load_state.with(|state| {
                 if let RouterLoadState::Loaded { path, .. } = state {
                     if on_first_page {
                         // This is the first load event, so the next one will be for a new page (or at
                         // least something that we should announce, if this page reloads then the
                         // content will change, that would be from thawing)
                         on_first_page = false;
+                        None
                     } else {
                         // TODO Validate approach with reloading
                         // A new page has just been loaded and is interactive (this event only fires
@@ -133,11 +134,17 @@ impl Reactor {
                                 }
                             }
                         };
-
-                        route_announcement.set(announcement);
+                        Some(announcement)
                     }
+                } else {
+                    None
                 }
             });
+
+            // Set the announcement outside the .with() closure to avoid BorrowMutError
+            if let Some(announcement) = announcement_opt {
+                route_announcement.set(announcement);
+            }
         });
 
         // --- HSR and live reloading ---
@@ -200,18 +207,17 @@ impl Reactor {
         // reactivity going as long as it isn't dropped). Popup errors do *not*
         // get access to a router or the like. Every time `popup_err_view` is
         // updated, this will update too.
-        let popup_view = self.popup_error_view;
+        let popup_view_version = self.popup_error_view_version;
+        let popup_view_holder = self.popup_error_view_holder.clone();
         render_or_hydrate(
             view! {
                 (move || {
-                    let view_rc = popup_view.get_clone();
-                    // We need to extract the inner View from Rc.
-                    // Since View isn't Clone, we use Rc::try_unwrap or create an effect pattern
-                    Rc::try_unwrap(view_rc).unwrap_or_else(|rc| {
-                        // If there are multiple references, we can't unwrap.
-                        // Return empty view as fallback
-                        View::new()
-                    })
+                    // Track the version counter - this triggers re-runs when
+                    // set_popup_error_view() is called
+                    popup_view_version.track();
+                    // Take the view from the holder - this doesn't trigger any
+                    // reactive updates since the holder isn't a signal
+                    popup_view_holder.borrow_mut().take().unwrap_or_else(View::new)
                 })
             },
             popup_error_root,
@@ -289,14 +295,14 @@ impl Reactor {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
                 let (_, body_view) = self.error_views.handle(err, ErrorPosition::Popup);
-                self.popup_error_view.set(Rc::new(body_view)); // Popups never hydrate
+                self.set_popup_error_view(body_view); // Popups never hydrate
 
                 // Signal the top-level disposer, which will also call the child scope disposer
                 // ignored above
                 return false;
             }
         };
-        self.current_view.set(Rc::new(starting_view));
+        self.set_current_view(starting_view);
 
         // --- Reload commander ---
 
@@ -333,7 +339,7 @@ impl Reactor {
                     // Get the subsequent view and handle errors
                     match reactor.get_subsequent_view(verdict.clone()).await {
                         Ok((view, disposer)) => {
-                            reactor.current_view.set(Rc::new(view));
+                            reactor.set_current_view(view);
                             // SAFETY: We're outside the old page's scope
                             unsafe {
                                 page_disposer_2.update(disposer);
@@ -401,7 +407,7 @@ impl Reactor {
                                     // Get the subsequent view and handle errors
                                     match reactor.get_subsequent_view(verdict).await {
                                         Ok((view, disposer)) => {
-                                            reactor.current_view.set(Rc::new(view));
+                                            reactor.set_current_view(view);
                                             // SAFETY: We're outside the old page's scope
                                             unsafe { page_disposer_2.update(disposer); }
                                         }
@@ -422,13 +428,19 @@ impl Reactor {
                             }
                         });
 
-                        // This template is reactive, and will be updated as necessary
-                        let current_view = reactor_for_view.current_view;
+                        // This template is reactive, and will be updated as necessary.
+                        // We track the version counter (not the view holder itself) to avoid
+                        // triggering spurious re-runs when we take the view out.
+                        let current_view_version = reactor_for_view.current_view_version;
+                        let current_view_holder = reactor_for_view.current_view_holder.clone();
                         view! {
                             (move || {
-                                let view_rc = current_view.get_clone();
-                                // Try to unwrap the Rc, or create a new empty view if there are multiple references
-                                Rc::try_unwrap(view_rc).unwrap_or_else(|_rc| View::new())
+                                // Track the version counter - this triggers re-runs when
+                                // set_current_view() is called during navigation
+                                current_view_version.track();
+                                // Take the view from the holder - this doesn't trigger any
+                                // reactive updates since the holder isn't a signal
+                                current_view_holder.borrow_mut().take().unwrap_or_else(View::new)
                             })
                         }
                     }

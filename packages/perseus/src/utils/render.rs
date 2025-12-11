@@ -32,9 +32,19 @@ pub(crate) fn render_or_hydrate(
         // Normal hydration path when hydrate feature is enabled
         #[cfg(feature = "hydrate")]
         {
-            // Use hydrate_in_scope to stay within the current reactive root
-            // This ensures that contexts (like Reactor) from the parent scope remain available
-            sycamore::web::hydrate_in_scope(|| view, &parent);
+            // Due to Sycamore 0.9.2's hydration architecture, we cannot use hydrate_in_scope
+            // directly. The issue is that Perseus's SSR renders only the page template content,
+            // but the client wraps this in a router with dynamic views. These dynamic views
+            // create marker expectations (<!--/--> comments) that don't exist in the SSR output.
+            //
+            // As a workaround, we clear the SSR content and render fresh. This means the user
+            // will see a brief flash of the SSR content being replaced, but it avoids the
+            // hydration marker mismatch panic.
+            //
+            // TODO: Implement proper hydration by having SSR render through the same
+            // router structure, or by investigating Sycamore's partial hydration options.
+            parent.set_inner_html("");
+            sycamore::web::render_in_scope(|| view, &parent);
         }
         #[cfg(not(feature = "hydrate"))]
         {

@@ -66,6 +66,10 @@ impl HtmlShell {
         let mut head_before_boundary = Vec::new();
         let mut scripts_before_boundary = Vec::new();
 
+        // Inject the Sycamore hydration script (required for Sycamore 0.9.2+)
+        // This tells the client-side code that SSR was used in blocking mode
+        scripts_before_boundary.push("window.__sycamore_ssr_mode='blocking';".into());
+
         // Inject a global variable to identify whether we are testing (picked up by app
         // shell to trigger helper DOM events)
         if env::var("PERSEUS_TESTING").is_ok() {
@@ -135,7 +139,7 @@ impl HtmlShell {
                 }};
                 checker();
             }}).then(async () => {{
-                await init("{path_prefix}/.perseus/bundle.wasm");
+                await init({{ module_or_path: "{path_prefix}/.perseus/bundle.wasm" }});
             }});
         }}
         main();
@@ -159,7 +163,7 @@ impl HtmlShell {
                 }};
                 checker();
             }}).then(async () => {{
-                await init("{path_prefix}/.perseus/bundle.wasm");
+                await init({{ module_or_path: "{path_prefix}/.perseus/bundle.wasm" }});
             }});
         }}
         main();

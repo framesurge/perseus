@@ -107,16 +107,24 @@ pub struct Reactor {
     /// The app's error views.
     #[cfg(any(client, doc))]
     pub(crate) error_views: Rc<ErrorViews>,
-    /// A reactive container for the current page-wide view. This will usually
+    /// Storage for the current page-wide view. This will usually
     /// contain the contents of the current page, but it may also contain a
-    /// page-wide error. This will be wrapped in a router.
-    /// We use Rc<View> because View doesn't implement Clone in Sycamore 0.9.
+    /// page-wide error. We use Rc<RefCell<Option<View>>> because View doesn't implement Clone.
+    /// The RefCell allows us to take the view out when rendering.
     #[cfg(any(client, doc))]
-    current_view: Signal<Rc<View>>,
-    /// A reactive container for any popup errors.
-    /// We use Rc<View> because View doesn't implement Clone in Sycamore 0.9.
+    current_view_holder: Rc<RefCell<Option<View>>>,
+    /// A version counter signal that triggers reactive updates when the current view changes.
+    /// We use a separate counter instead of putting View directly in a signal because
+    /// modifying a signal inside its own reactive closure causes spurious re-runs.
     #[cfg(any(client, doc))]
-    popup_error_view: Signal<Rc<View>>,
+    current_view_version: Signal<u64>,
+    /// Storage for any popup errors.
+    /// We use Rc<RefCell<Option<View>>> because View doesn't implement Clone.
+    #[cfg(any(client, doc))]
+    popup_error_view_holder: Rc<RefCell<Option<View>>>,
+    /// A version counter signal that triggers reactive updates when the popup error view changes.
+    #[cfg(any(client, doc))]
+    popup_error_view_version: Signal<u64>,
     /// The app's root div ID.
     #[cfg(any(client, doc))]
     root: String,
@@ -184,8 +192,10 @@ impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<M, T>> for 
             // This will be filled out by a `.thaw()` call or HSR
             frozen_app: Rc::new(RefCell::new(None)),
             is_first: Cell::new(true),
-            current_view: create_signal(Rc::new(View::new())),
-            popup_error_view: create_signal(Rc::new(View::new())),
+            current_view_holder: Rc::new(RefCell::new(Some(View::new()))),
+            current_view_version: create_signal(0),
+            popup_error_view_holder: Rc::new(RefCell::new(Some(View::new()))),
+            popup_error_view_version: create_signal(0),
             entities: app.entities,
             locales,
             render_cfg,
@@ -273,6 +283,38 @@ impl Reactor {
             let new_path = path.replace(&curr_locale, new_locale);
             sycamore_router::navigate(&new_path);
         }
+    }
+
+    /// Sets the current page view and triggers a reactive update.
+    /// This stores the view in the holder and increments the version counter
+    /// to trigger any reactive closures watching the view.
+    #[cfg(any(client, doc))]
+    pub(crate) fn set_current_view(&self, view: View) {
+        *self.current_view_holder.borrow_mut() = Some(view);
+        self.current_view_version.set(self.current_view_version.get_untracked() + 1);
+    }
+
+    /// Takes the current page view from the holder and returns it.
+    /// This should only be called from within a reactive closure that tracks
+    /// `current_view_version`.
+    #[cfg(any(client, doc))]
+    pub(crate) fn take_current_view(&self) -> View {
+        self.current_view_holder.borrow_mut().take().unwrap_or_else(View::new)
+    }
+
+    /// Sets the popup error view and triggers a reactive update.
+    #[cfg(any(client, doc))]
+    pub(crate) fn set_popup_error_view(&self, view: View) {
+        *self.popup_error_view_holder.borrow_mut() = Some(view);
+        self.popup_error_view_version.set(self.popup_error_view_version.get_untracked() + 1);
+    }
+
+    /// Takes the popup error view from the holder and returns it.
+    /// This should only be called from within a reactive closure that tracks
+    /// `popup_error_view_version`.
+    #[cfg(any(client, doc))]
+    pub(crate) fn take_popup_error_view(&self) -> View {
+        self.popup_error_view_holder.borrow_mut().take().unwrap_or_else(View::new)
     }
 }
 
