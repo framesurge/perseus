@@ -58,18 +58,24 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         .send_keys(&frozen_app)
         .await?;
     c.find(Locator::Id("thaw_button")).await?.click().await?;
-    // Wait for the global_state element to ensure navigation completed
-    // (this will wait for the element to appear with the expected text)
-    assert_eq!(
-        c.find(Locator::Id("global_state")).await?.text().await?,
-        "Hello World! Extra text."
-    );
+    // Wait for navigation to complete by polling the URL until it changes
+    for _ in 0..50 {
+        if c.current_url().await?.as_ref().starts_with("http://localhost:8080/about") {
+            break;
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    }
     // Now verify we're on the about page
     assert!(c
         .current_url()
         .await?
         .as_ref()
         .starts_with("http://localhost:8080/about"));
+    // And verify the global state was restored
+    assert_eq!(
+        c.find(Locator::Id("global_state")).await?.text().await?,
+        "Hello World! Extra text."
+    );
 
     // And go back to the index page to check everything fully
     c.find(Locator::Id("index-link")).await?.click().await?;
