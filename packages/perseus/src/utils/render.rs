@@ -10,11 +10,7 @@ use sycamore::prelude::*;
 /// the given view was created inside a `with_hydration_context()` closure.
 #[cfg(any(client, doc))]
 #[allow(unused_variables)]
-pub(crate) fn render_or_hydrate(
-    view: View,
-    parent: web_sys::Element,
-    force_render: bool,
-) {
+pub(crate) fn render_or_hydrate(view: View, parent: web_sys::Element, force_render: bool) {
     use sycamore::web::NoHydrate;
 
     // If we're forcing a render (not hydrating), we need to clear content and use regular rendering
@@ -24,10 +20,7 @@ pub(crate) fn render_or_hydrate(
         parent.set_inner_html("");
         // Wrap the view in NoHydrate to disable hydration for this render
         // This ensures we use regular DOM nodes instead of HydrateNodes
-        sycamore::web::render_in_scope(
-            || view! { NoHydrate { (view) } },
-            &parent
-        );
+        sycamore::web::render_in_scope(|| view! { NoHydrate { (view) } }, &parent);
     } else {
         // Normal hydration path when hydrate feature is enabled
         #[cfg(feature = "hydrate")]
@@ -59,9 +52,7 @@ pub(crate) fn render_or_hydrate(
 
 /// Renders the given view to a string in a fallible manner.
 #[cfg(engine)]
-pub(crate) fn ssr_fallible<E>(
-    view_fn: impl FnOnce() -> Result<View, E>,
-) -> Result<String, E> {
+pub(crate) fn ssr_fallible<E>(view_fn: impl FnOnce() -> Result<View, E>) -> Result<String, E> {
     // IMPORTANT: We must call view_fn() INSIDE render_to_string's closure,
     // not before. This is because render_to_string sets IS_HYDRATING = true
     // before calling the view function, which causes elements to be created

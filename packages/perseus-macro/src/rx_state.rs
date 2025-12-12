@@ -123,12 +123,12 @@ pub fn make_rx_impl(input: ReactiveStateDeriveInput) -> TokenStream {
             intermediate_field_makers.extend(
                 quote! { #field_ident: ::sycamore::prelude::create_signal(self.#field_ident), },
             );
-            new_intermediate_field_makers.extend(
-                quote! { #field_ident: ::sycamore::prelude::create_signal(#field_ident), },
-            );
+            new_intermediate_field_makers
+                .extend(quote! { #field_ident: ::sycamore::prelude::create_signal(#field_ident), });
             // All fields must be `Clone`
-            unrx_field_makers
-                .extend(quote! { #field_ident: self.#field_ident.with_untracked(|val| val.clone()), });
+            unrx_field_makers.extend(
+                quote! { #field_ident: self.#field_ident.with_untracked(|val| val.clone()), },
+            );
 
             // Handle suspended fields (we don't care if they're nested, the user can worry
             // about that (probably using `RxResult` or similar))

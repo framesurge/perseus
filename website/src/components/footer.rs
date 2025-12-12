@@ -6,9 +6,7 @@ static COPYRIGHT_YEARS: &str = "2021-2023";
 /// The footer for the entire app, which can be styled arbitrarily.
 #[component]
 pub fn Footer() -> View {
-    let copyright_text = t!("footer.copyright", {
-        "years" = COPYRIGHT_YEARS
-    });
+    let copyright_text = t!("footer.copyright", { "years" = COPYRIGHT_YEARS });
     view! {
         footer(
             class = "w-full flex justify-center py-5 bg-black text-white"

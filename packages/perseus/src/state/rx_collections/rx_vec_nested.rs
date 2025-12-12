@@ -44,9 +44,8 @@ where
     type Unrx = RxVecNested<T>;
 
     fn make_unrx(self) -> Self::Unrx {
-        self.0.with_untracked(|vec| {
-            RxVecNested(vec.iter().map(|x| x.clone().make_unrx()).collect())
-        })
+        self.0
+            .with_untracked(|vec| RxVecNested(vec.iter().map(|x| x.clone().make_unrx()).collect()))
     }
 
     #[cfg(any(client, doc))]

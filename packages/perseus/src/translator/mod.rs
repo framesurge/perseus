@@ -31,15 +31,9 @@ pub use FluentTranslator as Translator;
 #[cfg(feature = "translator-fluent")]
 pub use FLUENT_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
-#[cfg(all(
-    feature = "translator-lightweight",
-    not(feature = "translator-fluent")
-))]
+#[cfg(all(feature = "translator-lightweight", not(feature = "translator-fluent")))]
 pub use LightweightTranslator as Translator;
-#[cfg(all(
-    feature = "translator-lightweight",
-    not(feature = "translator-fluent")
-))]
+#[cfg(all(feature = "translator-lightweight", not(feature = "translator-fluent")))]
 pub use LIGHTWEIGHT_TRANSLATOR_FILE_EXT as TRANSLATOR_FILE_EXT;
 
 // And then we export the appropriate macro backends, hidden from the docs
@@ -56,28 +50,16 @@ pub use fluent::t_macro_backend_with_args;
 #[cfg(feature = "translator-fluent")]
 pub use fluent::TranslationArgs;
 
-#[cfg(all(
-    feature = "translator-lightweight",
-    not(feature = "translator-fluent")
-))]
+#[cfg(all(feature = "translator-lightweight", not(feature = "translator-fluent")))]
 #[doc(hidden)]
 pub use lightweight::link_macro_backend;
-#[cfg(all(
-    feature = "translator-lightweight",
-    not(feature = "translator-fluent")
-))]
+#[cfg(all(feature = "translator-lightweight", not(feature = "translator-fluent")))]
 #[doc(hidden)]
 pub use lightweight::t_macro_backend;
-#[cfg(all(
-    feature = "translator-lightweight",
-    not(feature = "translator-fluent")
-))]
+#[cfg(all(feature = "translator-lightweight", not(feature = "translator-fluent")))]
 #[doc(hidden)]
 pub use lightweight::t_macro_backend_with_args;
-#[cfg(all(
-    feature = "translator-lightweight",
-    not(feature = "translator-fluent")
-))]
+#[cfg(all(feature = "translator-lightweight", not(feature = "translator-fluent")))]
 pub use lightweight::TranslationArgs;
 
 #[cfg(all(

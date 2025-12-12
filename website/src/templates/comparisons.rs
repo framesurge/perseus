@@ -105,14 +105,17 @@ fn ComparisonTable(props: ComparisonTableProps) -> View {
     let comparison_supports_ssr = create_memo(move || comparison.get_clone().supports_ssr.render());
     let comparison_supports_ssr_ssg_same_page =
         create_memo(move || comparison.get_clone().supports_ssr_ssg_same_page.render());
-    let comparison_supports_i18n = create_memo(move || comparison.get_clone().supports_i18n.render());
+    let comparison_supports_i18n =
+        create_memo(move || comparison.get_clone().supports_i18n.render());
     let comparison_supports_incremental =
         create_memo(move || comparison.get_clone().supports_incremental.render());
     let comparison_supports_revalidation =
         create_memo(move || comparison.get_clone().supports_revalidation.render());
     let comparison_inbuilt_cli = create_memo(move || comparison.get_clone().inbuilt_cli.render());
-    let comparison_inbuilt_routing = create_memo(move || comparison.get_clone().inbuilt_routing.render());
-    let comparison_supports_shell = create_memo(move || comparison.get_clone().supports_shell.render());
+    let comparison_inbuilt_routing =
+        create_memo(move || comparison.get_clone().inbuilt_routing.render());
+    let comparison_supports_shell =
+        create_memo(move || comparison.get_clone().supports_shell.render());
     let comparison_supports_deployment =
         create_memo(move || comparison.get_clone().supports_deployment.render());
     let comparison_supports_exporting =
@@ -295,17 +298,17 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> View {
     let curr_comparison_name = create_signal(comparison_names[0].clone());
 
     let select_options = comparison_names
-            .iter()
-            .map(|name| {
-                let name = name.clone();
-                let name_2 = name.clone();
-                view! {
-                    option(value = name) {
-                        (name_2)
-                    }
+        .iter()
+        .map(|name| {
+            let name = name.clone();
+            let name_2 = name.clone();
+            view! {
+                option(value = name) {
+                    (name_2)
                 }
-            })
-            .collect::<Vec<_>>();
+            }
+        })
+        .collect::<Vec<_>>();
 
     let curr_comparison = create_memo(move || {
         comparisons
@@ -314,9 +317,9 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> View {
             .clone()
     });
 
-    let comparisons_extra = t!( "comparisons-extra");
+    let comparisons_extra = t!("comparisons-extra");
     let menu_signal = create_signal(false);
-    let perseus_title = t!( "perseus");
+    let perseus_title = t!("perseus");
     let text_color = "text-black dark:text-white".to_string();
     let menu_color = "bg-black dark:bg-white".to_string();
     let mobile_nav = View::default();
@@ -329,10 +332,10 @@ pub fn comparisons_page(props: ComparisonsPageProps) -> View {
         menu_open: Some(menu_signal),
     };
 
-    let comparisons_heading = t!( "comparisons-heading");
-    let comparisons_subtitle = t!( "comparisons-subtitle");
-    let sycamore_heading = t!( "comparisons-sycamore-heading");
-    let sycamore_text = t!( "comparisons-sycamore-text");
+    let comparisons_heading = t!("comparisons-heading");
+    let comparisons_subtitle = t!("comparisons-subtitle");
+    let sycamore_heading = t!("comparisons-sycamore-heading");
+    let sycamore_text = t!("comparisons-sycamore-text");
 
     view! {
         Container(

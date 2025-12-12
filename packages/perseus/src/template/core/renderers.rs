@@ -67,7 +67,7 @@ impl TemplateInner {
 
         // The context we have here has no context elements set on it, so we set all the
         // defaults (job of the router component on the client-side)
-        use sycamore::reactive::{create_root, create_child_scope};
+        use sycamore::reactive::{create_child_scope, create_root};
 
         // IMPORTANT: When called during SSR (from render_to_string), we must NOT create
         // a new root because that would isolate us from the HydrationRegistry context.
@@ -82,7 +82,8 @@ impl TemplateInner {
         let in_existing_scope = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             // This will succeed if we're in a scope, fail otherwise
             create_child_scope(|| {}).dispose();
-        })).is_ok();
+        }))
+        .is_ok();
 
         if in_existing_scope {
             // We're in an SSR context with existing scope - use child scope to inherit contexts

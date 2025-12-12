@@ -116,7 +116,7 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
     let (state_pat, state_ty, is_ref) = match arg {
         FnArg::Typed(PatType { ty, pat, .. }) => match &**ty {
             Type::Reference(TypeReference { elem, .. }) => (pat, elem.clone(), true),
-            other_ty => (pat, Box::new(other_ty.clone()), false)
+            other_ty => (pat, Box::new(other_ty.clone()), false),
         },
         FnArg::Receiver(_) => unreachable!(),
     };

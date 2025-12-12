@@ -64,12 +64,7 @@ impl DocsVersionStatus {
             // No message should be displayed if it's the correct version
             Self::Stable => View::default(),
             Self::Outdated => {
-                let outdated_msg = t!(
-                    "docs-status.outdated",
-                    {
-                        "stable" = &stable_version
-                    }
-                );
+                let outdated_msg = t!("docs-status.outdated", { "stable" = &stable_version });
                 view! {
                     div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
@@ -84,12 +79,7 @@ impl DocsVersionStatus {
                 }
             }
             Self::Beta => {
-                let beta_msg = t!(
-                    "docs-status.beta",
-                    {
-                        "stable" = &stable_version
-                    }
-                );
+                let beta_msg = t!("docs-status.beta", { "stable" = &stable_version });
                 view! {
                     div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
@@ -104,12 +94,7 @@ impl DocsVersionStatus {
                 }
             }
             Self::Next => {
-                let next_msg = t!(
-                    "docs-status.next",
-                    {
-                        "stable" = &stable_version
-                    }
-                );
+                let next_msg = t!("docs-status.next", { "stable" = &stable_version });
                 view! {
                     div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {

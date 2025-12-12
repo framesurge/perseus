@@ -291,7 +291,8 @@ impl Reactor {
     #[cfg(any(client, doc))]
     pub(crate) fn set_current_view(&self, view: View) {
         *self.current_view_holder.borrow_mut() = Some(view);
-        self.current_view_version.set(self.current_view_version.get_untracked() + 1);
+        self.current_view_version
+            .set(self.current_view_version.get_untracked() + 1);
     }
 
     /// Takes the current page view from the holder and returns it.
@@ -299,14 +300,18 @@ impl Reactor {
     /// `current_view_version`.
     #[cfg(any(client, doc))]
     pub(crate) fn take_current_view(&self) -> View {
-        self.current_view_holder.borrow_mut().take().unwrap_or_else(View::new)
+        self.current_view_holder
+            .borrow_mut()
+            .take()
+            .unwrap_or_else(View::new)
     }
 
     /// Sets the popup error view and triggers a reactive update.
     #[cfg(any(client, doc))]
     pub(crate) fn set_popup_error_view(&self, view: View) {
         *self.popup_error_view_holder.borrow_mut() = Some(view);
-        self.popup_error_view_version.set(self.popup_error_view_version.get_untracked() + 1);
+        self.popup_error_view_version
+            .set(self.popup_error_view_version.get_untracked() + 1);
     }
 
     /// Takes the popup error view from the holder and returns it.
@@ -314,7 +319,10 @@ impl Reactor {
     /// `popup_error_view_version`.
     #[cfg(any(client, doc))]
     pub(crate) fn take_popup_error_view(&self) -> View {
-        self.popup_error_view_holder.borrow_mut().take().unwrap_or_else(View::new)
+        self.popup_error_view_holder
+            .borrow_mut()
+            .take()
+            .unwrap_or_else(View::new)
     }
 }
 

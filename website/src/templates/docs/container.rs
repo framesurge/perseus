@@ -121,7 +121,7 @@ pub fn DocsContainer(props: DocsContainerProps) -> View {
     let header_props = HeaderProps {
         text_color: "text-black dark:text-white".to_string(),
         menu_color: "bg-black dark:bg-white".to_string(),
-        title: t!( "perseus"),
+        title: t!("perseus"),
         mobile_nav_extension: view! {
             hr()
             div(class = "text-left p-3 overflow-y-scroll h-[60vh]") {

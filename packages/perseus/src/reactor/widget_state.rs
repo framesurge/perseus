@@ -1,9 +1,9 @@
 #[cfg(any(client, doc))]
-use std::sync::Arc;
+use std::cell::RefCell;
 #[cfg(any(client, doc))]
 use std::rc::Rc;
 #[cfg(any(client, doc))]
-use std::cell::RefCell;
+use std::sync::Arc;
 
 use super::Reactor;
 use crate::{
@@ -128,7 +128,8 @@ impl Reactor {
                                         Ok(Some(intermediate_state)) => {
                                             // Declare the relationship between the widget and its
                                             // caller
-                                            reactor.state_store
+                                            reactor
+                                                .state_store
                                                 .declare_dependency(&path, &caller_path);
 
                                             // In Sycamore 0.9.2, pass state by value (or clone if not Copy)
@@ -146,14 +147,17 @@ impl Reactor {
                         });
                     });
 
-                    Ok((sycamore::prelude::view! {
-                        (move || {
-                            // Track the version counter - triggers re-runs when view changes
-                            view_version.track();
-                            // Take the view from holder - doesn't trigger reactive updates
-                            view_holder.borrow_mut().take().unwrap_or_else(View::new)
-                        })
-                    }, disposer))
+                    Ok((
+                        sycamore::prelude::view! {
+                            (move || {
+                                // Track the version counter - triggers re-runs when view changes
+                                view_version.track();
+                                // Take the view from holder - doesn't trigger reactive updates
+                                view_holder.borrow_mut().take().unwrap_or_else(View::new)
+                            })
+                        },
+                        disposer,
+                    ))
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
@@ -260,7 +264,8 @@ impl Reactor {
                                         Ok(Some(intermediate_state)) => {
                                             // Declare the relationship between the widget and its
                                             // caller
-                                            reactor.state_store
+                                            reactor
+                                                .state_store
                                                 .declare_dependency(&path, &caller_path);
 
                                             view_fn(intermediate_state.make_unrx(), props)
@@ -277,14 +282,17 @@ impl Reactor {
                         });
                     });
 
-                    Ok((sycamore::prelude::view! {
-                        (move || {
-                            // Track the version counter - triggers re-runs when view changes
-                            view_version.track();
-                            // Take the view from holder - doesn't trigger reactive updates
-                            view_holder.borrow_mut().take().unwrap_or_else(View::new)
-                        })
-                    }, disposer))
+                    Ok((
+                        sycamore::prelude::view! {
+                            (move || {
+                                // Track the version counter - triggers re-runs when view changes
+                                view_version.track();
+                                // Take the view from holder - doesn't trigger reactive updates
+                                view_holder.borrow_mut().take().unwrap_or_else(View::new)
+                            })
+                        },
+                        disposer,
+                    ))
                 };
             }
             // On the engine-side, this is impossible (we cannot be instructed to fetch)
@@ -382,4 +390,3 @@ impl Reactor {
         }
     }
 }
-

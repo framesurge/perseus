@@ -451,11 +451,11 @@ fn index_page(examples: CodeExamples) -> View {
     // };
 
     // Extract t! macro results for dangerously_set_inner_html to avoid closure wrapping
-    let state_gen_desc = t!( "index-state-gen.desc");
-    let i18n_desc = t!( "index-i18n.desc");
-    let speed_desc_1 = t!( "index-speed.desc-line-1");
-    let speed_desc_2 = t!( "index-speed.desc-line-2");
-    let speed_desc_3 = t!( "index-speed.desc-line-3");
+    let state_gen_desc = t!("index-state-gen.desc");
+    let i18n_desc = t!("index-i18n.desc");
+    let speed_desc_1 = t!("index-speed.desc-line-1");
+    let speed_desc_2 = t!("index-speed.desc-line-2");
+    let speed_desc_3 = t!("index-speed.desc-line-3");
 
     view! {
         Container(

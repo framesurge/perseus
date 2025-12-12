@@ -35,7 +35,9 @@ use std::{io::Cursor, path::Path};
 // Rocket uses hyper which uses http 0.2.x while Perseus uses http 1.x
 
 /// Convert rocket's hyper http 0.2.x Request to perseus's http 1.x Request
-fn convert_request(rocket_req: rocket::http::hyper::Request<()>) -> Result<http::Request<()>, String> {
+fn convert_request(
+    rocket_req: rocket::http::hyper::Request<()>,
+) -> Result<http::Request<()>, String> {
     let mut builder = http::Request::builder();
 
     // Convert method
@@ -54,7 +56,9 @@ fn convert_request(rocket_req: rocket::http::hyper::Request<()>) -> Result<http:
     };
 
     // Convert URI
-    let perseus_uri: http::Uri = rocket_req.uri().to_string()
+    let perseus_uri: http::Uri = rocket_req
+        .uri()
+        .to_string()
         .parse()
         .map_err(|e| format!("Failed to convert URI: {}", e))?;
 
@@ -194,7 +198,11 @@ where
         Ok(rocket_request) => match convert_request(rocket_request) {
             Ok(perseus_request) => Outcome::from(
                 req,
-                ApiResponse(turbine.get_initial_load(PathMaybeWithLocale(path), perseus_request).await),
+                ApiResponse(
+                    turbine
+                        .get_initial_load(PathMaybeWithLocale(path), perseus_request)
+                        .await,
+                ),
             ),
             Err(_) => Outcome::Error(Status::BadRequest),
         },

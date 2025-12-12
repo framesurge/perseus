@@ -192,9 +192,7 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
         .await
         .expect("Failed to bind to address");
 
-    axum::serve(listener, app)
-        .await
-        .unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 /// Creates and starts the default Perseus server with compression using Axum.

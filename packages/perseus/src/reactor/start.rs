@@ -280,8 +280,7 @@ impl Reactor {
             Err(err @ ClientError::ServerError { .. }) => {
                 // Rather than worrying about multi-file invariants, just do the error
                 // handling manually for sanity
-                let (head_str, body_view) =
-                    self.error_views.handle(err, ErrorPosition::Page);
+                let (head_str, body_view) = self.error_views.handle(err, ErrorPosition::Page);
                 replace_head(&head_str);
 
                 // For apps using exporting, it's very possible that the prerendered may be
@@ -350,7 +349,8 @@ impl Reactor {
                             // placed into the correct `Signal` for future managament
                             let (root_handle, pagewide) = reactor.report_err(err);
                             // Create disposer for cleanup
-                            let disposer_fn: Box<dyn FnOnce()> = Box::new(move || root_handle.dispose());
+                            let disposer_fn: Box<dyn FnOnce()> =
+                                Box::new(move || root_handle.dispose());
                             if pagewide {
                                 unsafe {
                                     page_disposer_2.update(disposer_fn);

@@ -10,10 +10,10 @@ use crate::{
 #[cfg(engine)]
 use http::HeaderMap;
 use serde::{de::DeserializeOwned, Serialize};
+use sycamore::prelude::*;
 use sycamore::reactive::create_child_scope;
 #[cfg(engine)]
 use sycamore::web::SsrNode;
-use sycamore::prelude::*;
 
 impl TemplateInner {
     // The view functions below are shadowed for widgets, and therefore these
@@ -40,7 +40,8 @@ impl TemplateInner {
             move |preload_info, template_state, path| {
                 let reactor = Reactor::from_cx();
                 // This will handle frozen/active state prioritization, etc.
-                let intermediate_state = reactor.get_page_state::<I::Unrx>(&path, template_state)?;
+                let intermediate_state =
+                    reactor.get_page_state::<I::Unrx>(&path, template_state)?;
                 // Run the user's code in a child scope so any effects they start are killed
                 // when the page ends (otherwise we basically get a series of
                 // continuous pseudo-memory leaks, which can also cause accumulations of
@@ -118,10 +119,7 @@ impl TemplateInner {
     /// This is for heads that do require state. Those that do not should use
     /// `.head()` instead.
     #[cfg(engine)]
-    pub fn head_with_state<S, V>(
-        mut self,
-        val: impl Fn(S) -> V + Send + Sync + 'static,
-    ) -> Self
+    pub fn head_with_state<S, V>(mut self, val: impl Fn(S) -> V + Send + Sync + 'static) -> Self
     where
         S: Serialize + DeserializeOwned + MakeRx + 'static,
         V: Into<GeneratorResult<View>>,
@@ -148,9 +146,7 @@ impl TemplateInner {
                 };
 
             let template_name = template_name.clone();
-            val(state)
-                .into()
-                .into_server_result("head", template_name)
+            val(state).into().into_server_result("head", template_name)
         }));
         self
     }

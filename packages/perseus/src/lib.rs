@@ -135,8 +135,8 @@ pub mod prelude {
     pub use crate::reactor::Reactor;
     pub use crate::state::{BuildPaths, RxResult, RxResultRx, SerdeInfallible, StateGeneratorInfo};
     pub use crate::template::{Capsule, Template};
-    pub use sycamore_router::{navigate, navigate_replace};
     pub use sycamore::web::{GlobalProps, HtmlGlobalAttributes};
+    pub use sycamore_router::{navigate, navigate_replace};
 
     #[cfg(engine)]
     pub use crate::utils::{cache_fallible_res, cache_res};

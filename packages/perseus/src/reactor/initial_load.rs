@@ -121,7 +121,8 @@ impl Reactor {
                 }
 
                 // Render the actual template to the root
-                let (view, disposer) = entity.render_for_template_client(full_path.clone(), state)?;
+                let (view, disposer) =
+                    entity.render_for_template_client(full_path.clone(), state)?;
 
                 // Update the router state
                 self.router_state.set_load_state(RouterLoadState::Loaded {
@@ -129,7 +130,10 @@ impl Reactor {
                     path: full_path,
                 });
 
-                Ok(InitialView::View(view, Box::new(move || disposer.dispose())))
+                Ok(InitialView::View(
+                    view,
+                    Box::new(move || disposer.dispose()),
+                ))
             }
             // If the user is using i18n, then they'll want to detect the locale on any paths
             // missing a locale. Those all go to the same system that redirects to the

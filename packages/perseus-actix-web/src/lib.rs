@@ -45,7 +45,10 @@ fn convert_method(actix_method: &actix_web::http::Method) -> http::Method {
 
 /// Convert actix-web's http 0.2.x Uri to perseus's http 1.x Uri
 fn convert_uri(actix_uri: &actix_web::http::Uri) -> Result<http::Uri, String> {
-    actix_uri.to_string().parse().map_err(|e| format!("Failed to convert URI: {}", e))
+    actix_uri
+        .to_string()
+        .parse()
+        .map_err(|e| format!("Failed to convert URI: {}", e))
 }
 
 /// Convert actix-web's http 0.2.x Version to perseus's http 1.x Version
@@ -115,8 +118,12 @@ impl Responder for ApiResponse {
 
         // Convert headers from perseus's http 1.x to actix's http 0.2.x
         for (name, value) in &self.0.headers {
-            if let Ok(actix_name) = actix_web::http::header::HeaderName::from_bytes(name.as_str().as_bytes()) {
-                if let Ok(actix_value) = actix_web::http::header::HeaderValue::from_bytes(value.as_bytes()) {
+            if let Ok(actix_name) =
+                actix_web::http::header::HeaderName::from_bytes(name.as_str().as_bytes())
+            {
+                if let Ok(actix_value) =
+                    actix_web::http::header::HeaderValue::from_bytes(value.as_bytes())
+                {
                     res.insert_header((actix_name, actix_value));
                 }
             }

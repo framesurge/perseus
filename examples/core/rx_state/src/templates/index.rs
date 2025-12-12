@@ -24,7 +24,9 @@ fn index_page(state: IndexPageStateRx) -> View {
     // process will double-execute this logic. That's why things like this
     // should generally be done with suspended state.
     // In Sycamore 0.9.2, use .update() instead of .modify()
-    state.test.update(|vec| vec.push(create_signal("bar".to_string())));
+    state
+        .test
+        .update(|vec| vec.push(create_signal("bar".to_string())));
 
     view! {
         p { (format!("Greetings, {}!", state.username.get_clone())) }

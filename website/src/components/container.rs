@@ -13,7 +13,10 @@ pub struct ContainerProps {
 pub fn Container(props: ContainerProps) -> View {
     let children = props.children.call();
     // In Sycamore 0.9.2, Option props need to be unwrapped or defaulted
-    let menu_signal = props.header.menu_open.unwrap_or_else(|| create_signal(false));
+    let menu_signal = props
+        .header
+        .menu_open
+        .unwrap_or_else(|| create_signal(false));
 
     view! {
         Header(
