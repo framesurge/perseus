@@ -454,14 +454,6 @@ impl ErrorViews {
         err: ServerErrorData,
         translator: Option<&Translator>,
     ) -> (String, String) {
-        // We need to create an engine-side reactor
-        let reactor = Reactor::engine(TemplateState::empty(), RenderMode::Error, translator);
-
-        // Use create_root to establish a reactive scope
-        let _disposer = sycamore::reactive::create_root(|| {
-            reactor.add_self_to_cx();
-        });
-
         // Depending on whether or not we had a translator, we can figure out the
         // capabilities
         let err_cx = match translator {
@@ -470,18 +462,46 @@ impl ErrorViews {
             Some(_) => ErrorContext::FullNoGlobal,
             None => ErrorContext::WithReactor,
         };
-        // NOTE: No hydration context
-        let (head_view, body_view) = (self.handler)(
-            ClientError::ServerError {
-                status: err.status,
-                message: err.msg,
-            },
-            err_cx,
-            ErrorPosition::Page,
-        );
 
-        let head_str = sycamore::render_to_string(|| head_view);
-        let body_str = sycamore::render_to_string(|| body_view);
+        let handler = &self.handler;
+        let status = err.status;
+        let msg_clone = err.msg.clone();
+
+        // Render head view
+        let head_str = sycamore::render_to_string(|| {
+            // Create reactor and add to context WITHOUT create_root
+            // render_to_string already provides a reactive scope
+            let reactor = Reactor::engine(TemplateState::empty(), RenderMode::Error, translator);
+            reactor.add_self_to_cx();
+
+            let (head_view, _) = handler(
+                ClientError::ServerError {
+                    status,
+                    message: msg_clone.clone(),
+                },
+                err_cx,
+                ErrorPosition::Page,
+            );
+            head_view
+        });
+
+        // Render body view
+        let body_str = sycamore::render_to_string(|| {
+            // Create reactor and add to context WITHOUT create_root
+            // render_to_string already provides a reactive scope
+            let reactor = Reactor::engine(TemplateState::empty(), RenderMode::Error, translator);
+            reactor.add_self_to_cx();
+
+            let (_, body_view) = handler(
+                ClientError::ServerError {
+                    status,
+                    message: err.msg.clone(),
+                },
+                err_cx,
+                ErrorPosition::Page,
+            );
+            body_view
+        });
 
         (head_str, body_str)
     }
