@@ -153,20 +153,21 @@ jobs:
             #     packages: firefox
             #     version: 1.0
 
-            # # And finally cache Geckodriver itself
-            # - uses: actions/cache@v3
-            #   id: geckocache
-            #   with:
-            #     path: |
-            #       ~/.geckodriver
-            #     # The cache should be OS-specific
-            #     key: ${{ runner.os }}-geckodriver
-            # - name: Install Geckodriver
-            #   if: steps.geckocache.outputs.cache-hit != 'true'
-            #   run: wget -O ~/geckodriver-archive https://github.com/mozilla/geckodriver/releases/download/v0.36.0/geckodriver-v0.36.0-linux64.tar.gz && tar -xvzf ~/geckodriver-archive -C ~/ && mv ~/geckodriver ~/.geckodriver && chmod +x ~/.geckodriver
+            # Install geckodriver for E2E tests
+            - name: Install Geckodriver
+              run: |
+                  wget -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.36.0/geckodriver-v0.36.0-linux64.tar.gz
+                  tar -xzf /tmp/geckodriver.tar.gz -C /tmp
+                  sudo mv /tmp/geckodriver /usr/local/bin/geckodriver
+                  sudo chmod +x /usr/local/bin/geckodriver
+                  geckodriver --version
+
             - run: sudo apt update && sudo apt install firefox
+            - run: rustup target add wasm32-unknown-unknown
 
             - name: Run Firefox WebDriver
               run: geckodriver &
+            - name: Wait for Geckodriver to start
+              run: sleep 3
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }}
