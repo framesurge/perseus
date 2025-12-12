@@ -19,6 +19,12 @@ fn index_page(state: IndexPropsRx) -> View {
     let reactor = Reactor::from_cx();
     let global_state = reactor.get_global_state::<AppStateRx>();
 
+    // Clone for closures (required for 'static lifetime in Sycamore 0.9.2)
+    let reactor_freeze = reactor.clone();
+    let freeze_status_freeze = freeze_status.clone();
+    let reactor_thaw = reactor.clone();
+    let thaw_status_thaw = thaw_status.clone();
+
     view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
         p(id = "page_state") { (format!("Greetings, {}!", state.username.get_clone())) }
@@ -33,55 +39,63 @@ fn index_page(state: IndexPropsRx) -> View {
         button(id = "freeze_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
             #[cfg(client)] // The freezing types are only available in the browser
-            spawn_local_scoped(async {
-                use perseus::state::{IdbFrozenStateStore, Freeze};
-                // We do this here (rather than when we get the reactor) so that it's updated whenever we press the button
-                let frozen_state = reactor.freeze();
-                let idb_store = match IdbFrozenStateStore::new().await {
-                    Ok(idb_store) => idb_store,
-                    Err(_) => {
-                        freeze_status.set("Error.".to_string());
-                        return;
-                    }
-                };
-                match idb_store.set(&frozen_state).await {
-                    Ok(_) => freeze_status.set("Saved.".to_string()),
-                    Err(_) => freeze_status.set("Error.".to_string())
-                };
-            })
+            {
+                let reactor_clone = reactor_freeze.clone();
+                let freeze_status_clone = freeze_status_freeze.clone();
+                spawn_local_scoped(async move {
+                    use perseus::state::{IdbFrozenStateStore, Freeze};
+                    // We do this here (rather than when we get the reactor) so that it's updated whenever we press the button
+                    let frozen_state = reactor_clone.freeze();
+                    let idb_store = match IdbFrozenStateStore::new().await {
+                        Ok(idb_store) => idb_store,
+                        Err(_) => {
+                            freeze_status_clone.set("Error.".to_string());
+                            return;
+                        }
+                    };
+                    match idb_store.set(&frozen_state).await {
+                        Ok(_) => freeze_status_clone.set("Saved.".to_string()),
+                        Err(_) => freeze_status_clone.set("Error.".to_string())
+                    };
+                })
+            }
         }) { "Freeze to IndexedDB" }
         p { (freeze_status.get_clone()) }
 
         button(id = "thaw_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
             #[cfg(client)] // The freezing types are only available in the browser
-            spawn_local_scoped(async move {
-                use perseus::state::{IdbFrozenStateStore, PageThawPrefs, ThawPrefs};
-                let idb_store = match IdbFrozenStateStore::new().await {
-                    Ok(idb_store) => idb_store,
-                    Err(_) => {
-                        thaw_status.set("Error.".to_string());
-                        return;
-                    }
-                };
-                let frozen_state = match idb_store.get().await {
-                    Ok(Some(frozen_state)) => frozen_state,
-                    Ok(None) => {
-                        thaw_status.set("No state stored.".to_string());
-                        return;
-                    }
-                    Err(_) => {
-                        thaw_status.set("Error.".to_string());
-                        return;
-                    }
-                };
+            {
+                let reactor_clone = reactor_thaw.clone();
+                let thaw_status_clone = thaw_status_thaw.clone();
+                spawn_local_scoped(async move {
+                    use perseus::state::{IdbFrozenStateStore, PageThawPrefs, ThawPrefs};
+                    let idb_store = match IdbFrozenStateStore::new().await {
+                        Ok(idb_store) => idb_store,
+                        Err(_) => {
+                            thaw_status_clone.set("Error.".to_string());
+                            return;
+                        }
+                    };
+                    let frozen_state = match idb_store.get().await {
+                        Ok(Some(frozen_state)) => frozen_state,
+                        Ok(None) => {
+                            thaw_status_clone.set("No state stored.".to_string());
+                            return;
+                        }
+                        Err(_) => {
+                            thaw_status_clone.set("Error.".to_string());
+                            return;
+                        }
+                    };
 
-                // You would probably set your thawing preferences differently
-                match reactor.thaw(&frozen_state, ThawPrefs { page: PageThawPrefs::IncludeAll, global_prefer_frozen: true }) {
-                    Ok(_) => thaw_status.set("Thawed.".to_string()),
-                    Err(_) => thaw_status.set("Error.".to_string())
-                }
-            })
+                    // You would probably set your thawing preferences differently
+                    match reactor_clone.thaw(&frozen_state, ThawPrefs { page: PageThawPrefs::IncludeAll, global_prefer_frozen: true }) {
+                        Ok(_) => thaw_status_clone.set("Thawed.".to_string()),
+                        Err(_) => thaw_status_clone.set("Error.".to_string())
+                    }
+                })
+            }
         }) { "Thaw from IndexedDB" }
         p { (thaw_status.get_clone()) }
     }

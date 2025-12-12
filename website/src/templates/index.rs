@@ -277,11 +277,12 @@ fn AnimatedCircularProgressBar(props: AnimatedCircularProgressBarProps) -> View 
     // We only do this after the component has been mounted (`NodeRef` usage)
     // BUG This doesn't work in Chrome...
     #[cfg(client)]
-    on_mount(|| {
+    on_mount(move || {
         use wasm_bindgen::prelude::Closure;
         use wasm_bindgen::JsCast;
 
-        let raw_elem: Element = elem.get::<DomNode>().unchecked_into();
+        // In Sycamore 0.9.2, NodeRef.get() returns web_sys::Node directly
+        let raw_elem: Element = elem.get().unchecked_into();
         // Get the `<circle>` element to animate
         let svg_elem = raw_elem
             .children()
