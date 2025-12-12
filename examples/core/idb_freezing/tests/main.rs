@@ -54,6 +54,8 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
 
     // Press the thaw button
     c.find(Locator::Id("thaw_button")).await?.click().await?;
+    // Wait for navigation to complete after thawing (navigates back to the frozen page)
+    wait_for_checkpoint!("page_interactive", 1, c);
     // We should now be back on the about page, with the global state restored there
     assert!(c
         .current_url()
@@ -68,7 +70,7 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     // And go back to the index page to check everything fully
     c.find(Locator::Id("index-link")).await?.click().await?;
     c.current_url().await?;
-    wait_for_checkpoint!("page_interactive", 1, c);
+    wait_for_checkpoint!("page_interactive", 2, c);
     // Verify that everything has been correctly restored
     assert_eq!(
         c.find(Locator::Id("page_state")).await?.text().await?,
