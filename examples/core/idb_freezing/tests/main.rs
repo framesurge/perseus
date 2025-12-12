@@ -56,7 +56,11 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     c.find(Locator::Id("thaw_button")).await?.click().await?;
     // Wait for navigation to complete by polling the URL until it changes
     for _ in 0..50 {
-        if c.current_url().await?.as_ref().starts_with("http://localhost:8080/about") {
+        if c.current_url()
+            .await?
+            .as_ref()
+            .starts_with("http://localhost:8080/about")
+        {
             break;
         }
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;

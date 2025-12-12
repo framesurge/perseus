@@ -344,7 +344,10 @@ fn minify_js(from: &Path, to: &Path) -> Result<(), DeployError> {
         }
         Ok(Err(err)) => {
             // Minification returned an error
-            eprintln!("Warning: JS minification failed ({}), using unminified JS", err);
+            eprintln!(
+                "Warning: JS minification failed ({}), using unminified JS",
+                err
+            );
             js_bundle
         }
         Err(_) => {
@@ -356,8 +359,7 @@ fn minify_js(from: &Path, to: &Path) -> Result<(), DeployError> {
         }
     };
 
-    fs::write(to, minified_js)
-        .map_err(|err| DeployError::WriteMinifiedJsFailed { source: err })?;
+    fs::write(to, minified_js).map_err(|err| DeployError::WriteMinifiedJsFailed { source: err })?;
 
     Ok(())
 }
