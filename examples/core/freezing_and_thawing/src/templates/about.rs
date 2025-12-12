@@ -11,6 +11,10 @@ fn about_page() -> View {
 
     let global_state = render_ctx.get_global_state::<AppStateRx>();
 
+    // Clone for the closure (required for 'static lifetime in Sycamore 0.9.2)
+    let frozen_app_clone = frozen_app.clone();
+    let render_ctx_clone = render_ctx.clone();
+
     view! {
         p(id = "global_state") { (global_state.test.get_clone()) }
 
@@ -19,11 +23,11 @@ fn about_page() -> View {
         br()
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
-        button(id = "freeze_button", on:click = |_| {
+        button(id = "freeze_button", on:click = move |_| {
             #[cfg(client)]
             {
                 use perseus::state::Freeze;
-                frozen_app.set(render_ctx.freeze());
+                frozen_app_clone.set(render_ctx_clone.freeze());
             }
         }) { "Freeze!" }
         p(id = "frozen_app") { (frozen_app.get_clone()) }

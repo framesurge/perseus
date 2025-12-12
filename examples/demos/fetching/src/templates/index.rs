@@ -22,14 +22,15 @@ fn index_page(
     #[cfg(client)]
     // Because we only have `reqwasm` on the client-side, we make sure this is only *compiled* in
     // the browser as well
-    if browser_ip.get().is_none() {
+    // In Sycamore 0.9.2, use get_clone() for non-Copy types
+    if browser_ip.get_clone().is_none() {
         // Spawn a `Future` on this thread to fetch the data (`spawn_local` is
         // re-exported from `wasm-bindgen-futures`) Don't worry, this doesn't
         // need to be sent to JavaScript for execution
         //
         // We want to access the `message` `Signal`, so we'll clone it in (and then we
         // need `move` because this has to be `'static`)
-        spawn_local_scoped(async {
+        spawn_local_scoped(async move {
             // This interface may seem weird, that's because it wraps the browser's Fetch
             // API We request from a local path here because of CORS
             // restrictions (see the book)

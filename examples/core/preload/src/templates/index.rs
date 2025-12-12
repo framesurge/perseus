@@ -7,7 +7,7 @@ fn index_page() -> View {
     {
         // Get the reactor first, which is the one-stop-shop for everything
         // internal to Perseus in the browser
-        let reactor = use_context::<Reactor>();
+        let reactor = Reactor::from_cx();
         // This spawns a future in the background, and will panic if the page you give
         // doesn't exist (to handle those errors and manage the future, use
         // `.try_preload` instead).

@@ -17,6 +17,12 @@ fn index_page(state: IndexPageStateRx) -> View {
 
     let global_state = reactor.get_global_state::<AppStateRx>();
 
+    // Clone for closures (required for 'static lifetime in Sycamore 0.9.2)
+    let frozen_app_freeze = frozen_app.clone();
+    let reactor_freeze = reactor.clone();
+    let frozen_app_thaw = frozen_app.clone();
+    let reactor_thaw = reactor.clone();
+
     view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
         p(id = "page_state") { (format!("Greetings, {}!", state.username.get_clone())) }
@@ -28,19 +34,19 @@ fn index_page(state: IndexPageStateRx) -> View {
         a(href = "about", id = "about-link") { "About" }
         br()
 
-        button(id = "freeze_button", on:click = |_| {
+        button(id = "freeze_button", on:click = move |_| {
             #[cfg(client)]
             {
                 use perseus::state::Freeze;
-                frozen_app.set(reactor.freeze());
+                frozen_app_freeze.set(reactor_freeze.freeze());
             }
         }) { "Freeze!" }
         p(id = "frozen_app") { (frozen_app.get_clone()) }
 
         input(id = "thaw_input", bind:value = frozen_app, placeholder = "Frozen state")
-        button(id = "thaw_button", on:click = |_| {
+        button(id = "thaw_button", on:click = move |_| {
             #[cfg(client)]
-            reactor.thaw(&frozen_app.get_clone(), perseus::state::ThawPrefs {
+            reactor_thaw.thaw(&frozen_app_thaw.get_clone(), perseus::state::ThawPrefs {
                 page: perseus::state::PageThawPrefs::IncludeAll,
                 global_prefer_frozen: true
             }).unwrap();

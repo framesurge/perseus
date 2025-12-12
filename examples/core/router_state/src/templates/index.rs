@@ -7,11 +7,16 @@ fn router_state_page() -> View {
     #[cfg(client)]
     {
         use perseus::router::RouterLoadState;
-        let load_state = Reactor::from_cx().router_state.get_load_state();
-        // This uses Sycamore's `create_memo` to create a state that will update
+        // Clone for the closure (required for 'static lifetime in Sycamore 0.9.2)
+        let load_state_str_clone = load_state_str.clone();
+        // This uses Sycamore's `create_effect` to create a state that will update
         // whenever the router state changes
-        create_effect(|| {
-            let new_str = match (*load_state.get()).clone() {
+        create_effect(move || {
+            // Get the load state inside the effect to avoid lifetime issues
+            let reactor = Reactor::from_cx();
+            let load_state = reactor.router_state.get_load_state();
+            // In Sycamore 0.9.2, .get() returns the value directly (not a reference)
+            let new_str = match load_state.get_clone() {
                 RouterLoadState::Loaded {
                     template_name,
                     path,
@@ -28,7 +33,7 @@ fn router_state_page() -> View {
                 } => format!("Loading {} (template: {}).", *path, template_name),
                 RouterLoadState::Server => "We're on the server.".to_string(),
             };
-            load_state_str.set(new_str);
+            load_state_str_clone.set(new_str);
         });
     }
 

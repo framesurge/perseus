@@ -8,8 +8,6 @@ mod templates;
 
 use perseus::prelude::*;
 use sycamore::prelude::*;
-#[cfg(any(client, doc))]
-use sycamore_web::elements::tags::{HtmlLinkAttributes, HtmlMetaAttributes};
 
 #[perseus::main_export]
 pub fn main() -> PerseusApp {

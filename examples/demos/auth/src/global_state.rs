@@ -59,7 +59,8 @@ impl AuthDataRx {
     pub fn detect_state(&self) {
         // If we've checked the login status before, then we should assume the status
         // hasn't changed (we'd change this in a login/logout page)
-        if let LoginState::Yes | LoginState::No = *self.state.get() {
+        // In Sycamore 0.9.2, use get_clone() to get the value
+        if let LoginState::Yes | LoginState::No = self.state.get_clone() {
             return;
         }
 
