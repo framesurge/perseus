@@ -195,13 +195,12 @@ test.subcommands.cli.cmd = [
 ]
 test.subcommands.cli.desc = "runs the cli tests (all are long-running, this will take a while)"
 test.subcommands.example-all-integrations.cmd = [
-    "EXAMPLE_INTEGRATION=actix-web bonnie dev example %category %example test",
-    "EXAMPLE_INTEGRATION=warp bonnie dev example %category %example test",
-    "EXAMPLE_INTEGRATION=axum bonnie dev example %category %example test",
-    "EXAMPLE_INTEGRATION=rocket bonnie dev example %category %example test"
+    # Since Perseus 0.5.0, examples use specific integration crates directly,
+    # so we only test each example once with its configured integration
+    "EXAMPLE_INTEGRATION=axum bonnie dev example %category %example test"
 ]
 test.subcommands.example-all-integrations.args = [ "category", "example" ]
-test.subcommands.example-all-integrations.desc = "tests a single example with all integrations (assumes geckodriver running in background)"
+test.subcommands.example-all-integrations.desc = "tests a single example with its configured integration (assumes geckodriver running in background)"
 
 # Releases the project (maintainers only)
 # We commit all staged files so we can manually bump the Cargo version

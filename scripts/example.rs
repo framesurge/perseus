@@ -19,11 +19,12 @@ fn main() -> ExitCode {
     let integration_locked = std::fs::metadata(format!("examples/{}/{}/.integration_locked", &category, &example)).is_ok();
     // These paths are for the CLI, which is inside `packages/perseus-cli`
     let cli_path = format!("../../examples/{}/{}", &category, &example);
-    // We use `perseus-warp` because that's aliased to `perseus-integration` in all example crates for readability of code examples
-    let cargo_args = format!("--features \"perseus-axum/{}\"", integration);
-    if !integration_locked {
-        args.push(format!("--cargo-engine-args='{}'", &cargo_args));
-    }
+    // NOTE: Since Perseus 0.5.0, examples use specific integration crates directly
+    // (perseus-axum, perseus-warp, etc.) rather than perseus-integration with features.
+    // We no longer try to test each example with all integrations; instead, each example
+    // is tested once with its configured integration.
+    // The integration parameter is kept for backwards compatibility but is not used.
+    let _integration = integration; // Silence unused variable warning
 
     #[cfg(unix)]
     let shell_exec = "sh";
