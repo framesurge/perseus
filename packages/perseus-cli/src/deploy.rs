@@ -321,23 +321,43 @@ fn minify_js(from: &Path, to: &Path) -> Result<(), DeployError> {
     // actually fine, because we don't need `initSync` whatsoever
     let js_bundle = js_bundle.replace("export { initSync }", "// export { initSync }");
 
-    let mut minified = Vec::new();
-    let session = Session::new();
-    minify(
-        &session,
-        TopLevelMode::Global,
-        js_bundle.as_bytes(),
-        // Guaranteed to be UTF-8 output
-        &mut minified,
-    )
-    // This is the updated line
-    .map_err(|err| DeployError::MinifyError {
-        source: Box::new(std::io::Error::other(err.to_string())),
-    })?;
+    // Try to minify, but catch panics from minify-js library bugs
+    // If minification fails/panics, fall back to unminified JS
+    let js_bundle_bytes = js_bundle.as_bytes().to_vec();
+    let minified_js = std::panic::catch_unwind(move || -> Result<String, String> {
+        let mut minified = Vec::new();
+        let session = Session::new();
+        minify(
+            &session,
+            TopLevelMode::Global,
+            &js_bundle_bytes,
+            &mut minified,
+        )
+        .map_err(|e| format!("{:?}", e))?;
+        String::from_utf8(minified).map_err(|e| format!("{:?}", e))
+    });
 
-    let minified =
-        String::from_utf8(minified).map_err(|err| DeployError::MinifyNotUtf8 { source: err })?;
-    fs::write(to, minified).map_err(|err| DeployError::WriteMinifiedJsFailed { source: err })?;
+    let minified_js = match minified_js {
+        Ok(Ok(minified)) => {
+            // Minification succeeded
+            minified
+        }
+        Ok(Err(err)) => {
+            // Minification returned an error
+            eprintln!("Warning: JS minification failed ({}), using unminified JS", err);
+            js_bundle
+        }
+        Err(_) => {
+            // Minification panicked (known issue with minify-js 0.6.0)
+            eprintln!(
+                "Warning: JS minification panicked (known issue with minify-js), using unminified JS"
+            );
+            js_bundle
+        }
+    };
+
+    fs::write(to, minified_js)
+        .map_err(|err| DeployError::WriteMinifiedJsFailed { source: err })?;
 
     Ok(())
 }
