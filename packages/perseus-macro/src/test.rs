@@ -152,7 +152,9 @@ pub fn test_impl(input: TestFn, args: TestArgs) -> TokenStream {
                 let chrome_opts;
                 if headless {
                     firefox_opts = ::serde_json::json!({ "args": ["--headless"] });
-                    chrome_opts = ::serde_json::json!({ "args": ["--headless"] });
+                    // Use --headless=new for Chrome 109+ which is the modern headless mode
+                    // Also disable GPU and sandbox for CI environments
+                    chrome_opts = ::serde_json::json!({ "args": ["--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"] });
                 } else {
                     firefox_opts = ::serde_json::json!({ "args": [] });
                     chrome_opts = ::serde_json::json!({ "args": [] });
