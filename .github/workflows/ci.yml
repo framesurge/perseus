@@ -147,27 +147,22 @@ jobs:
                       target/
                   key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
-            # # Also cache the apt packages we need for testing
-            # - uses: awalsh128/cache-apt-pkgs-action@latest
-            #   with:
-            #     packages: firefox
-            #     version: 1.0
-
-            # Install geckodriver for E2E tests
-            - name: Install Geckodriver
+            # Install chromedriver for E2E tests (Chrome is pre-installed on GitHub runners)
+            - name: Install Chromedriver
               run: |
-                  wget -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.36.0/geckodriver-v0.36.0-linux64.tar.gz
-                  tar -xzf /tmp/geckodriver.tar.gz -C /tmp
-                  sudo mv /tmp/geckodriver /usr/local/bin/geckodriver
-                  sudo chmod +x /usr/local/bin/geckodriver
-                  geckodriver --version
+                  CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
+                  CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION%.*}")
+                  wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"
+                  unzip /tmp/chromedriver.zip -d /tmp
+                  sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+                  sudo chmod +x /usr/local/bin/chromedriver
+                  chromedriver --version
 
-            - run: sudo apt update && sudo apt install firefox
             - run: rustup target add wasm32-unknown-unknown
 
-            - name: Run Firefox WebDriver
-              run: geckodriver &
-            - name: Wait for Geckodriver to start
+            - name: Run Chrome WebDriver
+              run: chromedriver --port=4444 &
+            - name: Wait for Chromedriver to start
               run: sleep 3
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }}
