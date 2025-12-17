@@ -6,6 +6,8 @@ use crate::{
     state::{AnyFreeze, GlobalStateType, MakeRx, MakeUnrx},
 };
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(client)]
+use sycamore::reactive::use_global_scope;
 
 // These methods are used for acquiring the global state on both the
 // browser-side and the engine-side
@@ -60,6 +62,10 @@ impl Reactor {
                     let unrx = typed_state
                         .into_concrete()
                         .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+                    // Create signals in the global scope so they survive navigation
+                    #[cfg(client)]
+                    let rx = use_global_scope().run_in(|| unrx.make_rx());
+                    #[cfg(not(client))]
                     let rx = unrx.make_rx();
                     // On the engine-side, do not set this as the active state, because that
                     // would compromise any capsules trying to access this (see #280)
@@ -200,7 +206,8 @@ impl Reactor {
                     // is why we have to make everything else do the same
                     // Then we convince the compiler that that actually is `R` with the
                     // ludicrous trait bound at the beginning of this function
-                    let rx = unrx.make_rx();
+                    // Create signals in the global scope so they survive navigation
+                    let rx = use_global_scope().run_in(|| unrx.make_rx());
                     // And we'll register this as the new active global state
                     let mut active_global_state = self.global_state.0.borrow_mut();
                     *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));
