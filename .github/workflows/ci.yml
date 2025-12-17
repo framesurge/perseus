@@ -147,16 +147,12 @@ jobs:
                       target/
                   key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
-            # Install chromedriver for E2E tests (Chrome is pre-installed on GitHub runners)
-            - name: Install Chromedriver
-              run: |
-                  CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
-                  CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION%.*}")
-                  wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"
-                  unzip /tmp/chromedriver.zip -d /tmp
-                  sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
-                  sudo chmod +x /usr/local/bin/chromedriver
-                  chromedriver --version
+            # Setup Chrome and ChromeDriver for E2E tests
+            - name: Setup Chrome and ChromeDriver
+              uses: browser-actions/setup-chrome@v1
+              with:
+                  chrome-version: stable
+                  install-chromedriver: true
 
             - run: rustup target add wasm32-unknown-unknown
 
