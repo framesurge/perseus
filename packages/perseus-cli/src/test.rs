@@ -5,11 +5,29 @@ use crate::thread::spawn_thread;
 use crate::{errors::*, serve};
 use console::{style, Emoji};
 use indicatif::{MultiProgress, ProgressBar};
+use std::net::TcpStream;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 // Emoji for stages
 static TESTING: Emoji<'_, '_> = Emoji("🧪", "");
+
+/// Waits for the server to be ready by attempting to connect to it.
+/// Returns true if the server is ready within the timeout, false otherwise.
+fn wait_for_server_ready(host: &str, port: u16, timeout_secs: u64) -> bool {
+    let addr = format!("{}:{}", host, port);
+    let start = Instant::now();
+    let timeout = Duration::from_secs(timeout_secs);
+
+    while start.elapsed() < timeout {
+        if TcpStream::connect(&addr).is_ok() {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    false
+}
 
 /// Returns the exit code if it's non-zero.
 macro_rules! handle_exit_code {
@@ -82,6 +100,14 @@ pub fn test(
                 cmd: server_path,
                 source: err,
             })?;
+
+        // Wait for the server to be ready before running tests
+        // This prevents race conditions where tests start before the server is listening
+        let host = &test_opts.host;
+        let port = test_opts.port;
+        if !wait_for_server_ready(host, port, 30) {
+            eprintln!("Warning: Server may not be ready after 30 seconds, proceeding with tests anyway");
+        }
 
         // Now run the Cargo tests against that
         let test_msg = format!(
