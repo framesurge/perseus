@@ -465,38 +465,75 @@ impl Tool {
     /// Gets the latest version for this tool from its GitHub repository. One
     /// should only bother executing this if we know there are precompiled
     /// binaries for this platform.
+    ///
+    /// If the GitHub API fails (e.g., due to rate limiting), this will fall back
+    /// to a known good version.
     pub async fn get_latest_version(&self) -> Result<String, InstallError> {
-        let json = Client::new()
-            .get(&format!(
-                "https://api.github.com/repos/{}/releases/latest",
-                self.gh_repo
-            ))
-            // This needs to display the name of the app for GH
-            .header("User-Agent", "perseus-cli")
-            .send()
-            .await
-            .map_err(|err| InstallError::GetLatestToolVersionFailed {
-                source: err,
-                tool: self.name.to_string(),
-            })?
-            .json::<serde_json::Value>()
-            .await
-            .map_err(|err| InstallError::GetLatestToolVersionFailed {
-                source: err,
-                tool: self.name.to_string(),
+        // Try to get the GITHUB_TOKEN from the environment for authenticated requests
+        // (higher rate limits in CI)
+        let client = Client::new();
+        let mut request = client.get(&format!(
+            "https://api.github.com/repos/{}/releases/latest",
+            self.gh_repo
+        ));
+
+        // Add User-Agent (required by GitHub)
+        request = request.header("User-Agent", "perseus-cli");
+
+        // If GITHUB_TOKEN is available (e.g., in CI), use it for higher rate limits
+        if let Ok(token) = std::env::var("GITHUB_TOKEN") {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let result = async {
+            let response = request.send().await.map_err(|err| {
+                InstallError::GetLatestToolVersionFailed {
+                    source: err,
+                    tool: self.name.to_string(),
+                }
             })?;
-        let latest_version =
-            json.get("tag_name")
+
+            // Check for rate limiting or other HTTP errors
+            if !response.status().is_success() {
+                return Err(InstallError::ParseToolVersionFailed {
+                    tool: self.name.to_string(),
+                });
+            }
+
+            let json = response.json::<serde_json::Value>().await.map_err(|err| {
+                InstallError::GetLatestToolVersionFailed {
+                    source: err,
+                    tool: self.name.to_string(),
+                }
+            })?;
+
+            let latest_version =
+                json.get("tag_name")
+                    .ok_or_else(|| InstallError::ParseToolVersionFailed {
+                        tool: self.name.to_string(),
+                    })?;
+
+            Ok(latest_version
+                .as_str()
                 .ok_or_else(|| InstallError::ParseToolVersionFailed {
                     tool: self.name.to_string(),
-                })?;
+                })?
+                .to_string())
+        }
+        .await;
 
-        Ok(latest_version
-            .as_str()
-            .ok_or_else(|| InstallError::ParseToolVersionFailed {
-                tool: self.name.to_string(),
-            })?
-            .to_string())
+        // If fetching the latest version fails (e.g., rate limiting), use fallback
+        match result {
+            Ok(version) => Ok(version),
+            Err(_) => {
+                eprintln!(
+                    "Warning: Failed to fetch latest {} version from GitHub API (possibly rate-limited), using fallback version {}",
+                    self.name,
+                    self.tool_type.fallback_version()
+                );
+                Ok(self.tool_type.fallback_version())
+            }
+        }
     }
     /// Installs the tool, taking the predetermined status as an argument to
     /// avoid installing if the tool is actually already available, since
@@ -698,6 +735,16 @@ impl ToolType {
         match &self {
             Self::WasmBindgen => "%artifact_name",
             Self::WasmOpt => "binaryen-%version",
+        }
+        .to_string()
+    }
+    /// Gets a fallback version to use when the GitHub API rate limit is hit.
+    /// This is periodically updated when new versions are released.
+    pub fn fallback_version(&self) -> String {
+        match &self {
+            // Keep these in sync with roughly recent versions
+            Self::WasmBindgen => "0.2.100",
+            Self::WasmOpt => "version_125",
         }
         .to_string()
     }

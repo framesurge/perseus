@@ -71,6 +71,8 @@ jobs:
             - run: rustup target add wasm32-unknown-unknown
             - name: Run CLI tests
               run: bonnie test cli
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # We now have a separate job for each example's E2E testing because they all take a while, we may as well run them in parallel
     # The job for each E2E test is exactly the same except for a minor difference, so we'll use a matrix based on listing the subdirectories
     e2e-example-test:
@@ -162,3 +164,5 @@ jobs:
               run: sleep 3
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
