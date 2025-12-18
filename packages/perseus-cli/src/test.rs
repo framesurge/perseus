@@ -106,7 +106,9 @@ pub fn test(
         let host = &test_opts.host;
         let port = test_opts.port;
         if !wait_for_server_ready(host, port, 30) {
-            eprintln!("Warning: Server may not be ready after 30 seconds, proceeding with tests anyway");
+            eprintln!(
+                "Warning: Server may not be ready after 30 seconds, proceeding with tests anyway"
+            );
         }
 
         // Now run the Cargo tests against that
