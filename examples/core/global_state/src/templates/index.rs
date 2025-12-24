@@ -14,7 +14,7 @@ fn index_page() -> View {
         p { (global_state.test.get_clone()) }
         input(bind:value = global_state.test)
 
-        a(href = "about", id = "about-link") { "About" }
+        Link(to = "/about", id = "about-link") { "About" }
     }
 }
 

@@ -18,7 +18,7 @@ struct IndexPageState {
 fn index_page(state: IndexPageState) -> View {
     view! {
         p { (state.greeting) }
-        a(href = "about") { "About" }
+        Link(to = "/about") { "About" }
     }
 }
 

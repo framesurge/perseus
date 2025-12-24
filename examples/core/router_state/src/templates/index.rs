@@ -40,7 +40,7 @@ fn router_state_page() -> View {
     view! {
         p { (load_state_str.get_clone()) }
 
-        a(href = "about", id = "about-link") { "About!" }
+        Link(to = "/about", id = "about-link") { "About!" }
     }
 }
 

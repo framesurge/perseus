@@ -12,7 +12,7 @@ struct IndexPageState {
 fn index_page(state: IndexPageStateRx) -> View {
     view! {
         p { (state.greeting.get_clone()) }
-        a(href = "about", id = "about-link") { "About!" }
+        Link(to = "/about", id = "about-link") { "About!" }
     }
 }
 
