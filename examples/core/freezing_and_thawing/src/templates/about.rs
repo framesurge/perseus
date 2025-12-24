@@ -19,7 +19,12 @@ fn about_page() -> View {
         p(id = "global_state") { (global_state.test.get_clone()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "", id = "index-link") { "Index" }
+        // Note: Using on:click with navigate() because sycamore-router doesn't attach click handlers to dynamic views.
+        // The href is kept for SEO (crawlers will see the link).
+        a(href = "/", id = "index-link", on:click = |ev: web_sys::MouseEvent| {
+            ev.prevent_default();
+            navigate("/");
+        }) { "Index" }
         br()
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route

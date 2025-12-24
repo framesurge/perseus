@@ -17,6 +17,8 @@ use sycamore::{
     reactive::{create_child_scope, NodeHandle},
     web::View,
 };
+#[cfg(any(client, doc))]
+use sycamore::reactive::use_global_scope;
 
 #[cfg(any(client, doc))]
 use crate::template::PreloadInfo;
@@ -343,6 +345,10 @@ impl Reactor {
                         .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
                     match unrx_res {
                         Ok(unrx) => {
+                            // Create signals in the global scope so they survive navigation
+                            #[cfg(client)]
+                            let rx = use_global_scope().run_in(|| unrx.make_rx());
+                            #[cfg(not(client))]
                             let rx = unrx.make_rx();
                             // Add that to the state store as the new active state
                             self.state_store.add_state(url, rx.clone(), false)?;
@@ -382,6 +388,10 @@ impl Reactor {
             let unrx = typed_state
                 .into_concrete()
                 .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+            // Create signals in the global scope so they survive navigation
+            #[cfg(client)]
+            let rx = use_global_scope().run_in(|| unrx.make_rx());
+            #[cfg(not(client))]
             let rx = unrx.make_rx();
             // Add that to the state store as the new active state
             self.state_store.add_state(url, rx.clone(), false)?;

@@ -31,7 +31,12 @@ fn index_page(state: IndexPageStateRx) -> View {
         input(id = "set_global_state", bind:value = global_state.test, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "about", id = "about-link") { "About" }
+        // Note: Using on:click with navigate() because sycamore-router doesn't attach click handlers to dynamic views.
+        // The href is kept for SEO (crawlers will see the link).
+        a(href = "/about", id = "about-link", on:click = |ev: web_sys::MouseEvent| {
+            ev.prevent_default();
+            navigate("/about");
+        }) { "About" }
         br()
 
         button(id = "freeze_button", on:click = move |_| {

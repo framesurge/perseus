@@ -102,7 +102,8 @@ impl PageStateStore {
                     PssState::Some(state) => state,
                     // We don't care whether there could be state in future, there isn't any right
                     // now
-                    _ => return None,
+                    PssState::None => return None,
+                    PssState::Never => return None,
                 };
                 state.as_any().downcast_ref::<T>().map(|val| (*val).clone())
             }

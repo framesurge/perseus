@@ -12,6 +12,8 @@ use crate::{
 use serde::{de::DeserializeOwned, Serialize};
 use sycamore::prelude::*;
 
+#[cfg(client)]
+use sycamore::reactive::use_global_scope;
 #[cfg(any(client, doc))]
 use sycamore_router::navigate;
 
@@ -288,6 +290,10 @@ impl Reactor {
             let unrx = typed_state
                 .into_concrete()
                 .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+            // Create signals in the global scope so they survive navigation
+            #[cfg(client)]
+            let rx = use_global_scope().run_in(|| unrx.make_rx());
+            #[cfg(not(client))]
             let rx = unrx.make_rx();
             // Add that to the state store as the new active state
             self.state_store.add_state(url, rx.clone(), false)?;
@@ -440,6 +446,10 @@ impl Reactor {
                     // is why we have to make everything else do the same
                     // Then we convince the compiler that that actually is `R` with the
                     // ludicrous trait bound at the beginning of this function
+                    // Create signals in the global scope so they survive navigation
+                    #[cfg(client)]
+                    let rx = use_global_scope().run_in(|| unrx.make_rx());
+                    #[cfg(not(client))]
                     let rx = unrx.make_rx();
                     // Now add the reactive version to the state store (see the documentation
                     // for this method for HSR caveats, and why we ignore the error in HSR mode)
