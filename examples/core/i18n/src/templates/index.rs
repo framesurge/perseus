@@ -8,7 +8,7 @@ fn index_page() -> View {
         p { (t!("hello", {
             "user" = username
         })) }
-        a(href = link!( "/about")) { "About" }
+        Link(to = link!("/about")) { "About" }
     }
 }
 

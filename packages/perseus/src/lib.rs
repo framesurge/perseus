@@ -22,6 +22,8 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_debug_implementations)]
 #![recursion_limit = "256"] // TODO Do we need this anymore?
 
+/// Reusable UI components provided by Perseus.
+pub mod components;
 /// Utilities for working with the engine-side, particularly with regards to
 /// setting up the entrypoint for your app's build/export/server processes.
 #[cfg(engine)]
@@ -126,6 +128,7 @@ pub type PerseusNodeType = sycamore::web::HtmlNode;
 /// A series of imports needed by most Perseus apps, in some form. This should
 /// be used in conjunction with the Sycamore prelude.
 pub mod prelude {
+    pub use crate::components::Link;
     pub use crate::error_views::ErrorViews;
     // Target-gating doesn't matter, because the prelude is intended to be used all
     // at once

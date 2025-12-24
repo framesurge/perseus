@@ -33,7 +33,7 @@ fn index_page(state: IndexPropsRx) -> View {
         input(id = "set_global_state", bind:value = global_state.test, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "about", id = "about-link") { "About" }
+        Link(to = "/about", id = "about-link") { "About" }
         br()
 
         button(id = "freeze_button", on:click = move |_| {

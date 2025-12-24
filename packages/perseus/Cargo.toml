@@ -54,6 +54,7 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 # TODO review feature flags here
 web-sys = { version = "0.3", features = [
     "Headers",
+    "MouseEvent",
     "Navigator",
     "NodeList",
     "Request",

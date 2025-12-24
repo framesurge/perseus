@@ -22,9 +22,10 @@ fn index_page() -> View {
     view! {
         p { (t!("index-msg")) }
 
-        a(id = "about", href = link!("about")) { (t!("index-about-link")) }
-        a(id = "fr-about", href = "fr-FR/about") { "About (French)" }
-        a(id = "en-about", href = "en-US/about") { "About (English)" }
+        Link(to = link!("/about"), id = "about") { (t!("index-about-link")) }
+        // These cross-locale links will cause full page reloads (expected behavior)
+        a(id = "fr-about", href = "/fr-FR/about") { "About (French)" }
+        a(id = "en-about", href = "/en-US/about") { "About (English)" }
     }
 }
 

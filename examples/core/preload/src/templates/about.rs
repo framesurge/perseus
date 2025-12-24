@@ -5,7 +5,7 @@ fn about_page() -> View {
     view! {
         p { (t!("about-msg")) }
 
-        a(id = "index", href = link!("")) { (t!("about-index-link")) }
+        Link(to = link!("/"), id = "index") { (t!("about-index-link")) }
     }
 }
 

@@ -17,9 +17,9 @@ fn post_page(props: PostPageStateRx) -> View {
         p {
             (props.content.get_clone())
         }
-        a(href = link!("/post")) { "Root post page" }
+        Link(to = link!("/post")) { "Root post page" }
         br()
-        a(href = link!("/post/blah/test/blah")) { "Complex post page" }
+        Link(to = link!("/post/blah/test/blah")) { "Complex post page" }
     }
 }
 

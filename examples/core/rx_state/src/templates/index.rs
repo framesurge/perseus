@@ -43,12 +43,7 @@ fn index_page(state: IndexPageStateRx) -> View {
                 .unwrap_or("None".to_string().into())
         ) }
 
-        // Note: Using on:click with navigate() because sycamore-router doesn't attach click handlers to dynamic views.
-        // The href is kept for SEO (crawlers will see the link).
-        a(href = "/about", id = "about-link", on:click = |ev: web_sys::MouseEvent| {
-            ev.prevent_default();
-            navigate("/about");
-        }) { "About" }
+        Link(to = "/about", id = "about-link") { "About" }
     }
 }
 

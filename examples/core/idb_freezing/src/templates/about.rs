@@ -20,7 +20,7 @@ fn about_page() -> View {
         p(id = "global_state") { (global_state.test.get_clone()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "", id = "index-link") { "Index" }
+        Link(to = "/", id = "index-link") { "Index" }
         br()
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
