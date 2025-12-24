@@ -20,11 +20,13 @@ async fn index(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         Ok(())
     }
 
-    // Subsequent...
+    // Subsequent load (client-side navigation)
     goto_page_from_links(c, "index-link").await?;
+    wait_for_checkpoint!("page_interactive", 1, c);
     test(c).await?;
-    // ...and initial
+    // Initial load (full page reload resets checkpoint counter)
     c.refresh().await?;
+    wait_for_checkpoint!("page_interactive", 0, c);
     test(c).await?;
 
     Ok(())
@@ -46,11 +48,13 @@ async fn about(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         Ok(())
     }
 
-    // Subsequent...
+    // Subsequent load (client-side navigation)
     goto_page_from_links(c, "about-link").await?;
+    wait_for_checkpoint!("page_interactive", 1, c);
     test(c).await?;
-    // ...and initial
+    // Initial load (full page reload resets checkpoint counter)
     c.refresh().await?;
+    wait_for_checkpoint!("page_interactive", 0, c);
     test(c).await?;
 
     Ok(())
@@ -75,11 +79,13 @@ async fn clock(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         Ok(())
     }
 
-    // Subsequent...
+    // Subsequent load (client-side navigation)
     goto_page_from_links(c, "clock-link").await?;
+    wait_for_checkpoint!("page_interactive", 1, c);
     test(c).await?;
-    // ...and initial
+    // Initial load (full page reload resets checkpoint counter)
     c.refresh().await?;
+    wait_for_checkpoint!("page_interactive", 0, c);
     test(c).await?;
 
     Ok(())
@@ -98,11 +104,13 @@ async fn four(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         Ok(())
     }
 
-    // Subsequent...
+    // Subsequent load (client-side navigation)
     goto_page_from_links(c, "four-link").await?;
+    wait_for_checkpoint!("page_interactive", 1, c);
     test(c).await?;
-    // ...and initial
+    // Initial load (full page reload resets checkpoint counter)
     c.refresh().await?;
+    wait_for_checkpoint!("page_interactive", 0, c);
     test(c).await?;
 
     Ok(())
@@ -152,10 +160,11 @@ async fn calc(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
         Ok(())
     }
 
-    // Subsequent...
+    // Subsequent load (client-side navigation)
     goto_page_from_links(c, "calc-link").await?;
+    wait_for_checkpoint!("page_interactive", 1, c);
     test(c).await?;
-    // ...and initial
+    // Initial load (full page reload resets checkpoint counter)
     c.refresh().await?;
     wait_for_checkpoint!("page_interactive", 0, c);
     test(c).await?;
