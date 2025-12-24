@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 fn about_page() -> View {
     view! {
         p { "About." }
-        a(href = "") { "Index." }
+        Link(to = "/") { "Index." }
     }
 }
 
