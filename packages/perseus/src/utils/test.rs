@@ -15,7 +15,10 @@ macro_rules! wait_for_checkpoint {
 
         loop {
             // Try to find the element
-            match $client.find(::fantoccini::Locator::Id(&checkpoint_id)).await {
+            match $client
+                .find(::fantoccini::Locator::Id(&checkpoint_id))
+                .await
+            {
                 Ok(_) => break, // Found it!
                 Err(_) => {
                     // Not found yet, check if we've timed out

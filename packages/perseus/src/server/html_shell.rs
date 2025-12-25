@@ -461,9 +461,7 @@ impl fmt::Display for HtmlShell {
                 let extra_attrs = caps.get(1).map_or("", |m| m.as_str());
                 format!(
                     "<div id=\"{}\"{}>{}",
-                    self.root_id,
-                    extra_attrs,
-                    self.content
+                    self.root_id, extra_attrs, self.content
                 )
             })
             .to_string();

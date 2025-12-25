@@ -485,42 +485,43 @@ impl Tool {
             request = request.header("Authorization", format!("Bearer {}", token));
         }
 
-        let result = async {
-            let response = request.send().await.map_err(|err| {
-                InstallError::GetLatestToolVersionFailed {
-                    source: err,
-                    tool: self.name.to_string(),
+        let result =
+            async {
+                let response = request.send().await.map_err(|err| {
+                    InstallError::GetLatestToolVersionFailed {
+                        source: err,
+                        tool: self.name.to_string(),
+                    }
+                })?;
+
+                // Check for rate limiting or other HTTP errors
+                if !response.status().is_success() {
+                    return Err(InstallError::ParseToolVersionFailed {
+                        tool: self.name.to_string(),
+                    });
                 }
-            })?;
 
-            // Check for rate limiting or other HTTP errors
-            if !response.status().is_success() {
-                return Err(InstallError::ParseToolVersionFailed {
-                    tool: self.name.to_string(),
-                });
-            }
+                let json = response.json::<serde_json::Value>().await.map_err(|err| {
+                    InstallError::GetLatestToolVersionFailed {
+                        source: err,
+                        tool: self.name.to_string(),
+                    }
+                })?;
 
-            let json = response.json::<serde_json::Value>().await.map_err(|err| {
-                InstallError::GetLatestToolVersionFailed {
-                    source: err,
-                    tool: self.name.to_string(),
-                }
-            })?;
+                let latest_version =
+                    json.get("tag_name")
+                        .ok_or_else(|| InstallError::ParseToolVersionFailed {
+                            tool: self.name.to_string(),
+                        })?;
 
-            let latest_version =
-                json.get("tag_name")
+                Ok(latest_version
+                    .as_str()
                     .ok_or_else(|| InstallError::ParseToolVersionFailed {
                         tool: self.name.to_string(),
-                    })?;
-
-            Ok(latest_version
-                .as_str()
-                .ok_or_else(|| InstallError::ParseToolVersionFailed {
-                    tool: self.name.to_string(),
-                })?
-                .to_string())
-        }
-        .await;
+                    })?
+                    .to_string())
+            }
+            .await;
 
         // If fetching the latest version fails (e.g., rate limiting), use fallback
         match result {

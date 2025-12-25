@@ -13,12 +13,12 @@ use crate::{
     state::{AnyFreeze, MakeRx, MakeUnrx, PssContains, TemplateState, UnreactiveState},
 };
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(any(client, doc))]
+use sycamore::reactive::use_global_scope;
 use sycamore::{
     reactive::{create_child_scope, NodeHandle},
     web::View,
 };
-#[cfg(any(client, doc))]
-use sycamore::reactive::use_global_scope;
 
 #[cfg(any(client, doc))]
 use crate::template::PreloadInfo;
