@@ -73,7 +73,10 @@ mod utils {
 
         let exit_status = child.try_wait()?;
         if let Some(status) = exit_status {
-            panic!("server process returned non-zero exit code '{}'", status);
+            panic!(
+                "server process exited unexpectedly with status '{}' (expected it to keep running)",
+                status
+            );
         }
 
         let body = ureq::get(path)

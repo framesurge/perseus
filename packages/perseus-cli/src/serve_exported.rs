@@ -37,11 +37,12 @@ pub async fn serve_exported(
         return Ok(exit_code);
     }
 
-    let dir = dir.join("dist/exported");
+    let exported_dir = dir.join("dist/exported");
+    let error_404_path = exported_dir.join("__export_404.html");
     // We actually don't have to worry about HTML file extensions at all
     let files = warp::any()
-        .and(warp::fs::dir(dir))
-        .or(warp::fs::file("dist/exported/__export_404.html"));
+        .and(warp::fs::dir(exported_dir))
+        .or(warp::fs::file(error_404_path));
     // Parse `localhost` into `127.0.0.1` (picky Rust `std`)
     let host = if host == "localhost" {
         "127.0.0.1".to_string()
@@ -58,7 +59,8 @@ pub async fn serve_exported(
         port = port
     );
 
-    warp::serve(files).bind(addr).await;
+    // Run the server (this blocks forever)
+    warp::serve(files).run(addr).await;
     // We will never get here (the above runs forever)
     Ok(0)
 }
