@@ -22,6 +22,9 @@ use web_sys::{CustomEvent, CustomEventInit};
 /// This function performs all error handling internally, and will do its level
 /// best not to fail, including through setting panic handlers.
 pub fn run_client<M: MutableStore, T: TranslationsManager>(app: impl Fn() -> PerseusAppBase<M, T>) {
+    // Set panic hook early for better error messages in case of panics
+    console_error_panic_hook::set_once();
+
     let mut app = app();
     // The latter of these is a clone of the handler used for other errors
     let (general_panic_handler, view_panic_handler) = app.take_panic_handlers();

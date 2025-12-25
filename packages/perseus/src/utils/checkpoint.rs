@@ -29,7 +29,7 @@ pub fn checkpoint(name: &str) {
 
     let is_testing = WindowVariable::new_bool("__PERSEUS_TESTING");
     match is_testing {
-        WindowVariable::Some(val) if val => (),
+        WindowVariable::Some(val) if val => {}
         // If the boolean was some other type in JS, just abort (this would be a *very* weird
         // environment that implies user tampering)
         _ => return,

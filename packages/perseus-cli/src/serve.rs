@@ -39,6 +39,7 @@ fn build_server(
     num_steps: u8,
     exec: Arc<Mutex<String>>,
     is_release: bool,
+    is_testing: bool,
     tools: &Tools,
     global_opts: &Opts,
 ) -> Result<
@@ -67,6 +68,18 @@ fn build_server(
     let sb_target = dir;
     let sb_thread = spawn_thread(
         move || {
+            // Base environment variables for the build
+            let mut env_vars: Vec<(&str, &str)> = vec![
+                ("CARGO_TARGET_DIR", "dist/target_engine"),
+                ("RUSTFLAGS", "--cfg=engine"),
+                ("CARGO_TERM_COLOR", "always"),
+            ];
+            // Add PERSEUS_TESTING when in testing mode so that the HTML shell
+            // includes the window.__PERSEUS_TESTING = true script for checkpoints
+            if is_testing {
+                env_vars.push(("PERSEUS_TESTING", "true"));
+            }
+
             let (stdout, _stderr) = handle_exit_code!(run_stage(
                 vec![&format!(
                     // This sets Cargo to tell us everything, including the executable path to the
@@ -79,11 +92,7 @@ fn build_server(
                 &sb_target,
                 &sb_spinner,
                 &sb_msg,
-                vec![
-                    ("CARGO_TARGET_DIR", "dist/target_engine"),
-                    ("RUSTFLAGS", "--cfg=engine"),
-                    ("CARGO_TERM_COLOR", "always")
-                ],
+                env_vars,
                 // These are JSON logs, never print them (they're duplicated by the build logs
                 // anyway, we're compiling the same thing)
                 false,
@@ -243,6 +252,7 @@ pub fn serve(
         num_steps,
         Arc::clone(&exec),
         opts.release,
+        silent_no_run, // When silent_no_run is true, we're in testing mode
         tools,
         global_opts,
     )?;

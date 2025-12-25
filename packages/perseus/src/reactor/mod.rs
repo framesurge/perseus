@@ -369,13 +369,14 @@ impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
     /// the given type. This will only work with window variables that have
     /// been serialized to strings from the given type `T`.
     fn new_obj(name: &str) -> Self {
-        let val_opt = web_sys::window().unwrap().get(name);
-        let js_obj = match val_opt {
-            Some(js_obj) => js_obj,
-            None => return Self::None,
+        // Use js_sys::Reflect::get to access any JavaScript property, including primitives
+        let window = web_sys::window().unwrap();
+        let js_val = match js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str(name)) {
+            Ok(val) if !val.is_undefined() => val,
+            _ => return Self::None,
         };
         // The object should only actually contain the string value that was injected
-        let val_str = match js_obj.as_string() {
+        let val_str = match js_val.as_string() {
             Some(val_str) => val_str,
             None => return Self::Malformed,
         };
@@ -397,13 +398,14 @@ impl WindowVariable<bool> {
     ///
     /// This is generally used internally for managing flags.
     pub(crate) fn new_bool(name: &str) -> Self {
-        let val_opt = web_sys::window().unwrap().get(name);
-        let js_bool = match val_opt {
-            Some(js_bool) => js_bool,
-            None => return Self::None,
+        // Use js_sys::Reflect::get to access any JavaScript property, including primitives
+        let window = web_sys::window().unwrap();
+        let js_val = match js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str(name)) {
+            Ok(val) if !val.is_undefined() => val,
+            _ => return Self::None,
         };
         // The object should only actually contain the boolean value that was injected
-        match js_bool.as_bool() {
+        match js_val.as_bool() {
             Some(val) => Self::Some(val),
             None => Self::Malformed,
         }
@@ -414,13 +416,14 @@ impl WindowVariable<String> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with `String` window variables.
     fn new_str(name: &str) -> Self {
-        let val_opt = web_sys::window().unwrap().get(name);
-        let js_str = match val_opt {
-            Some(js_str) => js_str,
-            None => return Self::None,
+        // Use js_sys::Reflect::get to access any JavaScript property, including primitives
+        let window = web_sys::window().unwrap();
+        let js_val = match js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str(name)) {
+            Ok(val) if !val.is_undefined() => val,
+            _ => return Self::None,
         };
-        // The object should only actually contain the boolean value that was injected
-        match js_str.as_string() {
+        // The object should only actually contain the string value that was injected
+        match js_val.as_string() {
             Some(val) => Self::Some(val),
             None => Self::Malformed,
         }

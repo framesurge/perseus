@@ -2,6 +2,7 @@ use crate::error_views::ServerErrorData;
 use crate::page_data::PageData;
 use crate::state::TemplateState;
 use crate::utils::minify;
+use regex::Regex;
 use std::{env, fmt};
 
 /// Escapes special characters in page data that might interfere with JavaScript
@@ -443,20 +444,29 @@ impl fmt::Display for HtmlShell {
                 ),
             );
 
-        // The user MUST place have a `<div>` of this exact form (documented explicitly)
-        // We permit either double or single quotes
-        let html_to_replace_double = format!("<div id=\"{}\">", self.root_id);
-        let html_to_replace_single = format!("<div id='{}'>", self.root_id);
-        let html_replacement = format!(
-            // We give the content a specific ID so that it can be deleted if an error page needs
-            // to be rendered on the client-side
-            "{}{}",
-            &html_to_replace_double, self.content,
+        // The user MUST have a `<div>` with the root ID.
+        // We use regex to match the div regardless of additional attributes (like hydration keys
+        // added by Sycamore's render_to_string in 0.9.2+).
+        // This matches: <div id="root"...> or <div id='root'...> with any attributes
+        let root_div_pattern = format!(
+            r#"<div\s+id\s*=\s*["']{}["']([^>]*)>"#,
+            regex::escape(&self.root_id)
         );
-        // Now interpolate that HTML into the HTML shell
-        let new_shell = shell_with_body
-            .replace(&html_to_replace_double, &html_replacement)
-            .replace(&html_to_replace_single, &html_replacement);
+        let root_div_regex = Regex::new(&root_div_pattern).expect("Invalid root div regex pattern");
+
+        // Replace the root div, preserving any additional attributes (like data-hk)
+        let new_shell = root_div_regex
+            .replace(&shell_with_body, |caps: &regex::Captures| {
+                // caps[0] is the full match, caps[1] is any additional attributes
+                let extra_attrs = caps.get(1).map_or("", |m| m.as_str());
+                format!(
+                    "<div id=\"{}\"{}>{}",
+                    self.root_id,
+                    extra_attrs,
+                    self.content
+                )
+            })
+            .to_string();
 
         // Finally, set the `lang` tag if we should
         let final_shell = if self.locale != "xx-XX" {

@@ -27,7 +27,9 @@ use std::rc::Rc;
 use std::{any::TypeId, sync::Arc};
 use std::{collections::HashMap, panic::PanicHookInfo};
 use sycamore::prelude::{component, view};
-use sycamore::web::{render_to_string, GlobalProps, HtmlGlobalAttributes, View};
+#[cfg(engine)]
+use sycamore::web::render_to_string;
+use sycamore::web::{GlobalProps, HtmlGlobalAttributes, View};
 
 /// The default index view, because some simple apps won't need anything fancy
 /// here. The user should be able to provide the smallest possible amount of
@@ -375,6 +377,8 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
     #[cfg(any(client, doc))]
     #[doc(hidden)]
     fn new_wasm() -> Self {
+        let mut error_views_default = ErrorViews::unlocalized_development_default();
+        let panic_handler = error_views_default.take_panic_handler();
         Self {
             root: "root".to_string(),
             // We do initialize with no templates, because an app without templates is in theory
@@ -396,7 +400,7 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
             // Many users won't need anything fancy in the index view, so we provide a default
             index_view: DFLT_INDEX_VIEW.to_string(),
             panic_handler: None,
-            panic_handler_view: ErrorViews::unlocalized_development_default().take_panic_handler(),
+            panic_handler_view: panic_handler,
             _marker: PhantomData,
         }
     }
@@ -698,8 +702,18 @@ impl<M: MutableStore, T: TranslationsManager> PerseusAppBase<M, T> {
     pub fn index_view<'a>(mut self, f: impl Fn() -> View + 'a) -> Self {
         // We need to render the index view without any hydration IDs (which would break
         // the HTML shell's interpolation mechanisms)
-        let html_str = sycamore::web::render_to_string(f);
-        self.index_view = html_str;
+        // NOTE: render_to_string is only available in SSR mode (engine), so we skip
+        // this on the client where the index view isn't needed anyway
+        #[cfg(engine)]
+        {
+            let html_str = sycamore::web::render_to_string(f);
+            self.index_view = html_str;
+        }
+        #[cfg(client)]
+        {
+            // On client, the index view closure is ignored - the HTML shell already exists
+            let _ = f;
+        }
 
         self
     }
