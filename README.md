@@ -27,17 +27,20 @@ use perseus::prelude::*;
 use sycamore::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         .template(
             Template::build("index")
-                .view(|| {
-                    view! {
-                        p { "Hello World!" }
-                    }
-                })
+                .view(index_page)
                 .build()
         )
+        .error_views(ErrorViews::unlocalized_development_default())
+}
+
+fn index_page() -> View {
+    view! {
+        p { "Hello World!" }
+    }
 }
 ```
 
@@ -55,6 +58,17 @@ perseus serve -w
 ```
 
 Then, hop over to <http://localhost:8080> and see a placeholder app, in all its glory! If you change some code, that'll automatically update, reloading the browser all by itself. (This rebuilding might take a while though, see [here](https://framesurge.sh/perseus/en-US/docs/next/fundamentals/compilation-times/) for how to speed things up.)
+
+## Sycamore 0.9.2
+
+Perseus v0.5.0 uses Sycamore 0.9.2, which brings significant API improvements:
+
+- **Simpler view functions** - No more `cx: Scope` parameter or `<G: Html>` generics
+- **Cleaner syntax** - `view! { div { "Hello" } }` instead of `view! { cx, div { "Hello" } }`
+- **Built-in Link component** - `Link(to = "/about") { "About" }` for client-side navigation
+- **Improved signals** - `create_signal(value)` as a free function
+
+See the [migration guide](https://framesurge.sh/perseus/en-US/docs/migrating) for upgrading from v0.4.x.
 
 ## Aim
 

@@ -2,96 +2,94 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [Unreleased]
+## [0.5.0](https://github.com/framesurge/perseus/compare/v0.4.3...v0.5.0) (2025-01-XX)
 
-### Breaking Changes
+### ⚠ BREAKING CHANGES
 
-* **migration:** Upgraded from Sycamore 0.8 to Sycamore 0.9.2
+This release upgrades Perseus from Sycamore 0.8.x to Sycamore 0.9.2, bringing significant API improvements but requiring migration of existing code.
 
-This is a major migration that updates Perseus to work with Sycamore 0.9.2. The migration includes significant changes to the reactive system and component API.
+#### View Function Signature Changes
 
-#### Core Framework Changes
+```rust
+// Before (0.4.x with Sycamore 0.8)
+fn my_page<G: Html>(cx: Scope) -> View<G> {
+    view! { cx, p { "Hello" } }
+}
 
-* **ReactiveState macro:** Removed `Copy` trait derivation from generated intermediate structs
-  - Sycamore 0.9.2 signals are `Copy` by default
-  - Prevents compilation errors when reactive fields contain non-Copy types
+// After (0.5.0 with Sycamore 0.9.2)
+fn my_page() -> View {
+    view! { p { "Hello" } }
+}
+```
 
-* **Signal API updates:**
-  - Removed `create_scope()` and `Scope` parameters from all components
-  - All reactive primitives are now `'static` and `Copy` by default
-  - Changed `.get().clone()` to `.get_clone()` for non-Copy types
-  - Replaced `.modify()` with `.update()` for signal mutations
-  - Signals now auto-convert to views in templates
+#### Signal API Changes
 
-* **View API changes:**
-  - Removed `<G: Html>` generic parameter from all view functions
-  - `View` type is no longer generic
-  - `View::default()` replaced with `View::new()` in some contexts
+```rust
+// Before
+let count = cx.create_signal(0);
+state.items.modify().push(item);
 
-* **Component Props:**
-  - `Option<T>` props now expect unwrapped values in component builders
-  - Removed `Clone` trait requirement from `View` types
-  - Props builder pattern requires concrete values, not Options
+// After
+let count = create_signal(0);
+state.items.update(|items| items.push(item));
+```
 
-#### Website Package Changes
+#### Reactor Access Changes
 
-* **Event handlers:** Added `move` keyword to closures requiring `'static` lifetime
-* **Context usage:** Wrapped `Reactor` in `Rc<T>` for types not implementing `Clone`
-* **Template values:** Extracted reactive macro calls (like `t!()`) before `view!` macro to prevent temporary borrow errors
-* **NodeRef API:** Type information requires recasting inside closure scopes
+```rust
+// Before
+let reactor = Reactor::<G>::from_cx(cx);
 
-#### Migration Guide for Users
+// After
+let reactor = Reactor::<BrowserNodeType>::from_cx();
+```
 
-If you're upgrading an existing Perseus application to this version, you'll need to make the following changes:
+### Features
 
-1. **Remove Scope parameters:**
-   ```rust
-   // Before (0.8)
-   #[component]
-   fn MyComponent<G: Html>(cx: Scope, props: MyProps) -> View<G> {
-       let signal = create_signal(cx, value);
-   }
+* **components:** Add `Link` component for client-side navigation ([0ee5abd](https://github.com/framesurge/perseus/commit/0ee5abd8))
+  ```rust
+  // New way to create internal links
+  Link(to = "/about") { "About Us" }
+  ```
+* **docs:** Add complete 0.5.x documentation with Sycamore 0.9.2 syntax ([e0938b0](https://github.com/framesurge/perseus/commit/e0938b06))
+* **docs:** Add comprehensive migration guide from 0.4.x to 0.5.x
 
-   // After (0.9.2)
-   #[component]
-   fn MyComponent(props: MyProps) -> View {
-       let signal = create_signal(value);
-   }
-   ```
+### Bug Fixes
 
-2. **Update signal mutations:**
-   ```rust
-   // Before (0.8)
-   state.vec.modify().push(item);
+* **compat:** Fix WASM client crashes with Sycamore 0.9.2 ([fcc2230](https://github.com/framesurge/perseus/commit/fcc2230f))
+* **state:** Preserve reactive state across client-side navigation ([eb70dd5](https://github.com/framesurge/perseus/commit/eb70dd5e))
+* **state:** Create global state signals in root scope to survive navigation ([2f26554](https://github.com/framesurge/perseus/commit/2f26554a))
+* **cli:** Fix relative path bug in serve_exported ([2695a36](https://github.com/framesurge/perseus/commit/2695a368))
+* **cli:** Handle GitHub API rate limiting for wasm-opt version checks ([a5ab490](https://github.com/framesurge/perseus/commit/a5ab4900))
+* **cli:** Catch minify-js panics and fall back to unminified JS ([e1ae2f9](https://github.com/framesurge/perseus/commit/e1ae2f96))
+* **hydration:** Fix hydration issues with new Sycamore API ([f40321f](https://github.com/framesurge/perseus/commit/f40321f3))
+* **context:** Ensure reactor context accessible in child scopes ([2cd25c5](https://github.com/framesurge/perseus/commit/2cd25c54))
+* **compat:** Update PanicInfo to PanicHookInfo for Rust 1.82+ ([661d4ce](https://github.com/framesurge/perseus/commit/661d4ce9))
 
-   // After (0.9.2)
-   state.vec.update(|vec| vec.push(item));
-   ```
+### Code Refactoring
 
-3. **Fix event handler lifetimes:**
-   ```rust
-   // Before (0.8)
-   on:click = |_| { /* handler */ }
+* Update all examples to use Sycamore 0.9.2 syntax
+* Update website components for Sycamore 0.9.2 compatibility
+* Remove deprecated `Scope` parameter from all view functions
+* Replace `<G: Html>` generics with concrete `View` type
 
-   // After (0.9.2)
-   on:click = move |_| { /* handler */ }
-   ```
+### Dependencies
 
-4. **Update Option prop handling:**
-   ```rust
-   // Before (0.8)
-   MyComponent(
-       optional_prop = Some(value),
-   )
+* `sycamore` → 0.9.2
+* `sycamore-router` → 0.9.2
 
-   // After (0.9.2)
-   let unwrapped = value.unwrap_or_default();
-   MyComponent(
-       optional_prop = unwrapped,
-   )
-   ```
+### Migration Guide
 
-For detailed migration information, see the [Sycamore migration guide](https://sycamore.dev/book/migration/0-8-to-0-9).
+For detailed migration information, see the [migration guide](https://framesurge.sh/perseus/en-US/docs/migrating) or the `docs/0.5.x/en-US/migrating.md` file.
+
+Key changes:
+
+1. **Remove Scope parameters** from all view functions
+2. **Remove `<G: Html>` generics** - use `View` instead of `View<G>`
+3. **Update view! macro** - remove `cx` as first argument
+4. **Use Link component** for internal navigation instead of `a(href=...)`
+5. **Update signal access** - use `create_signal(value)` as free function
+6. **Update Reactor access** - use `Reactor::<BrowserNodeType>::from_cx()`
 
 ### [0.4.3](/home/arctic-hen7/me/.main-mirror.git/compare/v0.4.2...v0.4.3) (2024-07-19)
 
