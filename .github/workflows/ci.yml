@@ -6,7 +6,6 @@ on:
             - main
             - update-v5.0
     pull_request:
-    workflow_dispatch:
 
 jobs:
     check:
