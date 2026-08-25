@@ -59,33 +59,51 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     turbine: &'static Turbine<M, T>,
     opts: ServerOptions,
 ) -> Router {
+    get_router_with_api(turbine, opts, None).await
+}
+
+/// Gets the `Router` needed to configure an existing Axum app for Perseus with
+/// optional custom API routes. The `api_router` parameter allows you to add
+/// REST API endpoints (POST, PUT, DELETE, etc.) that will be handled before
+/// the Perseus page routing fallback.
+///
+/// # Example
+/// ```rust,ignore
+/// use axum::{Router, routing::post};
+///
+/// let api_router = Router::new()
+///     .route("/api/auth/login", post(login_handler));
+///
+/// let router = perseus_axum::get_router_with_api(turbine, opts, Some(api_router)).await;
+/// ```
+pub async fn get_router_with_api<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+    turbine: &'static Turbine<M, T>,
+    opts: ServerOptions,
+    api_router: Option<Router>,
+) -> Router {
     let router = Router::new()
         // --- File handlers ---
         .route(
             "/.perseus/bundle.js",
-            get_service(ServeFile::new(opts.js_bundle.clone()).precompressed_br())
-                .handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.js_bundle.clone()).precompressed_br()),
         )
         .route(
             "/.perseus/bundle.wasm",
-            get_service(ServeFile::new(opts.wasm_bundle.clone()).precompressed_br())
-                .handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.wasm_bundle.clone()).precompressed_br()),
         )
         .route(
             "/.perseus/bundle.wasm.js",
-            get_service(ServeFile::new(opts.wasm_js_bundle.clone()).precompressed_br())
-                .handle_error(handle_fs_error),
+            get_service(ServeFile::new(opts.wasm_js_bundle.clone()).precompressed_br()),
         )
         .nest_service(
             "/.perseus/snippets",
-            get_service(ServeDir::new(opts.snippets).precompressed_br())
-                .handle_error(handle_fs_error),
+            get_service(ServeDir::new(opts.snippets).precompressed_br()),
         );
 
     // --- Translation and subsequent load handlers ---
     let mut router = router
         .route(
-            "/.perseus/translations/:locale",
+            "/.perseus/translations/{locale}",
             get(move |Path(locale): Path<String>| async move {
                 ApiResponse(turbine.get_translations(&locale).await)
             }),
@@ -95,7 +113,7 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
             get(move || async move { ApiResponse(turbine.get_initial_consts("").await) }),
         )
         .route(
-            "/.perseus/initial_consts/:locale",
+            "/.perseus/initial_consts/{locale}",
             get(move |Path(locale): Path<String>| async move {
                 let locale = match locale.strip_suffix(".js") {
                     Some(locale) => locale,
@@ -106,11 +124,11 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
                         ))
                     }
                 };
-                ApiResponse(turbine.get_initial_consts(&locale).await)
+                ApiResponse(turbine.get_initial_consts(locale).await)
             }),
         )
         .route(
-            "/.perseus/page/:locale/*tail",
+            "/.perseus/page/{locale}/{*tail}",
             get(
                 move |Path(path_parts): Path<Vec<String>>,
                       Query(SubsequentLoadQueryParams {
@@ -147,14 +165,20 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
     if turbine.static_dir.exists() {
         router = router.nest_service(
             "/.perseus/static",
-            get_service(ServeDir::new(&turbine.static_dir)).handle_error(handle_fs_error),
+            get_service(ServeDir::new(&turbine.static_dir)),
         )
     }
     for (url, static_path) in turbine.static_aliases.iter() {
         router = router.route(
             url, // This comes with a leading forward slash!
-            get_service(ServeFile::new(static_path)).handle_error(handle_fs_error),
+            get_service(ServeFile::new(static_path)),
         );
+    }
+
+    // --- Merge custom API routes (if provided) ---
+    // This must be done before the fallback handler so API routes take precedence
+    if let Some(api) = api_router {
+        router = router.merge(api);
     }
 
     // --- Initial load handler ---
@@ -173,11 +197,6 @@ pub async fn get_router<M: MutableStore + 'static, T: TranslationsManager + 'sta
 }
 
 // TODO Review if there's anything more to do here
-async fn handle_fs_error(_err: std::io::Error) -> impl IntoResponse {
-    dbg!("Error!");
-    (StatusCode::INTERNAL_SERVER_ERROR, "Couldn't serve file.")
-}
-
 // ----- Default server -----
 
 /// Creates and starts the default Perseus server with Axum. This should be run
@@ -189,18 +208,68 @@ pub async fn dflt_server<M: MutableStore + 'static, T: TranslationsManager + 'st
     opts: ServerOptions,
     (host, port): (String, u16),
 ) {
+    dflt_server_with_api(turbine, opts, (host, port), None).await
+}
+
+/// Creates and starts the default Perseus server with Axum, including custom
+/// API routes. This allows you to add REST API endpoints (POST, PUT, DELETE, etc.)
+/// alongside Perseus page routing.
+///
+/// # Example
+/// ```rust,ignore
+/// use axum::{Router, routing::post, Json};
+/// use serde::{Deserialize, Serialize};
+///
+/// #[derive(Deserialize)]
+/// struct LoginRequest {
+///     email: String,
+///     password: String,
+/// }
+///
+/// #[derive(Serialize)]
+/// struct LoginResponse {
+///     token: String,
+/// }
+///
+/// async fn login_handler(Json(req): Json<LoginRequest>) -> Json<LoginResponse> {
+///     // Handle login logic
+///     Json(LoginResponse { token: "...".to_string() })
+/// }
+///
+/// pub async fn server_with_auth<M, T>(
+///     turbine: &'static Turbine<M, T>,
+///     opts: ServerOptions,
+///     (host, port): (String, u16),
+/// ) where
+///     M: MutableStore + 'static,
+///     T: TranslationsManager + 'static,
+/// {
+///     let api_router = Router::new()
+///         .route("/api/auth/login", post(login_handler));
+///
+///     perseus_axum::dflt_server_with_api(turbine, opts, (host, port), Some(api_router)).await
+/// }
+/// ```
+#[cfg(feature = "dflt-server")]
+pub async fn dflt_server_with_api<M: MutableStore + 'static, T: TranslationsManager + 'static>(
+    turbine: &'static Turbine<M, T>,
+    opts: ServerOptions,
+    (host, port): (String, u16),
+    api_router: Option<Router>,
+) {
     use std::net::SocketAddr;
 
     let addr: SocketAddr = format!("{}:{}", host, port)
         .parse()
         .expect("Invalid address provided to bind to.");
 
-    let app = get_router(turbine, opts).await;
+    let app = get_router_with_api(turbine, opts, api_router).await;
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
-        .unwrap();
+        .expect("Failed to bind to address");
+
+    axum::serve(listener, app).await.unwrap();
 }
 
 /// Creates and starts the default Perseus server with compression using Axum.
@@ -216,18 +285,35 @@ pub async fn dflt_server_with_compression<
     opts: ServerOptions,
     (host, port): (String, u16),
 ) {
+    dflt_server_with_compression_and_api(turbine, opts, (host, port), None).await
+}
+
+/// Creates and starts the default Perseus server with compression and custom
+/// API routes using Axum. This allows you to add REST API endpoints alongside
+/// Perseus page routing with response compression enabled.
+#[cfg(feature = "dflt-server-with-compression")]
+pub async fn dflt_server_with_compression_and_api<
+    M: MutableStore + 'static,
+    T: TranslationsManager + 'static,
+>(
+    turbine: &'static Turbine<M, T>,
+    opts: ServerOptions,
+    (host, port): (String, u16),
+    api_router: Option<Router>,
+) {
     use std::net::SocketAddr;
 
     let addr: SocketAddr = format!("{}:{}", host, port)
         .parse()
         .expect("Invalid address provided to bind to.");
 
-    let app = get_router(turbine, opts)
+    let app = get_router_with_api(turbine, opts, api_router)
         .await
         .layer(tower_http::compression::CompressionLayer::new());
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
-        .unwrap();
+        .expect("Failed to bind to address");
+
+    axum::serve(listener, app).await.unwrap();
 }

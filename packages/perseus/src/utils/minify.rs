@@ -6,10 +6,17 @@ use minify_html_onepass::{with_friendly_error, Cfg};
 ///
 /// If the second argument is set to `false`, CSS and JS will not be minified,
 /// and the performance will be improved.
+///
+/// NOTE: Minification is automatically disabled when the `hydrate` feature is
+/// enabled, because the minifier removes quotes from `data-hk` attributes,
+/// which breaks client-side hydration.
 pub(crate) fn minify(code: &str, minify_extras: bool) -> Result<String, ServerError> {
     // In case the user is using invalid HTML (very tricky error to track down), we
     // let them disable this feature
-    if cfg!(feature = "minify") {
+    // IMPORTANT: Disable minification when hydrate feature is enabled because
+    // the minifier removes quotes from data-hk attributes (e.g., data-hk=0.0 instead
+    // of data-hk="0.0"), which causes hydration to fail
+    if cfg!(feature = "minify") && !cfg!(feature = "hydrate") {
         let cfg = Cfg {
             minify_js: minify_extras && cfg!(feature = "minify-js"),
             minify_css: minify_extras && cfg!(feature = "minify-css"),

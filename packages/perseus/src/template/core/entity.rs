@@ -1,7 +1,5 @@
 use std::{collections::HashMap, ops::Deref};
 
-use sycamore::web::Html;
-
 use super::TemplateInner;
 
 /// An internal container over a [`TemplateInner`]. Conceptually,
@@ -19,18 +17,18 @@ use super::TemplateInner;
 /// however, as capsules are used by calling a component method on them, meaning
 /// the widget rendering process always has access to the capsule itself.
 #[derive(Debug)]
-pub struct Entity<G: Html>(TemplateInner<G>);
+pub struct Entity(TemplateInner);
 
-impl<G: Html> From<TemplateInner<G>> for Entity<G> {
-    fn from(val: TemplateInner<G>) -> Self {
+impl From<TemplateInner> for Entity {
+    fn from(val: TemplateInner) -> Self {
         Self(val)
     }
 }
 
 // Immutable methods should be able to be called such that this can be treated
 // as a template/capsule
-impl<G: Html> std::ops::Deref for Entity<G> {
-    type Target = TemplateInner<G>;
+impl std::ops::Deref for Entity {
+    type Target = TemplateInner;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -38,7 +36,7 @@ impl<G: Html> std::ops::Deref for Entity<G> {
 }
 
 /// An alias for a map of entities, keyed by their names/root paths.
-pub type EntityMap<G> = HashMap<String, Forever<Entity<G>>>;
+pub type EntityMap = HashMap<String, Forever<Entity>>;
 
 /// A helpful wrapper type that allows something to be stored as either an owned
 /// type or a static reference, which prevents unnecessary memory leaks when

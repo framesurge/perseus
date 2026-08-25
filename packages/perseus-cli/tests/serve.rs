@@ -5,7 +5,6 @@ use assert_fs::{
     TempDir,
 };
 use predicates::prelude::*;
-use std::process::Command;
 
 /// Makes sure that `perseus serve --no-run` produces the correct artifacts.
 /// This will then test that the local server actually works by running `perseus
@@ -18,10 +17,9 @@ fn serve_produces_artifacts_and_serves() -> Result<(), Box<dyn std::error::Error
     init_test(&dir)?;
 
     // Serve the app without running it
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("serve")
-        .arg("--no-run");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("serve").arg("--no-run");
     cmd.assert().success();
 
     // Assert on all the artifacts, based on the code in the `init` example
@@ -47,23 +45,21 @@ fn serve_produces_artifacts_and_serves() -> Result<(), Box<dyn std::error::Error
         .assert(predicate::path::exists());
 
     // Serve the app properly
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()).arg("serve");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("serve");
     test_serve(&mut cmd, "http://localhost:8080")?;
 
     // Try serving on a different port
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("serve")
-        .arg("--port")
-        .arg("8000");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("serve").arg("--port").arg("8000");
     test_serve(&mut cmd, "http://localhost:8000")?;
 
     // And try with `--no-build`
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("serve")
-        .arg("--no-build");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("serve").arg("--no-build");
     test_serve(&mut cmd, "http://localhost:8080")?;
 
     Ok(())

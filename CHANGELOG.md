@@ -2,6 +2,98 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.5.0](https://github.com/afidegnum/perseus/compare/v0.4.3...v0.5.0) (2026-08-25)
+
+### ⚠ BREAKING CHANGES
+
+This release upgrades Perseus from Sycamore 0.8.x to Sycamore 0.9.2, bringing significant API improvements but requiring migration of existing code.
+
+#### View Function Signature Changes
+
+```rust
+// Before (0.4.x with Sycamore 0.8)
+fn my_page<G: Html>(cx: Scope) -> View<G> {
+    view! { cx, p { "Hello" } }
+}
+
+// After (0.5.0 with Sycamore 0.9.2)
+fn my_page() -> View {
+    view! { p { "Hello" } }
+}
+```
+
+#### Signal API Changes
+
+```rust
+// Before
+let count = cx.create_signal(0);
+state.items.modify().push(item);
+
+// After
+let count = create_signal(0);
+state.items.update(|items| items.push(item));
+```
+
+#### Reactor Access Changes
+
+```rust
+// Before
+let reactor = Reactor::<G>::from_cx(cx);
+
+// After
+let reactor = Reactor::<BrowserNodeType>::from_cx();
+```
+
+### Features
+
+* **components:** Add `Link` component for client-side navigation ([0ee5abd](https://github.com/framesurge/perseus/commit/0ee5abd8))
+  ```rust
+  // New way to create internal links
+  Link(to = "/about") { "About Us" }
+  ```
+* **docs:** Add complete 0.5.x documentation with Sycamore 0.9.2 syntax ([e0938b0](https://github.com/framesurge/perseus/commit/e0938b06))
+* **docs:** Add comprehensive migration guide from 0.4.x to 0.5.x
+* **examples:** Add persauth membership demo app with auth, RBAC, categories, and mail
+
+### Bug Fixes
+
+* **compat:** Fix WASM client crashes with Sycamore 0.9.2 ([fcc2230](https://github.com/framesurge/perseus/commit/fcc2230f))
+* **state:** Preserve reactive state across client-side navigation ([eb70dd5](https://github.com/framesurge/perseus/commit/eb70dd5e))
+* **state:** Create global state signals in root scope to survive navigation ([2f26554](https://github.com/framesurge/perseus/commit/2f26554a))
+* **cli:** Fix relative path bug in serve_exported ([2695a36](https://github.com/framesurge/perseus/commit/2695a368))
+* **cli:** Handle GitHub API rate limiting for wasm-opt version checks ([a5ab490](https://github.com/framesurge/perseus/commit/a5ab4900))
+* **cli:** Catch minify-js panics and fall back to unminified JS ([e1ae2f9](https://github.com/framesurge/perseus/commit/e1ae2f96))
+* **hydration:** Fix hydration issues with new Sycamore API ([f40321f](https://github.com/framesurge/perseus/commit/f40321f3))
+* **context:** Ensure reactor context accessible in child scopes ([2cd25c5](https://github.com/framesurge/perseus/commit/2cd25c54))
+* **compat:** Update PanicInfo to PanicHookInfo for Rust 1.82+ ([661d4ce](https://github.com/framesurge/perseus/commit/661d4ce9))
+* **turbine:** Generate page/head artifacts for stateless templates so direct loads work
+
+### Code Refactoring
+
+* Update all examples to use Sycamore 0.9.2 syntax
+* Update website components for Sycamore 0.9.2 compatibility
+* Remove deprecated `Scope` parameter from all view functions
+* Replace `<G: Html>` generics with concrete `View` type
+* Remove accidental `examples/target/` build artifacts from history and ignore all `target/` directories
+
+### Dependencies
+
+* `sycamore` → 0.9.2
+* `sycamore-router` → 0.9.2
+
+### Migration Guide
+
+For detailed migration information, see the [migration guide](https://framesurge.sh/perseus/en-US/docs/migrating) or the `docs/0.5.x/en-US/migrating.md` file.
+
+Key changes:
+
+1. **Remove Scope parameters** from all view functions
+2. **Remove `<G: Html>` generics** - use `View` instead of `View<G>`
+3. **Update view! macro** - remove `cx` as first argument
+4. **Use Link component** for internal navigation instead of `a(href=...)`
+5. **Update signal access** - use `create_signal(value)` as free function
+6. **Update Reactor access** - use `Reactor::<BrowserNodeType>::from_cx()`
+
 ### [0.4.3](/home/arctic-hen7/me/.main-mirror.git/compare/v0.4.2...v0.4.3) (2024-07-19)
 
 

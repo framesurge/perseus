@@ -97,12 +97,12 @@ pub enum EngineError {
 /// message and an app that has completely frozen.
 ///
 /// The `Panic` variant on this type only provides a formatted panic message,
-/// and nothing else from [`std::panic::PanicInfo`], due to lifetime
+/// and nothing else from [`std::panic::PanicHookInfo`], due to lifetime
 /// constraints. Since the message formatting is done by the standard library,
 /// which automatically takes account of the `payload` and `message`, the only
 /// other properties are `location` and `can_unwind`: the latter should be
 /// handled by Perseus if it ever is, and the former shoudl not be exposed to
-/// end users. Currently, there is no way to get the underlying `PanicInfo`
+/// end users. Currently, there is no way to get the underlying `PanicHookInfo`
 /// through Perseus' error handling system (although a plugin could do it
 /// by overriding the panic handler, but this is usually a bad idea).
 #[derive(Error, Debug)]

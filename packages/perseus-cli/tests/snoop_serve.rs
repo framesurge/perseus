@@ -1,8 +1,6 @@
 use crate::utils::{init_test, test_serve};
 use assert_cmd::prelude::*;
 use assert_fs::TempDir;
-use predicates::prelude::*;
-use std::process::Command;
 
 /// Makes sure that `perseus snoop serve` runs the app.
 #[test]
@@ -12,24 +10,21 @@ fn snoop_serve_serves() -> Result<(), Box<dyn std::error::Error>> {
     init_test(&dir)?;
 
     // Build the app first
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()).arg("build");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("build");
     cmd.assert().success();
 
     // Serve the app properly
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("snoop")
-        .arg("serve");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("snoop").arg("serve");
     test_serve(&mut cmd, "http://localhost:8080")?;
 
     // Try serving on a different port
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("snoop")
-        .arg("serve")
-        .arg("--port")
-        .arg("8000");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("snoop").arg("serve").arg("--port").arg("8000");
     test_serve(&mut cmd, "http://localhost:8000")?;
 
     Ok(())

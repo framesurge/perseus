@@ -1,0 +1,3 @@
+[submodule "portfolio"]
+	path = portfolio
+	url = git@github.com:afidegnum/perseus-portfolio.git

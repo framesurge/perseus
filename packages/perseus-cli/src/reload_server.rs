@@ -85,7 +85,7 @@ pub async fn run_reload_server(host: String, port: u16) {
     );
 
     let routes = command.or(receive);
-    warp::serve(routes).run(addr).await
+    warp::serve(routes).bind(addr).await;
 }
 
 /// Orders all connected browsers to reload themselves. This spawns a blocking

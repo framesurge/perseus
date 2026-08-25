@@ -1,9 +1,8 @@
 use super::Reactor;
 use crate::state::IdbFrozenStateStore;
-use sycamore::web::Html;
 use wasm_bindgen::JsValue;
 
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Freezes the app's state to IndexedDB to be accessed in future. This
     /// takes a pre-determined frozen state to avoid *really* annoying
     /// lifetime errors.

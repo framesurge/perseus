@@ -20,8 +20,13 @@
         "docs_rs": "0.3"
     },
     "0.4.x": {
+        "state": "outdated",
+        "git": "v0.4.2",
+        "docs_rs": "0.4"
+    },
+    "0.5.x": {
         "state": "stable",
         "git": "HEAD",
-        "docs_rs": "0.4"
+        "docs_rs": "0.5"
     }
 }

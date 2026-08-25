@@ -4,7 +4,6 @@ use assert_fs::{
     TempDir,
 };
 use predicates::prelude::*;
-use std::process::Command;
 
 use crate::utils::init_test;
 
@@ -16,13 +15,14 @@ fn export_error_page_produces_page() -> Result<(), Box<dyn std::error::Error>> {
     init_test(&dir)?;
 
     // Build the app
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path()).arg("build");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("build");
     cmd.assert().success();
 
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("export-error-page")
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("export-error-page")
         .arg("--code")
         .arg("404")
         .arg("--output")

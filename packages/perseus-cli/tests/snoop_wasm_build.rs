@@ -4,7 +4,6 @@ use assert_fs::{
     TempDir,
 };
 use predicates::prelude::*;
-use std::process::Command;
 
 use crate::utils::init_test;
 
@@ -19,10 +18,9 @@ fn snoop_wasm_build_produces_artifacts() -> Result<(), Box<dyn std::error::Error
     init_test(&dir)?;
 
     // Build the app
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("snoop")
-        .arg("wasm-build");
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("snoop").arg("wasm-build");
     cmd.assert().success();
 
     // Assert on all the artifacts, based on the code in the `init` example

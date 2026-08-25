@@ -90,9 +90,6 @@ pub struct EngineMainFn {
     pub block: Box<Block>,
     /// Any attributes the function uses.
     pub attrs: Vec<Attribute>,
-    /// Any generics the function takes (shouldn't be any, but it could in
-    /// theory).
-    pub generics: Generics,
 }
 impl Parse for EngineMainFn {
     fn parse(input: ParseStream) -> Result<Self> {
@@ -144,11 +141,7 @@ impl Parse for EngineMainFn {
                     ));
                 }
 
-                Ok(Self {
-                    block,
-                    attrs,
-                    generics: sig.generics,
-                })
+                Ok(Self { block, attrs })
             }
             item => Err(syn::Error::new_spanned(
                 item,

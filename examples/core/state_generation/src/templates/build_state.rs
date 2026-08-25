@@ -8,13 +8,13 @@ struct PageState {
     greeting: String,
 }
 
-fn build_state_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
-    view! { cx,
-        p { (state.greeting.get()) }
+fn build_state_page(state: PageStateRx) -> View {
+    view! {
+        p { (state.greeting.get_clone()) }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("build_state")
         .build_state_fn(get_build_state)
         .view_with_state(build_state_page)

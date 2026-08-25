@@ -4,16 +4,12 @@ use sycamore::prelude::*;
 // use web_sys::{Event, KeyboardEvent};
 
 // #[component]
-// pub fn SearchBar<G: Html>(cx: Scope) -> View<G> {
-//     let search = create_signal(cx, String::new());
+// pub fn SearchBar() -> View {
+//     let search = create_signal(String::new());
 
-//     view! { cx,
+//     view! {
 //         input(
 //             class = "p-2 border rounded-md mb-2 focus:outline-indigo-500
-// search-bar-bg max-w-full",             placeholder = t!(cx, "search"),
-//             bind:value = search,
-//             // When the user presses enter, we should submit their search to
-// Google in a new tab             on:keyup = move |ev: Event| {
 //                 let event: KeyboardEvent = ev.unchecked_into();
 //                 if event.key() == "Enter" {
 //                     let search = search.get();
@@ -28,8 +24,8 @@ use sycamore::prelude::*;
 // }
 
 #[component]
-pub fn SearchBar<G: Html>(_cx: Scope) -> View<G> {
-    View::empty()
+pub fn SearchBar() -> View {
+    View::default()
 }
 
 // /// Searches the site using Google as a proxy.

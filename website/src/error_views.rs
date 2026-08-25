@@ -3,8 +3,8 @@ use sycamore::prelude::*;
 
 // This site will be exported statically, so we only have control over 404 pages
 // for broken links in the site itself
-pub fn get_error_views<G: Html>() -> ErrorViews<G> {
-    ErrorViews::new(|cx, err, _err_info, _err_pos| {
+pub fn get_error_views() -> ErrorViews {
+    ErrorViews::new(|err, _err_info, _err_pos| {
         match err {
             // Errors from the server, like 404s; these are best displayed over the whole
             // page
@@ -15,27 +15,27 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
             } => match status {
                 // This one is usually handled separately
                 404 => (
-                    view! { cx,
+                    view! {
                         title { "Page not found" }
                     },
-                    not_found_page(cx),
+                    not_found_page(),
                 ),
                 // If the status is 4xx, it's a client-side problem (which is weird, and might
                 // indicate tampering)
                 _ if (400..500).contains(&status) => (
-                    view! { cx,
+                    view! {
                         title { "Error" }
                     },
-                    view! { cx,
+                    view! {
                         p { "There was something wrong with the last request, please try reloading the page." }
                     },
                 ),
                 // 5xx is a server error
                 _ => (
-                    view! { cx,
+                    view! {
                         title { "Error" }
                     },
-                    view! { cx,
+                    view! {
                         p { "Sorry, our server experienced an internal error. Please try reloading the page." }
                     },
                 ),
@@ -45,28 +45,28 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
             //
             // The argument here is the formatted panic message.
             ClientError::Panic(_) => (
-                view! { cx,
+                view! {
                     title { "Critical error" }
                 },
-                view! { cx,
+                view! {
                     p { "Sorry, but a critical internal error has occurred. This has been automatically reported to our team, who'll get on it as soon as possible. In the mean time, please try reloading the page." }
                 },
             ),
             // Network errors (but these could be caused by unexpected server rejections)
             ClientError::FetchError(_) => (
-                view! { cx,
+                view! {
                     title { "Error" }
                 },
-                view! { cx,
+                view! {
                     p { "A network error occurred, do you have an internet connection? (If you do, try reloading the page.)" }
                 },
             ),
 
             _ => (
-                view! { cx,
+                view! {
                     title { "Error" }
                 },
-                view! { cx,
+                view! {
                     p { (format!("An internal error has occurred: '{}'.", err)) }
                 },
             ),
@@ -74,8 +74,8 @@ pub fn get_error_views<G: Html>() -> ErrorViews<G> {
     })
 }
 
-fn not_found_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn not_found_page() -> View {
+    view! {
         div(class = "flex flex-col justify-center items-center h-screen") {
             main(class = "flex flex-col border border-black rounded-lg max-w-xl m-4") {
                 h3(class = "text-2xl font-bold w-full pb-4 border-b border-black my-4") {

@@ -102,7 +102,8 @@ impl PageStateStore {
                     PssState::Some(state) => state,
                     // We don't care whether there could be state in future, there isn't any right
                     // now
-                    _ => return None,
+                    PssState::None => return None,
+                    PssState::Never => return None,
                 };
                 state.as_any().downcast_ref::<T>().map(|val| (*val).clone())
             }
@@ -401,7 +402,7 @@ impl PageStateStore {
     /// double-preload things).
     pub fn cycle_route_preloaded(&self, keep_urls: &[&PathMaybeWithLocale]) {
         let mut preloaded = self.route_preloaded.borrow_mut();
-        preloaded.retain(|url, _| keep_urls.iter().any(|keep_url| *keep_url == url));
+        preloaded.retain(|url, _| keep_urls.contains(&url));
     }
     /// Forces the store to keep a certain page. This will prevent it from being
     /// evicted from the store, regardless of how many other pages are

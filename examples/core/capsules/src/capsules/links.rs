@@ -7,26 +7,26 @@ use sycamore::prelude::*;
 // and that would probably make more sense, but this is a capsules example!)
 
 lazy_static! {
-    pub static ref LINKS: Capsule<PerseusNodeType, ()> = get_capsule();
+    pub static ref LINKS: Capsule<()> = get_capsule();
 }
 
-fn links_capsule<G: Html>(cx: Scope, _: ()) -> View<G> {
-    view! { cx,
+fn links_capsule(_: ()) -> View {
+    view! {
         div(id = "links", style = "margin-top: 1rem;") {
-            a(id = "index-link", href = "") { "Index" }
+            Link(to = "/", id = "index-link") { "Index" }
             br {}
-            a(id = "about-link", href = "about") { "About" }
+            Link(to = "/about", id = "about-link") { "About" }
             br {}
-            a(id = "clock-link", href = "clock") { "Clock" }
+            Link(to = "/clock", id = "clock-link") { "Clock" }
             br {}
-            a(id = "four-link", href = "four") { "4" }
+            Link(to = "/four", id = "four-link") { "4" }
             br {}
-            a(id = "calc-link", href = "calc") { "Calc" }
+            Link(to = "/calc", id = "calc-link") { "Calc" }
         }
     }
 }
 
-pub fn get_capsule<G: Html>() -> Capsule<G, ()> {
+pub fn get_capsule() -> Capsule<()> {
     Capsule::build(Template::build("links"))
         .empty_fallback()
         .view(links_capsule)

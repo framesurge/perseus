@@ -10,30 +10,35 @@ use crate::{
     state::{Freeze, FrozenApp, ThawPrefs},
 };
 use serde::{de::DeserializeOwned, Serialize};
-#[cfg(any(client, doc))]
-use sycamore::prelude::Scope;
-use sycamore::web::Html;
+
+#[cfg(client)]
+use sycamore::reactive::use_global_scope;
 #[cfg(any(client, doc))]
 use sycamore_router::navigate;
 
 // Explicitly prevent the user from trying to freeze on the engine-side
 #[cfg(any(client, doc))]
-impl<G: Html> Freeze for Reactor<G> {
+impl Freeze for Reactor {
     fn freeze(&self) -> String {
         // This constructs a `FrozenApp`, which has everything the thawing reactor will
         // need
         let frozen_app = FrozenApp {
             // `GlobalStateType` -> `FrozenGlobalState`
             global_state: (&*self.global_state.0.borrow()).into(),
-            route: match &*self.router_state.get_load_state_rc().get_untracked() {
-                RouterLoadState::Loaded { path, .. } => Some(path.clone()),
-                // It would be impressive to manage this timing, but it's fine to go to the route we
-                // were in the middle of loading when we thaw
-                RouterLoadState::Loading { path, .. } => Some(path.clone()),
-                RouterLoadState::Server => None,
-                // Error states are no longer propagated to the router, so we will attempt
-                // to pick up the last successful load implicitly
-            },
+            route: self
+                .router_state
+                .get_load_state_rc()
+                .with_untracked(|state| {
+                    match state {
+                        RouterLoadState::Loaded { path, .. } => Some(path.clone()),
+                        // It would be impressive to manage this timing, but it's fine to go to the route we
+                        // were in the middle of loading when we thaw
+                        RouterLoadState::Loading { path, .. } => Some(path.clone()),
+                        RouterLoadState::Server => None,
+                        // Error states are no longer propagated to the router, so we will attempt
+                        // to pick up the last successful load implicitly
+                    }
+                }),
             state_store: self.state_store.freeze_to_hash_map(),
         };
         serde_json::to_string(&frozen_app).unwrap()
@@ -41,7 +46,7 @@ impl<G: Html> Freeze for Reactor<G> {
 }
 
 #[cfg(any(client, doc))]
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Commands Perseus to 'thaw' the app from the given frozen state. You'll
     /// also need to provide preferences for thawing, which allow you to control
     /// how different pages should prioritize frozen state over existing (or
@@ -83,16 +88,20 @@ impl<G: Html> Reactor<G> {
         drop(frozen_app);
 
         if let Some(frozen_route) = route {
-            let curr_route = match &*self.router_state.get_load_state_rc().get_untracked() {
-                // If we've loaded a page, or we're about to, only change the route if necessary
-                RouterLoadState::Loaded { path, .. } | RouterLoadState::Loading { path, .. } => {
-                    path.clone()
-                }
-                // Since this function is only defined on the browser-side, this should
-                // be completely impossible (note that the user can't change the router
-                // state manually)
-                RouterLoadState::Server => unreachable!(),
-            };
+            let curr_route = self
+                .router_state
+                .get_load_state_rc()
+                .with_untracked(|state| {
+                    match state {
+                        // If we've loaded a page, or we're about to, only change the route if necessary
+                        RouterLoadState::Loaded { path, .. }
+                        | RouterLoadState::Loading { path, .. } => path.clone(),
+                        // Since this function is only defined on the browser-side, this should
+                        // be completely impossible (note that the user can't change the router
+                        // state manually)
+                        RouterLoadState::Server => unreachable!(),
+                    }
+                });
             // If we're on the same page, just reload, otherwise go to the frozen route
             if curr_route == frozen_route {
                 // We need to do this to get the new frozen state (dependent on thaw prefs)
@@ -124,12 +133,13 @@ impl<G: Html> Reactor<G> {
     // Conveniently, we can use the lifetime mechanics of knowing that the render
     // context is registered on the given scope to ensure that the future works
     // out
-    pub fn preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+    pub fn preload(&self, url: &str) {
         use fmterr::fmt_err;
         let url = url.to_string();
+        let reactor = Reactor::from_cx();
 
-        sycamore_futures::spawn_local_scoped(cx, async move {
-            if let Err(err) = self.try_preload(&url).await {
+        sycamore_futures::spawn_local_scoped(async move {
+            if let Err(err) = reactor.try_preload(&url).await {
                 panic!("{}", fmt_err(&err));
             }
         });
@@ -155,12 +165,13 @@ impl<G: Html> Reactor<G> {
     // Conveniently, we can use the lifetime mechanics of knowing that the render
     // context is registered on the given scope to ensure that the future works
     // out
-    pub fn route_preload<'a, 'b: 'a>(&'b self, cx: Scope<'a>, url: &str) {
+    pub fn route_preload(&self, url: &str) {
         use fmterr::fmt_err;
         let url = url.to_string();
+        let reactor = Reactor::from_cx();
 
-        sycamore_futures::spawn_local_scoped(cx, async move {
-            if let Err(err) = self.try_route_preload(&url).await {
+        sycamore_futures::spawn_local_scoped(async move {
+            if let Err(err) = reactor.try_route_preload(&url).await {
                 panic!("{}", fmt_err(&err));
             }
         });
@@ -247,7 +258,7 @@ impl<G: Html> Reactor<G> {
 
 // These methods are used for acquiring the state of pages on both the
 // browser-side and the engine-side
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Gets the intermediate state type for the given page by evaluating active
     /// and frozen state to see if anything else is available, reverting to
     /// the provided state from the server if necessary.
@@ -278,6 +289,10 @@ impl<G: Html> Reactor<G> {
             let unrx = typed_state
                 .into_concrete()
                 .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+            // Create signals in the global scope so they survive navigation
+            #[cfg(client)]
+            let rx = use_global_scope().run_in(|| unrx.make_rx());
+            #[cfg(not(client))]
             let rx = unrx.make_rx();
             // Add that to the state store as the new active state
             self.state_store.add_state(url, rx.clone(), false)?;
@@ -430,6 +445,10 @@ impl<G: Html> Reactor<G> {
                     // is why we have to make everything else do the same
                     // Then we convince the compiler that that actually is `R` with the
                     // ludicrous trait bound at the beginning of this function
+                    // Create signals in the global scope so they survive navigation
+                    #[cfg(client)]
+                    let rx = use_global_scope().run_in(|| unrx.make_rx());
+                    #[cfg(not(client))]
                     let rx = unrx.make_rx();
                     // Now add the reactive version to the state store (see the documentation
                     // for this method for HSR caveats, and why we ignore the error in HSR mode)

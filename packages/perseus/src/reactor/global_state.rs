@@ -6,14 +6,12 @@ use crate::{
     state::{AnyFreeze, GlobalStateType, MakeRx, MakeUnrx},
 };
 use serde::{de::DeserializeOwned, Serialize};
-use sycamore::{
-    prelude::{create_ref, Scope},
-    web::Html,
-};
+#[cfg(client)]
+use sycamore::reactive::use_global_scope;
 
 // These methods are used for acquiring the global state on both the
 // browser-side and the engine-side
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Gets the global state. Note that this can only be used for reactive
     /// global state, since Perseus always expects your global state to be
     /// reactive.
@@ -24,20 +22,20 @@ impl<G: Html> Reactor<G> {
     /// instead.
     // This function takes the final ref struct as a type parameter! That
     // complicates everything substantially.
-    pub fn get_global_state<'a, I>(&self, cx: Scope<'a>) -> &'a I
+    pub fn get_global_state<I>(&self) -> I
     where
         I: MakeUnrx + AnyFreeze + Clone,
         I::Unrx: MakeRx<Rx = I>,
     {
         // Warn the user about the perils of having no build-time global state handler
-        self.try_get_global_state::<I>(cx).unwrap().expect("you requested global state, but none exists for this app (if you're generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
+        self.try_get_global_state::<I>().unwrap().expect("you requested global state, but none exists for this app (if you're generating it at request-time, then you can't access it at build-time; try adding a build-time generator too, or target-gating your use of global state for the browser-side only)")
     }
     /// The underlying logic for `.get_global_state()`, except this will return
     /// `None` if the app does not have global state.
     ///
     /// This will return an error if the state from the server was found to be
     /// invalid.
-    pub fn try_get_global_state<'a, I>(&self, cx: Scope<'a>) -> Result<Option<&'a I>, ClientError>
+    pub fn try_get_global_state<I>(&self) -> Result<Option<I>, ClientError>
     where
         I: MakeUnrx + AnyFreeze + Clone,
         I::Unrx: MakeRx<Rx = I>,
@@ -64,6 +62,10 @@ impl<G: Html> Reactor<G> {
                     let unrx = typed_state
                         .into_concrete()
                         .map_err(|err| ClientInvariantError::InvalidState { source: err })?;
+                    // Create signals in the global scope so they survive navigation
+                    #[cfg(client)]
+                    let rx = use_global_scope().run_in(|| unrx.make_rx());
+                    #[cfg(not(client))]
                     let rx = unrx.make_rx();
                     // On the engine-side, do not set this as the active state, because that
                     // would compromise any capsules trying to access this (see #280)
@@ -86,7 +88,7 @@ impl<G: Html> Reactor<G> {
                 }
             };
 
-        Ok(Some(create_ref(cx, intermediate_state)))
+        Ok(Some(intermediate_state))
     }
 
     /// Determines if the global state should use the state given by the server,
@@ -204,7 +206,8 @@ impl<G: Html> Reactor<G> {
                     // is why we have to make everything else do the same
                     // Then we convince the compiler that that actually is `R` with the
                     // ludicrous trait bound at the beginning of this function
-                    let rx = unrx.make_rx();
+                    // Create signals in the global scope so they survive navigation
+                    let rx = use_global_scope().run_in(|| unrx.make_rx());
                     // And we'll register this as the new active global state
                     let mut active_global_state = self.global_state.0.borrow_mut();
                     *active_global_state = GlobalStateType::Loaded(Box::new(rx.clone()));

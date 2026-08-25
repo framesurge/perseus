@@ -6,7 +6,6 @@ use futures::{
 };
 use serde_json::Value;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
-use sycamore::web::SsrNode;
 
 use super::Turbine;
 use crate::{
@@ -105,7 +104,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         &self,
         path: PathWithoutLocale,
         translator: &Translator,
-        template: &Entity<SsrNode>,
+        template: &Entity,
         was_incremental: bool,
         req: Request,
     ) -> Result<(PageData, TemplateState), ServerError> {
@@ -244,7 +243,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         path: PathWithoutLocale,
         locale: String,
         state: TemplateState,
-        entity: &'a Entity<SsrNode>, // Recursion could make this either a template or a capsule
+        entity: &'a Entity, // Recursion could make this either a template or a capsule
         global_state: TemplateState,
         req: &'a Request,
         translator: &'a Translator,
@@ -284,13 +283,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         // which is dropped when this is done. So, we can safely get the widget states
         // back.
         // Now prerender the actual content (a bit roundabout for error handling)
-        let prerendered = ssr_fallible(|cx| {
+        let prerendered = ssr_fallible(|| {
             entity.render_for_template_server(
                 full_path.clone(),
                 state.clone(),
                 global_state.clone(),
                 mode.clone(),
-                cx,
                 translator,
             )
         })?;
@@ -422,7 +420,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
         was_incremental: bool,
         req: Request,
         // If these are `None`, we'll generate them
-        entity: Option<&Entity<SsrNode>>, // Not for recursion, just convenience
+        entity: Option<&Entity>, // Not for recursion, just convenience
         global_state: Option<TemplateState>,
         is_initial: bool,
     ) -> Result<StateAndHead, ServerError> {
@@ -713,7 +711,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     async fn page_or_widget_should_revalidate(
         &self,
         path_encoded: &str,
-        entity: &Entity<SsrNode>,
+        entity: &Entity,
         build_info: StateGeneratorInfo<UnknownStateType>,
         req: Request,
     ) -> Result<bool, ServerError> {

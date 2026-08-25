@@ -3,47 +3,55 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-fn about_page<G: Html>(cx: Scope) -> View<G> {
+fn about_page() -> View {
     // This is not part of our data model
-    let freeze_status = create_signal(cx, String::new());
+    let freeze_status = create_signal(String::new());
     // It's faster to get this only once and rely on reactivity
     // But it's unused when this runs on the server-side because of the target-gate
     // below
-    let reactor = Reactor::<G>::from_cx(cx);
-    let global_state = reactor.get_global_state::<AppStateRx>(cx);
+    let reactor = Reactor::from_cx();
+    let global_state = reactor.get_global_state::<AppStateRx>();
 
-    view! { cx,
-        p(id = "global_state") { (global_state.test.get()) }
+    // Clone for the closure (required for 'static lifetime in Sycamore 0.9.2)
+    let reactor_freeze = reactor.clone();
+    let freeze_status_clone = freeze_status.clone();
+
+    view! {
+        p(id = "global_state") { (global_state.test.get_clone()) }
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "", id = "index-link") { "Index" }
+        Link(to = "/", id = "index-link") { "Index" }
         br()
 
         // We'll let the user freeze from here to demonstrate that the frozen state also navigates back to the last route
         button(id = "freeze_button", on:click = move |_| {
             // The IndexedDB API is asynchronous, so we'll spawn a future
             #[cfg(client)]
-            spawn_local_scoped(cx, async move {
-                use perseus::state::{IdbFrozenStateStore, Freeze};
-                // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
-                let frozen_state = reactor.freeze();
-                let idb_store = match IdbFrozenStateStore::new().await {
-                    Ok(idb_store) => idb_store,
-                    Err(_) => {
-                        freeze_status.set("Error.".to_string());
-                        return;
-                    }
-                };
-                match idb_store.set(&frozen_state).await {
-                    Ok(_) => freeze_status.set("Saved.".to_string()),
-                    Err(_) => freeze_status.set("Error.".to_string())
-                };
-            })
+            {
+                let reactor_clone = reactor_freeze.clone();
+                let freeze_status_clone = freeze_status_clone.clone();
+                spawn_local_scoped(async move {
+                    use perseus::state::{IdbFrozenStateStore, Freeze};
+                    // We do this here (rather than when we get the render context) so that it's updated whenever we press the button
+                    let frozen_state = reactor_clone.freeze();
+                    let idb_store = match IdbFrozenStateStore::new().await {
+                        Ok(idb_store) => idb_store,
+                        Err(_) => {
+                            freeze_status_clone.set("Error.".to_string());
+                            return;
+                        }
+                    };
+                    match idb_store.set(&frozen_state).await {
+                        Ok(_) => freeze_status_clone.set("Saved.".to_string()),
+                        Err(_) => freeze_status_clone.set("Error.".to_string())
+                    };
+                })
+            }
         }) { "Freeze to IndexedDB" }
-        p { (freeze_status.get()) }
+        p { (freeze_status.get_clone()) }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("about").view(about_page).build()
 }

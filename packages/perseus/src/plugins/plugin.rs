@@ -63,7 +63,7 @@ impl<D: Any + Send + Sync> Plugin<D> {
             functional_actions_registrar: Box::new(functional_actions_registrar),
             control_actions_registrar: Box::new(control_actions_registrar),
             env,
-            plugin_data_type: PhantomData::default(),
+            plugin_data_type: PhantomData,
         }
     }
 }

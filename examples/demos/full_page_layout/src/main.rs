@@ -2,16 +2,16 @@ mod components;
 mod templates;
 
 use perseus::prelude::*;
-use sycamore::prelude::view;
+use sycamore::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
         .template(crate::templates::long::get_template())
         .error_views(ErrorViews::unlocalized_development_default())
-        .index_view(|cx| {
-            view! { cx,
+        .index_view(|| {
+            view! {
                 html {
                     head {
                         meta(charset = "UTF-8")

@@ -66,15 +66,9 @@ pub(crate) fn connect_to_reload_server(live_reload_tx: Sender<()>) {
 
 fn get_window_var(name: &str) -> Option<String> {
     let val_opt = web_sys::window().unwrap().get(name);
-    let js_obj = match val_opt {
-        Some(js_obj) => js_obj,
-        None => return None,
-    };
+    let js_obj = val_opt?;
     // The object should only actually contain the string value that was injected
-    let state_str = match js_obj.as_string() {
-        Some(state_str) => state_str,
-        None => return None,
-    };
+    let state_str = js_obj.as_string()?;
     // On the server-side, we encode a `None` value directly (otherwise it will be
     // some convoluted stringified JSON)
     Some(state_str)

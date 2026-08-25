@@ -1,6 +1,7 @@
 use crate::{
     cmd::{cfg_spinner, run_stage},
     errors::*,
+    get_user_crate_name,
     parse::{CheckOpts, Opts},
     thread::{spawn_thread, ThreadHandle},
     Tools,
@@ -81,6 +82,8 @@ fn cargo_check(
     ),
     ExecutionError,
 > {
+    // Get the crate name for --package flag
+    let crate_name = get_user_crate_name(&dir)?;
     // We need to own this for the threads
     let tools = tools.clone();
     let Opts {
@@ -138,8 +141,8 @@ fn cargo_check(
         move || {
             handle_exit_code!(run_stage(
                 vec![&format!(
-                    "{} check --target wasm32-unknown-unknown {}",
-                    tools.cargo_browser, cargo_browser_args
+                    "{} check --package {} --target wasm32-unknown-unknown {}",
+                    tools.cargo_browser, crate_name, cargo_browser_args
                 )],
                 &browser_dir,
                 &browser_spinner,

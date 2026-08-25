@@ -2,51 +2,50 @@ use super::RouteVerdict;
 use crate::{path::PathMaybeWithLocale, router::RouteInfo};
 use std::cell::RefCell;
 use std::rc::Rc;
-use sycamore::prelude::{create_rc_signal, create_ref, RcSignal, Scope};
+use sycamore::prelude::*;
 
-/// The state for the router. This makes use of `RcSignal`s internally, and can
+/// The state for the router. This makes use of signals internally, and can
 /// be cheaply cloned.
 #[derive(Clone, Debug)]
 pub struct RouterState {
-    /// The router's current load state. This is in an `RcSignal` because users
-    /// need to be able to create derived state from it.
-    load_state: RcSignal<RouterLoadState>,
+    /// The router's current load state.
+    load_state: Signal<RouterLoadState>,
     /// The last route verdict. We can come back to this if we need to reload
     /// the current page without losing context etc.
     last_verdict: Rc<RefCell<Option<RouteVerdict>>>,
-    /// A flip-flop `RcSignal`. Whenever this is changed, the router will reload
-    /// the current page in the SPA style (maintaining state). As a user, you
+    /// A flip-flop signal. Whenever this is changed, the router will reload
+    /// the current page in SPA style (maintaining state). As a user, you
     /// should rarely ever need to do this, but it's used internally in the
     /// thawing process.
-    pub(crate) reload_commander: RcSignal<bool>,
+    pub(crate) reload_commander: Signal<bool>,
 }
 impl Default for RouterState {
     /// Creates a default instance of the router state intended for usage at the
     /// startup of an app.
     fn default() -> Self {
         Self {
-            load_state: create_rc_signal(RouterLoadState::Server),
+            load_state: create_signal(RouterLoadState::Server),
             last_verdict: Rc::new(RefCell::new(None)),
             // It doesn't matter what we initialize this as, it's just for signalling
-            reload_commander: create_rc_signal(true),
+            reload_commander: create_signal(true),
         }
     }
 }
 impl RouterState {
     /// Gets the load state of the router. You'll still need to call `.get()`
-    /// after this (this just returns a `&'a RcSignal` to derive other state
-    /// from in a `create_memo` or the like).
-    pub fn get_load_state<'a>(&self, cx: Scope<'a>) -> &'a RcSignal<RouterLoadState> {
-        create_ref(cx, self.load_state.clone())
+    /// after this (this just returns a `&Signal` to derive other state
+    /// from in a `create_memo` or as like).
+    pub fn get_load_state(&self) -> &Signal<RouterLoadState> {
+        &self.load_state
     }
     /// Gets the load state of the router. You'll still need to call `.get()`
-    /// after this (this just returns a `RcSignal` to derive other state from in
-    /// a `create_memo` or the like).
+    /// after this (this just returns a `&Signal` to derive other state
+    /// from in a `create_memo` or as like).
     ///
     /// This is designed for internal use only. End users should get a reference
     /// with `.get_load_state()`.
-    pub(crate) fn get_load_state_rc(&self) -> RcSignal<RouterLoadState> {
-        self.load_state.clone() // TODO Better approach than cloning here?
+    pub(crate) fn get_load_state_rc(&self) -> Signal<RouterLoadState> {
+        self.load_state
     }
     /// Sets the load state of the router.
     ///
@@ -75,7 +74,7 @@ impl RouterState {
     /// reload the page fully through `web_sys`.
     pub fn reload(&self) {
         self.reload_commander
-            .set(!*self.reload_commander.get_untracked())
+            .set(!self.reload_commander.get_untracked())
     }
     /// Gets the current path within the app, including the locale if the app is
     /// using i18n. This will not have a leading/trailing forward slash.

@@ -1,0 +1,12 @@
+# Database
+users.db
+users.db-shm
+users.db-wal
+
+# Perseus
+dist/
+target/
+.perseus/
+
+# OS
+.DS_Store

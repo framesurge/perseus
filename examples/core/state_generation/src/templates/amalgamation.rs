@@ -8,13 +8,13 @@ struct PageState {
     message: String,
 }
 
-fn amalgamation_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a PageStateRx) -> View<G> {
-    view! { cx,
-        p { (format!("The message is: '{}'", state.message.get())) }
+fn amalgamation_page(state: PageStateRx) -> View {
+    view! {
+        p { (format!("The message is: '{}'", state.message.get_clone())) }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("amalgamation")
         // We'll generate some state at build time and some more at request time
         .build_state_fn(get_build_state)

@@ -59,12 +59,13 @@ pub enum DocsVersionStatus {
 }
 impl DocsVersionStatus {
     /// Renders the docs status to a Sycamore template for display.
-    pub fn render<G: GenericNode>(&self, cx: Scope, stable_version: String) -> View<G> {
+    pub fn render(&self, stable_version: String) -> View {
         match &self {
             // No message should be displayed if it's the correct version
-            Self::Stable => View::empty(),
+            Self::Stable => View::default(),
             Self::Outdated => {
-                view! { cx,
+                let outdated_msg = t!("docs-status.outdated", { "stable" = &stable_version });
+                view! {
                     div(class = "ring-4 ring-red-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -72,19 +73,14 @@ impl DocsVersionStatus {
                                 style = "fill: #f87171;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!(
-                                cx,
-                                "docs-status.outdated",
-                                {
-                                    "stable" = &stable_version
-                                }
-                            ))
+                            p(dangerously_set_inner_html = outdated_msg)
                         }
                     }
                 }
             }
             Self::Beta => {
-                view! { cx,
+                let beta_msg = t!("docs-status.beta", { "stable" = &stable_version });
+                view! {
                     div(class = "ring-4 ring-yellow-300 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -92,19 +88,14 @@ impl DocsVersionStatus {
                                 style = "fill: #fcd34d;",
                                 dangerously_set_inner_html = WARNING_ICON
                             )
-                            p(dangerously_set_inner_html = &t!(
-                                cx,
-                                "docs-status.beta",
-                                {
-                                    "stable" = &stable_version
-                                }
-                            ))
+                            p(dangerously_set_inner_html = beta_msg)
                         }
                     }
                 }
             }
             Self::Next => {
-                view! { cx,
+                let next_msg = t!("docs-status.next", { "stable" = &stable_version });
+                view! {
                     div(class = "ring-4 ring-orange-400 p-4 rounded-lg mt-1") {
                         div(class = "flex flex-col 2xs:flex-row dark:text-white") {
                             span(
@@ -112,13 +103,7 @@ impl DocsVersionStatus {
                                 style = "fill: #fb923c;",
                                 dangerously_set_inner_html = ERROR_ICON
                             )
-                            p(dangerously_set_inner_html = &t!(
-                                cx,
-                                "docs-status.next",
-                                {
-                                    "stable" = &stable_version
-                                }
-                            ))
+                            p(dangerously_set_inner_html = next_msg)
                         }
                     }
                 }

@@ -13,7 +13,7 @@ struct IndexPageState {
 // This macro will make our state reactive *and* store it in the page state
 // store, which means it'll be the same even if we go to the about page and come
 // back (as long as we're in the same session)
-fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
+fn index_page(state: IndexPageStateRx) -> View {
     // IMPORTANT: Remember, Perseus caches all reactive state, so, if you come here,
     // go to another page, and then come back, *two* elements will have been
     // added in total. The state is preserved across routes! To avoid this, use
@@ -23,38 +23,38 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
     // this would still be performed for HSR, because the state restoration
     // process will double-execute this logic. That's why things like this
     // should generally be done with suspended state.
+    // In Sycamore 0.9.2, use .update() instead of .modify()
     state
         .test
-        .modify()
-        .push(create_rc_signal("bar".to_string()));
+        .update(|vec| vec.push(create_signal("bar".to_string())));
 
-    view! { cx,
-        p { (format!("Greetings, {}!", state.username.get())) }
+    view! {
+        p { (format!("Greetings, {}!", state.username.get_clone())) }
         input(bind:value = state.username, placeholder = "Username")
         p { (
             state
                 .test
                 // Get the underlying `Vec`
-                .get()
+                .get_clone()
                 // Now, in that `Vec`, get the third element
                 .get(2)
                 // Because that will be `None` initially, display `None` otherwise
-                .map(|x| x.get())
+                .map(|x| x.get_clone())
                 .unwrap_or("None".to_string().into())
         ) }
 
-        a(href = "about", id = "about-link") { "About" }
+        Link(to = "/about", id = "about-link") { "About" }
     }
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head() -> View {
+    view! {
         title { "Index Page" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index")
         .view_with_state(index_page)
         .head(head)

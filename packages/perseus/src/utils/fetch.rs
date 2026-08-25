@@ -7,8 +7,9 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 /// error management system, and should not be used by end users.
 pub(crate) async fn fetch(url: &str, ty: AssetType) -> Result<Option<String>, ClientError> {
     let js_err_handler = |err: JsValue| FetchError::Js(format!("{:?}", err));
-    let mut opts = RequestInit::new();
-    opts.method("GET").mode(RequestMode::Cors);
+    let opts = RequestInit::new();
+    opts.set_method("GET");
+    opts.set_mode(RequestMode::Cors);
 
     let request = Request::new_with_str_and_init(url, &opts).map_err(js_err_handler)?;
 

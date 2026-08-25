@@ -31,15 +31,14 @@ use crate::{
 };
 use futures::executor::block_on;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
-use sycamore::web::SsrNode;
 
 /// The Perseus state generator.
 #[derive(Debug)]
 pub struct Turbine<M: MutableStore, T: TranslationsManager> {
     /// All the templates and capsules in the app.
-    entities: EntityMap<SsrNode>,
+    entities: EntityMap,
     /// The app's error views.
-    error_views: Arc<ErrorViews<SsrNode>>,
+    error_views: Arc<ErrorViews>,
     /// The app's locales data.
     locales: Locales,
     /// An immutable store.
@@ -75,12 +74,10 @@ pub struct Turbine<M: MutableStore, T: TranslationsManager> {
 }
 
 // We want to be able to create a turbine straight from an app base
-impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<SsrNode, M, T>>
-    for Turbine<M, T>
-{
+impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<M, T>> for Turbine<M, T> {
     type Error = PluginError;
 
-    fn try_from(app: PerseusAppBase<SsrNode, M, T>) -> Result<Self, Self::Error> {
+    fn try_from(app: PerseusAppBase<M, T>) -> Result<Self, Self::Error> {
         let locales = app.get_locales()?;
         let immutable_store = app.get_immutable_store()?;
         let index_view_str = app.get_index_view_str();
@@ -141,7 +138,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
             Err(err) => return Err(err.into()),
         };
 
-        let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
+        let html_shell = PerseusAppBase::<M, T>::get_html_shell(
             self.index_view_str.to_string(),
             &self.root_id,
             &self.plugins,

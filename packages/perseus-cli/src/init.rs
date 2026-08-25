@@ -138,7 +138,7 @@ edition = "2021"
 # Dependencies for the engine and the browser go here
 [dependencies]
 perseus = { version = "=%perseus_version", features = [ "hydrate" ] }
-sycamore = "^0.8.1"
+sycamore = "^0.9.2"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 
@@ -156,7 +156,7 @@ static DFLT_INIT_MAIN_RS: &str = r#"mod templates;
 use perseus::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new()
         .template(crate::templates::index::get_template())
 }"#;
@@ -164,8 +164,8 @@ static DFLT_INIT_MOD_RS: &str = r#"pub mod index;"#;
 static DFLT_INIT_INDEX_RS: &str = r#"use perseus::prelude::*;
 use sycamore::prelude::*;
 
-fn index_page<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+fn index_page() -> View {
+    view! {
         // Don't worry, there are much better ways of styling in Perseus!
         div(style = "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 95vh;") {
             h1 { "Welcome to Perseus!" }
@@ -179,13 +179,13 @@ fn index_page<G: Html>(cx: Scope) -> View<G> {
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head() -> View {
+    view! {
         title { "Welcome to Perseus!" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index").view(index_page).head(head).build()
 }"#;
 static DFLT_INIT_CONFIG_TOML: &str = r#"[build]

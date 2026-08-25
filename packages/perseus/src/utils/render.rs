@@ -1,113 +1,86 @@
-#[cfg(any(client, doc))]
-use sycamore::utils::render::insert;
-#[cfg(all(not(feature = "hydrate"), any(client, doc)))]
-use sycamore::web::DomNode;
-#[cfg(engine)]
-use sycamore::web::SsrNode;
-use sycamore::{prelude::Scope, view::View};
+use sycamore::prelude::*;
 
 /// Renders or hydrates the given view to the given node,
-/// depending on feature flags. This will atuomatically handle
+/// depending on feature flags. This will automatically handle
 /// proper scoping.
 ///
 /// This has the option to force a render by ignoring the initial elements.
 ///
 /// **Warning:** if hydration is being used, it is expected that
 /// the given view was created inside a `with_hydration_context()` closure.
-// XXX This is *highly* dependent on internal Sycamore implementation
-// details! (TODO PR for `hydrate_to_with_scope` etc.)
 #[cfg(any(client, doc))]
 #[allow(unused_variables)]
-pub(crate) fn render_or_hydrate(
-    cx: Scope,
-    view: View<crate::template::BrowserNodeType>,
-    parent: web_sys::Element,
-    force_render: bool,
-) {
-    use sycamore::utils::hydrate::{with_hydration_context, with_no_hydration_context};
+pub(crate) fn render_or_hydrate(view: View, parent: web_sys::Element, force_render: bool) {
+    use sycamore::web::NoHydrate;
 
-    #[cfg(feature = "hydrate")]
-    {
-        use sycamore::web::HydrateNode;
-
-        // If we're forcing a proper render, then we'll have to remove existing content
-        if force_render {
-            parent.set_inner_html("");
-        }
-
-        // We need `sycamore::hydrate_to_with_scope()`!
-        // --- Verbatim copy from Sycamore, changed for known scope ---
-        // Get children from parent into a View to set as the initial node value.
-        let mut children = Vec::new();
-        let child_nodes = parent.child_nodes();
-        for i in 0..child_nodes.length() {
-            children.push(child_nodes.get(i).unwrap());
-        }
-        let children = children
-            .into_iter()
-            .map(|x| View::new_node(HydrateNode::from_web_sys(x)))
-            .collect::<Vec<_>>();
-
-        insert(
-            cx,
-            &HydrateNode::from_web_sys(parent.into()),
-            if force_render {
-                with_no_hydration_context(|| view)
-            } else {
-                with_hydration_context(|| view)
-            },
-            if force_render {
-                None
-            } else {
-                Some(View::new_fragment(children))
-            },
-            None,
-            false,
-        );
-    }
-    #[cfg(not(feature = "hydrate"))]
-    {
-        // We have to delete the existing content before we can render the new stuff
+    // If we're forcing a render (not hydrating), we need to clear content and use regular rendering
+    // This happens even when the hydrate feature is enabled, because force_render means
+    // this content was not server-rendered and has no hydration markers
+    if force_render {
         parent.set_inner_html("");
-        insert(
-            cx,
-            &DomNode::from_web_sys(parent.into()),
-            view,
-            None,
-            None,
-            false,
-        );
+        // Wrap the view in NoHydrate to disable hydration for this render
+        // This ensures we use regular DOM nodes instead of HydrateNodes
+        sycamore::web::render_in_scope(|| view! { NoHydrate { (view) } }, &parent);
+    } else {
+        // Normal hydration path when hydrate feature is enabled
+        #[cfg(feature = "hydrate")]
+        {
+            // Due to Sycamore 0.9.2's hydration architecture, we cannot use hydrate_in_scope
+            // directly. The issue is that Perseus's SSR renders only the page template content,
+            // but the client wraps this in a router with dynamic views. These dynamic views
+            // create marker expectations (<!--/--> comments) that don't exist in the SSR output.
+            //
+            // As a workaround, we clear the SSR content and render fresh. This means the user
+            // will see a brief flash of the SSR content being replaced, but it avoids the
+            // hydration marker mismatch panic.
+            //
+            // TODO: Implement proper hydration by having SSR render through the same
+            // router structure, or by investigating Sycamore's partial hydration options.
+            parent.set_inner_html("");
+            sycamore::web::render_in_scope(|| view, &parent);
+        }
+        #[cfg(not(feature = "hydrate"))]
+        {
+            // We have to delete the existing content before we can render the new stuff
+            parent.set_inner_html("");
+            // Use render_in_scope to stay within the current reactive root
+            // This ensures that contexts (like Reactor) from the parent scope remain available
+            sycamore::web::render_in_scope(|| view, &parent);
+        }
     }
 }
 
-/// Renders the given view to a string in a fallible manner, managing hydration
-/// automatically.
-// XXX This is *highly* dependent on internal Sycamore implementation
-// details!
+/// Renders the given view to a string in a fallible manner.
 #[cfg(engine)]
-pub(crate) fn ssr_fallible<E>(
-    view_fn: impl FnOnce(Scope) -> Result<View<SsrNode>, E>,
-) -> Result<String, E> {
-    use sycamore::web::WriteToString;
-    use sycamore::{prelude::create_scope_immediate, utils::hydrate::with_hydration_context}; // XXX This may become private one day!
+pub(crate) fn ssr_fallible<E>(view_fn: impl FnOnce() -> Result<View, E>) -> Result<String, E> {
+    // IMPORTANT: We must call view_fn() INSIDE render_to_string's closure,
+    // not before. This is because render_to_string sets IS_HYDRATING = true
+    // before calling the view function, which causes elements to be created
+    // with hydration keys. If we create the view outside and pass it in,
+    // the elements will already be created without hydration keys.
 
-    let mut ret = Ok(String::new());
-    create_scope_immediate(|cx| {
-        // Usefully, this wrapper can return anything!
-        let view_res = with_hydration_context(|| view_fn(cx));
-        match view_res {
-            Ok(view) => {
-                let mut view_str = String::new();
-                for node in view.flatten() {
-                    node.write_to_string(&mut view_str);
-                }
-                ret = Ok(view_str);
-            }
+    // We use RefCell to communicate errors out of the closure
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    let error: Rc<RefCell<Option<E>>> = Rc::new(RefCell::new(None));
+    let error_clone = Rc::clone(&error);
+
+    let view_str = sycamore::render_to_string(|| {
+        match view_fn() {
+            Ok(view) => view,
             Err(err) => {
-                ret = Err(err);
+                *error_clone.borrow_mut() = Some(err);
+                // Return an empty view in case of error
+                sycamore::view! {}
             }
         }
     });
 
-    ret
+    // Check if an error occurred during view creation
+    if let Some(err) = error.borrow_mut().take() {
+        return Err(err);
+    }
+
+    Ok(view_str)
 }

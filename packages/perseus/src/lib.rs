@@ -22,6 +22,8 @@ documentation, and this should mostly be used as a secondary reference source. Y
 #![deny(missing_debug_implementations)]
 #![recursion_limit = "256"] // TODO Do we need this anymore?
 
+/// Reusable UI components provided by Perseus.
+pub mod components;
 /// Utilities for working with the engine-side, particularly with regards to
 /// setting up the entrypoint for your app's build/export/server processes.
 #[cfg(engine)]
@@ -119,22 +121,14 @@ pub type PerseusNodeType = sycamore::web::SsrNode;
 /// You **should not** use this in your return types (e.g.
 /// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
 /// This is intended for `lazy_static!`s and the like, for capsules. See
-/// the book and capsule examples for further details.
-#[cfg(all(client, not(feature = "hydrate")))]
-pub type PerseusNodeType = sycamore::web::DomNode;
-/// An alias for `DomNode`, `HydrateNode`, or `SsrNode`, depending on the
-/// `hydrate` feature flag and compilation target.
-///
-/// You **should not** use this in your return types (e.g.
-/// `View<PerseusNodeType>`), there you should use a `G: Html` generic.
-/// This is intended for `lazy_static!`s and the like, for capsules. See
-/// the book and capsule examples for further details.
-#[cfg(all(client, feature = "hydrate"))]
-pub type PerseusNodeType = sycamore::web::HydrateNode;
+/// book and capsule examples for further details.
+#[cfg(client)]
+pub type PerseusNodeType = sycamore::web::HtmlNode;
 
 /// A series of imports needed by most Perseus apps, in some form. This should
 /// be used in conjunction with the Sycamore prelude.
 pub mod prelude {
+    pub use crate::components::Link;
     pub use crate::error_views::ErrorViews;
     // Target-gating doesn't matter, because the prelude is intended to be used all
     // at once
@@ -144,7 +138,7 @@ pub mod prelude {
     pub use crate::reactor::Reactor;
     pub use crate::state::{BuildPaths, RxResult, RxResultRx, SerdeInfallible, StateGeneratorInfo};
     pub use crate::template::{Capsule, Template};
-    pub use sycamore::web::Html;
+    pub use sycamore::web::{GlobalProps, HtmlGlobalAttributes};
     pub use sycamore_router::{navigate, navigate_replace};
 
     #[cfg(engine)]

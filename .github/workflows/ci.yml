@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - main
+            - update-v5.0
     pull_request:
 
 jobs:
@@ -69,6 +70,8 @@ jobs:
             - run: rustup target add wasm32-unknown-unknown
             - name: Run CLI tests
               run: bonnie test cli
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # We now have a separate job for each example's E2E testing because they all take a while, we may as well run them in parallel
     # The job for each E2E test is exactly the same except for a minor difference, so we'll use a matrix based on listing the subdirectories
     e2e-example-test:
@@ -145,26 +148,45 @@ jobs:
                       target/
                   key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
-            # # Also cache the apt packages we need for testing
-            # - uses: awalsh128/cache-apt-pkgs-action@latest
-            #   with:
-            #     packages: firefox
-            #     version: 1.0
+            # Setup Chrome for E2E tests
+            - name: Setup Chrome
+              uses: browser-actions/setup-chrome@v1
+              with:
+                  chrome-version: stable
+                  install-chromedriver: false
 
-            # # And finally cache Geckodriver itself
-            # - uses: actions/cache@v3
-            #   id: geckocache
-            #   with:
-            #     path: |
-            #       ~/.geckodriver
-            #     # The cache should be OS-specific
-            #     key: ${{ runner.os }}-geckodriver
-            # - name: Install Geckodriver
-            #   if: steps.geckocache.outputs.cache-hit != 'true'
-            #   run: wget -O ~/geckodriver-archive https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz && tar -xvzf ~/geckodriver-archive -C ~/ && mv ~/geckodriver ~/.geckodriver && chmod +x ~/.geckodriver
-            - run: sudo apt update && sudo apt install firefox
+            - name: Install matching ChromeDriver
+              run: |
+                  set -euo pipefail
+                  CHROME_VERSION="$(google-chrome --product-version)"
+                  CHROME_MAJOR="${CHROME_VERSION%%.*}"
+                  DRIVER_VERSION="$(curl -fsSL "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_MAJOR}")"
 
-            - name: Run Firefox WebDriver
-              run: geckodriver &
+                  mkdir -p "$HOME/.local/bin"
+                  curl -fsSL \
+                      -o /tmp/chromedriver-linux64.zip \
+                      "https://storage.googleapis.com/chrome-for-testing-public/${DRIVER_VERSION}/linux64/chromedriver-linux64.zip"
+                  rm -rf /tmp/chromedriver-linux64
+                  unzip -qo /tmp/chromedriver-linux64.zip -d /tmp
+                  install -m 0755 /tmp/chromedriver-linux64/chromedriver "$HOME/.local/bin/chromedriver"
+                  echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+            - name: Verify Chrome and ChromeDriver major versions
+              run: |
+                  set -euo pipefail
+                  CHROME_MAJOR="$(google-chrome --product-version | cut -d. -f1)"
+                  DRIVER_MAJOR="$(chromedriver --version | awk '{print $2}' | cut -d. -f1)"
+                  echo "Chrome major: ${CHROME_MAJOR}"
+                  echo "ChromeDriver major: ${DRIVER_MAJOR}"
+                  test "${CHROME_MAJOR}" = "${DRIVER_MAJOR}"
+
+            - run: rustup target add wasm32-unknown-unknown
+
+            - name: Run Chrome WebDriver
+              run: chromedriver --port=4444 &
+            - name: Wait for Chromedriver to start
+              run: sleep 3
             - name: Run E2E tests for example ${{ matrix.name }} in category ${{ matrix.type }}
               run: bonnie test example-all-integrations ${{ matrix.type }} ${{ matrix.name }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,38 +9,44 @@ struct IndexPageState {
     username: String,
 }
 
-fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
+fn index_page(state: IndexPageStateRx) -> View {
     // This is not part of our data model, we do NOT want the frozen app
     // synchronized as part of our page's state, it should be separate
-    let frozen_app = create_signal(cx, String::new());
-    let reactor = Reactor::<G>::from_cx(cx);
+    let frozen_app = create_signal(String::new());
+    let reactor = Reactor::from_cx();
 
-    let global_state = reactor.get_global_state::<AppStateRx>(cx);
+    let global_state = reactor.get_global_state::<AppStateRx>();
 
-    view! { cx,
+    // Clone for closures (required for 'static lifetime in Sycamore 0.9.2)
+    let frozen_app_freeze = frozen_app.clone();
+    let reactor_freeze = reactor.clone();
+    let frozen_app_thaw = frozen_app.clone();
+    let reactor_thaw = reactor.clone();
+
+    view! {
         // For demonstration, we'll let the user modify the page's state and the global state arbitrarily
-        p(id = "page_state") { (format!("Greetings, {}!", state.username.get())) }
+        p(id = "page_state") { (format!("Greetings, {}!", state.username.get_clone())) }
         input(id = "set_page_state", bind:value = state.username, placeholder = "Username")
-        p(id = "global_state") { (global_state.test.get()) }
+        p(id = "global_state") { (global_state.test.get_clone()) }
         input(id = "set_global_state", bind:value = global_state.test, placeholder = "Global state")
 
         // When the user visits this and then comes back, they'll still be able to see their username (the previous state will be retrieved from the global state automatically)
-        a(href = "about", id = "about-link") { "About" }
+        Link(to = "/about", id = "about-link") { "About" }
         br()
 
-        button(id = "freeze_button", on:click = |_| {
+        button(id = "freeze_button", on:click = move |_| {
             #[cfg(client)]
             {
                 use perseus::state::Freeze;
-                frozen_app.set(reactor.freeze());
+                frozen_app_freeze.set(reactor_freeze.freeze());
             }
         }) { "Freeze!" }
-        p(id = "frozen_app") { (frozen_app.get()) }
+        p(id = "frozen_app") { (frozen_app.get_clone()) }
 
         input(id = "thaw_input", bind:value = frozen_app, placeholder = "Frozen state")
-        button(id = "thaw_button", on:click = |_| {
+        button(id = "thaw_button", on:click = move |_| {
             #[cfg(client)]
-            reactor.thaw(&frozen_app.get(), perseus::state::ThawPrefs {
+            reactor_thaw.thaw(&frozen_app_thaw.get_clone(), perseus::state::ThawPrefs {
                 page: perseus::state::PageThawPrefs::IncludeAll,
                 global_prefer_frozen: true
             }).unwrap();
@@ -48,7 +54,7 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("index")
         .build_state_fn(get_build_state)
         .view_with_state(index_page)

@@ -3,25 +3,25 @@ use sycamore::prelude::*;
 
 use crate::global_state::AppStateRx;
 
-fn about_page<G: Html>(cx: Scope) -> View<G> {
-    let global_state = Reactor::<G>::from_cx(cx).get_global_state::<AppStateRx>(cx);
+fn about_page() -> View {
+    let global_state = Reactor::from_cx().get_global_state::<AppStateRx>();
 
-    view! { cx,
+    view! {
         // The user can change the global state through an input, and the changes they make will be reflected throughout the app
-        p { (global_state.test.get()) }
+        p { (global_state.test.get_clone()) }
         input(bind:value = global_state.test)
 
-        a(href = "") { "Index" }
+        Link(to = "/") { "Index" }
     }
 }
 
 #[engine_only_fn]
-fn head(cx: Scope) -> View<SsrNode> {
-    view! { cx,
+fn head() -> View {
+    view! {
         title { "About Page" }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("about").view(about_page).head(head).build()
 }

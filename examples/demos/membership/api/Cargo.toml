@@ -1,0 +1,98 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2021"
+description = "Basic Authentication Middleware"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# assets = { path = "../asset-pipeline" }
+# Env
+dotenv = "0.15.0"
+env_logger = "0.10.0"
+log = "0.4"
+
+# lazy_static = "1.4.0"
+config = "0.13.3"
+envy = "0.4.2"
+anyhow = "1.0.70"
+actix-web = { version = "4.3.1", default-features = false, features = ["macros", "cookies", "secure-cookies"] }
+# actix-web = "4.3.1"
+actix-files = "0.6.2"
+actix-identity = "0.5.2"
+
+actix-session = {version = "0.7.2", features = ["cookie-session"] }
+tokio = { version = "1.27.0", features = ["macros"] }
+actix-cors = "0.6.4"
+utoipa = { version = "3.4.5", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "3.1.5", features = ["actix-web"] }
+
+# Used for generating OTP codes and sessions.
+rand = "0.8.5"
+# Sha256 and hex for hashing the session verifier. (Both from SQLx)
+sha2 = "0.10.6"
+hex = "0.4.3"
+
+
+# Actix Web Client - Used for the reverese proxy
+# awc = "3.0.0-beta.3"
+
+# env_logger = "0.7"
+regex = "1.7.3" # For checking if we need to skip auth
+
+# Used by the proxy
+url = "2.3"
+
+# HTML and Validation/
+# markup = "0"
+# validator = { version = "0.12", features = ["derive"] }
+
+# Bcrypt for legacy apps, argon for new apps.
+bcrypt = "0.14.0"
+argon2 = "0.5.0"
+# required by argon.
+rand_core = { version = "0.6.4", features = ["std"] }
+
+
+# Use this for access to hcaptcha
+reqwest = { version = "0.11.16", default-features = false, features = ["json", "rustls-tls"] }
+time = "0.3.25"
+# chrono = "0.4.26"
+chrono = { version = "0.4.26", features = ["serde"] }
+# The database
+# sqlx = { version = "0.5", default-features = false,  features = [ "runtime-tokio-rustls", "postgres", "macros", "uuid" ] }
+deadpool-postgres = { version = "0.10.5",  features = ["serde"] }
+tokio-pg-mapper = "0.2.0"
+tokio-pg-mapper-derive = "0.2.0"
+tokio-postgres = { version = "0.7.8", features = ["with-chrono-0_4", "with-uuid-0_8"] }
+postgres-types = "0.2.5"
+
+serde = { version = "1.0.159", features = ["derive"] }
+serde_json = "1.0.95"
+derive_more = "0.99.17"
+# schemars = "0.8.12"
+# Use by authentication
+futures = "0.3.28"
+
+# For sending emails
+lettre = { version = "0.10", default-features = false,  features = ["rustls-tls", "smtp-transport", "builder"] }
+# mail-send = "0.4.0"
+# mail-builder = "0.3.0"
+html2text = "0.5.1"
+# NFKC password normalisation.
+unicode-normalization = "0.1.22"
+
+
+# AES-GCM -> Encrypt OTP codes. This and base64 were already in actix web as part of cookie
+aes-gcm = "0.10.1"
+base64 = "0.21.2"
+
+[build-dependencies]
+# Use by build.rs for cache busting.
+sha1 = "0.10.5"
+
+
+[dev-dependencies]
+# WebDriver Library for UI testing.
+thirtyfour = { version = "0", default-features = false, features = [ "reqwest-rustls-tls", "tokio-runtime" ] }
+tokio = { version = "1", features = ["macros"] }

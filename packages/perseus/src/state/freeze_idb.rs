@@ -1,4 +1,4 @@
-use rexie::{Direction, Error as RexieError, ObjectStore, Rexie, TransactionMode};
+use rexie::{Error as RexieError, ObjectStore, Rexie, TransactionMode};
 use std::rc::Rc;
 use thiserror::Error;
 use wasm_bindgen::JsValue;
@@ -105,11 +105,11 @@ impl IdbFrozenStateStore {
         // Get the last element from the store by working backwards and getting
         // everything, with a limit of 1
         let frozen_states = store
-            .get_all(None, Some(1), None, Some(Direction::Prev))
+            .get_all(None, Some(1))
             .await
             .map_err(|err| IdbError::GetError { source: err })?;
-        let frozen_state = match frozen_states.get(0) {
-            Some((_key, value)) => value,
+        let frozen_state = match frozen_states.first() {
+            Some(value) => value, // New API: just the value
             None => return Ok(None),
         };
         // TODO Do this without cloning the whole thing into the Wasm table and then

@@ -57,13 +57,13 @@ mod engine {
                     }
 
                     match c {
-                        's' => duration = duration + chrono::Duration::seconds(interval_length),
-                        'm' => duration = duration + chrono::Duration::minutes(interval_length),
-                        'h' => duration = duration + chrono::Duration::hours(interval_length),
-                        'd' => duration = duration + chrono::Duration::days(interval_length),
-                        'w' => duration = duration + chrono::Duration::weeks(interval_length),
-                        'M' => duration = duration + chrono::Duration::days(interval_length * 30), /* Assumed length of a month */
-                        'y' => duration = duration + chrono::Duration::days(interval_length * 365), /* Assumed length of a year */
+                        's' => duration += chrono::Duration::seconds(interval_length),
+                        'm' => duration += chrono::Duration::minutes(interval_length),
+                        'h' => duration += chrono::Duration::hours(interval_length),
+                        'd' => duration += chrono::Duration::days(interval_length),
+                        'w' => duration += chrono::Duration::weeks(interval_length),
+                        'M' => duration += chrono::Duration::days(interval_length * 30), /* Assumed length of a month */
+                        'y' => duration += chrono::Duration::days(interval_length * 365), /* Assumed length of a year */
                         _ => return Err(InvalidDuration),
                     };
 

@@ -75,11 +75,11 @@ impl Parse for TemplateFn {
                     }
                     args.push(arg.clone())
                 }
-                // We can have 2 arguments only (scope, state), or 3 if it's
-                // a capsule
+                // We can have 1 argument only (state), or 2 if it's a capsule
                 // Any other kind of template doesn't need this macro
-                if args.len() != 2 && args.len() != 3 {
-                    return Err(syn::Error::new_spanned(&sig.inputs, "`#[auto_scope]` is only useful if you're using reactive state (which requires two arguments)"));
+                // Note: In Sycamore 0.9, there's no scope parameter anymore
+                if args.len() != 1 && args.len() != 2 {
+                    return Err(syn::Error::new_spanned(&sig.inputs, "`#[auto_scope]` is only useful if you're using reactive state (which requires one argument for state)"));
                 }
 
                 Ok(Self {
@@ -110,24 +110,34 @@ pub fn template_impl(input: TemplateFn) -> TokenStream {
         return_type,
     } = input;
 
-    let arg = &fn_args[1];
-    let (state_pat, state_arg) = match arg {
+    // In Sycamore 0.9, the first argument is the state (no scope anymore)
+    // Since signals are Copy and 'static, we accept the state by value or by reference
+    let arg = &fn_args[0];
+    let (state_pat, state_ty, is_ref) = match arg {
         FnArg::Typed(PatType { ty, pat, .. }) => match &**ty {
-            Type::Reference(TypeReference { elem, .. }) => (pat, elem),
-            _ => return syn::Error::new_spanned(arg, "the state argument must be a reference (e.g. `&MyStateTypeRx`); if you're using unreactive state (i.e. you're deriving `UnreactiveState` instead of `ReactiveState`), you don't need this macro!").to_compile_error()
+            Type::Reference(TypeReference { elem, .. }) => (pat, elem.clone(), true),
+            other_ty => (pat, Box::new(other_ty.clone()), false),
         },
         FnArg::Receiver(_) => unreachable!(),
     };
-    let props_arg = match fn_args.get(2) {
-        Some(arg) => quote!( #arg ),
+    // Capsules have another argument for properties (now at index 1 instead of 2)
+    let props_arg = match fn_args.get(1) {
+        Some(arg) => quote!( , #arg ),
         None => quote!(),
     };
+    // Generate the state parameter - either by reference or by value
+    let state_param = if is_ref {
+        quote! { #state_pat: &#state_ty }
+    } else {
+        quote! { #state_pat: #state_ty }
+    };
+
     quote! {
-        // All we do is set up the lifetimes correctly
+        // In Sycamore 0.9.2: no scope parameter, no generic type parameter
+        // Since signals are 'static and Copy, reactive state can be passed by value
         #(#attrs)*
-        #vis fn #name<'__page, G: ::sycamore::prelude::Html>(
-            cx: ::sycamore::prelude::BoundedScope<'_, '__page>,
-            #state_pat: &'__page #state_arg,
+        #vis fn #name(
+            #state_param
             // Capsules have another argument for properties
             #props_arg
         ) -> #return_type {

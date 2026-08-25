@@ -1,0 +1,17 @@
+pub mod categories;
+pub mod contact;
+pub mod create_post;
+pub mod dashboard;
+pub mod admin;
+pub mod index;
+pub mod login;
+pub mod logout;
+pub mod post_view;
+pub mod posts;
+pub mod preferences;
+pub mod profile;
+pub mod register;
+pub mod roles;
+pub mod support;
+pub mod tags;
+pub mod users;

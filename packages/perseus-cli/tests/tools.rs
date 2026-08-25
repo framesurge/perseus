@@ -22,9 +22,9 @@ fn local_tool_installation_works() -> Result<(), Box<dyn std::error::Error>> {
     init_test(&dir)?;
 
     // Build the app
-    let mut cmd = Command::cargo_bin("perseus")?;
-    cmd.env("TEST_EXAMPLE", dir.path())
-        .arg("build")
+    let mut cmd = crate::utils::perseus_cmd(&dir);
+
+    cmd.arg("build")
         .arg("--no-system-tools-cache")
         // We manually specify the versions to test that functionality (latest is implicitly
         // tested by everything else), and to have reliable file paths to assert on

@@ -1,8 +1,11 @@
+#[cfg(not(feature = "translator-fluent"))]
 use crate::reactor::Reactor;
 use crate::translator::errors::*;
-use crate::PerseusNodeType;
 use std::collections::HashMap;
-use sycamore::prelude::{use_context, Scope, Signal};
+#[cfg(not(feature = "translator-fluent"))]
+use std::rc::Rc;
+#[cfg(not(feature = "translator-fluent"))]
+use sycamore::prelude::use_context;
 
 /// The file extension used by the lightweight translator, which expects JSON
 /// files.
@@ -142,29 +145,37 @@ impl TranslationArgs {
         Self(HashMap::new())
     }
 }
+impl Default for TranslationArgs {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// The internal lightweight backend for the `t!` macro.
+///
+/// This is only available when lightweight is enabled and fluent is not.
+#[cfg(not(feature = "translator-fluent"))]
 #[doc(hidden)]
-pub fn t_macro_backend(id: &str, cx: Scope) -> String {
-    // This `G` doesn't actually need to match up at all, but we do need to find the
-    // right type
-    let translator = use_context::<Reactor<PerseusNodeType>>(cx).get_translator();
+pub fn t_macro_backend(id: &str) -> String {
+    let translator = use_context::<Rc<Reactor>>().get_translator();
     translator.translate(id, None)
 }
 /// The internal lightweight backend for the `t!` macro, when it's used with
 /// arguments.
+///
+/// This is only available when lightweight is enabled and fluent is not.
+#[cfg(not(feature = "translator-fluent"))]
 #[doc(hidden)]
-pub fn t_macro_backend_with_args(id: &str, args: TranslationArgs, cx: Scope) -> String {
-    // This `G` doesn't actually need to match up at all, but we do need to find the
-    // right type
-    let translator = use_context::<Reactor<PerseusNodeType>>(cx).get_translator();
+pub fn t_macro_backend_with_args(id: &str, args: TranslationArgs) -> String {
+    let translator = use_context::<Rc<Reactor>>().get_translator();
     translator.translate(id, Some(args))
 }
 /// The internal lightweight backend for the `link!` macro.
+///
+/// This is only available when lightweight is enabled and fluent is not.
+#[cfg(not(feature = "translator-fluent"))]
 #[doc(hidden)]
-pub fn link_macro_backend(url: &str, cx: Scope) -> String {
-    // This `G` doesn't actually need to match up at all, but we do need to find the
-    // right type
-    let translator = use_context::<Reactor<PerseusNodeType>>(cx).get_translator();
+pub fn link_macro_backend(url: &str) -> String {
+    let translator = use_context::<Rc<Reactor>>().get_translator();
     translator.url(url)
 }

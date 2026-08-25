@@ -18,7 +18,6 @@ use futures::{
     FutureExt,
 };
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
-use sycamore::web::SsrNode;
 
 impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     /// Builds your whole app for being run on a server. Do not use this
@@ -106,7 +105,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
         // And build the HTML shell (so that this does the exact same thing as
         // instantiating from files)
-        let html_shell = PerseusAppBase::<SsrNode, M, T>::get_html_shell(
+        let html_shell = PerseusAppBase::<M, T>::get_html_shell(
             self.index_view_str.to_string(),
             &self.root_id,
             &self.plugins,
@@ -161,7 +160,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     // widget/capsule
     async fn build_template_or_capsule(
         &self,
-        entity: &Entity<SsrNode>,
+        entity: &Entity,
         exporting: bool,
     ) -> Result<HashMap<String, String>, ServerError> {
         // If we're exporting, ensure that all the capsule's strategies are export-safe
@@ -276,7 +275,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     pub(super) async fn build_path_or_widget_for_locale(
         &self,
         path: PurePath,
-        entity: &Entity<SsrNode>,
+        entity: &Entity,
         extra: &TemplateState,
         locale: &str,
         global_state: TemplateState,
@@ -359,8 +358,9 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
 
             build_state
         } else {
-            // There's nothing we can do with any other sort of template at build-time
-            return Ok(HashMap::new());
+            // Stateless templates still need their prerendered HTML/head artifacts generated at
+            // build/serve time, even if they don't persist any page state.
+            TemplateState::empty()
         };
 
         // For templates (*not* capsules), we'll render the full content (with
@@ -429,7 +429,7 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
     #[allow(clippy::too_many_arguments)] // Internal function
     fn build_render<'a>(
         &'a self,
-        entity: &'a Entity<SsrNode>,
+        entity: &'a Entity,
         full_path: PathMaybeWithLocale,
         full_path_encoded: &'a str,
         translator: Translator,
@@ -457,13 +457,12 @@ impl<M: MutableStore, T: TranslationsManager> Turbine<M, T> {
                 };
 
                 // Now prerender the actual content
-                let prerendered = ssr_fallible(|cx| {
+                let prerendered = ssr_fallible(|| {
                     entity.render_for_template_server(
                         full_path.clone(),
                         state.clone(),
                         global_state.clone(),
                         mode.clone(),
-                        cx,
                         &translator,
                     )
                 })?;

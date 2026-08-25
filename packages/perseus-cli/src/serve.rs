@@ -16,6 +16,20 @@ use std::sync::{Arc, Mutex};
 static BUILDING_SERVER: Emoji<'_, '_> = Emoji("📡", "");
 static SERVING: Emoji<'_, '_> = Emoji("🛰️ ", "");
 
+type BuildServerFn = Box<dyn FnOnce() -> Result<i32, ExecutionError> + Send + 'static>;
+type BuildServerThread = ThreadHandle<BuildServerFn, Result<i32, ExecutionError>>;
+
+struct BuildServerParams<'a> {
+    dir: PathBuf,
+    spinners: &'a MultiProgress,
+    num_steps: u8,
+    exec: Arc<Mutex<String>>,
+    is_release: bool,
+    is_testing: bool,
+    tools: &'a Tools,
+    global_opts: &'a Opts,
+}
+
 /// Returns the exit code if it's non-zero.
 macro_rules! handle_exit_code {
     ($code:expr) => {{
@@ -33,22 +47,22 @@ macro_rules! handle_exit_code {
 /// truly atomically (which will have build spinners already on it if
 /// necessary). This also takes a `Mutex<String>` to inform the caller of the
 /// path of the server executable.
-fn build_server(
-    dir: PathBuf,
-    spinners: &MultiProgress,
-    num_steps: u8,
-    exec: Arc<Mutex<String>>,
-    is_release: bool,
-    tools: &Tools,
-    global_opts: &Opts,
-) -> Result<
-    ThreadHandle<impl FnOnce() -> Result<i32, ExecutionError>, Result<i32, ExecutionError>>,
-    ExecutionError,
-> {
+fn build_server(params: BuildServerParams<'_>) -> Result<BuildServerThread, ExecutionError> {
+    let BuildServerParams {
+        dir,
+        spinners,
+        num_steps,
+        exec,
+        is_release,
+        is_testing,
+        tools,
+        global_opts,
+    } = params;
     let tools = tools.clone();
     let Opts {
         cargo_engine_args, ..
     } = global_opts.clone();
+    let sequential = global_opts.sequential;
 
     // Server building message
     let sb_msg = format!(
@@ -65,44 +79,51 @@ fn build_server(
     let sb_spinner = spinners.insert((num_steps - 1).into(), ProgressBar::new_spinner());
     let sb_spinner = cfg_spinner(sb_spinner, &sb_msg);
     let sb_target = dir;
-    let sb_thread = spawn_thread(
-        move || {
-            let (stdout, _stderr) = handle_exit_code!(run_stage(
-                vec![&format!(
-                    // This sets Cargo to tell us everything, including the executable path to the
-                    // server
-                    "{} build --message-format json {} {}",
-                    tools.cargo_engine,
-                    if is_release { "--release" } else { "" },
-                    cargo_engine_args
-                )],
-                &sb_target,
-                &sb_spinner,
-                &sb_msg,
-                vec![
-                    ("CARGO_TARGET_DIR", "dist/target_engine"),
-                    ("RUSTFLAGS", "--cfg=engine"),
-                    ("CARGO_TERM_COLOR", "always")
-                ],
-                // These are JSON logs, never print them (they're duplicated by the build logs
-                // anyway, we're compiling the same thing)
-                false,
-            )?);
+    let task: BuildServerFn = Box::new(move || {
+        // Base environment variables for the build
+        let mut env_vars: Vec<(&str, &str)> = vec![
+            ("CARGO_TARGET_DIR", "dist/target_engine"),
+            ("RUSTFLAGS", "--cfg=engine"),
+            ("CARGO_TERM_COLOR", "always"),
+        ];
+        // Add PERSEUS_TESTING when in testing mode so that the HTML shell
+        // includes the window.__PERSEUS_TESTING = true script for checkpoints
+        if is_testing {
+            env_vars.push(("PERSEUS_TESTING", "true"));
+        }
 
-            let msgs: Vec<&str> = stdout.trim().split('\n').collect();
-            // If we got to here, the exit code was 0 and everything should've worked
-            // The last message will just tell us that the build finished, the second-last
-            // one will tell us the executable path
-            let msg = msgs.get(msgs.len() - 2);
-            let msg = match msg {
-                // We'll parse it as a Serde `Value`, we don't need to know everything that's in
-                // there
-                Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
-                    .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
-                None => return Err(ExecutionError::ServerExecutableMsgNotFound),
-            };
-            let server_exec_path = msg.get("executable");
-            let server_exec_path = match server_exec_path {
+        let (stdout, _stderr) = handle_exit_code!(run_stage(
+            vec![&format!(
+                // This sets Cargo to tell us everything, including the executable path to the
+                // server
+                "{} build --message-format json {} {}",
+                tools.cargo_engine,
+                if is_release { "--release" } else { "" },
+                cargo_engine_args
+            )],
+            &sb_target,
+            &sb_spinner,
+            &sb_msg,
+            env_vars,
+            // These are JSON logs, never print them (they're duplicated by the build logs
+            // anyway, we're compiling the same thing)
+            false,
+        )?);
+
+        let msgs: Vec<&str> = stdout.trim().split('\n').collect();
+        // If we got to here, the exit code was 0 and everything should've worked
+        // The last message will just tell us that the build finished, the second-last
+        // one will tell us the executable path
+        let msg = msgs.get(msgs.len() - 2);
+        let msg = match msg {
+            // We'll parse it as a Serde `Value`, we don't need to know everything that's in
+            // there
+            Some(msg) => serde_json::from_str::<serde_json::Value>(msg)
+                .map_err(|err| ExecutionError::GetServerExecutableFailed { source: err })?,
+            None => return Err(ExecutionError::ServerExecutableMsgNotFound),
+        };
+        let server_exec_path = msg.get("executable");
+        let server_exec_path = match server_exec_path {
             // We'll parse it as a Serde `Value`, we don't need to know everything that's in there
             Some(server_exec_path) => match server_exec_path.as_str() {
                 Some(server_exec_path) => server_exec_path,
@@ -118,14 +139,13 @@ fn build_server(
             }),
         };
 
-            // And now the main thread needs to know about this
-            let mut exec_val = exec.lock().unwrap();
-            *exec_val = server_exec_path.to_string();
+        // And now the main thread needs to know about this
+        let mut exec_val = exec.lock().unwrap();
+        *exec_val = server_exec_path.to_string();
 
-            Ok(0)
-        },
-        global_opts.sequential,
-    );
+        Ok(0)
+    });
+    let sb_thread = spawn_thread(task, sequential);
 
     Ok(sb_thread)
 }
@@ -237,15 +257,16 @@ pub fn serve(
     let exec = Arc::new(Mutex::new(String::new()));
     // We can begin building the server in a thread without having to deal with the
     // rest of the build stage yet
-    let sb_thread = build_server(
-        dir.clone(),
+    let sb_thread = build_server(BuildServerParams {
+        dir: dir.clone(),
         spinners,
         num_steps,
-        Arc::clone(&exec),
-        opts.release,
+        exec: Arc::clone(&exec),
+        is_release: opts.release,
+        is_testing: silent_no_run, // When silent_no_run is true, we're in testing mode
         tools,
         global_opts,
-    )?;
+    })?;
     // Only build if the user hasn't set `--no-build`, handling non-zero exit codes
     if did_build {
         let (sg_thread, wb_thread) = build_internal(

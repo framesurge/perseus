@@ -1,0 +1,135 @@
+use deadpool_postgres::Config as PgConfig;
+use std::env;
+
+use config::ConfigError;
+use serde::Deserialize;
+
+use crate::auth::hex_to_bytes;
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct SrvConfig {
+    pub host: String,
+    pub port: u16,
+    pub secret_key: String,
+    pub bcrypt_or_argon: bool,
+    pub email_otp_enabled: bool,
+    pub user_table_name: String,
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_username: String,
+    pub smtp_password: String,
+    pub smtp_tls_off: bool,
+    pub user_invalid_id: i32,
+    pub max_otp_attempts: i32,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct Config {
+    pub srv_cnf: SrvConfig,
+    pub pg: deadpool_postgres::Config,
+}
+
+impl Config {
+    pub fn from_env() -> Result<Self, ConfigError> {
+        config::Config::builder()
+            .add_source(config::Environment::default())
+            .build()
+            .unwrap()
+            .try_deserialize()
+    }
+}
+
+impl Config {
+    pub fn new() -> Config {
+        let hex = env::var("SRV_CNF_SECRET_KEY").expect("SECRET_KEY not set");
+
+        let host = env::var("SRV_CNF_HOST").expect("HOST not set");
+
+        let port: u16 = if env::var("SRV_CNF_PORT").is_ok() {
+            env::var("PORT").unwrap().parse::<u16>().unwrap()
+        } else {
+            9090
+        };
+
+        let email_otp_enabled: bool = if env::var("SRV_CNF_ENABLE_EMAIL_OTP").is_ok() {
+            env::var("SRV_CNF_ENABLE_EMAIL_OTP")
+                .unwrap()
+                .parse::<bool>()
+                .unwrap()
+        } else {
+            false
+        };
+
+        let bcrypt_or_argon: bool = env::var("SRV_CNF_BCRYPT_OR_ARGON").is_ok();
+
+        // let auth_type: AuthType = if env::var("AUTH_TYPE").is_ok() {
+        //     let t = env::var("AUTH_TYPE").unwrap();
+        //     if t.to_lowercase() == "encrypted" {
+        //         AuthType::Encrypted
+        //     } else {
+        //         AuthType::Normal
+        //     }
+        // } else {
+        //     AuthType::Normal
+        // };
+
+        let user_table_name: String = if env::var("SRV_CNF_USER_TABLE_NAME").is_ok() {
+            env::var("SRV_CNF_USER_TABLE_NAME").unwrap()
+        } else {
+            "users".into()
+        };
+
+        // let logout_url: String = if env::var("LOGOUT_URL").is_ok() {
+        //     env::var("LOGOUT_URL").unwrap()
+        // } else {
+        //     "/".into()
+        // };
+
+        let smtp_host = env::var("SRV_CNF_SMTP_HOST").expect("SRV_CNF_SMTP_HOST not set");
+        let smtp_port = env::var("SRV_CNF_SMTP_PORT").expect("SRV_CNF_SMTP_PORT not set");
+        let s_port: u16 = smtp_port.parse().expect("Port not parsed");
+        let smtp_username =
+            env::var("SRV_CNF_SMTP_USERNAME").expect("SRV_CNF_SMTP_USERNAME not set");
+        let smtp_password =
+            env::var("SRV_CNF_SMTP_PASSWORD").expect("SRV_CNF_SMTP_PASSWORD not set");
+        let smtp_tls_off = env::var("SRV_CNF_SMTP_TLS_OFF").expect("SRV_CNF_SMTP_TLS_OFF not set");
+        let smtp_bool: bool = smtp_tls_off.parse().expect("Cound read TLS Book");
+        let user_invalid_id =
+            env::var("SRV_CNF_USER_INVALID_ID").expect("SRV_CNF_USER_INVALID_ID not set");
+        let invalid_user: i32 = user_invalid_id.parse().expect("INvalid UserID not parsed");
+        let max_otp_attempts =
+            env::var("SRV_CNF_MAX_OTP_ATTEMPTS").expect("SRV_CNF_MAX_OTP_ATTEMPTS not set");
+        let otp_attempts = max_otp_attempts.parse().expect("OTP Attempts not Parsed");
+
+        let secret_bytes = hex_to_bytes(&hex).expect("SECRET_KEY could not parse");
+        let secret_key = String::from_utf8(secret_bytes).expect("failed to decode secret key");
+        let pg_config = PgConfig {
+            user: Some(env::var("PG_USERNAME").expect("PG_USERNAME not set")),
+
+            password: Some(env::var("PG_PASSWORD").expect("PG_PASSWD not set")),
+            dbname: Some(env::var("PG_DBNAME").expect("PG_DBNAME not set")),
+            host: Some(env::var("PG_HOST").expect("PG_HOST not set")),
+            port: Some(5432),
+            ..PgConfig::default()
+        };
+
+        Config {
+            srv_cnf: SrvConfig {
+                host,
+                port,
+                secret_key,
+                user_table_name,
+                bcrypt_or_argon,
+                email_otp_enabled,
+                smtp_host,
+                smtp_port: s_port,
+                smtp_username,
+                smtp_password,
+                smtp_tls_off: smtp_bool,
+                user_invalid_id: invalid_user,
+                max_otp_attempts: otp_attempts, // smtp_config: SmtpConfig::new(),
+            },
+            pg: pg_config,
+        }
+    }
+}

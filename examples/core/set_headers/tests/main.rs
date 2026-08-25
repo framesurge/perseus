@@ -6,7 +6,10 @@ use fantoccini::Client;
 #[perseus::test]
 async fn main(_: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let res = ureq::get("http://localhost:8080").call().unwrap();
-    let header_val = res.header("x-greeting");
+    let header_val = res
+        .headers()
+        .get("x-greeting")
+        .and_then(|v| v.to_str().ok());
     assert_eq!(header_val, Some("Hello World!"));
 
     Ok(())

@@ -3,9 +3,8 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Deref;
-#[cfg(any(client, doc))]
-use sycamore::prelude::Scope;
-use sycamore::reactive::{create_rc_signal, RcSignal};
+
+use sycamore::reactive::{create_signal, Signal};
 
 /// A reactive version of [`HashMap`] that uses nested reactivity on its
 /// elements. That means the type inside the vector must implement [`MakeRx`]
@@ -22,23 +21,23 @@ where
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone;
 /// The reactive version of [`RxHashMapNested`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RxHashMapNestedRx<K, V>(RcSignal<HashMap<K, V::Rx>>)
+pub struct RxHashMapNestedRx<K, V>(Signal<HashMap<K, V::Rx>>)
 where
-    K: Clone + Serialize + DeserializeOwned + Eq + Hash,
+    K: Clone + Serialize + DeserializeOwned + Eq + Hash + 'static,
     V: MakeRx + Serialize + DeserializeOwned + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone;
 
 // --- Reactivity implementations ---
 impl<K, V> MakeRx for RxHashMapNested<K, V>
 where
-    K: Clone + Serialize + DeserializeOwned + Eq + Hash,
+    K: Clone + Serialize + DeserializeOwned + Eq + Hash + 'static,
     V: MakeRx + Serialize + DeserializeOwned + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone,
 {
     type Rx = RxHashMapNestedRx<K, V>;
 
     fn make_rx(self) -> Self::Rx {
-        RxHashMapNestedRx(create_rc_signal(
+        RxHashMapNestedRx(create_signal(
             self.0.into_iter().map(|(k, v)| (k, v.make_rx())).collect(),
         ))
     }
@@ -52,17 +51,24 @@ where
     type Unrx = RxHashMapNested<K, V>;
 
     fn make_unrx(self) -> Self::Unrx {
-        let map = (*self.0.get_untracked()).clone();
-        RxHashMapNested(map.into_iter().map(|(k, v)| (k, v.make_unrx())).collect())
+        self.0.with_untracked(|map| {
+            RxHashMapNested(
+                map.iter()
+                    .map(|(k, v)| (k.clone(), v.clone().make_unrx()))
+                    .collect(),
+            )
+        })
     }
 
     #[cfg(any(client, doc))]
-    fn compute_suspense(&self, cx: Scope) {
+    fn compute_suspense(&self) {
         // We do *not* want to recompute this every time the user changes the state!
         // (There lie infinite loops.)
-        for elem in self.0.get_untracked().values() {
-            elem.compute_suspense(cx);
-        }
+        self.0.with_untracked(|map| {
+            for elem in map.values() {
+                elem.compute_suspense();
+            }
+        });
     }
 }
 // --- Dereferencing ---
@@ -84,7 +90,7 @@ where
     V: MakeRx + Serialize + DeserializeOwned + 'static,
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone,
 {
-    type Target = RcSignal<HashMap<K, V::Rx>>;
+    type Target = Signal<HashMap<K, V::Rx>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -110,7 +116,7 @@ where
     V::Rx: MakeUnrx<Unrx = V> + Freeze + Clone,
 {
     fn freeze(&self) -> String {
-        let unrx = Self(self.0.clone()).make_unrx();
+        let unrx = Self(self.0).make_unrx();
         // This should never panic, because we're dealing with a vector
         serde_json::to_string(&unrx).unwrap()
     }

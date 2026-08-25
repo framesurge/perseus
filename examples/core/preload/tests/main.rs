@@ -39,31 +39,33 @@ async fn main(c: &mut Client) -> Result<(), fantoccini::error::CmdError> {
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert!(text.contains("Open up"));
 
-    // Go to `/fr-FR/about`
+    // Go to `/fr-FR/about` - cross-locale link causes full page reload
+    // After full page reload, checkpoint counter resets to 0
     c.find(Locator::Id("fr-about")).await?.click().await?;
     let url = c.current_url().await?;
     assert!(url
         .as_ref()
         .starts_with("http://localhost:8080/fr-FR/about"));
-    wait_for_checkpoint!("page_interactive", 3, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert!(text.contains("cette page"));
 
-    // Go to `/fr-FR`
+    // Go to `/fr-FR` - client-side navigation, checkpoint increments
     c.find(Locator::Id("index")).await?.click().await?;
     let url = c.current_url().await?;
     assert!(url.as_ref().starts_with("http://localhost:8080/fr-FR"));
-    wait_for_checkpoint!("page_interactive", 3, c);
+    wait_for_checkpoint!("page_interactive", 1, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert!(text.contains("ci-dessous"));
 
-    // Now go back to `/en-US`
+    // Now go back to `/en-US` - cross-locale link causes full page reload
+    // After full page reload, checkpoint counter resets to 0
     c.find(Locator::Id("en-about")).await?.click().await?;
     let url = c.current_url().await?;
     assert!(url
         .as_ref()
         .starts_with("http://localhost:8080/en-US/about"));
-    wait_for_checkpoint!("page_interactive", 4, c);
+    wait_for_checkpoint!("page_interactive", 0, c);
     let text = c.find(Locator::Css("p")).await?.text().await?;
     assert!(text.contains("Check out"));
 

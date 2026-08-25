@@ -41,25 +41,25 @@ struct OtherTest {
     third_greeting: Result<String, SerdeInfallible>,
 }
 
-fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx) -> View<G> {
-    let greeting = create_memo(cx, || match &*state.greeting.get() {
+fn index_page(state: IndexPageStateRx) -> View {
+    let greeting = create_memo(move || match state.greeting.get_clone() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
     });
-    let second_greeting = create_memo(cx, move || match &*state.test.get() {
+    let second_greeting = create_memo(move || match state.test.get_clone() {
         // We don't particularly want `Rc<Rc<T>>`, hence this clone (but either will work)
-        Ok(test) => (*test.second_greeting.get()).clone(),
+        Ok(test) => test.second_greeting.get_clone(),
         Err(_) => "Error!".to_string(),
     });
-    let third_greeting = create_memo(cx, move || match &*state.other_test.third_greeting.get() {
+    let third_greeting = create_memo(move || match state.other_test.third_greeting.get_clone() {
         Ok(state) => state.to_string(),
         Err(_) => unreachable!(),
     });
 
-    view! { cx,
-        p(id = "first") { (greeting.get()) }
-        p(id = "second") { (second_greeting.get()) }
-        p(id = "third") { (third_greeting.get()) }
+    view! {
+        p(id = "first") { (greeting.get_clone()) }
+        p(id = "second") { (second_greeting.get_clone()) }
+        p(id = "third") { (third_greeting.get_clone()) }
     }
 }
 
@@ -75,14 +75,14 @@ fn index_page<'a, G: Html>(cx: BoundedScope<'_, 'a>, state: &'a IndexPageStateRx
 // We can do things with the scope here as necessary, but we don't use it in
 // this example.
 #[browser_only_fn]
-async fn greeting_handler<'a>(
-    _cx: Scope<'a>,
-    greeting: &'a RcSignal<Result<String, SerdeInfallible>>,
+async fn greeting_handler(
+    greeting: Signal<Result<String, SerdeInfallible>>,
 ) -> Result<(), SerdeInfallible> {
     // Here, we're just waiting for a second before continuing, just to show a delay
     // (and so that Perseus isn't too fast for the tests of this example...)
     sleep(Duration::from_secs(1)).await;
     // This is very simple, but we could easily perform network requests etc. here
+    // In Sycamore 0.9.2, suspense handlers take owned signals
     greeting.set(Ok("Hello from the handler!".to_string()));
     Ok(())
 }
@@ -91,14 +91,12 @@ async fn greeting_handler<'a>(
 // version of `RxResult`. As `IndexPageStateRx` is to `IndexPageState`,
 // `RxResultRef` is to `RxResult`!
 #[browser_only_fn]
-async fn test_handler<'a>(
-    _cx: Scope<'a>,
-    test: &'a RxResultRx<Test, String>,
-) -> Result<(), String> {
+async fn test_handler(test: RxResultRx<Test, String>) -> Result<(), String> {
     sleep(Duration::from_secs(1)).await;
     // Unfortunately, this verbosity is necessary until `Try` is stabilized so we
     // can have custom implementations of the `?` operator.
-    let test = match &*test.get() {
+    // In Sycamore 0.9.2, use get_clone() for non-Copy types and suspense handlers take owned values
+    let test = match test.get_clone() {
         Ok(test) => test.clone(),
         Err(err) => return Err(err.clone()),
     };
@@ -108,12 +106,12 @@ async fn test_handler<'a>(
 }
 
 #[browser_only_fn]
-async fn other_test_handler<'a>(
-    _cx: Scope<'a>,
-    greeting: &'a RcSignal<Result<String, SerdeInfallible>>,
+async fn other_test_handler(
+    greeting: Signal<Result<String, SerdeInfallible>>,
 ) -> Result<(), SerdeInfallible> {
     sleep(Duration::from_secs(1)).await;
     // This is very simple, but we could easily perform network requests etc. here
+    // In Sycamore 0.9.2, suspense handlers take owned signals
     greeting.set(Ok("Hello again again from the handler!".to_string()));
     Ok(())
 }
@@ -133,7 +131,7 @@ async fn get_build_state(_info: StateGeneratorInfo<()>) -> IndexPageState {
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     // Note that suspense handlers are registered through the state, not here
     Template::build("index")
         .view_with_state(index_page)

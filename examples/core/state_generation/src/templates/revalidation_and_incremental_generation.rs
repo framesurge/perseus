@@ -12,16 +12,13 @@ struct PageState {
     time: String,
 }
 
-fn revalidation_and_incremental_generation_page<'a, G: Html>(
-    cx: BoundedScope<'_, 'a>,
-    state: &'a PageStateRx,
-) -> View<G> {
-    view! { cx,
-        p { (format!("The time when this page was last rendered was '{}'.", state.time.get())) }
+fn revalidation_and_incremental_generation_page(state: PageStateRx) -> View {
+    view! {
+        p { (format!("The time when this page was last rendered was '{}'.", state.time.get_clone())) }
     }
 }
 
-pub fn get_template<G: Html>() -> Template<G> {
+pub fn get_template() -> Template {
     Template::build("revalidation_and_incremental_generation")
         .view_with_state(revalidation_and_incremental_generation_page)
         // This page will revalidate every five seconds (and so the time displayed will be updated)

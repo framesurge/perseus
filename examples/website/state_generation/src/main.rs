@@ -5,7 +5,7 @@ use std::time::Duration;
 use sycamore::prelude::*;
 
 #[perseus::main(perseus_axum::dflt_server)]
-pub fn main<G: Html>() -> PerseusApp<G> {
+pub fn main() -> PerseusApp {
     PerseusApp::new().template(
         Template::build("post")
             .view_with_state(post_page)
@@ -23,12 +23,13 @@ pub fn main<G: Html>() -> PerseusApp<G> {
 
 #[auto_scope]
 // EXCERPT_START
-fn post_page<G: Html>(cx: Scope, state: &PostRx) -> View<G> {
-    view! { cx,
-        h1 { (state.title.get()) }
-        p { (state.author.get()) }
+fn post_page(state: PostRx) -> View {
+    let content = state.content.get_clone();
+    view! {
+        h1 { (state.title.get_clone()) }
+        p { (state.author.get_clone()) }
         div(
-            dangerously_set_inner_html = &state.content.get()
+            dangerously_set_inner_html = content
         )
     }
 }

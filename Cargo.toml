@@ -2,11 +2,11 @@
 members = [
 	"packages/*",
     "examples/core/*",
-    "examples/demos/*",
     "examples/comprehensive/*",
     "examples/website/*",
     "website",
 ]
+exclude = ["portfolio"]
 resolver = "2"
 
 [profile.release]

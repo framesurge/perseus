@@ -14,7 +14,7 @@ use std::process::Command;
 /// `wasm32-unknown-unknown` target with `rustup` if it's available.
 pub fn check_env(global_opts: &Opts) -> Result<(), Error> {
     // Check for `cargo`
-    let cargo_res = Command::new(global_opts.cargo_engine_path.to_string())
+    let cargo_res = Command::new(&global_opts.cargo_engine_path)
         .arg("--version")
         .output()
         .map_err(|err| Error::CargoNotPresent { source: err })?;
@@ -30,7 +30,7 @@ pub fn check_env(global_opts: &Opts) -> Result<(), Error> {
     }
     // If the user has `rustup`, make sure they have `wasm32-unknown-unknown`
     // installed If they don'aren't using `rustup`, we won't worry about this
-    let rustup_res = Command::new(global_opts.rustup_path.to_string())
+    let rustup_res = Command::new(&global_opts.rustup_path)
         .args(["target", "list"])
         .output();
     if let Ok(rustup_res) = rustup_res {

@@ -21,15 +21,12 @@ pub(crate) use render_mode::{RenderMode, RenderStatus};
 
 // --- Common imports ---
 #[cfg(any(client, doc))]
-use crate::template::{BrowserNodeType, EntityMap};
+use crate::template::EntityMap;
 use crate::{
     i18n::Translator,
     state::{GlobalState, GlobalStateType, PageStateStore, TemplateState},
 };
-use sycamore::{
-    prelude::{provide_context, use_context, Scope},
-    web::Html,
-};
+use sycamore::prelude::provide_context;
 
 // --- Engine-side imports ---
 
@@ -50,17 +47,16 @@ use crate::{
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(any(client, doc))]
 use serde_json::Value;
+use std::rc::Rc;
 #[cfg(any(client, doc))]
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
-    rc::Rc,
 };
 #[cfg(any(client, doc))]
-use sycamore::{
-    reactive::{create_rc_signal, RcSignal},
-    view::View,
-};
+use sycamore::prelude::View;
+#[cfg(any(client, doc))]
+use sycamore::reactive::{create_signal, Signal};
 
 /// The core of Perseus' browser-side systems. This forms a central point for
 /// all the Perseus state and rendering logic to operate from. In your own code,
@@ -68,7 +64,7 @@ use sycamore::{
 ///
 /// Note that this is also used on the engine-side for rendering.
 #[derive(Debug)]
-pub struct Reactor<G: Html> {
+pub struct Reactor {
     /// The state store, which is used to hold all reactive states, along with
     /// preloads.
     pub(crate) state_store: PageStateStore,
@@ -101,7 +97,7 @@ pub struct Reactor<G: Html> {
     pub(crate) render_cfg: HashMap<String, String>,
     /// The app's templates and capsules for use in routing.
     #[cfg(any(client, doc))]
-    pub(crate) entities: EntityMap<G>,
+    pub(crate) entities: EntityMap,
     /// The app's locales.
     #[cfg(any(client, doc))]
     pub(crate) locales: Locales,
@@ -110,22 +106,32 @@ pub struct Reactor<G: Html> {
     translations_manager: ClientTranslationsManager,
     /// The app's error views.
     #[cfg(any(client, doc))]
-    pub(crate) error_views: Rc<ErrorViews<G>>,
-    /// A reactive container for the current page-wide view. This will usually
+    pub(crate) error_views: Rc<ErrorViews>,
+    /// Storage for the current page-wide view. This will usually
     /// contain the contents of the current page, but it may also contain a
-    /// page-wide error. This will be wrapped in a router.
+    /// page-wide error. We use Rc<RefCell<Option<View>>> because View doesn't implement Clone.
+    /// The RefCell allows us to take the view out when rendering.
     #[cfg(any(client, doc))]
-    current_view: RcSignal<View<BrowserNodeType>>,
-    /// A reactive container for any popup errors.
+    current_view_holder: Rc<RefCell<Option<View>>>,
+    /// A version counter signal that triggers reactive updates when the current view changes.
+    /// We use a separate counter instead of putting View directly in a signal because
+    /// modifying a signal inside its own reactive closure causes spurious re-runs.
     #[cfg(any(client, doc))]
-    popup_error_view: RcSignal<View<BrowserNodeType>>,
+    current_view_version: Signal<u64>,
+    /// Storage for any popup errors.
+    /// We use Rc<RefCell<Option<View>>> because View doesn't implement Clone.
+    #[cfg(any(client, doc))]
+    popup_error_view_holder: Rc<RefCell<Option<View>>>,
+    /// A version counter signal that triggers reactive updates when the popup error view changes.
+    #[cfg(any(client, doc))]
+    popup_error_view_version: Signal<u64>,
     /// The app's root div ID.
     #[cfg(any(client, doc))]
     root: String,
 
     // --- Engine-side only ---
     #[cfg(engine)]
-    pub(crate) render_mode: RenderMode<G>,
+    pub(crate) render_mode: RenderMode,
     /// The currently active translator. On the browser-side, this is handled by
     /// the more fully-fledged `ClientTranslationsManager` type.
     ///
@@ -138,12 +144,10 @@ pub struct Reactor<G: Html> {
 // This uses window variables set by the HTML shell, so it should never be used
 // on the engine-side
 #[cfg(any(client, doc))]
-impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G, M, T>>
-    for Reactor<G>
-{
+impl<M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<M, T>> for Reactor {
     type Error = ClientError;
 
-    fn try_from(app: PerseusAppBase<G, M, T>) -> Result<Self, Self::Error> {
+    fn try_from(app: PerseusAppBase<M, T>) -> Result<Self, Self::Error> {
         let locales = app.get_locales()?;
         let root = app.get_root()?;
         let plugins = &app.plugins;
@@ -188,8 +192,10 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
             // This will be filled out by a `.thaw()` call or HSR
             frozen_app: Rc::new(RefCell::new(None)),
             is_first: Cell::new(true),
-            current_view: create_rc_signal(View::empty()),
-            popup_error_view: create_rc_signal(View::empty()),
+            current_view_holder: Rc::new(RefCell::new(Some(View::new()))),
+            current_view_version: create_signal(0),
+            popup_error_view_holder: Rc::new(RefCell::new(Some(View::new()))),
+            popup_error_view_version: create_signal(0),
             entities: app.entities,
             locales,
             render_cfg,
@@ -204,20 +210,23 @@ impl<G: Html, M: MutableStore, T: TranslationsManager> TryFrom<PerseusAppBase<G,
     }
 }
 
-impl<G: Html> Reactor<G> {
-    /// Adds `self` to the given Sycamore scope as context.
-    ///
-    /// # Panics
-    /// This will panic if any other reactor is found in the context.
-    pub(crate) fn add_self_to_cx(self, cx: Scope) {
-        provide_context(cx, self);
+impl Reactor {
+    /// Adds `self` to the current reactive context.
+    pub(crate) fn add_self_to_cx(self) {
+        provide_context(Rc::new(self));
+        // Also provide a boolean flag to indicate reactor exists
+        provide_context(true);
     }
     /// Gets a [`Reactor`] out of the given Sycamore scope's context.
     ///
     /// You should never need to worry about this function panicking, since
     /// your code will only ever run if a reactor is present.
-    pub fn from_cx(cx: Scope) -> &Self {
-        use_context::<Self>(cx)
+    pub fn from_cx() -> Rc<Self> {
+        use sycamore::prelude::try_use_context;
+
+        try_use_context::<Rc<Self>>().expect(
+            "Reactor::from_cx() called outside of reactive scope or without reactor in context",
+        )
     }
     /// Gets the currently active translator.
     ///
@@ -275,14 +284,54 @@ impl<G: Html> Reactor<G> {
             sycamore_router::navigate(&new_path);
         }
     }
+
+    /// Sets the current page view and triggers a reactive update.
+    /// This stores the view in the holder and increments the version counter
+    /// to trigger any reactive closures watching the view.
+    #[cfg(any(client, doc))]
+    pub(crate) fn set_current_view(&self, view: View) {
+        *self.current_view_holder.borrow_mut() = Some(view);
+        self.current_view_version
+            .set(self.current_view_version.get_untracked() + 1);
+    }
+
+    /// Takes the current page view from the holder and returns it.
+    /// This should only be called from within a reactive closure that tracks
+    /// `current_view_version`.
+    #[cfg(any(client, doc))]
+    pub(crate) fn take_current_view(&self) -> View {
+        self.current_view_holder
+            .borrow_mut()
+            .take()
+            .unwrap_or_default()
+    }
+
+    /// Sets the popup error view and triggers a reactive update.
+    #[cfg(any(client, doc))]
+    pub(crate) fn set_popup_error_view(&self, view: View) {
+        *self.popup_error_view_holder.borrow_mut() = Some(view);
+        self.popup_error_view_version
+            .set(self.popup_error_view_version.get_untracked() + 1);
+    }
+
+    /// Takes the popup error view from the holder and returns it.
+    /// This should only be called from within a reactive closure that tracks
+    /// `popup_error_view_version`.
+    #[cfg(any(client, doc))]
+    pub(crate) fn take_popup_error_view(&self) -> View {
+        self.popup_error_view_holder
+            .borrow_mut()
+            .take()
+            .unwrap_or_default()
+    }
 }
 
 #[cfg(engine)]
-impl<G: Html> Reactor<G> {
+impl Reactor {
     /// Initializes a new [`Reactor`] on the engine-side.
     pub(crate) fn engine(
         global_state: TemplateState,
-        mode: RenderMode<G>,
+        mode: RenderMode,
         translator: Option<&Translator>,
     ) -> Self {
         Self {
@@ -320,13 +369,14 @@ impl<T: Serialize + DeserializeOwned> WindowVariable<T> {
     /// the given type. This will only work with window variables that have
     /// been serialized to strings from the given type `T`.
     fn new_obj(name: &str) -> Self {
-        let val_opt = web_sys::window().unwrap().get(name);
-        let js_obj = match val_opt {
-            Some(js_obj) => js_obj,
-            None => return Self::None,
+        // Use js_sys::Reflect::get to access any JavaScript property, including primitives
+        let window = web_sys::window().unwrap();
+        let js_val = match js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str(name)) {
+            Ok(val) if !val.is_undefined() => val,
+            _ => return Self::None,
         };
         // The object should only actually contain the string value that was injected
-        let val_str = match js_obj.as_string() {
+        let val_str = match js_val.as_string() {
             Some(val_str) => val_str,
             None => return Self::Malformed,
         };
@@ -348,13 +398,14 @@ impl WindowVariable<bool> {
     ///
     /// This is generally used internally for managing flags.
     pub(crate) fn new_bool(name: &str) -> Self {
-        let val_opt = web_sys::window().unwrap().get(name);
-        let js_bool = match val_opt {
-            Some(js_bool) => js_bool,
-            None => return Self::None,
+        // Use js_sys::Reflect::get to access any JavaScript property, including primitives
+        let window = web_sys::window().unwrap();
+        let js_val = match js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str(name)) {
+            Ok(val) if !val.is_undefined() => val,
+            _ => return Self::None,
         };
         // The object should only actually contain the boolean value that was injected
-        match js_bool.as_bool() {
+        match js_val.as_bool() {
             Some(val) => Self::Some(val),
             None => Self::Malformed,
         }
@@ -365,13 +416,14 @@ impl WindowVariable<String> {
     /// Gets the window variable of the given name, attempting to fetch it as
     /// the given type. This will only work with `String` window variables.
     fn new_str(name: &str) -> Self {
-        let val_opt = web_sys::window().unwrap().get(name);
-        let js_str = match val_opt {
-            Some(js_str) => js_str,
-            None => return Self::None,
+        // Use js_sys::Reflect::get to access any JavaScript property, including primitives
+        let window = web_sys::window().unwrap();
+        let js_val = match js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str(name)) {
+            Ok(val) if !val.is_undefined() => val,
+            _ => return Self::None,
         };
-        // The object should only actually contain the boolean value that was injected
-        match js_str.as_string() {
+        // The object should only actually contain the string value that was injected
+        match js_val.as_string() {
             Some(val) => Self::Some(val),
             None => Self::Malformed,
         }

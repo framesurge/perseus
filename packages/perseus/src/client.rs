@@ -1,7 +1,7 @@
 use crate::reactor::Reactor;
 use crate::{i18n::TranslationsManager, init::PerseusAppBase, stores::MutableStore};
-use crate::{plugins::PluginAction, template::BrowserNodeType, utils::checkpoint};
-use sycamore::prelude::create_scope;
+use crate::{plugins::PluginAction, utils::checkpoint};
+use sycamore::prelude::create_root;
 use wasm_bindgen::JsValue;
 use web_sys::{CustomEvent, CustomEventInit};
 
@@ -21,9 +21,10 @@ use web_sys::{CustomEvent, CustomEventInit};
 ///
 /// This function performs all error handling internally, and will do its level
 /// best not to fail, including through setting panic handlers.
-pub fn run_client<M: MutableStore, T: TranslationsManager>(
-    app: impl Fn() -> PerseusAppBase<BrowserNodeType, M, T>,
-) {
+pub fn run_client<M: MutableStore, T: TranslationsManager>(app: impl Fn() -> PerseusAppBase<M, T>) {
+    // Set panic hook early for better error messages in case of panics
+    console_error_panic_hook::set_once();
+
     let mut app = app();
     // The latter of these is a clone of the handler used for other errors
     let (general_panic_handler, view_panic_handler) = app.take_panic_handlers();
@@ -88,36 +89,35 @@ pub fn run_client<M: MutableStore, T: TranslationsManager>(
     // (terminating Perseus and rendering the app inoperable)
     let mut running = true;
     // === IF THIS DISPOSER IS CALLED, PERSEUS WILL TERMINATE! ===
-    let app_disposer = create_scope(|cx| {
+    let root_handle = create_root(|| {
         // NOTE: To anyone who ever thinks it might be a good idea to put this whole
         // thing in a `with_hydration_cx()`, it's not, it's really not.
-        running = {
-            // Create the reactor
-            match Reactor::try_from(app) {
-                Ok(reactor) => {
-                    // We're away!
-                    reactor.add_self_to_cx(cx);
-                    let reactor = Reactor::from_cx(cx);
-                    reactor.start(cx)
-                }
-                Err(err) => {
-                    // We don't have a reactor, so render a critical popup error, hoping the user
-                    // can see something prerendered that makes sense (this
-                    // displays and everything)
-                    Reactor::handle_critical_error(cx, err, &error_views);
-                    // We can't do anything without a reactor
-                    false
-                }
+        // Create the reactor
+        let result = match Reactor::try_from(app) {
+            Ok(reactor) => {
+                // We're away!
+                reactor.add_self_to_cx();
+                let reactor = Reactor::from_cx();
+                reactor.start()
+            }
+            Err(err) => {
+                // We don't have a reactor, so render a critical popup error, hoping the user
+                // can see something prerendered that makes sense (this
+                // displays and everything)
+                Reactor::handle_critical_error(err, &error_views);
+                // We can't do anything without a reactor
+                false
             }
         };
+        running = result;
     });
 
     dispatch_loaded(running, false);
 
     // If we failed, terminate
     if !running {
-        // SAFETY We're outside the app's scope.
-        unsafe { app_disposer.dispose() }
+        // Clean up the root scope
+        root_handle.dispose();
         // This is one of the best places in Perseus for crash analytics
         plugins
             .functional_actions
@@ -147,9 +147,9 @@ pub type ClientReturn = Result<(), JsValue>;
 /// unwinding panics, and there could be a user function for catching panics.
 fn dispatch_loaded(running: bool, panic: bool) {
     let document = web_sys::window().unwrap().document().unwrap();
-    let mut ev_init = CustomEventInit::new();
+    let ev_init = CustomEventInit::new();
     // We provide whether or not the app is actually running to this
-    ev_init.detail(&if panic { JsValue::NULL } else { running.into() });
+    ev_init.set_detail(&if panic { JsValue::NULL } else { running.into() });
     let ev = CustomEvent::new_with_event_init_dict("__perseus_loaded", &ev_init).unwrap();
     document.dispatch_event(&ev).unwrap();
 }

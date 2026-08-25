@@ -1,6 +1,6 @@
 use super::Locales;
 use crate::{path::PathWithoutLocale, utils::get_path_prefix_client};
-use sycamore::rt::Reflect;
+use js_sys::Reflect;
 use wasm_bindgen::JsValue;
 
 /// Detects which locale the user should be served and redirects appropriately.
